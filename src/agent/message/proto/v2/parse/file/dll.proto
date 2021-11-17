@@ -1,0 +1,5 @@
+message dll {
+  required int32 scan_id = 1;
+  required string filename = 2;
+  required bytes filecontent = 3;
+}

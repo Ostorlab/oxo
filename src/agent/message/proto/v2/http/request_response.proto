@@ -1,0 +1,28 @@
+message header {
+  required string name = 1;
+  required string value = 2;
+}
+
+message request {
+  required string method = 1;
+  required string url = 2;
+  repeated header headers = 3;
+  optional bytes body = 4;
+}
+
+message response {
+  required string url = 1;
+  required int32 status = 2;
+  required string status_text = 3;
+  repeated header headers = 4;
+  optional string remote_ip = 5;
+  optional int32 remote_port = 6;
+  optional string protocol = 7;
+  optional bytes body = 8;
+}
+
+message request_response {
+  required int32 scan_id = 1;
+  required request request = 2;
+  optional response response = 3;
+}

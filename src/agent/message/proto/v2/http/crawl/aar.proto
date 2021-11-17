@@ -1,0 +1,4 @@
+message aar {
+  required int32 scan_id = 1;
+  required string url = 2;
+}

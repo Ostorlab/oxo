@@ -1,0 +1,18 @@
+message java_method_call{
+
+  message java_object {
+    required string signature = 4;
+    required bytes value = 5;
+  }
+
+  message parameter {
+    required string name = 2;
+    required java_object value = 3;
+  }
+
+  required int32 scan_id = 1;
+  required string class_name = 2;
+  required string method_name = 3;
+  required string signature = 4;
+  repeated parameter parameters = 5;
+}

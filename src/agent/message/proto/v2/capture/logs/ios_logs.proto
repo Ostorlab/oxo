@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+message ios_logs {
+  required int32 scan_id = 1;
+  required float timestamp = 2;
+  required string level = 3;
+  required string message = 4;
+}

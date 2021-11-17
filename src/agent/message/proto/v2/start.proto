@@ -1,0 +1,5 @@
+syntax = "proto2";
+
+message start {
+  required int32 scan_id = 1;
+}

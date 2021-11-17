@@ -1,0 +1,9 @@
+package report.event;
+
+message scan_done {
+  required int32 scan_id = 1;
+  required string source = 2;
+  optional string message = 3 [default = 'scan_done'];
+  optional string description = 4;
+  required string correlation_id = 5;
+}

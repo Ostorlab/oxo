@@ -1,0 +1,46 @@
+message reference {
+  required string url = 1;
+  required string name = 2;
+  required string refsource = 3;
+  repeated string tags = 4;
+}
+
+message version_match {
+  required string start = 1;
+  required bool start_include = 2;
+  required string end = 3;
+  required bool end_include = 4;
+}
+
+message cpe_match {
+  required string part = 1;
+  optional string vendor = 2;
+  optional string product = 3;
+  optional version_match version = 4;
+  optional string update = 5;
+  optional string edition = 6;
+  optional string language = 7;
+  optional string sw_edition = 8;
+  optional string sw = 9;
+  optional string hw = 10;
+  optional string other = 11;
+  required bool vulnerable = 12;
+}
+
+message target {
+  repeated cpe_match cpe_matches = 1;
+}
+
+message cve {
+  required int32 scan_id = 1;
+  required string cve_id = 2;
+  repeated target targets = 3;
+  optional int32 cwe = 4;
+  required string description = 5;
+  repeated reference references = 6;
+  optional string cvss_v3_vector = 7;
+  optional string cvss_v2_vector = 8;
+  required string published_date = 9;
+  required string modified_date = 19;
+
+}

@@ -1,0 +1,5 @@
+message strings {
+  required int32 scan_id = 1;
+  required string filename = 2;
+  repeated string strings = 3;
+}

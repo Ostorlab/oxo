@@ -1,0 +1,6 @@
+message android {
+  required int32 scan_id = 1;
+  required bytes file = 2;
+  required string hash = 3;
+  optional string platform = 4 [default = 'android'];
+}

@@ -1,0 +1,14 @@
+message monitor_filesystem {
+  required int32 scan_id = 1;
+  required string filename = 2;
+  required int32 pid = 3;
+  required int32 uid = 4;
+  required int32 gid = 5;
+  required int32 mode = 6;
+  required int32 ppid = 7;
+  required string proc = 8;
+  required string type = 9;
+  required string user_right = 10;
+  required string group_right = 11;
+  required string other_right = 12;
+}

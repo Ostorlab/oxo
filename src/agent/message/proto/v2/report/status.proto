@@ -1,0 +1,10 @@
+message status {
+
+  message attribute {
+    required string key = 1;
+    required string value = 2;
+  }
+
+  required int32 scan_id = 1;
+  repeated attribute attributes = 2;
+}

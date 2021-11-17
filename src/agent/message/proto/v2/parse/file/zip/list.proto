@@ -1,0 +1,10 @@
+message list {
+  message file {
+    required string filename = 1;
+    required bytes filecontent = 2;
+    required string filetype = 3;
+  }
+
+  required int32 scan_id = 1;
+  repeated file files = 2;
+}

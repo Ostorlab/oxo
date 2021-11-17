@@ -1,0 +1,13 @@
+message vulnerability {
+  required string title = 2;
+  required string technical_detail = 3;
+  required string risk_rating = 4;
+  required string dna = 5;
+}
+
+message vulnerabilities {
+  required int32 scan_id = 1;
+  required string agent_name = 2;
+  required string agent_version = 3;
+  repeated vulnerability vulnerabilities = 4;
+}
