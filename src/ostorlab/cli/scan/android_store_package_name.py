@@ -1,6 +1,6 @@
 import logging
 
-from cli.rootcli import scan
+from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
 

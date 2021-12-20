@@ -2,11 +2,16 @@ import logging
 
 import click
 
-from apis import runner as apis_runner
-from apis import scan as apis_scan
-from cli.rootcli import scan
+from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import scan as apis_scan
+from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
+
+
+@scan.command()
+def android_store():
+    """Command on cli1"""
 
 
 @scan.command()
@@ -19,7 +24,7 @@ logger = logging.getLogger(__name__)
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
 @click.option('--tlsverify/--no-tlsverify', default=True)
 @click.pass_context
-def ipa(ctx, plan, platform, application):
+def mobile(ctx, plan, platform, application):
     try:
         api_runner = apis_runner.Runner(username=ctx.obj['username'], password=ctx.obj['password'],
                                         proxy=ctx.obj['proxy'], verify=ctx.obj['tlsverify'])
@@ -37,3 +42,8 @@ def ipa(ctx, plan, platform, application):
 
     except apis_runner.AuthenticationError:
         logger.error('Authentication error, please check that your credentials are valid.')
+
+
+@scan.command()
+def ios_store():
+    """Command on cli1"""
