@@ -19,3 +19,8 @@ def agent():
 @rootcli.group()
 def agentgroup():
     pass
+
+
+@rootcli.group()
+def auth():
+    pass
