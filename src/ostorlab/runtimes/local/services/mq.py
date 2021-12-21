@@ -3,10 +3,10 @@ import logging
 import os
 
 import docker
-import docker.models.services
-from docker import errors
-import docker.types
 import tenacity
+from docker import errors
+from docker import types
+from docker.models import services
 
 logger = logging.getLogger(__name__)
 
@@ -62,12 +62,12 @@ class LocalRabbitMQ:
                 attachable=True,
                 labels={'ostorlab.universe': self._name, },
                 check_duplicate=True
-                )
+            )
 
-    def _start_mq(self) -> docker.models.services.Service:
+    def _start_mq(self) -> services.Service:
         logger.info('starting MQ')
-        endpoint_spec = docker.types.services.EndpointSpec(mode='vip')
-        service_mode = docker.types.services.ServiceMode('replicated', replicas=1)
+        endpoint_spec = types.services.EndpointSpec(mode='vip')
+        service_mode = types.services.ServiceMode('replicated', replicas=1)
         return self._docker_client.services.create(
             image=self._mq_image,
             networks=[self._network],
@@ -77,7 +77,7 @@ class LocalRabbitMQ:
                 f'MQ_SERVICE_NAME={self._mq_host}',
                 f'RABBITMQ_ERLANG_COOKIE={binascii.hexlify(os.urandom(10)).decode()}',
             ],
-            restart_policy=docker.types.RestartPolicy(condition='any'),
+            restart_policy=types.RestartPolicy(condition='any'),
             mode=service_mode,
             labels={'ostorlab.universe': self._name, 'ostorlab.mq': ''},
             endpoint_spec=endpoint_spec)
@@ -97,4 +97,3 @@ class LocalRabbitMQ:
             return len([task for task in self._mq_service.tasks() if task['Status']['State'] == 'running']) == 1
         except errors.DockerException:
             return False
-
