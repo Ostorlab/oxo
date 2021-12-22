@@ -1,3 +1,5 @@
+import click
+
 from ostorlab.assets import Asset
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.runtime import AgentRunDefinition
@@ -10,7 +12,9 @@ class LocalRuntime(runtime.Runtime):
     """
 
     def can_run(self, agent_run_definition: AgentRunDefinition) -> bool:
-        raise NotImplementedError()
+        return True
+        # raise NotImplementedError()
 
     def scan(self, agent_run_definition: AgentRunDefinition, asset: Asset) -> None:
+        click.echo('INFO: NotImplemented ')
         raise NotImplementedError()

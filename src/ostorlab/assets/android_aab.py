@@ -1,8 +1,11 @@
 import io
 
-from ostorlab import assets
+from .asset import Asset
 
 
-class AndroidAab(assets.Asset):
+class AndroidAab(Asset):
     """Android AAB target asset."""
     file: io.FileIO
+
+    def __init__(self, file):
+        self.file = file

@@ -1,8 +1,11 @@
 import io
 
-from ostorlab import assets
+from ostorlab.assets.asset import Asset
 
 
-class IOSIpa(assets.Asset):
+class IOSIpa(Asset):
     """iOS IPA target asset."""
     file: io.FileIO
+
+    def __init__(self, file):
+        self.file = file

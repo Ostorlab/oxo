@@ -1,49 +1,35 @@
 import logging
-
 import click
 
-from ostorlab.apis import runner as apis_runner
-from ostorlab.apis import scan as apis_scan
+from ostorlab.assets import AndroidApk, IOSIpa, AndroidAab
+
 from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
 
 
 @scan.command()
-def android_store():
-    """Command on cli1"""
-
-
-@scan.command()
-@click.option('--plan', type=click.Choice(['free']), help='Plan.', required=True)
-@click.option('--platform', type=click.Choice(['android', 'ios']), help='platform.', required=True)
-@click.option('--application', type=click.Path(readable=True, exists=True), help='application.', required=True)
-@click.option('--title', '-t', help='Scan title.')
-@click.option('--username', '-u', help='Ostorlab platform username.')
-@click.option('--password', '-p', help='Ostorlab platform password.')
-@click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option('--tlsverify/--no-tlsverify', default=True)
+@click.option('--file', type=click.File(), help='application .apk file.', required=True)
 @click.pass_context
-def mobile(ctx, plan, platform, application):
-    try:
-        api_runner = apis_runner.Runner(username=ctx.obj['username'], password=ctx.obj['password'],
-                                        proxy=ctx.obj['proxy'], verify=ctx.obj['tlsverify'])
-        api_runner.authenticate()
-
-        with open(application, 'rb') as o_app:
-            logger.debug('application %s', application)
-            create_request = apis_scan.CreateMobileScanAPIRequest(
-                title=ctx.obj['title'],
-                asset_type=apis_scan.MobileAssetType[platform.upper()],
-                plan=apis_scan.Plan[plan.upper()],
-                application=o_app)
-            response = api_runner.execute(create_request)
-            logger.debug(response)
-
-    except apis_runner.AuthenticationError:
-        logger.error('Authentication error, please check that your credentials are valid.')
+def android_apk(ctx, file):
+    runtime = ctx.obj['runtime']
+    asset = AndroidApk(file)
+    runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
 
 
 @scan.command()
-def ios_store():
-    """Command on cli1"""
+@click.option('--file', type=click.File(), help='application .aab file.', required=True)
+@click.pass_context
+def android_aab(ctx, file):
+    runtime = ctx.obj['runtime']
+    asset = AndroidAab(file)
+    runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
+
+
+@scan.command()
+@click.option('--file', type=click.File(), help='application .ipa file.', required=True)
+@click.pass_context
+def ios_ipa(ctx, file):
+    runtime = ctx.obj['runtime']
+    asset = IOSIpa(file)
+    runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
