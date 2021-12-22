@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 @auth.command()
 @click.option('--username', '-u', help='Ostorlab platform username.', required=True)
 @click.option('--password', '-p', help='Ostorlab platform password.', required=True)
-@click.option('--expires', '-e', help='Expiration time for token (m for minutes and d for days).')
+@click.option('--expires', '-e', help='Expiration time for token (m for minutes, h for hours, and d for days).')
 @click.pass_context
 def login(ctx, username, password, expires):
     try:
