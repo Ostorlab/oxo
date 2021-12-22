@@ -55,14 +55,13 @@ class APIRunner:
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')
 
-            if field_errors is not None:
-                if field_errors[0] == "Must include \"otp_token\"":
-                    self._otp_token = click.prompt(
-                        'Please enter the OTP code from your authenticator app')
-                    self.authenticate()
-                else:
-                    logger.debug(response.content)
-                    raise AuthenticationError(response.status_code)
+            if field_errors is not None and field_errors[0] == "Must include \"otp_token\"":
+                self._otp_token = click.prompt(
+                    'Please enter the OTP code from your authenticator app')
+                self.authenticate()
+            else:
+                logger.debug(response.content)
+                raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get('token')
 
