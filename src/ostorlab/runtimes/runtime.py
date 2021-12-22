@@ -1,6 +1,7 @@
-""" ostorlab runtime"""
+""" ostorlab runtime module """
 import abc
 import dataclasses
+import io
 from typing import List, Iterable, Optional, Dict
 
 from ostorlab.assets import Asset
@@ -44,7 +45,7 @@ class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
 
     @classmethod
-    def from_file(cls, group):
+    def from_file(cls, group: io.FileIO):
         """
         construct AgentGroupDefinition from yaml file
 

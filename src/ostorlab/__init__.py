@@ -1,4 +1,4 @@
-""" Ostorlab Cli Module """
+""" Ostorlab cli module. """
 import logging
 
 from rich.logging import RichHandler

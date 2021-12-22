@@ -1,4 +1,4 @@
-""" root cli for ostorlab cli"""
+"""Entry point for ostorlab cli. with the main commands """
 import io
 from typing import List, Optional
 import click
@@ -12,15 +12,11 @@ from ostorlab.runtimes.runtime import AgentRunDefinition, AgentGroupDefinition, 
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
     """
-    root command for ostorlab cli initiate the context, Available commands
-    - scan
-    - agent
-    - agent-group
-
+    root command for ostorlab cli initiate the context
     Args:
-        ctx (click.core.Context): click Context object
-        proxy (Optional[str]): Proxy to route HTTPS requests through.
-        tlsverify (bool): Enabled/Disable tlsverify
+        ctx (click.core.Context): click context object
+        proxy (Optional[str]): proxy to route HTTPS requests through.
+        tlsverify (bool): enabled/disable tlsverify
 
     Returns:
         None
@@ -34,9 +30,10 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
 
 @rootcli.group()
 @click.option('--runtime', type=click.Choice(['local', 'managed', 'hybrid']), help='run time ', required=True)
-@click.option('--agents', multiple=True, help='list of Agents ', required=True)
+@click.option('--agents', multiple=True, help='List of agents keys. ', required=True)
 @click.option('--title', '-t', help='Scan title.')
-@click.option('--agents-group-definition', '-agd', type=click.File('r'), help='agents-group.yaml file', multiple=True)
+@click.option('--agents-group-definition', '-agd', type=click.File('r'),
+              help='path to agents group definition file (yaml).', multiple=True)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[io.FileIO],
          title: str) -> None:
@@ -46,7 +43,7 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_
         ctx (click.core.Context): click Context object
         runtime (str): specify the runtime type ['local', 'managed', 'hybrid']
         agents (List[str]): List of agents names to use in the scan
-        agents_group_definition ( List[io.FileIO]): List of agents_group_definition .yaml files
+        agents_group_definition ( List[io.FileIO]): List of agents group definition .yaml files
         title (str): title for scan
 
     Returns:

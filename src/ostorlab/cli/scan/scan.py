@@ -2,7 +2,7 @@
 import io
 import logging
 import click
-from ostorlab.assets import AndroidApk, IOSIpa, AndroidAab
+from ostorlab import assets
 from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
     """
-    run scan for android .apk package file, Build an instance of Asset class and pass it to the runtime
+    run scan for android .apk package file, build an instance of asset class and pass it to the runtime
 
     Args:
         file (io.File): path to the .apk file
@@ -23,7 +23,7 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
     """
 
     runtime = ctx.obj['runtime']
-    asset = AndroidApk(file)
+    asset = assets.AndroidApk(file)
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
 
 
@@ -42,7 +42,7 @@ def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
         None:
     """
     runtime = ctx.obj['runtime']
-    asset = AndroidAab(file)
+    asset = assets.AndroidAab(file)
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
 
 
@@ -62,5 +62,5 @@ def ios_ipa(ctx, file):
        """
 
     runtime = ctx.obj['runtime']
-    asset = IOSIpa(file)
+    asset = assets.IOSIpa(file)
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
