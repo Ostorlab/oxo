@@ -57,5 +57,5 @@ class OstorlabValidationError(Exception):
     """
 
 class OstorlabSchemaError(Exception):
-    """Wrapper Exception for the ValidationError produced by jsonschema's validate method.
+    """Wrapper Exception for the SchemaError produced by jsonschema's validate method.
     """
