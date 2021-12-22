@@ -28,7 +28,7 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
 
 
 @scan.command()
-@click.option('--file', type=click.File(), help='application .aab file.', required=True)
+@click.option('--file', type=click.File(), help='path for android .aab file.', required=True)
 @click.pass_context
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
     """
@@ -51,10 +51,10 @@ def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
 @click.pass_context
 def ios_ipa(ctx, file):
     """
-       run scan for ios .ipa package file, Build an instance of Asset class and pass it to the runtime
+       run scan for IOS .ipa package file, Build an instance of Asset class and pass it to the runtime
 
        Args:
-           file (io.File): path to the .apk file
+           file (io.File): path to the .ipa file
            ctx (click.core.Context): context object contains info from the command
 
        Returns:

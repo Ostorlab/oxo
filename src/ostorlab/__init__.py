@@ -1,4 +1,4 @@
-""" Ostorlab cli module. """
+""" Ostorlab Package: TODO: add proper description for the package. """
 import logging
 
 from rich.logging import RichHandler

@@ -17,5 +17,5 @@ class LocalRuntime(runtime.Runtime):
         raise NotImplementedError()
 
     def scan(self, agent_run_definition: AgentRunDefinition, asset: Asset) -> None:
-        click.echo('INFO: NotImplemented ')
+        click.echo('INFO: scan method NotImplemented')
         raise NotImplementedError()
