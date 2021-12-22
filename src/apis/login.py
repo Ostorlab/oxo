@@ -5,9 +5,10 @@ from . import request
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):
 
-    def __init__(self, username: str, password: str) -> None:
+    def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
         self._username = username
         self._password = password
+        self._otp_token = otp_token
 
     @property
     def endpoint(self):
@@ -19,8 +20,17 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
 
     @property
     def data(self) -> Optional[Dict]:
-        data = {
-            'username': self._username,
-            'password': self._password,
-        }
-        return data
+        if self._otp_token is not None:
+            data = {
+                'username': self._username,
+                'password': self._password,
+                'otp_token': self._otp_token,
+            }
+            return data
+        else:
+            data = {
+                'username': self._username,
+                'password': self._password,
+            }
+            return data
+        
