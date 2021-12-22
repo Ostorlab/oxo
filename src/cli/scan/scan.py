@@ -26,7 +26,7 @@ def android_store():
 @click.pass_context
 def mobile(ctx, plan, platform, application):
     try:
-        api_runner = apis_runner.Runner(username=ctx.obj['username'], password=ctx.obj['password'],
+        api_runner = apis_runner.APIRunner(username=ctx.obj['username'], password=ctx.obj['password'],
                                         proxy=ctx.obj['proxy'], verify=ctx.obj['tlsverify'])
         api_runner.authenticate()
 
