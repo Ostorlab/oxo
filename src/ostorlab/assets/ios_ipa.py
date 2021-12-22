@@ -1,7 +1,6 @@
 """ios .IPA  asset."""
 
 import io
-
 from ostorlab.assets.asset import Asset
 
 
