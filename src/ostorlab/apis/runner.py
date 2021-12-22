@@ -34,7 +34,7 @@ class APIRunner:
         self._otp_token = None
 
     def _login_user(self) -> requests.models.Response:
-        """ Sends API request to log in the user
+        """ Logs in the user
 
         Returns:
             requests.models.Response: The API response
