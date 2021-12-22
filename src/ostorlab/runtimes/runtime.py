@@ -1,3 +1,4 @@
+""" ostorlab runtime"""
 import abc
 import dataclasses
 from typing import List, Iterable, Optional, Dict
@@ -22,10 +23,35 @@ class AgentDefinition:
     bus_username: str = 'username'
     bus_password: str = 'password'
 
+    @classmethod
+    def from_agent_key(cls, agent_key):
+        """
+        construct AgentDefinition from agent_key
+
+        Args:
+            agent_key (string): agent key
+        """
+
+        # TODO:implement reading agent AgentDefinition using agent_key
+        name = ''
+        path = ''
+        container_image = ''
+        return cls(name, path, container_image)
+
 
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
+
+    @classmethod
+    def from_file(cls, group):
+        """
+        construct AgentGroupDefinition from yaml file
+
+        Args:
+            group (string): agent key
+        """
+        return cls()
 
 
 @dataclasses.dataclass

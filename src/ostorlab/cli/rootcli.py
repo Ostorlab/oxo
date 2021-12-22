@@ -2,13 +2,13 @@
 import io
 from typing import List, Optional
 import click
-from ostorlab.runtimes import LocalRuntime, AgentBuilder, AgentGroupBuilder
+from ostorlab.runtimes import LocalRuntime
 from ostorlab.runtimes.runtime import AgentRunDefinition, AgentGroupDefinition, AgentDefinition
 
 
 @click.group()
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option("--tlsverify/--no-tlsverify", default=True)
+@click.option('--tlsverify/--no-tlsverify', default=True)
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
     """
@@ -50,7 +50,7 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_
         title (str): title for scan
 
     Returns:
-        None: 
+        None
         Raises:
             - AgentDefinitionError : when one or multiple agent definition is not valid
     """
@@ -64,13 +64,14 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_
     # Building List of Agents definition
     agents_definition: List[AgentDefinition] = []
     for agent_key in agents:
-        agents_definition.append(AgentBuilder().build(agent_key=agent_key))
+        agents_definition.append(AgentDefinition.from_agent_key(agent_key=agent_key))
 
     # Building List of Agents definition
     agents_groups: List[AgentGroupDefinition] = []
     for group in agents_group_definition:
-        agents_groups.append(AgentGroupBuilder().build(group))
+        agents_groups.append(AgentGroupDefinition.from_file(group))
 
+    #
     agent_run_definition = AgentRunDefinition(agent_groups=agents_groups, agents=agents_definition)
     if runtime.can_run(agent_run_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime
