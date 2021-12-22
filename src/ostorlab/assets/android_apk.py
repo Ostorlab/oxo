@@ -1,11 +1,11 @@
-"""Android APK target asset."""
+"""Android APK  asset."""
 
 import io
-from .asset import Asset
+from ostorlab.assets.asset import Asset
 
 
 class AndroidApk(Asset):
-    """Android APK target asset."""
+    """Android Apk target asset."""
     file: io.FileIO
 
     def __init__(self, file: io.FileIO) -> None:
