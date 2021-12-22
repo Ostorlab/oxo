@@ -33,7 +33,7 @@ class APIRunner:
         self._expires = expires
         self._otp_token = None
 
-    def create_request(self):
+    def _login_user(self):
         if self._otp_token is not None:
             login_request = login.UsernamePasswordLoginAPIRequest(
                 self._username, self._password, self._otp_token)
@@ -43,7 +43,7 @@ class APIRunner:
         return self._sent_request(login_request)
 
     def authenticate(self):
-        response = self.create_request()
+        response = self._login_user()
 
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')
