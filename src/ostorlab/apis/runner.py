@@ -33,13 +33,14 @@ class APIRunner:
         self._expires = expires
         self._otp_token = None
 
-    def _login_user(self):
-        if self._otp_token is not None:
-            login_request = login.UsernamePasswordLoginAPIRequest(
-                self._username, self._password, self._otp_token)
-        else:
-            login_request = login.UsernamePasswordLoginAPIRequest(
-                self._username, self._password)
+    def _login_user(self) -> requests.models.Response:
+        """ Sends API request to log in the user
+
+        Returns:
+            requests.models.Response: The API response
+        """        
+        login_request = login.UsernamePasswordLoginAPIRequest(
+            self._username, self._password, self._otp_token)
         return self._sent_request(login_request)
 
     def authenticate(self):
