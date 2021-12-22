@@ -1,7 +1,9 @@
+""" root cli for ostorlab cli"""
+import io
+from typing import List, Optional
 import click
 from ostorlab.runtimes import LocalRuntime, AgentBuilder, AgentGroupBuilder
 from ostorlab.runtimes.runtime import AgentRunDefinition, AgentGroupDefinition, AgentDefinition
-from typing import List, Optional
 
 
 @click.group()
@@ -10,8 +12,20 @@ from typing import List, Optional
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
     """
-    root Cli command
+    root command for ostorlab cli initiate the context, Available commands
+    - scan
+    - agent
+    - agent-group
+
+    Args:
+        ctx (click.core.Context): click Context object
+        proxy (Optional[str]): Proxy to route HTTPS requests through.
+        tlsverify (bool): Enabled/Disable tlsverify
+
+    Returns:
+        None
     """
+
     ctx.obj = {
         'proxy': proxy,
         'tlsverify': tlsverify
@@ -24,9 +38,22 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
 @click.option('--title', '-t', help='Scan title.')
 @click.option('--agents-group-definition', '-agd', type=click.File('r'), help='agents-group.yaml file', multiple=True)
 @click.pass_context
-def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[str],
+def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[io.FileIO],
          title: str) -> None:
-    """ Start a new scan """
+    """ Start a new scan on a provided asset
+
+    Args:
+        ctx (click.core.Context): click Context object
+        runtime (str): specify the runtime type ['local', 'managed', 'hybrid']
+        agents (List[str]): List of agents names to use in the scan
+        agents_group_definition ( List[io.FileIO]): List of agents_group_definition .yaml files
+        title (str): title for scan
+
+    Returns:
+        None: 
+        Raises:
+            - AgentDefinitionError : when one or multiple agent definition is not valid
+    """
 
     if runtime == 'local':
         runtime = LocalRuntime()
