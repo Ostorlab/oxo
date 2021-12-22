@@ -23,6 +23,7 @@ class ResponseError(Error):
 
 
 class APIRunner:
+    """Makes all API Requests."""    
 
     def __init__(self, username: Optional[str], password: Optional[str], expires: Optional[str], proxy: str = None, verify: bool = True):
         self._username = username
