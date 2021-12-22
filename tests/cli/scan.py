@@ -6,4 +6,3 @@ def test_RunScan():
     runner = CliRunner()
     result = runner.invoke(rootcli, ['scan'])
     assert not result.exception
-    assert "Error: Missing option '--runtime'" in result.output
