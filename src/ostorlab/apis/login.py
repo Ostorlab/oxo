@@ -4,6 +4,11 @@ from . import request
 
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):
+    """Sends API request to log in the user 
+
+    Args:
+        request (APIRequest): The class APIRequest
+    """    
 
     def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
         self._username = username
