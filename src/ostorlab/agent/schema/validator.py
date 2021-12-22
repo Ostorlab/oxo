@@ -13,13 +13,21 @@ from jsonschema import validate
 from jsonschema import exceptions
 import ruamel.yaml
 
+
+class Exception(Exception):
+    """Base Exception
+    """
+
+
 class ValidationError(Exception):
     """Wrapper Exception for the ValidationError produced by jsonschema's validate method.
     """
 
+
 class SchemaError(Exception):
     """Wrapper Exception for the SchemaError produced by jsonschema's validate method.
     """
+
 
 class Validator():
     """Creates validator that checks yaml files with a json schema.
