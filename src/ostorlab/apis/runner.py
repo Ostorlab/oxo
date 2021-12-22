@@ -43,7 +43,12 @@ class APIRunner:
             self._username, self._password, self._otp_token)
         return self._sent_request(login_request)
 
-    def authenticate(self):
+    def authenticate(self) -> None:
+        """Authenticates the user
+
+        Raises:
+            AuthenticationError: If user credentials are not valid
+        """        
         response = self._login_user()
 
         if response.status_code != 200:
