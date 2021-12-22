@@ -13,11 +13,11 @@ from jsonschema import validate
 from jsonschema import exceptions
 import ruamel.yaml
 
-class OstorlabValidationError(Exception):
+class ValidationError(Exception):
     """Wrapper Exception for the ValidationError produced by jsonschema's validate method.
     """
 
-class OstorlabSchemaError(Exception):
+class SchemaError(Exception):
     """Wrapper Exception for the SchemaError produced by jsonschema's validate method.
     """
 
@@ -43,8 +43,8 @@ class Validator():
         """ Validates a yaml file against a json schema .
 
         Raises:
-            OstorlabValidationError if the validation did not pass well.
-            OstorlabSchemaError if the Schema is not valid.
+            ValidationError if the validation did not pass well.
+            SchemaError if the Schema is not valid.
         """
         yaml = ruamel.yaml.YAML(typ='safe')
         yaml_data = yaml.load(yaml_file_object)
@@ -52,6 +52,6 @@ class Validator():
         try:
             validate(instance=yaml_data, schema=self._json_schema)
         except exceptions.ValidationError as e:
-            raise OstorlabValidationError("Validation did not pass well.") from e
+            raise ValidationError("Validation did not pass well.") from e
         except exceptions.SchemaError as e:
-            raise OstorlabSchemaError("Schema is invalid.") from e
+            raise SchemaError("Schema is invalid.") from e

@@ -6,7 +6,7 @@ import io
 import pytest
 
 from src.ostorlab.agent.schema.validator import Validator
-from src.ostorlab.agent.schema.validator import OstorlabValidationError, OstorlabSchemaError
+from src.ostorlab.agent.schema.validator import ValidationError, SchemaError
 
 
 def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file):
@@ -41,13 +41,13 @@ def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file):
 
         try:
             validator.validate(yaml_data_file)
-        except OstorlabValidationError:
-            pytest.fail("OstorlabValidationError shouldn't be expected.")
-        except OstorlabSchemaError:
-            pytest.fail("OstorlabSchemaError shouldn't be expected.")
+        except ValidationError:
+            pytest.fail("ValidationError shouldn't be expected.")
+        except SchemaError:
+            pytest.fail("SchemaError shouldn't be expected.")
 
 
-def testYamlValidation_whenItIsWrong_raisesOstorlabValidationError(json_schema_file):
+def testYamlValidation_whenItIsWrong_raisesValidationError(json_schema_file):
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid.
 
@@ -77,12 +77,13 @@ def testYamlValidation_whenItIsWrong_raisesOstorlabValidationError(json_schema_f
     validator = Validator(json_schema_file)
     yaml_data_file = io.StringIO(invalid_yaml_data)
 
-    with pytest.raises(OstorlabValidationError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         validator.validate(yaml_data_file)
 
-    assert exc_info.type is OstorlabValidationError
+    assert exc_info.type is ValidationError
 
-def testYamlValidation_whenSchemaIsInvalid_raisesOstorlabSchemaError():
+
+def testYamlValidation_whenSchemaIsInvalid_raisesSchemaError():
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the Json schema file is invalid.
     """
@@ -121,7 +122,7 @@ def testYamlValidation_whenSchemaIsInvalid_raisesOstorlabSchemaError():
     yaml_data_file = io.StringIO(valid_yaml_data)
     validator = Validator(json_schema_file_object)
 
-    with pytest.raises(OstorlabSchemaError) as exc_info:
+    with pytest.raises(SchemaError) as exc_info:
         validator.validate(yaml_data_file)
 
-    assert exc_info.type is OstorlabSchemaError
+    assert exc_info.type is SchemaError
