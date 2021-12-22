@@ -20,6 +20,11 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
 
     @property
     def data(self) -> Optional[Dict]:
+        """Gets the user login credentials
+
+        Returns:
+            Optional[Dict]: The user login credentials
+        """        
         if self._otp_token is not None:
             data = {
                 'username': self._username,
