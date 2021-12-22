@@ -2,8 +2,8 @@ import logging
 
 import click
 
-from apis import runner as apis_runner
-from cli.rootcli import auth
+from ostorlab.apis import runner as apis_runner
+from ostorlab.cli.rootcli import auth
 
 logger = logging.getLogger(__name__)
 
