@@ -2,9 +2,9 @@ import logging
 
 import click
 
-from apis import runner as apis_runner
-from apis import scan as apis_scan
-from cli.rootcli import scan
+from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import scan as apis_scan
+from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
 

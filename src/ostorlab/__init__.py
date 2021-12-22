@@ -2,7 +2,7 @@ import logging
 
 from rich.logging import RichHandler
 
-from cli.rootcli import rootcli
+from ostorlab.cli.rootcli import rootcli
 
 FORMAT = "%(message)s"
 logging.basicConfig(

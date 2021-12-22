@@ -1,10 +1,10 @@
 import logging
 
-from cli.rootcli import scan
+from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
 
 
 @scan.command()
-def ip():
+def web():
     """Command on cli1"""

@@ -1,10 +1,10 @@
 import logging
 
-from cli.rootcli import scan
+from ostorlab.cli.rootcli import scan
 
 logger = logging.getLogger(__name__)
 
 
 @scan.command()
-def web():
+def ios_store():
     """Command on cli1"""

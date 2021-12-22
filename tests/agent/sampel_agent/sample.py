@@ -1,4 +1,4 @@
-from ostorlab import Agent, Message, ReportMixin
+from ostorlab.agent import Agent, Message, ReportMixin
 
 
 class SampleAgent(Agent, ReportMixin):
