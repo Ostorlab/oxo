@@ -22,9 +22,10 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
 @click.option('--runtime', type=click.Choice(['local', 'managed', 'hybrid']), help='run time ', required=True)
 @click.option('--agents', multiple=True, help='list of Agents ', required=True)
 @click.option('--title', '-t', help='Scan title.')
-@click.option('--agents-group', type=click.File('r'), help='agents-group.yaml file', multiple=True)
+@click.option('--agents-group-definition', '-agd', type=click.File('r'), help='agents-group.yaml file', multiple=True)
 @click.pass_context
-def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group: List[str], title: str) -> None:
+def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[str],
+         title: str) -> None:
     """ Start a new scan """
 
     if runtime == 'local':
@@ -39,11 +40,11 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group:
         agents_definition.append(AgentBuilder().build(agent_key=agent_key))
 
     # Building List of Agents definition
-    agents_group_definition: List[AgentGroupDefinition] = []
-    for group in agents_group:
-        agents_group_definition.append(AgentGroupBuilder().build(group))
+    agents_groups: List[AgentGroupDefinition] = []
+    for group in agents_group_definition:
+        agents_groups.append(AgentGroupBuilder().build(group))
 
-    agent_run_definition = AgentRunDefinition(agent_groups=agents_group_definition, agents=agents_definition)
+    agent_run_definition = AgentRunDefinition(agent_groups=agents_groups, agents=agents_definition)
     if runtime.can_run(agent_run_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime
         ctx.obj['agent_run_definition'] = agent_run_definition
