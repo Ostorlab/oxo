@@ -1,11 +1,24 @@
 import logging
+"""Python's module which implements a flexible event logging system. The documentation can be found at https://docs.python.org/3/library/logging.html
+"""
+
 from typing import Dict, Optional
 
 import requests
+"""An elegant and simple HTTP library for Python
+"""
+
 import click
+"""Package for creating beautiful command line interfaces in a composable way. Documentation: https://click.palletsprojects.com/en/8.0.x/
+"""
 
 from . import login
+"""Class that makes a request to log in the user
+"""
+
 from . import request as api_request
+"""Abstract Base Class with the different endpoints used for API calls 
+"""
 
 logger = logging.getLogger(__name__)
 

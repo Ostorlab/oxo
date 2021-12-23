@@ -1,7 +1,8 @@
 from typing import Dict, Optional
 
 from . import request
-
+"""Abstract Base Class with the different endpoints used for API calls 
+"""
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):  
     """Makes a request to log in the user
