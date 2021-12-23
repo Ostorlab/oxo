@@ -27,6 +27,7 @@ class AgentDefinition:
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
+    agents: List[AgentDefinition]
 
 
 @dataclasses.dataclass
@@ -37,7 +38,16 @@ class AgentRunDefinition:
 
     @property
     def applied_agents(self) -> List[AgentDefinition]:
-        raise NotImplementedError()
+        """The list of applicable agents. The list is composed of both defined agent and agent groups.
+
+        Returns:
+            List of agents used in the current run definition.
+        """
+        agents = []
+        agents.extend(self.agents)
+        for group in self.agent_groups:
+            agents.extend(group.agents)
+        return agents
 
 
 class Runtime(abc.ABC):
