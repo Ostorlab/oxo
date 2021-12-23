@@ -1,55 +1,59 @@
 """Validation of Yaml configuration files against json schema files.
 
-Uses the jsonschema library to validate the yaml files.
-Uses the ruamel.yaml for parssing the Yaml files.
-
     Typical usage example:
-    validator = Validator(yaml_file_object, json_schema_file_object)
-    validator.validate()
+    validator = Validator(json_schema_file_object)
+    validator.validate(yaml_file_object)
 """
 import json
 from io import FileIO
-from jsonschema import validate
-from jsonschema import exceptions
+from jsonschema import validate, exceptions
+from jsonschema import Draft202012Validator
 import ruamel.yaml
 
+VERSIONED_JSONSCHEMA_VALIDATOR = Draft202012Validator 
 
-class Exception(Exception):
+
+class Error(Exception):
     """Base Exception
     """
 
 
-class ValidationError(Exception):
+class ValidationError(Error):
     """Wrapper Exception for the ValidationError produced by jsonschema's validate method.
     """
 
 
-class SchemaError(Exception):
+class SchemaError(Error):
     """Wrapper Exception for the SchemaError produced by jsonschema's validate method.
     """
 
 
-class Validator():
+class Validator:
     """Creates validator that checks yaml files with a json schema.
-
-    Attributes:
-        yaml_data: Parsed yaml data with ruamel.yaml parser.
-        _json_schema: Parsed json schema.
     """
 
     def __init__(self, json_schema_file_object: FileIO):
         """Inits Validator class.
 
         Args:
-            yaml_file_object: A file object of the Yaml configuration file.
             json_schema_file_object: A file object of the Json schema file.
+
+        Raises:
+            SchemaError: When the Json schema file in itself is not valid.
         """
         self._json_schema = json.load(json_schema_file_object)
+        try:
+            VERSIONED_JSONSCHEMA_VALIDATOR.check_schema(self._json_schema)
+        except exceptions.SchemaError as e:
+            raise SchemaError("Schema is invalid.") from e
+
 
 
     def validate(self, yaml_file_object):
         """ Validates a yaml file against a json schema .
 
+        Args:
+            yaml_file_object: A file object of the yaml configuration file we want to validate.
         Raises:
             ValidationError if the validation did not pass well.
             SchemaError if the Schema is not valid.

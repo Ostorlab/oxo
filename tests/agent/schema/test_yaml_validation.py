@@ -83,29 +83,9 @@ def testYamlValidation_whenItIsWrong_raisesValidationError(json_schema_file):
     assert exc_info.type is ValidationError
 
 
-def testYamlValidation_whenSchemaIsInvalid_raisesSchemaError():
-    """Unit test for the method that validates a yaml configuration file against a json schema.
-    Case where the Json schema file is invalid.
+def testValidatorInit_whenSchemaIsInvalid_raisesSchemaError():
+    """Unit test for the init of the validator class with a invalid schema.
     """
-
-    valid_yaml_data = """
-        name: Agent1
-        description: Agent1 Description should be here
-        image: some/path/to/the/image
-        source: https://github.com/
-        durability: development
-        restrictions: 
-        - restriction1
-        - restriction2
-        in_selectors: 
-        - in_selector1
-        - in_selector2
-        out_selectors:
-        - out_selector1
-        - out_selector2
-        restart_policy: run_once
-    """
-
     # the invalid part : type : "strg".
     invalid_json_schema = """
         {
@@ -119,10 +99,7 @@ def testYamlValidation_whenSchemaIsInvalid_raisesSchemaError():
     """
     json_schema_file_object = io.StringIO(invalid_json_schema)
 
-    yaml_data_file = io.StringIO(valid_yaml_data)
-    validator = Validator(json_schema_file_object)
-
     with pytest.raises(SchemaError) as exc_info:
-        validator.validate(yaml_data_file)
+        _ = Validator(json_schema_file_object)
 
     assert exc_info.type is SchemaError
