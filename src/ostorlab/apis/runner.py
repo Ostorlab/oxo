@@ -38,7 +38,7 @@ class APIRunner:
         """ Logs in the user
 
         Returns:
-            requests.models.Response: The API response
+            The API response
         """        
         login_request = login.UsernamePasswordLoginAPIRequest(
             self._username, self._password, self._otp_token)
