@@ -1,3 +1,4 @@
+"""Utils to generate and manipulate strings."""
 import random
 import string
 
