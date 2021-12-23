@@ -1,4 +1,4 @@
-""" Local runtime. """
+"""Local runtime."""
 
 import click
 

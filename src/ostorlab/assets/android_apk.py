@@ -1,4 +1,4 @@
-""" Android .APK asset. """
+"""Android .APK asset."""
 import dataclasses
 import io
 from ostorlab.assets.asset import Asset

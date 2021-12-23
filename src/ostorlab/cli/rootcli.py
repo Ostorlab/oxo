@@ -1,4 +1,4 @@
-""" Entry point for ostorlab cli. with the main commands. """
+"""Entry point for ostorlab cli. with the main commands."""
 import io
 import click
 from typing import List, Optional
@@ -10,12 +10,11 @@ from ostorlab import runtimes
 @click.option('--tlsverify/--no-tlsverify', default=True)
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
-    """
-    root command for ostorlab cli initiate the context
+    """root command for ostorlab cli, initiate the context.
     Args:
-        ctx (click.core.Context): click context object
-        proxy (Optional[str]): proxy to route HTTPS requests through.
-        tlsverify (bool): enabled/disable tlsverify
+        ctx: Click context object
+        proxy: proxy to route HTTPS requests through.
+        tlsverify: enabled/disable tlsverify
 
     Returns:
         None
@@ -43,14 +42,16 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[io.FileIO],
          title: str) -> None:
-    """ Start a new scan on a provided asset
+    """scan command: Start a new scan on a provided asset.
+    usage:
+        - ostorlab scan --agents=agent1,agent2 --title=test_scan
 
     Args:
-        ctx (click.core.Context): click Context object
-        runtime (str): specify the runtime type ['local', 'managed', 'hybrid']
-        agents (List[str]): List of agents names to use in the scan
-        agents_group_definition ( List[io.FileIO]): List of agents group definition .yaml files
-        title (str): title for scan
+        ctx: click Context object
+        runtime: specify the runtime type ['local', 'managed', 'hybrid']
+        agents: List of agents names to use in the scan
+        agents_group_definition: List of agents group definition .yaml files
+        title: title for scan
 
     Returns:
         None

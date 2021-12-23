@@ -1,4 +1,4 @@
-""" ostorlab runtime module """
+"""ostorlab runtime module."""
 import abc
 import dataclasses
 import io
@@ -26,8 +26,7 @@ class AgentDefinition:
 
     @classmethod
     def from_agent_key(cls, agent_key):
-        """
-        construct AgentDefinition from agent_key
+        """construct AgentDefinition from agent_key
 
         Args:
             agent_key (string): agent key
@@ -46,8 +45,7 @@ class AgentGroupDefinition:
 
     @classmethod
     def from_file(cls, group: io.FileIO):
-        """
-        construct AgentGroupDefinition from yaml file
+        """construct AgentGroupDefinition from yaml file.
 
         Args:
             group (string): agent key

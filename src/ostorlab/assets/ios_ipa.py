@@ -1,4 +1,4 @@
-""" iOS .IPA asset. """
+"""iOS .IPA asset."""
 import dataclasses
 import io
 from ostorlab.assets.asset import Asset

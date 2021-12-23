@@ -1,4 +1,4 @@
-""" scan module thats handle running a scan for deferment asset  """
+"""scan module that's handle running a scan for deferment."""
 import io
 import logging
 import click
@@ -12,12 +12,14 @@ logger = logging.getLogger(__name__)
 @click.option('--file', type=click.File(), help='application .apk file.', required=True)
 @click.pass_context
 def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
-    """
-    run scan for android .apk package file, build an instance of asset class and pass it to the runtime
+    """run scan for android .apk package file.
+
+     build an instance of asset class AndroidApk and pass it to the runtime.
+
 
     Args:
-        file (io.File): path to the .apk file
-        ctx (click.core.Context): context object contains info from the command
+        file: path to the .apk file
+        ctx: context object contains info from the command
     Returns:
         None:
     """
@@ -31,12 +33,13 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
 @click.option('--file', type=click.File(), help='path for android .aab file.', required=True)
 @click.pass_context
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
-    """
-    run scan for android .aab package file, Build an instance of Asset class and pass it to the runtime
+    """run scan for android .aab package file.
+
+     Build an instance of Asset class AndroidAab and pass it to the runtime.
 
     Args:
-        file (io.File): path to the .apk file
-        ctx (click.core.Context): context object contains info from the command
+        file: path to the .apk file
+        ctx: context object contains info from the command
 
     Returns:
         None:
@@ -50,12 +53,13 @@ def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
 @click.option('--file', type=click.File(), help='application .ipa file.', required=True)
 @click.pass_context
 def ios_ipa(ctx, file):
-    """
-       run scan for IOS .ipa package file, Build an instance of Asset class and pass it to the runtime
+    """run scan for IOS .ipa package file.
+
+     Build an instance of Asset class IOSIpa and pass it to the runtime
 
        Args:
-           file (io.File): path to the .ipa file
-           ctx (click.core.Context): context object contains info from the command
+           file: path to the .ipa file
+           ctx: context object contains info from the command
 
        Returns:
            None:
