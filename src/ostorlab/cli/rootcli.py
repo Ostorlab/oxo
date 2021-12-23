@@ -65,17 +65,16 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_
         # managed and hybrid are not implemented
         raise NotImplementedError()
 
-    # Building List of Agents definition
+    # Building list of agents definition
     agents_definition: List[runtimes.AgentDefinition] = []
     for agent_key in agents:
         agents_definition.append(runtimes.AgentDefinition.from_agent_key(agent_key=agent_key))
 
-    # Building List of Agents definition
+    # Building list of agent group definition
     agents_groups: List[runtimes.AgentGroupDefinition] = []
     for group in agents_group_definition:
         agents_groups.append(runtimes.AgentGroupDefinition.from_file(group))
 
-    #
     agent_run_definition = runtimes.AgentRunDefinition(agent_groups=agents_groups, agents=agents_definition)
     if runtime.can_run(agent_run_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime

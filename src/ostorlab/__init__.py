@@ -1,4 +1,4 @@
-"""Ostorlab main package"""
+"""Ostorlab main package."""
 import logging
 from rich.logging import RichHandler
 from ostorlab.cli.rootcli import rootcli
