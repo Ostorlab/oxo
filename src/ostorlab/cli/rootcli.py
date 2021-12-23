@@ -10,15 +10,7 @@ from ostorlab import runtimes
 @click.option('--tlsverify/--no-tlsverify', default=True)
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
-    """root command for ostorlab cli, initiate the context.
-    Args:
-        ctx: Click context object
-        proxy: proxy to route HTTPS requests through.
-        tlsverify: enabled/disable tlsverify
-
-    Returns:
-        None
-    """
+    """ostorlab cli. Open source tool to AUTOMATE YOUR SECURITY TESTING."""
 
     ctx.obj = {
         'proxy': proxy,
@@ -42,21 +34,9 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[io.FileIO],
          title: str) -> None:
-    """scan command: Start a new scan on a provided asset.
-    usage:
+    """scan command: Start a new scan on a provided asset.\n
+    usage:\n
         - ostorlab scan --agents=agent1,agent2 --title=test_scan
-
-    Args:
-        ctx: click Context object
-        runtime: specify the runtime type ['local', 'managed', 'hybrid']
-        agents: List of agents names to use in the scan
-        agents_group_definition: List of agents group definition .yaml files
-        title: title for scan
-
-    Returns:
-        None
-        Raises:
-            - AgentDefinitionError : when one or multiple agent definition is not valid
     """
 
     if runtime == 'local':

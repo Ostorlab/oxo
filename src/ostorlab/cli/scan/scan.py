@@ -12,17 +12,7 @@ logger = logging.getLogger(__name__)
 @click.option('--file', type=click.File(), help='application .apk file.', required=True)
 @click.pass_context
 def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
-    """run scan for android .apk package file.
-
-     build an instance of asset class AndroidApk and pass it to the runtime.
-
-
-    Args:
-        file: path to the .apk file
-        ctx: context object contains info from the command
-    Returns:
-        None:
-    """
+    """run scan for android .APK package file."""
 
     runtime = ctx.obj['runtime']
     asset = assets.AndroidApk(file)
@@ -33,17 +23,7 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
 @click.option('--file', type=click.File(), help='path for android .aab file.', required=True)
 @click.pass_context
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
-    """run scan for android .aab package file.
-
-     Build an instance of Asset class AndroidAab and pass it to the runtime.
-
-    Args:
-        file: path to the .apk file
-        ctx: context object contains info from the command
-
-    Returns:
-        None:
-    """
+    """run scan for android .AAB package file."""
     runtime = ctx.obj['runtime']
     asset = assets.AndroidAab(file)
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
@@ -53,17 +33,7 @@ def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
 @click.option('--file', type=click.File(), help='application .ipa file.', required=True)
 @click.pass_context
 def ios_ipa(ctx, file):
-    """run scan for IOS .ipa package file.
-
-     Build an instance of Asset class IOSIpa and pass it to the runtime
-
-       Args:
-           file: path to the .ipa file
-           ctx: context object contains info from the command
-
-       Returns:
-           None:
-       """
+    """run scan for IOS .IPA package file."""
 
     runtime = ctx.obj['runtime']
     asset = assets.IOSIpa(file)
