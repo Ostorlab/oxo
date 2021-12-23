@@ -9,11 +9,11 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
     """    
 
     def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
-        """Constructs all the necessary attributes for the object
+        """Constructs all the necessary attributes for the object.
 
         Args:
-            username: the username (email) used to login
-            password: the password used to login
+            username: the username (email) used to login.
+            password: the password used to login.
             otp_token: the OTP or static code if required by the organisation the user belongs to. Defaults to None.
         """        
         self._username = username
@@ -30,10 +30,10 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
 
     @property
     def data(self) -> Optional[Dict]:
-        """Gets the user login credentials
+        """Gets the user login credentials.
 
         Returns:
-            The user login credentials
+            The user login credentials.
         """        
         if self._otp_token is not None:
             data = {

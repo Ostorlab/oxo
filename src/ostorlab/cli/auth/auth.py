@@ -7,7 +7,7 @@ import click
 """
 
 from ostorlab.apis import runner as apis_runner
-"""the APIRunner that handles all API calls
+"""the APIRunner that handles all API calls.
 """
 
 from ostorlab.cli.rootcli import auth
@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 @click.option('--password', '-p', help='Ostorlab platform password.', required=True)
 @click.option('--token-duration', help='Expiration time for token (m for minutes, h for hours, and d for days).')
 def login(username, password, token_duration):
-    """Gets the login credentials from the user and calls the APIRunner
+    """Gets the login credentials from the user and calls the APIRunner.
 
     Args:
-        username: the username (email) used to login
-        password: the password used to login
-        token_duration: The duration for which the token is valid (Can be in minutes, hours, days, or a combination of any two or all three)
+        username: the username (email) used to login.
+        password: the password used to login.
+        token_duration: The duration for which the token is valid (Can be in minutes, hours, days, or a combination of any two or all three).
     """    
     try:
         api_runner = apis_runner.APIRunner(username=username, password=password,
