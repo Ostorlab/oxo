@@ -1,8 +1,17 @@
+"""Makes a login request.
+
+This code gets the username and password of a user and makes a login request to the token endpoint. 
+If an OTP token is required, the the user must provide either an OTP code from their authenticator app or
+a backed up static code in order to complete the authentication process.
+
+    Typical usage example:
+
+    login_request = login.UsernamePasswordLoginAPIRequest(username, password, otp_token).
+"""
+
 from typing import Dict, Optional
 
 from . import request
-"""Abstract Base Class with the different endpoints used for API calls 
-"""
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):  
     """Makes a request to log in the user
