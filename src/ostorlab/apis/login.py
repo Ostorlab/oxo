@@ -1,12 +1,12 @@
 """Makes a login request.
 
 This code gets the username and password of a user and makes a login request to the token endpoint. 
-If an OTP token is required, the the user must provide either an OTP code from their authenticator app or
+If an OTP token is required, the user must provide either an OTP code from their authenticator app or
 a backed up static code in order to complete the authentication process.
 
     Typical usage example:
 
-    login_request = login.UsernamePasswordLoginAPIRequest(username, password, otp_token).
+    login_request = login.UsernamePasswordLoginAPIRequest(username, password, otp_token)
 """
 
 from typing import Dict, Optional
@@ -14,8 +14,7 @@ from typing import Dict, Optional
 from . import request
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):  
-    """Makes a request to log in the user
-    """    
+    """Makes a request to log in the user"""    
 
     def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
         """Constructs all the necessary attributes for the object.
