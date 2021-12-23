@@ -82,7 +82,7 @@ class APIRunner:
                     'Please enter the OTP code from your authenticator app')
                 self.authenticate()
             else:
-                logger.debug(response.content)
+                logger.debug('response %s', response.content)
                 raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get('token')
