@@ -5,7 +5,7 @@ It also has classes for authentication errors, API response errors, etc.
 
     Typical usage example:
 
-    foo = APIRunner(username=username, password=password,token_duration=token_duration).
+    foo = APIRunner(username, password,token_duration).
     foo.authenticate().
 """
 
