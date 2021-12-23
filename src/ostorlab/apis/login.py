@@ -8,7 +8,7 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
     """    
 
     def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
-        """UsernamePasswordLoginAPIRequest class constructor to initialize the object
+        """Constructs all the necessary attributes for the object
 
         Args:
             username: the username (email) used to login
