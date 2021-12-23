@@ -23,15 +23,25 @@ class ResponseError(Error):
 
 
 class APIRunner:
-    """Makes all API Requests."""    
+    """Handles all API calls and behind the scenes operations such as authentication, validation, etc."""    
 
-    def __init__(self, username: Optional[str], password: Optional[str], expires: Optional[str], proxy: str = None, verify: bool = True):
+    def __init__(self, username: Optional[str], password: Optional[str], token_duration: Optional[str], proxy: str = None, verify: bool = True):
+        """Constructs all the necessary attributes for the object
+
+        Args:
+            username: the username (email) used to login
+            password: the password used to login
+            token_duration: The duration for which the token is valid (Can be in minutes, hours, days, or a combination of any two or all three)
+            proxy: The proxy through which a request is made. Defaults to None.
+            verify: Whether or not to verify the TLS certificate. Defaults to True.
+        """   
+
         self._username = username
         self._password = password
         self._proxy = proxy
         self._verify = verify
         self._token = None
-        self._expires = expires
+        self._token_duration = token_duration
         self._otp_token = None
 
     def _login_user(self) -> requests.models.Response:
