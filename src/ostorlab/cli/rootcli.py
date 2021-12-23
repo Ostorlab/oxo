@@ -23,4 +23,6 @@ def agentgroup():
 
 @rootcli.group()
 def auth():
+    """Creates a group for the auth command and attatches subcommands
+    """    
     pass
