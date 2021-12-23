@@ -5,8 +5,8 @@ It also has classes for authentication errors, API response errors, etc.
 
     Typical usage example:
 
-    foo = APIRunner(username, password, token_duration).
-    foo.authenticate().
+    foo = APIRunner(username, password, token_duration)
+    foo.authenticate()
 """
 
 import logging
@@ -57,7 +57,7 @@ class APIRunner:
         self._otp_token = None
 
     def _login_user(self) -> requests.models.Response:
-        """ Logs in the user.
+        """Logs in the user.
 
         Returns:
             The API response.
