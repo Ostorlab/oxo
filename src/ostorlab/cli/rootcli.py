@@ -61,7 +61,7 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_
         ctx.obj['agent_run_definition'] = agent_run_definition
         ctx.obj['title'] = title
     else:
-        raise click.ClickException('can use the provided agents/ agent group list  ')
+        raise click.ClickException('Error: InvalideAgents')
 
 
 @rootcli.group()
