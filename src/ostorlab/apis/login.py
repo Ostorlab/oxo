@@ -4,8 +4,17 @@ from . import request
 
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):  
+    """Makes a request to log in the user
+    """    
 
     def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
+        """UsernamePasswordLoginAPIRequest class constructor to initialize the object
+
+        Args:
+            username: the username (email) used to login
+            password: the password used to login
+            otp_token: the OTP or static code if required by the organisation the user belongs to. Defaults to None.
+        """        
         self._username = username
         self._password = password
         self._otp_token = otp_token
@@ -23,7 +32,7 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
         """Gets the user login credentials
 
         Returns:
-            Optional[Dict]: The user login credentials
+            The user login credentials
         """        
         if self._otp_token is not None:
             data = {
