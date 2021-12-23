@@ -1,24 +1,26 @@
-import logging
-"""Python's module which implements a flexible event logging system. Documentation: https://docs.python.org/3/library/logging.html
+"""Gets the login credentials from the user and calls the APIRunner.
+
+This module contains logic for the auth command and it's options (username, password, and token-duration). 
+
+  Typical usage examples:
+
+  ostorlab auth login: authenticates the user using the persisted token if it exists, else, shows an error.
+  ostorlab auth login -u [your_username] -p [your_password]: authenticates the user using the username and password.
+  ostorlab auth login -u [your_username] -p [your_password] --token-duration=[desired_duration]: authenticates the user using the username and password, and sets the duration for which the token is valid.
 """
+
+import logging
 
 import click
-"""Package for creating beautiful command line interfaces in a composable way. Documentation: https://click.palletsprojects.com/en/8.0.x/
-"""
 
 from ostorlab.apis import runner as apis_runner
-"""the APIRunner that handles all API calls.
-"""
-
 from ostorlab.cli.rootcli import auth
-"""the auth group that allows us to use the auth command and it's subcommands
-"""
 
 logger = logging.getLogger(__name__)
 
 @auth.command()
-@click.option('--username', '-u', help='Ostorlab platform username.', required=True)
-@click.option('--password', '-p', help='Ostorlab platform password.', required=True)
+@click.option('--username', '-u', help='Ostorlab platform username.')
+@click.option('--password', '-p', help='Ostorlab platform password.')
 @click.option('--token-duration', help='Expiration time for token (m for minutes, h for hours, and d for days).')
 def login(username, password, token_duration):
     """Gets the login credentials from the user and calls the APIRunner.
