@@ -1,4 +1,4 @@
-"""scan module that's handle running a scan for deferment."""
+"""scan module that's handle running a scan using a list of agents key and an asset."""
 import io
 import logging
 import click
