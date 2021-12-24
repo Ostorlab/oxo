@@ -1,3 +1,4 @@
+"""RabbitMQ service in charge of routing Agent messages."""
 import binascii
 import logging
 import os
@@ -14,6 +15,8 @@ MQ_IMAGE = 'rabbitmq:3.9-management'
 
 
 class LocalRabbitMQ:
+    """RabbitMQ service spawned a docker swarm service."""
+
     def __init__(self,
                  name: str,
                  network: str,
@@ -29,7 +32,12 @@ class LocalRabbitMQ:
         self._mq_service = None
 
     @property
-    def url(self):
+    def url(self) -> str:
+        """URL to connect to the local RabbitMQ instance.
+
+        Returns:
+            RabbitMQ URL string.
+        """
         return f'amqp://guest:guest@{self._mq_host}:5672/'
 
     @property
