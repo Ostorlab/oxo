@@ -1,0 +1,76 @@
+{
+
+    "CustomTypes": {
+        "ArrayOfStrings": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "maxLength": 4096
+            }
+        }      
+    },
+
+
+    "properties": {
+        "kind": {
+            "type": "string",
+            "maxLength": 2048
+        },
+        
+        "description":{
+            "type": "string"
+        },
+
+        "image":{
+            "type": "string",
+            "pattern": "((?:[^/]*/)*)(.*)"
+        },
+
+        "restart_policy":{
+            "type": "string",
+            "maxLength": 1024,
+            "enum": ["run_once", "always_restart"]
+        },
+
+        "restrictions": {
+            "$ref": "#/CustomTypes/ArrayOfStrings"
+        },
+
+        "constraints":{ 
+            "$ref": "#/CustomTypes/ArrayOfStrings"
+        },
+
+
+        "agents":{
+            "type": "array",
+            "items": {
+                "type": "object", 
+                "properties":{
+                    "name": { "type": "string" },
+                    "args": {"type": "array"},
+                    "items":{
+                        "type": "object"
+                    }
+                }
+            }       
+        }, 
+
+        "agentGroupArgument":{
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "type": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "description": { "type": "string" },
+                "value": { "type": "string" }
+            }       
+        }
+    },
+
+    "required": ["kind", "description", "agents"]
+}
