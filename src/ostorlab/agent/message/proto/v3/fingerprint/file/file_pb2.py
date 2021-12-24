@@ -16,10 +16,10 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='file.proto',
-  package='',
+  package='v3.fingerprint.file',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\nfile.proto\"\x17\n\x07Message\x12\x0c\n\x04path\x18\x01 \x02(\t')
+  serialized_pb=_b('\n\nfile.proto\x12\x13v3.fingerprint.file\"\x17\n\x07Message\x12\x0c\n\x04path\x18\x01 \x02(\t')
 )
 
 
@@ -27,13 +27,13 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _MESSAGE = _descriptor.Descriptor(
   name='Message',
-  full_name='Message',
+  full_name='v3.fingerprint.file.Message',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='path', full_name='Message.path', index=0,
+      name='path', full_name='v3.fingerprint.file.Message.path', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -51,8 +51,8 @@ _MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=14,
-  serialized_end=37,
+  serialized_start=35,
+  serialized_end=58,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
@@ -61,7 +61,7 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 Message = _reflection.GeneratedProtocolMessageType('Message', (_message.Message,), dict(
   DESCRIPTOR = _MESSAGE,
   __module__ = 'file_pb2'
-  # @@protoc_insertion_point(class_scope:Message)
+  # @@protoc_insertion_point(class_scope:v3.fingerprint.file.Message)
   ))
 _sym_db.RegisterMessage(Message)
 

@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+package v3.fingerprint.file.library;
+
 message Message {
   required string path = 1;
   required string name = 2;
