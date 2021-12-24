@@ -1,4 +1,4 @@
-"""tests for ostorlab root cli"""
+"""Tests for ostorlab root cli"""
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
 import click
@@ -6,7 +6,7 @@ import click
 
 def testScanCli_WithNoOptions_ShowAvailableOptionsAndCommands():
     """Test ostorlab scan command with no options and no sub command.
-    should show list of available commands and exit with exit_code = 0."""
+    Should show list of available commands and exit with exit_code = 0."""
 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ['scan'])
@@ -18,7 +18,7 @@ def testScanCli_WithNoOptions_ShowAvailableOptionsAndCommands():
 
 def testScanCli_WithInValidAgents_ShowError(mocker):
     """Test ostorlab scan command with all options and no sub command.
-     should show list of available commands (assets) and exit with error exit_code = 2."""
+     Should show list of available commands (assets) and exit with error exit_code = 2."""
 
     mocker.patch('src.ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
     runner = CliRunner()
@@ -29,7 +29,7 @@ def testScanCli_WithInValidAgents_ShowError(mocker):
 
 def testScanCli_WithValide_ShowSpecifySubCommandError(mocker):
     """Test ostorlab scan command with all options and no sub command.
-     should show list of available commands (assets) and exit with error exit_code = 2."""
+     Should show list of available commands (assets) and exit with error exit_code = 2."""
 
     mocker.patch('src.ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=True)
     runner = CliRunner()

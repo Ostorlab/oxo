@@ -1,4 +1,4 @@
-"""Entry point for ostorlab cli. with the main commands."""
+"""This module is the entry point for ostorlab CLI."""
 import io
 import click
 from typing import List, Optional
@@ -7,10 +7,10 @@ from ostorlab import runtimes
 
 @click.group()
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option('--tlsverify/--no-tlsverify', default=True)
+@click.option('--tlsverify/--no-tlsverify',help='tlsverify.', default=True)
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
-    """ostorlab cli. Open source tool to AUTOMATE YOUR SECURITY TESTING."""
+    """Ostorlab is an open-source project to help automate security testing. Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way."""
 
     ctx.obj = {
         'proxy': proxy,
@@ -20,8 +20,8 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
 
 @rootcli.group()
 @click.option('--runtime', type=click.Choice(['local', 'managed', 'hybrid']),
-              help="""
-                    specify the runtime to use: \n
+              help="""Runtime is in charge of preparing the environment to trigger a scan.\n
+                    Specify the runtime to use: \n
                     local: on you local machine \n
                     managed: on Ostorlab cloud, (requires login) \n
                     hybrid: soon!. \n
@@ -29,21 +29,21 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> N
               required=True)
 @click.option('--agents', multiple=True, help='List of agents keys. to use in the scan. ', required=True)
 @click.option('--title', '-t', help='Scan title.')
-@click.option('--agents-group-definition', '-agd', type=click.File('r'),
-              help='path to agents group definition file (yaml).', multiple=True)
+@click.option('--agents-group-definition', '-g', type=click.File('r'),
+              help='Path to agents group definition file (yaml).', multiple=True)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[io.FileIO],
          title: str) -> None:
-    """scan command: Start a new scan on a provided asset.\n
-    usage:\n
-        - ostorlab scan --agents=agent1,agent2 --title=test_scan
+    """Start a new scan on a specific asset.\n
+    Usage:\n
+        - ostorlab scan run --agents=agent1,agent2 --title=test_scan android-apk --file=path/to/application.apk
     """
 
     if runtime == 'local':
         runtime = runtimes.LocalRuntime()
     else:
         # managed and hybrid are not implemented
-        raise NotImplementedError()
+        raise click.ClickException('NotImplementedError')
 
     # Building list of agents definition
     agents_definition: List[runtimes.AgentDefinition] = []
@@ -66,16 +66,15 @@ def scan(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_
 
 @rootcli.group()
 def agent():
-    raise NotImplementedError()
+        raise click.ClickException('NotImplementedError')
 
 
 @rootcli.group()
 def agentgroup():
-    raise NotImplementedError()
+        raise click.ClickException('NotImplementedError')
 
 
 @rootcli.group()
 def auth():
-    """Creates a group for the auth command and attatches subcommands.
-    """
+    """Creates a group for the auth command and attatches subcommands."""
     pass

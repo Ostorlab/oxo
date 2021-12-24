@@ -1,10 +1,10 @@
-"""tests for ostorlab root cli"""
+"""Tests for ostorlab root cli"""
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
 
 
 def testRootCli_WithNoOptions_ShowAvailableOptions():
-    """test ostorlab main command 'Ostorlab' with no options and no sub command."""
+    """Test ostorlab main command 'Ostorlab' with no options and no sub command."""
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, [''])
     assert "Usage: rootcli [OPTIONS]" in result.output

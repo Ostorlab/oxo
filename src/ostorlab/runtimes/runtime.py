@@ -1,4 +1,4 @@
-"""ostorlab runtime module."""
+"""Ostorlab runtime module."""
 import abc
 import dataclasses
 import io
@@ -26,13 +26,13 @@ class AgentDefinition:
 
     @classmethod
     def from_agent_key(cls, agent_key):
-        """construct AgentDefinition from agent_key
+        """Construct AgentDefinition from agent_key
 
         Args:
             agent_key (string): agent key
         """
 
-        # TODO:implement reading agent AgentDefinition using agent_key
+        # TODO(mohsine):implement reading agent AgentDefinition using agent_key
         name = ''
         path = ''
         container_image = ''
@@ -45,7 +45,7 @@ class AgentGroupDefinition:
 
     @classmethod
     def from_file(cls, group: io.FileIO):
-        """construct AgentGroupDefinition from yaml file.
+        """Construct AgentGroupDefinition from yaml file.
 
         Args:
             group (string): agent key
