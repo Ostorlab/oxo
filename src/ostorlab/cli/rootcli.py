@@ -5,7 +5,7 @@ from typing import Optional
 
 @click.group()
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option('--tlsverify/--no-tlsverify', help='tlsverify.', default=True)
+@click.option('--tlsverify/--no-tlsverify', help='Control tlsverify server verification.', default=True)
 @click.pass_context
 def rootcli(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
     """Ostorlab is an open-source project to help automate security testing.\n

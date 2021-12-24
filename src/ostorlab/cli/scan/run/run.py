@@ -1,5 +1,5 @@
 """Module for the command run inside the group scan.
-this module take care of preparing the selected run time and the list of provided agents. before starting a scan.
+this module take care of preparing the selected runtime and the list of provided agents, before starting a scan.
 Example of usage:  ostorlab scan run --agents=agent1,agent2 --title=test_scan [asset] [options]
 """
 import io
@@ -33,7 +33,7 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
     if runtime == 'local':
         runtime = runtimes.LocalRuntime()
     else:
-        # managed and hybrid are not implemented
+        # managed and hybrid are not implemented yet
         raise click.ClickException(f'The selected runtime {0} is not supported!'.format(runtime))
 
     # Building list of agents definition
