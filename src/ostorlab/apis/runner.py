@@ -17,6 +17,7 @@ import requests
 import click
 
 from ostorlab import configuration_manager
+from ostorlab.apis import auth as apis_auth
 from . import login
 from . import request as api_request
 
@@ -41,7 +42,7 @@ class APIRunner:
     """
 
     def __init__(self, username: Optional[str], password: Optional[str],
-                 token_duration: Optional[str], proxy: str = None, verify: bool = True):
+                 token_duration: Optional[str] = None, proxy: str = None, verify: bool = True):
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -58,6 +59,7 @@ class APIRunner:
         self._proxy = proxy
         self._verify = verify
         self._token = None
+        self._api_key = None
         self._token_duration = token_duration
         self._otp_token = None
 
@@ -91,7 +93,12 @@ class APIRunner:
                 raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get('token')
-            configuration_manager.ConfigurationManager().set_token(self._token)
+            api_key_response = self.execute(
+                apis_auth.CreateAPIKeyAPIRequest(self._token_duration))
+            self._api_key = api_key_response['data']['createApiKey']['apiKey']['secretKey']
+            configuration_manager.ConfigurationManager().set_api_key(self._api_key)
+            self._token = None
+
 
     def execute(self, request: api_request.APIRequest) -> Dict:
         """Executes a request using the GraphQL API
@@ -106,7 +113,7 @@ class APIRunner:
             The API response
         """
         response = self._sent_request(
-            request, headers={'Authorization': f'Token {self._token}'}, multipart=True)
+            request, headers={'Authorization': f'Token {self._token}'})
         if response.status_code != 200:
             raise ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
