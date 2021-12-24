@@ -27,7 +27,7 @@ def android_store():
 def mobile(ctx, plan, platform, application):
     try:
         api_runner = apis_runner.APIRunner(username=ctx.obj['username'], password=ctx.obj['password'],
-                                        proxy=ctx.obj['proxy'], verify=ctx.obj['tlsverify'])
+                                           proxy=ctx.obj['proxy'], verify=ctx.obj['tlsverify'])
         api_runner.authenticate()
 
         with open(application, 'rb') as o_app:
@@ -41,7 +41,8 @@ def mobile(ctx, plan, platform, application):
             logger.debug(response)
 
     except apis_runner.AuthenticationError:
-        logger.error('Authentication error, please check that your credentials are valid.')
+        logger.error(
+            'Authentication error, please check that your credentials are valid.')
 
 
 @scan.command()
