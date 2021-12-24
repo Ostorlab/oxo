@@ -94,6 +94,17 @@ class APIRunner:
             configuration_manager.ConfigurationManager().set_token(self._token)
 
     def execute(self, request: api_request.APIRequest) -> Dict:
+        """Executes a request using the GraphQL API
+
+        Args:
+            request: The request to be executed
+
+        Raises:
+            ResponseError: When the API returns an error
+
+        Returns:
+            The API response
+        """
         response = self._sent_request(
             request, headers={'Authorization': f'Token {self._token}'}, multipart=True)
         if response.status_code != 200:
@@ -102,7 +113,10 @@ class APIRunner:
         else:
             return response.json()
 
-    def _sent_request(self, request: api_request.APIRequest, headers=None, multipart=False) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest, headers=None,
+                      multipart=False) -> requests.Response:
+        """Sends an API request
+        """
         if self._proxy is not None:
             proxy = {
                 'https': self._proxy
@@ -111,8 +125,8 @@ class APIRunner:
             proxy = None
 
         if multipart:
-            return requests.post(request.endpoint, files=request.data, headers=headers, proxies=proxy,
-                                 verify=self._verify)
+            return requests.post(request.endpoint, files=request.data, headers=headers,
+                                 proxies=proxy, verify=self._verify)
         else:
-            return requests.post(request.endpoint, data=request.data, headers=headers, proxies=proxy,
-                                 verify=self._verify)
+            return requests.post(request.endpoint, data=request.data, headers=headers,
+                                 proxies=proxy, verify=self._verify)
