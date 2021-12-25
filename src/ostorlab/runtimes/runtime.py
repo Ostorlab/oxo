@@ -2,7 +2,7 @@
 import abc
 import dataclasses
 from typing import List, Iterable, Optional, Dict
-
+import io
 from ostorlab.assets import Asset
 
 
