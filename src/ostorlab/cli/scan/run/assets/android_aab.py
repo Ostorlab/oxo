@@ -7,7 +7,7 @@ from ostorlab.cli.scan.run import run
 
 
 @run.command()
-@click.option('--file', type=click.File(), help='Path for android .AAB file.', required=True)
+@click.option('--file', type=click.File(), help='Path to .AAB file.', required=True)
 @click.pass_context
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .AAB package file."""

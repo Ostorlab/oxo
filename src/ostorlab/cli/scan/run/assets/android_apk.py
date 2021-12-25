@@ -8,7 +8,7 @@ from ostorlab.cli.scan.run.run import run
 
 
 @run.command()
-@click.option('--file', type=click.File(), help='Application .APK file.', required=True)
+@click.option('--file', type=click.File(), help='Path to .APK file.', required=True)
 @click.pass_context
 def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .APK package file."""

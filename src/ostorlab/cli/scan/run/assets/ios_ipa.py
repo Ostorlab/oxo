@@ -8,7 +8,7 @@ from ostorlab.cli.scan.run.run import run
 
 
 @run.command()
-@click.option('--file', type=click.File(), help='Application .IPA file.', required=True)
+@click.option('--file', type=click.File(), help='Path to .IPA file.', required=True)
 @click.pass_context
 def ios_ipa(ctx, file):
     """Run scan for .IPA package file."""
