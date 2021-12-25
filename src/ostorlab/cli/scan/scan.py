@@ -13,11 +13,8 @@ def scan(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None
     """You can use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
         - Show list of scans: ostorlab scan --list\n
-        - show full details of a scan: ostorlab scan describe --scan=scan_id.\n
+        - Show full details of a scan: ostorlab scan describe --scan=scan_id.\n
     """
     ctx.obj['proxy'] = proxy,
     ctx.obj['tlsverify'] = tlsverify
     pass
-
-
-
