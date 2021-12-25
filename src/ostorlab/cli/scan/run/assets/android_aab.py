@@ -1,6 +1,5 @@
 """Asset of type .AAB package file.
-This module take care of preparing a file of type .aab before injecting it to the runtime instance.
-"""
+This module take care of preparing a file of type .aab before injecting it to the runtime instance."""
 import io
 import click
 from ostorlab import assets

@@ -1,3 +1,20 @@
+"""Local runtime runs agents locally.
+
+The local runtime requires Docker Swarm to run robust long-running services with a set of configured services, like
+a local RabbitMQ.
+"""
+import logging
+import socket
+from typing import List
+from typing import Optional
+
+import docker
+import requests
+import tenacity
+from docker.models import services as docker_models_services
+from docker.types import services as docker_types_services
+
+from ostorlab import exceptions
 from ostorlab.assets import Asset
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
