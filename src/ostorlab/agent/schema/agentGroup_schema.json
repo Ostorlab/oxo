@@ -61,7 +61,6 @@
                         "type": "array"
                     },
                     "items":{
-                        "description": "",
                         "type": "object"
                     }
                 }
