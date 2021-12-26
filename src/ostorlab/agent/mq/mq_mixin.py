@@ -16,8 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class MQMixin:
+    """MQ Mixin class used to initialize the channel, send messages and process them."""
 
     def __init__(self, name, keys, max_priority=None, loop=None):
+        """Initialize the MQ parameters, the channel pools and the executors to process the messages.
+        Args:
+            name: Name of the queue.
+            keys: Selectors that the queue listens to.
+            max_priority: Optional To declare a priority queue, it is a positive int [1, 255],
+             indicating the max priority the queue supports.
+        """
         self._name = name
         self._keys = keys
         self._queue_name = f'{self._name}_queue'
@@ -48,7 +56,7 @@ class MQMixin:
     async def mq_run(self, delete_queue_first=False):
         """
 
-        :param delete_queue_first: used for testing purposes. To delete pending queues first.
+        :param delete_queue_first: Used for testing purposes. To delete pending queues first.
         :return:
         """
         await self.mq_init()
@@ -73,7 +81,7 @@ class MQMixin:
             try:
                 result = await self._loop.run_in_executor(self._executor, self._process_message, message.routing_key,
                                                       message.body)
-                logging.info(result)
+                logging.debug(f'The process message result: {result}')
             except Exception as e:
                 logging.info('Got an exception')
                 logging.exception(e)
@@ -88,6 +96,12 @@ class MQMixin:
             await exchange.publish(routing_key=key, message=pika_message)
 
     def mq_send_message(self, key, message, message_priority=None):
+        """the method sends the message to the selected key with the deinfed priority in async mode .
+        Args:
+            keys: Selectors that the queue listens to.
+            message: Message to send .
+            message_priority: the priority to use for the message default is 0.
+        """
         future = asyncio.run_coroutine_threadsafe(self.async_mq_send_message(key, message, message_priority),
                                                   loop=self._loop)
         return future.result()

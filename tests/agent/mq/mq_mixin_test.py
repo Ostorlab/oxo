@@ -1,14 +1,16 @@
+"""Tests for MQMixin module."""
+
 import asyncio
 import random
 import string
 from unittest import mock
 import pytest
 
-from ostorlab.agent.mq.mq_mixin import MQMixin
+from ostorlab.agent.mq import mq_mixin
 
 
-class Agent(MQMixin):
-
+class Agent(mq_mixin.MQMixin):
+    """Helper class to test MQ implementation of send and process messages."""
     def __init__(self, name='test1', keys=('a.#',)):
         super().__init__(name=name, keys=keys)
         self.stub = None
