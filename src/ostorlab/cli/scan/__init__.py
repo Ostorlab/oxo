@@ -1,3 +1,3 @@
 """Module for the root command: scan."""
-from .scan import scan
-from .run import run
+from ostorlab.cli.scan.scan import scan
+from ostorlab.cli.scan.run import run
