@@ -6,7 +6,7 @@ from ostorlab import assets
 from ostorlab.cli.scan.run import run
 
 
-@run.command()
+@run.run.command()
 @click.option('--file', type=click.File(), help='Path to .AAB file.', required=True)
 @click.pass_context
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:

@@ -4,10 +4,10 @@ This module take care of preparing a file of type .IPA before injecting it to th
 
 import click
 from ostorlab import assets
-from ostorlab.cli.scan.run.run import run
+from ostorlab.cli.scan.run import run
 
 
-@run.command()
+@run.run.command()
 @click.option('--file', type=click.File(), help='Path to .IPA file.', required=True)
 @click.pass_context
 def ios_ipa(ctx, file):
