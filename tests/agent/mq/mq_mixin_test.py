@@ -34,12 +34,12 @@ def rand_bytes(size=10):
 
 
 @pytest.mark.asyncio
-async def testClient_whenMessageIsSent_processMessageIsCalled(mocker):
+async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service):
     word = rand_bytes()
     stub = mocker.stub(name='test1')
     client = Agent.create(stub, name='test1', keys=['d.#'])
     await client.mq_run(delete_queue_first=True)
-    client.mq_send_message(key='d.1.2', message=word)
+    await client.async_mq_send_message(key='d.1.2', message=word)
     await asyncio.sleep(1)
     await client.mq_close()
     stub.assert_called_with(word)
@@ -47,13 +47,14 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker):
 
 
 @pytest.mark.asyncio
-async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker):
+async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_service):
     word = rand_bytes()
     stub = mocker.stub(name='test2')
     stub.side_effect = [Exception, None]
     client = Agent.create(stub, name='test2', keys=['b.#'])
     await client.mq_run(delete_queue_first=True)
-    client.mq_send_message(key='b.1.2', message=word)
+    # client.mq_send_message(key='b.1.2', message=word)
+    await client.async_mq_send_message(key='b.1.2', message=word)
     await asyncio.sleep(1)
     await client.mq_close()
     stub.assert_has_calls([mock.call(word), mock.call(word)])
@@ -61,13 +62,14 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker):
 
 
 @pytest.mark.asyncio
-async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker):
+async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq_service):
     word = rand_bytes()
     stub = mocker.stub(name='test3')
     stub.side_effect = [Exception, Exception, None]
     client = Agent.create(stub, name='test3', keys=['c.#'])
     await client.mq_run(delete_queue_first=True)
-    client.mq_send_message(key='c.1.2', message=word)
+    # client.mq_send_message(key='c.1.2', message=word)
+    await client.async_mq_send_message(key='c.1.2', message=word)
     await asyncio.sleep(1)
     await client.mq_close()
     stub.assert_has_calls([mock.call(word), mock.call(word)])
@@ -75,7 +77,7 @@ async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker):
 
 
 @pytest.mark.asyncio
-async def testClient_whenClientDisconnects_messageIsNotLost(mocker):
+async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
     word = rand_bytes()
     stub = mocker.stub(name='test4')
     # client to send the message
@@ -87,7 +89,8 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker):
     # close the client before the message is received
     await client2.mq_close()
     # send the message
-    client1.mq_send_message(key='e.1.2', message=word)
+    # client1.mq_send_message(key='e.1.2', message=word)
+    await client1.async_mq_send_message(key='e.1.2', message=word)
     # restart the client
     await client2.mq_run()
     await asyncio.sleep(5)

@@ -17,6 +17,7 @@ class LocalRabbitMQ:
     def __init__(self,
                  name: str,
                  network: str,
+                 exposed_ports: dict = None,
                  image: str = MQ_IMAGE) -> None:
 
         self._name = name
@@ -27,6 +28,8 @@ class LocalRabbitMQ:
         self._mq_host = f'mq_{self._name}'
         # service
         self._mq_service = None
+        # exposed_port
+        self._exposed_ports = exposed_ports
 
     @property
     def url(self):
@@ -66,7 +69,10 @@ class LocalRabbitMQ:
 
     def _start_mq(self) -> services.Service:
         logger.info('starting MQ')
-        endpoint_spec = types.services.EndpointSpec(mode='vip')
+        if self._exposed_ports:
+            endpoint_spec = types.services.EndpointSpec(mode='vip', ports=self._exposed_ports)
+        else:
+            endpoint_spec = types.services.EndpointSpec(mode='vip')
         service_mode = types.services.ServiceMode('replicated', replicas=1)
         return self._docker_client.services.create(
             image=self._mq_image,
