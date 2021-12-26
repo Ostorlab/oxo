@@ -1,2 +1,3 @@
-from ostorlab.cli.scan import scan
+"""Ostorlab cli package."""
+from ostorlab.cli import scan
 from ostorlab.cli.auth import auth
