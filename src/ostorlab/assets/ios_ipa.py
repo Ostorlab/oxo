@@ -1,10 +1,10 @@
 """iOS .IPA asset."""
 import dataclasses
 import io
-from ostorlab.assets.asset import Asset
+from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-class IOSIpa(Asset):
+class IOSIpa(asset.Asset):
     """IOS .IPA target asset."""
     file: io.FileIO
