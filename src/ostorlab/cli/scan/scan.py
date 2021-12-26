@@ -7,7 +7,7 @@ import click
 
 @rootcli.group()
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option('--tlsverify/--no-tlsverify', help='Control tlsverify server verification.', default=True)
+@click.option('--tlsverify/--no-tlsverify', help='Control TLS server certificate verification.', default=True)
 @click.pass_context
 def scan(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
     """You can use scan [subcommand] to list, start or stop a scan.\n

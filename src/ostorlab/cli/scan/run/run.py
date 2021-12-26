@@ -1,6 +1,7 @@
 """Module for the command run inside the group scan.
-this module take care of preparing the selected runtime and the list of provided agents, before starting a scan.
-Example of usage:  ostorlab scan run --agents=agent1,agent2 --title=test_scan [asset] [options]."""
+This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
+Example of usage:  
+    - ostorlab scan run --agents=agent1,agent2 --title=test_scan [asset] [options]."""
 import io
 from typing import List
 import click
@@ -19,7 +20,7 @@ from ostorlab.cli.scan import scan
               required=True)
 @click.option('--agents', multiple=True, help='List of agents keys. to use in the scan. ', required=True)
 @click.option('--title', '-t', help='Scan title.')
-@click.option('--agents-group-definition', '-g',type=click.File('r'),
+@click.option('--agents-group-definition', '-g', type=click.File('r'),
               help='Path to agents group definition file (yaml).', multiple=True)
 @click.pass_context
 def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_definition: List[io.FileIO],
@@ -33,19 +34,22 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
         runtime = runtimes.LocalRuntime()
     else:
         # managed and hybrid are not implemented yet
-        raise click.ClickException(f'The selected runtime {0} is not supported!'.format(runtime))
+        raise click.ClickException(
+            f'The selected runtime {0} is not supported!'.format(runtime))
 
     # Building list of agents definition
     agents_definition: List[runtimes.AgentDefinition] = []
     for agent_key in agents:
-        agents_definition.append(runtimes.AgentDefinition.from_agent_key(agent_key=agent_key))
+        agents_definition.append(
+            runtimes.AgentDefinition.from_agent_key(agent_key=agent_key))
 
     # Building list of agent group definition
     agents_groups: List[runtimes.AgentGroupDefinition] = []
     for group in agents_group_definition:
         agents_groups.append(runtimes.AgentGroupDefinition.from_file(group))
 
-    agent_run_definition = runtimes.AgentRunDefinition(agent_groups=agents_groups, agents=agents_definition)
+    agent_run_definition = runtimes.AgentRunDefinition(
+        agent_groups=agents_groups, agents=agents_definition)
     if runtime.can_run(agent_run_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime
         ctx.obj['agent_run_definition'] = agent_run_definition
