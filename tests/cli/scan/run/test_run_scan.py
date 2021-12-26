@@ -21,7 +21,7 @@ def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
     """Test ostorlab scan command with all options and no sub command.
      Should show list of available commands (assets) and exit with error exit_code = 2."""
 
-    mocker.patch('src.ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
+    mocker.patch('ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
     runner = CliRunner()
 
     result = runner.invoke(rootcli.rootcli,['scan', 'run', '--agents=agent1,agent2', '--runtime=local', '--title=scan1',
@@ -34,7 +34,7 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
     """Test ostorlab scan run command with all valid options and no sub command.
      Should show list of available commands (assets) and exit with error exit_code = 2."""
 
-    mocker.patch('src.ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=True)
+    mocker.patch('ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=True)
     runner = CliRunner()
 
     result = runner.invoke(rootcli.rootcli,
