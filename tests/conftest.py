@@ -1,5 +1,4 @@
-"""Definitions of the fixtures that will be shared among multiple tests.
-"""
+"""Definitions of the fixtures that will be shared among multiple tests."""
 
 from io import StringIO
 import pytest
