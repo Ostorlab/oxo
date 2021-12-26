@@ -3,7 +3,7 @@ import abc
 import dataclasses
 from typing import List, Iterable, Optional, Dict
 import io
-from ostorlab.assets import Asset
+from ostorlab import assets
 
 
 @dataclasses.dataclass
@@ -89,7 +89,7 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def scan(self, agent_run_definition: AgentRunDefinition, asset: Asset) -> None:
+    def scan(self, agent_run_definition: AgentRunDefinition, asset: assets.Asset) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
