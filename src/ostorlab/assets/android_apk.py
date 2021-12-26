@@ -1,10 +1,10 @@
 """Android .APK asset."""
 import dataclasses
 import io
-from ostorlab.assets import asset
+from ostorlab import assets
 
 
 @dataclasses.dataclass
-class AndroidApk(asset.Asset):
+class AndroidApk(assets.Asset):
     """Android .APK  target asset."""
     file: io.FileIO

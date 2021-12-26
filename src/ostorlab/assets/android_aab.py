@@ -1,10 +1,10 @@
 """Android .AAB asset."""
 import dataclasses
 import io
-from ostorlab.assets import asset
+from ostorlab import assets
 
 
 @dataclasses.dataclass
-class AndroidAab(asset.Asset):
+class AndroidAab(assets.Asset):
     """Android .AAB target asset."""
     file: io.FileIO
