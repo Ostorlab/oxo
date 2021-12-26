@@ -3,7 +3,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://ostorlab.co/agentgrp_schema.json",
     "title": "Agent Group Schema",
-    "description": "Agent Grou json-specification : A full description of fields of an agent group definition yaml file.",
+    "description": "Agent Group json-specification : A full description of fields of an agent group definition yaml file.",
 
     "CustomTypes": {
         "ArrayOfStrings": {
