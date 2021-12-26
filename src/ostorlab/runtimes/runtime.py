@@ -25,10 +25,10 @@ class AgentDefinition:
 
     @classmethod
     def from_agent_key(cls, agent_key):
-        """Construct AgentDefinition from agent_key
+        """Construct AgentDefinition from agent_key.
 
         Args:
-            agent_key: agent key
+            agent_key: agent key.
         """
 
         # TODO(mohsine):implement reading agent AgentDefinition using agent_key
