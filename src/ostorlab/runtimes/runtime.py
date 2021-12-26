@@ -28,7 +28,7 @@ class AgentDefinition:
         """Construct AgentDefinition from agent_key
 
         Args:
-            agent_key (string): agent key
+            agent_key: agent key
         """
 
         # TODO(mohsine):implement reading agent AgentDefinition using agent_key
@@ -48,7 +48,7 @@ class AgentGroupDefinition:
         """Construct AgentGroupDefinition from yaml file.
 
         Args:
-            group (string): agent key
+            group : agent group .yaml file.
         """
         return cls()
 
