@@ -1,5 +1,5 @@
 """Asset of type .APK package file.
-This module take care of preparing a file of type .APK before injecting it to the runtime instance.
+This module takes care of preparing a file of type .APK before injecting it to the runtime instance.
 """
 import io
 import click

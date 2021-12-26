@@ -34,8 +34,7 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
         runtime = runtimes.LocalRuntime()
     else:
         # managed and hybrid are not implemented yet
-        raise click.ClickException(
-            f'The selected runtime {0} is not supported!'.format(runtime))
+        raise click.ClickException(f'The selected runtime {runtime} is not supported!')
 
     # Building list of agents definition
     agents_definition: List[runtimes.AgentDefinition] = []

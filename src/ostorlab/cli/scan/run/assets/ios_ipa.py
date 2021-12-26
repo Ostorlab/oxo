@@ -1,5 +1,5 @@
 """Asset of type .IPA (IOS App Store Package).
-This module take care of preparing a file of type .IPA before injecting it to the runtime instance.
+This module takes care of preparing a file of type .IPA before injecting it to the runtime instance.
 """
 
 import click
