@@ -1,6 +1,5 @@
 """This module is the entry point for ostorlab CLI."""
 import click
-from typing import Optional
 
 
 @click.group()
@@ -14,12 +13,12 @@ def rootcli(ctx: click.core.Context) -> None:
 
 @rootcli.group()
 def agent():
-    raise click.ClickException('NotImplementedError')
+    raise click.ClickException('NotImplementedError.')
 
 
 @rootcli.group()
 def agentgroup():
-    raise click.ClickException('NotImplementedError')
+    raise click.ClickException('NotImplementedError.')
 
 
 @rootcli.group()
