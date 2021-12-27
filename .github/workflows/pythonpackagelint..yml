@@ -32,4 +32,6 @@ jobs:
         python -m pip install -e .
     - name: Runnning pytest.
       run: |
-        pylint --rcfile=.pylintrc
+        pylint --rcfile=.pylintrc src/
+        pylint --rcfile=.pylintrc -d C0103 tests/
+
