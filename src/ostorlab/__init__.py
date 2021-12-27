@@ -12,4 +12,4 @@ logger = logging.getLogger("CLI")
 
 
 def main():
-    rootcli()
+    rootcli(None)

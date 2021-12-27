@@ -6,14 +6,12 @@
 """
 import json
 from io import FileIO
-from jsonschema import validate, exceptions
-from jsonschema import Draft202012Validator
+import jsonschema
 import ruamel.yaml
+from ostorlab import exceptions
 
-VERSIONED_JSONSCHEMA_VALIDATOR = Draft202012Validator
 
-
-class Error(Exception):
+class Error(exceptions.OstorlabError):
     """Base Exception
     """
 
@@ -43,8 +41,8 @@ class Validator:
         """
         self._json_schema = json.load(json_schema_file_object)
         try:
-            VERSIONED_JSONSCHEMA_VALIDATOR.check_schema(self._json_schema)
-        except exceptions.SchemaError as e:
+            jsonschema.Draft202012Validator.check_schema(self._json_schema)
+        except jsonschema.exceptions.SchemaError as e:
             raise SchemaError("Schema is invalid.") from e
 
     def validate(self, yaml_file_object):
@@ -60,8 +58,8 @@ class Validator:
         yaml_data = yaml.load(yaml_file_object)
 
         try:
-            validate(instance=yaml_data, schema=self._json_schema)
-        except exceptions.ValidationError as e:
+            jsonschema.validate(instance=yaml_data, schema=self._json_schema)
+        except jsonschema.exceptions.ValidationError as e:
             raise ValidationError("Validation did not pass well.") from e
-        except exceptions.SchemaError as e:
+        except jsonschema.exceptions.SchemaError as e:
             raise SchemaError("Schema is invalid.") from e

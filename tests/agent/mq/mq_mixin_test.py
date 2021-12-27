@@ -28,6 +28,7 @@ class Agent(mq_mixin.MQMixin):
 
 
 @pytest.mark.asyncio
+@pytest.mark.docker
 async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service):
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test1')
@@ -41,6 +42,7 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
 
 @pytest.mark.skip(reason='Needs debugging why MQ is not resending the message')
 @pytest.mark.asyncio
+@pytest.mark.docker
 async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_service):
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test2')
@@ -56,6 +58,7 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_s
 
 @pytest.mark.skip(reason='Needs debugging why MQ is not resending the message')
 @pytest.mark.asyncio
+@pytest.mark.docker
 async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq_service):
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test3')
@@ -71,6 +74,7 @@ async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq
 
 
 @pytest.mark.asyncio
+@pytest.mark.docker
 async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test4')

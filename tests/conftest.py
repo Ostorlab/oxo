@@ -2,6 +2,7 @@
 import io
 import pytest
 
+
 @pytest.fixture
 def json_schema_file():
     """Json schema is made a fixture since it will be used by multiple unit tests.
@@ -88,5 +89,5 @@ def json_schema_file():
         }
 
     """
-    json_schema_file_object =  io.StringIO(json_schema)
-    return  json_schema_file_object
+    json_schema_file_object = io.StringIO(json_schema)
+    return json_schema_file_object

@@ -1,3 +1,4 @@
+"""Abstract Asset class to define the scan target and its properties.TODO(mohsine):write doscstring."""
 import abc
 
 

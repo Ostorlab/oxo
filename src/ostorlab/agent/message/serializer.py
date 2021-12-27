@@ -39,11 +39,11 @@ def _find_package_name(selector: str) -> Optional[str]:
         raise NoMatchingPackageNameError()
     else:
         # Remove the path to the current package.
-        matching_package = re.sub('^.*/ostorlab/', 'ostorlab/', filtered_matching[0])
+        matching_package = re.sub(r'^.*/ostorlab/', 'ostorlab/', filtered_matching[0])
         # Replace / with .
         matching_package = matching_package.replace('/', '.')
         # Point to the compiled protobufs.
-        return re.sub('\.proto$', '_pb2', re.sub('^\.code\.', '', matching_package))
+        return re.sub(r'\.proto$', '_pb2', re.sub(r'^\.code\.', '', matching_package))
 
 
 def _list_message_proto_files() -> List[str]:
@@ -54,6 +54,7 @@ def _list_message_proto_files() -> List[str]:
         for file in f:
             if MESSAGE_PROTO in file:
                 files.append(os.path.join(r, file))
+        del d
     return files
 
 

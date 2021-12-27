@@ -34,5 +34,5 @@ jobs:
     - name: Runnning linter.
       run: |
         pylint --rcfile=.pylintrc src/
-        pylint --rcfile=.pylintrc -d C0103 tests/
+        pylint --rcfile=.pylintrc -d C0103,W0613 tests/
 
