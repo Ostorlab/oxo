@@ -1,14 +1,14 @@
 """Tests for the validation of Json specifications for Agent & AgentGroup."""
 
-from pathlib import Path
+import pathlib
 import io
 
 import pytest
 
 from ostorlab.agent.schema import validator
 
-OSTORLAB_ROOT_DIR = Path(__file__).parent.parent.parent.parent
-AGENT_SPEC_PATH = path = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agent_schema.json'  
+OSTORLAB_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.parent
+AGENT_SPEC_PATH  = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agent_schema.json'  
 AGENT_GROUP_SPEC_PATH = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agentGroup_schema.json'
 
 
