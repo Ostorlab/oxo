@@ -18,12 +18,12 @@
 
     "properties": {
         "kind": {
-            "description": "Required - Full name of the agent group.",
+            "description": "[Required] - Full name of the agent group.",
             "type": "string",
             "maxLength": 2048
         },
         "description":{
-            "description": "Required - Text fully describing the agent group.",
+            "description": "[Required] - Text fully describing the agent group.",
             "type": "string"
         },
         "image":{
@@ -46,7 +46,7 @@
             "$ref": "#/CustomTypes/ArrayOfStrings"
         },
         "agents":{
-            "description": "Required - List of dictionary-like objects explaining the agents belonging to the current agent group.",
+            "description": "[Required] - List of dictionary-like objects explaining the agents belonging to the current agent group.",
             "type": "array",
             "items": {
                 "description": "Dictionary-like object of the agent.",
