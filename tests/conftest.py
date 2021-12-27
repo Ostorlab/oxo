@@ -1,8 +1,9 @@
 """Definitions of the fixtures that will be shared among multiple tests.
 """
 
-from io import StringIO
+import io
 import pytest
+
 
 @pytest.fixture
 def json_schema_file():
@@ -90,5 +91,5 @@ def json_schema_file():
         }
 
     """
-    json_schema_file_object =  StringIO(json_schema)
+    json_schema_file_object =  io.StringIO(json_schema)
     return  json_schema_file_object
