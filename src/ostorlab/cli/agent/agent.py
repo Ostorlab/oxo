@@ -1,6 +1,6 @@
 """Agent related CLI commands."""
 
-from pathlib import Path
+import pathlib
 import logging
 
 import click
@@ -11,7 +11,7 @@ from ostorlab.cli import rootcli
 from ostorlab.agent.schema import validator
 
 # is it the correct way to do it ?
-AGENT_SPEC_PATH = Path(__file__).parent.parent.parent / "agent/schema/agent_schema.json"
+AGENT_SPEC_PATH = pathlib.Path(__file__).parent.parent.parent / "agent/schema/agent_schema.json"
 logger = logging.getLogger(__name__)
 
 
