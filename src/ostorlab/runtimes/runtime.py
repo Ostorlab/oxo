@@ -30,6 +30,7 @@ class AgentDefinition:
         Args:
             agent_key: agent key.
         """
+        del agent_key
 
         # TODO(mohsine):implement reading agent AgentDefinition using agent_key
         name = ''
@@ -50,6 +51,7 @@ class AgentGroupDefinition:
         Args:
             group : agent group .yaml file.
         """
+        del group
         agents = []
         return cls(agents)
 

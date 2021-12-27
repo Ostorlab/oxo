@@ -78,7 +78,7 @@ class LocalRabbitMQ:
                 name=self._network,
                 driver='overlay',
                 attachable=True,
-                labels={'ostorlab.universe': self._name, },
+                labels={'ostorlab.universe': self._name,},
                 check_duplicate=True
             )
 
