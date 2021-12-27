@@ -1,6 +1,6 @@
 """Module for the command run inside the group scan.
 This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
-Example of usage:  
+Example of usage:
     - ostorlab scan run --agents=agent1,agent2 --title=test_scan [asset] [options]."""
 import io
 from typing import List

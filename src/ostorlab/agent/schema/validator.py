@@ -10,7 +10,7 @@ from jsonschema import validate, exceptions
 from jsonschema import Draft202012Validator
 import ruamel.yaml
 
-VERSIONED_JSONSCHEMA_VALIDATOR = Draft202012Validator 
+VERSIONED_JSONSCHEMA_VALIDATOR = Draft202012Validator
 
 
 class Error(Exception):
@@ -47,8 +47,6 @@ class Validator:
         except exceptions.SchemaError as e:
             raise SchemaError("Schema is invalid.") from e
 
-
-
     def validate(self, yaml_file_object):
         """ Validates a yaml file against a json schema .
 
@@ -58,7 +56,7 @@ class Validator:
             ValidationError if the validation did not pass well.
             SchemaError if the Schema is not valid.
         """
-        yaml = ruamel.yaml.YAML(typ='safe')
+        yaml = ruamel.yaml.YAML(typ="safe")
         yaml_data = yaml.load(yaml_file_object)
 
         try:
