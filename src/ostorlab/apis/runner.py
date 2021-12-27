@@ -1,7 +1,7 @@
 """Handles all API calls and behind the scenes operations such as authentication, validation, etc.
 
 This module contains code to handle all API calls and any behind the scenes logic like authentication.
-It also has classes for authentication errors, API response errors, etc. 
+It also has classes for authentication errors, API response errors, etc.
 
     Typical usage example:
 
@@ -37,13 +37,19 @@ class ResponseError(Error):
 class APIRunner:
     """Handles all API calls and behind the scenes operations such as authentication, validation, etc."""
 
-    def __init__(self, username: Optional[str], password: Optional[str], token_duration: Optional[str], proxy: str = None, verify: bool = True):
+    def __init__(self,
+                 username: Optional[str],
+                 password: Optional[str],
+                 token_duration: Optional[str],
+                 proxy: str = None,
+                 verify: bool = True):
         """Constructs all the necessary attributes for the object.
 
         Args:
             username: the username (email) used to login.
             password: the password used to login.
-            token_duration: The duration for which the token is valid (Can be in minutes, hours, days, or a combination of any two or all three).
+            token_duration: The duration for which the token is valid
+                (Can be in minutes, hours, days, or a combination of any two or all three).
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether or not to verify the TLS certificate. Defaults to True.
         """
@@ -77,7 +83,7 @@ class APIRunner:
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')
 
-            if field_errors is not None and field_errors[0] == "Must include \"otp_token\"":
+            if field_errors is not None and field_errors[0] == 'Must include "otp_token"':
                 self._otp_token = click.prompt(
                     'Please enter the OTP code from your authenticator app')
                 self.authenticate()

@@ -15,6 +15,6 @@ def scan(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None
         - Show list of scans: ostorlab scan --list\n
         - Show full details of a scan: ostorlab scan describe --scan=scan_id.\n
     """
-    ctx.obj['proxy'] = proxy,
+    ctx.obj['proxy'] = proxy
     ctx.obj['tlsverify'] = tlsverify
     pass

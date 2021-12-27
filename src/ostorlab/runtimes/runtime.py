@@ -50,7 +50,8 @@ class AgentGroupDefinition:
         Args:
             group : agent group .yaml file.
         """
-        return cls()
+        agents = []
+        return cls(agents)
 
 
 @dataclasses.dataclass
