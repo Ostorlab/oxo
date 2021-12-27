@@ -4,6 +4,7 @@
 import io
 import pytest
 
+<<<<<<< HEAD
 from click import testing
 import docker
 import ruamel.yaml
@@ -11,6 +12,10 @@ import ruamel.yaml
 from ostorlab.cli import rootcli
 
 
+||||||| 18df33d
+=======
+
+>>>>>>> 69884431da0cb4b37cac2351a7c6e70e02477884
 @pytest.fixture
 def json_schema_file():
     """Json schema is made a fixture since it will be used by multiple unit tests.
