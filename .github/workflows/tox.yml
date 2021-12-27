@@ -30,7 +30,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install  tox
+        python -m pip install  tox tox-gh-actions
         python -m pip install -e .
     - name: runnning tox #all commands (lint and tests) are inside tox 
       run: |
