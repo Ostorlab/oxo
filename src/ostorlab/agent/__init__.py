@@ -1,1 +1,1 @@
-from .agent import Agent
+from ostorlab.agent.agent import Agent

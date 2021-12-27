@@ -3,7 +3,7 @@ import pytest
 
 from ostorlab.utils import strings
 
-
+# pylint: disable=W0631
 def testRandomString_whenLengthIsValid_returnsARandomStringOfSpecifiedSize():
     """Tests if a proper random string is generated."""
     generated = strings.random_string(6)

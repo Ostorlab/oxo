@@ -127,8 +127,16 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+<<<<<<< HEAD
 .coverage
 **/__pycache__/
 
 # VS Code IDE
 .vscode/
+||||||| ee73905
+=======
+
+
+# Intellij-based IDE
+.idea/
+>>>>>>> 1587a943b3a3d83d788ae46395db68c98a954068
