@@ -1,11 +1,9 @@
-"""Definitions of the fixtures that will be shared among multiple tests.
-"""
-
-from io import StringIO, FileIO
+"""Definitions of the fixtures that will be shared among multiple tests."""
+import io
 import pytest
 
 @pytest.fixture
-def json_schema_file() -> FileIO:
+def json_schema_file():
     """Json schema is made a fixture since it will be used by multiple unit tests.
 
     Returns:
@@ -90,5 +88,5 @@ def json_schema_file() -> FileIO:
         }
 
     """
-    json_schema_file_object =  StringIO(json_schema)
+    json_schema_file_object =  io.StringIO(json_schema)
     return  json_schema_file_object
