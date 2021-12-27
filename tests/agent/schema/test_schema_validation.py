@@ -13,7 +13,7 @@ AGENT_GROUP_SPEC_PATH = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agentGrou
 
 
 def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
-    """Unit test to checks the validity of the Agent json-schema.
+    """Unit test to check the validity of the Agent json-schema.
     Case where the Agent definition is valid.
     """
 
