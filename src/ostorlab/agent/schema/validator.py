@@ -10,7 +10,7 @@ import jsonschema
 import ruamel.yaml
 from ostorlab import exceptions
 
-VersionedJsonschemaValidator = jsonschema.Draft202012Validator
+VERSIONED_JSONSCHEMA_VALIDATOR = jsonschema.Draft202012Validator
 
 
 class Error(exceptions.OstorlabError):
@@ -43,7 +43,7 @@ class Validator:
         """
         self._json_schema = json.load(json_schema_file_object)
         try:
-            VersionedJsonschemaValidator.check_schema(self._json_schema)
+            VERSIONED_JSONSCHEMA_VALIDATOR.check_schema(self._json_schema)
         except jsonschema.exceptions.SchemaError as e:
             raise SchemaError("Schema is invalid.") from e
 
