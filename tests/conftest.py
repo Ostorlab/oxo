@@ -10,7 +10,6 @@ import ruamel.yaml
 from ostorlab.cli import rootcli
 
 
-
 @pytest.fixture
 def json_schema_file():
     """Json schema is made a fixture since it will be used by multiple unit tests.
@@ -102,22 +101,10 @@ def json_schema_file():
 
 
 @pytest.fixture
-def docker_sdk_client():
-    """Runs the agent build command, yields the docker sdk client & clean-up.
-    Yields:
-        docker sdk client
+def docker_dummy_image_cleanup():
+    """Pytest fixture for removing all dummy images.
     """
-    
-    dummy_def_yaml_file_path = "./assets/dummydef.yaml"
-    runner = testing.CliRunner()
-
-    _ = runner.invoke(rootcli.rootcli, ["agent", "build", f"--file={dummy_def_yaml_file_path}"])
-
-    yaml = ruamel.yaml.YAML(typ='safe')
-    with open(dummy_def_yaml_file_path, 'r') as def_file:
-        dummy_def_data = yaml.load(def_file)
-        image_name = dummy_def_data["name"]
-
     client = docker.from_env()
     yield client
-    client.images.remove(image_name)
+    for img in client.images.list():
+        _ = [client.images.remove(t) for t in img.tags if "dummy" in t]
