@@ -129,4 +129,6 @@ dmypy.json
 .pyre/
 .coverage
 **/__pycache__/
+
+# VS Code IDE
 .vscode/
