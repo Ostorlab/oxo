@@ -10,7 +10,9 @@ from ostorlab.utils import strings
 class Agent(mq_mixin.MQMixin):
     """Helper class to test MQ implementation of send and process messages."""
     def __init__(self, name='test1', keys=('a.#',)):
-        super().__init__(name=name, keys=keys)
+        url = 'amqp://guest:guest@localhost:5672/'
+        topic = 'test_topic'
+        super().__init__(name=name, keys=keys, url=url, topic=topic)
         self.stub = None
 
     def _process_message(self, selector, message):
@@ -27,7 +29,7 @@ class Agent(mq_mixin.MQMixin):
 
 @pytest.mark.asyncio
 async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service):
-    word = strings.random_string(length=10)
+    word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test1')
     client = Agent.create(stub, name='test1', keys=['d.#'])
     await client.mq_run(delete_queue_first=True)
@@ -40,7 +42,7 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
 
 @pytest.mark.asyncio
 async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_service):
-    word = strings.random_string(length=10)
+    word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test2')
     stub.side_effect = [Exception, None]
     client = Agent.create(stub, name='test2', keys=['b.#'])
@@ -55,7 +57,7 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_s
 
 @pytest.mark.asyncio
 async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq_service):
-    word = strings.random_string(length=10)
+    word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test3')
     stub.side_effect = [Exception, Exception, None]
     client = Agent.create(stub, name='test3', keys=['c.#'])
@@ -70,7 +72,7 @@ async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq
 
 @pytest.mark.asyncio
 async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
-    word = strings.random_string(length=10)
+    word = strings.random_string(length=10).encode()
     stub = mocker.stub(name='test4')
     # client to send the message
     client1 = Agent.create(stub, name='test4', keys=['f.#'])
