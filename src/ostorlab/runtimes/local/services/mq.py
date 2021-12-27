@@ -8,6 +8,7 @@ import tenacity
 from docker import errors
 from docker import types
 from docker.models import services
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class LocalRabbitMQ:
     def __init__(self,
                  name: str,
                  network: str,
-                 exposed_ports: dict[int, int] = None,
+                 exposed_ports: Dict[int, int] = None,
                  image: str = MQ_IMAGE) -> None:
         """Initialize the MQ service parameters.
         Args:
