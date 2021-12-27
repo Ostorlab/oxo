@@ -3,7 +3,7 @@
 #  - Run pylint for each of the supported Python versions. 
 # Pylint will only fail without fixing any of the errors or warnings.
 
-name: Python package
+name: Pylint
 
 on:
   push:
