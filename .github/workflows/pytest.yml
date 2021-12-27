@@ -1,7 +1,7 @@
-# This workflow use pylint:
+# This workflow use pytest:
 #  - Install Python dependencies.
 #  - Run pytest for each of the supported Python versions ["3.8", "3.9", "3.10"]. 
-# Running pytest with -m "no docker": Docker API is not accessible.
+# Running pytest with -m "no docker" to disable test that require a docker installation.
 
 name: Pytest.
 
