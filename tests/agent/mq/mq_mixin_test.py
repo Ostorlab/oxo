@@ -1,13 +1,11 @@
 """Tests for MQMixin module."""
 
 import asyncio
-import random
-import string
 from unittest import mock
 import pytest
 
 from ostorlab.agent.mq import mq_mixin
-
+from ostorlab.utils import strings
 
 class Agent(mq_mixin.MQMixin):
     """Helper class to test MQ implementation of send and process messages."""
@@ -16,6 +14,7 @@ class Agent(mq_mixin.MQMixin):
         self.stub = None
 
     def _process_message(self, selector, message):
+        """Process the MQ messages using stub callback for the unittests."""
         if self.stub is not None:
             self.stub(message)
 
@@ -26,16 +25,9 @@ class Agent(mq_mixin.MQMixin):
         return instance
 
 
-def rand_bytes(size=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    rand_string = ''.join(random.choice(letters) for i in range(size))
-    return rand_string.encode()
-
-
 @pytest.mark.asyncio
 async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service):
-    word = rand_bytes()
+    word = strings.random_string(length=10)
     stub = mocker.stub(name='test1')
     client = Agent.create(stub, name='test1', keys=['d.#'])
     await client.mq_run(delete_queue_first=True)
