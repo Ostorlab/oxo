@@ -1,8 +1,15 @@
 """Definitions of the fixtures that will be shared among multiple tests.
 """
 
-from io import StringIO
+import io
 import pytest
+
+from click import testing
+import docker
+import ruamel.yaml
+
+from ostorlab.cli import rootcli
+
 
 @pytest.fixture
 def json_schema_file():
@@ -90,5 +97,27 @@ def json_schema_file():
         }
 
     """
-    json_schema_file_object =  StringIO(json_schema)
+    json_schema_file_object =  io.StringIO(json_schema)
     return  json_schema_file_object
+
+
+@pytest.fixture
+def docker_sdk_client():
+    """Runs the agent build command, yields the docker sdk client & clean-up.
+    Yields:
+        docker sdk client
+    """
+    
+    dummy_def_yaml_file_path = "./assets/dummydef.yaml"
+    runner = testing.CliRunner()
+
+    _ = runner.invoke(rootcli.rootcli, ["agent", "build", f"--file={dummy_def_yaml_file_path}"])
+
+    yaml = ruamel.yaml.YAML(typ='safe')
+    with open(dummy_def_yaml_file_path, 'r') as def_file:
+        dummy_def_data = yaml.load(def_file)
+        image_name = dummy_def_data["name"]
+
+    client = docker.from_env()
+    yield client
+    client.images.remove(image_name)
