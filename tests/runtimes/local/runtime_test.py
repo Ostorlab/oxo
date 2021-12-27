@@ -20,7 +20,7 @@ def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
     assert any(s.name.startswith('mq_') for s in services)
 
 
-@pytest.xfail(reason='Missing sample agents to test with')
+@pytest.mark.skip(reason='Missing sample agents to test with')
 @pytest.mark.docker
 def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
