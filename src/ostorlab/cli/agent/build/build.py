@@ -20,8 +20,8 @@ def build(file: str) -> None:
     """Ostorlab agent build -f path/to/definition.yaml
     CLI command to build the agent container from a definition.yaml file.
     """
-    
-    with open(AGENT_SPEC_PATH, 'r', encoding='utf8') as agent_spec:
+
+    with open(AGENT_SPEC_PATH, 'r') as agent_spec:
         try:
             yaml_def_validator = validator.Validator(agent_spec)
         except validator.SchemaError:
@@ -33,7 +33,7 @@ def build(file: str) -> None:
         logger.error("Definition file does not conform to the provided specification.")
 
     yaml = ruamel.yaml.YAML(typ='safe')
-    with open(file, 'r', encoding='utf8') as def_file:
+    with open(file, 'r') as def_file:
         agent_def = yaml.load(def_file)
 
     dockerfile_path = agent_def["docker_file_path"]
