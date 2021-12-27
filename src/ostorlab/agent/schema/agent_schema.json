@@ -24,7 +24,7 @@
     
     "properties": {
         "name": {
-            "description": "Required - Agent full Name",
+            "description": "[Required] - Agent full Name",
             "type": "string",
             "maxLength": 2048
         },
@@ -35,7 +35,7 @@
             "maxLength": 512
         },
         "description":{
-            "description": "Required - Text fully describing the agent.",
+            "description": "[Required] - Text fully describing the agent.",
             "type": "string"
         },
         "image":{
@@ -65,11 +65,11 @@
             "$ref": "#/CustomTypes/ArrayOfStrings"
         },
         "in_selectors":{
-            "description": "Required : Array of strings explaning the input selectors of the agent.",
+            "description": "[Required] : Array of strings explaning the input selectors of the agent.",
             "$ref": "#/CustomTypes/ArrayOfStrings"
         },
         "out_selectors":{
-            "description": "Required : Array of strings explaning the output selectors of the agent.",
+            "description": "[Required] : Array of strings explaning the output selectors of the agent.",
             "$ref": "#/CustomTypes/ArrayOfStrings"
         },
         "restart_policy":{
