@@ -40,7 +40,7 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
 
 @pytest.mark.asyncio
 async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_service):
-    word = rand_bytes()
+    word = strings.random_string(length=10)
     stub = mocker.stub(name='test2')
     stub.side_effect = [Exception, None]
     client = Agent.create(stub, name='test2', keys=['b.#'])
@@ -55,7 +55,7 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_s
 
 @pytest.mark.asyncio
 async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq_service):
-    word = rand_bytes()
+    word = strings.random_string(length=10)
     stub = mocker.stub(name='test3')
     stub.side_effect = [Exception, Exception, None]
     client = Agent.create(stub, name='test3', keys=['c.#'])
@@ -70,7 +70,7 @@ async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(mocker, mq
 
 @pytest.mark.asyncio
 async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
-    word = rand_bytes()
+    word = strings.random_string(length=10)
     stub = mocker.stub(name='test4')
     # client to send the message
     client1 = Agent.create(stub, name='test4', keys=['f.#'])
