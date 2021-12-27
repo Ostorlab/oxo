@@ -24,8 +24,8 @@ def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
     mocker.patch('ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
     runner = CliRunner()
 
-    result = runner.invoke(rootcli.rootcli,['scan', 'run', '--agents=agent1,agent2', '--runtime=local', '--title=scan1',
-                                            'android-apk'])
+    result = runner.invoke(rootcli.rootcli,
+                           ['scan', 'run', '--agents=agent1,agent2', '--runtime=local', '--title=scan1', 'android-apk'])
 
     assert isinstance(result.exception, BaseException)
 
