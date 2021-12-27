@@ -127,4 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-tests/__pycache__/
+.coverage
+**/__pycache__/
+.vscode/
