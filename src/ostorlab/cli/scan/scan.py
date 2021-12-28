@@ -1,49 +1,20 @@
-import logging
+"""Scan module that handles running a scan using a list of agent keys and a target asset."""
+from typing import Optional
 
+from ostorlab.cli.rootcli import rootcli
 import click
 
-from ostorlab.apis import runner as apis_runner
-from ostorlab.apis import scan as apis_scan
-from ostorlab.cli.rootcli import scan
 
-logger = logging.getLogger(__name__)
-
-
-@scan.command()
-def android_store():
-    """Command on cli1"""
-
-
-@scan.command()
-@click.option('--plan', type=click.Choice(['free']), help='Plan.', required=True)
-@click.option('--platform', type=click.Choice(['android', 'ios']), help='platform.', required=True)
-@click.option('--application', type=click.Path(readable=True, exists=True), help='application.', required=True)
-@click.option('--title', '-t', help='Scan title.')
-@click.option('--username', '-u', help='Ostorlab platform username.')
-@click.option('--password', '-p', help='Ostorlab platform password.')
+@rootcli.group()
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option('--tlsverify/--no-tlsverify', default=True)
+@click.option('--tlsverify/--no-tlsverify', help='Control TLS server certificate verification.', default=True)
 @click.pass_context
-def mobile(ctx, plan, platform, application):
-    try:
-        api_runner = apis_runner.APIRunner(username=ctx.obj['username'], password=ctx.obj['password'],
-                                        proxy=ctx.obj['proxy'], verify=ctx.obj['tlsverify'])
-        api_runner.authenticate()
-
-        with open(application, 'rb') as o_app:
-            logger.debug('application %s', application)
-            create_request = apis_scan.CreateMobileScanAPIRequest(
-                title=ctx.obj['title'],
-                asset_type=apis_scan.MobileAssetType[platform.upper()],
-                plan=apis_scan.Plan[plan.upper()],
-                application=o_app)
-            response = api_runner.execute(create_request)
-            logger.debug(response)
-
-    except apis_runner.AuthenticationError:
-        logger.error('Authentication error, please check that your credentials are valid.')
-
-
-@scan.command()
-def ios_store():
-    """Command on cli1"""
+def scan(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
+    """You can use scan [subcommand] to list, start or stop a scan.\n
+    Examples:\n
+        - Show list of scans: ostorlab scan --list\n
+        - Show full details of a scan: ostorlab scan describe --scan=scan_id.\n
+    """
+    ctx.obj['proxy'] = proxy
+    ctx.obj['tlsverify'] = tlsverify
+    pass

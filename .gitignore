@@ -132,3 +132,7 @@ dmypy.json
 
 # VS Code IDE
 .vscode/
+
+
+# Intellij-based IDE
+.idea/

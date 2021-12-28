@@ -1,8 +1,19 @@
+<<<<<<< HEAD
 """Definitions of the fixtures that will be shared among multiple tests."""
 
 import io
+||||||| ee73905
+"""Definitions of the fixtures that will be shared among multiple tests.
+"""
+
+from io import StringIO, FileIO
+=======
+"""Definitions of the fixtures that will be shared among multiple tests."""
+import io
+>>>>>>> main
 import pytest
 
+<<<<<<< HEAD
 from click import testing
 import docker
 import ruamel.yaml
@@ -10,6 +21,10 @@ import ruamel.yaml
 from ostorlab.cli import rootcli
 
 
+||||||| ee73905
+=======
+
+>>>>>>> main
 @pytest.fixture
 def json_schema_file():
     """Json schema is made a fixture since it will be used by multiple unit tests.
