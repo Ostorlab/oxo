@@ -64,7 +64,7 @@ class AgentGroupDefinition:
         try:
             validator_object.validate(group)
         except validator.ValidationError:
-            pass
+            raise validator.ValidationError
 
         agents_definitions = []
         for agent in agentgroup_def['agents']:
