@@ -1,21 +1,10 @@
-<<<<<<< HEAD
 """Definitions of the fixtures that will be shared among multiple tests."""
 
 import io
-||||||| ee73905
-"""Definitions of the fixtures that will be shared among multiple tests.
-"""
-
-from io import StringIO, FileIO
-=======
-"""Definitions of the fixtures that will be shared among multiple tests."""
-import io
->>>>>>> 1587a943b3a3d83d788ae46395db68c98a954068
 import pytest
 
 from click import testing
 import docker
-import ruamel.yaml
 
 from ostorlab.cli import rootcli
 
