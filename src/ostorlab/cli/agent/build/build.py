@@ -10,7 +10,7 @@ import ruamel.yaml
 from ostorlab.cli import rootcli
 from ostorlab.agent.schema import validator
 
-AGENT_SPEC_PATH = pathlib.Path(__file__).parent.parent.parent / "agent/schema/agent_schema.json"
+AGENT_SPEC_PATH = pathlib.Path(__file__).parent.parent.parent.parent / "agent/schema/agent_schema.json"
 logger = logging.getLogger(__name__)
 
 
