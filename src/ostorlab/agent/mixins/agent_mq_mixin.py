@@ -85,6 +85,7 @@ class AgentMQMixin:
 
     async def _mq_process_message(self, message: aio_pika.IncomingMessage):
         """Consumes the MQ messages and calls the process message callback."""
+        logger.debug('incoming pika message received')
         async with message.process(requeue=True, reject_on_redelivered=True):
             result = await self._loop.run_in_executor(self._executor,
                                                       self.process_message,
@@ -103,6 +104,7 @@ class AgentMQMixin:
             key: Selector where to send the message.
             message_priority: the priority of the message. Default is 0
         """
+        logger.debug(f'sending %s to %s', message, key)
         async with self._channel_pool.acquire() as channel:
             exchange = await self._get_exchange(channel)
             pika_message = aio_pika.Message(body=message, priority=message_priority)
@@ -115,12 +117,12 @@ class AgentMQMixin:
             message: Message to send .
             message_priority: the priority to use for the message default is 0.
         """
-        future = asyncio.run_coroutine_threadsafe(self.async_mq_send_message(key, message, message_priority),
-                                                  loop=self._loop)
-        return future.result()
+        logger.debug(f'sending %s to %s', message, key)
+        if not self._loop.is_running():
+            self._loop.run_until_complete(self.async_mq_send_message(key, message, message_priority))
+        else:
+            self._loop.create_task(self.async_mq_send_message(key, message, message_priority))
 
     async def mq_close(self):
         """Close the MQ channel and the connection pool."""
-
         await self._channel_pool.close()
-        await self._connection_pool.close()
