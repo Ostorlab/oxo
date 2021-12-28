@@ -3,10 +3,7 @@
 import io
 import pytest
 
-from click import testing
 import docker
-
-from ostorlab.cli import rootcli
 
 
 @pytest.fixture
@@ -105,4 +102,4 @@ def docker_dummy_image_cleanup():
     client = docker.from_env()
     yield client
     for img in client.images.list():
-        [client.images.remove(t) for t in img.tags if "dummy" in t]
+        _ = [client.images.remove(t) for t in img.tags if "dummy" in t]
