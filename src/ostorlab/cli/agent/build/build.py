@@ -1,4 +1,4 @@
-"""Agent related CLI commands."""
+"""Agent Build commands."""
 
 import pathlib
 import logging
