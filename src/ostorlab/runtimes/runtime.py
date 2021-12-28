@@ -1,7 +1,7 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 import abc
 import dataclasses
-from typing import List, Iterable, Optional, Dict
+from typing import List, Iterable, Optional, Dict, Any
 import io
 from ostorlab import assets
 
@@ -11,8 +11,11 @@ class AgentDefinition:
     """Data class holding attributes of an agent."""
     name: str
     path: str
+    in_selectors: List[str]
+    out_selectors: List[str]
     container_image: str
-    args: Iterable = ()
+    # TODO(alaeddine): add better type definition for args.
+    args: List[Any]
     constraints: List[str] = None
     mounts: Iterable = ()
     restart_policy: str = 'any'
