@@ -8,7 +8,7 @@ import pytest
 from ostorlab.agent.schema import validator
 
 OSTORLAB_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.parent
-AGENT_SPEC_PATH  = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agent_schema.json'  
+AGENT_SPEC_PATH  = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agent_schema.json'
 AGENT_GROUP_SPEC_PATH = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agentGroup_schema.json'
 
 
@@ -52,7 +52,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
           description: "agentArgumentDescription2"
           default_value: "42"
     """
-    with open(AGENT_SPEC_PATH, 'r') as agent_json_spec:
+    with open(AGENT_SPEC_PATH, "r", encoding="utf8") as agent_json_spec:
         validator_object = validator.Validator(agent_json_spec)
 
     with io.StringIO(valid_yaml_data) as yaml_data_file:
@@ -105,8 +105,8 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
           description: "agentArgumentDescription2"
           default_value: "42"
     """
-    with open(AGENT_SPEC_PATH, 'r') as agent_json_spec:
-        validator_object = validator.Validator(agent_json_spec)    
+    with open(AGENT_SPEC_PATH, "r", encoding="utf8") as agent_json_spec:
+        validator_object = validator.Validator(agent_json_spec)
     yaml_data_file = io.StringIO(invalid_yaml_data)
 
     with pytest.raises(validator.ValidationError):
@@ -150,8 +150,8 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
               description: "agentGroupArgumentDescription2"
               value: "42"    
     """
-    with open(AGENT_GROUP_SPEC_PATH, 'r') as agentGroup_json_spec:
-        validator_object = validator.Validator(agentGroup_json_spec)
+    with open(AGENT_GROUP_SPEC_PATH, "r", encoding="utf8") as agentgroup_json_spec:
+        validator_object = validator.Validator(agentgroup_json_spec)
 
     with io.StringIO(valid_yaml_agent_group_data) as yaml_data_file:
         try:
@@ -199,8 +199,8 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
               value: "42"
 
     """
-    with open(AGENT_GROUP_SPEC_PATH, 'r') as agentGroup_json_spec:
-        validator_object = validator.Validator(agentGroup_json_spec)
+    with open(AGENT_GROUP_SPEC_PATH, "r", encoding="utf8") as agentgroup_json_spec:
+        validator_object = validator.Validator(agentgroup_json_spec)
     yaml_data_file = io.StringIO(invalid_yaml_agent_group_data)
 
     with pytest.raises(validator.ValidationError):
