@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 @rootcli.agent.command()
 @click.option("--file", "-f", help="Path to Agent yaml definition.", required=True)
 def build(file: str) -> None:
-    """Ostorlab agent build -f path/to/definition.yaml
-    CLI command to build the agent container from a definition.yaml file.
+    """CLI command to build the agent container from a definition.yaml file.
+    Usage : Ostorlab agent build -f path/to/definition.yaml
     """
 
     with open(AGENT_SPEC_PATH, 'r') as agent_spec:
