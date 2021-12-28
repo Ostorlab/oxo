@@ -1,2 +1,2 @@
-"""Module for the root command: agent."""
+"""Module for the agent build command"""
 from ostorlab.cli.agent.build import build

@@ -1,6 +1,9 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
+
 import io
 import pytest
+
+import docker
 
 
 @pytest.fixture
@@ -89,5 +92,16 @@ def json_schema_file():
         }
 
     """
-    json_schema_file_object = io.StringIO(json_schema)
-    return json_schema_file_object
+    json_schema_file_object =  io.StringIO(json_schema)
+    return  json_schema_file_object
+
+
+@pytest.fixture
+def docker_dummy_image_cleanup():
+    """Pytest fixture for removing all dummy images."""
+    client = docker.from_env()
+    yield client
+    for img in client.images.list():
+        for t in img.tags:
+            if "dummy" in t:
+                client.images.remove(t)
