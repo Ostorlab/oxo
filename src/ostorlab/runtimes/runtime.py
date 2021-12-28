@@ -1,17 +1,21 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 import abc
 import dataclasses
-from typing import List, Iterable, Optional, Dict
-import io
+from typing import List, Iterable, Optional, Dict, TextIO
+
+import ruamel.yaml
+
 from ostorlab import assets
+from ostorlab.agent.schema import validator
+from ostorlab.utils import schemas
 
 
 @dataclasses.dataclass
 class AgentDefinition:
     """Data class holding attributes of an agent."""
     name: str
-    path: str
-    container_image: str
+    path: str = None
+    container_image: str = None
     args: Iterable = ()
     constraints: List[str] = None
     mounts: Iterable = ()
@@ -22,6 +26,7 @@ class AgentDefinition:
     pull_image: bool = False
     bus_username: str = 'username'
     bus_password: str = 'password'
+
 
     @classmethod
     def from_agent_key(cls, agent_key):
@@ -43,15 +48,32 @@ class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
     agents: List[AgentDefinition]
 
+
     @classmethod
-    def from_file(cls, group: io.FileIO):
+    def from_file(cls, group: TextIO):
         """Construct AgentGroupDefinition from yaml file.
 
         Args:
             group : agent group .yaml file.
         """
-        agents = []
-        return cls(agents)
+        with open(schemas.AGENT_GROUP_SPEC_PATH, 'r') as agentgrp_spec:
+            validator_object = validator.Validator(agentgrp_spec)
+        yaml_parser = ruamel.yaml.YAML(typ='safe')
+        agentgroup_def = yaml_parser.load(group)
+
+        try:
+            validator_object.validate(group)
+        except validator.ValidationError:
+            pass
+
+        agents_definitions = []
+        for agent in agentgroup_def['agents']:
+            agent_def = AgentDefinition(agent['name'])
+            for k, v in agent.items():
+                setattr(agent_def, k, v)
+            agents_definitions.append(agent_def)
+        
+        return cls(agents_definitions)
 
 
 @dataclasses.dataclass
