@@ -106,7 +106,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
           default_value: "42"
     """
     with open(AGENT_SPEC_PATH, 'r') as agent_json_spec:
-        validator_object = validator.Validator(agent_json_spec)    
+        validator_object = validator.Validator(agent_json_spec)
     yaml_data_file = io.StringIO(invalid_yaml_data)
 
     with pytest.raises(validator.ValidationError):
