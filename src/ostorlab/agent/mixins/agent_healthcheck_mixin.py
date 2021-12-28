@@ -132,7 +132,7 @@ class AgentHealthcheckMixin:
         logger.debug('enabling healthcheck')
         self._healthcheck_web_thread.add_healthcheck(healthcheck_callback)
 
-    def start(self) -> None:
+    def start_healthcheck(self) -> None:
         """Start exposing the health service.
 
         Returns:
@@ -141,7 +141,7 @@ class AgentHealthcheckMixin:
         self._healthcheck_web_thread.start()
         logger.debug('Healthcheck web thread started.')
 
-    def stop(self) -> None:
+    def stop_healthcheck(self) -> None:
         """Stop exposing the health service.
 
         Returns:

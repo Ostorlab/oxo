@@ -2,13 +2,16 @@
 
 import asyncio
 from unittest import mock
+
 import pytest
 
-from ostorlab.agent.mq import mq_mixin
+from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.utils import strings
 
-class Agent(mq_mixin.MQMixin):
+
+class Agent(agent_mq_mixin.AgentMQMixin):
     """Helper class to test MQ implementation of send and process messages."""
+
     def __init__(self, name='test1', keys=('a.#',)):
         url = 'amqp://guest:guest@localhost:5672/'
         topic = 'test_topic'
@@ -40,6 +43,7 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
     stub.assert_called_with(word)
     assert stub.call_count == 1
 
+
 @pytest.mark.skip(reason='Needs debugging why MQ is not resending the message')
 @pytest.mark.asyncio
 @pytest.mark.docker
@@ -55,6 +59,7 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_s
     await client.mq_close()
     stub.assert_has_calls([mock.call(word), mock.call(word)])
     assert stub.call_count == 2
+
 
 @pytest.mark.skip(reason='Needs debugging why MQ is not resending the message')
 @pytest.mark.asyncio
