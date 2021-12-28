@@ -1,3 +1,4 @@
+"""TODO(mohsine):Wrtite docstring."""
 import abc
 import logging
 from typing import Dict, Optional
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class APIRequest(abc.ABC):
+    """TODO(mohsine):Wrtite docstring."""
 
     @property
     def endpoint(self):

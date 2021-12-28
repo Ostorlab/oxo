@@ -6,7 +6,6 @@ class SampleAgent(Agent, ReportMixin):
     def __init__(self, speed, performance):
         self._speed = speed
 
-
     def process(self, message: Message) -> None:
         print('hello agent')
         self.emit(
