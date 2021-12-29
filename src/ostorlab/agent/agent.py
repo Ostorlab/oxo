@@ -139,7 +139,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
 
     @abc.abstractmethod
     def at_exit(self) -> None:
-        """Overridale at exit method to perform cleanup in the case of expected and unexpected agent termination.
+        """Overridable at exit method to perform cleanup in the case of expected and unexpected agent termination.
 
         Returns:
 
