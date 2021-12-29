@@ -1,9 +1,21 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
-
 import io
-import pytest
+import time
 
+import pytest
 import docker
+
+from ostorlab.runtimes.local.services import mq
+
+
+@pytest.fixture(scope='session')
+def mq_service():
+    """Start MQ Docker service"""
+    lrm = mq.LocalRabbitMQ(name='core_mq', network='test_network', exposed_ports={5672: 5672})
+    lrm.start()
+    time.sleep(3)
+    yield lrm
+    lrm.stop()
 
 
 @pytest.fixture
@@ -92,8 +104,8 @@ def json_schema_file():
         }
 
     """
-    json_schema_file_object =  io.StringIO(json_schema)
-    return  json_schema_file_object
+    json_schema_file_object = io.StringIO(json_schema)
+    return json_schema_file_object
 
 
 @pytest.fixture
@@ -103,5 +115,5 @@ def docker_dummy_image_cleanup():
     yield client
     for img in client.images.list():
         for t in img.tags:
-            if "dummy" in t:
+            if 'dummy' in t:
                 client.images.remove(t)
