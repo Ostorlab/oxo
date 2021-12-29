@@ -199,11 +199,10 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             Agent instance.
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument("-f", "--file", help="Agent YAML definition file.")
-        parser.add_argument("-p", "--proto", help="Agent binary proto settings.")
+        parser.add_argument('-f', '--file', help='Agent YAML definition file.')
+        parser.add_argument('-p', '--proto', help='Agent binary proto settings.')
         args = parser.parse_args()
-        print(args.file)
-        print(args.proto)
+        logger.info('running agent with definition %s and proto %s', args.file, args.proto)
         agent_definition = definitions.AgentDefinition.from_yaml(args.file)
         agent_settings = definitions.AgentInstanceSettings.from_proto(args.proto)
         instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
