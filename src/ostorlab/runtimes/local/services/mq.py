@@ -8,6 +8,7 @@ import tenacity
 from docker import errors
 from docker import types
 from docker.models import services
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,15 @@ class LocalRabbitMQ:
     def __init__(self,
                  name: str,
                  network: str,
+                 exposed_ports: Dict[int, int] = None,
                  image: str = MQ_IMAGE) -> None:
-
+        """Initialize the MQ service parameters.
+        Args:
+            name: Name of the service.
+            network: Network used for the Docker MQ service.
+            exposed_ports: The list of MQ service exposed ports
+            image: MQ Docker image
+        """
         self._name = name
         self._docker_client = docker.from_env()
         # images
@@ -30,6 +38,8 @@ class LocalRabbitMQ:
         self._mq_host = f'mq_{self._name}'
         # service
         self._mq_service = None
+        # exposed_port
+        self._exposed_ports = exposed_ports
 
     @property
     def url(self) -> str:
@@ -68,13 +78,13 @@ class LocalRabbitMQ:
                 name=self._network,
                 driver='overlay',
                 attachable=True,
-                labels={'ostorlab.universe': self._name, },
+                labels={'ostorlab.universe': self._name,},
                 check_duplicate=True
             )
 
     def _start_mq(self) -> services.Service:
         logger.info('starting MQ')
-        endpoint_spec = types.services.EndpointSpec(mode='vip')
+        endpoint_spec = types.services.EndpointSpec(mode='vip', ports=self._exposed_ports)
         service_mode = types.services.ServiceMode('replicated', replicas=1)
         return self._docker_client.services.create(
             image=self._mq_image,

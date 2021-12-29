@@ -13,8 +13,8 @@ def rootcli(ctx: click.core.Context) -> None:
 
 @rootcli.group()
 def agent():
-    raise click.ClickException('NotImplementedError.')
-
+    """ToDo"""
+    pass
 
 @rootcli.group()
 def agentgroup():

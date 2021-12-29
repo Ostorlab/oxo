@@ -41,8 +41,12 @@ class APIRunner:
        validation, etc.
     """
 
-    def __init__(self, username: Optional[str], password: Optional[str],
-                 token_duration: Optional[str] = None, proxy: str = None, verify: bool = True):
+    def __init__(self,
+                 username: Optional[str],
+                 password: Optional[str],
+                 token_duration: Optional[str],
+                 proxy: str = None,
+                 verify: bool = True):
         """Constructs all the necessary attributes for the object.
 
         Args:

@@ -1,6 +1,6 @@
 """Makes a login request.
 
-This code gets the username and password of a user and makes a login request to the token endpoint. 
+This code gets the username and password of a user and makes a login request to the token endpoint.
 If an OTP token is required, the user must provide either an OTP code from their authenticator app or
 a backed up static code in order to complete the authentication process.
 
@@ -25,6 +25,7 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
             password: the password used to login.
             otp_token: the OTP or static code if required by the organisation the
             user belongs to. Defaults to None.
+            otp_token: the OTP or static code if required by the organisation the user belongs to. Defaults to None.
         """
         self._username = username
         self._password = password
@@ -52,8 +53,9 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
                 'otp_token': self._otp_token,
             }
             return data
-        data = {
-            'username': self._username,
-            'password': self._password,
-        }
-        return data
+        else:
+            data = {
+                'username': self._username,
+                'password': self._password,
+            }
+            return data
