@@ -38,5 +38,3 @@ def login(username, password, token_duration):
     except apis_runner.AuthenticationError:
         logger.error(
             'Authentication error, please check that your credentials are valid.')
-
-        # TODO(rabson): add fetch API key and persist API key.
