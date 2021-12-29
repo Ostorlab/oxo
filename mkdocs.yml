@@ -1,7 +1,7 @@
 site_name: "Ostorlab."
 site_description: "Ostorlab is an open-source project to help automate security testing. Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way."
-site_url: "https://ostorlab.github.io/"
-repo_url: "https://github.com/vuejs/vue"
+site_url: "https://docs.ostorlab.io"
+repo_url: "https://github.com/Ostorlab/ostorlab"
 repo_name: "Ostorlab/ostorlab"
 nav:
   - Home: README.md
@@ -24,6 +24,8 @@ nav:
         - Privacy: privacy/README.md
         - Terms: terms/README.md
 
+  #  this one is only a demo
+  - Api Reference: SDK/README.md
 plugins:
   - search
   - mkdocstrings:
