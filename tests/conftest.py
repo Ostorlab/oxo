@@ -1,4 +1,5 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
+
 import io
 import time
 

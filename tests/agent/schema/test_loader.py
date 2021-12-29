@@ -96,7 +96,6 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
           description: "agentArgumentDescription2"
           default_value: "42"
     """
-
     yaml_data_file = io.StringIO(invalid_yaml_data)
 
     with pytest.raises(validator.ValidationError):
@@ -140,7 +139,6 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
               description: "agentGroupArgumentDescription2"
               value: "42"    
     """
-
     yaml_data_file = io.StringIO(valid_yaml_agent_group_data)
 
     data = loader.load_agent_group_yaml(yaml_data_file)
@@ -185,7 +183,6 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
               value: "42"
 
     """
-
     yaml_data_file = io.StringIO(invalid_yaml_agent_group_data)
 
     with pytest.raises(validator.ValidationError):
