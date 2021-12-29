@@ -1,3 +1,4 @@
+"""Agent class unit tests."""
 import datetime
 import logging
 import multiprocessing as mp

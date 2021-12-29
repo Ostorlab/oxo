@@ -115,5 +115,5 @@ def docker_dummy_image_cleanup():
     yield client
     for img in client.images.list():
         for t in img.tags:
-            if "dummy" in t:
+            if 'dummy' in t:
                 client.images.remove(t)
