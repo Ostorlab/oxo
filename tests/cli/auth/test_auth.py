@@ -16,7 +16,7 @@ def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ['auth', 'login'])
-    assert 'Usage: rootcli auth login [OPTIONS] COMMAND [ARGS]' in result.output
+    assert 'Usage: rootcli auth login [OPTIONS]' in result.output
     assert result.exit_code == 2
 
 
@@ -26,11 +26,13 @@ def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthen
     Should raise AuthenticationError.
     """
 
+    mock___init__.return_value = None
     runner = CliRunner()
     requests_mock.post(api_request.TOKEN_ENDPOINT, json={'non_field_errors': [
                        'Unable to log in with provided credentials.']}, status_code=400)
-    runner.invoke(
+    result = runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+    assert result.exception is None
     mock___init__.assert_called()
 
 
@@ -43,8 +45,8 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(reque
         'secretKey': 'ADABYMTu.S7Y8zmKxpbgTcSuGmsC3rkPdAs95yMwW', 'apiKey': {'expiryDate': None}}}}}
     token_dict = {'token': '2fd7a589-64b4-442e-95aa-eb0d082aab63'}
     runner = CliRunner()
-    requests_mock.post(api_request.TOKEN_ENDPOINT, [
-                       {'json': token_dict, 'status_code': 200}, {'json': api_key_dict, 'status_code': 200}])
+    requests_mock.post(api_request.TOKEN_ENDPOINT, json = token_dict, status_code = 200)
+    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT, json = api_key_dict, status_code = 200)
     result = runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
     assert result.exception is None
