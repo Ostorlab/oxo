@@ -7,7 +7,7 @@ import time
 import pytest
 
 from ostorlab.agent import agent, message as agent_message
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions
 
 logger = logging.getLogger(__name__)
 
@@ -38,14 +38,14 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
             mp_event.set()
 
     start_agent = StartTestAgent(
-        runtime.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping']),
-        runtime.AgentInstanceSettings(
+        definitions.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping']),
+        definitions.AgentInstanceSettings(
             bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test',
             healthcheck_port=5301,
         ))
     process_agent = ProcessTestAgent(
-        runtime.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping']),
-        runtime.AgentInstanceSettings(
+        definitions.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping']),
+        definitions.AgentInstanceSettings(
             bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test', healthcheck_port=5302))
 
     mp_event.clear()
