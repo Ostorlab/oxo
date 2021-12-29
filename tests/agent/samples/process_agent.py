@@ -28,7 +28,7 @@ class ProcessTestAgent(agent.Agent):
 
 process_agent = ProcessTestAgent(
     definitions.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping'],
-                            out_selectors=['v3.healthcheck.ping']),
+                                out_selectors=['v3.healthcheck.ping']),
     definitions.AgentInstanceSettings(
         bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test', healthcheck_port=5302))
 
