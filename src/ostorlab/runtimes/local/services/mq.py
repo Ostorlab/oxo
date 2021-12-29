@@ -8,6 +8,7 @@ import tenacity
 from docker import errors
 from docker import types
 from docker.models import services
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ class LocalRabbitMQ:
                 name=self._network,
                 driver='overlay',
                 attachable=True,
-                labels={'ostorlab.universe': self._name, },
+                labels={'ostorlab.universe': self._name,},
                 check_duplicate=True
             )
 

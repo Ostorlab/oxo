@@ -4,35 +4,32 @@
     validator = Validator(json_schema_file_object)
     validator.validate(yaml_file_object)
 """
+import io
 import json
-from io import FileIO
-from jsonschema import validate, exceptions
-from jsonschema import Draft202012Validator
+
+import jsonschema
 import ruamel.yaml
 
-VERSIONED_JSONSCHEMA_VALIDATOR = Draft202012Validator
+from ostorlab import exceptions
 
 
-class Error(Exception):
+class Error(exceptions.OstorlabError):
     """Base Exception
     """
 
 
 class ValidationError(Error):
-    """Wrapper Exception for the ValidationError produced by jsonschema's validate method.
-    """
+    """Wrapper Exception for the ValidationError produced by jsonschema's validate method."""
 
 
 class SchemaError(Error):
-    """Wrapper Exception for the SchemaError produced by jsonschema's validate method.
-    """
+    """Wrapper Exception for the SchemaError produced by jsonschema's validate method."""
 
 
 class Validator:
-    """Creates validator that checks yaml files with a json schema.
-    """
+    """Creates validator that checks yaml files with a json schema."""
 
-    def __init__(self, json_schema_file_object: FileIO):
+    def __init__(self, json_schema_file_object: io.FileIO):
         """Inits Validator class.
 
         Args:
@@ -43,9 +40,9 @@ class Validator:
         """
         self._json_schema = json.load(json_schema_file_object)
         try:
-            VERSIONED_JSONSCHEMA_VALIDATOR.check_schema(self._json_schema)
-        except exceptions.SchemaError as e:
-            raise SchemaError("Schema is invalid.") from e
+            jsonschema.Draft202012Validator.check_schema(self._json_schema)
+        except jsonschema.exceptions.SchemaError as e:
+            raise SchemaError('Schema is invalid.') from e
 
     def validate(self, yaml_file_object):
         """ Validates a yaml file against a json schema .
@@ -56,12 +53,12 @@ class Validator:
             ValidationError if the validation did not pass well.
             SchemaError if the Schema is not valid.
         """
-        yaml = ruamel.yaml.YAML(typ="safe")
+        yaml = ruamel.yaml.YAML(typ='safe')
         yaml_data = yaml.load(yaml_file_object)
 
         try:
-            validate(instance=yaml_data, schema=self._json_schema)
-        except exceptions.ValidationError as e:
-            raise ValidationError("Validation did not pass well.") from e
-        except exceptions.SchemaError as e:
-            raise SchemaError("Schema is invalid.") from e
+            jsonschema.validate(instance=yaml_data, schema=self._json_schema)
+        except jsonschema.exceptions.ValidationError as e:
+            raise ValidationError('Validation did not pass well.') from e
+        except jsonschema.exceptions.SchemaError as e:
+            raise SchemaError('Schema is invalid.') from e

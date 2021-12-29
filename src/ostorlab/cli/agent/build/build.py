@@ -1,44 +1,35 @@
-"""Agent related CLI commands."""
-
-import pathlib
+"""Agent Build commands."""
+import io
 import logging
 
 import click
 import docker
-import ruamel.yaml
 
-from ostorlab.cli import rootcli
+from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
+from ostorlab.cli.agent import agent
 
-AGENT_SPEC_PATH = pathlib.Path(__file__).parent.parent.parent / "agent/schema/agent_schema.json"
 logger = logging.getLogger(__name__)
 
 
-@rootcli.agent.command()
-@click.option("--file", "-f", help="Path to Agent yaml definition.", required=True)
-def build(file: str) -> None:
-    """Ostorlab agent build -f path/to/definition.yaml
-    CLI command to build the agent container from a definition.yaml file.
+@agent.command()
+@click.option('--file', '-f', type=click.File('rb'), help='Path to Agent yaml definition.', required=True)
+def build(file: io.FileIO) -> None:
+    """CLI command to build the agent container from a definition.yaml file.
+    Usage : Ostorlab agent build -f path/to/definition.yaml
     """
-
-    with open(AGENT_SPEC_PATH, 'r') as agent_spec:
-        try:
-            yaml_def_validator = validator.Validator(agent_spec)
-        except validator.SchemaError:
-            logger.error("Schema is invalid.")
-
     try:
-        yaml_def_validator.validate(file)
+        agent_def = loader.load_agent_yaml(file)
+
+        dockerfile_path = agent_def['docker_file_path']
+        docker_build_root = agent_def['docker_build_root']
+        container_name = agent_def['name']
+
+        docker_sdk_client = docker.from_env()
+        docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag=container_name)
+    except validator.SchemaError:
+        logger.error(
+            'Schema is invalid, this should not happen, please report an issue at '
+            'https://github.com/Ostorlab/ostorlab/issues.')
     except validator.ValidationError:
-        logger.error("Definition file does not conform to the provided specification.")
-
-    yaml = ruamel.yaml.YAML(typ='safe')
-    with open(file, 'r') as def_file:
-        agent_def = yaml.load(def_file)
-
-    dockerfile_path = agent_def["docker_file_path"]
-    docker_build_root = agent_def["docker_build_root"]
-    container_name = agent_def["name"]
-
-    docker_sdk_client = docker.from_env()
-    docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag= container_name)
+        logger.error('Definition file does not conform to the provided specification.')
