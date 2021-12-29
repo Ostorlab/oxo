@@ -105,6 +105,7 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             Always true for the moment as the local runtime don't have restrictions on what it can run.
         """
+        del agent_run_definition
         return True
 
     def scan(self, agent_run_definition: runtime.AgentRunDefinition, asset: Asset) -> None:

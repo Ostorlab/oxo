@@ -104,12 +104,12 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         """
         raise NotImplementedError()
 
-    def process_message(self, selector: str, serialized_message: bytes) -> None:
+    def process_message(self, selector: str, message: bytes) -> None:
         """Processes raw message received from BS.
 
         Args:
             selector: destination selector with full path, including UUID set by default.
-            serialized_message: raw bytes message.
+            message: raw bytes message.
 
         Returns:
             None
@@ -117,9 +117,10 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         try:
             # remove the UUID from the selector:
             selector = '.'.join(selector.split('.')[: -1])
-            message = agent_message.Message.from_raw(selector, serialized_message)
+            message = agent_message.Message.from_raw(selector, message)
             logger.debug('call to process with message=%s', message)
             self.process(message)
+        # pylint: disable=W0703
         except Exception as e:
             logger.exception('exception raised: %s', e)
         finally:
@@ -181,7 +182,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             raise NonListedMessageSelectorError(f'{selector} is not in {"".join(self.out_selectors)}')
 
         message = agent_message.Message.from_data(selector, data)
-        logger.debug(f'call to send message with %s', message)
+        logger.debug('call to send message with %s', message)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
         selector = f'{message.selector}.{uuid.uuid1()}'
