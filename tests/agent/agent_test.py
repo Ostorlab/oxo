@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt(mq_service):
     """The setup of this test seems complicated, but it is the most robust implementation iteration.
 
+    The test also tests for many things at the same time, like start and process lifecycle, message emit and message
+    serialization.
+
     The test defines two agent, a start-only agent that sends a ping and a process-only agent the listens for pings.
     The process agent is start first as a dedicated process to start listening. Once a message is received, a
     multiprocess event is set to True.
