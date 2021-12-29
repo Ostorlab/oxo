@@ -4,10 +4,12 @@
     validator = Validator(json_schema_file_object)
     validator.validate(yaml_file_object)
 """
+import io
 import json
-from io import FileIO
+
 import jsonschema
 import ruamel.yaml
+
 from ostorlab import exceptions
 
 
@@ -17,20 +19,17 @@ class Error(exceptions.OstorlabError):
 
 
 class ValidationError(Error):
-    """Wrapper Exception for the ValidationError produced by jsonschema's validate method.
-    """
+    """Wrapper Exception for the ValidationError produced by jsonschema's validate method."""
 
 
 class SchemaError(Error):
-    """Wrapper Exception for the SchemaError produced by jsonschema's validate method.
-    """
+    """Wrapper Exception for the SchemaError produced by jsonschema's validate method."""
 
 
 class Validator:
-    """Creates validator that checks yaml files with a json schema.
-    """
+    """Creates validator that checks yaml files with a json schema."""
 
-    def __init__(self, json_schema_file_object: FileIO):
+    def __init__(self, json_schema_file_object: io.FileIO):
         """Inits Validator class.
 
         Args:

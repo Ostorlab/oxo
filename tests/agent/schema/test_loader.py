@@ -1,15 +1,11 @@
 """Tests for the validation of Json specifications for Agent & AgentGroup."""
 
-import pathlib
 import io
 
 import pytest
 
+from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
-
-OSTORLAB_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent.parent
-AGENT_SPEC_PATH  = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agent_schema.json'
-AGENT_GROUP_SPEC_PATH = OSTORLAB_ROOT_DIR / 'src/ostorlab/agent/schema/agentGroup_schema.json'
 
 
 def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
@@ -52,16 +48,11 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
           description: "agentArgumentDescription2"
           default_value: "42"
     """
-    with open(AGENT_SPEC_PATH, "r", encoding="utf8") as agent_json_spec:
-        validator_object = validator.Validator(agent_json_spec)
+    yaml_data_file = io.StringIO(valid_yaml_data)
 
-    with io.StringIO(valid_yaml_data) as yaml_data_file:
-        try:
-            validator_object.validate(yaml_data_file)
-        except validator.ValidationError:
-            pytest.fail("ValidationError shouldn't be expected.")
-        except validator.SchemaError:
-            pytest.fail("SchemaError shouldn't be expected.")
+    data = loader.load_agent_yaml(yaml_data_file)
+
+    assert data['name'] == 'Agent1'
 
 
 def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError():
@@ -105,12 +96,10 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
           description: "agentArgumentDescription2"
           default_value: "42"
     """
-    with open(AGENT_SPEC_PATH, "r", encoding="utf8") as agent_json_spec:
-        validator_object = validator.Validator(agent_json_spec)
     yaml_data_file = io.StringIO(invalid_yaml_data)
 
     with pytest.raises(validator.ValidationError):
-        validator_object.validate(yaml_data_file)
+        loader.load_agent_yaml(yaml_data_file)
 
 
 def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
@@ -150,16 +139,11 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
               description: "agentGroupArgumentDescription2"
               value: "42"    
     """
-    with open(AGENT_GROUP_SPEC_PATH, "r", encoding="utf8") as agentgroup_json_spec:
-        validator_object = validator.Validator(agentgroup_json_spec)
+    yaml_data_file = io.StringIO(valid_yaml_agent_group_data)
 
-    with io.StringIO(valid_yaml_agent_group_data) as yaml_data_file:
-        try:
-            validator_object.validate(yaml_data_file)
-        except validator.ValidationError:
-            pytest.fail("ValidationError shouldn't be expected.")
-        except validator.SchemaError:
-            pytest.fail("SchemaError shouldn't be expected.")
+    data = loader.load_agent_group_yaml(yaml_data_file)
+
+    assert data['description'] == 'AgentGroup1 Should be here'
 
 
 def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError():
@@ -199,9 +183,7 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
               value: "42"
 
     """
-    with open(AGENT_GROUP_SPEC_PATH, "r", encoding="utf8") as agentgroup_json_spec:
-        validator_object = validator.Validator(agentgroup_json_spec)
     yaml_data_file = io.StringIO(invalid_yaml_agent_group_data)
 
     with pytest.raises(validator.ValidationError):
-        validator_object.validate(yaml_data_file)
+        loader.load_agent_group_yaml(yaml_data_file)
