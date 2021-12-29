@@ -20,8 +20,3 @@ def agent():
 def agentgroup():
     raise click.ClickException('NotImplementedError.')
 
-
-@rootcli.group()
-def auth():
-    """You can use auth [subcommand] [options] to authenticate."""
-    pass

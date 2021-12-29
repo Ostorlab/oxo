@@ -16,7 +16,7 @@ def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ['auth', 'login'])
-    assert 'Usage: rootcli auth login [OPTIONS]' in result.output
+    assert 'Usage: rootcli auth login [OPTIONS] COMMAND [ARGS]' in result.output
     assert result.exit_code == 2
 
 

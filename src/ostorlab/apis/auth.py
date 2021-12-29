@@ -1,7 +1,7 @@
 """Handles the creation of an API key.
 """
 
-from . import request
+from ostorlab.apis import request
 from datetime import datetime
 from typing import Dict, Optional
 import json
@@ -20,7 +20,7 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         Args:
            expiry_date: The date when the API key should expire. Defaults to None.
         """
-        self._name = "Ostorlab CLI"
+        self._name = 'Ostorlab CLI'
         self._expiry_date = expiry_date
 
     @property
