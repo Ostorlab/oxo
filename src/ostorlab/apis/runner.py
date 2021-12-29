@@ -87,7 +87,7 @@ class APIRunner:
 
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')
-            if field_errors is not None and field_errors[0] == "Must include \"otp_token\"":
+            if field_errors is not None and field_errors[0] == 'Must include \"otp_token\"':
                 self._otp_token = click.prompt(
                     'Please enter the OTP code from your authenticator app')
                 self.authenticate()
@@ -101,7 +101,6 @@ class APIRunner:
             self._api_key = api_key_response['data']['createApiKey']['apiKey']['secretKey']
             configuration_manager.ConfigurationManager().set_api_key(self._api_key)
             self._token = None
-
 
     def execute(self, request: api_request.APIRequest) -> Dict:
         """Executes a request using the GraphQL API
