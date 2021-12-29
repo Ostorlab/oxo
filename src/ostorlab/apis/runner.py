@@ -82,7 +82,6 @@ class APIRunner:
         response = self._login_user()
 
         if response.status_code != 200:
-            raise Exception(response.json())
             field_errors = response.json().get('non_field_errors')
             if field_errors is not None and field_errors[0] == "Must include \"otp_token\"":
                 self._otp_token = click.prompt(
