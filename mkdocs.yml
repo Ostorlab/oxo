@@ -1,0 +1,14 @@
+theme:
+  name: "material"
+
+plugins:
+  - search
+  - mkdocstrings:
+      watch:
+        - src/ostorlab
+
+site_name: "Ostorlab Docs."
+site_description: "Findings, thoughts, tutorials, work. Pieces of my mind!"
+site_url: "https://pawamoy.github.io/"
+repo_url: "https://github.com/Ostorlab/ostorlab"
+repo_name: "Ostorlab/ostorlab"
