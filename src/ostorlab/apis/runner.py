@@ -18,8 +18,8 @@ import click
 
 from ostorlab import configuration_manager
 from ostorlab.apis import auth as apis_auth
-from . import login
-from . import request as api_request
+from ostorlab.apis import login
+from ostorlab.apis import request as api_request
 
 logger = logging.getLogger(__name__)
 
