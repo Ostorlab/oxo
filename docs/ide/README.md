@@ -3,17 +3,17 @@
 The analysis environment goal is to ease manual assessment and offer the power to write custom checks on top of all the
 analyses done by Ostorlab, from taint analysis, dynamic call traces, intercepted traffic, and scanned API requests.
 
-![analysis](/ide/analysis.gif)
+![analysis](../public/ide/analysis.gif)
 
 The current release focuses on static analysis and comes with the following features:
 
 * APK and IPA file listing with content access
 
-![files](/ide/file_listing.gif)
+![files](../public/ide/file_listing.gif)
 
 * Code highlighting for HTML, Javascript, XML, Java, C++
 
-![code highlight](/ide/code_highlight_elf.gif)
+![code highlight](../public/ide/code_highlight_elf.gif)
 
 * Binary plist extraction
 * Macho and ELF file disassembly and decompilation for ARM and ARM64
@@ -21,15 +21,15 @@ The current release focuses on static analysis and comes with the following feat
 * DEX classes listing
 * DEX smali listing and java decompilation
 
-![dex](/ide/dex.gif)
+![dex](../public/ide/dex.gif)
 
 * Android resource extraction
 
-![resource](/ide/resources.gif)
+![resource](../public/ide/resources.gif)
 
 * Android manifest extraction
 
-![manifest](/ide/manifest.gif)
+![manifest](../public/ide/manifest.gif)
 
 * DEX, Macho, and ELF function call trace analysis with full refs and xrefs generation
 * Contextual call trace generation.
@@ -50,7 +50,7 @@ Parent navigation is split into:
 
 ## Static Analysis
 
-![analysis](/ide/large_call_stack.gif)
+![analysis](../public/ide/large_call_stack.gif)
 
 ### Search
 
@@ -64,7 +64,7 @@ for an example to search for all sinks method containing the word `mem`:
 }
 ```
 
-![analysis](/ide/search.gif)
+![analysis](../public/ide/search.gif)
 
 The list of supported keywords are:
 

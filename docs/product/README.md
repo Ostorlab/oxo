@@ -12,7 +12,7 @@ the security of the application.
 
 ## Static Taint Analysis
 
-![Header](/product/taint.svg)
+![Header](../public/product/taint.svg)
 
 Taint analysis is a powerful capability that evaluates all execution paths within the application to detect vulnerable
 patterns. Taint analysis is capable of detecting vulnerabilities caused by unsafe settings, like the use of weak
@@ -20,7 +20,7 @@ cryptographic ciphers, or vulnerabilities caused by accepting untrusted input wi
 
 ## 3rd Party Vulnerability Detection
 
-![Header](/product/known_vulnz.svg)
+![Header](../public/product/known_vulnz.svg)
 
 Powered by a fingerprinting engine that understands all major frameworks like Cordova, Ionic, Xamarin or React Native
 and all popular package management systems, like Gradle, Cocoapods, npm or nuget, Ostorlab is capable of detecting
@@ -42,7 +42,7 @@ evolutionary approach that provides high coverage within the application.
 
 ## XSS Detection
 
-![Header](/product/genetic.svg)
+![Header](../public/product/genetic.svg)
 
 While XSS vulnerabilities still plague web application, it still impacts multi-platform mobile applications as well as
 multi-platform backends. Ostorlab XSS detection uses powerful polyglot payloads to detect DOM and reflected XSS

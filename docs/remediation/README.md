@@ -26,31 +26,31 @@ following capabilities and guarantees:
 * A ticket is automatically created in the case of a newly detected vulnerability. The ticket details will contain 
 information about the vulnerability. Priorities are set automatically based on the vulnerability severity.
 
-![Ticket Detail](/remediation/ticket_detail.png)
+![Ticket Detail](../public/remediation/ticket_detail.png)
 
 * The platform will aggregate future occurrences of the same vulnerability in the same ticket. Aggregation is done either
 by ticket detail, for instance all SQL injection will have a single ticket, or by an internal attribute called DNA
 that uniquely identify each vulnerability. The DNA is computed based on the type of vulnerability to ensure it is uniquely
 identified.
 
-![Vulnerability Aggregation](/remediation/vuln_aggregate.png)
+![Vulnerability Aggregation](../public/remediation/vuln_aggregate.png)
 
 * Tickets can be marked as fixed. For fixed tickets,
 
-![Fixed Ticket](/remediation/ticket_fixed.png)
+![Fixed Ticket](../public/remediation/ticket_fixed.png)
 
 the platform will automatically mark the ticket as verified if the vulnerabilities are indeed absent from future scans
 
-![Verified Ticket](/remediation/ticket_verified.png)
+![Verified Ticket](../public/remediation/ticket_verified.png)
 
 or will re-open the same ticket.
 
-![Reopened Ticket](/remediation/ticket_reopen.png)
+![Reopened Ticket](../public/remediation/ticket_reopen.png)
 
 * Tickets can be marked as an exception or a false-positive. Excepted and false-positive tickets are kept as is when new occurrences
 of the same vulnerability are found.
 
-![Exception Ticket](/remediation/ticket_exception.png)
+![Exception Ticket](../public/remediation/ticket_exception.png)
 
 Manually created tickets also benefit from the same ticket management capabilities if a vulnerability is assigned
 to the ticket.
@@ -61,13 +61,13 @@ A ticket has multiple settings to reflect urgency, priority, ownership or ease s
 
 All edits to ticket are tracked in the activity section to see who did what and when.
 
-![Ticket Activity](/remediation/ticket_activity.png)
+![Ticket Activity](../public/remediation/ticket_activity.png)
 
 ### Urgency and Priority
 
 The ticket has a priority setting from P0 to P3. P0 is the most urgent to P3 the least urgent.
 
-![Ticket Priority](/remediation/update_priority.png)
+![Ticket Priority](../public/remediation/update_priority.png)
 
 ### Ownership
 
@@ -77,11 +77,11 @@ are fixed.
 Tickets can be assigned to an existing user, who can access the ticket, provided he is part of the organisation owning the ticket.
 Otherwise he will receive an invitation to join the organisation.
 
-![Ticket Priority](/remediation/assign_user.png)
+![Ticket Priority](../public/remediation/assign_user.png)
 
 Invitation can only be approved by an ADMIN of the organisation, which can be done at the Organisation / Invitation section.
 
-![Invitations](/remediation/invitations.png)
+![Invitations](../public/remediation/invitations.png)
 
 Once the user creates an account and has his invitation approved, he will be automatically assigned the tickets.
 
@@ -93,7 +93,7 @@ enable add extra meaning to the ticket. Like for instance adding an `env` tag wi
 
 Setting the value is not obligatory as names only are acceptable
 
-![Tags](/remediation/tags.png)
+![Tags](../public/remediation/tags.png)
 
 ### Searching
 
@@ -111,7 +111,7 @@ Supported keywords are:
 * __tagName__: search by tag name
 * __tagValue__: search by tag value
 
-![Ticket Search](/remediation/ticket_search.png)
+![Ticket Search](../public/remediation/ticket_search.png)
 
 
 ## Collaboration
@@ -124,15 +124,15 @@ This includes scan access, vulnerability data access, ticket data access, etc.
 Collaboration on tickets can be done using the comment section, comments can be updated or deleted. A trace of the
 action is however recorded in the activity section.
 
-![Comments](/remediation/comments.png)
+![Comments](../public/remediation/comments.png)
 
 In the case some data can't be shared across multiple teams, dedicated organisations can be created to confine all interactions
 within the same organisation. This typically applies when for instance an application is built by an external 3rd party,
 while others are built internally.
 
-![Create Organisation](/remediation/organisation_create.png)
+![Create Organisation](../public/remediation/organisation_create.png)
 
-![Invite Users](/remediation/invite_users.png)
+![Invite Users](../public/remediation/invite_users.png)
 
 ## Policies
 
@@ -145,7 +145,7 @@ One of the 5 pillars of autonomous security is Policies. There are several polic
 These are just sample of remediation policies. At this stage Ostorlab only supports setting and enforcing the patching
 policy.
 
-![Patching Policy](/remediation/policy.png)
+![Patching Policy](../public/remediation/policy.png)
 
 ### Patching Policy
 
@@ -155,9 +155,9 @@ An example would be fixing a high severity issue within 5 days.
 The policy is enforced by the ticketing system that compares ticket creation time with the highest vulnerability severity
 against defined policy.
 
-![Ticket List](/remediation/ticket_list.png)
+![Ticket List](../public/remediation/ticket_list.png)
 
-![Ticket Calendar SLO](/remediation/ticket_calendar_slo.png)
+![Ticket Calendar SLO](../public/remediation/ticket_calendar_slo.png)
 
 
 ## Metrics and Dashboards
@@ -174,14 +174,14 @@ These metrics are accessible in an organisation dashboards that have 5 sections:
 
 ### Application Summary
 
-![Application Summary](/remediation/application_summary.png)
+![Application Summary](../public/remediation/application_summary.png)
 
 Application summary simply lists the most recent assets and their most recent scan status. This allows a quick look into
 what has been running and their risk posture.
 
 ### Maturity Radar
 
-![Security Posture](/remediation/radare.png)
+![Security Posture](../public/remediation/radare.png)
 
 The radar shows the global metrics that scores on a scale from 0 to 5. The scores are scales to be comparable with
 2 anchor values. The first is an organisation average collected across all organisation on the platform. 
@@ -191,25 +191,25 @@ The goal is to give a sense to the metrics instead of simply having non-interpre
 
 ### Vulnerability and Ticket Trending
 
-![Vulnrability Trending](/remediation/vuln_trending.png)
+![Vulnrability Trending](../public/remediation/vuln_trending.png)
 
 The trending bars shows count of vulnerability counts and ticket updates focusing on confirmed findings and fixed
 and exception status.
 
 The trending bar is configurable to show any period.
 
-![Time Range](/remediation/range.png)
+![Time Range](../public/remediation/range.png)
 
 ### Scan Heatmap
 
-![Scan Heatmap](/remediation/heatmap.png)
+![Scan Heatmap](../public/remediation/heatmap.png)
 
 Scan heatmap shows a distribution of scans. This is helpful to ensure that scans are performed on a regular basis, for
 instance to ensure that there is at least a weekly coverage.
 
 ### Ticket Calendar
 
-![Calendar](/remediation/calendar.png)
+![Calendar](../public/remediation/calendar.png)
 
 The ticket calendar shows all open and reopen tickets by time. Fixed, exception and false positive tickets are not shown
 as they should not trigger any action.

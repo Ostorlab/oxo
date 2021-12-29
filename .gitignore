@@ -136,3 +136,16 @@ dmypy.json
 
 # Intellij-based IDE
 .idea/
+.coverage
+**/__pycache__/
+
+# VS Code IDE
+.vscode/
+
+
+# Intellij-based IDE
+.idea/
+
+#mkdocs output
+site/
+site/

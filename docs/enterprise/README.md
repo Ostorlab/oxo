@@ -17,7 +17,7 @@ dependencies, or a new scanning capability is added, your application is reviewe
 
 ## Executive, Compliance and Trends Dashboard
 
-![Header](/enterprise/dashboard.svg)
+![Header](../public/enterprise/dashboard.svg)
 
 
 Either you want to have a high-level overview of your mobile application security posture, you would like to share and
@@ -27,7 +27,7 @@ accessible within seconds.
 
 ## Vulnerability Lifecycle Management Tools
 
-![Header](/enterprise/cycle.svg)
+![Header](../public/enterprise/cycle.svg)
 
 
 Who should fix this issue? has it been done in a timely manner? was the fix verified? are these issues recurrent and
@@ -50,7 +50,7 @@ tackling the same challenges and what hurdles to avoid.
 
 ## Dedicated Support Contact
 
-![Header](/enterprise/support.svg)
+![Header](../public/enterprise/support.svg)
 
 All our enterprise customers have access to a 24/7 support, either it is a critical issue that needs to be addressed
 within minutes, a feature request essential to you business or bug fix, we provide outstanding support that meets your

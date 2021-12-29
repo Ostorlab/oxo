@@ -26,7 +26,7 @@ the technology and syntax.
 You can use the GraphiQL web application to experiment with the API. GrapiQL is accessible at <https://api.ostorlab.co/apis/graphql>.
 The API is accessible to authenticated users only. Make sure you are authenticated at <https://api.ostorlab.co/portal/login/> .
 
-![sandbox](/apidoc/img1.png)
+![sandbox](/../public/apidoc/img1.png)
 
 ### Scripts
 
@@ -134,7 +134,7 @@ query {
 }
 ```
 
-![output](/apidoc/img2.png)
+![output](/../public/apidoc/img2.png)
 
 ### Scan Details
 

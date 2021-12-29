@@ -19,30 +19,30 @@ the application’s attack surface, and validate findings to enable false-positi
 * Create an account [here](https://report.ostorlab.co/account/new/) using your email address and password and
  validate your account:
 
-![Register](/technical/v2/register.png)
+![Register](../public/technical/v2/register.png)
 
 * Start a scan by uploading the application and specifying the target platform:
 
-![New Scan Menu](/technical/v2/dashboard1.png)
-![New Scan Menu](/technical/v2/scan1.png)
+![New Scan Menu](../public/technical/v2/dashboard1.png)
+![New Scan Menu](../public/technical/v2/scan1.png)
 
 * You can check your scan progress in the [Scanning Section](https://report.ostorlab.co/scan/list), first queued, running and then done:
 
-![Dashboard and Scan Progress](/technical/v2/scan_list.png)
+![Dashboard and Scan Progress](../public/technical/v2/scan_list.png)
 
 * While the scan is running, you can already start accessing the scan results:
 
-![List of Vulnerabilities](/technical/v2/report.png)
+![List of Vulnerabilities](../public/technical/v2/report.png)
 
 * You may click on any finding to access detailed reports with recommendation, references and technical details:
 
-![Vulnerability Detail](/technical/v2/vuln_report.png)
+![Vulnerability Detail](../public/technical/v2/vuln_report.png)
 
 * Scans has 3 sections. **Vulnerabilities**: that list actionable findings, **Info**: with information on the application,
 like stack traces, taint traces, extracted configuration settings, **Dependency**: List of 3rd party libraries and
 frameworks fingerprinted in the application.
 
-![Dependency Section](/technical/v2/deps.png)
+![Dependency Section](../public/technical/v2/deps.png)
 
 * You can also access scan artifacts or generate a PDF report. The report generation runs in the background and a
 notification is sent once the report is generated:
@@ -51,7 +51,7 @@ notification is sent once the report is generated:
 
 * All scans produce a set of artifcats that varies depending on the type scan:
 
-![Call Coverage](/technical/v2/call_coverage.png)
+![Call Coverage](../public/technical/v2/call_coverage.png)
 
 ## Continuous Monitoring
 
@@ -70,7 +70,7 @@ application and triggers a scan.
 - Once a week: Ostorlab will scan your application at least once a week, this is useful to cover applications with
 silent updates or code push (Microsoft React Native Code Push for instance).
 
-![Monitoring Menu](/technical/v2/monitoring.png)
+![Monitoring Menu](../public/technical/v2/monitoring.png)
 
 Creating a monitoring rule follows the same steps as creating a scan. You can access the rule details in the
 monitoring menu, by clicking on the monitoring rule, you can access the list of created scans. The list
@@ -79,14 +79,14 @@ scans to access the full scan report:
 
 Monitoring rules can be disabled to stop the creation of new scans, or fully deleted.
 
-![Monitoring Options](/technical/v2/monitoring_menu.png)
+![Monitoring Options](../public/technical/v2/monitoring_menu.png)
 
 ## Authenticated scans
 
 Ostorlab offers support for performing authenticated scans on both the Mobile application and the backend servers. 
 Credentials can be set at scan creation using the "Add Test Credentials" menu.
 
-![Test Credentials](/technical/v2/add_credentials.png)
+![Test Credentials](../public/technical/v2/add_credentials.png)
 
 The credentials also include other test parameters like credit card data to perform test payment, address and phone
 number to perform test checkouts.
@@ -97,7 +97,7 @@ Complex authentication schemes like OTP or the random numerical pad are either a
 manually performed for one-offs by an Ostorlab support member.
 
 If your application requires custom authentication scheme, please reach out to 
-[support@ostorlab.dev](support@ostorlab.dev) for advice. 
+[mailto::support@ostorlab.dev](support@ostorlab.dev) for advice. 
 
 These workflows can be automated using a custom [Appium](http://appium.io/) scripts.
 The script integration is for the moment done by Ostorlab team to review code before
@@ -115,7 +115,7 @@ Each vulnerability has a risk rating attached. The following is a description of
 - **Important**, **Info**: Information findings that can help with manual assessment, understand application behavior or
  confirm certain aspects of the application, like certificate used to sign the application.
 
-![Risk Ratings](/technical/v2/risk_rating.png)
+![Risk Ratings](../public/technical/v2/risk_rating.png)
 
 
 ## Architecture
