@@ -30,7 +30,7 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         Returns:
             The query to generate an API key
         """
-        return '''
+        return """
          mutation CreateApiKey($name: String!, $expiryDate: DateTime) {
                createApiKey(name: $name, expiryDate: $expiryDate) {
                   apiKey {
@@ -41,7 +41,7 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
                   }
                }
             }
-        '''
+        """
 
     @property
     def endpoint(self):
