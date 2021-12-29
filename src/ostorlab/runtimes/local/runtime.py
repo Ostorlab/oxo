@@ -17,6 +17,7 @@ from docker.types import services as docker_types_services
 from ostorlab import exceptions
 from ostorlab.assets import Asset
 from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.services import mq
 from ostorlab.utils import strings as strings_utils
 
@@ -96,7 +97,7 @@ class LocalRuntime(runtime.Runtime):
         """Local runtime instance name."""
         return self._name
 
-    def can_run(self, agent_run_definition: runtime.AgentRunDefinition) -> bool:
+    def can_run(self, agent_run_definition: definitions.AgentRunDefinition) -> bool:
         """Checks if the runtime can run the provided agent run definition.
 
         Args:
@@ -108,7 +109,7 @@ class LocalRuntime(runtime.Runtime):
         del agent_run_definition
         return True
 
-    def scan(self, agent_run_definition: runtime.AgentRunDefinition, asset: Asset) -> None:
+    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: Asset) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -156,12 +157,12 @@ class LocalRuntime(runtime.Runtime):
         if self._mq_service is None or self._mq_service.is_healthy is False:
             raise UnhealthyService('MQ service is unhealthy.')
 
-    def _start_agents(self, agent_run_definition: runtime.AgentRunDefinition):
+    def _start_agents(self, agent_run_definition: definitions.AgentRunDefinition):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_run_definition.applied_agents:
             self._start_agent(agent)
 
-    def _start_agent(self, agent: runtime.AgentDefinition) -> None:
+    def _start_agent(self, agent: definitions.AgentDefinition) -> None:
         """Start agent based on provided definition.
 
         Args:
@@ -199,7 +200,7 @@ class LocalRuntime(runtime.Runtime):
             # time.sleep(10)
             self._scale_service(agent_service, agent.replicas)
 
-    def _check_agents_healthy(self, agent_run_definition: runtime.AgentRunDefinition):
+    def _check_agents_healthy(self, agent_run_definition: definitions.AgentRunDefinition):
         """Checks if an agent is healthy."""
         return self._are_agents_ready(agent_run_definition.applied_agents)
 
@@ -220,7 +221,7 @@ class LocalRuntime(runtime.Runtime):
                     # return last value and don't raise RetryError exception.
                     retry_error_callback=lambda lv: lv.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
-    def _are_agents_ready(self, agents: List[runtime.AgentDefinition], fail_fast=True) -> bool:
+    def _are_agents_ready(self, agents: List[definitions.AgentDefinition], fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
          (once vs long-running)."""
         all_agents_healthy = True

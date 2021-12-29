@@ -6,6 +6,7 @@ serialization, message receiving and sending, selector enrollment, agent health 
 To use it, check out documentations at https://docs.ostorlab.co/.
 """
 import abc
+import argparse
 import asyncio
 import atexit
 import functools
@@ -18,7 +19,7 @@ from ostorlab import exceptions
 from ostorlab.agent import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +35,8 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
     """
 
     def __init__(self,
-                 agent_definition: runtime.AgentDefinition,
-                 agent_instance_definition: runtime.AgentInstanceSettings
+                 agent_definition: definitions.AgentDefinition,
+                 agent_instance_definition: definitions.AgentInstanceSettings
                  ) -> None:
         """Inits the agent configuration from the Yaml agent definition.
 
@@ -191,17 +192,22 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         logger.debug('done call to send_message')
 
     @classmethod
-    def main(cls) -> 'Agent':
+    def main(cls) -> None:
         """Prepares the agents class by reading and settings all the parameters passed from runtimes.
 
         Returns:
             Agent instance.
         """
-        # read yaml file.
-        # create class.
-        # call the run method on it.
-        # TODO (alaeddine): add implementation.
-        raise NotImplementedError()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-f", "--file", help="Agent YAML definition file.")
+        parser.add_argument("-p", "--proto", help="Agent binary proto settings.")
+        args = parser.parse_args()
+        print(args.file)
+        print(args.proto)
+        agent_definition = definitions.AgentDefinition.from_yaml(args.file)
+        agent_settings = definitions.AgentInstanceSettings.from_proto(args.proto)
+        instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
+        instance.run()
 
 
 class Agent(AgentMixin):

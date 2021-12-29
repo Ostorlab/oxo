@@ -3,7 +3,7 @@ import datetime
 import logging
 
 from ostorlab.agent import agent, message as agent_message
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,11 @@ class ProcessTestAgent(agent.Agent):
 
 
 process_agent = ProcessTestAgent(
-    runtime.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping'],
+    definitions.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping'],
                             out_selectors=['v3.healthcheck.ping']),
-    runtime.AgentInstanceSettings(
+    definitions.AgentInstanceSettings(
         bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test', healthcheck_port=5302))
 
 process_agent.run()
+
+# ProcessTestAgent.main()
