@@ -11,6 +11,17 @@ AGENT_SPEC_PATH = pathlib.Path(__file__).parent / 'agent_schema.json'
 AGENT_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / 'agent_group_schema.json'
 
 
+def _load_spec_yaml(file, spec):
+    """Loads file based on spec"""
+    with open(spec, 'r', encoding='utf8') as agent_spec:
+        yaml_def_validator = validator.Validator(agent_spec)
+        yaml_def_validator.validate(file)
+        file.seek(0)
+        yaml = ruamel.yaml.YAML(typ='safe')
+        agent_def = yaml.load(file)
+        return agent_def
+
+
 def load_agent_yaml(file: io.FileIO) -> Dict:
     """Loads and validates agent yaml definition file.
 
@@ -21,13 +32,8 @@ def load_agent_yaml(file: io.FileIO) -> Dict:
         Parsed yaml dict.
     """
 
-    with open(AGENT_SPEC_PATH, 'r', encoding='utf8') as agent_spec:
-        yaml_def_validator = validator.Validator(agent_spec)
-        yaml_def_validator.validate(file)
-        file.seek(0)
-        yaml = ruamel.yaml.YAML(typ='safe')
-        agent_def = yaml.load(file)
-        return agent_def
+    spec = AGENT_SPEC_PATH
+    return _load_spec_yaml(file, spec)
 
 
 def load_agent_group_yaml(file: io.FileIO) -> Dict:
@@ -39,10 +45,5 @@ def load_agent_group_yaml(file: io.FileIO) -> Dict:
     Returns:
         Parsed yaml dict.
     """
-    with open(AGENT_GROUP_SPEC_PATH, 'r', encoding='utf8') as agent_grop_spec:
-        yaml_def_validator = validator.Validator(agent_grop_spec)
-        yaml_def_validator.validate(file)
-        file.seek(0)
-        yaml = ruamel.yaml.YAML(typ='safe')
-        agent_def = yaml.load(file)
-        return agent_def
+    spec = AGENT_GROUP_SPEC_PATH
+    return _load_spec_yaml(file, spec)
