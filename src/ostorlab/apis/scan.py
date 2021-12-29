@@ -26,7 +26,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
 
     @property
     def query(self) -> Optional[str]:
-        return '''
+        return """
 mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $plan: String!) {
       createMobileScan(title: $title, assetType:$assetType, application: $application, plan: $plan) {
         scan {
@@ -34,7 +34,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
         }
       }
     }
-    '''
+    """
 
     @property
     def data(self) -> Optional[Dict]:

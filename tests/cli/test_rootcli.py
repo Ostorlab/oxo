@@ -21,5 +21,5 @@ def testRootCli_whenWrongCommandIsProvided_showsNoSuchCommandErrorAndExit():
 
     result = runner.invoke(rootcli.rootcli, ['wrong-command'])
 
-    assert "No such command 'wrong-command'" in result.output
+    assert 'No such command \'wrong-command\'' in result.output
     assert result.exit_code == 2
