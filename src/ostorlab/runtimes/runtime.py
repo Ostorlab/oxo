@@ -1,7 +1,7 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 import abc
 import dataclasses
-from typing import List, Iterable, Optional, Dict
+from typing import List, Optional, Dict, Any
 import io
 from ostorlab import assets
 
@@ -10,39 +10,36 @@ from ostorlab import assets
 class AgentDefinition:
     """Data class holding attributes of an agent."""
     name: str
-    path: str
-    container_image: str
-    args: Iterable = ()
+    in_selectors: List[str] = dataclasses.field(default_factory=list)
+    out_selectors: List[str] = dataclasses.field(default_factory=list)
+    args: List[Any] = dataclasses.field(default_factory=list)
     constraints: List[str] = None
-    mounts: Iterable = ()
+    mounts: Optional[List[str]] = None
+    restart_policy: str = 'any'
+    mem_limit: int = None
+    open_ports: Optional[Dict[int, int]] = None
+
+
+@dataclasses.dataclass
+class AgentInstanceSettings:
+    """Agent instance lists the settings of running instance of an agent."""
+    bus_url: str
+    bus_exchange_topic: str
+    args: List[Any] = dataclasses.field(default_factory=list)
+    constraints: List[str] = None
+    mounts: Optional[List[str]] = None
     restart_policy: str = 'any'
     mem_limit: int = None
     open_ports: Optional[Dict[int, int]] = None
     replicas: int = 1
-    pull_image: bool = False
-    bus_username: str = 'username'
-    bus_password: str = 'password'
-
-    @classmethod
-    def from_agent_key(cls, agent_key):
-        """Construct AgentDefinition from agent_key.
-
-        Args:
-            agent_key: agent key.
-        """
-        del agent_key
-
-        # TODO(mohsine):implement reading agent AgentDefinition using agent_key
-        name = ''
-        path = ''
-        container_image = ''
-        return cls(name, path, container_image)
+    healthcheck_host: str = '0.0.0.0'
+    healthcheck_port: int = 5000
 
 
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
-    agents: List[AgentDefinition]
+    agents: List[AgentInstanceSettings]
 
     @classmethod
     def from_file(cls, group: io.FileIO):
@@ -59,11 +56,11 @@ class AgentGroupDefinition:
 @dataclasses.dataclass
 class AgentRunDefinition:
     """Data class defining scan run agent composition and configuration."""
-    agents: List[AgentDefinition]
+    agents: List[AgentInstanceSettings]
     agent_groups: List[AgentGroupDefinition]
 
     @property
-    def applied_agents(self) -> List[AgentDefinition]:
+    def applied_agents(self) -> List[AgentInstanceSettings]:
         """The list of applicable agents. The list is composed of both defined agent and agent groups.
 
         Returns:
