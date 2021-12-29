@@ -1,3 +1,4 @@
+"""Sample agent that implements the start method and sends a message."""
 import datetime
 
 from ostorlab.agent import agent
@@ -5,7 +6,13 @@ from ostorlab.runtimes import runtime
 
 
 class StartTestAgent(agent.Agent):
+    """Agent implementation."""
     def start(self) -> None:
+        """Sends ping message.
+
+        Returns:
+            None
+        """
         self.emit('v3.healthcheck.ping', {'body': f'from test agent at {datetime.datetime.now()}'})
 
 

@@ -1,9 +1,9 @@
 """Agent class.
 
-The agent class is the class that all agents must inherit from to access the different features, like automated message
+All agents should inherit from the agent class to access the different features, like automated message
 serialization, message receiving and sending, selector enrollment, agent health check, etc.
 
-To use it, create a yaml file that contains the information about the agent, like name, description, license.
+To use it, check out documentations at https://docs.ostorlab.co/.
 """
 import abc
 import asyncio
@@ -76,6 +76,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         atexit.register(functools.partial(Agent.at_exit, self))
         self._loop.run_until_complete(self.mq_init())
         logger.debug('calling start method')
+        # This is call in a thread to avoid blocking calls from affecting the MQ heartbeat running on the main thread.
         t = threading.Thread(target=self.start)
         t.start()
         t.join()
@@ -86,7 +87,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
                 self._loop.run_until_complete(self.mq_run())
                 self._loop.run_forever()
         finally:
-            logger.debug('closing MQ')
+            logger.debug('closing bus and loop')
             self._loop.run_until_complete(self.mq_close())
             self._loop.close()
 
@@ -96,71 +97,109 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
 
     @abc.abstractmethod
     def is_healthy(self) -> bool:
-        """Overridable agent health check method to add custom health check logic."""
+        """Overridable agent health check method to add custom health check logic.
+
+        Returns:
+            bool to indicate if the agent is healthy of not.
+        """
         raise NotImplementedError()
 
-    def process_message(self, selector: str, serialized_message: bytes):
+    def process_message(self, selector: str, serialized_message: bytes) -> None:
+        """Processes raw message received from BS.
+
+        Args:
+            selector: destination selector with full path, including UUID set by default.
+            serialized_message: raw bytes message.
+
+        Returns:
+            None
+        """
         try:
             # remove the UUID from the selector:
             selector = '.'.join(selector.split('.')[: -1])
-            logger.info('%s: %s', selector, serialized_message)
             message = agent_message.Message.from_raw(selector, serialized_message)
-            logger.debug('process_message: message=%s', message)
-            logger.info('call process_message')
+            logger.debug('call to process with message=%s', message)
             self.process(message)
         except Exception as e:
             logger.exception('exception raised: %s', e)
         finally:
             self.process_cleanup()
-            logger.debug('DONE call process_message')
+            logger.debug('done call to process message')
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:
-        """Overridable message cleanup method to be called once process is completed or even in the case of a failure."""
+        """Overridable message cleanup method to be called once process is completed or even in the case of a failure.
+
+        Returns:
+            None
+        """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def at_exit(self) -> None:
-        """Overridale at exit method to perform cleanup in the case of expected and unexpected agent termination."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def start(self) -> None:
-        raise NotImplementedError('Missing process method implementation.')
-
-    @abc.abstractmethod
-    def process(self, message: agent_message.Message) -> None:
-        raise NotImplementedError('Missing process method implementation.')
-
-    def emit(self, selector: str, data: Dict[str, Any]) -> None:
-        """
-
-        Args:
-            selector:
-            data:
+        """Overridale at exit method to perform cleanup in the case of expected and unexpected agent termination.
 
         Returns:
 
         """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def start(self) -> None:
+        """Overridable agent start to implement one-off or long-processing non-receiving agents.
+
+        Returns:
+            None
+        """
+        raise NotImplementedError('Missing process method implementation.')
+
+    @abc.abstractmethod
+    def process(self, message: agent_message.Message) -> None:
+        """Overridable message processing method.
+
+        Args:
+            message: message received from with selector and data.
+
+        Returns:
+            None
+        """
+        raise NotImplementedError('Missing process method implementation.')
+
+    def emit(self, selector: str, data: Dict[str, Any]) -> None:
+        """Sends a message to all listening agents on the specified selector.
+
+        Args:
+            selector: target selector.
+            data: message data to be serialized.
+
+        Returns:
+            None
+        """
         if selector not in self.out_selectors:
-            logger.warning('selector not present in list of out selectors')
+            logger.error('selector not present in list of out selectors')
             # CAUTION: this check is enforced on the client-side only in certain runtimes
             raise NonListedMessageSelectorError(f'{selector} is not in {"".join(self.out_selectors)}')
 
         message = agent_message.Message.from_data(selector, data)
-        logger.debug(f'call to send_message to %s', message)
+        logger.debug(f'call to send message with %s', message)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
         selector = f'{message.selector}.{uuid.uuid1()}'
         serialized_message = message.raw
         self.mq_send_message(selector, serialized_message)
-        logger.debug('DONE call to send_message')
+        logger.debug('done call to send_message')
 
     @classmethod
     def main(cls) -> 'Agent':
+        """Prepares the agents class by reading and settings all the parameters passed from runtimes.
+
+        Returns:
+            Agent instance.
+        """
         # read yaml file.
         # create class.
         # call the run method on it.
+        # TODO (alaeddine): add implementation.
         raise NotImplementedError()
 
 
@@ -190,19 +229,44 @@ class Agent(AgentMixin):
     """
 
     def is_healthy(self) -> bool:
-        """Overridable agent health check method to add custom health check logic."""
+        """Overridable agent health check method to add custom health check logic.
+
+        Returns:
+            bool to indicate if the agent is healthy or not.
+        """
         return True
 
     def start(self) -> None:
+        """Overridable agent start to implement one-off or long-processing non-receiving agents.
+
+        Returns:
+            None
+        """
         pass
 
     def process(self, message: agent_message.Message) -> None:
+        """Overridable message processing method.
+
+        Args:
+            message: message received from with selector and data.
+
+        Returns:
+            None
+        """
         raise NotImplementedError('Missing process method implementation.')
 
     def process_cleanup(self) -> None:
-        """Overridale message cleanup method to be called once process is completed or even in the case of a failure."""
+        """Overridable message cleanup method to be called once process is completed or even in the case of a failure.
+
+        Returns:
+            None
+        """
         pass
 
     def at_exit(self) -> None:
-        """Overridale at exit method to perform cleanup in the case of expected and unexpected agent termination."""
+        """Overridable at exit method to perform cleanup in the case of expected and unexpected agent termination.
+
+        Returns:
+            None
+        """
         pass
