@@ -1,4 +1,5 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
+
 import io
 import time
 
@@ -104,8 +105,8 @@ def json_schema_file():
         }
 
     """
-    json_schema_file_object = io.StringIO(json_schema)
-    return json_schema_file_object
+    json_schema_file_object =  io.StringIO(json_schema)
+    return  json_schema_file_object
 
 
 @pytest.fixture
