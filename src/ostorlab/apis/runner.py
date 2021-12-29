@@ -1,7 +1,7 @@
 """Handles all API calls and behind the scenes operations such as authentication, validation, etc.
 
 This module contains code to handle all API calls and any behind the scenes logic
-like authentication. It also has classes for authentication errors, API response errors, etc. 
+like authentication. It also has classes for authentication errors, API response errors, etc.
 
     Typical usage example:
 
