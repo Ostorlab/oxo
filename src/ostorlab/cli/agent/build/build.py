@@ -1,4 +1,4 @@
-'""Agent Build commands.""'
+"""Agent Build commands."""
 import io
 import pathlib
 import logging
