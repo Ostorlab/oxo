@@ -44,6 +44,10 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         '''
 
     @property
+    def endpoint(self):
+        return request.TOKEN_ENDPOINT
+
+    @property
     def data(self) -> Optional[Dict]:
         """Sets the query and variables to generate an API key.
 
