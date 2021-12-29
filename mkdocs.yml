@@ -1,5 +1,17 @@
 theme:
   name: "material"
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: dark
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - search
@@ -8,7 +20,21 @@ plugins:
         - src/ostorlab
 
 site_name: "Ostorlab Docs."
-site_description: "Findings, thoughts, tutorials, work. Pieces of my mind!"
-site_url: "https://pawamoy.github.io/"
-repo_url: "https://github.com/Ostorlab/ostorlab"
+site_description: "Ostorlab is an open-source project to help automate security testing. Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way."
+site_url: "https://ostorlab.github.io/"
+repo_url: "https://github.com/vuejs/vue"
 repo_name: "Ostorlab/ostorlab"
+nav:
+  - Home: index.md
+  - Tutorials:
+      - tutorials/run-your-first-scan.md
+  - Api: api/README.md
+  - Guide: guide/README.md
+  - Changelog: changelog/README.md
+  - Compliance: guide/README.md
+  - enterprise: guide/README.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
