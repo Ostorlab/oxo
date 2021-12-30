@@ -45,6 +45,12 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
             constraints:
               - "constraint1"
               - "constraint2"
+            in_selectors: 
+              - "in_selector1"
+              - "in_selector2"
+            out_selectors:
+              - "out_selector1"
+              - "out_selector2"  
             mounts:
               - "mount1"
               - "mount2"
@@ -59,6 +65,12 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
             constraints:
               - "constraint3"
               - "constraint4"
+            in_selectors: 
+              - "in_selector3"
+              - "in_selector4"
+            out_selectors:
+              - "out_selector3"
+              - "out_selector4"
             mounts:
               - "mount3"
               - "mount4"
@@ -75,6 +87,8 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         name='AgentBigFuzzer',
         args=[{'color': 'red', 'speed': 'slow'}],
         constraints=['constraint1', 'constraint2'],
+        in_selectors=['in_selector1', 'in_selector2'],
+        out_selectors=['out_selector1', 'out_selector2'],
         mounts=['mount1', 'mount2'],
         restart_policy='always_restart',
         open_ports={'src_port': 50000, 'dest_port': 50300},
@@ -83,6 +97,8 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         name='AgentSmallFuzzer',
         args=[{'color': 'blue', 'speed': 'fast'}],
         constraints=['constraint3', 'constraint4'],
+        in_selectors=['in_selector3', 'in_selector4'],
+        out_selectors=['out_selector3', 'out_selector4'],
         mounts=['mount3', 'mount4'],
         restart_policy='always_restart',
         open_ports={'src_port': 50800, 'dest_port': 55000},
