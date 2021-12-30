@@ -53,7 +53,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
                 src_port: 50000
                 dest_port: 50300
             args:
-                color: "red"
+              - color: "red"
                 speed: "slow" 
           - name: "AgentSmallFuzzer"
             constraints:
@@ -68,12 +68,12 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
                 src_port: 50800
                 dest_port: 55000
             args:
-                color: "blue"
+              - color: "blue"
                 speed: "fast" 
     """
     dummy_agent_def1 = definitions.AgentDefinition(
         name='AgentBigFuzzer',
-        args={'color': 'red', 'speed': 'slow'},
+        args=[{'color': 'red', 'speed': 'slow'}],
         constraints=['constraint1', 'constraint2'],
         mounts=['mount1', 'mount2'],
         restart_policy='always_restart',
@@ -81,19 +81,16 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
     )
     dummy_agent_def2 = definitions.AgentDefinition(
         name='AgentSmallFuzzer',
-        args={'color': 'blue', 'speed': 'fast'},
+        args=[{'color': 'blue', 'speed': 'fast'}],
         constraints=['constraint3', 'constraint4'],
         mounts=['mount3', 'mount4'],
         restart_policy='always_restart',
         open_ports={'src_port': 50800, 'dest_port': 55000},
     )
     dummy_agents = [dummy_agent_def1, dummy_agent_def2]
-
-
-    agentgrp_def_object = definitions.AgentGroupDefinition([])
     valid_yaml_def = io.StringIO(valid_yaml)
 
-    agentgrp_def = agentgrp_def_object.from_yaml(valid_yaml_def)
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(valid_yaml_def)
 
     assert len(agentgrp_def.agents) == len(dummy_agents)
     assert agentgrp_def.agents == dummy_agents

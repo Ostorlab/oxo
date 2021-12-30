@@ -155,7 +155,7 @@ class AgentGroupDefinition:
         Args:
             group : agent group .yaml file.
         """
-        agentgroup_def = loader.load_agent_group_yaml(loader.AGENT_GROUP_SPEC_PATH)
+        agentgroup_def = loader.load_agent_group_yaml(group)
         agents_definitions = []
         for agent in agentgroup_def['agents']:
             agent_def = AgentDefinition(agent['name'])
