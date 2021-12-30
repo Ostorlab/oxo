@@ -42,8 +42,6 @@ markdown_extensions:
 theme:
   name: "material"
   logo: "https://www.ostorlab.co/img/logo/logo-emblem.png"
-  palette:
-    - scheme: ostorlab
   features:
   - navigation.tabs
   - navigation.top
