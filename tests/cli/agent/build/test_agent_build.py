@@ -15,8 +15,8 @@ def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage():
     result = runner.invoke(rootcli.rootcli, ['agent', 'build'])
 
     assert 'Usage: rootcli agent build [OPTIONS]' in result.output
-    assert "Try \'rootcli agent build --help\' for help." in result.output
-    assert "Error: Missing option \'--file\' / \'-f\'." in result.output
+    assert 'Try \'rootcli agent build --help\' for help.' in result.output
+    assert 'Error: Missing option \'--file\' / \'-f\'.' in result.output
 
 
 def _is_docker_image_present(image: str):
