@@ -19,6 +19,7 @@ import click
 from ostorlab import configuration_manager
 from ostorlab.apis import create_api_key
 from ostorlab.apis import login
+from ostorlab.apis import revoke_api_key
 from ostorlab.apis import request as api_request
 
 logger = logging.getLogger(__name__)
@@ -42,9 +43,9 @@ class APIRunner:
     """
 
     def __init__(self,
-                 username: Optional[str],
-                 password: Optional[str],
-                 token_duration: Optional[str],
+                 username: str = None,
+                 password: str = None,
+                 token_duration: str = None,
                  proxy: str = None,
                  verify: bool = True):
         """Constructs all the necessary attributes for the object.
@@ -63,9 +64,10 @@ class APIRunner:
         self._proxy = proxy
         self._verify = verify
         self._token = None
-        self._api_key = None
         self._token_duration = token_duration
         self._otp_token = None
+        self.configuration_manager = configuration_manager.ConfigurationManager()
+        self._api_key = self.configuration_manager.get_api_key()
 
     def _login_user(self) -> requests.models.Response:
         """Logs in the user.
@@ -98,9 +100,18 @@ class APIRunner:
             self._token = response.json().get('token')
             api_key_response = self.execute(
                 create_api_key.CreateAPIKeyAPIRequest(self._token_duration))
-            self._api_key = api_key_response['data']['createApiKey']['apiKey']['secretKey']
-            configuration_manager.ConfigurationManager().set_api_key(self._api_key)
+            api_data = api_key_response['data']['createApiKey']['apiKey']
+            self._api_key = api_data['secretKey']
+            self.configuration_manager.set_api_data(api_data)
             self._token = None
+
+    def revoke_api_key(self) -> None:
+        if self._api_key is None:
+            return
+        api_key_id = self.configuration_manager.get_api_key_id()
+        self.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
+        self.configuration_manager.delete_api_data()
+        self._api_key = None
 
     def execute(self, request: api_request.APIRequest) -> Dict:
         """Executes a request using the GraphQL API
@@ -114,8 +125,12 @@ class APIRunner:
         Returns:
             The API response
         """
+        if self._token is not None:
+            headers = {'Authorization': f'Token {self._token}'}
+        else:
+            headers = {'X-Api-Key': f'{self._api_key}'}
         response = self._sent_request(
-            request, headers={'Authorization': f'Token {self._token}'})
+            request, headers)
         if response.status_code != 200:
             raise ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
