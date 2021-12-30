@@ -62,8 +62,9 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_prom
 
     mock_prompt.return_value = None
     runner = CliRunner()
-    requests_mock.post(api_request.TOKEN_ENDPOINT, json={'non_field_errors': [
-                       'Must include "otp_token"']}, status_code=400)
+    token_dict = {'token': '2fd7a589-64b4-442e-95aa-eb0d082aab63'}
+    requests_mock.post(api_request.TOKEN_ENDPOINT, [{'json':{'non_field_errors': [
+                       'Must include "otp_token"']}, 'status_code':400}, {'json': token_dict, 'status_code': 200}])
     runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
     mock_prompt.assert_called()
