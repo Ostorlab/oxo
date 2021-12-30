@@ -11,7 +11,7 @@ like authentication. It also has classes for authentication errors, API response
 
 import logging
 
-from typing import Dict, Optional
+from typing import Dict
 
 import requests
 import click
