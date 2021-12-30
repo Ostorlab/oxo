@@ -21,7 +21,7 @@ class LocalRabbitMQ:
     def __init__(self,
                  name: str,
                  network: str,
-                 exposed_ports: "dict[int, int]" = None,
+                 exposed_ports: 'Dict[int, int]' = None,
                  image: str = MQ_IMAGE) -> None:
         """Initialize the MQ service parameters.
         Args:
