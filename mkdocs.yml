@@ -3,29 +3,33 @@ site_description: "Ostorlab is an open-source project to help automate security 
 site_url: "https://docs.ostorlab.io"
 repo_url: "https://github.com/Ostorlab/ostorlab"
 repo_name: "Ostorlab/ostorlab"
+copyright: 'Copyright &copy; 2021 Ostorlab.'
 nav:
-  - Home: README.md
-  - Guide: guide/README.md
-  - Remediation: remediation/README.md
-  - Analysis: ide/README.md
-  - Tutorials:
-      - tutorials/run-your-first-scan.md
-  - API: api/README.md
-  - Learn More:
-    - FAQ: faq/README.md
-    - Product:
-        - product/README.md
-        - Knowledge Base: changelog/README.md
-        - Changelog: changelog/README.md
-        - User management: user_management/README.md
-    - Miscellaneous:
-        - Compliance: compliance/README.md
-        - Enterprise: enterprise/README.md
-        - Privacy: privacy/README.md
-        - Terms: terms/README.md
+  - Home: index.md
+  - Documentation:
+      - Guide: guide/README.md
+      - Remediation: remediation/README.md
+      - Analysis: ide/README.md
+      - Tutorials:
+          - tutorials/run-your-first-scan.md
+      - API: api/README.md
+      - Learn More:
+        - FAQ: faq/README.md
+        - Product:
+            - product/README.md
+            - Knowledge Base: changelog/README.md
+            - Changelog: changelog/README.md
+            - User management: user_management/README.md
+        - Miscellaneous:
+            - Compliance: compliance/README.md
+            - Enterprise: enterprise/README.md
+            - Privacy: privacy/README.md
+            - Terms: terms/README.md
 
-  #  this one is only a demo
+    #  this one is only a demo
   - Api Reference: SDK/README.md
+  - FAQ: faq/README.md
+
 plugins:
   - search
   - mkdocstrings:
@@ -42,8 +46,15 @@ markdown_extensions:
 theme:
   name: "material"
   logo: "https://www.ostorlab.co/img/logo/logo-emblem.png"
+  custom_dir: docs/overrides
   features:
   - navigation.tabs
-  - navigation.top
+  - tabs
+  - instant
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed
+
 extra_css:
   - stylesheets/extra.css

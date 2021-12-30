@@ -97,7 +97,7 @@ Complex authentication schemes like OTP or the random numerical pad are either a
 manually performed for one-offs by an Ostorlab support member.
 
 If your application requires custom authentication scheme, please reach out to 
-[mailto::support@ostorlab.dev](support@ostorlab.dev) for advice. 
+[support@ostorlab.dev](mailto::support@ostorlab.dev) for advice. 
 
 These workflows can be automated using a custom [Appium](http://appium.io/) scripts.
 The script integration is for the moment done by Ostorlab team to review code before
