@@ -1,7 +1,5 @@
 """Tests for CLI agent build command."""
 
-import pytest
-
 import docker
 from click import testing
 
@@ -14,11 +12,11 @@ def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage():
     """
     runner = testing.CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ["agent", "build"])
+    result = runner.invoke(rootcli.rootcli, ['agent', 'build'])
 
-    assert "Usage: rootcli agent build [OPTIONS]" in result.output
-    assert "Try 'rootcli agent build --help' for help." in result.output
-    assert "Error: Missing option '--file' / '-f'." in result.output
+    assert 'Usage: rootcli agent build [OPTIONS]' in result.output
+    assert """Try 'rootcli agent build --help' for help.""" in result.output
+    assert """Error: Missing option '--file' / '-f'.""" in result.output
 
 
 def _is_docker_image_present(image: str):
@@ -34,8 +32,8 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
     """Test ostorlab agent build CLI command : Case where the command is valid.
     The agent container should be built.
     """
-    dummy_def_yaml_file_path = "./assets/dummydef.yaml"
+    dummy_def_yaml_file_path = './assets/dummydef.yaml'
     runner = testing.CliRunner()
-    _ = runner.invoke(rootcli.rootcli, ["agent", "build", f"--file={dummy_def_yaml_file_path}"])
+    _ = runner.invoke(rootcli.rootcli, ['agent', 'build', f'--file={dummy_def_yaml_file_path}'])
 
-    assert _is_docker_image_present("dummy_agent") is True
+    assert _is_docker_image_present('dummy_agent') is True
