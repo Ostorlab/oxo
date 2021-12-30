@@ -17,7 +17,7 @@ import requests
 import click
 
 from ostorlab import configuration_manager
-from ostorlab.apis import auth as apis_auth
+from ostorlab.apis import create_api_key
 from ostorlab.apis import login
 from ostorlab.apis import request as api_request
 
@@ -97,7 +97,7 @@ class APIRunner:
         else:
             self._token = response.json().get('token')
             api_key_response = self.execute(
-                apis_auth.CreateAPIKeyAPIRequest(self._token_duration))
+                create_api_key.CreateAPIKeyAPIRequest(self._token_duration))
             self._api_key = api_key_response['data']['createApiKey']['apiKey']['secretKey']
             configuration_manager.ConfigurationManager().set_api_key(self._api_key)
             self._token = None
