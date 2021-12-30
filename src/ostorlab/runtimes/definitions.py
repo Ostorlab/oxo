@@ -158,9 +158,18 @@ class AgentGroupDefinition:
         agentgroup_def = loader.load_agent_group_yaml(group)
         agents_definitions = []
         for agent in agentgroup_def['agents']:
-            agent_def = AgentDefinition(agent['name'])
-            for k, v in agent.items():
-                setattr(agent_def, k, v)
+            agent_def = AgentDefinition(
+                name=agent.get('name'),
+                in_selectors=agent.get('in_selectors'),
+                out_selectors=agent.get('out_selectors'),
+                args=agent.get('args'),
+                constraints=agent.get('constraints'),
+                mounts=agent.get('mounts'),
+                restart_policy=agent.get('restart_policy'),
+                mem_limit=agent.get('mem_limit'),
+                open_ports=agent.get('open_ports')
+            )
+            
             agents_definitions.append(agent_def)
 
         return cls(agents_definitions)
