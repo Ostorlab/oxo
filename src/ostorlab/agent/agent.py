@@ -11,9 +11,11 @@ import asyncio
 import atexit
 import functools
 import logging
+import pathlib
+import sys
 import threading
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, NoReturn
 
 from ostorlab import exceptions
 from ostorlab.agent import message as agent_message
@@ -192,21 +194,50 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         logger.debug('done call to send_message')
 
     @classmethod
-    def main(cls) -> None:
-        """Prepares the agents class by reading and settings all the parameters passed from runtimes.
+    def main(cls, args=None) -> NoReturn:
+        """Prepares the agents class by reading the agent definition and runtime settings.
+
+        By the default, the class main expects the definition file to be at `agent.yaml` and settings to be at
+        `/tmp/settings.binproto`.
+
+        The values can be overridden by passing the arguments `--definition` and `--settings`.
+
+        The definition file defines the agents, like name, description, consumed and generated selectors. The definition
+        might include information on how to run the agent, but those can be overridden by the scan runtime.
+
+        The settings file defines how the agent is running, what services are enabled and what addresses should it
+        connect to. Some of these settings are consumed by the scan runtime, others are consumed by the agent itself.
+
+        Args:
+            args: Arguments passed to the argument parser. These are added for testability.
 
         Returns:
-            Agent instance.
+            The function do not return unless an error is detected. The agent instance starts running and never returns.
         """
+
+        # Settings the args to make the code testable without mocking.
+        if not args:
+            args = sys.argv[1:]
+
         parser = argparse.ArgumentParser()
-        parser.add_argument('-f', '--file', help='Agent YAML definition file.')
-        parser.add_argument('-p', '--proto', help='Agent binary proto settings.')
-        args = parser.parse_args()
-        logger.info('running agent with definition %s and proto %s', args.file, args.proto)
-        agent_definition = definitions.AgentDefinition.from_yaml(args.file)
-        agent_settings = definitions.AgentInstanceSettings.from_proto(args.proto)
-        instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
-        instance.run()
+        parser.add_argument('-d', '--definition', default='agent.yaml', help='Agent YAML definition file.')
+        parser.add_argument('-s', '--settings', default='/tmp/settings.binproto', help='Agent binary proto settings.')
+        args = parser.parse_args(args)
+        logger.info('running agent with definition %s and settings %s', args.definition, args.settings)
+
+        if not pathlib.Path(args.definition).exists():
+            logger.error('definition file does not exist')
+            sys.exit(2)
+        if not pathlib.Path(args.settings).exists():
+            logger.error('settings file does not exist')
+            sys.exit(2)
+
+        with open(args.definition, 'r', encoding='utf-8') as f_definition, open(args.settings, 'rb') as f_settings:
+            agent_definition = definitions.AgentDefinition.from_yaml(f_definition)
+            agent_settings = definitions.AgentInstanceSettings.from_proto(f_settings.read())
+            instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
+            logger.debug('running agent instance')
+            instance.run()
 
 
 class Agent(AgentMixin):

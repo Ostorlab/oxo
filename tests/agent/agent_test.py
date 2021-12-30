@@ -2,6 +2,7 @@
 import datetime
 import logging
 import multiprocessing as mp
+import pathlib
 import time
 
 import pytest
@@ -59,3 +60,35 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
     start_agent_t.terminate()
 
     assert mp_event.is_set() is True
+
+
+def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
+    class SampleAgent(agent.Agent):
+        """Sample agent"""
+
+    mocker.patch('ostorlab.agent.agent.Agent.__init__', return_value=None)
+    mocker.patch('ostorlab.agent.agent.Agent.run', return_value=None)
+
+    SampleAgent.main(['--definition',
+                      str(pathlib.Path(__file__).parent / 'dummyagent.yaml'), '--settings',
+                      str(pathlib.Path(__file__).parent / 'settings.binproto')])
+
+    SampleAgent.run.assert_called()
+    SampleAgent.__init__.assert_called()
+
+
+def testAgentMain_whithNonExistingFile_exits(mocker):
+    class SampleAgent(agent.Agent):
+        """Sample agent"""
+
+    mocker.patch('ostorlab.agent.agent.Agent.__init__', return_value=None)
+    mocker.patch('ostorlab.agent.agent.Agent.run', return_value=None)
+    with pytest.raises(SystemExit) as wrapper_exception:
+        SampleAgent.main(['--definition',
+                          'random', '--settings',
+                          'random'])
+
+        SampleAgent.run.assert_not_called()
+        SampleAgent.__init__.assert_not_called()
+        assert wrapper_exception.type == SystemExit
+        assert wrapper_exception.value.code == 42
