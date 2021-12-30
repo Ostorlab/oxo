@@ -163,7 +163,6 @@ class AgentGroupDefinition:
                 setattr(agent_def, k, v)
             agents_definitions.append(agent_def)
 
-        del group
         return cls(agents_definitions)
 
 
