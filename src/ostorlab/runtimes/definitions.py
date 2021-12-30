@@ -84,9 +84,16 @@ class AgentGroupDefinition:
         Args:
             group : agent group .yaml file.
         """
+        agentgroup_def = loader.load_agent_group_yaml(loader.AGENT_GROUP_SPEC_PATH)
+        agents_definitions = []
+        for agent in agentgroup_def['agents']:
+            agent_def = AgentDefinition(agent['name'])
+            for k, v in agent.items():
+                setattr(agent_def, k, v)
+            agents_definitions.append(agent_def)
+
         del group
-        agents = []
-        return cls(agents)
+        return cls(agents_definitions)
 
 
 @dataclasses.dataclass
