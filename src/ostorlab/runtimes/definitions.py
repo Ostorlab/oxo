@@ -169,7 +169,7 @@ class AgentGroupDefinition:
                 mem_limit=agent.get('mem_limit'),
                 open_ports=agent.get('open_ports')
             )
-            
+
             agents_definitions.append(agent_def)
 
         return cls(agents_definitions)
