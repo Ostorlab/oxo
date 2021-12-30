@@ -4,7 +4,6 @@ import io
 from ostorlab.runtimes import definitions
 
 
-
 def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():
     """Tests the creation of an agent definition from a valid yaml definition file."""
     valid_yaml_data = """
@@ -98,3 +97,32 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
 
     assert len(agentgrp_def.agents) == len(dummy_agents)
     assert agentgrp_def.agents == dummy_agents
+
+
+def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
+    """Tests that the generated proto is of type bytes."""
+    instance_settings = definitions.AgentInstanceSettings(
+        bus_url='mq',
+        bus_exchange_topic='topic',
+        args=[definitions.Arg(name='speed', type='str', value=b'fast')]
+    )
+
+    proto = instance_settings.to_raw_proto()
+
+    assert isinstance(proto, bytes)
+
+
+def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanceSettings():
+    """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+    instance_settings = definitions.AgentInstanceSettings(
+        bus_url='mq',
+        bus_exchange_topic='topic',
+        args=[definitions.Arg(name='speed', type='str', value=b'fast')]
+    )
+
+    proto = instance_settings.to_raw_proto()
+    new_instance = definitions.AgentInstanceSettings.from_proto(proto)
+
+    assert new_instance.bus_url == 'mq'
+    assert new_instance.bus_exchange_topic == 'topic'
+    assert len(new_instance.args) == 1

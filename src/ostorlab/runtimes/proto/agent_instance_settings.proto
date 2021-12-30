@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+package ostorlab.runtimes.proto;
+
+
+message Arg {
+  // Defines the arguments passed to the agent. All arg values are serialized to raw bytes and define a type that the
+  // must know how to handle.
+  required string name = 1;
+  required string type = 2;
+  required bytes  value = 3;
+}
+
+message PortMapping {
+  // Defines container port mapping. All ports are mapping on 0.0.0.0.
+  required sint32 source_port = 1;
+  required sint32 destination_port = 2;
+}
+
+
+message AgentInstanceSettings {
+  // Proto definition of agent instance settings. This is use to serialize all the settings passed from the runtime to
+  // the agent.
+  required string bus_url = 1;
+  required string bus_exchange_topic = 2;
+  repeated Arg args = 3;
+  repeated string constraints = 4;
+  repeated string mounts = 5;
+  required string restart_policy = 6;
+  optional sint64 mem_limit = 7;
+  repeated PortMapping open_ports = 8;
+  required sint32 replicas = 9;
+  required string healthcheck_host = 10;
+  required sint32 healthcheck_port = 11;
+}
