@@ -27,7 +27,7 @@ importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox
 //   }
 // })
 
-window.addEventListener('activate', function (event) {
+self.addEventListener('activate', function (event) {
       event.waitUntil(
         caches.keys().then(function (cacheNames) {
           console.info('deleting cache')
