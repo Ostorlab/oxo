@@ -49,5 +49,4 @@ class RevokeAPIKeyAPIRequest(request.APIRequest):
             'query': self.query,
             'variables': json.dumps({'apiKeyId': self._api_key_id})
         }
-        print(data)
         return data

@@ -109,8 +109,8 @@ class APIRunner:
         if self._api_key is None:
             return
         api_key_id = self.configuration_manager.get_api_key_id()
-        res = self.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
-        logger.info(res)
+        response = self.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
+        logger.info(response)
         self.configuration_manager.delete_api_data()
         self._api_key = None
 
@@ -140,15 +140,13 @@ class APIRunner:
 
     def _sent_request(self, request: api_request.APIRequest, headers=None,
                       multipart=False) -> requests.Response:
-        """Sends an API request
-        """
+        """Sends an API request."""
         if self._proxy is not None:
             proxy = {
                 'https': self._proxy
             }
         else:
             proxy = None
-
         if multipart:
             return requests.post(request.endpoint, files=request.data, headers=headers,
                                  proxies=proxy, verify=self._verify)
