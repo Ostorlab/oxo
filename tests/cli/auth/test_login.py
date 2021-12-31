@@ -16,6 +16,7 @@ def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ['auth', 'login'])
+    
     assert 'Usage: rootcli auth login [OPTIONS]' in result.output
     assert result.exit_code == 2
 
@@ -33,6 +34,7 @@ def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthen
                        'Unable to log in with provided credentials.']}, status_code=400)
     result = runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+
     assert result.exception is None
     mock___init__.assert_called()
 
@@ -50,6 +52,7 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(reque
     requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT, json = api_key_dict, status_code = 200)
     result = runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+
     assert result.exception is None
     assert configuration_manager.ConfigurationManager(
     ).get_api_key() == api_key_dict['data']['createApiKey']['apiKey']['secretKey']
@@ -68,4 +71,5 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_prom
                        'Must include "otp_token"']}, 'status_code':400}, {'json': token_dict, 'status_code': 200}])
     runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+
     mock_prompt.assert_called()
