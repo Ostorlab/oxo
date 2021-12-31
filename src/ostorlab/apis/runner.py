@@ -109,12 +109,13 @@ class APIRunner:
         if self._api_key is None:
             return
         api_key_id = self.configuration_manager.get_api_key_id()
-        self.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
+        res = self.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
+        logger.info(res)
         self.configuration_manager.delete_api_data()
         self._api_key = None
 
     def execute(self, request: api_request.APIRequest) -> Dict:
-        """Executes a request using the GraphQL API
+        """Executes a request using the GraphQL API.
 
         Args:
             request: The request to be executed
