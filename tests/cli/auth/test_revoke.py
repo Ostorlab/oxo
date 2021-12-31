@@ -5,67 +5,35 @@ from ostorlab.apis import runner as apis_runner
 from ostorlab import configuration_manager
 from ostorlab.apis import request as api_request
 
-import click
 from unittest import mock
 
 
-def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
-    """Test ostorlab auth login command when used with no options.
-    Should show usage.
+def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(requests_mock):
+    """Test ostorlab auth revoke command with valid api key id.
+    Should delete api data from storage.
     """
 
+    api_data_dict = {'data': {'revokeApiKey': {'result': True}}}
     runner = CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['auth', 'login'])
-    assert 'Usage: rootcli auth login [OPTIONS]' in result.output
-    assert result.exit_code == 2
+    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+                       json=api_data_dict, status_code=200)
+    result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
 
-
-@mock.patch.object(apis_runner.AuthenticationError, '__init__')
-def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(mock___init__,
-                                                                                                  requests_mock):
-    """Test ostorlab auth login command with wrong login credentials.
-    Should raise AuthenticationError.
-    """
-
-    mock___init__.return_value = None
-    runner = CliRunner()
-    requests_mock.post(api_request.TOKEN_ENDPOINT, json={'non_field_errors': [
-                       'Unable to log in with provided credentials.']}, status_code=400)
-    result = runner.invoke(
-        rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
-    assert result.exception is None
-    mock___init__.assert_called()
-
-
-def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(requests_mock):
-    """Test ostorlab auth login command with valid login credentials (no otp required).
-    Should set API key.
-    """
-
-    api_key_dict = {'data': {'createApiKey': {'apiKey': {
-        'secretKey': 'ADABYMTu.S7Y8zmKxpbgTcSuGmsC3rkPdAs95yMwW', 'apiKey': {'expiryDate': None}}}}}
-    token_dict = {'token': '2fd7a589-64b4-442e-95aa-eb0d082aab63'}
-    runner = CliRunner()
-    requests_mock.post(api_request.TOKEN_ENDPOINT, json = token_dict, status_code = 200)
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT, json = api_key_dict, status_code = 200)
-    result = runner.invoke(
-        rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
     assert result.exception is None
     assert configuration_manager.ConfigurationManager(
-    ).get_api_key() == api_key_dict['data']['createApiKey']['apiKey']['secretKey']
+    ).get_api_data() == None
 
 
-@ mock.patch.object(click, 'prompt')
-def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_promptOtp(mock_prompt, requests_mock):
-    """Test ostorlab auth login command with correct login credentials without OTP.
-    Should assert that the otp prompt is called.
+@mock.patch.object(apis_runner.ResponseError, '__init__')
+def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIsProvided_raisesResponseException(
+    mock_response_error_init, requests_mock):
+    """Test ostorlab auth revoke command with wrong api key id.
+    Should raise ResponseError.
     """
 
-    mock_prompt.return_value = None
+    mock_response_error_init.return_value = None
     runner = CliRunner()
-    token_dict = {'token': '2fd7a589-64b4-442e-95aa-eb0d082aab63'}
-    requests_mock.post(api_request.TOKEN_ENDPOINT, [{'json':{'non_field_errors': [
-                       'Must include "otp_token"']}, 'status_code':400}, {'json': token_dict, 'status_code': 200}])
-    runner.invoke(
-        rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
-    mock_prompt.assert_called()
+    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT, json=None, status_code=401)
+    result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
+    assert result.exception is not None
+    mock_response_error_init.assert_called()
