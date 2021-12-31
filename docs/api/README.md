@@ -1,6 +1,6 @@
 # API
 
-!!! tip
+!!! info
     Ostorlab added support of Universal Binary JSON encoding. UBJSON provides several performance benefits and adds support
     for binary data types. For more information  about the format and available libraries, check out the following
     link [UBJSON Spec](https://ubjson.org/).
