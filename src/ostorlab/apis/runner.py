@@ -19,7 +19,6 @@ import click
 from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import create_api_key
 from ostorlab.apis import login
-from ostorlab.apis import revoke_api_key
 from ostorlab.apis import request as api_request
 
 logger = logging.getLogger(__name__)
