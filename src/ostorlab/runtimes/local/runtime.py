@@ -177,6 +177,25 @@ class LocalRuntime(runtime.Runtime):
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
+        agent_instance_settings = definitions.AgentInstanceSettings(
+            bus_url='amqp://guest:guest@localhost:5672/',
+            bus_exchange_topic='ostorlab_test',
+            args=agent.args,
+            constraints=agent.constraints,
+            mounts=agent.mounts,
+            restart_policy=agent.restart_policy,
+            mem_limit=agent.mem_limit,
+            open_ports=agent.open_ports,
+            replicas=1,
+            healthcheck_host='0.0.0.0',
+            healthcheck_port=5301)
+
+        agent_instance_settings_proto = agent_instance_settings.to_raw_proto()
+        docker_config = self._docker_client.configs.create(name=f'agent_{agent.name}_{self._name}', data=agent_instance_settings_proto)
+        config_reference = docker.types.ConfigReference(config_id=docker_config['id'],
+                                                        config_name=docker_config['name'],
+                                                        filename='/tmp/settings.binproto')
+
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
             command=agent_cmd,
@@ -190,6 +209,7 @@ class LocalRuntime(runtime.Runtime):
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
             mounts=agent.mounts,
             labels={'ostorlab.universe': self._name},
+            configs=[config_reference],
             constraints=agent.constraints,
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=agent.mem_limit))
