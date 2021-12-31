@@ -3,6 +3,8 @@
 import logging
 
 from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import revoke_api_key
+from ostorlab import configuration_manager
 from ostorlab.cli.auth import auth
 
 logger = logging.getLogger(__name__)
@@ -12,8 +14,19 @@ logger = logging.getLogger(__name__)
 def revoke():
     """Use this to revoke your API key.
     """
+    config_manager = configuration_manager.ConfigurationManager()
+
     try:
-        apis_runner.APIRunner().revoke_api_key()
+        api_key_id = config_manager.get_api_key_id()
+        runner = apis_runner.APIRunner()
+
+        response = runner.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
+        if response.get('errors') is not None:
+            raise apis_runner.ResponseError(
+                f'Error revoking API key: {response.get("errors")[0].get("message")}')
+
+        runner.unauthenticate()
+        config_manager.delete_api_data()
     except apis_runner.AuthenticationError:
         logger.error(
-            'Error, OrganizationAPIKey matching query does not exist.')
+            'Authentication error, please check that your credentials are valid.')

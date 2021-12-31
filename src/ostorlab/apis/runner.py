@@ -105,14 +105,7 @@ class APIRunner:
             self.configuration_manager.set_api_data(api_data)
             self._token = None
 
-    def revoke_api_key(self) -> None:
-        """Revokes the api key."""
-        if self._api_key is None:
-            return
-        api_key_id = self.configuration_manager.get_api_key_id()
-        response = self.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
-        logger.info(response)
-        self.configuration_manager.delete_api_data()
+    def unauthenticate(self) -> None:
         self._api_key = None
 
     def execute(self, request: api_request.APIRequest) -> Dict:
@@ -129,8 +122,12 @@ class APIRunner:
         """
         if self._token is not None:
             headers = {'Authorization': f'Token {self._token}'}
-        else:
+        elif self._api_key is not None:
             headers = {'X-Api-Key': f'{self._api_key}'}
+        else:
+            headers = None
+            logger.warning('No authentication credentials were provided.')
+
 
         response = self._sent_request(
             request, headers)
