@@ -23,8 +23,6 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
         Args:
             username: the username (email) used to login.
             password: the password used to login.
-            otp_token: the OTP or static code if required by the organisation the
-            user belongs to. Defaults to None.
             otp_token: the OTP or static code if the user has enabled OTP. Defaults to None.
         """
         self._username = username
