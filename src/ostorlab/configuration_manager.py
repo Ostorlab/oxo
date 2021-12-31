@@ -15,9 +15,10 @@ class ConfigurationManager:
        API keys.
     """
 
-    def __init__(self):
+    def __init__(self, private_dir: str = OSTORLAB_PRIVATE_DIR):
         """Constructs all the necessary attributes for the object."""
-        OSTORLAB_PRIVATE_DIR.mkdir(parents=True, exist_ok=True)
+        self._private_dir = private_dir
+        self._private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = OSTORLAB_PRIVATE_DIR / 'key'
 
     def set_api_key(self, api_key: str) -> None:

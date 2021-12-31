@@ -22,8 +22,8 @@ def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
 
 
 @mock.patch.object(apis_runner.AuthenticationError, '__init__')
-def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(mock_authentication_error_init,
-                                                                                                  requests_mock):
+def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(
+    mock_authentication_error_init,requests_mock):
     """Test ostorlab auth login command with wrong login credentials.
     Should raise AuthenticationError.
     """
