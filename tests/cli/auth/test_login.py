@@ -16,19 +16,19 @@ def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ['auth', 'login'])
-    
+
     assert 'Usage: rootcli auth login [OPTIONS]' in result.output
     assert result.exit_code == 2
 
 
 @mock.patch.object(apis_runner.AuthenticationError, '__init__')
-def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(mock___init__,
+def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(mock_authentication_error_init,
                                                                                                   requests_mock):
     """Test ostorlab auth login command with wrong login credentials.
     Should raise AuthenticationError.
     """
 
-    mock___init__.return_value = None
+    mock_authentication_error_init.return_value = None
     runner = CliRunner()
     requests_mock.post(api_request.TOKEN_ENDPOINT, json={'non_field_errors': [
                        'Unable to log in with provided credentials.']}, status_code=400)
@@ -36,7 +36,7 @@ def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthen
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
 
     assert result.exception is None
-    mock___init__.assert_called()
+    mock_authentication_error_init.assert_called()
 
 
 def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(requests_mock):
