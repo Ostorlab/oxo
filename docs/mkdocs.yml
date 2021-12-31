@@ -7,8 +7,6 @@ copyright: 'Copyright &copy; 2021 Ostorlab.'
 edit_uri: ""
 nav:
   - Home: index.md
-#  - Tutorials:
-#    - tutorials/run-your-first-scan.md
   - Guide:
       - Getting Started: guide/README.md
       - Remediation: remediation/README.md
@@ -16,12 +14,8 @@ nav:
       - API: api/README.md
       - User management: user_management/README.md
       - Product:  product/README.md
-#      - Knowledge Base: kb/README.md #to import
       - Compliance: compliance/README.md
       - Enterprise: enterprise/README.md
-
-    #  this one is only a demo
-  #  - API Reference: SDK/README.md
   - Changelog: changelog/README.md
   - FAQ: faq/README.md
   - Privacy: privacy/README.md

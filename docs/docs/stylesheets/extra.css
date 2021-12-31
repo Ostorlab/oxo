@@ -3,4 +3,63 @@
     --md-primary-fg-color--light: #000000;
     --md-primary-fg-color--dark:  #000000;
     --md-accent-fg-color:#d9534f;
+    
   }
+
+
+.high{
+    color: white !important;
+    background-color: red  !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.medium{
+    color: white !important;
+    background-color: orange !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.low{
+    color: white !important;
+    background-color: #FDD835  !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.potentially{
+    color: white !important;
+    background-color: grey  !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.hardening {
+    color: white !important;
+    background-color: purple  !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.secure{
+    color: white !important;
+    background-color: #1B5E20 !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.info{
+    color: white !important;
+    background-color: #42A5F5 !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
+.important{
+    color: white !important;
+    background-color: #43A047 !important;
+    padding: 2px !important;
+    text-transform: uppercase;
+}
+
