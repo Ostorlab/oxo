@@ -34,7 +34,7 @@ plugins:
        on_pre_build: "docs.hooks:generate_kb"
   - mkdocstrings:
       watch:
-        - src/ostorlab
+        - ../src/ostorlab
 
 markdown_extensions:
   - admonition
