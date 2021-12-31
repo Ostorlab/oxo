@@ -1,5 +1,4 @@
-"""Handles the creation of an API key.
-"""
+"""Handles the creation of an API key."""
 
 from ostorlab.apis import request
 from datetime import datetime
@@ -11,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class CreateAPIKeyAPIRequest(request.APIRequest):
-    """Handles the creation of an API key.
-    """
+    """Handles the creation of an API key."""
 
     def __init__(self, expiry_date: Optional[datetime] = None):
         """Constructs all the necessary attributes for the object.
@@ -54,16 +52,10 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         Returns:
               The API key, name, and expiry date.
         """
-        if self._expiry_date is not None:
-            data = {
-                'query': self.query,
-                'variables': json.dumps({'name': self._name,
-                                         'expiryDate': self._expiry_date
-                                         })
-            }
-            return data
         data = {
             'query': self.query,
-            'variables': json.dumps({'name': self._name})
+            'variables': json.dumps({'name': self._name,
+                                        'expiryDate': self._expiry_date
+                                        })
         }
         return data
