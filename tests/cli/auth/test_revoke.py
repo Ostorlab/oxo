@@ -21,7 +21,7 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
 
     assert result.exception is None
     assert configuration_manager.ConfigurationManager(
-    ).get_api_data() == None
+    ).get_api_data() is None
 
 
 @mock.patch.object(apis_runner.ResponseError, '__init__')
