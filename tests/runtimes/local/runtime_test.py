@@ -36,4 +36,6 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
     assert any(s.name.startswith('mq_') for s in services)
     assert any(s.name.starts_with('agent_') for s in services)
     # TODO(alaeddine): check for asset injection.
+    configs = docker_client.configs.list()
+    assert any(c.name.starts_with('agent_') for c in configs)
 

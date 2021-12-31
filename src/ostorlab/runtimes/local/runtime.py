@@ -178,8 +178,8 @@ class LocalRuntime(runtime.Runtime):
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
         agent_instance_settings = definitions.AgentInstanceSettings(
-            bus_url='amqp://guest:guest@localhost:5672/',
-            bus_exchange_topic='ostorlab_test',
+            bus_url=self._mq_service.url,
+            bus_exchange_topic=f'ostorlab_topic_{self._name}',
             args=agent.args,
             constraints=agent.constraints,
             mounts=agent.mounts,
