@@ -16,7 +16,7 @@ from typing import Dict, Optional
 import requests
 import click
 
-from ostorlab import configuration_manager
+from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import create_api_key
 from ostorlab.apis import login
 from ostorlab.apis import revoke_api_key
@@ -24,7 +24,6 @@ from ostorlab.apis import request as api_request
 
 logger = logging.getLogger(__name__)
 
-ConfigurationManager = configuration_manager.ConfigurationManager
 
 class Error(Exception):
     """Base Error Class"""
@@ -48,8 +47,7 @@ class APIRunner:
                  password: str = None,
                  token_duration: str = None,
                  proxy: str = None,
-                 verify: bool = True,
-                 config_manager: ConfigurationManager = ConfigurationManager):
+                 verify: bool = True):
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -66,7 +64,7 @@ class APIRunner:
         self._proxy = proxy
         self._verify = verify
         self._token_duration = token_duration
-        self.configuration_manager = config_manager()
+        self.configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
         self._api_key: Optional[str] = self.configuration_manager.get_api_key()
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
@@ -108,6 +106,7 @@ class APIRunner:
             self._token = None
 
     def revoke_api_key(self) -> None:
+        """Revokes the api key."""
         if self._api_key is None:
             return
         api_key_id = self.configuration_manager.get_api_key_id()
@@ -132,6 +131,7 @@ class APIRunner:
             headers = {'Authorization': f'Token {self._token}'}
         else:
             headers = {'X-Api-Key': f'{self._api_key}'}
+
         response = self._sent_request(
             request, headers)
         if response.status_code != 200:
