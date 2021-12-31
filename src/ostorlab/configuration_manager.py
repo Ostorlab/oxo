@@ -47,7 +47,6 @@ class ConfigurationManager:
         """
         try:
             with open(self._complete_api_key_path, 'r', encoding='utf-8') as file:
-                # TODO (Rabson): Handle case where file content is not a dict
                 return json.loads(file.read())
         except FileNotFoundError:
             return None
@@ -92,5 +91,4 @@ class ConfigurationManager:
     def delete_api_data(self) -> None:
         """Deletes the file containing the API data.
         """
-        # TODO handle exception
         self._complete_api_key_path.unlink(missing_ok=True)
