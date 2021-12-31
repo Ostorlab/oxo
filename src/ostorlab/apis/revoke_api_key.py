@@ -1,5 +1,4 @@
-"""Revokes the API key.
-"""
+"""Revokes the API key."""
 
 from ostorlab.apis import request
 from typing import Dict, Optional
@@ -10,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class RevokeAPIKeyAPIRequest(request.APIRequest):
-    """Revokes the API key.
-    """
+    """Revokes the API key."""
 
     def __init__(self, api_key_id: str):
         """Constructs all the necessary attributes for the object.
