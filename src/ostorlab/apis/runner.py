@@ -62,10 +62,10 @@ class APIRunner:
         self._password = password
         self._proxy = proxy
         self._verify = verify
-        self._token = None
-        self._api_key = None
+        self._token: Optional[str] = None
+        self._api_key: Optional[str] = None
         self._token_duration = token_duration
-        self._otp_token = None
+        self._otp_token: Optional[str] = None
 
     def _login_user(self) -> requests.models.Response:
         """Logs in the user.
