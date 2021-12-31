@@ -15,8 +15,7 @@ logger = logging.getLogger(__name__)
 @click.option('--password', '-p', help='Ostorlab platform password.', required=True)
 @click.option('--token-duration', help='Expiration time for token (m for minutes, h for hours, and d for days).')
 def login(username, password, token_duration):
-    """Use this to log into your account.
-    """
+    """Use this to log into your account."""
     try:
         api_runner = apis_runner.APIRunner(username=username, password=password,
                                            token_duration=token_duration)
