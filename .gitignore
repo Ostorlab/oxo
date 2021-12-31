@@ -118,7 +118,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+/docs/site
 
 # mypy
 .mypy_cache/
@@ -136,3 +136,15 @@ dmypy.json
 
 # Intellij-based IDE
 .idea/
+.coverage
+**/__pycache__/
+
+# VS Code IDE
+.vscode/
+
+
+# Intellij-based IDE
+.idea/
+
+#mkdocs output
+site/

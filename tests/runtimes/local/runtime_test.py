@@ -3,7 +3,7 @@ import docker
 import pytest
 
 from ostorlab.assets import domain_name
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 
 
@@ -11,7 +11,7 @@ from ostorlab.runtimes.local import runtime as local_runtime
 def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = domain_name.DomainName(name='ostorlab.co')
-    agent_run_definition = runtime.AgentRunDefinition(agents=[], agent_groups=[])
+    agent_run_definition = definitions.AgentRunDefinition(agents=[], agent_groups=[])
 
     local_runtime_instance.scan(agent_run_definition=agent_run_definition, asset=asset)
 
@@ -26,7 +26,7 @@ def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
 def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = domain_name.DomainName(name='ostorlab.co')
-    agent_run_definition = runtime.AgentRunDefinition(agents=[], agent_groups=[])
+    agent_run_definition = definitions.AgentRunDefinition(agents=[], agent_groups=[])
 
     local_runtime_instance.scan(agent_run_definition=agent_run_definition, asset=asset)
 
@@ -36,3 +36,4 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
     assert any(s.name.startswith('mq_') for s in services)
     assert any(s.name.starts_with('agent_') for s in services)
     # TODO(alaeddine): check for asset injection.
+

@@ -1,4 +1,8 @@
 name: dummy_agent
 version: 1.0.0
+description: random text
+in_selectors:
+  - a.b.c
+out_selectors: []
 docker_file_path : ./assets/dummyagentDockerfile
 docker_build_root : ./

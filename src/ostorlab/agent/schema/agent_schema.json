@@ -143,8 +143,7 @@
                     },
                     "default_value": {
                         "description": "[Optional] - Default value of the agent argument as a binary object.",
-                        "type": "string",
-                        "contentEncoding": "base64"
+                        "type": "string"
                     }
                 }
             }
@@ -153,3 +152,4 @@
 
     "required": ["name", "description", "in_selectors", "out_selectors"]
 }
+

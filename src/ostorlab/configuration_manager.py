@@ -5,10 +5,12 @@
     such as storing and retriving API keys.
 """
 
-from pathlib import Path
 from typing import Dict, Optional
 from datetime import datetime
 import json
+import pathlib
+
+OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / '.ostorlab'
 
 
 class ConfigurationManager:
@@ -16,12 +18,16 @@ class ConfigurationManager:
        API keys.
     """
 
-    def __init__(self):
-        """Constructs all the necessary attributes for the object.
+    def __init__(self, private_dir: str = OSTORLAB_PRIVATE_DIR):
+        """Constructs all the necessary attributes for the object
+
+        Args:
+            private_dir: The private directory where Ostorlab configurations are stored.
+            Defaults to OSTORLAB_PRIVATE_DIR.
         """
-        self._ostorlab_private_dir = Path.home() / '.ostorlab'
-        self._ostorlab_private_dir.mkdir(parents=True, exist_ok=True)
-        self._complete_api_key_path = self._ostorlab_private_dir / 'key'
+        self._private_dir = private_dir
+        self._private_dir.mkdir(parents=True, exist_ok=True)
+        self._complete_api_key_path = self._private_dir / 'key'
 
     def set_api_data(self, api_data: Dict) -> None:
         """Persists the API data (key, id, expiry date) to a file in the given path.

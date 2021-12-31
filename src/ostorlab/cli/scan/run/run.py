@@ -6,6 +6,7 @@ import io
 from typing import List
 import click
 from ostorlab import runtimes
+from ostorlab.runtimes import definitions
 from ostorlab.cli.scan import scan
 
 
@@ -37,17 +38,17 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
         raise click.ClickException(f'The selected runtime {runtime} is not supported!')
 
     # Building list of agents definition
-    agents_definition: List[runtimes.AgentDefinition] = []
+    agents_definition: List[definitions.AgentDefinition] = []
     for agent_key in agents:
         agents_definition.append(
-            runtimes.AgentDefinition.from_agent_key(agent_key=agent_key))
+            definitions.AgentDefinition.from_agent_key(agent_key=agent_key))
 
     # Building list of agent group definition
-    agents_groups: List[runtimes.AgentGroupDefinition] = []
+    agents_groups: List[definitions.AgentGroupDefinition] = []
     for group in agents_group_definition:
-        agents_groups.append(runtimes.AgentGroupDefinition.from_file(group))
+        agents_groups.append(definitions.AgentGroupDefinition.from_file(group))
 
-    agent_run_definition = runtimes.AgentRunDefinition(
+    agent_run_definition = definitions.AgentRunDefinition(
         agent_groups=agents_groups, agents=agents_definition)
     if runtime.can_run(agent_run_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime

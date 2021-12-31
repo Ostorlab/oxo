@@ -11,7 +11,7 @@ like authentication. It also has classes for authentication errors, API response
 
 import logging
 
-from typing import Dict
+from typing import Dict, Optional
 
 import requests
 import click
@@ -24,6 +24,7 @@ from ostorlab.apis import request as api_request
 
 logger = logging.getLogger(__name__)
 
+ConfigurationManager = configuration_manager.ConfigurationManager
 
 class Error(Exception):
     """Base Error Class"""
@@ -47,7 +48,8 @@ class APIRunner:
                  password: str = None,
                  token_duration: str = None,
                  proxy: str = None,
-                 verify: bool = True):
+                 verify: bool = True,
+                 config_manager: ConfigurationManager = ConfigurationManager):
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -63,11 +65,11 @@ class APIRunner:
         self._password = password
         self._proxy = proxy
         self._verify = verify
-        self._token = None
         self._token_duration = token_duration
-        self._otp_token = None
-        self.configuration_manager = configuration_manager.ConfigurationManager()
-        self._api_key = self.configuration_manager.get_api_key()
+        self.configuration_manager = config_manager()
+        self._api_key: Optional[str] = self.configuration_manager.get_api_key()
+        self._token: Optional[str] = None
+        self._otp_token: Optional[str] = None
 
     def _login_user(self) -> requests.models.Response:
         """Logs in the user.
