@@ -1,3 +1,4 @@
+ostorlab
 mkdocs
 mkdocstrings
 mkdocs-material
