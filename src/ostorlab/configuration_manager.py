@@ -5,7 +5,7 @@
     such as storing and retriving API keys.
 """
 
-from pathlib import Path
+import pathlib
 
 
 class ConfigurationManager:
@@ -16,7 +16,7 @@ class ConfigurationManager:
     def __init__(self):
         """Constructs all the necessary attributes for the object.
         """
-        self._ostorlab_private_dir = Path.home() / '.ostorlab'
+        self._ostorlab_private_dir = pathlib.Path.home() / '.ostorlab'
         self._ostorlab_private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = self._ostorlab_private_dir / 'key'
 
