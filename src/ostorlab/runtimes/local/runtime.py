@@ -191,7 +191,8 @@ class LocalRuntime(runtime.Runtime):
             healthcheck_port=5301)
 
         agent_instance_settings_proto = agent_instance_settings.to_raw_proto()
-        docker_config = self._docker_client.configs.create(name=f'agent_{agent.name}_{self._name}', data=agent_instance_settings_proto)
+        docker_config = self._docker_client.configs.create(name=f'agent_{agent.name}_{self._name}',
+                                                           data=agent_instance_settings_proto)
         config_reference = docker.types.ConfigReference(config_id=docker_config.id,
                                                         config_name=f'agent_{agent.name}_{self._name}',
                                                         filename='/tmp/settings.binproto')
