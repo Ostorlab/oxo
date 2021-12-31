@@ -1,0 +1,6 @@
+
+[submodule "kbvulnz"]
+path = kbvulnz
+url = git@github.com:Ostorlab/KB.git
+branch = master
+
