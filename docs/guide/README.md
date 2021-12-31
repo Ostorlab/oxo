@@ -1,8 +1,4 @@
----
-sidebarDepth: 2
----
-
-# Guide
+# Getting started.
 
 ## Overview 
 
@@ -47,7 +43,7 @@ frameworks fingerprinted in the application.
 * You can also access scan artifacts or generate a PDF report. The report generation runs in the background and a
 notification is sent once the report is generated:
 
-![PDF Generation](/technical/guide/pdf_export.png)
+![PDF Generation](../public/technical/guide/pdf_export.png)
 
 * All scans produce a set of artifcats that varies depending on the type scan:
 
@@ -134,7 +130,7 @@ CORE infrastructure is in charge of scan scheduling, reporting, access managemen
 A Universe is a group of agents that runs the scan logic. All agents communicate using message queues dedicated to the 
 universe and offers each scan a self-contained environment with no interaction with other running scans.
 
-![architecture](/technical/architecture.png)
+![architecture](../public/technical/architecture.png)
 Ostorlab scanner leverages scalability on different levels:
 
 * Agents: Each agent performs a specialized task. Agents can be duplicated to perform repetitive intensive tasks that 
@@ -210,7 +206,7 @@ execution paths. Ostorlab’s static taint engine takes into account object-orie
 to offer a fast, efficient and near false-positive-free taint info. The taint info is then used by dozens of rules to 
 identify vulnerabilities, like SQL injection, command injection or use of hardcoded keys.
 
-![architecture](/technical/taint.png)
+![architecture](../public/technical/taint.png)
 
 ### Dynamic Analysis
 

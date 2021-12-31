@@ -51,7 +51,7 @@
   max-width: 700px;
   display: flex;
   padding: .4rem;
-  margin: 100px auto;
+  margin: 0 auto;
   text-align: center;
 }
 .tx-hero h1 {
@@ -302,22 +302,21 @@
 
 </style>
 
-
-<!-- Hero for landing page -->
-<div class="md-container tx-hero">
+  <!-- Hero for landing page -->
+  <div class="md-container tx-hero">
     <div class="md-grid md-typeset">
       <div class="md-main__inner">
         <div>
-          <h1>Welcome to Ostorlab!</h1>
-          <p>
-            Ostorlab is a platform that analyzes mobile application to identify vulnerabilities and potential weaknesses.
+          <h1>Your toolkit for containerized applications on AWS</h1>
+          <p>AWS Copilot is an open source command line interface that makes it easy for developers to <span class="em">build</span>,
+            <span class="em">release</span>, and <span class="em">operate</span> production ready containerized applications on AWS App Runner, Amazon ECS, and AWS Fargate.
           </p>
           <a
-            href="/guide/"
+            href="docs/overview/"
             title="Get Started"
             class="md-button md-button--primary"
           >
-            Get started 
+            Get started
             <svg width="11" height="10" viewBox="0 0 11 10" fill="none" style="margin-left:2px"><path d="M1 5.16772H9.5M9.5 5.16772L6.5 1.66772M9.5 5.16772L6.5 8.66772" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
           </a>
         </div>
@@ -325,6 +324,261 @@
     </div>
   </div>
 
+  <div class="md-container">
+    <div class="tx-hero__image">
+      <img
+        src="#"
+        alt=""
+        draggable="false"
+      >
+    </div>
+  </div>
+
+  <div class="md-container secondary-section">
+    <div class="g">
+      <!-- Architecture as building blocks -->
+      <div class="section">
+        <div class="component-wrapper">
+          <div class="first-column">
+            <h3>Get started with architectures</h3>
+            <p>
+              Run a <span class="em">single command</span> to quickly get started with a containerized
+              application using best practices on AWS from a Dockerfile.
+            </p>
+            <p>
+              Instead of modeling individual resources, Copilot provides common cloud architectures:
+              <a href="docs/concepts/services/#request-driven-web-service">Request-Driven Web Service</a>,
+              <a href="docs/concepts/services/#load-balanced-web-service">Load Balanced Web Service</a>,
+              <a href="docs/concepts/services/#backend-service">Backend Service</a>,
+              <a href="docs/concepts/services/#worker-service">Worker Service</a>, <a href="docs/concepts/jobs/">Scheduled Job</a>.
+              The necessary infrastructure is generated from the chosen pattern.
+              Focus your time on writing business logic instead of connecting AWS resources.
+            </p>
+          </div>
+          <div class="second-column">
+            <div class="image-wrapper">
+              <img
+                src="#"
+                alt=""
+                draggable="false"
+              >
+            </div>
+          </div>
+        </div>
+        <div class="component-wrapper" style="display: block;">
+          <h4>Explore features</h4>
+
+          <!-- Arch as code -->
+          <div class="responsive-grid">
+            <a class="card-wrapper" href="docs/manifest/overview">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                    {% include ".icons/octicons/file-code-24.svg" %}
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Manifests</h5>
+                  <p>
+                    Describe your services with architecture-as-code.
+                  </p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Networking -->
+            <a class="card-wrapper" href="docs/developing/service-discovery">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                    {% include ".icons/fontawesome/solid/network-wired.svg" %}
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Networking</h5>
+                  <p>
+                    Service discovery is setup by default for your services to connect to each other.
+                  </p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Customize -->
+            <a class="card-wrapper" href="docs/developing/additional-aws-resources/">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                    {% include ".icons/fontawesome/solid/puzzle-piece.svg" %}
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Grow with Addons</h5>
+                  <p>
+                    Integrate your services with databases or any other AWS resources.
+                  </p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Continuous delivery -->
+      <div class="section follow">
+        <div class="component-wrapper">
+          <div class="first-column">
+            <h3>Continuous delivery</h3>
+            <p>
+              No need to worry about gluing Copilot commands in a script to create an automated release process.
+              Copilot provides commands to create multiple deployment <a href="docs/concepts/environments/">environments</a> in separate AWS accounts and regions,
+              as well as creating an AWS CodePipeline <a href="docs/concepts/pipelines/">pipeline</a> to build your container images, deploy your services, and
+              run automated tests.
+            </p>
+          </div>
+          <div class="second-column">
+            <div class="image-wrapper">
+              <img
+                src="#"
+                alt=""
+                draggable="false"
+              >
+            </div>
+          </div>
+        </div>
+        <div class="component-wrapper" style="display: block;">
+          <h4>Explore features</h4>
+
+          <!-- Environments -->
+          <div class="responsive-grid">
+            <a class="card-wrapper" href="docs/commands/env-init/">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                    {% include ".icons/octicons/copy-24.svg" %}
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Environments</h5>
+                  <p>
+                    Deploy to multiple AWS accounts and regions.
+                  </p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Override -->
+            <a class="card-wrapper" href="docs/manifest/lb-web-service/#environments">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                    {% include ".icons/octicons/pencil-24.svg" %}
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Override per environment</h5>
+                  <p>
+                    Adjust your service settings per environments in the manifest.
+                  </p>
+                </div>
+              </div>
+            </a>
+
+            <!-- Customize -->
+            <a class="card-wrapper" href="docs/commands/pipeline-init/">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji"></span>
+                </div>
+                <div class="card-content">
+                  <h5>Automated releases</h5>
+                  <p>
+                    Create a continuous delivery pipeline with built-in commands.
+                  </p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operations -->
+      <div class="section follow">
+        <div class="component-wrapper">
+          <div class="first-column">
+            <h3>Operations is part of the workflow</h3>
+            <p>
+              Modeling, provisioning, and deploying services are only part of the application lifecycle for the developer.
+              Copilot also supports workflows around troubleshooting and debugging to help when things go wrong. <a href="docs/commands/svc-logs/">Tail
+              your logs</a>, <a href="docs/commands/svc-exec">get a shell</a> to a running container, <a href="docs/commands/svc-status/">view the health</a> of your services
+              from the comfort of your terminal.
+            </p>
+          </div>
+          <div class="second-column">
+            <div class="image-wrapper">
+              <img
+                src="#"
+                alt=""
+                draggable="false"
+              >
+            </div>
+          </div>
+        </div>
+        <div class="component-wrapper" style="display: block;">
+          <h4>Explore features</h4>
+
+          <!-- Tasks -->
+          <div class="responsive-grid">
+            <a class="card-wrapper" href="docs/commands/task-run/">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Run tasks</h5>
+                  <p>
+                    Run one-off tasks for operational workloads.
+                  </p>
+                </div>
+              </div>
+            </a>
+
+            <a class="card-wrapper" href="docs/commands/svc-exec/">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                    {% include ".icons/octicons/terminal-24.svg" %}
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Exec</h5>
+                  <p>
+                    Run commands in or get a shell to a container running on AWS Fargate.
+                  </p>
+                </div>
+              </div>
+            </a>
+
+            <a class="card-wrapper" href="docs/commands/svc-status/">
+              <div class="card">
+                <div class="logo">
+                  <span class="twemoji">
+                  </span>
+                </div>
+                <div class="card-content">
+                  <h5>Monitoring</h5>
+                  <p>
+                    View logs or alarms from your services or tasks.
+                  </p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 <!-- Content -->
