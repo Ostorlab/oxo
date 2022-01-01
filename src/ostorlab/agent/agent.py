@@ -11,6 +11,7 @@ import asyncio
 import atexit
 import functools
 import logging
+import os
 import pathlib
 import sys
 import threading
@@ -67,6 +68,14 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(self, name=agent_definition.name,
                                                                host=agent_instance_definition.healthcheck_host,
                                                                port=agent_instance_definition.healthcheck_port)
+
+    @property
+    def universe(self):
+        """Returns the current scan universe.
+
+        A universe is the group of agents and services in charge of running a scan. The universe is defined
+        by the runtime."""
+        return os.environ.get('UNIVERSE')
 
     def run(self) -> None:
         """Starts running the agent.
@@ -175,6 +184,23 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         Args:
             selector: target selector.
             data: message data to be serialized.
+        Raises:
+            NonListedMessageSelectorError: when selector is not part of listed out selectors.
+
+        Returns:
+            None
+        """
+        message = agent_message.Message.from_data(selector, data)
+        self.emit_raw(selector, message.raw)
+
+    def emit_raw(self, selector: str, raw: bytes) -> None:
+        """Sends a message to all listeing agents on the specified selector with no serializaion.
+
+        Args:
+            selector: target selector.
+            raw: raw message to send.
+        Raises:
+            NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
         Returns:
             None
@@ -184,13 +210,11 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             # CAUTION: this check is enforced on the client-side only in certain runtimes
             raise NonListedMessageSelectorError(f'{selector} is not in {"".join(self.out_selectors)}')
 
-        message = agent_message.Message.from_data(selector, data)
-        logger.debug('call to send message with %s', message)
+        logger.debug('call to send message with %s', selector)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
-        selector = f'{message.selector}.{uuid.uuid1()}'
-        serialized_message = message.raw
-        self.mq_send_message(selector, serialized_message)
+        selector = f'{selector}.{uuid.uuid1()}'
+        self.mq_send_message(selector, raw)
         logger.debug('done call to send_message')
 
     @classmethod
