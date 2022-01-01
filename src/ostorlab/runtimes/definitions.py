@@ -64,6 +64,7 @@ class AgentDefinition:
 @dataclasses.dataclass
 class AgentInstanceSettings:
     """Agent instance lists the settings of running instance of an agent."""
+    key: str
     bus_url: str
     bus_exchange_topic: str
     args: List[Arg] = dataclasses.field(default_factory=list)

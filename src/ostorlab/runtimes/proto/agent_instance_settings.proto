@@ -32,4 +32,5 @@ message AgentInstanceSettings {
   required sint32 replicas = 9;
   required string healthcheck_host = 10;
   required sint32 healthcheck_port = 11;
+  required string key = 12;
 }

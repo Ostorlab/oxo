@@ -22,6 +22,8 @@ from ostorlab.runtimes.local.services import mq
 from ostorlab.utils import strings as strings_utils
 
 NETWORK = 'ostorlab_local_network'
+HEALTHCHECK_HOST = '0.0.0.0'
+HEALTHCHECK_PORT = '5000'
 
 logger = logging.getLogger(__name__)
 
@@ -162,39 +164,31 @@ class LocalRuntime(runtime.Runtime):
         for agent in agent_run_definition.applied_agents:
             self._start_agent(agent)
 
-    def _start_agent(self, agent: definitions.AgentDefinition) -> None:
+    def _start_agent(self, agent: definitions.AgentInstanceSettings) -> None:
         """Start agent based on provided definition.
 
         Args:
             agent: An agent definition containing all the settings of how agent should run and what arguments to pass.
         """
-        logger.info('starting agent %s.%s: %s', agent.path, agent.name, agent.args)
+        logger.info('starting agent %s: %s', agent.key, agent.args)
         # TODO(alaeddine): This should change once it is clear how to trigger the agent main class.
-        agent_cmd = f'runagent.exe --agent {agent.name} {" ".join(agent.args)}'
+        agent_cmd = f'runagent.exe --agent {agent.key} {" ".join(agent.args)}'
         # Port published with ingress mode can't be used with dnsrr mode
         if agent.open_ports:
             endpoint_spec = docker_types_services.EndpointSpec(ports=agent.open_ports)
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
-        agent_instance_settings = definitions.AgentInstanceSettings(
-            bus_url=self._mq_service.url,
-            bus_exchange_topic=f'ostorlab_topic_{self._name}',
-            args=agent.args,
-            constraints=agent.constraints,
-            mounts=agent.mounts,
-            restart_policy=agent.restart_policy,
-            mem_limit=agent.mem_limit,
-            open_ports=agent.open_ports,
-            replicas=1,
-            healthcheck_host='0.0.0.0',
-            healthcheck_port=5301)
+        agent.bus_url = self._mq_service.url
+        agent.bus_exchange_topic = f'ostorlab_topic_{self._name}'
+        agent.healthcheck_host = HEALTHCHECK_HOST
+        agent.healthcheck_port = HEALTHCHECK_PORT
 
-        agent_instance_settings_proto = agent_instance_settings.to_raw_proto()
-        docker_config = self._docker_client.configs.create(name=f'agent_{agent.name}_{self._name}',
+        agent_instance_settings_proto = agent.to_raw_proto()
+        docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
                                                            data=agent_instance_settings_proto)
         config_reference = docker.types.ConfigReference(config_id=docker_config.id,
-                                                        config_name=f'agent_{agent.name}_{self._name}',
+                                                        config_name=f'agent_{agent.key}_{self._name}',
                                                         filename='/tmp/settings.binproto')
 
         agent_service = self._docker_client.services.create(
@@ -206,7 +200,7 @@ class LocalRuntime(runtime.Runtime):
                 f'MQ_URL={self._mq_service.url}',
                 f'MQ_VHOST={self._mq_service.vhost}',
             ],
-            name=f'agent_{agent.name}_{self._name}',
+            name=f'agent_{agent.key}_{self._name}',
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
             mounts=agent.mounts,
             labels={'ostorlab.universe': self._name},
@@ -242,7 +236,7 @@ class LocalRuntime(runtime.Runtime):
                     # return last value and don't raise RetryError exception.
                     retry_error_callback=lambda lv: lv.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
-    def _are_agents_ready(self, agents: List[definitions.AgentDefinition], fail_fast=True) -> bool:
+    def _are_agents_ready(self, agents: List[definitions.AgentInstanceSettings], fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
          (once vs long-running)."""
         all_agents_healthy = True
