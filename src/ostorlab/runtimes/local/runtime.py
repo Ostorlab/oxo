@@ -97,26 +97,26 @@ class LocalRuntime(runtime.Runtime):
         """Local runtime instance name."""
         return self._name
 
-    def can_run(self, agent_run_definition: definitions.AgentRunDefinition) -> bool:
+    def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent run definition.
 
         Args:
-            agent_run_definition: Agent and Agent group definition.
+            agent_group_definition: Agent and Agent group definition.
 
         Returns:
             Always true for the moment as the local runtime don't have restrictions on what it can run.
         """
-        del agent_run_definition
+        del agent_group_definition
         return True
 
-    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: base_asset.Asset) -> None:
+    def scan(self, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
          agents, ensuring they are healthy and then injects the target asset.
 
         Args:
-            agent_run_definition: Agent run definition that will define the set of agents and how agents are configured.
+            agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             asset: the target asset to scan.
 
         Returns:
@@ -125,8 +125,8 @@ class LocalRuntime(runtime.Runtime):
         self._create_network()
         self._start_services()
         self._check_services_healthy()
-        self._start_agents(agent_run_definition)
-        self._check_agents_healthy(agent_run_definition)
+        self._start_agents(agent_group_definition)
+        self._check_agents_healthy(agent_group_definition)
         self._inject_asset(asset)
 
     def _create_network(self):
@@ -157,38 +157,36 @@ class LocalRuntime(runtime.Runtime):
         if self._mq_service is None or self._mq_service.is_healthy is False:
             raise UnhealthyService('MQ service is unhealthy.')
 
-    def _start_agents(self, agent_run_definition: definitions.AgentRunDefinition):
+    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
-        for agent in agent_run_definition.applied_agents:
+        for agent in agent_group_definition.agents:
             self._start_agent(agent)
 
-    def _start_agent(self, agent: definitions.AgentDefinition) -> None:
+    def _start_agent(self, agent: definitions.AgentSettings,
+                     extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
         """Start agent based on provided definition.
 
         Args:
             agent: An agent definition containing all the settings of how agent should run and what arguments to pass.
         """
-        logger.info('starting agent %s.%s: %s', agent.path, agent.name, agent.args)
-        # TODO(alaeddine): This should change once it is clear how to trigger the agent main class.
-        agent_cmd = f'runagent.exe --agent {agent.name} {" ".join(agent.args)}'
+        logger.info('starting agent %s with %s', agent.key, agent.args)
         # Port published with ingress mode can't be used with dnsrr mode
         if agent.open_ports:
-            endpoint_spec = docker_types_services.EndpointSpec(ports=agent.open_ports)
+            endpoint_spec = docker_types_services.EndpointSpec(
+                ports={p.destination_port: p.source_port for p in agent.open_ports})
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
-            command=agent_cmd,
             networks=[self._network],
             env=[
                 f'UNIVERSE={self._name}',
-                f'MQ_URL={self._mq_service.url}',
-                f'MQ_VHOST={self._mq_service.vhost}',
             ],
-            name=f'agent_{agent.name}_{self._name}',
+            name=f'{agent.container_image}_{self._name}',
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
             mounts=agent.mounts,
+            configs=extra_configs,
             labels={'ostorlab.universe': self._name},
             constraints=agent.constraints,
             endpoint_spec=endpoint_spec,
@@ -200,9 +198,9 @@ class LocalRuntime(runtime.Runtime):
             # time.sleep(10)
             self._scale_service(agent_service, agent.replicas)
 
-    def _check_agents_healthy(self, agent_run_definition: definitions.AgentRunDefinition):
+    def _check_agents_healthy(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Checks if an agent is healthy."""
-        return self._are_agents_ready(agent_run_definition.applied_agents)
+        return self._are_agents_ready(agent_group_definition.agents)
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=12),
@@ -221,7 +219,7 @@ class LocalRuntime(runtime.Runtime):
                     # return last value and don't raise RetryError exception.
                     retry_error_callback=lambda lv: lv.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
-    def _are_agents_ready(self, agents: List[definitions.AgentDefinition], fail_fast=True) -> bool:
+    def _are_agents_ready(self, agents: List[definitions.AgentSettings], fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
          (once vs long-running)."""
         all_agents_healthy = True

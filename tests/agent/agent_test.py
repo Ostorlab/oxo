@@ -7,8 +7,10 @@ import time
 
 import pytest
 
-from ostorlab.agent import agent, message as agent_message
-from ostorlab.runtimes import definitions
+from ostorlab.agent import agent
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.agent import message as agent_message
+from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +41,16 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
             mp_event.set()
 
     start_agent = StartTestAgent(
-        definitions.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping']),
-        definitions.AgentInstanceSettings(
+        agent_definitions.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping']),
+        runtime_definitions.AgentSettings(
+            key='agent/ostorlab/start_test_agent',
             bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test',
             healthcheck_port=5301,
         ))
     process_agent = ProcessTestAgent(
-        definitions.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping']),
-        definitions.AgentInstanceSettings(
+        agent_definitions.AgentDefinition(name='process_test_agent', in_selectors=['v3.healthcheck.ping']),
+        runtime_definitions.AgentSettings(
+            key='agent/ostorlab/process_test_agent',
             bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test', healthcheck_port=5302))
 
     mp_event.clear()
@@ -63,6 +67,7 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
 
 
 def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
+    """Test agent main with proper arguments, agent runs."""
     class SampleAgent(agent.Agent):
         """Sample agent"""
 
@@ -78,6 +83,7 @@ def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
 
 
 def testAgentMain_whithNonExistingFile_exits(mocker):
+    """Test agent when missing definition or settings files to ensure the command exits."""
     class SampleAgent(agent.Agent):
         """Sample agent"""
 

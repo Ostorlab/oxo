@@ -10,11 +10,11 @@ class Runtime(abc.ABC):
     """Runtime is in charge of preparing the environment to trigger a scan."""
 
     @abc.abstractmethod
-    def can_run(self, agent_run_definition: definitions.AgentRunDefinition) -> bool:
+    def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime is capable of running the provided agent run definition.
 
         Args:
-            agent_run_definition: The agent run definition from a set of agents and agent groups.
+            agent_group_definition: The agent run definition from a set of agents and agent groups.
 
         Returns:
             True if can run, false otherwise.
@@ -22,11 +22,11 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: base_asset.Asset) -> None:
+    def scan(self, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
-            agent_run_definition: The agent run definition from a set of agents and agent groups.
+            agent_group_definition: The agent run definition from a set of agents and agent groups.
             asset: The scan target asset.
 
         Returns:

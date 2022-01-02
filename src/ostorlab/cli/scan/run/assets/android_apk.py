@@ -15,4 +15,4 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
 
     runtime = ctx.obj['runtime']
     asset = android_apk_asset.AndroidApk(file.read())
-    runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
+    runtime.scan(agent_group_definition=ctx.obj['agent_run_definition'], asset=asset)

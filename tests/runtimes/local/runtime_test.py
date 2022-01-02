@@ -2,7 +2,7 @@
 import docker
 import pytest
 
-from ostorlab.assets import domain_name
+from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 
@@ -10,10 +10,10 @@ from ostorlab.runtimes.local import runtime as local_runtime
 @pytest.mark.docker
 def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
-    asset = domain_name.DomainName(name='ostorlab.co')
-    agent_run_definition = definitions.AgentRunDefinition(agents=[], agent_groups=[])
+    asset = android_apk.AndroidApk(content=b'APK')
+    agent_run_definition = definitions.AgentGroupDefinition(agents=[])
 
-    local_runtime_instance.scan(agent_run_definition=agent_run_definition, asset=asset)
+    local_runtime_instance.scan(agent_group_definition=agent_run_definition, asset=asset)
 
     docker_client = docker.from_env()
 
@@ -26,9 +26,9 @@ def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
 def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = domain_name.DomainName(name='ostorlab.co')
-    agent_run_definition = definitions.AgentRunDefinition(agents=[], agent_groups=[])
+    agent_run_definition = definitions.AgentGroupDefinition(agents=[])
 
-    local_runtime_instance.scan(agent_run_definition=agent_run_definition, asset=asset)
+    local_runtime_instance.scan(agent_group_definition=agent_run_definition, asset=asset)
 
     docker_client = docker.from_env()
 
