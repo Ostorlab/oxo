@@ -3,7 +3,7 @@ This module takes care of preparing a file of type .IPA before injecting it to t
 """
 
 import click
-from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.cli.scan.run import run
 
 
@@ -14,5 +14,5 @@ def ios_ipa(ctx, file):
     """Run scan for .IPA package file."""
 
     runtime = ctx.obj['runtime']
-    asset = ios_ipa.IOSIpa(file.read())
+    asset = ios_ipa_asset.IOSIpa(file.read())
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
