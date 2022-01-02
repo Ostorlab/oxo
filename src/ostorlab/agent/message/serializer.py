@@ -66,30 +66,54 @@ def _selector_to_package_regex(subject):
     return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\..*'
 
 
-def serialize(selector: str, message: Dict[str, Any]):
+def serialize(selector: str, values: Dict[str, Any]):
     """Serializes a Request message using the proper format defined using the seelctor value.
     If the subject is a.b.c. The corresponding proto is located at message/a/b/c/xxx.proto.
 
     Args:
         selector: Message selector, must specify the version in use.
-        message: Dict representation of the message to serialize.
+        values: Dict representation of the message to serialize.
 
     Returns:
         Proto serialized message.
     """
     try:
-        return _serialize(selector, PROTO_CLASS_NAME, message)
+        return _serialize(selector, PROTO_CLASS_NAME, values)
     except json_format.Error as e:
         raise SerializationError('Error serializing message') from e
 
 
-def _serialize(selector: str, class_name: str, message: Dict[str, Any]):
+def _serialize(selector: str, class_name: str, values: Dict[str, Any]):
     """Serializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
     class_object = getattr(importlib.import_module(package_name), class_name)
     proto_message = class_object()
-    json_format.ParseDict(message, proto_message)
+    _parse_dict(values, proto_message)
     return proto_message
+
+
+def _parse_list(values: Any, message) -> None:
+    """Parse list to protobuf message."""
+    if isinstance(values[0], dict):  # value needs to be further parsed
+        for v in values:
+            cmd = message.add()
+            _parse_dict(v, cmd)
+    else:  # value can be set
+        message.extend(values)
+
+
+def _parse_dict(values: Any, message) -> None:
+    """Parse dict to protobuf message."""
+    for k, v in values.items():
+        if isinstance(v, dict):  # value needs to be further parsed
+            _parse_dict(v, getattr(message, k))
+        elif isinstance(v, list):
+            _parse_list(v, getattr(message, k))
+        else:
+            try:
+                setattr(message, k, v)
+            except AttributeError as e:
+                raise SerializationError('invalid attribute {k}') from e
 
 
 def deserialize(selector: str, serialized: bytes):
