@@ -28,5 +28,5 @@ def revoke():
         runner.unauthenticate()
         config_manager.delete_api_data()
     except apis_runner.AuthenticationError:
-        logger.error(
-            'Authentication error, please check that your credentials are valid.')
+        runner.unauthenticate()
+        logger.error('Your API key has already been revoked.')
