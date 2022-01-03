@@ -1,3 +1,4 @@
+kind: Agent
 name: dummy_agent
 version: 1.0.0
 description: random text

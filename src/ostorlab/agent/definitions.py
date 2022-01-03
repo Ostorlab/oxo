@@ -4,23 +4,7 @@ import io
 from typing import List, Optional
 
 from ostorlab.agent.schema import loader
-
-
-@dataclasses.dataclass
-class Arg:
-    """Data class holding a definition.
-
-    The value is always bytes to support all arg values. The type is defined by the type attribute."""
-    name: str
-    type: str
-    value: bytes
-
-
-@dataclasses.dataclass
-class PortMapping:
-    """Data class defining a port mapping source to destination"""
-    source_port: int
-    destination_port: int
+from ostorlab.utils import defintions
 
 
 @dataclasses.dataclass
@@ -29,12 +13,12 @@ class AgentDefinition:
     name: str
     in_selectors: List[str] = dataclasses.field(default_factory=list)
     out_selectors: List[str] = dataclasses.field(default_factory=list)
-    args: List[Arg] = dataclasses.field(default_factory=list)
+    args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = None
     mounts: Optional[List[str]] = None
     restart_policy: str = 'any'
     mem_limit: int = None
-    open_ports: List[PortMapping] = dataclasses.field(default_factory=list)
+    open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
 
     @classmethod
     def from_yaml(cls, file: io.FileIO) -> 'AgentDefinition':

@@ -22,7 +22,9 @@ from ostorlab import exceptions
 from ostorlab.agent import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
-from ostorlab.runtimes import definitions
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes import definitions as runtime_definitions
+
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +40,8 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
     """
 
     def __init__(self,
-                 agent_definition: definitions.AgentDefinition,
-                 agent_instance_definition: definitions.AgentInstanceSettings
+                 agent_definition: agent_definitions.AgentDefinition,
+                 agent_instance_definition: runtime_definitions.AgentSettings
                  ) -> None:
         """Inits the agent configuration from the Yaml agent definition.
 
@@ -257,8 +259,8 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             sys.exit(2)
 
         with open(args.definition, 'r', encoding='utf-8') as f_definition, open(args.settings, 'rb') as f_settings:
-            agent_definition = definitions.AgentDefinition.from_yaml(f_definition)
-            agent_settings = definitions.AgentInstanceSettings.from_proto(f_settings.read())
+            agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
+            agent_settings = runtime_definitions.AgentSettings.from_proto(f_settings.read())
             instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
             logger.debug('running agent instance')
             instance.run()

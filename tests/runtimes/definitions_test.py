@@ -2,12 +2,13 @@
 import io
 
 from ostorlab.runtimes import definitions
+from ostorlab.utils import defintions as utils_definitions
 
 
 def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
     """Tests the creation of an agent group definition from a valid yaml definition file."""
     valid_yaml = """
-        kind: "AgentGroup1"
+        kind: "AgentGroup"
         description: "AgentGroup1 Should be here"
         image: "some/path/to/the/image"
         restart_policy: "always_restart"
@@ -27,11 +28,12 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
               - "mount2"
             restart_policy: "always_restart"
             open_ports:
-                src_port: 50000
-                dest_port: 50300
+                - src_port: 50000
+                  dest_port: 50300
             args:
-              - color: "red"
-                speed: "slow" 
+              - name: "color"
+                type: "string"
+                value: "red"
           - key: "agent/ostorlab/SmallFuzzer"
             constraints:
               - "constraint3"
@@ -48,27 +50,28 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
             restart_policy: "always_restart"
             replicas: 1
             open_ports:
-                src_port: 50800
-                dest_port: 55000
+                - src_port: 50800
+                  dest_port: 55000
             args:
-              - color: "blue"
-                speed: "fast" 
+              - name: "color"
+                type: "string"
+                value: "blue"
     """
     dummy_agent_def1 = definitions.AgentSettings(
         key='agent/ostorlab/BigFuzzer',
-        args=[definitions.Arg(name='color', type='str', value=b'red')],
+        args=[utils_definitions.Arg(name='color', type='string', value='red')],
         constraints=['constraint1', 'constraint2'],
         mounts=['mount1', 'mount2'],
         restart_policy='always_restart',
-        open_ports=[definitions.PortMapping(source_port=50000, destination_port=50300)],
+        open_ports=[utils_definitions.PortMapping(source_port=50000, destination_port=50300)],
     )
     dummy_agent_def2 = definitions.AgentSettings(
         key='agent/ostorlab/SmallFuzzer',
-        args=[definitions.Arg(name='color', type='str', value=b'red')],
+        args=[utils_definitions.Arg(name='color', type='string', value='blue')],
         constraints=['constraint3', 'constraint4'],
         mounts=['mount3', 'mount4'],
         restart_policy='always_restart',
-        open_ports=[definitions.PortMapping(source_port=50000, destination_port=50300)],
+        open_ports=[utils_definitions.PortMapping(source_port=50800, destination_port=55000)],
     )
     dummy_agents = [dummy_agent_def1, dummy_agent_def2]
     valid_yaml_def = io.StringIO(valid_yaml)
@@ -85,7 +88,7 @@ def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
         key='agent/ostorlab/BigFuzzer',
         bus_url='mq',
         bus_exchange_topic='topic',
-        args=[definitions.Arg(name='speed', type='str', value=b'fast')]
+        args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
 
     proto = instance_settings.to_raw_proto()
@@ -99,7 +102,7 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
         key='agent/ostorlab/BigFuzzer',
         bus_url='mq',
         bus_exchange_topic='topic',
-        args=[definitions.Arg(name='speed', type='str', value=b'fast')]
+        args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
 
     proto = instance_settings.to_raw_proto()

@@ -14,7 +14,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
     """
 
     valid_yaml_data = """
-        name: "Agent1"
+        name: "Agent"
         version : 1.1.0
         description: "Agent1 Description should be here"
         image: "some/path/to/the/image"
@@ -52,7 +52,8 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
 
     data = loader.load_agent_yaml(yaml_data_file)
 
-    assert data['name'] == 'Agent1'
+    assert data['name'] == 'Agent'
+    assert data['version'] == '1.1.0'
 
 
 def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError():
@@ -62,7 +63,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
     """
 
     invalid_yaml_data = """
-        name: "Agent1"
+        name: "Agent"
         version : 1.
         description: "Agent1 Description should be here"
         image: "some/path/to/the/image"
@@ -86,7 +87,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         docker_build_root: "/"
         agent_runner: "theAgentRunner"
         agent_path: "some/path/to/agent.py"
-        agenArgument:
+        args:
         - name: "agentArgumentName1"
           type: "string"
           description: "agentArgumentDescription1"
@@ -108,7 +109,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
     """
 
     valid_yaml_agent_group_data = """
-        kind: "AgentGroup1"
+        kind: "AgentGroup"
         description: "AgentGroup1 Should be here"
         image: "some/path/to/the/image"
         restart_policy: "always_restart"

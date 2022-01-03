@@ -5,23 +5,7 @@ from typing import List, Optional
 
 from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
-
-
-@dataclasses.dataclass
-class Arg:
-    """Data class holding a definition.
-
-    The value is always bytes to support all arg values. The type is defined by the type attribute."""
-    name: str
-    type: str
-    value: bytes
-
-
-@dataclasses.dataclass
-class PortMapping:
-    """Data class defining a port mapping source to destination"""
-    source_port: int
-    destination_port: int
+from ostorlab.utils import defintions
 
 
 @dataclasses.dataclass
@@ -30,12 +14,12 @@ class AgentSettings:
     key: str
     bus_url: Optional[str] = None
     bus_exchange_topic: Optional[str] = None
-    args: List[Arg] = dataclasses.field(default_factory=list)
+    args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
     restart_policy: str = 'any'
     mem_limit: Optional[int] = None
-    open_ports: List[PortMapping] = dataclasses.field(default_factory=list)
+    open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
     healthcheck_host: str = '0.0.0.0'
     healthcheck_port: int = 5000
@@ -63,7 +47,7 @@ class AgentSettings:
             key=instance.key,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
-            args=[Arg(
+            args=[defintions.Arg(
                 name=a.name,
                 type=a.type,
                 value=a.value
@@ -72,7 +56,7 @@ class AgentSettings:
             mounts=instance.mounts,
             restart_policy=instance.restart_policy,
             mem_limit=instance.mem_limit,
-            open_ports=[PortMapping(
+            open_ports=[defintions.PortMapping(
                 source_port=p.source_port,
                 destination_port=p.destination_port
             ) for p in instance.open_ports],
@@ -133,12 +117,16 @@ class AgentGroupDefinition:
         for agent in agent_group_def['agents']:
             agent_def = AgentSettings(
                 key=agent.get('key'),
-                args=agent.get('args'),
+                args=[defintions.Arg(name=a.get('name'), description=a.get('description'), type=a.get('type'),
+                                     value=a.get('value')) for a in
+                      agent.get('args', [])],
                 constraints=agent.get('constraints'),
                 mounts=agent.get('mounts'),
                 restart_policy=agent.get('restart_policy'),
                 mem_limit=agent.get('mem_limit'),
-                open_ports=agent.get('open_ports')
+                open_ports=[defintions.PortMapping(source_port=p.get('src_port'), destination_port=p.get('dest_port'))
+                            for p
+                            in agent.get('open_ports', [])]
             )
 
             agent_settings.append(agent_def)

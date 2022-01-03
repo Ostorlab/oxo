@@ -25,6 +25,8 @@ NETWORK = 'ostorlab_local_network'
 
 logger = logging.getLogger(__name__)
 
+ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostor/inject_asset'
+
 
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
@@ -263,8 +265,13 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        # TODO(alaeddine): implement asset injection.
-        pass
+        docker_config = self._docker_client.configs.create(name='asset',
+                                                           data=asset.to_proto())
+        config_reference = docker.types.ConfigReference(config_id=docker_config.id,
+                                                        config_name='asset',
+                                                        filename='/tmp/asset.binproto')
+        inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT)
+        self._start_agent(agent=inject_asset_agent_settings, extra_configs=[config_reference])
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
