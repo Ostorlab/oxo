@@ -15,4 +15,4 @@ def ios_ipa(ctx, file):
 
     runtime = ctx.obj['runtime']
     asset = ios_ipa_asset.IOSIpa(file.read())
-    runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
+    runtime.scan(agent_group_definition=ctx.obj['agent_run_definition'], asset=asset)

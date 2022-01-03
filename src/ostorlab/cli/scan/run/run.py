@@ -38,10 +38,10 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
         raise click.ClickException(f'The selected runtime {runtime} is not supported!')
 
     # Building list of agents definition
-    agents_definition: List[definitions.AgentDefinition] = []
+    agents_settings: List[definitions.AgentSettings] = []
     for agent_key in agents:
-        agents_definition.append(
-            definitions.AgentDefinition.from_agent_key(agent_key=agent_key))
+        agents_settings.append(
+            definitions.AgentSettings(key=agent_key))
 
     # Building list of agent group definition
     agents_groups: List[definitions.AgentGroupDefinition] = []
@@ -49,8 +49,8 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
         agents_groups.append(definitions.AgentGroupDefinition.from_file(group))
 
     agent_run_definition = definitions.AgentRunDefinition(
-        agent_groups=agents_groups, agents=agents_definition)
-    if runtime.can_run(agent_run_definition=agent_run_definition):
+        agent_groups=agents_groups, agents=agents_settings)
+    if runtime.can_run(agent_group_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime
         ctx.obj['agent_run_definition'] = agent_run_definition
         ctx.obj['title'] = title
