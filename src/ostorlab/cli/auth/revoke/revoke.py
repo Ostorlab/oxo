@@ -6,14 +6,15 @@ from ostorlab.apis import runner as apis_runner
 from ostorlab.apis import revoke_api_key
 from ostorlab import configuration_manager
 from ostorlab.cli.auth import auth
+from ostorlab.utils import rich
 
 logger = logging.getLogger(__name__)
 
 
 @auth.auth.command()
 def revoke():
-    """Use this to revoke your API key.
-    """
+    """Use this to revoke your API key."""
+    
     config_manager = configuration_manager.ConfigurationManager()
 
     try:
@@ -22,11 +23,10 @@ def revoke():
 
         response = runner.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
         if response.get('errors') is not None:
-            raise apis_runner.ResponseError(
-                f'Error revoking API key: {response.get("errors")[0].get("message")}')
+            rich.error('Could not revoke your API key.')
 
         runner.unauthenticate()
         config_manager.delete_api_data()
     except apis_runner.AuthenticationError:
         runner.unauthenticate()
-        logger.error('Your API key has already been revoked.')
+        rich.error('Your API key has already been revoked.')

@@ -20,6 +20,7 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import create_api_key
 from ostorlab.apis import login
 from ostorlab.apis import request as api_request
+from ostorlab.utils import rich
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ class APIRunner:
             headers = {'X-Api-Key': f'{self._api_key}'}
         else:
             headers = None
-            logger.warning('No authentication credentials were provided.')
+            rich.warning('No authentication credentials were provided.')
 
 
         response = self._sent_request(request, headers)
