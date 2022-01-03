@@ -100,9 +100,15 @@ class APIRunner:
             self._token = response.json().get('token')
             api_key_response = self.execute(
                 create_api_key.CreateAPIKeyAPIRequest(self._token_duration))
+
             api_data = api_key_response['data']['createApiKey']['apiKey']
-            self._api_key = api_data['secretKey']
-            self._configuration_manager.set_api_data(api_data)
+            secret_key = api_data['secretKey']
+            api_key_id = api_data['apiKey']['id']
+            expiry_date = api_data['apiKey']['expiryDate']
+
+            self._api_key = secret_key
+            self._configuration_manager.set_api_data(
+                secret_key, api_key_id, expiry_date)
             self._token = None
 
     def unauthenticate(self) -> None:

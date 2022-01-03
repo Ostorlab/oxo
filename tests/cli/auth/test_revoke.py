@@ -1,7 +1,9 @@
 """Unit Tests for auth revoke command."""
+
+import logging
+
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
-from ostorlab.apis import runner as apis_runner
 from ostorlab import configuration_manager
 from ostorlab.apis import request as api_request
 
@@ -24,22 +26,22 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
     ).get_api_data() is None
 
 
-@mock.patch.object(apis_runner.ResponseError, '__init__')
-def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_raisesResponseException(
-    mock_response_error_init, requests_mock):
+@mock.patch.object(logging.Logger, 'error')
+def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
+    mock_logger, requests_mock):
     """Test ostorlab auth revoke command with wrong api key id.
-    Should raise ResponseError.
+    Should log the error.
     """
 
     errors_dict = {'errors': [{'message': 'OrganizationAPIKey matching query does not exist.', 'locations': [
         {'line': 3, 'column': 16}], 'path': ['revokeApiKey']}], 'data': {'revokeApiKey': None}}
 
-    mock_response_error_init.return_value = None
+    mock_logger.return_value = None
     runner = CliRunner()
     requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=errors_dict, status_code=200)
     result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
-    assert result.exception is not None
-    mock_response_error_init.assert_called()
+    assert result.exception is None
+    mock_logger.assert_called_once_with('Error revoking your API key.')
 
 

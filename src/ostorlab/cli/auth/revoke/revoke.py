@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 @auth.auth.command()
 def revoke():
     """Use this to revoke your API key."""
-    
+
     config_manager = configuration_manager.ConfigurationManager()
 
     try:
