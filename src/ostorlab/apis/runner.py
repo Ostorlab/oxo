@@ -20,7 +20,7 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import create_api_key
 from ostorlab.apis import login
 from ostorlab.apis import request as api_request
-from ostorlab.utils import rich
+from ostorlab.utils import rich_console
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,7 @@ class APIRunner:
         Returns:
             The API response.
         """
+        rich_console.processing()
         login_request = login.UsernamePasswordLoginAPIRequest(
             self._username, self._password, self._otp_token)
         return self._sent_request(login_request)
@@ -109,6 +110,7 @@ class APIRunner:
             self._api_key = secret_key
             self._configuration_manager.set_api_data(
                 secret_key, api_key_id, expiry_date)
+            rich_console.authenticate()
             self._token = None
 
     def unauthenticate(self) -> None:
@@ -132,7 +134,7 @@ class APIRunner:
             headers = {'X-Api-Key': f'{self._api_key}'}
         else:
             headers = None
-            rich.warning('No authentication credentials were provided.')
+            rich_console.warning('No authentication credentials were provided.')
 
 
         response = self._sent_request(request, headers)
