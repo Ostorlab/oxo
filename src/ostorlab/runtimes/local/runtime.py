@@ -22,6 +22,8 @@ from ostorlab.runtimes.local.services import mq
 from ostorlab.utils import strings as strings_utils
 
 NETWORK = 'ostorlab_local_network'
+HEALTHCHECK_HOST = '0.0.0.0'
+HEALTHCHECK_PORT = '5000'
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +164,13 @@ class LocalRuntime(runtime.Runtime):
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
-            self._start_agent(agent)
+            agent_instance_settings_proto = agent.to_raw_proto()
+            docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
+                                                               data=agent_instance_settings_proto)
+            config_reference = docker.types.ConfigReference(config_id=docker_config.id,
+                                                              config_name=f'agent_{agent.key}_{self._name}',
+                                                              filename='/tmp/settings.binproto')
+            self._start_agent(agent, [config_reference])
 
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
@@ -178,6 +186,11 @@ class LocalRuntime(runtime.Runtime):
                 ports={p.destination_port: p.source_port for p in agent.open_ports})
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
+
+        agent.bus_url = self._mq_service.url
+        agent.bus_exchange_topic = f'ostorlab_topic_{self._name}'
+        agent.healthcheck_host = HEALTHCHECK_HOST
+        agent.healthcheck_port = HEALTHCHECK_PORT
 
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
