@@ -164,7 +164,13 @@ class LocalRuntime(runtime.Runtime):
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
-            self._start_agent(agent)
+            agent_instance_settings_proto = agent.to_raw_proto()
+            docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
+                                                               data=agent_instance_settings_proto)
+            config_reference = docker.types.ConfigReference(config_id=docker_config.id,
+                                                              config_name=f'agent_{agent.key}_{self._name}',
+                                                              filename='/tmp/settings.binproto')
+            self._start_agent(agent, [config_reference])
 
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
@@ -185,13 +191,6 @@ class LocalRuntime(runtime.Runtime):
         agent.bus_exchange_topic = f'ostorlab_topic_{self._name}'
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT
-
-        agent_instance_settings_proto = agent.to_raw_proto()
-        docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
-                                                           data=agent_instance_settings_proto)
-        extra_configs.add(docker.types.ConfigReference(config_id=docker_config.id,
-                                                        config_name=f'agent_{agent.key}_{self._name}',
-                                                        filename='/tmp/settings.binproto'))
 
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
