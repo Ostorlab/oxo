@@ -1,6 +1,0 @@
-ostorlab
-mkdocs
-mkdocstrings
-mkdocs-material
-mkdocs-simple-hooks
-pymdown-extensions

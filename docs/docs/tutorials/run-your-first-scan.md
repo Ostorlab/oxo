@@ -1,1 +1,0 @@
-# Your first scan with ostorlab.
