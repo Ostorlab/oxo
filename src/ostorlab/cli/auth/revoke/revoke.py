@@ -22,8 +22,8 @@ def revoke():
 
         response = runner.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
         if response.get('errors') is not None:
-            raise apis_runner.ResponseError(
-                f'Error revoking API key: {response.get("errors")[0].get("message")}')
+            logger.error('Error revoking your API key.')
+
 
         runner.unauthenticate()
         config_manager.delete_api_data()
