@@ -5,80 +5,34 @@ from typing import List, Optional
 
 from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
+from ostorlab.utils import defintions
 
 
 @dataclasses.dataclass
-class Arg:
-    """Data class holding a definition.
-
-    The value is always bytes to support all arg values. The type is defined by the type attribute."""
-    name: str
-    type: str
-    value: bytes
-
-
-@dataclasses.dataclass
-class PortMapping:
-    """Data class defining a port mapping source to destination"""
-    source_port: int
-    destination_port: int
-
-
-@dataclasses.dataclass
-class AgentDefinition:
-    """Data class holding attributes of an agent."""
-    name: str
-    in_selectors: List[str] = dataclasses.field(default_factory=list)
-    out_selectors: List[str] = dataclasses.field(default_factory=list)
-    args: List[Arg] = dataclasses.field(default_factory=list)
-    constraints: List[str] = None
-    mounts: Optional[List[str]] = None
-    restart_policy: str = 'any'
-    mem_limit: int = None
-    open_ports: List[PortMapping] = dataclasses.field(default_factory=list)
-
-    @classmethod
-    def from_yaml(cls, file: io.FileIO) -> 'AgentDefinition':
-        """Constructs an agent definition from a yaml definition file.
-
-        Args:
-            file: Yaml file.
-
-        Returns:
-            Agent definition.
-        """
-        definition = loader.load_agent_yaml(file)
-        return cls(
-            name=definition.get('name'),
-            in_selectors=definition.get('in_selectors'),
-            out_selectors=definition.get('out_selectors'),
-            args=definition.get('args'),
-            constraints=definition.get('constraints'),
-            mounts=definition.get('mounts'),
-            restart_policy=definition.get('restart_policy'),
-            mem_limit=definition.get('mem_limit'),
-            open_ports=definition.get('open_ports'),
-        )
-
-
-@dataclasses.dataclass
-class AgentInstanceSettings:
+class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
     key: str
-    bus_url: str
-    bus_exchange_topic: str
-    args: List[Arg] = dataclasses.field(default_factory=list)
+    bus_url: Optional[str] = None
+    bus_exchange_topic: Optional[str] = None
+    args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
     restart_policy: str = 'any'
     mem_limit: Optional[int] = None
-    open_ports: List[PortMapping] = dataclasses.field(default_factory=list)
+    open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
     healthcheck_host: str = '0.0.0.0'
     healthcheck_port: int = 5000
 
+    @property
+    def container_image(self):
+        """Agent image name."""
+        image = self.key.replace('/', '_')
+        # TODO (alaeddine): add container tag resolution.
+        return image
+
     @classmethod
-    def from_proto(cls, proto: bytes) -> 'AgentInstanceSettings':
+    def from_proto(cls, proto: bytes) -> 'AgentSettings':
         """Constructs an agent definition from a binary proto settings.
 
         Args:
@@ -90,9 +44,10 @@ class AgentInstanceSettings:
         instance = agent_instance_settings_pb2.AgentInstanceSettings()
         instance.ParseFromString(proto)
         return cls(
+            key=instance.key,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
-            args=[Arg(
+            args=[defintions.Arg(
                 name=a.name,
                 type=a.type,
                 value=a.value
@@ -101,7 +56,7 @@ class AgentInstanceSettings:
             mounts=instance.mounts,
             restart_policy=instance.restart_policy,
             mem_limit=instance.mem_limit,
-            open_ports=[PortMapping(
+            open_ports=[defintions.PortMapping(
                 source_port=p.source_port,
                 destination_port=p.destination_port
             ) for p in instance.open_ports],
@@ -117,6 +72,7 @@ class AgentInstanceSettings:
             Bytes as a serialized proto.
         """
         instance = agent_instance_settings_pb2.AgentInstanceSettings()
+        instance.key = self.key
         instance.bus_url = self.bus_url
         instance.bus_exchange_topic = self.bus_exchange_topic
 
@@ -147,7 +103,7 @@ class AgentInstanceSettings:
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
-    agents: List[AgentInstanceSettings]
+    agents: List[AgentSettings]
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -156,41 +112,23 @@ class AgentGroupDefinition:
         Args:
             group : agent group .yaml file.
         """
-        agentgroup_def = loader.load_agent_group_yaml(group)
-        agents_definitions = []
-        for agent in agentgroup_def['agents']:
-            agent_def = AgentDefinition(
-                name=agent.get('name'),
-                in_selectors=agent.get('in_selectors'),
-                out_selectors=agent.get('out_selectors'),
-                args=agent.get('args'),
+        agent_group_def = loader.load_agent_group_yaml(group)
+        agent_settings = []
+        for agent in agent_group_def['agents']:
+            agent_def = AgentSettings(
+                key=agent.get('key'),
+                args=[defintions.Arg(name=a.get('name'), description=a.get('description'), type=a.get('type'),
+                                     value=a.get('value')) for a in
+                      agent.get('args', [])],
                 constraints=agent.get('constraints'),
                 mounts=agent.get('mounts'),
                 restart_policy=agent.get('restart_policy'),
                 mem_limit=agent.get('mem_limit'),
-                open_ports=agent.get('open_ports')
+                open_ports=[defintions.PortMapping(source_port=p.get('src_port'), destination_port=p.get('dest_port'))
+                            for p
+                            in agent.get('open_ports', [])]
             )
 
-            agents_definitions.append(agent_def)
+            agent_settings.append(agent_def)
 
-        return cls(agents_definitions)
-
-
-@dataclasses.dataclass
-class AgentRunDefinition:
-    """Data class defining scan run agent composition and configuration."""
-    agents: List[AgentInstanceSettings]
-    agent_groups: List[AgentGroupDefinition]
-
-    @property
-    def applied_agents(self) -> List[AgentInstanceSettings]:
-        """The list of applicable agents. The list is composed of both defined agent and agent groups.
-
-        Returns:
-            List of agents used in the current run definition.
-        """
-        agents = []
-        agents.extend(self.agents)
-        for group in self.agent_groups:
-            agents.extend(group.agents)
-        return agents
+        return cls(agent_settings)

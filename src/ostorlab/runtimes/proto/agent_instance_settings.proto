@@ -21,16 +21,16 @@ message PortMapping {
 message AgentInstanceSettings {
   // Proto definition of agent instance settings. This is use to serialize all the settings passed from the runtime to
   // the agent.
-  required string bus_url = 1;
-  required string bus_exchange_topic = 2;
-  repeated Arg args = 3;
-  repeated string constraints = 4;
-  repeated string mounts = 5;
-  required string restart_policy = 6;
-  optional sint64 mem_limit = 7;
-  repeated PortMapping open_ports = 8;
-  required sint32 replicas = 9;
-  required string healthcheck_host = 10;
-  required sint32 healthcheck_port = 11;
-  required string key = 12;
+  required string key = 1;
+  required string bus_url = 2;
+  required string bus_exchange_topic = 3;
+  repeated Arg args = 4;
+  repeated string constraints = 5;
+  repeated string mounts = 6;
+  required string restart_policy = 7;
+  optional sint64 mem_limit = 8;
+  repeated PortMapping open_ports = 9;
+  required sint32 replicas = 10;
+  required string healthcheck_host = 11;
+  required sint32 healthcheck_port = 12;
 }

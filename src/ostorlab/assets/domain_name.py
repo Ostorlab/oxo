@@ -1,10 +1,11 @@
 """Domain name asset definition."""
 import dataclasses
 
-from ostorlab import assets
+from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-class DomainName(assets.Asset):
+@asset.selector('v3.asset.dns.a_record')
+class DomainName(asset.Asset):
     """Domain Name target asset per RFC 1034 and 1035."""
     name: str

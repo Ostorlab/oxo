@@ -1,7 +1,7 @@
 """Handles all API calls and behind the scenes operations such as authentication, validation, etc.
 
-This module contains code to handle all API calls and any behind the scenes logic like authentication.
-It also has classes for authentication errors, API response errors, etc.
+This module contains code to handle all API calls and any behind the scenes logic
+like authentication. It also has classes for authentication errors, API response errors, etc.
 
     Typical usage example:
 
@@ -16,8 +16,10 @@ from typing import Dict, Optional
 import requests
 import click
 
-from . import login
-from . import request as api_request
+from ostorlab import configuration_manager
+from ostorlab.apis import auth as apis_auth
+from ostorlab.apis import login
+from ostorlab.apis import request as api_request
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,9 @@ class ResponseError(Error):
 
 
 class APIRunner:
-    """Handles all API calls and behind the scenes operations such as authentication, validation, etc."""
+    """Handles all API calls and behind the scenes operations such as authentication,
+       validation, etc.
+    """
 
     def __init__(self,
                  username: Optional[str],
@@ -49,7 +53,7 @@ class APIRunner:
             username: the username (email) used to login.
             password: the password used to login.
             token_duration: The duration for which the token is valid
-                (Can be in minutes, hours, days, or a combination of any two or all three).
+            (Can be in minutes, hours, days, or a combination of any two or all three).
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether or not to verify the TLS certificate. Defaults to True.
         """
@@ -58,9 +62,10 @@ class APIRunner:
         self._password = password
         self._proxy = proxy
         self._verify = verify
-        self._token = None
+        self._token: Optional[str] = None
+        self._api_key: Optional[str] = None
         self._token_duration = token_duration
-        self._otp_token = None
+        self._otp_token: Optional[str] = None
 
     def _login_user(self) -> requests.models.Response:
         """Logs in the user.
@@ -82,8 +87,7 @@ class APIRunner:
 
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')
-
-            if field_errors is not None and field_errors[0] == 'Must include "otp_token"':
+            if field_errors is not None and field_errors[0] == 'Must include \"otp_token\"':
                 self._otp_token = click.prompt(
                     'Please enter the OTP code from your authenticator app')
                 self.authenticate()
@@ -92,17 +96,36 @@ class APIRunner:
                 raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get('token')
+            api_key_response = self.execute(
+                apis_auth.CreateAPIKeyAPIRequest(self._token_duration))
+            self._api_key = api_key_response['data']['createApiKey']['apiKey']['secretKey']
+            configuration_manager.ConfigurationManager().set_api_key(self._api_key)
+            self._token = None
 
     def execute(self, request: api_request.APIRequest) -> Dict:
+        """Executes a request using the GraphQL API
+
+        Args:
+            request: The request to be executed
+
+        Raises:
+            ResponseError: When the API returns an error
+
+        Returns:
+            The API response
+        """
         response = self._sent_request(
-            request, headers={'Authorization': f'Token {self._token}'}, multipart=True)
+            request, headers={'Authorization': f'Token {self._token}'})
         if response.status_code != 200:
             raise ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
         else:
             return response.json()
 
-    def _sent_request(self, request: api_request.APIRequest, headers=None, multipart=False) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest, headers=None,
+                      multipart=False) -> requests.Response:
+        """Sends an API request
+        """
         if self._proxy is not None:
             proxy = {
                 'https': self._proxy
@@ -111,8 +134,8 @@ class APIRunner:
             proxy = None
 
         if multipart:
-            return requests.post(request.endpoint, files=request.data, headers=headers, proxies=proxy,
-                                 verify=self._verify)
+            return requests.post(request.endpoint, files=request.data, headers=headers,
+                                 proxies=proxy, verify=self._verify)
         else:
-            return requests.post(request.endpoint, data=request.data, headers=headers, proxies=proxy,
-                                 verify=self._verify)
+            return requests.post(request.endpoint, data=request.data, headers=headers,
+                                 proxies=proxy, verify=self._verify)
