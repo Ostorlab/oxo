@@ -12,7 +12,7 @@ class RevokeAPIKeyAPIRequest(request.APIRequest):
     """Revokes the API key."""
 
     def __init__(self, api_key_id: str):
-        """Constructs all the necessary attributes for the object.
+        """Sets API key identifier.
 
         Args:
            api_key_id: The API key id used to revoke the API key.
