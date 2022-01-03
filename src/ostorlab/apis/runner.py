@@ -128,8 +128,7 @@ class APIRunner:
             logger.warning('No authentication credentials were provided.')
 
 
-        response = self._sent_request(
-            request, headers)
+        response = self._sent_request(request, headers)
         if response.status_code != 200:
             raise ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
