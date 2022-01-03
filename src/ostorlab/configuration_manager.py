@@ -29,17 +29,24 @@ class ConfigurationManager:
         self._private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = self._private_dir / 'key'
 
-    def set_api_data(self, api_data: Dict) -> None:
+    def set_api_data(self, secret_key: str, api_key_id: str, expiry_date: Optional[datetime]) -> None:
         """Persists the API data (key, id, expiry date) to a file in the given path.
 
         Args:
             api_key: The authenticated user's generated API key.
         """
+
+        api_data = {
+            'secret_key': secret_key,
+            'api_key_id': api_key_id,
+            'expiry_date': expiry_date
+        }
+
         with open(self._complete_api_key_path, 'w', encoding='utf-8') as file:
             data = json.dumps(api_data, indent=4)
             file.write(data)
 
-    def get_api_data(self) -> Optional[Dict]:
+    def _get_api_data(self) -> Optional[Dict]:
         """Gets the API data from the location in which it is saved.
 
         Returns:
@@ -57,9 +64,9 @@ class ConfigurationManager:
         Returns:
             The user's API key if it exists, otherwise returns None.
         """
-        api_data = self.get_api_data()
+        api_data = self._get_api_data()
         if api_data is not None:
-            return api_data.get('secretKey')
+            return api_data.get('secret_key')
         else:
             return None
 
@@ -69,9 +76,9 @@ class ConfigurationManager:
         Returns:
             The user's API key id if it exists, otherwise returns None.
         """
-        api_data = self.get_api_data()
-        if api_data is not None and api_data.get('apiKey') is not None:
-            return api_data.get('apiKey').get('id')
+        api_data = self._get_api_data()
+        if api_data is not None:
+            return api_data.get('api_key_id')
         else:
             return None
 
@@ -81,9 +88,9 @@ class ConfigurationManager:
         Returns:
             The user's API key expiry date if it exists, otherwise returns None.
         """
-        api_data = self.get_api_data()
-        if api_data is not None and api_data.get('apiKey') is not None:
-            return api_data.get('apiKey').get('expiryDate')
+        api_data = self._get_api_data()
+        if api_data is not None:
+            return api_data.get('expiry_date')
         else:
             return None
 
