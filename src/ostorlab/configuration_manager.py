@@ -46,7 +46,7 @@ class ConfigurationManager:
             data = json.dumps(api_data, indent=4)
             file.write(data)
 
-    def _get_api_data(self) -> Optional[Dict]:
+    def get_api_data(self) -> Optional[Dict]:
         """Gets the API data from the location in which it is saved.
 
         Returns:
@@ -64,7 +64,7 @@ class ConfigurationManager:
         Returns:
             The user's API key if it exists, otherwise returns None.
         """
-        api_data = self._get_api_data()
+        api_data = self.get_api_data()
         if api_data is not None:
             return api_data.get('secret_key')
         else:
@@ -76,7 +76,7 @@ class ConfigurationManager:
         Returns:
             The user's API key id if it exists, otherwise returns None.
         """
-        api_data = self._get_api_data()
+        api_data = self.get_api_data()
         if api_data is not None:
             return api_data.get('api_key_id')
         else:
@@ -88,7 +88,7 @@ class ConfigurationManager:
         Returns:
             The user's API key expiry date if it exists, otherwise returns None.
         """
-        api_data = self._get_api_data()
+        api_data = self.get_api_data()
         if api_data is not None:
             return api_data.get('expiry_date')
         else:
