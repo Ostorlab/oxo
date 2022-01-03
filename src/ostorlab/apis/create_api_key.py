@@ -35,6 +35,7 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
                      secretKey
                      apiKey {
                         expiryDate
+                        id
                      }
                   }
                }

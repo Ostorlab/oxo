@@ -16,8 +16,8 @@ from typing import Dict, Optional
 import requests
 import click
 
-from ostorlab import configuration_manager
-from ostorlab.apis import auth as apis_auth
+from ostorlab import configuration_manager as config_manager
+from ostorlab.apis import create_api_key
 from ostorlab.apis import login
 from ostorlab.apis import request as api_request
 
@@ -42,9 +42,9 @@ class APIRunner:
     """
 
     def __init__(self,
-                 username: Optional[str],
-                 password: Optional[str],
-                 token_duration: Optional[str],
+                 username: str = None,
+                 password: str = None,
+                 token_duration: str = None,
                  proxy: str = None,
                  verify: bool = True):
         """Constructs all the necessary attributes for the object.
@@ -62,9 +62,10 @@ class APIRunner:
         self._password = password
         self._proxy = proxy
         self._verify = verify
-        self._token: Optional[str] = None
-        self._api_key: Optional[str] = None
         self._token_duration = token_duration
+        self._configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
+        self._api_key: Optional[str] = self._configuration_manager.get_api_key()
+        self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
 
     def _login_user(self) -> requests.models.Response:
@@ -97,13 +98,23 @@ class APIRunner:
         else:
             self._token = response.json().get('token')
             api_key_response = self.execute(
-                apis_auth.CreateAPIKeyAPIRequest(self._token_duration))
-            self._api_key = api_key_response['data']['createApiKey']['apiKey']['secretKey']
-            configuration_manager.ConfigurationManager().set_api_key(self._api_key)
+                create_api_key.CreateAPIKeyAPIRequest(self._token_duration))
+
+            api_data = api_key_response['data']['createApiKey']['apiKey']
+            secret_key = api_data['secretKey']
+            api_key_id = api_data['apiKey']['id']
+            expiry_date = api_data['apiKey']['expiryDate']
+
+            self._api_key = secret_key
+            self._configuration_manager.set_api_data(
+                secret_key, api_key_id, expiry_date)
             self._token = None
 
+    def unauthenticate(self) -> None:
+        self._api_key = None
+
     def execute(self, request: api_request.APIRequest) -> Dict:
-        """Executes a request using the GraphQL API
+        """Executes a request using the GraphQL API.
 
         Args:
             request: The request to be executed
@@ -114,8 +125,16 @@ class APIRunner:
         Returns:
             The API response
         """
-        response = self._sent_request(
-            request, headers={'Authorization': f'Token {self._token}'})
+        if self._token is not None:
+            headers = {'Authorization': f'Token {self._token}'}
+        elif self._api_key is not None:
+            headers = {'X-Api-Key': f'{self._api_key}'}
+        else:
+            headers = None
+            logger.warning('No authentication credentials were provided.')
+
+
+        response = self._sent_request(request, headers)
         if response.status_code != 200:
             raise ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
@@ -124,15 +143,13 @@ class APIRunner:
 
     def _sent_request(self, request: api_request.APIRequest, headers=None,
                       multipart=False) -> requests.Response:
-        """Sends an API request
-        """
+        """Sends an API request."""
         if self._proxy is not None:
             proxy = {
                 'https': self._proxy
             }
         else:
             proxy = None
-
         if multipart:
             return requests.post(request.endpoint, files=request.data, headers=headers,
                                  proxies=proxy, verify=self._verify)
