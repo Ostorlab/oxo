@@ -15,9 +15,9 @@ from docker.models import services as docker_models_services
 from docker.types import services as docker_types_services
 
 from ostorlab import exceptions
-from ostorlab.assets import Asset
-from ostorlab.runtimes import runtime
+from ostorlab.assets import asset as base_asset
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
 from ostorlab.utils import strings as strings_utils
 
@@ -109,7 +109,7 @@ class LocalRuntime(runtime.Runtime):
         del agent_run_definition
         return True
 
-    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: Asset) -> None:
+    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: base_asset.Asset) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -139,7 +139,7 @@ class LocalRuntime(runtime.Runtime):
                 name=self._network,
                 driver='overlay',
                 attachable=True,
-                labels={'ostorlab.universe': self._name,},
+                labels={'ostorlab.universe': self._name},
                 check_duplicate=True
             )
 
@@ -263,7 +263,7 @@ class LocalRuntime(runtime.Runtime):
             if service.name.startswith('agent_'):
                 yield service
 
-    def _inject_asset(self, asset: Asset):
+    def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
         # TODO(alaeddine): implement asset injection.
         pass

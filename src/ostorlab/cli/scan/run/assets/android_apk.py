@@ -3,7 +3,7 @@ This module takes care of preparing a file of type .APK before injecting it to t
 """
 import io
 import click
-from ostorlab import assets
+from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.cli.scan.run import run
 
 
@@ -14,5 +14,5 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .APK package file."""
 
     runtime = ctx.obj['runtime']
-    asset = assets.AndroidApk(file)
+    asset = android_apk_asset.AndroidApk(file.read())
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)

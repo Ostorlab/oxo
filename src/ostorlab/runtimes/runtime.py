@@ -2,7 +2,7 @@
 import abc
 
 from ostorlab.runtimes import definitions
-from ostorlab import assets
+from ostorlab.assets import asset as base_asset
 
 
 
@@ -22,7 +22,7 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: assets.Asset) -> None:
+    def scan(self, agent_run_definition: definitions.AgentRunDefinition, asset: base_asset.Asset) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:

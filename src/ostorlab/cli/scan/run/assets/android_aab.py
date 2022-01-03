@@ -2,7 +2,7 @@
 This module takes care of preparing a file of type .aab before injecting it to the runtime instance."""
 import io
 import click
-from ostorlab import assets
+from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.cli.scan.run import run
 
 
@@ -12,5 +12,5 @@ from ostorlab.cli.scan.run import run
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .AAB package file."""
     runtime = ctx.obj['runtime']
-    asset = assets.AndroidAab(file)
+    asset = android_aab_asset.AndroidAab(file)
     runtime.scan(agent_run_definition=ctx.obj['agent_run_definition'], asset=asset)
