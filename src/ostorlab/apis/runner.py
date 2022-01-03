@@ -63,8 +63,8 @@ class APIRunner:
         self._proxy = proxy
         self._verify = verify
         self._token_duration = token_duration
-        self.configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
-        self._api_key: Optional[str] = self.configuration_manager.get_api_key()
+        self._configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
+        self._api_key: Optional[str] = self._configuration_manager.get_api_key()
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
 
@@ -101,7 +101,7 @@ class APIRunner:
                 create_api_key.CreateAPIKeyAPIRequest(self._token_duration))
             api_data = api_key_response['data']['createApiKey']['apiKey']
             self._api_key = api_data['secretKey']
-            self.configuration_manager.set_api_data(api_data)
+            self._configuration_manager.set_api_data(api_data)
             self._token = None
 
     def unauthenticate(self) -> None:
