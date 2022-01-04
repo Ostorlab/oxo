@@ -136,7 +136,6 @@ class APIRunner:
             headers = None
             rich_console.warning('No authentication credentials were provided.')
 
-
         response = self._sent_request(request, headers)
         if response.status_code != 200:
             raise ResponseError(

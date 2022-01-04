@@ -19,8 +19,8 @@ class ScansListAPIRequest(request.APIRequest):
             The query to list the scans.
         """
         return """
-         query Scans {
-            scans {
+         query Scans($page: Int, $numberElements: Int) {
+            scans(page: $page, numberElements: $numberElements) {
                 pageInfo {
                     hasNext
                     hasPrevious
@@ -33,7 +33,6 @@ class ScansListAPIRequest(request.APIRequest):
                     riskRating
                     version
                     packageName
-                    b64Icon
                     id
                     progress
                     messageStatus
@@ -73,5 +72,8 @@ class ScansListAPIRequest(request.APIRequest):
         Returns:
               The query to list the scans.
         """
-        data = {'query': self.query}
+        data = {
+            'query': self.query,
+            'variables': json.dumps({'page': 1, 'numberElements': 5})
+            }
         return data
