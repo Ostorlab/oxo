@@ -52,7 +52,6 @@ def testDeserializeRequest_withIncorrectSelector_throwsError():
         serializer.deserialize('v3.capture.logs', serialized.SerializeToString())
 
 
-
 def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
     """Test message serialization with an empty message event message."""
     serialized = serializer.serialize('v3.report.event.scan.done', {})
