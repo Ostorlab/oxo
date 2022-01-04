@@ -1,0 +1,5 @@
+syntax = "proto2";
+
+package v3.report.event;
+
+message Message {}
