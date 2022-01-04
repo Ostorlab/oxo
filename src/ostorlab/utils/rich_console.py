@@ -61,7 +61,7 @@ def info(info_text: str):
       Returns:
          # TODO (Rabson) add return type
       """
-    return console.print(info_text, style="info")
+    return console.print(info_text, style='info')
 
 
 def authenticate():
