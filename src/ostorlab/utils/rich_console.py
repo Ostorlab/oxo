@@ -122,6 +122,7 @@ def scan_list_table(data) -> None:
         count and number of pages.
     """
     scans = data['data']['scans']['scans']
+    print_json_data(len(scans))
     scans_table = table.Table(title='\n[bold]List of Scans', show_lines=True)
 
     scans_table.add_column('Application')
@@ -132,7 +133,7 @@ def scan_list_table(data) -> None:
     scans_table.add_column('Risk')
 
     for scan in scans:
-        scans_table.add_row(f'{scan["asset"]["packageName"]}:{scan["version"]}', scan['assetType'],
+        scans_table.add_row(f'{scan["packageName"]}:{scan["version"]}', scan['assetType'],
                             scan['plan'], scan['createdTime'], scan['progress'], scan['riskRating'])
 
     console.print(scans_table)

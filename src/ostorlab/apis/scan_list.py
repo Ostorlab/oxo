@@ -7,9 +7,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class ScansListAPIRequest(request.APIRequest):
     """Lists the remote scans."""
+
+    def __init__(self, page: int, elements: int):
+        self._page = page
+        self._elements = elements
 
     @property
     def query(self) -> Optional[str]:
@@ -36,21 +39,6 @@ class ScansListAPIRequest(request.APIRequest):
                     progress
                     createdTime
                     plan
-                    asset {
-                    ... on AndroidStoreAssetType {
-                        packageName
-                    }
-                    ... on IOSStoreAssetType {
-                        applicationName
-                        packageName
-                    }
-                    ... on UrlAssetType {
-                        urls
-                    }
-                    ... on DomainAssetType {
-                        domain
-                    }
-                    }
                 }
             }
          }
@@ -67,8 +55,9 @@ class ScansListAPIRequest(request.APIRequest):
         Returns:
               The query to list the scans.
         """
+        logger.info(self._page)
         data = {
             'query': self.query,
-            'variables': json.dumps({'page': 1, 'numberElements': 5})
+            'variables': json.dumps({'page': self._page, 'numberElements': self._elements})
             }
         return data
