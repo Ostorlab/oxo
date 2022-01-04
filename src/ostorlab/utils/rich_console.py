@@ -1,9 +1,7 @@
 """Utils to pretty print console statements."""
 
 import time
-from rich import theme
-from rich import console
-from rich import progress
+from rich import theme, progress, console
 
 custom_theme = theme.Theme({
     'success': 'bold green',
