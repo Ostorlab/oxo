@@ -55,5 +55,6 @@ def testDeserializeRequest_withIncorrectSelector_throwsError():
 def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
     """Test message serialization with an empty message event message."""
     serialized = serializer.serialize('v3.report.event.scan.done', {})
-
+    assert serialized is not None
+    serialized = serializer.serialize('v3.report.event.post_scan.done', {})
     assert serialized is not None
