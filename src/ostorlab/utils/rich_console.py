@@ -70,16 +70,16 @@ def authenticate():
     console.print()
 
     with console.status(status='[bold blue]Logging you into Ostorlab') as status:
-        time.sleep(3)
+        time.sleep(2)
         status.update(status='[bold blue]Validating your credentials')
-        time.sleep(3)
+        time.sleep(2)
         status.update(status='[bold blue]Logging into your account')
-        time.sleep(3)
+        time.sleep(2)
         status.update(status='[bold blue]Generating your API key')
         time.sleep(2)
         status.update(status='[bold blue]Persisting your API key')
-        time.sleep(3)
-    console.print('[bold green]Authentication successful')
+        time.sleep(2)
+    console.print('[bold green]✅ Authentication successful')
 
 
 def processing():
