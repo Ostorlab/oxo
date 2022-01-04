@@ -2,7 +2,8 @@
 import datetime
 
 from ostorlab.agent import agent
-from ostorlab.runtimes import definitions
+from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.agent import definitions as agent_definitions
 
 
 class StartTestAgent(agent.Agent):
@@ -16,10 +17,11 @@ class StartTestAgent(agent.Agent):
         self.emit('v3.healthcheck.ping', {'body': f'from test agent at {datetime.datetime.now()}'})
 
 
-definition = definitions.AgentDefinition(
+definition = agent_definitions.AgentDefinition(
     name='start_test_agent',
     out_selectors=['v3.healthcheck.ping'])
-settings = definitions.AgentInstanceSettings(
+settings = runtime_definitions.AgentSettings(
+    key='agent/ostorlab/start_test_agent',
     bus_url='amqp://guest:guest@localhost:5672/',
     bus_exchange_topic='ostorlab_test',
     healthcheck_port=5301)

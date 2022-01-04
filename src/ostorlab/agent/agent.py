@@ -11,6 +11,7 @@ import asyncio
 import atexit
 import functools
 import logging
+import os
 import pathlib
 import sys
 import threading
@@ -21,7 +22,9 @@ from ostorlab import exceptions
 from ostorlab.agent import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
-from ostorlab.runtimes import definitions
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes import definitions as runtime_definitions
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +40,8 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
     """
 
     def __init__(self,
-                 agent_definition: definitions.AgentDefinition,
-                 agent_instance_definition: definitions.AgentInstanceSettings
+                 agent_definition: agent_definitions.AgentDefinition,
+                 agent_instance_definition: runtime_definitions.AgentSettings
                  ) -> None:
         """Inits the agent configuration from the Yaml agent definition.
 
@@ -67,6 +70,14 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(self, name=agent_definition.name,
                                                                host=agent_instance_definition.healthcheck_host,
                                                                port=agent_instance_definition.healthcheck_port)
+
+    @property
+    def universe(self):
+        """Returns the current scan universe.
+
+        A universe is the group of agents and services in charge of running a scan. The universe is defined
+        by the runtime."""
+        return os.environ.get('UNIVERSE')
 
     def run(self) -> None:
         """Starts running the agent.
@@ -175,6 +186,23 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         Args:
             selector: target selector.
             data: message data to be serialized.
+        Raises:
+            NonListedMessageSelectorError: when selector is not part of listed out selectors.
+
+        Returns:
+            None
+        """
+        message = agent_message.Message.from_data(selector, data)
+        self.emit_raw(selector, message.raw)
+
+    def emit_raw(self, selector: str, raw: bytes) -> None:
+        """Sends a message to all listeing agents on the specified selector with no serializaion.
+
+        Args:
+            selector: target selector.
+            raw: raw message to send.
+        Raises:
+            NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
         Returns:
             None
@@ -184,13 +212,11 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             # CAUTION: this check is enforced on the client-side only in certain runtimes
             raise NonListedMessageSelectorError(f'{selector} is not in {"".join(self.out_selectors)}')
 
-        message = agent_message.Message.from_data(selector, data)
-        logger.debug('call to send message with %s', message)
+        logger.debug('call to send message with %s', selector)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
-        selector = f'{message.selector}.{uuid.uuid1()}'
-        serialized_message = message.raw
-        self.mq_send_message(selector, serialized_message)
+        selector = f'{selector}.{uuid.uuid1()}'
+        self.mq_send_message(selector, raw)
         logger.debug('done call to send_message')
 
     @classmethod
@@ -220,7 +246,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             args = sys.argv[1:]
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-d', '--definition', default='agent.yaml', help='Agent YAML definition file.')
+        parser.add_argument('-d', '--definition', default='ostorlab.yaml', help='Agent YAML definition file.')
         parser.add_argument('-s', '--settings', default='/tmp/settings.binproto', help='Agent binary proto settings.')
         args = parser.parse_args(args)
         logger.info('running agent with definition %s and settings %s', args.definition, args.settings)
@@ -233,8 +259,8 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             sys.exit(2)
 
         with open(args.definition, 'r', encoding='utf-8') as f_definition, open(args.settings, 'rb') as f_settings:
-            agent_definition = definitions.AgentDefinition.from_yaml(f_definition)
-            agent_settings = definitions.AgentInstanceSettings.from_proto(f_settings.read())
+            agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
+            agent_settings = runtime_definitions.AgentSettings.from_proto(f_settings.read())
             instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
             logger.debug('running agent instance')
             instance.run()
