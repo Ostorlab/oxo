@@ -4,12 +4,10 @@ Example of usage:
     - ostorlab scan list --source=source."""
 
 import click
-import logging
 from ostorlab.cli.scan import scan
 from ostorlab.apis import runner as apis_runner
 from ostorlab.apis import scan_list
-
-logger = logging.getLogger(__name__)
+from ostorlab.utils import rich_console
 
 
 @scan.command()
@@ -24,7 +22,7 @@ def list(source: str) -> None:
         try:
             runner = apis_runner.APIRunner()
             response = runner.execute(scan_list.ScansListAPIRequest())
-            logger.info(response)
+            rich_console.scan_list_table(response)
         except apis_runner.AuthenticationError:
             runner.unauthenticate()
     else:

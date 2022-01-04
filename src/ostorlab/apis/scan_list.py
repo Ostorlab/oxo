@@ -28,21 +28,16 @@ class ScansListAPIRequest(request.APIRequest):
                     numPages
                 }
                 scans {
-                    title
                     assetType
                     riskRating
                     version
                     packageName
                     id
                     progress
-                    messageStatus
                     createdTime
                     plan
-                    hasAnalysis
                     asset {
-                    __typename
                     ... on AndroidStoreAssetType {
-                        applicationName
                         packageName
                     }
                     ... on IOSStoreAssetType {

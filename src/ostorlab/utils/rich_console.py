@@ -1,7 +1,7 @@
 """Utils to pretty print console statements."""
 
 import time
-from rich import theme, progress, console
+from rich import theme, progress, console, table, print_json
 
 custom_theme = theme.Theme({
     'success': 'bold green',
@@ -105,3 +105,34 @@ def processing():
     with console.status('[green]Processing request...'):
         time.sleep(1)
         console.log('[bold]Request processed.')
+
+def print_json_data(data) -> None:
+    """pretty prints a dictionary.
+
+    Args:
+        data: The data to pretty print.
+    """
+    print_json(data=data)
+
+def scan_list_table(data) -> None:
+    """Constructs a table to display the list of scans.
+
+    Args:
+        data: The list of scans and other meta data such as
+        count and number of pages.
+    """
+    scans = data['data']['scans']['scans']
+    scans_table = table.Table(title='\n[bold]List of Scans', show_lines=True)
+
+    scans_table.add_column('Application')
+    scans_table.add_column('Platform')
+    scans_table.add_column('Plan')
+    scans_table.add_column('Created Time')
+    scans_table.add_column('Progress')
+    scans_table.add_column('Risk')
+
+    for scan in scans:
+        scans_table.add_row(f'{scan["asset"]["packageName"]}:{scan["version"]}', scan['assetType'],
+                            scan['plan'], scan['createdTime'], scan['progress'], scan['riskRating'])
+
+    console.print(scans_table)
