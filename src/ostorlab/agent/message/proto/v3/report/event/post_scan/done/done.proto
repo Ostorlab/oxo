@@ -1,0 +1,6 @@
+syntax = "proto2";
+
+package v3.report.event.post_scan.done;
+
+message Message {
+}
