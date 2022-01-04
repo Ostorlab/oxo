@@ -65,9 +65,7 @@ def info(info_text: str):
 def authenticate():
     """Shows a message for each step in authentication."""
 
-    console.print()
-
-    with console.status(status='[bold blue]Logging you into Ostorlab') as status:
+    with console.status(status='[bold blue]Connecting to Ostorlab') as status:
         time.sleep(2)
         status.update(status='[bold blue]Validating your credentials')
         time.sleep(2)
@@ -80,10 +78,30 @@ def authenticate():
     console.print('[bold green]✅ Authentication successful')
 
 
+def revoke():
+    """Shows a message for each step in revoking an API."""
+
+    with console.status('[bold blue]Connecting to Ostorlab') as status:
+        time.sleep(2)
+        status.update(status='[bold blue]Validating your credentials')
+        time.sleep(2)
+        status.update(status='[bold blue] Revoking your API key')
+        time.sleep(2)
+        console.log('[bold]API key revoked')
+        time.sleep(2)
+        status.update(
+            status='[bold red]Deleting your API key',
+            spinner='bouncingBall',
+            spinner_style='yellow',
+        )
+        time.sleep(3)
+    console.print('[bold green]✅ Access revoked successfully')
+
+
 def processing():
     """Shows text when any command is entered."""
     console.print()
 
     with console.status('[green]Processing request...'):
-        time.sleep(1.5)
+        time.sleep(1)
         console.log('[bold]Request processed.')

@@ -21,12 +21,14 @@ def revoke():
         api_key_id = config_manager.get_api_key_id()
         runner = apis_runner.APIRunner()
 
+        rich_console.processing()
         response = runner.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
         if response.get('errors') is not None:
             rich_console.error('Could not revoke your API key.')
 
         runner.unauthenticate()
         config_manager.delete_api_data()
+        rich_console.revoke()
     except apis_runner.AuthenticationError:
         runner.unauthenticate()
         rich_console.error('Your API key has already been revoked.')
