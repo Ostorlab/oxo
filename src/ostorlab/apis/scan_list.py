@@ -3,9 +3,6 @@
 from ostorlab.apis import request
 from typing import Dict, Optional
 import json
-import logging
-
-logger = logging.getLogger(__name__)
 
 class ScansListAPIRequest(request.APIRequest):
     """Lists the remote scans."""
@@ -55,7 +52,6 @@ class ScansListAPIRequest(request.APIRequest):
         Returns:
               The query to list the scans.
         """
-        logger.info(self._page)
         data = {
             'query': self.query,
             'variables': json.dumps({'page': self._page, 'numberElements': self._elements})
