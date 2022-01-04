@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package v3.report.event;
+
+message Message {
+    required float timeout_sec = 1;
+}
