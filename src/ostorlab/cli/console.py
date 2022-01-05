@@ -1,6 +1,7 @@
 """Utils to pretty print console statements."""
 
 import rich
+from dateutil import parser
 
 custom_theme = rich.theme.Theme({
     'success': 'bold green',
@@ -69,6 +70,18 @@ def print_json_data(data) -> None:
     """
     rich.print_json(data=data)
 
+def format_date(date: str) -> str:
+    """Formats date to a readable format.
+
+    Args:
+        date: The date to format.
+
+    Returns:
+        The formatted date.
+    """
+    parsed_date = parser.parse(date)
+    return parsed_date.strftime('%B %d %Y')
+
 
 def scan_list_table(data) -> None:
     """Constructs a table to display the list of scans.
@@ -89,7 +102,7 @@ def scan_list_table(data) -> None:
 
     for scan in scans:
         scans_table.add_row(f'{scan["packageName"]}:{scan["version"]}', scan['assetType'],
-                            scan['plan'], scan['createdTime'], scan['progress'], scan['riskRating'])
+                            scan['plan'], format_date(scan['createdTime']), scan['progress'], scan['riskRating'])
 
     console.print(scans_table)
 
