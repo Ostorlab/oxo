@@ -2,6 +2,10 @@
 
 import rich
 
+CONSOLE_LOADING_TEXT_STYLES = 'bold blue'
+CONSOLE_LOADED_TEXT_STYLES = 'bold green'
+CONSOLE_WARNING_TEXT_STYLES = 'bold green'
+
 custom_theme = rich.theme.Theme({
     'success': 'bold green',
     'error': 'red',
