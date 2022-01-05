@@ -26,7 +26,6 @@ def list(source: str, page: int, elements: int) -> None:
         try:
             runner = apis_runner.APIRunner()
             response = runner.execute(scan_list.ScansListAPIRequest(page, elements))
-            # console.print_json_data(response)
             console.scan_list_table(response)
         except apis_runner.Error:
             console.error('Could not fetch scans.')
