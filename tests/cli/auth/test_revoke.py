@@ -1,11 +1,10 @@
 """Unit Tests for auth revoke command."""
 
-
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
 from ostorlab import configuration_manager
 from ostorlab.apis import request as api_request
-from ostorlab.utils import rich_console
+from ostorlab.apis import runner as apis_runner
 
 from unittest import mock
 
@@ -26,11 +25,11 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
     ).get_api_data() is None
 
 
-@mock.patch.object(rich_console, 'error')
+@mock.patch.object(apis_runner.APIRunner, 'unauthenticate')
 def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
     mock_rich_console, requests_mock):
     """Test ostorlab auth revoke command with wrong api key id.
-    Should log the error.
+    Should unauthenticate user.
     """
 
     errors_dict = {'errors': [{'message': 'OrganizationAPIKey matching query does not exist.', 'locations': [
@@ -42,6 +41,6 @@ def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
                        json=errors_dict, status_code=200)
     result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
     assert result.exception is None
-    mock_rich_console.assert_called_once_with('Could not revoke your API key.')
+    mock_rich_console.assert_called()
 
 
