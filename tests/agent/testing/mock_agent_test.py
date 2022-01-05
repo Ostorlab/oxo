@@ -5,15 +5,15 @@ from abc import ABC
 
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
-from ostorlab.agent.testing import mock_agent
 from ostorlab.agent import agent
+from ostorlab.agent.testing.mock_agent import agent_mock
 
 
 class StartTestAgent(agent.Agent, ABC):
     """Test Agent implementation."""
 
 
-def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList():
+def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):
     definition = agent_definitions.AgentDefinition(
         name='start_test_agent',
         out_selectors=['v3.healthcheck.ping'])
@@ -23,7 +23,7 @@ def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList():
         bus_exchange_topic='NA',
         healthcheck_port=5301)
 
-    test_agent = mock_agent.start_agent(StartTestAgent, definition, settings)
+    test_agent = StartTestAgent(definition, settings)
     test_agent.emit('v3.healthcheck.ping', {'body': f'from test agent at {datetime.datetime.now()}'})
-    assert len(test_agent.emit_message_with_selector_queue) == 1
-    assert test_agent.emit_message_with_selector_queue[0].selector == 'v3.healthcheck.ping'
+    assert len(agent_mock) == 1
+    assert agent_mock[0].selector == 'v3.healthcheck.ping'
