@@ -13,7 +13,7 @@ class StartTestAgent(agent.Agent, ABC):
     """Test Agent implementation."""
 
 
-def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):
+def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):  # pylint: disable=W0621
     definition = agent_definitions.AgentDefinition(
         name='start_test_agent',
         out_selectors=['v3.healthcheck.ping'])
