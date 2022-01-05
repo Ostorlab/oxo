@@ -6,7 +6,6 @@ from typing import Any, List, Dict
 from ostorlab.agent import message
 
 
-
 @pytest.fixture
 def agent_mock(mocker):
     """This fixtures patches all the Agent components and returns the list of messaged emitted """
