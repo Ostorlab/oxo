@@ -16,6 +16,8 @@ type=click.Choice(['local', 'remote']), required=True)
 @click.option('--page', '-p', help='Page number of scans you would like to see.', default=1)
 @click.option('--elements', '-e', help='Number of scans to show per page.', default=10)
 
+# Disabling pylint error of redfining built-in 'list
+# pylint: disable=redefined-builtin
 def list(source: str, page: int, elements: int) -> None:
     """List all your scans.\n
     Usage:\n
