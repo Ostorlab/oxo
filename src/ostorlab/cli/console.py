@@ -4,7 +4,8 @@ import rich
 
 CONSOLE_LOADING_TEXT_STYLES = 'bold blue'
 CONSOLE_LOADED_TEXT_STYLES = 'bold green'
-CONSOLE_WARNING_TEXT_STYLES = 'bold green'
+CONSOLE_WARNING_TEXT_STYLES = 'bold yellow'
+CONSOLE_ERROR_TEXT_STYLES = 'bold red'
 
 custom_theme = rich.theme.Theme({
     'success': 'bold green',
