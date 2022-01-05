@@ -278,13 +278,18 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        docker_config = self._docker_client.configs.create(name='asset',
+        asset_config = self._docker_client.configs.create(name='asset',
                                                            data=asset.to_proto())
-        config_reference = docker.types.ConfigReference(config_id=docker_config.id,
+        asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
                                                         config_name='asset',
                                                         filename='/tmp/asset.binproto')
+        selector_config = self._docker_client.configs.create(name='asset_selector',
+                                                           data=asset.selector)
+        selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
+                                                        config_name='asset_selector',
+                                                        filename='/tmp/asset_selector.txt')
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT)
-        self._start_agent(agent=inject_asset_agent_settings, extra_configs=[config_reference])
+        self._start_agent(agent=inject_asset_agent_settings, extra_configs=[asset_config_reference, selector_config_reference])
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
