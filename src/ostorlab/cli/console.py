@@ -10,6 +10,7 @@ custom_theme = rich.theme.Theme({
 })
 
 console = rich.console.Console(theme=custom_theme)
+table = rich.table.Table
 
 
 def success(success_text: str):
@@ -58,4 +59,37 @@ def info(info_text: str):
          # TODO (Rabson) add return type
       """
     return console.print(info_text, style='info')
+
+
+def print_json_data(data) -> None:
+    """pretty prints a dictionary.
+
+    Args:
+        data: The data to pretty print.
+    """
+    rich.print_json(data=data)
+
+
+def scan_list_table(data) -> None:
+    """Constructs a table to display the list of scans.
+
+    Args:
+        data: The list of scans and other meta data such as
+        count and number of pages.
+    """
+    scans = data['data']['scans']['scans']
+    scans_table = table(title=f'\n[bold]Showing {len(scans)} Scans', show_lines=True)
+
+    scans_table.add_column('Application')
+    scans_table.add_column('Platform')
+    scans_table.add_column('Plan')
+    scans_table.add_column('Created Time')
+    scans_table.add_column('Progress')
+    scans_table.add_column('Risk')
+
+    for scan in scans:
+        scans_table.add_row(f'{scan["packageName"]}:{scan["version"]}', scan['assetType'],
+                            scan['plan'], scan['createdTime'], scan['progress'], scan['riskRating'])
+
+    console.print(scans_table)
 
