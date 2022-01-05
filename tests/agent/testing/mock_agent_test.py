@@ -23,7 +23,7 @@ def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList():
         bus_exchange_topic='NA',
         healthcheck_port=5301)
 
-    test_agent = mock_agent .start_agent(StartTestAgent, definition, settings)
+    test_agent = mock_agent.start_agent(StartTestAgent, definition, settings)
     test_agent.emit('v3.healthcheck.ping', {'body': f'from test agent at {datetime.datetime.now()}'})
     assert len(test_agent.emit_message_with_selector_queue) == 1
     assert test_agent.emit_message_with_selector_queue[0].selector == 'v3.healthcheck.ping'

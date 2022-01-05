@@ -16,7 +16,7 @@ class MessageSelector:
 
 class MockAgent(agent.Agent, ABC):
     """MockAgent class implements the Agent class without the need to external components
-    It can be used as fixture by the agents to test their behaviors
+    It can be used by the agents to test their behaviors
     """
 
     def __init__(self, *args, **kwargs):
