@@ -196,7 +196,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         self.emit_raw(selector, message.raw)
 
     def emit_raw(self, selector: str, raw: bytes) -> None:
-        """Sends a message to all listeing agents on the specified selector with no serializaion.
+        """Sends a message to all listening agents on the specified selector with no serialization.
 
         Args:
             selector: target selector.
