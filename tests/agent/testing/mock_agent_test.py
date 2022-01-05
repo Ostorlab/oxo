@@ -6,7 +6,7 @@ from abc import ABC
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import agent
-from ostorlab.agent.testing.mock_agent import agent_mock
+from ostorlab.agent.testing.mock_agent import agent_mock # pylint: disable=W0611
 
 
 class StartTestAgent(agent.Agent, ABC):

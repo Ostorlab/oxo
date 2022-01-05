@@ -6,9 +6,9 @@ from typing import Any, List, Dict
 from ostorlab.agent import message
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def agent_mock(mocker):
-    """This fixtures patches all the Agent components and returns the list of messaged emitted """
+    """This fixtures patches all the Agent components and returns the list of messages emitted """
     emit_message_with_selector_queue: List[message.Message] = []
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_init', return_value=None)
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run', return_value=None)
