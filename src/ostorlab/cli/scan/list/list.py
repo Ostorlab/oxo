@@ -14,7 +14,7 @@ from ostorlab.utils import rich_console
 @click.option('--source', '-s', help='Where you want your scans to be fetched from.',
 type=click.Choice(['local', 'remote']), required=True)
 @click.option('--page', '-p', help='Page number of scans you would like to see.', default=1)
-@click.option('--elements', '-e', help='Number of scans to show per page.', default=10)
+@click.option('--elements', '-e', help='Number of scans to show per page.', default=1)
 
 def list(source: str, page: int, elements: int) -> None:
     """List all your scans.\n
@@ -26,6 +26,7 @@ def list(source: str, page: int, elements: int) -> None:
         try:
             runner = apis_runner.APIRunner()
             response = runner.execute(scan_list.ScansListAPIRequest(page, elements))
+            rich_console.print_json_data(response)
             rich_console.scan_list_table(response)
         except apis_runner.Error:
             rich_console.error('Could not fetch scans.')
