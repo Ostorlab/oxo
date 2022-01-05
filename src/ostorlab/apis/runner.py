@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 CONSOLE_LOADING_TEXT_STYLES = 'bold blue'
 CONSOLE_LOADED_TEXT_STYLES = 'bold green'
+CONSOLE_WARNING_TEXT_STYLES = 'bold green'
 
 
 class Error(Exception):
@@ -145,7 +146,8 @@ class APIRunner:
             headers = {'X-Api-Key': f'{self._api_key}'}
         else:
             headers = None
-            console.warning('No authentication credentials were provided.')
+            console.print(
+                f'[{CONSOLE_WARNING_TEXT_STYLES}]No authentication credentials were provided.')
 
         response = self._sent_request(request, headers)
         if response.status_code != 200:
