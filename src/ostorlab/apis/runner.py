@@ -25,10 +25,6 @@ from ostorlab.cli import console
 
 logger = logging.getLogger(__name__)
 
-CONSOLE_LOADING_TEXT_STYLES = 'bold blue'
-CONSOLE_LOADED_TEXT_STYLES = 'bold green'
-CONSOLE_WARNING_TEXT_STYLES = 'bold green'
-
 
 class Error(Exception):
     """Base Error Class"""
