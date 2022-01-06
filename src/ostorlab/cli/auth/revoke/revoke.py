@@ -8,14 +8,8 @@ from ostorlab import configuration_manager
 from ostorlab.cli.auth import auth
 from ostorlab.cli import console
 
-console = rich.console.Console()
 logger = logging.getLogger(__name__)
 console = console.Console()
-
-CONSOLE_LOADING_TEXT_STYLES = 'bold blue'
-CONSOLE_LOADED_TEXT_STYLES = 'bold green'
-CONSOLE_ERROR_TEXT_STYLES = 'bold red'
-
 
 
 @auth.auth.command()

@@ -1,108 +1,108 @@
-"""Utils to pretty print console statements."""
+"""Pretty prints and logs console statements."""
 
 import rich
 from dateutil import parser
-
-custom_theme = rich.theme.Theme({
-    'success': 'bold green',
-    'error': 'red',
-    'warning': 'yellow',
-    'info': 'bold blue'
-})
-
-console = rich.console.Console(theme=custom_theme)
-table = rich.table.Table
+from rich import status
+from typing import Dict
 
 
-def success(success_text: str):
-    """Shows success message.
+class Console():
+    """Pretty prints and logs console statements."""
 
-    Args:
-        success_text: success message to show.
+    THEME = {
+        'success': 'bold green',
+        'error': 'red',
+        'warning': 'yellow',
+        'info': 'bold blue'
+    }
 
-    Returns:
-       # TODO (Rabson) add return type
-    """
-    return console.print(success_text, style='success')
+    def __init__(self, theme: Dict[str, str] = None) -> None:
+        """Initializes the console with text styling.
 
+        Args:
+            theme: The text styling. Defaults to None.
+        """
+        if theme is None:
+            theme = self.THEME
+        self._console = rich.console.Console(theme=rich.theme.Theme(theme))
+        self._table = rich.table.Table
 
-def error(error_text: str):
-    """Shows error message.
+    def success(self, success_text: str) -> None:
+        """Shows success message.
 
-    Args:
-        error_text: error message to show.
+        Args:
+            success_text: The success text to show.
+        """
+        self._console.print(success_text, style='success')
 
-    Returns:
-       # TODO (Rabson) add return type
-    """
-    return console.print(f'[bold]ERROR:[/] {error_text}', style='error')
+    def error(self, error_text: str) -> None:
+        """Shows error message.
 
+        Args:
+            error_text: The error text to show.
+        """
+        self._console.print(f'[bold]ERROR:[/] {error_text}', style='error')
 
-def warning(warning_text: str):
-    """Shows warning message.
+    def warning(self, warning_text: str) -> None:
+        """Shows warning message.
 
-     Args:
-         warning_text: warning message to show.
+        Args:
+            warning_text: The warning text to show.
+        """
+        self._console.print(f'[bold]WARNING:[/] {warning_text}', style='warning')
 
-     Returns:
-        # TODO (Rabson) add return type
-     """
-    return console.print(f'[bold]WARNING:[/] {warning_text}', style='warning')
+    def info(self, info_text: str) -> None:
+        """Shows general information message.
 
+        Args:
+            info_text: The general text to show.
+        """
+        self._console.print(info_text, style='info')
 
-def info(info_text: str):
-    """Shows general information message.
+    def status(self, status_text: str) -> status.Status:
+        """Shows loading text.
 
-      Args:
-          info_text: general information message to show.
+        Args:
+            status_text: The loading text to show.
 
-      Returns:
-         # TODO (Rabson) add return type
-      """
-    return console.print(info_text, style='info')
+        Returns:
+            The loading text.
+        """
+        return self._console.status(f'[info]{status_text}')
 
+    def format_date(self, date: str) -> str:
+        """Formats date to a readable format.
 
-def print_json_data(data) -> None:
-    """pretty prints a dictionary.
+        Args:
+            date: The date to format.
 
-    Args:
-        data: The data to pretty print.
-    """
-    rich.print_json(data=data)
+        Returns:
+            The formatted date.
+        """
+        parsed_date = parser.parse(date)
+        return parsed_date.strftime('%B %d %Y')
 
-def format_date(date: str) -> str:
-    """Formats date to a readable format.
+    def scan_list_table(self, data) -> None:
+        """Constructs a table to display the list of scans.
 
-    Args:
-        date: The date to format.
+        Args:
+            data: The list of scans and other meta data such as
+            count and number of pages.
+        """
+        scans = data['data']['scans']['scans']
+        scans_table = self._table(
+            title=f'\n[bold]Showing {len(scans)} Scans', show_lines=True)
 
-    Returns:
-        The formatted date.
-    """
-    parsed_date = parser.parse(date)
-    return parsed_date.strftime('%B %d %Y')
+        scans_table.add_column('Application')
+        scans_table.add_column('Platform')
+        scans_table.add_column('Plan')
+        scans_table.add_column('Created Time')
+        scans_table.add_column('Progress')
+        scans_table.add_column('Risk')
 
+        for scan in scans:
+            scans_table.add_row(f'{scan["packageName"]}:{scan["version"]}', scan['assetType'],
+                                scan['plan'], self.format_date(scan['createdTime']),
+                                scan['progress'], scan['riskRating'])
 
-def scan_list_table(data) -> None:
-    """Constructs a table to display the list of scans.
-
-    Args:
-        data: The list of scans and other meta data such as
-        count and number of pages.
-    """
-    scans = data['data']['scans']['scans']
-    scans_table = table(title=f'\n[bold]Showing {len(scans)} Scans', show_lines=True)
-
-    scans_table.add_column('Application')
-    scans_table.add_column('Platform')
-    scans_table.add_column('Plan')
-    scans_table.add_column('Created Time')
-    scans_table.add_column('Progress')
-    scans_table.add_column('Risk')
-
-    for scan in scans:
-        scans_table.add_row(f'{scan["packageName"]}:{scan["version"]}', scan['assetType'],
-                            scan['plan'], format_date(scan['createdTime']), scan['progress'], scan['riskRating'])
-
-    console.print(scans_table)
-
+        self._console.print(scans_table)
