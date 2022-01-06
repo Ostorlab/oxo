@@ -43,13 +43,7 @@ def run(ctx: click.core.Context, runtime: str, agents: List[str], agents_group_d
         agents_settings.append(
             definitions.AgentSettings(key=agent_key))
 
-    # Building list of agent group definition
-    agents_groups: List[definitions.AgentGroupDefinition] = []
-    for group in agents_group_definition:
-        agents_groups.append(definitions.AgentGroupDefinition.from_file(group))
-
-    agent_run_definition = definitions.AgentRunDefinition(
-        agent_groups=agents_groups, agents=agents_settings)
+    agent_run_definition = definitions.AgentGroupDefinition(agents=agents_settings)
     if runtime.can_run(agent_group_definition=agent_run_definition):
         ctx.obj['runtime'] = runtime
         ctx.obj['agent_run_definition'] = agent_run_definition
