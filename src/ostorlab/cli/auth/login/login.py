@@ -9,6 +9,7 @@ from ostorlab.cli.auth import auth
 from ostorlab.cli import console
 
 logger = logging.getLogger(__name__)
+console = console.Console()
 
 
 @auth.auth.command()

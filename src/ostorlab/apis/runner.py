@@ -24,6 +24,7 @@ from ostorlab.cli import console
 
 
 logger = logging.getLogger(__name__)
+console = console.Console()
 
 
 class Error(Exception):
@@ -88,7 +89,7 @@ class APIRunner:
         Raises:
             AuthenticationError: If user credentials are not valid.
         """
-        with console.console.status(f'[{console.CONSOLE_LOADING_TEXT_STYLES}]Logging into your account'):
+        with console.status('Logging into your account'):
             response = self._login_user()
 
         if response.status_code != 200:
@@ -102,11 +103,10 @@ class APIRunner:
                 raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get('token')
-            with console.console.status(f'[{console.CONSOLE_LOADING_TEXT_STYLES}]Generating API key'):
+            with console.status('Generating API key'):
                 api_key_response = self.execute(
                     create_api_key.CreateAPIKeyAPIRequest(self._token_duration))
-                console.console.print(
-                    f'[{console.CONSOLE_LOADED_TEXT_STYLES}]API key generated')
+                console.success('API key generated')
 
             api_data = api_key_response['data']['createApiKey']['apiKey']
             secret_key = api_data['secretKey']
@@ -114,12 +114,12 @@ class APIRunner:
             expiry_date = api_data['apiKey']['expiryDate']
 
             self._api_key = secret_key
-            with console.console.status(f'[{console.CONSOLE_LOADING_TEXT_STYLES}]Persisting API key'):
+            with console.status('Persisting API key'):
                 self._configuration_manager.set_api_data(
                     secret_key, api_key_id, expiry_date)
-                console.console.print(f'[{console.CONSOLE_LOADED_TEXT_STYLES}]API key persisted')
+                console.success('API key persisted')
             self._token = None
-            console.console.print(f'[{console.CONSOLE_LOADED_TEXT_STYLES}]✅ Authentication successful')
+            console.success('✅ Authentication successful')
 
     def unauthenticate(self) -> None:
         self._api_key = None
@@ -142,8 +142,7 @@ class APIRunner:
             headers = {'X-Api-Key': f'{self._api_key}'}
         else:
             headers = None
-            console.console.print(
-                f'[{console.CONSOLE_WARNING_TEXT_STYLES}]No authentication credentials were provided.')
+            console.warning('No authentication credentials were provided.')
 
         response = self._sent_request(request, headers)
         if response.status_code != 200:
