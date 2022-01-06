@@ -40,18 +40,18 @@ def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(
 
     assert result.exception is None
 
-@mock.patch.object(console, 'error')
+@mock.patch.object(console.Console, 'error')
 def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
-        mock_rich_console, requests_mock):
+        mock_console, requests_mock):
     """Test ostorlab scan list command with correct commands and options
     but the user is not authenticated.
     Should log an error.
     """
 
-    mock_rich_console.return_value = None
+    mock_console.return_value = None
     runner = CliRunner()
     requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=None, status_code=401)
     result = runner.invoke(rootcli.rootcli, ['scan', 'list', '--source=remote'])
     assert result.exception is None
-    mock_rich_console.assert_called()
+    mock_console.assert_called()
