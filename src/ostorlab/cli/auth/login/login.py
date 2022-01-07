@@ -6,8 +6,10 @@ import click
 
 from ostorlab.apis import runner as apis_runner
 from ostorlab.cli.auth import auth
+from ostorlab.cli import console
 
 logger = logging.getLogger(__name__)
+console = console.Console()
 
 
 @auth.auth.command()
@@ -21,5 +23,5 @@ def login(username, password, token_duration):
                                            token_duration=token_duration)
         api_runner.authenticate()
     except apis_runner.AuthenticationError:
-        logger.error(
+        console.error(
             'Authentication error, please check that your credentials are valid.')
