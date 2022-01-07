@@ -14,6 +14,8 @@ class AgentSettings:
     key: str
     bus_url: Optional[str] = None
     bus_exchange_topic: Optional[str] = None
+    bus_managmentURL: Optional[str] = None
+    bus_vhost: Optional[str] = None
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
@@ -23,9 +25,7 @@ class AgentSettings:
     replicas: int = 1
     healthcheck_host: str = '0.0.0.0'
     healthcheck_port: int = 5000
-    bus_managmentURL: Optional[str] = None
-    bus_vhost: Optional[str] = None
-
+    
     @property
     def container_image(self):
         """Agent image name."""
@@ -49,6 +49,8 @@ class AgentSettings:
             key=instance.key,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
+            bus_managmentURL=instance.bus_managmentURL,
+            bus_vhost=instance.bus_vhost,
             args=[defintions.Arg(
                 name=a.name,
                 type=a.type,
@@ -77,6 +79,8 @@ class AgentSettings:
         instance.key = self.key
         instance.bus_url = self.bus_url
         instance.bus_exchange_topic = self.bus_exchange_topic
+        instance.bus_managmentURL = self.bus_managmentURL
+        instance.bus_vhost = self.bus_vhost
 
         for arg in self.args:
             arg_instance = instance.args.add()
