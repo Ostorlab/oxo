@@ -119,7 +119,7 @@ class APIRunner:
                     secret_key, api_key_id, expiry_date)
                 console.success('API key persisted')
             self._token = None
-            console.success('✅ Authentication successful')
+            console.success(':white_check_mark: Authentication successful')
 
     def unauthenticate(self) -> None:
         self._api_key = None
