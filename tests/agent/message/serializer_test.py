@@ -44,12 +44,12 @@ def testDeserializeRequest_withFileFingerprint_returnsCorrectObjects():
 
 def testDeserializeRequest_withIncorrectSelector_throwsError():
     """Test message deserialization error with incorrect selector."""
-    with pytest.raises(AttributeError):
+    with pytest.raises(serializer.NoMatchingPackageNameError):
         serialized = serializer.serialize('v3.fingerprint.file', {
             'path': '/etc/hosts',
         })
 
-        serializer.deserialize('v3.capture.logs', serialized.SerializeToString())
+        serializer.deserialize('v3.random.foo.bar', serialized.SerializeToString())
 
 
 def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
