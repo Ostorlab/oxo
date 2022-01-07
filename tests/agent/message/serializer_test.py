@@ -49,7 +49,7 @@ def testDeserializeRequest_withIncorrectSelector_throwsError():
             'path': '/etc/hosts',
         })
 
-        serializer.deserialize('v3.capture.logs', serialized.SerializeToString())
+        serializer.deserialize('v3.random.foo.bar', serialized.SerializeToString())
 
 
 def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
