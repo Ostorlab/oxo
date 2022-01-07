@@ -300,4 +300,13 @@ class LocalRuntime(runtime.Runtime):
                 s.scale(replicas)
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+        """Lists scans managed by runtime.
+
+        Args:
+            page: Page number for list pagination (default 1).
+            number_elements: count of elements to show in the listed page (default 10).
+
+        Returns:
+            List of scan objects.
+        """
         raise NotImplementedError()
