@@ -5,7 +5,7 @@ from rich import status
 from typing import Dict, List
 
 
-class Console():
+class Console:
     """Pretty prints and logs console statements."""
 
     THEME = {
@@ -69,16 +69,16 @@ class Console():
         """
         return self._console.status(f'[info]{text}')
 
-    def table(self, columns: Dict[str, str], data: List[Dict], table_title: str) -> None:
+    def table(self, columns: Dict[str, str], data: List[Dict], title: str) -> None:
         """Constructs a table to display a list of items.
 
         Args:
             columns: The table columns.
             data: The list of items to display.
-            table_title: The title of the table.
+            title: The title of the table.
         """
 
-        table = self._table(title=f'\n[bold]{table_title}', show_lines=True)
+        table = self._table(title=f'\n[bold]{title}', show_lines=True)
 
         for column in columns.keys():
             table.add_column(column)

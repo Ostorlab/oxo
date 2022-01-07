@@ -6,10 +6,10 @@ import click
 
 from ostorlab.apis import runner as apis_runner
 from ostorlab.cli.auth import auth
-from ostorlab.cli import console
+from ostorlab.cli import console as cli_console
 
 logger = logging.getLogger(__name__)
-console = console.Console()
+console = cli_console.Console()
 
 
 @auth.auth.command()

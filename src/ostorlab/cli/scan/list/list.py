@@ -4,40 +4,36 @@ Example of usage:
     - ostorlab scan list --source=source."""
 
 import click
-from ostorlab.cli.scan import scan
-from ostorlab.apis import runner as apis_runner
-from ostorlab.apis import scan_list
-from ostorlab.cli import console
 
-console = console.Console()
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan import scan
+
+console = cli_console.Console()
 
 
 @scan.command(name='list')
-@click.option('--runtime', '-r', help='The runtime you want to use.',
-              type=click.Choice(['local', 'remote']), required=True)
 @click.option('--page', '-p', help='Page number of scans you would like to see.', default=1)
 @click.option('--elements', '-e', help='Number of scans to show per page.', default=10)
-
-def list_scans(runtime: str, page: int, elements: int) -> None:
+@click.pass_context
+def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
     """List all your scans.\n
     Usage:\n
         - ostorlab scan list --source=source
     """
-
-    if runtime == 'remote':
-        try:
-            runner = apis_runner.APIRunner()
-            with console.status('Fetching scans'):
-                response = runner.execute(scan_list.ScansListAPIRequest(page, elements))
-                console.success('Scans fetched successfully')
-            columns = {'Id': 'id', 'Application': 'packageName', 'Version': 'version',
-                        'Platform': 'assetType', 'Plan': 'plan', 'Created Time': 'createdTime',
-                        'Progress': 'progress', 'Risk': 'riskRating'}
-            scans = response['data']['scans']['scans']
+    runtime_instance = ctx.obj['runtime']
+    with console.status('Fetching scans'):
+        scans = runtime_instance.list(page=page, number_elements=elements)
+        if scans is not None:
+            console.success('Scans listed successfully.')
+            columns = {'Id': 'id',
+                       'Application': 'application',
+                       'Version': 'version',
+                       'Platform': 'platform',
+                       'Plan': 'plan',
+                       'Created Time': 'created_time',
+                       'Progress': 'progress',
+                       'Risk': 'risk'}
             title = f'Showing {len(scans)} Scans'
-            console.table(columns=columns, data=scans, table_title=title)
-        except apis_runner.Error:
-            console.error('Could not fetch scans.')
-    else:
-        # TODO (Rabson) add support for local scans
-        return
+            console.table(columns=columns, data=[s.__dict__ for s in scans], title=title)
+        else:
+            console.error('Error fetching scan list.')
