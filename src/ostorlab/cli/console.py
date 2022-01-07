@@ -32,7 +32,7 @@ class Console:
         Args:
             text: The success text to show.
         """
-        self._console.print(text, style='success')
+        self._console.print(f':white_check_mark: {text}', style='success')
 
     def error(self, text: str) -> None:
         """Shows error message.
@@ -56,7 +56,7 @@ class Console:
         Args:
             text: The general text to show.
         """
-        self._console.print(text, style='info')
+        self._console.print(f':information_source: {text}', style='info')
 
     def status(self, text: str) -> status.Status:
         """Shows loading text.
