@@ -88,6 +88,8 @@ def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
         key='agent/ostorlab/BigFuzzer',
         bus_url='mq',
         bus_exchange_topic='topic',
+        bus_managment_url='mq_managment',
+        bus_vhost='vhost',
         args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
 
@@ -102,6 +104,8 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
         key='agent/ostorlab/BigFuzzer',
         bus_url='mq',
         bus_exchange_topic='topic',
+        bus_managment_url='mq_managment',
+        bus_vhost='vhost',
         args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
 
