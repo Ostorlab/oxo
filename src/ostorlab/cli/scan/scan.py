@@ -7,12 +7,12 @@ from ostorlab.runtimes import registry
 
 
 @rootcli.group()
-@click.option('--runtime', type=click.Choice(['local', 'managed', 'hybrid']),
+@click.option('--runtime', type=click.Choice(['local', 'remote', 'hybrid']),
               help="""Runtime is in charge of preparing the environment to trigger a scan.\n
                     Specify which runtime to use: \n
-                    local: on you local machine \n
-                    managed: on Ostorlab cloud, (requires login) \n
-                    hybrid: soon!. \n
+                    local: on you local machine\n
+                    remote: on Ostorlab cloud, (requires login)\n
+                    hybrid: running partially on Ostorlab cloud and partially on the local machine\n
                    """,
               required=True)
 @click.pass_context

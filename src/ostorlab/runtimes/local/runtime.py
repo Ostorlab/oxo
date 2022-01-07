@@ -298,3 +298,6 @@ class LocalRuntime(runtime.Runtime):
         for s in self._docker_client.services.list():
             if s.name == service.name:
                 s.scale(replicas)
+
+    def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+        raise NotImplementedError()
