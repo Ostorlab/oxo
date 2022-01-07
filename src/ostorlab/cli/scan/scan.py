@@ -1,20 +1,29 @@
 """Scan module that handles running a scan using a list of agent keys and a target asset."""
-from typing import Optional
+
+import click
 
 from ostorlab.cli.rootcli import rootcli
-import click
+from ostorlab.runtimes import runtime as base_runtime
 
 
 @rootcli.group()
-@click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
-@click.option('--tlsverify/--no-tlsverify', help='Control TLS server certificate verification.', default=True)
+@click.option('--runtime', type=click.Choice(['local', 'managed', 'hybrid']),
+              help="""Runtime is in charge of preparing the environment to trigger a scan.\n
+                    Specify which runtime to use: \n
+                    local: on you local machine \n
+                    managed: on Ostorlab cloud, (requires login) \n
+                    hybrid: soon!. \n
+                   """,
+              required=True)
 @click.pass_context
-def scan(ctx: click.core.Context, proxy: Optional[str], tlsverify: bool) -> None:
+def scan(ctx: click.core.Context, runtime: str) -> None:
     """You can use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
         - Show list of scans: ostorlab scan --list\n
         - Show full details of a scan: ostorlab scan describe --scan=scan_id.\n
     """
-    ctx.obj['proxy'] = proxy
-    ctx.obj['tlsverify'] = tlsverify
-    pass
+    try:
+        runtime_instance = base_runtime.Runtime.create(runtime)
+        ctx.obj['runtime'] = runtime_instance
+    except base_runtime.RuntimeNotFoundError as e:
+        raise click.ClickException(f'The selected runtime {runtime} is not supported.') from e
