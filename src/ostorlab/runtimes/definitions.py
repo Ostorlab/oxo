@@ -23,6 +23,8 @@ class AgentSettings:
     replicas: int = 1
     healthcheck_host: str = '0.0.0.0'
     healthcheck_port: int = 5000
+    bus_managmentURL: Optional[str] = None
+    bus_vhost: Optional[str] = None
 
     @property
     def container_image(self):
