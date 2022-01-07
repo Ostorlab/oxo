@@ -24,13 +24,15 @@ message AgentInstanceSettings {
   required string key = 1;
   required string bus_url = 2;
   required string bus_exchange_topic = 3;
-  repeated Arg args = 4;
-  repeated string constraints = 5;
-  repeated string mounts = 6;
-  required string restart_policy = 7;
-  optional sint64 mem_limit = 8;
-  repeated PortMapping open_ports = 9;
-  required sint32 replicas = 10;
-  required string healthcheck_host = 11;
-  required sint32 healthcheck_port = 12;
+  optional string bus_managment_url = 4;
+  optional string bus_vhost = 5;
+  repeated Arg args = 6;
+  repeated string constraints = 7;
+  repeated string mounts = 8;
+  required string restart_policy = 9;
+  optional sint64 mem_limit = 10;
+  repeated PortMapping open_ports = 11;
+  required sint32 replicas = 12;
+  required string healthcheck_host = 13;
+  required sint32 healthcheck_port = 14;
 }
