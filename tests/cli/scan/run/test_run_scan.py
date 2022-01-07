@@ -9,7 +9,7 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
 
     runner = CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ['scan', 'run'])
+    result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=local', 'run'])
 
     assert 'Usage: rootcli scan run [OPTIONS] COMMAND [ARGS]...' in result.output
     assert 'Commands:' in result.output
@@ -25,7 +25,7 @@ def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
     runner = CliRunner()
 
     result = runner.invoke(rootcli.rootcli,
-                           ['scan', 'run', '--agents=agent1,agent2', '--runtime=local', '--title=scan1', 'android-apk'])
+                           ['scan', '--runtime=local', 'run', '--agents=agent1,agent2', '--title=scan1', 'android-apk'])
 
     assert isinstance(result.exception, BaseException)
 
@@ -38,7 +38,7 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
     runner = CliRunner()
 
     result = runner.invoke(rootcli.rootcli,
-                           ['scan', 'run', '--agents=agent1,agent2', '--runtime=local', '--title=scan1'])
+                           ['scan', '--runtime=local', 'run', '--agents=agent1,agent2', '--title=scan1'])
 
     assert 'Error: Missing command.' in result.output
     assert result.exit_code == 2

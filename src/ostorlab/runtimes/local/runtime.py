@@ -168,8 +168,8 @@ class LocalRuntime(runtime.Runtime):
             docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
                                                                data=agent_instance_settings_proto)
             config_reference = docker.types.ConfigReference(config_id=docker_config.id,
-                                                              config_name=f'agent_{agent.key}_{self._name}',
-                                                              filename='/tmp/settings.binproto')
+                                                            config_name=f'agent_{agent.key}_{self._name}',
+                                                            filename='/tmp/settings.binproto')
             self._start_agent(agent, [config_reference])
 
     def _start_agent(self, agent: definitions.AgentSettings,
@@ -278,13 +278,19 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        docker_config = self._docker_client.configs.create(name='asset',
-                                                           data=asset.to_proto())
-        config_reference = docker.types.ConfigReference(config_id=docker_config.id,
-                                                        config_name='asset',
-                                                        filename='/tmp/asset.binproto')
+        asset_config = self._docker_client.configs.create(name='asset',
+                                                          data=asset.to_proto())
+        asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
+                                                              config_name='asset',
+                                                              filename='/tmp/asset.binproto')
+        selector_config = self._docker_client.configs.create(name='asset_selector',
+                                                             data=asset.selector)
+        selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
+                                                                 config_name='asset_selector',
+                                                                 filename='/tmp/asset_selector.txt')
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT)
-        self._start_agent(agent=inject_asset_agent_settings, extra_configs=[config_reference])
+        self._start_agent(agent=inject_asset_agent_settings,
+                          extra_configs=[asset_config_reference, selector_config_reference])
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
@@ -292,3 +298,15 @@ class LocalRuntime(runtime.Runtime):
         for s in self._docker_client.services.list():
             if s.name == service.name:
                 s.scale(replicas)
+
+    def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+        """Lists scans managed by runtime.
+
+        Args:
+            page: Page number for list pagination (default 1).
+            number_elements: count of elements to show in the listed page (default 10).
+
+        Returns:
+            List of scan objects.
+        """
+        raise NotImplementedError()

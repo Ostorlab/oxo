@@ -1,26 +1,20 @@
-"""Handles any configurations related to Ostorlab, such as storing and retriving
-    tokens or API keys.
+"""Handles any configurations related to Ostorlab, such as storing and retrieving tokens or API keys."""
 
-    This module contains code to handle any configurations related to Ostorlab
-    such as storing and retriving API keys.
-"""
-
-from typing import Dict, Optional
-from datetime import datetime
 import json
 import pathlib
+from datetime import datetime
+from typing import Dict, Optional
 
 OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / '.ostorlab'
 
 
 class ConfigurationManager:
-    """Handles any configurations related to Ostorlab, such as storing and retriving
+    """Handles any configurations related to Ostorlab, such as storing and retrieving
        API keys.
     """
 
-    def __init__(self, private_dir: str = OSTORLAB_PRIVATE_DIR):
+    def __init__(self, private_dir: pathlib.Path = OSTORLAB_PRIVATE_DIR):
         """Constructs all the necessary attributes for the object
-
         Args:
             private_dir: The private directory where Ostorlab configurations are stored.
             Defaults to OSTORLAB_PRIVATE_DIR.
@@ -94,8 +88,6 @@ class ConfigurationManager:
         else:
             return None
 
-
     def delete_api_data(self) -> None:
-        """Deletes the file containing the API data.
-        """
+        """Deletes the file containing the API data."""
         self._complete_api_key_path.unlink(missing_ok=True)

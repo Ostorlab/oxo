@@ -19,35 +19,35 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.capture.logs',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x1av3/capture/logs/logs.proto\x12\x0fv3.capture.logs\"9\n\x04logs\x12\x11\n\ttimestamp\x18\x01 \x02(\x02\x12\r\n\x05level\x18\x02 \x02(\t\x12\x0f\n\x07message\x18\x03 \x02(\t')
+  serialized_pb=_b('\n\x1av3/capture/logs/logs.proto\x12\x0fv3.capture.logs\"<\n\x07Message\x12\x11\n\ttimestamp\x18\x01 \x02(\x02\x12\r\n\x05level\x18\x02 \x02(\t\x12\x0f\n\x07message\x18\x03 \x02(\t')
 )
 
 
 
 
-_LOGS = _descriptor.Descriptor(
-  name='logs',
-  full_name='v3.capture.logs.logs',
+_MESSAGE = _descriptor.Descriptor(
+  name='Message',
+  full_name='v3.capture.logs.Message',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='timestamp', full_name='v3.capture.logs.logs.timestamp', index=0,
+      name='timestamp', full_name='v3.capture.logs.Message.timestamp', index=0,
       number=1, type=2, cpp_type=6, label=2,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='level', full_name='v3.capture.logs.logs.level', index=1,
+      name='level', full_name='v3.capture.logs.Message.level', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='message', full_name='v3.capture.logs.logs.message', index=2,
+      name='message', full_name='v3.capture.logs.Message.message', index=2,
       number=3, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -66,18 +66,18 @@ _LOGS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=47,
-  serialized_end=104,
+  serialized_end=107,
 )
 
-DESCRIPTOR.message_types_by_name['logs'] = _LOGS
+DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-logs = _reflection.GeneratedProtocolMessageType('logs', (_message.Message,), dict(
-  DESCRIPTOR = _LOGS,
+Message = _reflection.GeneratedProtocolMessageType('Message', (_message.Message,), dict(
+  DESCRIPTOR = _MESSAGE,
   __module__ = 'v3.capture.logs.logs_pb2'
-  # @@protoc_insertion_point(class_scope:v3.capture.logs.logs)
+  # @@protoc_insertion_point(class_scope:v3.capture.logs.Message)
   ))
-_sym_db.RegisterMessage(logs)
+_sym_db.RegisterMessage(Message)
 
 
 # @@protoc_insertion_point(module_scope)
