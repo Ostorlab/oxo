@@ -60,6 +60,8 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         self.passed_args = agent_instance_definition.args
         self.bus_url = agent_instance_definition.bus_url
         self.bus_exchange_topic = agent_instance_definition.bus_exchange_topic
+        self.bus_managmentURL = agent_instance_definition.bus_managmentURL
+        self.bus_vhost = agent_instance_definition.bus_vhost
         agent_mq_mixin.AgentMQMixin.__init__(self,
                                              name=agent_definition.name,
                                              # Selectors are mapped to queue binding that listen to all
