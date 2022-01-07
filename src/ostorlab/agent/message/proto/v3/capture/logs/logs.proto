@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package v3.capture.logs;
 
-message logs {
+message Message{
   required float timestamp = 1;
   required string level = 2;
   required string message = 3;
