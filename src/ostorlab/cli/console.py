@@ -2,7 +2,7 @@
 
 import rich
 from rich import status
-from typing import Dict
+from typing import Dict, List
 
 
 class Console():
@@ -24,50 +24,69 @@ class Console():
         if theme is None:
             theme = self.THEME
         self._console = rich.console.Console(theme=rich.theme.Theme(theme))
+        self._table = rich.table.Table
 
-    def success(self, success_text: str) -> None:
+    def success(self, text: str) -> None:
         """Shows success message.
 
         Args:
-            success_text: The success text to show.
+            text: The success text to show.
         """
-        self._console.print(success_text, style='success')
+        self._console.print(text, style='success')
 
-
-    def error(self, error_text: str) -> None:
+    def error(self, text: str) -> None:
         """Shows error message.
 
         Args:
-            error_text: The error text to show.
+            text: The error text to show.
         """
-        self._console.print(f'[bold]ERROR:[/] {error_text}', style='error')
+        self._console.print(f'[bold]ERROR:[/] {text}', style='error')
 
-
-    def warning(self, warning_text: str) -> None:
+    def warning(self, text: str) -> None:
         """Shows warning message.
 
         Args:
-            warning_text: The warning text to show.
+            text: The warning text to show.
         """
-        self._console.print(f'[bold]WARNING:[/] {warning_text}', style='warning')
+        self._console.print(f'[bold]WARNING:[/] {text}', style='warning')
 
-
-    def info(self, info_text: str) -> None:
+    def info(self, text: str) -> None:
         """Shows general information message.
 
         Args:
-            info_text: The general text to show.
+            text: The general text to show.
         """
-        self._console.print(info_text, style='info')
+        self._console.print(text, style='info')
 
-    def status(self, status_text: str) -> status.Status:
+    def status(self, text: str) -> status.Status:
         """Shows loading text.
 
         Args:
-            status_text: The loading text to show.
+            text: The loading text to show.
 
         Returns:
             The loading text.
         """
-        return self._console.status(f'[info]{status_text}')
+        return self._console.status(f'[info]{text}')
 
+    def table(self, columns: Dict[str, str], data: List[Dict], table_title: str) -> None:
+        """Constructs a table to display a list of items.
+
+        Args:
+            columns: The table columns.
+            data: The list of items to display.
+            table_title: The title of the table.
+        """
+
+        table = self._table(title=f'\n[bold]{table_title}', show_lines=True)
+
+        for column in columns.keys():
+            table.add_column(column)
+
+        for item in data:
+            row_values = []
+            for column in columns.values():
+                row_values.append(item[column])
+            table.add_row(*row_values)
+
+        self._console.print(table)
