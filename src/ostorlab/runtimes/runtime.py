@@ -1,23 +1,12 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 import abc
 
-from ostorlab.runtimes import definitions
 from ostorlab.assets import asset as base_asset
-from ostorlab import exceptions
+from ostorlab.runtimes import definitions
 
-class RuntimeNotFoundError(exceptions.OstorlabError):
-    """Specified runtime is not found."""
 
 class Runtime(abc.ABC):
     """Runtime is in charge of preparing the environment to trigger a scan."""
-
-    @classmethod
-    def create(cls, runtime_type, *args, **kwargs) -> 'Runtime':
-        if runtime_type == 'local':
-            from ostorlab.runtimes.local import runtime
-            return runtime.LocalRuntime(*args, **kwargs)
-        else:
-            raise NotImplementedError(f'runtime type {runtime_type} not found')
 
     @abc.abstractmethod
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
