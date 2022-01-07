@@ -36,23 +36,6 @@ class ScansListAPIRequest(request.APIRequest):
                     progress
                     createdTime
                     plan
-                    asset {
-                        __typename
-                        ... on AndroidStoreAssetType {
-                            applicationName
-                            packageName
-                        }
-                        ... on IOSStoreAssetType {
-                            applicationName
-                            packageName
-                        }
-                        ... on UrlAssetType {
-                            urls
-                        }
-                        ... on DomainAssetType {
-                            domain
-                        }
-                    }
                 }
             }
          }
