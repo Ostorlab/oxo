@@ -21,7 +21,7 @@ def agent_mock(mocker):
     mocker.patch(
         'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.add_healthcheck',
         return_value=None
-    ) 
+    )
     mocker.patch(
         'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__',
         return_value=None
