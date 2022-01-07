@@ -3,7 +3,7 @@
 import click
 
 from ostorlab.cli.rootcli import rootcli
-from ostorlab.runtimes import runtime as base_runtime
+from ostorlab.runtimes import registry
 
 
 @rootcli.group()
@@ -23,7 +23,7 @@ def scan(ctx: click.core.Context, runtime: str) -> None:
         - Show full details of a scan: ostorlab scan describe --scan=scan_id.\n
     """
     try:
-        runtime_instance = base_runtime.Runtime.create(runtime)
+        runtime_instance = registry.select_runtime(runtime)
         ctx.obj['runtime'] = runtime_instance
-    except base_runtime.RuntimeNotFoundError as e:
+    except registry.RuntimeNotFoundError as e:
         raise click.ClickException(f'The selected runtime {runtime} is not supported.') from e
