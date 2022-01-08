@@ -24,7 +24,6 @@ from ostorlab.utils import strings as strings_utils
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
 HEALTHCHECK_PORT = '5000'
-MANAGMENT_URL = 'http://guest:guest@localhost:15672'
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +189,7 @@ class LocalRuntime(runtime.Runtime):
 
         agent.bus_url = self._mq_service.url
         agent.bus_exchange_topic = f'ostorlab_topic_{self._name}'
-        agent.bus_managment_url = MANAGMENT_URL
+        agent.bus_managment_url = self._mq_service.management_url
         agent.bus_vhost = self._mq_service.vhost
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT
