@@ -54,17 +54,7 @@ class LocalRabbitMQ:
     @property
     def management_url(self) -> str:
         """URL to connect to the management interface of the RabbitMQ instance."""
-        return f'http://{self._mq_host}:15672/'
-
-    @property
-    def management_username(self) -> str:
-        """Username to connect to the management interface."""
-        return 'guest'
-
-    @property
-    def management_password(self) -> str:
-        """Username to connect to the management interface."""
-        return 'guest'
+        return f'http://guest:guest@{self._mq_host}:15672/'
 
     def start(self) -> None:
         """Start local rabbit mq instance."""
