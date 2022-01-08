@@ -56,9 +56,7 @@ class RemoteRuntime(runtime.Runtime):
         """
         try:
             runner = apis_runner.APIRunner()
-            with console.status('Fetching scans'):
-                response = runner.execute(scan_list.ScansListAPIRequest(page, number_elements))
-
+            response = runner.execute(scan_list.ScansListAPIRequest(page, number_elements))
             scans = response['data']['scans']['scans']
 
             return [
@@ -68,7 +66,7 @@ class RemoteRuntime(runtime.Runtime):
                     version=scan['version'],
                     platform=scan['assetType'],
                     plan=scan['plan'],
-                    created_time=scan['createTime'],
+                    created_time=scan['createdTime'],
                     progress=scan['progress'],
                     risk=scan['riskRating'],
                 ) for scan in scans
