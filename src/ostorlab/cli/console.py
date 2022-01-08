@@ -1,8 +1,10 @@
 """Pretty prints and logs console statements."""
 
-import rich
-from rich import status
 from typing import Dict, List
+
+import rich
+from rich import box
+from rich import status
 
 
 class Console:
@@ -89,4 +91,5 @@ class Console:
                 row_values.append(item[column])
             table.add_row(*row_values)
 
+        table.box = box.SQUARE_DOUBLE_HEAD
         self._console.print(table)
