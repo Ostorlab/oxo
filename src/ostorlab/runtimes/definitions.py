@@ -14,6 +14,8 @@ class AgentSettings:
     key: str
     bus_url: Optional[str] = None
     bus_exchange_topic: Optional[str] = None
+    bus_managment_url: Optional[str] = None
+    bus_vhost: Optional[str] = None
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
@@ -47,6 +49,8 @@ class AgentSettings:
             key=instance.key,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
+            bus_managment_url=instance.bus_managment_url,
+            bus_vhost=instance.bus_vhost,
             args=[defintions.Arg(
                 name=a.name,
                 type=a.type,
@@ -75,6 +79,8 @@ class AgentSettings:
         instance.key = self.key
         instance.bus_url = self.bus_url
         instance.bus_exchange_topic = self.bus_exchange_topic
+        instance.bus_managment_url = self.bus_managment_url
+        instance.bus_vhost = self.bus_vhost
 
         for arg in self.args:
             arg_instance = instance.args.add()

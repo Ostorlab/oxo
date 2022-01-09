@@ -12,9 +12,9 @@ from ostorlab.runtimes.local import runtime as local_runtime
 def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = android_apk.AndroidApk(content=b'APK')
-    agent_run_definition = definitions.AgentGroupDefinition(agents=[])
+    agent_group_definition = definitions.AgentGroupDefinition(agents=[])
 
-    local_runtime_instance.scan(agent_group_definition=agent_run_definition, asset=asset)
+    local_runtime_instance.scan(agent_group_definition=agent_group_definition, asset=asset)
 
     docker_client = docker.from_env()
 
@@ -27,9 +27,9 @@ def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
 def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning():
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = android_apk.AndroidApk(content=b'APK')
-    agent_run_definition = definitions.AgentGroupDefinition(agents=[])
+    agent_group_definition = definitions.AgentGroupDefinition(agents=[])
 
-    local_runtime_instance.scan(agent_group_definition=agent_run_definition, asset=asset)
+    local_runtime_instance.scan(agent_group_definition=agent_group_definition, asset=asset)
 
     docker_client = docker.from_env()
 
