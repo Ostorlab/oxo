@@ -1,4 +1,4 @@
-"""mock agent implements the required methods to test the agent's behaviors without using external components."""
+"""mock agent implements the required methods to test the agent's behavior without using external components."""
 import pytest
 
 from typing import List
@@ -35,3 +35,7 @@ def agent_mock(mocker):
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_send_message', side_effect=mq_send_message)
     yield emitted_messages
     emitted_messages = []
+
+
+
+
