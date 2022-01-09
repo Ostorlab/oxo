@@ -6,14 +6,13 @@ from abc import ABC
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import agent
-from ostorlab.agent.testing.mock_agent import agent_mock # pylint: disable=W0611
 
 
 class StartTestAgent(agent.Agent, ABC):
     """Test Agent implementation."""
 
 
-def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):  # pylint: disable=W0621
+def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):
     definition = agent_definitions.AgentDefinition(
         name='start_test_agent',
         out_selectors=['v3.healthcheck.ping'])
