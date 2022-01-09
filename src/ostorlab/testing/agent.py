@@ -1,4 +1,4 @@
-"""mock agent implements the required methods to test the agent's behaviors without using external components."""
+"""mock agent implements the required methods to test the agent's behavior without using external components."""
 import pytest
 
 from typing import List
