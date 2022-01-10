@@ -1,6 +1,7 @@
 """Tests for scan list command."""
 
 import docker
+import pytest
 
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
@@ -48,6 +49,8 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
     assert result.exception is None
     mock_console.assert_called()
 
+
+@pytest.mark.docker
 def testOstorlabScanListCLI_whenRuntimeOptionIsLocal_showsScansInfo():
     """Test ostorlab scan list command with local as the runtime option.
     Should show scans information.
