@@ -119,7 +119,7 @@ def _parse_dict(values: Any, message) -> None:
                 else:
                     setattr(message, k, v)
             except AttributeError as e:
-                raise SerializationError('invalid attribute {k}') from e
+                raise SerializationError(f'invalid attribute {k}') from e
 
 
 def deserialize(selector: str, serialized: bytes):
