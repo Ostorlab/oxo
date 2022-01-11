@@ -111,9 +111,17 @@ def _parse_dict(values: Any, message) -> None:
             _parse_list(v, getattr(message, k))
         else:
             try:
-                setattr(message, k, v)
+                # if is of type ENUM.
+                if message.DESCRIPTOR.fields_by_name[k].type == 14:
+                    # For type enum, we introspect the type to get enum type, and then get the string mapping to int.
+                    enum_v = message.DESCRIPTOR.fields_by_name[k].enum_type.values_by_name[v].number
+                    setattr(message, k, enum_v)
+                else:
+                    setattr(message, k, v)
             except AttributeError as e:
-                raise SerializationError('invalid attribute {k}') from e
+                raise SerializationError(f'invalid attribute {k}') from e
+            except KeyError as e:
+                raise SerializationError(f'invalid attribute {k}') from e
 
 
 def deserialize(selector: str, serialized: bytes):
