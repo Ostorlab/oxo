@@ -201,7 +201,8 @@ class LocalRuntime(runtime.Runtime):
                 f'UNIVERSE={self._name}',
             ],
             name=f'{agent.container_image}_{self._name}',
-            restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
+            restart_policy=docker_types_services.RestartPolicy(
+                condition=agent.restart_policy),
             mounts=agent.mounts,
             configs=extra_configs,
             labels={'ostorlab.universe': self._name},
@@ -261,10 +262,12 @@ class LocalRuntime(runtime.Runtime):
                     # all agents need to be healthy
                     all_agents_healthy = all_agents_healthy and task_healthy
                     if fail_fast and not all_agents_healthy:
-                        logger.error('agent health check %s is not healthy', service.name)
+                        logger.error(
+                            'agent health check %s is not healthy', service.name)
                         return False
 
-                    logger.info('agent healthcheck of %s is %s', service.name, all_agents_healthy)
+                    logger.info('agent healthcheck of %s is %s',
+                                service.name, all_agents_healthy)
                 else:
                     logger.error('agent service %s is not healthy', service.name)
                     if fail_fast and not all_agents_healthy:
@@ -273,7 +276,8 @@ class LocalRuntime(runtime.Runtime):
 
     def _list_agent_services(self):
         """List the services of type agents. All agent service must start with agent_."""
-        services = self._docker_client.services.list(filters={'label': f'ostorlab.universe={self._name}'})
+        services = self._docker_client.services.list(
+            filters={'label': f'ostorlab.universe={self._name}'})
         for service in services:
             if service.name.startswith('agent_'):
                 yield service
@@ -290,7 +294,8 @@ class LocalRuntime(runtime.Runtime):
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name='asset_selector',
                                                                  filename='/tmp/asset_selector.txt')
-        inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT)
+        inject_asset_agent_settings = definitions.AgentSettings(
+            key=ASSET_INJECTION_AGENT_DEFAULT)
         self._start_agent(agent=inject_asset_agent_settings,
                           extra_configs=[asset_config_reference, selector_config_reference])
 
@@ -315,6 +320,7 @@ class LocalRuntime(runtime.Runtime):
         universe_ids = set()
         client = docker.from_env()
         services = client.services.list()
+
         for s in services:
             try:
                 service_labels = s.attrs['Spec']['Labels']
