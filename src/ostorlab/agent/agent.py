@@ -287,7 +287,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         with open(args.definition, 'r', encoding='utf-8') as f_definition, open(args.settings, 'rb') as f_settings:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
             agent_settings = runtime_definitions.AgentSettings.from_proto(f_settings.read())
-            instance = cls(agent_definition=agent_definition, agent_instance_definition=agent_settings)
+            instance = cls(agent_definition=agent_definition, agent_settings=agent_settings)
             logger.debug('running agent instance')
             instance.run()
 
