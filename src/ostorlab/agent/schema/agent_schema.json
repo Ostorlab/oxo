@@ -1,0 +1,179 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://ostorlab.co/agent_schema.json",
+    "title": "Agent Schema",
+    "description": "Agent json-specification : A full description of fields of an agent definition yaml file.",
+    "CustomTypes": {
+      "ArrayOfStrings": {
+        "description": "An array of strings custom type.",
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      },
+      "Path": {
+        "description": "A path-like custom type.",
+        "type": "string",
+        "maxLength": 4096,
+        "pattern": "((?:[^/]*/)*)(.*)"
+      },
+      "agentPortMapping": {
+        "description": "[Optional] - Array of dictionary-like objects, defining the port mapping.",
+        "type": "array",
+        "items": {
+          "description": "Dictionary-like object of the argument.",
+          "type": "object",
+          "properties": {
+            "src_port": {
+              "description": "Source port.",
+              "type": "number"
+            },
+            "dest_port": {
+              "description": "Destination port.",
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "properties": {
+      "kind": {
+        "description": "[Required] - Agent kind.",
+        "type": "string",
+        "enum": ["Agent"]
+      },
+      "name": {
+        "description": "[Required] - Agent full Name",
+        "type": "string"
+      },
+      "version": {
+        "description": "[Optional] - Version of the agent, respection semantic versionning : major.minor.release.",
+        "type": "string",
+        "pattern": "^(\\d+\\.)?(\\d+\\.)?(\\d+)$",
+        "maxLength": 512
+      },
+      "description": {
+        "description": "[Required] - Text fully describing the agent.",
+        "type": "string"
+      },
+      "image": {
+        "description": "[Optional] - Path to the agent image.",
+        "$ref": "#/CustomTypes/Path"
+      },
+      "source": {
+        "description": "[Optional] - URL to the agent repository.",
+        "type": "string",
+        "format": "uri",
+        "pattern": "^https?://",
+        "maxLength": 4096
+      },
+      "license": {
+        "description": "[Optional] - Agent license",
+        "type": "string",
+        "maxLength": 1024
+      },
+      "durability": {
+        "description": "[Optional] - Durability of the agent, e.g.,  temporary, development, published.",
+        "type": "string",
+        "maxLength": 1024,
+        "enum": [
+          "temporary",
+          "development",
+          "published"
+        ]
+      },
+      "restrictions": {
+        "description": "[Optional] - Array of strings explaining the restrictions of the agent.",
+        "$ref": "#/CustomTypes/ArrayOfStrings"
+      },
+      "in_selectors": {
+        "description": "[Required] : Array of strings explaning the input selectors of the agent.",
+        "$ref": "#/CustomTypes/ArrayOfStrings"
+      },
+      "out_selectors": {
+        "description": "[Required] : Array of strings explaning the output selectors of the agent.",
+        "$ref": "#/CustomTypes/ArrayOfStrings"
+      },
+      "restart_policy": {
+        "description": "[Optional] - Restart policy of the agent, e.g., run_once, always_restart.",
+        "type": "string",
+        "maxLength": 1024,
+        "enum": [
+          "run_once",
+          "always_restart"
+        ]
+      },
+      "constraints": {
+        "description": "[Optional] - Array of strings explaning the constraints of the agent.",
+        "$ref": "#/CustomTypes/ArrayOfStrings"
+      },
+      "mounts": {
+        "description": "[Optional] - Array of strings of the mounts of the agent.",
+        "$ref": "#/CustomTypes/ArrayOfStrings"
+      },
+      "mem_limit": {
+        "description": "[Optional] - Maximum memory that can be used by the agent in bytes.",
+        "type": "number"
+      },
+      "port_mapping": {
+        "description": "[Optional] - Dictionary-like object, mapping a source port to a destination port.",
+        "type": "array",
+        "items": {
+          "$ref": "#/CustomTypes/agentPortMapping"
+        }
+      },
+      "docker_file_path": {
+        "description": "[Optional] - Path to the Dockerfile of the agent.",
+        "$ref": "#/CustomTypes/Path"
+      },
+      "docker_build_root": {
+        "description": "[Optional] - Path to be used in as a context root to build the agent.",
+        "$ref": "#/CustomTypes/Path"
+      },
+      "agent_runner": {
+        "description": "[Optional] - How to start the agent.",
+        "type": "string"
+      },
+      "agent_path": {
+        "description": "[Optional] - Path to the agent code or executable",
+        "$ref": "#/CustomTypes/Path"
+      },
+      "args": {
+        "description": "[Optional] - Array of dictionary-like objects, defining the agent arguments.",
+        "type": "array",
+        "items": {
+          "description": "Dictionary-like object of the argument.",
+          "type": "object",
+          "properties": {
+            "name": {
+              "description": "Name of the agent argument.",
+              "type": "string",
+              "maxLength": 2048
+            },
+            "type": {
+              "description": "Type of the agent argument : respecting the jsonschema types.",
+              "type": "string",
+              "maxLength": 2048
+            },
+            "description": {
+              "description": "[Optional] - Description of the agent argument.",
+              "type": "string"
+            },
+            "value": {
+              "description": "[Optional] - Default value of the agent argument as a binary object.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "name",
+      "description",
+      "in_selectors",
+      "out_selectors"
+    ]
+  }
+  
+  
