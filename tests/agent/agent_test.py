@@ -11,6 +11,7 @@ from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import defintions as utils_definitions
 
 logger = logging.getLogger(__name__)
 
@@ -98,3 +99,30 @@ def testAgentMain_whithNonExistingFile_exits(mocker):
         SampleAgent.__init__.assert_not_called()
         assert wrapper_exception.type == SystemExit
         assert wrapper_exception.value.code == 42
+
+
+
+def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
+    class TestAgent(agent.Agent):
+        """Test Agent"""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping'],
+                                          args=[
+                                              utils_definitions.Arg(name='color', type='string', value=None),
+                                              utils_definitions.Arg(name='speed', type='string', value=b'fast'),
+                                          ]),
+        runtime_definitions.AgentSettings(
+            key='agent/ostorlab/start_test_agent',
+            bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test',
+            healthcheck_port=5301,
+            args=[
+                utils_definitions.Arg(name='color', type='string', value=b'red'),
+            ]
+        ))
+
+    assert test_agent.args == {
+        'color': b'red',
+        'speed': b'fast'
+    }
+

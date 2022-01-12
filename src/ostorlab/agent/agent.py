@@ -19,12 +19,11 @@ import uuid
 from typing import Dict, Any, NoReturn
 
 from ostorlab import exceptions
+from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
-from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions as runtime_definitions
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,27 +40,29 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
 
     def __init__(self,
                  agent_definition: agent_definitions.AgentDefinition,
-                 agent_instance_definition: runtime_definitions.AgentSettings
+                 agent_settings: runtime_definitions.AgentSettings
                  ) -> None:
         """Inits the agent configuration from the Yaml agent definition.
 
         Args:
             agent_definition: Agent definition dictating the settings of the agent, like name, in_selectors ...
-            agent_instance_definition: The running instance definition dictating custom settings of the agent like bus
+            agent_settings: The running instance definition dictating custom settings of the agent like bus
              URL.
         """
         self._loop = asyncio.get_event_loop()
+        self._agent_definition = agent_definition
+        self._agent_settings = agent_settings
         self.name = agent_definition.name
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
         # Arguments are defined in the agent definition, and can have a default value. The value can also be set from
         # the scan definition in the agent group. Therefore, we read both and override the value from the passed args.
         self.defined_args = agent_definition.args
-        self.passed_args = agent_instance_definition.args
-        self.bus_url = agent_instance_definition.bus_url
-        self.bus_exchange_topic = agent_instance_definition.bus_exchange_topic
-        self.bus_managment_url = agent_instance_definition.bus_managment_url
-        self.bus_vhost = agent_instance_definition.bus_vhost
+        self.passed_args = agent_settings.args
+        self.bus_url = agent_settings.bus_url
+        self.bus_exchange_topic = agent_settings.bus_exchange_topic
+        self.bus_managment_url = agent_settings.bus_managment_url
+        self.bus_vhost = agent_settings.bus_vhost
         agent_mq_mixin.AgentMQMixin.__init__(self,
                                              name=agent_definition.name,
                                              # Selectors are mapped to queue binding that listen to all
@@ -70,8 +71,31 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
                                              url=self.bus_url,
                                              topic=self.bus_exchange_topic)
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(self, name=agent_definition.name,
-                                                               host=agent_instance_definition.healthcheck_host,
-                                                               port=agent_instance_definition.healthcheck_port)
+                                                               host=agent_settings.healthcheck_host,
+                                                               port=agent_settings.healthcheck_port)
+
+    @property
+    def definition(self) -> agent_definitions.AgentDefinition:
+        """Agent definition property."""
+        return self._agent_definition
+
+    @property
+    def settings(self) -> runtime_definitions.AgentSettings:
+        """Agent settings property."""
+        return self._agent_settings
+
+    @property
+    def args(self) -> Dict[str, Any]:
+        """Agent arguments as passed from definition and settings."""
+        arguments = {}
+        # First read the agent default values.
+        for a in self.definition.args:
+            arguments[a.name] = a.value
+        # Override the default values from settings.
+        for a in self.settings.args:
+            arguments[a.name] = a.value
+
+        return arguments
 
     @property
     def universe(self):
