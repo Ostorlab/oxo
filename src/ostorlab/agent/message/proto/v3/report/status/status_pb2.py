@@ -17,9 +17,9 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='v3/report/status/status.proto',
-  package='v3.report.scan.status',
+  package='v3.report.status',
   syntax='proto2',
-  serialized_pb=_b('\n\x1dv3/report/status/status.proto\x12\x15v3.report.scan.status\"%\n\x07Message\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t')
+  serialized_pb=_b('\n\x1dv3/report/status/status.proto\x12\x10v3.report.status\"%\n\x07Message\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -28,20 +28,20 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 _MESSAGE = _descriptor.Descriptor(
   name='Message',
-  full_name='v3.report.scan.status.Message',
+  full_name='v3.report.status.Message',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='v3.report.scan.status.Message.key', index=0,
+      name='key', full_name='v3.report.status.Message.key', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='value', full_name='v3.report.scan.status.Message.value', index=1,
+      name='value', full_name='v3.report.status.Message.value', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -59,8 +59,8 @@ _MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=56,
-  serialized_end=93,
+  serialized_start=51,
+  serialized_end=88,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
@@ -68,7 +68,7 @@ DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
 Message = _reflection.GeneratedProtocolMessageType('Message', (_message.Message,), dict(
   DESCRIPTOR = _MESSAGE,
   __module__ = 'v3.report.status.status_pb2'
-  # @@protoc_insertion_point(class_scope:v3.report.scan.status.Message)
+  # @@protoc_insertion_point(class_scope:v3.report.status.Message)
   ))
 _sym_db.RegisterMessage(Message)
 
