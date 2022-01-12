@@ -160,7 +160,7 @@
             "description": "[Optional] - Description of the agent argument.",
             "type": "string"
           },
-          "valuee": {
+          "value": {
             "description": "[Optional] - Default value of the agent argument as a binary object.",
             "type": "string"
           }
