@@ -334,5 +334,5 @@ class LocalRuntime(runtime.Runtime):
                     )
                     scans.append(scan)
             except KeyError:
-                logger.error('The label ostorlab.universe do not exist.')
-        return scans[0:number_elements]
+                logger.warning('The label ostorlab.universe do not exist.')
+        return scans[:number_elements]

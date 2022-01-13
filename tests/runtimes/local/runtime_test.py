@@ -80,12 +80,8 @@ def testRuntimeScanList_whenScansAreNotPresent_showsEmptyList(mocker):
     Shows an empty list.
     """
 
-    def docker_services():
-        """Method for mocking the scan list response."""
-        return []
-
     mocker.patch('docker.DockerClient.services', return_value=services_model.ServiceCollection())
-    mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
+    mocker.patch('docker.DockerClient.services.list', side_effect=lambda:[])
 
     scans = local_runtime.LocalRuntime().list()
 
