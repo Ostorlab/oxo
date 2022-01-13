@@ -60,7 +60,7 @@ def _style_asset(asset: str) -> str:
 def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
     """List all your scans.\n
     Usage:\n
-        - ostorlab scan list --runtime=runtime
+        - ostorlab scan --runtime=runtime list
     """
     runtime_instance = ctx.obj['runtime']
     with console.status('Fetching scans'):
