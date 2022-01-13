@@ -1,11 +1,13 @@
 """Pretty prints and logs console statements."""
 
-import rich
-from rich import status
 from typing import Dict, List
 
+import rich
+from rich import box
+from rich import status
 
-class Console():
+
+class Console:
     """Pretty prints and logs console statements."""
 
     THEME = {
@@ -32,7 +34,7 @@ class Console():
         Args:
             text: The success text to show.
         """
-        self._console.print(text, style='success')
+        self._console.print(f':white_check_mark: {text}', style='success')
 
     def error(self, text: str) -> None:
         """Shows error message.
@@ -56,7 +58,7 @@ class Console():
         Args:
             text: The general text to show.
         """
-        self._console.print(text, style='info')
+        self._console.print(f':information_source: {text}', style='info')
 
     def status(self, text: str) -> status.Status:
         """Shows loading text.
@@ -69,16 +71,16 @@ class Console():
         """
         return self._console.status(f'[info]{text}')
 
-    def table(self, columns: Dict[str, str], data: List[Dict], table_title: str) -> None:
+    def table(self, columns: Dict[str, str], data: List[Dict], title: str) -> None:
         """Constructs a table to display a list of items.
 
         Args:
             columns: The table columns.
             data: The list of items to display.
-            table_title: The title of the table.
+            title: The title of the table.
         """
 
-        table = self._table(title=f'\n[bold]{table_title}', show_lines=True)
+        table = self._table(title=f'\n[bold]{title}', show_lines=True)
 
         for column in columns.keys():
             table.add_column(column)
@@ -89,4 +91,5 @@ class Console():
                 row_values.append(item[column])
             table.add_row(*row_values)
 
+        table.box = box.SQUARE_DOUBLE_HEAD
         self._console.print(table)

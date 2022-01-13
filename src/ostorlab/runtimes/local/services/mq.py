@@ -43,16 +43,18 @@ class LocalRabbitMQ:
 
     @property
     def url(self) -> str:
-        """URL to connect to the local RabbitMQ instance.
-
-        Returns:
-            RabbitMQ URL string.
-        """
+        """URL to connect to the local RabbitMQ instance."""
         return f'amqp://guest:guest@{self._mq_host}:5672/'
 
     @property
     def vhost(self):
+        """Default vhost."""
         return '/'
+
+    @property
+    def management_url(self) -> str:
+        """URL to connect to the management interface of the RabbitMQ instance."""
+        return f'http://guest:guest@{self._mq_host}:15672/'
 
     def start(self) -> None:
         """Start local rabbit mq instance."""

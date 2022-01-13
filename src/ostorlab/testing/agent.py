@@ -1,4 +1,4 @@
-"""mock agent implements the required methods to test the agent's behaviors without using external components."""
+"""mock agent implements the required methods to test the agent's behavior without using external components."""
 import pytest
 
 from typing import List
@@ -14,6 +14,18 @@ def agent_mock(mocker):
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run', return_value=None)
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_close', return_value=None)
     mocker.patch('ostorlab.agent.agent.AgentMixin._is_mq_healthy', return_value=True)
+    mocker.patch(
+        'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.start_healthcheck',
+        return_value=None
+    )
+    mocker.patch(
+        'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.add_healthcheck',
+        return_value=None
+    )
+    mocker.patch(
+        'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__',
+        return_value=None
+    )
 
     def mq_send_message(key, message):
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'

@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package v3.report.status;
+
+message Message {
+    required string key = 1;
+    required string value = 2;
+}

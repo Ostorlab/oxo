@@ -207,6 +207,8 @@ class LocalRuntime(runtime.Runtime):
 
         agent.bus_url = self._mq_service.url
         agent.bus_exchange_topic = f'ostorlab_topic_{self._name}'
+        agent.bus_managment_url = self._mq_service.management_url
+        agent.bus_vhost = self._mq_service.vhost
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT
 
@@ -321,3 +323,15 @@ class LocalRuntime(runtime.Runtime):
         for s in self._docker_client.services.list():
             if s.name == service.name:
                 s.scale(replicas)
+
+    def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+        """Lists scans managed by runtime.
+
+        Args:
+            page: Page number for list pagination (default 1).
+            number_elements: count of elements to show in the listed page (default 10).
+
+        Returns:
+            List of scan objects.
+        """
+        raise NotImplementedError()

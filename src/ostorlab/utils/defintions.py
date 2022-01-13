@@ -10,7 +10,7 @@ class Arg:
     The value is always bytes to support all arg values. The type is defined by the type attribute."""
     name: str
     type: str
-    value: bytes
+    value: Optional[bytes] = None
     description: Optional[str] = None
 
 

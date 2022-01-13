@@ -24,6 +24,8 @@ weight: int
 import dataclasses
 from typing import Any, Dict
 
+from google.protobuf import json_format
+
 from ostorlab.agent.message import serializer
 
 
@@ -31,7 +33,7 @@ from ostorlab.agent.message import serializer
 class Message:
     """Message data class used for both incoming and outgoing messages."""
     selector: str
-    data: Any
+    data: Dict[str, Any]
     raw: bytes
 
     @classmethod
@@ -63,5 +65,6 @@ class Message:
         Returns:
             Message with both raw and data definitions.
         """
-        data = serializer.deserialize(selector, raw)
+        proto_message = serializer.deserialize(selector, raw)
+        data = json_format.MessageToDict(proto_message, preserving_proto_field_name=True)
         return cls(data=data, selector=selector, raw=raw)

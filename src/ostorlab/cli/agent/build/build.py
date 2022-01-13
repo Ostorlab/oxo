@@ -7,7 +7,10 @@ import docker
 
 from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
+from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
+
+console = cli_console.Console()
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +23,21 @@ def build(file: io.FileIO) -> None:
     """
     try:
         agent_def = loader.load_agent_yaml(file)
-
         dockerfile_path = agent_def['docker_file_path']
         docker_build_root = agent_def['docker_build_root']
-        container_name = agent_def['name']
-
-        docker_sdk_client = docker.from_env()
-        docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag=container_name)
+        agent_name = agent_def['name']
+        agent_version = agent_def.get('version', '0.0.0')
+        console.info(
+            f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
+            f' at root [bold red]{docker_build_root}[/].')
+        container_name = f'agent__{agent_name}:v{agent_version}'
+        with console.status(f'Building [bold red]{container_name}[/]'):
+            docker_sdk_client = docker.from_env()
+            docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag=container_name)
+        console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
     except validator.SchemaError:
-        logger.error(
+        console.error(
             'Schema is invalid, this should not happen, please report an issue at '
             'https://github.com/Ostorlab/ostorlab/issues.')
     except validator.ValidationError:
-        logger.error('Definition file does not conform to the provided specification.')
+        console.error('Definition file does not conform to the provided specification.')
