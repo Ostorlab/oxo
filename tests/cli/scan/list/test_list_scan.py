@@ -31,6 +31,7 @@ def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(
 
     assert result.exception is None
 
+
 @mock.patch.object(console.Console, 'error')
 def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
         mock_console, requests_mock):
