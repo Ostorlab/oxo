@@ -120,32 +120,3 @@ def docker_dummy_image_cleanup():
         for t in img.tags:
             if 'dummy' in t:
                 client.images.remove(t)
-
-
-# def docker_services():
-#     """Pytest fixture for."""
-#     service = {'ID': '0099i5n1y3gycuekvksyqyxav',
-#                'Version': {'Index': 2338134},
-#                'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-#                'UpdatedAt': '2022-01-07T15:06:19.777037132Z',
-#                'Spec': {'Name': 'mq_qmwjef',
-#                         'Labels': {'ostorlab.mq': '', 'ostorlab.universe': 'qmwjef'},
-#                         'TaskTemplate': {'ContainerSpec': {'Image': 'rabbitmq:3.9-management',
-#                                                            'Env': ['TASK_ID={{.Task.Slot}}',
-#                                                                    'MQ_SERVICE_NAME=mq_qmwjef',
-#                                                                    'RABBITMQ_ERLANG_COOKIE=2797cb34ff391e34567a'],
-#                                                            'Isolation': 'default'},
-#                                          'RestartPolicy': {'Condition': 'any',
-#                                                            'Delay': 0,
-#                                                            'MaxAttempts': 0,
-#                                                            'Window': 0},
-#                                          'Networks': [{'Target': '8z3orlqb21w8ka0n8vqfq940h'}],
-#                                          'ForceUpdate': 0,
-#                                          'Runtime': 'container'},
-#                         'Mode': {'Replicated': {'Replicas': 1}},
-#                         'EndpointSpec': {'Mode': 'vip'}},
-#                'Endpoint': {'Spec': {'Mode': 'vip'},
-#                             'VirtualIPs': [{'NetworkID': '8z3orlqb21w8ka0n8vqfq940h',
-#                                             'Addr': '10.0.1.53/24'}]}}
-
-#     return [services_model.Service(attrs=service)]

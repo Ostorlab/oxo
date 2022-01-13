@@ -48,9 +48,14 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
 
 @pytest.mark.docker
 def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
+    """Unittest for the scan list method when there are local scans available.
+    Gets the docker services and checks for those with ostorlab.universe
+    as one of the labels.
+    Shows the list of scans.
+    """
 
     def docker_services():
-        """Pytest fixture for."""
+        """Method for mocking the scan list response."""
         services = [
             {'ID': '0099i5n1y3gycuekvksyqyxav',
                              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
@@ -74,7 +79,14 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
 
 @pytest.mark.docker
 def testRuntimeScanList_whenScansAreNotPresent_showsEmptyList(mocker):
+    """Unittest for the scan list method when there are no local scans available.
+    Gets the docker services and checks for those with ostorlab.universe
+    as one of the labels.
+    Shows an empty list.
+    """
+
     def docker_services():
+        """Method for mocking the scan list response."""
         return []
 
     mocker.patch('docker.DockerClient.services', return_value=ServiceCollection())
