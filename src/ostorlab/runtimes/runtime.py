@@ -33,3 +33,15 @@ class Runtime(abc.ABC):
             None
         """
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def stop(self, scan_id: str) -> None:
+        """Stops a scan with the given id.
+
+        Args:
+            scan_id: The scan or universe id.
+
+        Returns:
+            None
+        """
+        raise NotImplementedError()
