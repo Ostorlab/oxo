@@ -12,7 +12,7 @@ console = cli_console.Console()
 @scan.command()
 @click.option('--id', '-id', 'scan_id', help='Id of the scan or universe.', required=True)
 @click.pass_context
-def stop(ctx: click.core.Context, scan_id: str) -> None:
+def stop(ctx: click.core.Context, scan_id: int) -> None:
     """Stop a scan.\n
     Usage:\n
         - ostorlab scan --runtime=source stop --id=id
@@ -21,4 +21,3 @@ def stop(ctx: click.core.Context, scan_id: str) -> None:
     runtime_instance = ctx.obj['runtime']
     with console.status('Stoping scan'):
         runtime_instance.stop(scan_id=scan_id)
-        console.success('Scan stopped successfully')

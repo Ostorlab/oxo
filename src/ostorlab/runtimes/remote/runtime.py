@@ -8,6 +8,7 @@ from typing import List
 
 from ostorlab.apis import runner as apis_runner
 from ostorlab.apis import scan_list
+from ostorlab.apis import scan_stop
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
@@ -43,6 +44,22 @@ class RemoteRuntime(runtime.Runtime):
             None
         """
         pass
+
+    def stop(self, scan_id: int) -> None:
+        """Stops a scan.
+
+        Args:
+            scan_id: The id of the scan to stop.
+        """
+        try:
+            runner = apis_runner.APIRunner()
+            response = runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
+            if response.get('errors') is not None:
+                console.error(f'Scan with id {scan_id} not found')
+            else:
+                console.success('Scan stopped successfully')
+        except apis_runner.Error:
+            console.error('Could not stop scan.')
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
