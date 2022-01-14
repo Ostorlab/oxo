@@ -12,10 +12,10 @@ from ostorlab.utils import defintions
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
     key: str
-    bus_url: Optional[str] = None
-    bus_exchange_topic: Optional[str] = None
-    bus_managment_url: Optional[str] = None
-    bus_vhost: Optional[str] = None
+    bus_url: Optional[str] = ''
+    bus_exchange_topic: Optional[str] = ''
+    bus_managment_url: Optional[str] = ''
+    bus_vhost: Optional[str] = ''
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
