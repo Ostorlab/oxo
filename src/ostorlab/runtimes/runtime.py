@@ -2,7 +2,7 @@
 import abc
 import dataclasses
 
-from typing import List
+from typing import List, Optional
 from ostorlab.assets import asset as base_asset
 from ostorlab.runtimes import definitions
 
@@ -12,13 +12,13 @@ class Scan:
     """Scan object."""
     # TODO(alaeddine): temporary object definition that needs to be refined.
     id: str
-    application: str
-    version: str
-    platform: str
-    plan: str
+    application: Optional[str]
+    version: Optional[str]
+    platform: Optional[str]
+    plan: Optional[str]
     created_time: str
-    progress: str
-    risk: str
+    progress: Optional[str]
+    risk: Optional[str]
 
 
 class Runtime(abc.ABC):
