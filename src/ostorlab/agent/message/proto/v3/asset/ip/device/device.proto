@@ -7,5 +7,5 @@ message Message {
   optional string mask = 2;
   optional string type = 3;
   optional string os = 4;
-  optional string os_cpe = 3;
+  optional string os_cpe = 5;
 }
