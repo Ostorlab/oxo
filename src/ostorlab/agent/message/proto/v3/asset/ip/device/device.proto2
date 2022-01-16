@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package v3.asset.ip.device;
+
+message Message {
+  required string host = 1;
+  optional string mask = 2;
+  optional string type = 3;
+  optional string os = 4;
+  optional string os_cpe = 3;
+}
