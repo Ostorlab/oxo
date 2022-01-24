@@ -1,3 +1,4 @@
+"""KB - Knowledge base.. ToDo"""
 import os
 import json
 
@@ -8,10 +9,11 @@ META = 'meta.json'
 
 class MetaKb(type):
     """ToDo"""
-    def __getattr__(self, item):
+    def __getattr__(cls, item):
         if not os.path.exists(os.path.join(FOLDER, item, META)):
             raise ValueError
-        meta = json.loads(open(os.path.join(FOLDER, item, META), encoding='utf-8').read())
+        with open(os.path.join(FOLDER, item, META), encoding='utf-8') as f:
+            meta = json.loads(f.read())
         return meta['title']
 
 
