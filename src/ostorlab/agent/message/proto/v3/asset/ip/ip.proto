@@ -1,8 +1,9 @@
-syntax = "proto2";
+ syntax = "proto2";
 
 package v3.asset.ip;
 
 message Message {
   required string host = 1;
   optional string mask = 2;
+  required int32 version = 3;
 }
