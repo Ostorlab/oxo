@@ -5,7 +5,7 @@ import pytest
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
-
+from docker.models import services as services_model
 
 @pytest.mark.skip(reason='Missing inject asset agent.')
 @pytest.mark.docker
@@ -40,3 +40,49 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
     configs = docker_client.configs.list()
     assert any(c.name.starts_with('agent_') for c in configs)
 
+
+@pytest.mark.docker
+def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
+    """Unittest for the scan list method when there are local scans available.
+    Gets the docker services and checks for those with ostorlab.universe
+    as one of the labels.
+    Shows the list of scans.
+    """
+
+    def docker_services():
+        """Method for mocking the scan list response."""
+        services = [
+            {'ID': '0099i5n1y3gycuekvksyqyxav',
+                             'CreatedAt': '2021-12-27T13:37:02.795789947Z',
+                             'Spec': {'Labels': {'ostorlab.universe': 'qmwjef'}}},
+            {'ID': '0099i5n1y3gycuekvksyqyxav',
+             'CreatedAt': '2021-12-27T13:37:02.795789947Z',
+             'Spec': {'Labels': {'ostorlab.mq': ''}}}
+                             ]
+
+        return [services_model.Service(attrs=service) for service in services]
+
+    mocker.patch('docker.DockerClient.services', return_value=services_model.ServiceCollection())
+    mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
+
+    scans = local_runtime.LocalRuntime().list()
+
+    assert len(scans) == 1
+    assert scans[0].id == 'qmwjef'
+    assert scans[0].created_time == '2021-12-27T13:37:02.795789947Z'
+
+
+@pytest.mark.docker
+def testRuntimeScanList_whenScansAreNotPresent_showsEmptyList(mocker):
+    """Unittest for the scan list method when there are no local scans available.
+    Gets the docker services and checks for those with ostorlab.universe
+    as one of the labels.
+    Shows an empty list.
+    """
+
+    mocker.patch('docker.DockerClient.services', return_value=services_model.ServiceCollection())
+    mocker.patch('docker.DockerClient.services.list', side_effect=lambda:[])
+
+    scans = local_runtime.LocalRuntime().list()
+
+    assert len(scans) == 0

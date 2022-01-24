@@ -36,77 +36,65 @@ def json_schema_file():
                         "type": "string",
                         "maxLength": 4096
                     }
-                }      
+                }
             },
-            
             "properties": {
                 "name": {
                     "type": "string",
                     "maxLength": 2048
                 },
-
                 "description":{
                     "type": "string"
                 },
-        
                 "image":{
                     "type": "string",
                     "pattern": "((?:[^/]*/)*)(.*)"
                 },
-        
                 "source":{
                     "type": "string",
                     "format": "uri",
                     "pattern": "^https?://",
                     "maxLength": 4096
                 },
-
                 "license":{
                     "type": "string",
                     "maxLength": 1024
                 },
-        
                 "durability":{
                     "type": "string",
                     "enum": ["temporary", "development", "published"]
                 },
-        
                 "restrictions": {
                     "$ref": "#/CustomTypes/ArrayOfStrings"
                 },
-        
+
                 "in_selectors":{
                     "$ref": "#/CustomTypes/ArrayOfStrings"
                 },
-        
+
                 "out_selectors":{
                     "$ref": "#/CustomTypes/ArrayOfStrings"
                 },
-        
                 "restart_policy":{
                     "type": "string",
                     "enum": ["run_once", "always_restart"]
                 },
-        
-                "constraints":{ 
+                "constraints":{
                     "$ref": "#/CustomTypes/ArrayOfStrings"
                 },
-        
                 "mounts":{
                     "$ref": "#/CustomTypes/ArrayOfStrings"
                 },
-        
-                "mem_limit":{ 
+                "mem_limit":{
                     "type": "number"
                 }
             },
-        
             "required": ["name", "image", "source", "durability", "restrictions", "in_selectors", "out_selectors", "restart_policy"]
         }
 
     """
-    json_schema_file_object =  io.StringIO(json_schema)
-    return  json_schema_file_object
+    json_schema_file_object = io.StringIO(json_schema)
+    return json_schema_file_object
 
 
 @pytest.fixture
