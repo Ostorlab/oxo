@@ -311,4 +311,28 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             List of scan objects.
         """
-        raise NotImplementedError()
+        scans = []
+        universe_ids = set()
+        client = docker.from_env()
+        services = client.services.list()
+
+        for s in services:
+            try:
+                service_labels = s.attrs['Spec']['Labels']
+                ostorlab_universe_id = service_labels.get('ostorlab.universe')
+                if 'ostorlab.universe' in service_labels.keys() and ostorlab_universe_id not in universe_ids:
+                    universe_ids.add(ostorlab_universe_id)
+                    scan = runtime.Scan(
+                        id=ostorlab_universe_id,
+                        application=None,
+                        version=None,
+                        platform=None,
+                        plan=None,
+                        created_time=s.attrs['CreatedAt'],
+                        progress=None,
+                        risk=None,
+                    )
+                    scans.append(scan)
+            except KeyError:
+                logger.warning('The label ostorlab.universe do not exist.')
+        return scans[:number_elements]
