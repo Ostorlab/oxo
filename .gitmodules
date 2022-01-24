@@ -3,3 +3,6 @@ path = kbvulnz
 url = git@github.com:Ostorlab/KB.git
 branch = master
 
+[submodule "src/ostorlab/agent/KB"]
+	path = src/ostorlab/agent/kb/KB
+	url = https://github.com/Ostorlab/KB.git
