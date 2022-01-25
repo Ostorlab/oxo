@@ -1,5 +1,5 @@
-[submodule "kbvulnz"]
-path = kbvulnz
-url = git@github.com:Ostorlab/KB.git
-branch = master
+[submodule "KB"]
+	path = src/ostorlab/agent/kb/KB
+	url = git@github.com:Ostorlab/KB.git
+    branch = master
 
