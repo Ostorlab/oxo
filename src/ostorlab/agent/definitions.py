@@ -1,7 +1,7 @@
 """Agent and Agent group definitions and settings dataclasses."""
 import dataclasses
 import io
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from ostorlab.agent.schema import loader
 from ostorlab.utils import defintions
@@ -13,7 +13,7 @@ class AgentDefinition:
     name: str
     in_selectors: List[str] = dataclasses.field(default_factory=list)
     out_selectors: List[str] = dataclasses.field(default_factory=list)
-    args: List[defintions.Arg] = dataclasses.field(default_factory=list)
+    args: List[Dict[str, Any]] = dataclasses.field(default_factory=list)
     constraints: List[str] = None
     mounts: Optional[List[str]] = None
     restart_policy: str = 'any'
