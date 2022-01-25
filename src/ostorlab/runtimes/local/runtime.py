@@ -295,7 +295,8 @@ class LocalRuntime(runtime.Runtime):
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name='asset_selector',
                                                                  filename='/tmp/asset_selector.txt')
-        inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy='none')
+        inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
+                                                                restart_policy='none')
         self._start_agent(agent=inject_asset_agent_settings,
                           extra_configs=[asset_config_reference, selector_config_reference])
 
