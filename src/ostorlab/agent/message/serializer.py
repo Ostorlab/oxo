@@ -116,6 +116,9 @@ def _parse_dict(values: Any, message) -> None:
                     # For type enum, we introspect the type to get enum type, and then get the string mapping to int.
                     enum_v = message.DESCRIPTOR.fields_by_name[k].enum_type.values_by_name[v].number
                     setattr(message, k, enum_v)
+                elif v is None:
+                    # Optional values don't need to be set.
+                    pass
                 else:
                     setattr(message, k, v)
             except AttributeError as e:
