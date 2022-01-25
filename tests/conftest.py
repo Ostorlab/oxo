@@ -77,7 +77,7 @@ def json_schema_file():
                 },
                 "restart_policy":{
                     "type": "string",
-                    "enum": ["run_once", "always_restart"]
+                    "enum": ["any", "on-failure", "none"]
                 },
                 "constraints":{
                     "$ref": "#/CustomTypes/ArrayOfStrings"

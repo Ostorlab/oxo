@@ -27,7 +27,7 @@ def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file):
         out_selectors:
         - "out_selector1"
         - "out_selector2"
-        restart_policy: "run_once"
+        restart_policy: "none"
     """
 
     with io.StringIO(valid_yaml_data) as yaml_data_file:
@@ -61,7 +61,7 @@ def testYamlValidation_whenSourceParamDoesNotRespectURLPattern_raisesValidationE
         out_selectors:
         - "out_selector1"
         - "out_selector2"
-        restart_policy: "run_once"
+        restart_policy: "none"
     """
     validator_object = validator.Validator(json_schema_file)
     yaml_data_file = io.StringIO(invalid_yaml_data)
