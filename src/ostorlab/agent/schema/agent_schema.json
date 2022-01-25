@@ -96,12 +96,13 @@
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "restart_policy": {
-      "description": "[Optional] - Restart policy of the agent, e.g., run_once, always_restart.",
+      "description": "[Optional] - Restart policy of the agent, e.g., none, any, on-failure.",
       "type": "string",
       "maxLength": 1024,
       "enum": [
-        "run_once",
-        "always_restart"
+        "any",
+        "on-failure",
+        "none"
       ]
     },
     "constraints": {

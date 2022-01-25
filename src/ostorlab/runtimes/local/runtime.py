@@ -27,7 +27,7 @@ HEALTHCHECK_PORT = 5000
 
 logger = logging.getLogger(__name__)
 
-ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostor/inject_asset'
+ASSET_INJECTION_AGENT_DEFAULT = 'agent_inject_asset'
 
 
 class UnhealthyService(exceptions.OstorlabError):
@@ -295,7 +295,7 @@ class LocalRuntime(runtime.Runtime):
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name='asset_selector',
                                                                  filename='/tmp/asset_selector.txt')
-        inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT)
+        inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy='none')
         self._start_agent(agent=inject_asset_agent_settings,
                           extra_configs=[asset_config_reference, selector_config_reference])
 
