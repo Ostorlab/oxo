@@ -11,7 +11,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         kind: "AgentGroup"
         description: "AgentGroup1 Should be here"
         image: "some/path/to/the/image"
-        restart_policy: "always_restart"
+        restart_policy: "any"
         agents:
           - key: "agent/ostorlab/BigFuzzer"
             constraints:
@@ -26,7 +26,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
             mounts:
               - "mount1"
               - "mount2"
-            restart_policy: "always_restart"
+            restart_policy: "any"
             open_ports:
                 - src_port: 50000
                   dest_port: 50300
@@ -47,7 +47,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
             mounts:
               - "mount3"
               - "mount4"
-            restart_policy: "always_restart"
+            restart_policy: "any"
             replicas: 1
             open_ports:
                 - src_port: 50800
@@ -62,7 +62,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         args=[utils_definitions.Arg(name='color', type='string', value='red')],
         constraints=['constraint1', 'constraint2'],
         mounts=['mount1', 'mount2'],
-        restart_policy='always_restart',
+        restart_policy='any',
         open_ports=[utils_definitions.PortMapping(source_port=50000, destination_port=50300)],
     )
     dummy_agent_def2 = definitions.AgentSettings(
@@ -70,7 +70,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         args=[utils_definitions.Arg(name='color', type='string', value='blue')],
         constraints=['constraint3', 'constraint4'],
         mounts=['mount3', 'mount4'],
-        restart_policy='always_restart',
+        restart_policy='any',
         open_ports=[utils_definitions.PortMapping(source_port=50800, destination_port=55000)],
     )
     dummy_agents = [dummy_agent_def1, dummy_agent_def2]

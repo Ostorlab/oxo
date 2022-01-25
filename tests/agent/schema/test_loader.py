@@ -29,7 +29,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
         out_selectors:
         - "out_selector1"
         - "out_selector2"
-        restart_policy: "run_once"
+        restart_policy: "any"
         mem_limit: 4096
         portmap:
          port_src: 50001
@@ -78,7 +78,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         out_selectors:
         - "out_selector1"
         - "out_selector2"
-        restart_policy: "run_once"
+        restart_policy: "any"
         mem_limit: 4096
         portmap:
          port_src: 50001
@@ -112,7 +112,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
         kind: "AgentGroup"
         description: "AgentGroup1 Should be here"
         image: "some/path/to/the/image"
-        restart_policy: "always_restart"
+        restart_policy: "any"
         restrictions:
         - "restriction1"
         - "restriction2"
@@ -155,7 +155,7 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
     invalid_yaml_agent_group_data = """
         kind: "AgentGroup1"
         image: "some/path/to/the/image"
-        restart_policy: "always_restart"
+        restart_policy: "any"
         restrictions:
         - "restriction1"
         - "restriction2"

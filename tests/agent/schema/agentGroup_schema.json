@@ -32,10 +32,10 @@
             "pattern": "((?:[^/]*/)*)(.*)"
         },
         "restart_policy":{
-            "description": "[Optional] - Restart policy of the agent group, e.g., run_once, always_restart.",
+            "description": "[Optional] - Restart policy of the agent group, e.g., on-failure, none, any.",
             "type": "string",
             "maxLength": 1024,
-            "enum": ["run_once", "always_restart"]
+            "enum": ["on-failure", "any", "none"]
         },
         "restrictions": {
             "description": "[Optional] - Array of strings explaining the restrictions of the agent group.",
