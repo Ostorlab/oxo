@@ -21,7 +21,7 @@ def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():
             out_selectors:
             - "out_selector1"
             - "out_selector2"
-            restart_policy: "run_once"
+            restart_policy: "any"
         """
 
     yaml_data_file = io.StringIO(valid_yaml_data)
