@@ -4,6 +4,7 @@ from ostorlab.agent.kb import kb
 
 
 def testkbGetAttribute_whenMappingExists_returnsEntry():
+    """Test KB resolves correctly and returns a valid entry."""
     entry = kb.KB.WEB_XSS
 
     assert entry.title is not None
@@ -14,6 +15,7 @@ def testkbGetAttribute_whenMappingExists_returnsEntry():
 
 
 def testkbGetAttribute_whenMappingDoNotExists_raisesValueError():
+    """Test KB resolution fails with a `ValueError`."""
     with pytest.raises(ValueError):
         kb.KB.RANDOM_FAKE_KEY
 
