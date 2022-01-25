@@ -6,7 +6,7 @@ from ostorlab.cli.scan.run import run
 
 
 @run.run.command()
-@click.option('--file', type=click.File(), help='Path to the file to be scanned.', required=True)
+@click.option('--file', type=click.File(mode='rb'), help='Path to the file to be scanned.', required=True)
 @click.pass_context
 def file_scan(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for a file."""
