@@ -35,7 +35,7 @@ def _find_package_name(selector: str) -> Optional[str]:
     """Finds matching package name to selector."""
     files = _list_message_proto_files()
     regex_pattern = _selector_to_package_regex(selector)
-    logger.debug(f'searching protos with pattern: %s', regex_pattern)
+    logger.debug('searching protos with pattern: %s', regex_pattern)
     pattern = re.compile(regex_pattern)
     matching = [pattern.match(f) for f in files]
     filtered_matching = [m.group(0) for m in matching if m is not None]
