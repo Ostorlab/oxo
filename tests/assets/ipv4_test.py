@@ -3,7 +3,7 @@ from ostorlab.agent.message import serializer
 from ostorlab.assets import ipv4
 
 
-def testAssetToProto_whenSelectorIsSetAndCorrect_generatesProto():
+def testAssetToProto_whenIPv4_generatesProto():
     asset = ipv4.IPv4(host='192.168.1.1')
     raw = asset.to_proto()
 

@@ -1,5 +1,6 @@
 """Serializer handles matching of selector to the proper protobuf message definition."""
 import importlib
+import logging
 import os
 import pathlib
 import re
@@ -16,6 +17,7 @@ PROTO_CLASS_NAME = 'Message'
 MESSAGE_PROTO = '_pb2'
 MESSAGE_CODE_PATH = pathlib.Path(__file__).parent / 'proto'
 
+logger = logging.getLogger(__name__)
 
 class SerializationError(exceptions.OstorlabError):
     """Base serialization Error."""
@@ -32,11 +34,13 @@ class NoMatchingPackageNameError(SerializationError):
 def _find_package_name(selector: str) -> Optional[str]:
     """Finds matching package name to selector."""
     files = _list_message_proto_files()
-    pattern = re.compile(_selector_to_package_regex(selector))
+    regex_pattern = _selector_to_package_regex(selector)
+    logger.debug(f'searching protos with pattern: {regex_pattern}')
+    pattern = re.compile(regex_pattern)
     matching = [pattern.match(f) for f in files]
     filtered_matching = [m.group(0) for m in matching if m is not None]
     if len(filtered_matching) > 1:
-        raise TooManyMatchingPackageNamesError()
+        raise TooManyMatchingPackageNamesError(f'Found {",".join(filtered_matching)}')
     elif len(filtered_matching) == 0:
         raise NoMatchingPackageNameError()
     else:
@@ -63,7 +67,7 @@ def _list_message_proto_files() -> List[str]:
 def _selector_to_package_regex(subject):
     """Maps selector to package matching regular expression."""
     splitted = subject.split('.')
-    return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\..*'
+    return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\.py'
 
 
 def serialize(selector: str, values: Dict[str, Any]):
