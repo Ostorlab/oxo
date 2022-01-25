@@ -71,10 +71,6 @@ class LocalRabbitMQ:
             if service.name.startswith('mq_') and self._name in universe:
                 service.remove()
 
-    def __del__(self):
-        """Force service stopped with object is getting deleted."""
-        self.stop()
-
     def _create_network(self):
         if any(network.name == self._network for network in self._docker_client.networks.list()):
             logger.warning('network already exists.')
