@@ -109,8 +109,8 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
     test_agent = TestAgent(
         agent_definitions.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping'],
                                           args=[
-                                              utils_definitions.Arg(name='color', type='string', value=None),
-                                              utils_definitions.Arg(name='speed', type='string', value=b'fast'),
+                                              {'name':'color', 'type':'string', 'value':None},
+                                              {'name':'speed', 'type':'string', 'value':b'fast'},
                                           ]),
         runtime_definitions.AgentSettings(
             key='agent/ostorlab/start_test_agent',

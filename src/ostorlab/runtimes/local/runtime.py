@@ -23,7 +23,7 @@ from ostorlab.utils import strings as strings_utils
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
-HEALTHCHECK_PORT = '5000'
+HEALTHCHECK_PORT = 5000
 
 logger = logging.getLogger(__name__)
 
@@ -164,13 +164,16 @@ class LocalRuntime(runtime.Runtime):
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
-            agent_instance_settings_proto = agent.to_raw_proto()
-            docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
-                                                               data=agent_instance_settings_proto)
-            config_reference = docker.types.ConfigReference(config_id=docker_config.id,
-                                                            config_name=f'agent_{agent.key}_{self._name}',
-                                                            filename='/tmp/settings.binproto')
-            self._start_agent(agent, [config_reference])
+            self._start_agent(agent, [])
+
+    def _add_settings_config(self, agent: definitions.AgentSettings):
+        """Add agent settings to docker config."""
+        agent_instance_settings_proto = agent.to_raw_proto()
+        docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
+                                                           data=agent_instance_settings_proto)
+        return docker.types.ConfigReference(config_id=docker_config.id,
+                                                        config_name=f'agent_{agent.key}_{self._name}',
+                                                        filename='/tmp/settings.binproto')
 
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
@@ -193,6 +196,8 @@ class LocalRuntime(runtime.Runtime):
         agent.bus_vhost = self._mq_service.vhost
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT
+
+        extra_configs.append(self._add_settings_config(agent))
 
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
