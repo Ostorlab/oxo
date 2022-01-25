@@ -27,7 +27,7 @@ HEALTHCHECK_PORT = 5000
 
 logger = logging.getLogger(__name__)
 
-ASSET_INJECTION_AGENT_DEFAULT = 'agent_inject_asset'
+ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostorlab/inject_asset'
 
 
 class UnhealthyService(exceptions.OstorlabError):

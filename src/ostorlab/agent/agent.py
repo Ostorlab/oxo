@@ -272,8 +272,12 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             args = sys.argv[1:]
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-d', '--definition', default='/app/agent/ostorlab.yaml', help='Agent YAML definition file.')
-        parser.add_argument('-s', '--settings', default='/tmp/settings.binproto', help='Agent binary proto settings.')
+        parser.add_argument('-d', '--definition',
+                            default='/app/agent/ostorlab.yaml',
+                            help='Agent YAML definition file.')
+        parser.add_argument('-s', '--settings',
+                            default='/tmp/settings.binproto',
+                            help='Agent binary proto settings.')
         args = parser.parse_args(args)
         logger.info('running agent with definition %s and settings %s', args.definition, args.settings)
 
