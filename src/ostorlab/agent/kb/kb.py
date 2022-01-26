@@ -3,7 +3,7 @@ import dataclasses
 import json
 import pathlib
 
-from typing import List, Dict
+from typing import Dict
 
 KB_FOLDER = 'KB'
 META_JSON = 'meta.json'
@@ -19,7 +19,7 @@ class Entry:
     short_description: str
     description: str
     recommendation: str
-    references: List[Dict[str, str]]
+    references: Dict[str, str]
     security_issue: bool = False
     privacy_issue: bool = False
     has_public_exploit: bool = False
