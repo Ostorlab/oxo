@@ -9,4 +9,4 @@ def testFileAsset_whenSelectorIsSetAndCorrect_generatesProto():
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize('v3.asset.file', raw)
-    assert unraw['content'] == b'test'
+    assert unraw.content == b'test'
