@@ -44,7 +44,7 @@ class Message:
         Args:
             selector: Target selector used to define the message format.
             data: Message data to be serialized to raw format.
-ProtoMessage
+
         Returns:
             Message with both raw and data definitions.
         """
