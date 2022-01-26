@@ -58,7 +58,7 @@ def _get_field_value_adaptor(pb, field, use_enum_labels=False) -> Callable:
     if field.type in TYPE_CALLABLE_MAP:
         return TYPE_CALLABLE_MAP[field.type]
 
-    raise UnrecognisedTypeError(f"Field {pb.__class__.__name__}.{field.name} has unrecognised type id {field.type}")
+    raise UnrecognisedTypeError(f'Field {pb.__class__.__name__}.{field.name} has unrecognised type id {field.type}')
 
 
 def protobuf_to_dict(pb, use_enum_labels: bool = False) -> Dict:

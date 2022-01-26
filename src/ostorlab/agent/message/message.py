@@ -24,11 +24,8 @@ weight: int
 import dataclasses
 from typing import Any, Dict
 
-from google.protobuf.message import Message
-
 from ostorlab.agent.message import proto_dict
 from ostorlab.agent.message import serializer
-
 
 
 @dataclasses.dataclass
@@ -47,7 +44,7 @@ class Message:
         Args:
             selector: Target selector used to define the message format.
             data: Message data to be serialized to raw format.
-
+ProtoMessage
         Returns:
             Message with both raw and data definitions.
         """
