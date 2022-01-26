@@ -6,10 +6,10 @@ from ostorlab.assets import file as file_asset
 from ostorlab.cli.scan.run import run
 
 
-@run.run.command()
+@run.run.command(name='file')
 @click.option('--file', type=click.File(mode='rb'), help='Path to file.', required=True)
 @click.pass_context
-def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
+def file_cli(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj['runtime']
     asset = file_asset.File(file.read())
