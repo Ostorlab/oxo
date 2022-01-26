@@ -7,10 +7,10 @@ from ostorlab.cli.scan.run import run
 
 
 @run.run.command()
-@click.option('--file', type=click.File(), help='Path to .AAB file.', required=True)
+@click.option('--file', type=click.File(mode='rb'), help='Path to .AAB file.', required=True)
 @click.pass_context
 def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .AAB package file."""
     runtime = ctx.obj['runtime']
-    asset = android_aab_asset.AndroidAab(file)
+    asset = android_aab_asset.AndroidAab(file.read())
     runtime.scan(agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)

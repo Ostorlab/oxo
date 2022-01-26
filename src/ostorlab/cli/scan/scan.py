@@ -14,6 +14,7 @@ from ostorlab.runtimes import registry
                     remote: on Ostorlab cloud, (requires login)\n
                     hybrid: running partially on Ostorlab cloud and partially on the local machine\n
                    """,
+              default='local',
               required=True)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str) -> None:
