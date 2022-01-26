@@ -169,10 +169,10 @@ class LocalRuntime(runtime.Runtime):
     def _add_settings_config(self, agent: definitions.AgentSettings):
         """Add agent settings to docker config."""
         agent_instance_settings_proto = agent.to_raw_proto()
-        docker_config = self._docker_client.configs.create(name=f'agent_{agent.key}_{self._name}',
+        docker_config = self._docker_client.configs.create(name=f'agent_{agent.container_image}_{self._name}',
                                                            data=agent_instance_settings_proto)
         return docker.types.ConfigReference(config_id=docker_config.id,
-                                                        config_name=f'agent_{agent.key}_{self._name}',
+                                                        config_name=f'agent_{agent.container_image}_{self._name}',
                                                         filename='/tmp/settings.binproto')
 
     def _start_agent(self, agent: definitions.AgentSettings,
