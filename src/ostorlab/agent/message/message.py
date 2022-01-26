@@ -24,10 +24,8 @@ weight: int
 import dataclasses
 from typing import Any, Dict
 
-from google.protobuf.message import Message as ProtoMessage
 from ostorlab.agent.message import proto_dict
 from ostorlab.agent.message import serializer
-
 
 
 @dataclasses.dataclass
@@ -38,7 +36,7 @@ class Message:
     raw: bytes
 
     @classmethod
-    def from_data(cls, selector: str, data: Dict[str, Any]) -> ProtoMessage:
+    def from_data(cls, selector: str, data: Dict[str, Any]) -> 'Message':
         """Generate a message from a structured data and destination selector.
 
         This a convenience method to avoid directly handling protobuf messages and the not so friendly protobuf API.
@@ -46,7 +44,7 @@ class Message:
         Args:
             selector: Target selector used to define the message format.
             data: Message data to be serialized to raw format.
-
+ProtoMessage
         Returns:
             Message with both raw and data definitions.
         """
@@ -54,7 +52,7 @@ class Message:
         return cls(data=data, selector=selector, raw=raw)
 
     @classmethod
-    def from_raw(cls, selector: str, raw: bytes) -> ProtoMessage:
+    def from_raw(cls, selector: str, raw: bytes) -> 'Message':
         """Generate a message from a raw data and source selector.
 
         This a convenience method to avoid directly handling protobuf messages and the not so friendly protobuf API.
