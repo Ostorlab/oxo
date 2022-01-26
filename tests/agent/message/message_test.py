@@ -25,3 +25,14 @@ def testMessageSerializeDeserializeWithEnum_whenSelectorIsValid_generatesProperP
 
     assert isinstance(serialized.raw, bytes)
     assert deserialized.data.get('risk_rating') == 'MEDIUM'
+
+
+def testMessageSerializeDeserializeForBytes_whenSelectorIsValid_generatesProperProto():
+    """Test message proper serialization from a dict object to a protobuf based on the selector."""
+    serialized = message.Message.from_data('v3.asset.file', {
+        'content': b'test',
+    })
+    deserialized = message.Message.from_raw('v3.asset.file', serialized.raw)
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get('content') == b'test'

@@ -24,9 +24,11 @@ weight: int
 import dataclasses
 from typing import Any, Dict
 
-from google.protobuf import json_format
+from google.protobuf.message import Message
 
+from ostorlab.agent.message import proto_dict
 from ostorlab.agent.message import serializer
+
 
 
 @dataclasses.dataclass
@@ -66,5 +68,5 @@ class Message:
             Message with both raw and data definitions.
         """
         proto_message = serializer.deserialize(selector, raw)
-        data = json_format.MessageToDict(proto_message, preserving_proto_field_name=True)
+        data = proto_dict.protobuf_to_dict(proto_message, use_enum_labels=True)
         return cls(data=data, selector=selector, raw=raw)
