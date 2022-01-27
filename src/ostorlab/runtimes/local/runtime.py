@@ -209,8 +209,7 @@ class LocalRuntime(runtime.Runtime):
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT
 
-        if extra_configs:
-            extra_configs.append(self._add_settings_config(agent))
+        extra_configs.append(self._add_settings_config(agent))
 
         # wait 2s and check max 5 times with 0.5s between each check.
         healthcheck = docker.types.Healthcheck(test=['CMD', 'echo', 'HELLO'],
@@ -261,7 +260,7 @@ class LocalRuntime(runtime.Runtime):
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
         tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
-        self._start_agent(agent=tracker_agent_settings)
+        self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
