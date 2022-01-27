@@ -1,10 +1,10 @@
 """Definition of the emitting protocol exposing the emit method."""
-from typing import Any, Dict
-from typing import Protocol
+from typing import Any, Dict, Protocol
 
 
 class Emitting(Protocol):
     """Protocol exposing the emit method."""
+
     def emit(self, selector: str, data: Dict[str, Any]) -> None:
         """Sends a message to all listening agents on the specified selector.
 
