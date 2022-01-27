@@ -34,6 +34,7 @@ HEALTHCHECK_INTERVAL = int(SECOND / 2)
 logger = logging.getLogger(__name__)
 
 ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostorlab/inject_asset'
+TRACKER_AGENT_DEFAULT = 'agent/ostorlab/tracker'
 
 
 class UnhealthyService(exceptions.OstorlabError):
@@ -175,6 +176,7 @@ class LocalRuntime(runtime.Runtime):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
             self._start_agent(agent, [])
+        self._start_tracker_agent()
 
     def _add_settings_config(self, agent: definitions.AgentSettings):
         """Add agent settings to docker config."""
@@ -254,6 +256,11 @@ class LocalRuntime(runtime.Runtime):
         for service in services:
             if service.name.startswith('agent_'):
                 yield service
+
+    def _start_tracker_agent(self):
+        """Start the tracker agent to handle the scan lifecycle."""
+        tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
+        self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
