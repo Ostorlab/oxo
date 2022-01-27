@@ -24,6 +24,12 @@ from ostorlab.utils import strings as strings_utils
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
 HEALTHCHECK_PORT = 5000
+SECOND = 1000000000
+HEALTHCHECK_RETRIES = 5
+HEALTHCHECK_TIMEOUT = 1 * SECOND
+HEALTHCHECK_START_PERIOD = 2 * SECOND
+HEALTHCHECK_INTERVAL = int(SECOND / 2)
+
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +167,10 @@ class LocalRuntime(runtime.Runtime):
         if self._mq_service is None or self._mq_service.is_healthy is False:
             raise UnhealthyService('MQ service is unhealthy.')
 
+    def _check_agents_healthy(self, agent_group_definition: definitions.AgentGroupDefinition):
+        """Checks if an agent is healthy."""
+        return self._are_agents_ready(agent_group_definition.agents)
+
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
@@ -199,6 +209,11 @@ class LocalRuntime(runtime.Runtime):
 
         extra_configs.append(self._add_settings_config(agent))
 
+        # wait 2s and check max 5 times with 0.5s between each check.
+        healthcheck = docker.types.Healthcheck(test=['CMD', 'echo', 'HELLO'],
+                                               retries=HEALTHCHECK_RETRIES, timeout=HEALTHCHECK_TIMEOUT,
+                                               start_period=HEALTHCHECK_START_PERIOD, interval=HEALTHCHECK_INTERVAL,)
+
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
             networks=[self._network],
@@ -209,6 +224,7 @@ class LocalRuntime(runtime.Runtime):
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
             mounts=agent.mounts,
             configs=extra_configs,
+            healthcheck=healthcheck,
             labels={'ostorlab.universe': self._name},
             constraints=agent.constraints,
             endpoint_spec=endpoint_spec,
@@ -220,10 +236,6 @@ class LocalRuntime(runtime.Runtime):
             # time.sleep(10)
             self._scale_service(agent_service, agent.replicas)
 
-    def _check_agents_healthy(self, agent_group_definition: definitions.AgentGroupDefinition):
-        """Checks if an agent is healthy."""
-        return self._are_agents_ready(agent_group_definition.agents)
-
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=12),
                     # return last value and don't raise RetryError exception.
@@ -231,50 +243,10 @@ class LocalRuntime(runtime.Runtime):
                     retry=tenacity.retry_if_result(lambda v: v is False))
     def _is_service_healthy(self, service: docker_models_services.Service, replicas=None) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
-        logger.info('checking service %s', service.name)
+        logger.debug('checking Spec service %s', service.name)
         if not replicas:
             replicas = service.attrs['Spec']['Mode']['Replicated']['Replicas']
         return replicas == len([task for task in service.tasks() if task['Status']['State'] == 'running'])
-
-    @tenacity.retry(stop=tenacity.stop_after_attempt(20),
-                    wait=tenacity.wait_exponential(multiplier=1, max=20),
-                    # return last value and don't raise RetryError exception.
-                    retry_error_callback=lambda lv: lv.result(),
-                    retry=tenacity.retry_if_result(lambda v: v is False))
-    def _are_agents_ready(self, agents: List[definitions.AgentSettings], fail_fast=True) -> bool:
-        """Checks that all agents are ready and healthy while taking into account the run type of agent
-         (once vs long-running)."""
-        all_agents_healthy = True
-        logger.info('listing services ...')
-        agent_services = list(self._list_agent_services())
-        if len(agent_services) < len(agents):
-            logger.error('found %d, expecting %d', len(agent_services), len(agents))
-            return False
-        else:
-            logger.info('found correct count of services')
-
-        for service in agent_services:
-            logger.info('checking %s ...', service.name)
-            if not _is_service_type_run(service):
-                if self._is_service_healthy(service):
-                    task_healthy = False
-                    container_ips = _get_task_ips(service)
-                    healthy = any(_is_agent_status_ok(ip) for ip in container_ips)
-                    # only a single task need to be healthy
-                    task_healthy = task_healthy or healthy
-
-                    # all agents need to be healthy
-                    all_agents_healthy = all_agents_healthy and task_healthy
-                    if fail_fast and not all_agents_healthy:
-                        logger.error('agent health check %s is not healthy', service.name)
-                        return False
-
-                    logger.info('agent healthcheck of %s is %s', service.name, all_agents_healthy)
-                else:
-                    logger.error('agent service %s is not healthy', service.name)
-                    if fail_fast and not all_agents_healthy:
-                        return False
-        return all_agents_healthy
 
     def _list_agent_services(self):
         """List the services of type agents. All agent service must start with agent_."""
@@ -342,3 +314,30 @@ class LocalRuntime(runtime.Runtime):
             except KeyError:
                 logger.warning('The label ostorlab.universe do not exist.')
         return scans[:number_elements]
+
+    @tenacity.retry(stop=tenacity.stop_after_attempt(20),
+                    wait=tenacity.wait_exponential(multiplier=1, max=20),
+                    # return last value and don't raise RetryError exception.
+                    retry_error_callback=lambda lv: lv.result(),
+                    retry=tenacity.retry_if_result(lambda v: v is False))
+    def _are_agents_ready(self, agents: List[definitions.AgentSettings], fail_fast=True) -> bool:
+        """Checks that all agents are ready and healthy while taking into account the run type of agent
+         (once vs long-running)."""
+        logger.info('listing services ...')
+        agent_services = list(self._list_agent_services())
+        if len(agent_services) < len(agents):
+            logger.error('found %d, expecting %d', len(agent_services), len(agents))
+            return False
+        else:
+            logger.info('found correct count of services')
+
+        for service in agent_services:
+            logger.info('checking %s ...', service.name)
+            if not _is_service_type_run(service):
+                if self._is_service_healthy(service):
+                    logger.info('agent service %s is healthy', service.name)
+                else:
+                    logger.error('agent service %s is not healthy', service.name)
+                    if fail_fast:
+                        return False
+        return True
