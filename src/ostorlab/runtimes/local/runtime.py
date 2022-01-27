@@ -188,7 +188,7 @@ class LocalRuntime(runtime.Runtime):
                                                         filename='/tmp/settings.binproto')
 
     def _start_agent(self, agent: definitions.AgentSettings,
-                     extra_configs: Optional[List[docker.types.ConfigReference]] = []) -> None:
+                     extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
         """Start agent based on provided definition.
 
         Args:
@@ -209,7 +209,8 @@ class LocalRuntime(runtime.Runtime):
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT
 
-        extra_configs.append(self._add_settings_config(agent))
+        if extra_configs:
+            extra_configs.append(self._add_settings_config(agent))
 
         # wait 2s and check max 5 times with 0.5s between each check.
         healthcheck = docker.types.Healthcheck(test=['CMD', 'echo', 'HELLO'],
@@ -258,7 +259,7 @@ class LocalRuntime(runtime.Runtime):
                 yield service
 
     def _start_tracker_agent(self):
-        """Injects the scan target assets."""
+        """Start the tracker agent to handle the scan lifecycle."""
         tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
         self._start_agent(agent=tracker_agent_settings)
 
