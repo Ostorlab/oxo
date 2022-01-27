@@ -2,7 +2,7 @@
 from typing import Any, Dict, Protocol
 
 
-class Emitting(Protocol):
+class EmitProtocol(Protocol):
     """Protocol exposing the emit method."""
 
     def emit(self, selector: str, data: Dict[str, Any]) -> None:
