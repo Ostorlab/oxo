@@ -19,6 +19,7 @@ from ostorlab.assets import asset as base_asset
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
+from ostorlab.cli import console as cli_console
 from ostorlab.utils import strings as strings_utils
 
 NETWORK = 'ostorlab_local_network'
@@ -32,6 +33,7 @@ HEALTHCHECK_INTERVAL = int(SECOND / 2)
 
 
 logger = logging.getLogger(__name__)
+console = cli_console.Console()
 
 ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostorlab/inject_asset'
 TRACKER_AGENT_DEFAULT = 'agent/ostorlab/tracker'
@@ -139,6 +141,30 @@ class LocalRuntime(runtime.Runtime):
         self._start_agents(agent_group_definition)
         self._check_agents_healthy(agent_group_definition)
         self._inject_asset(asset)
+
+    def stop(self, scan_id: str) -> None:
+        """Remove a service (scan) belonging to universe with scan_id(Universe Id).
+
+        Args:
+            scan_id: The id of the scan to stop.
+        """
+
+        scans = []
+        client = docker.from_env()
+        services = client.services.list()
+        for service in services:
+            try:
+                service_labels = service.attrs['Spec']['Labels']
+                ostorlab_universe_id = service_labels.get('ostorlab.universe')
+                if ostorlab_universe_id == scan_id:
+                    scans.append(service)
+                    service.remove()
+            except KeyError:
+                console.warning('The label ostorlab.universe does not exist.')
+        if len(scans) > 0:
+            console.success('Scan stopped successfully.')
+        else:
+            console.error(f'Scan with id {scan_id} not found.')
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicates."""

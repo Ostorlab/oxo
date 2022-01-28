@@ -50,6 +50,17 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def stop(self, scan_id: str) -> None:
+        """Stops a scan with the given id.
+
+        Args:
+            scan_id: The scan or universe id.
+
+        Returns:
+            None
+        """
+        raise NotImplementedError()
+
     def list(self, page: int = 1, number_elements: int = 10) -> List[Scan]:
         """Lists scans managed by runtime.
 
@@ -61,4 +72,3 @@ class Runtime(abc.ABC):
             List of scan objects.
         """
         raise NotImplementedError()
-
