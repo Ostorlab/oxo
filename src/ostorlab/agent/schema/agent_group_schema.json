@@ -32,7 +32,7 @@
         },
         "value": {
           "description": "[Optional] - Value of the agent group argument.",
-          "type": "string"
+          "type": ["string", "number", "boolean"]
         }
       }
     },

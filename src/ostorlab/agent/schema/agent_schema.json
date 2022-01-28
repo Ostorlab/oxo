@@ -163,7 +163,7 @@
           },
           "value": {
             "description": "[Optional] - Default value of the agent argument as a binary object.",
-            "type": "string"
+            "type": ["string", "number", "boolean"]
           }
         }
       }
