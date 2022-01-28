@@ -238,7 +238,7 @@ class LocalRuntime(runtime.Runtime):
         extra_configs.append(self._add_settings_config(agent))
 
         # wait 2s and check max 5 times with 0.5s between each check.
-        healthcheck = docker.types.Healthcheck(test=['CMD', 'echo', 'HELLO'],
+        healthcheck = docker.types.Healthcheck(test=['CMD', 'ostorlab', 'agent', 'healthcheck'],
                                                retries=HEALTHCHECK_RETRIES, timeout=HEALTHCHECK_TIMEOUT,
                                                start_period=HEALTHCHECK_START_PERIOD, interval=HEALTHCHECK_INTERVAL,)
 

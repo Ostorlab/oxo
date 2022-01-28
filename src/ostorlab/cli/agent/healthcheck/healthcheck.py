@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 def healthcheck(host: str, port: int, https: bool = False) -> None:
     """Minimal agent healthcheck command to ensure the agent response with 200 OK on localhost:5000 by default."""
     if https:
-        url = f'https://{host}:{port}'
+        url = f'https://{host}:{port}/status'
     else:
-        url = f'http://{host}:{port}'
+        url = f'http://{host}:{port}/status'
 
     try:
         response = requests.get(url)
