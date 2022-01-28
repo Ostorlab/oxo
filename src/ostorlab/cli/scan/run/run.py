@@ -10,10 +10,14 @@ from ostorlab.cli.scan import scan
 
 
 @scan.group()
-@click.option('--agents', multiple=True, help='List of agents keys. to use in the scan. ', required=True)
+@click.option('--agents',
+              multiple=True,
+              help='List of agents keys. to use in the scan. ',
+              required=False)
 @click.option('--title', '-t', help='Scan title.')
 @click.option('--agent-group-definition', '-g', type=click.File('r'),
-              help='Path to agents group definition file (yaml).')
+              help='Path to agents group definition file (yaml).',
+              required=False)
 @click.pass_context
 def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.FileIO,
         title: str) -> None:
