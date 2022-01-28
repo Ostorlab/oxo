@@ -1,5 +1,5 @@
-"""Asset of type file.
-This module takes care of preparing a generic file of type before injecting it to the runtime instance."""
+"""Asset of type IP.
+This module takes care of preparing an IP asset, either single address, a range with mask for both v4 and v6."""
 import logging
 import ipaddress
 import click

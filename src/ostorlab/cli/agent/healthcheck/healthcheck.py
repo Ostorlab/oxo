@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @agent.command()
 @click.option('--host', '-h', help='Host to check healthy agent.', required=False, default='localhost')
-@click.option('--port', '-p', help='Ostorlab platform password.', required=False, default=5000, type=int)
+@click.option('--port', '-p', help='Port to check healthy agent.', required=False, default=5000, type=int)
 @click.option('--https/--no-https', help='Enable HTTPS.', required=False, default=False)
 def healthcheck(host: str, port: int, https: bool = False) -> None:
     """Minimal agent healthcheck command to ensure the agent response with 200 OK on localhost:5000 by default."""

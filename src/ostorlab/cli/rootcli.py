@@ -11,8 +11,8 @@ logger = logging.getLogger('CLI')
 @click.pass_context
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
 @click.option('--tlsverify/--no-tlsverify', help='Control TLS server certificate verification.', default=True)
-@click.option('--debug/--no-debug', help='Enable debug mode', default=False)
-@click.option('--verbose/--no-verbose', help='Enable verbose mode', default=False)
+@click.option('-d', '--debug/--no-debug', help='Enable debug mode', default=False)
+@click.option('-v', '--verbose/--no-verbose', help='Enable verbose mode', default=False)
 def rootcli(ctx: click.core.Context, proxy: Optional[str] = None, tlsverify: Optional[bool] = True, debug: bool = False,
             verbose: bool = False) -> None:
     """Ostorlab is an open-source project to help automate security testing.\n
