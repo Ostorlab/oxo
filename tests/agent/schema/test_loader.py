@@ -40,13 +40,13 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
         agent_path: "some/path/to/agent.py"
         agenArgument:
         - name: "agentArgumentName1"
-          type: "string"
+          type: ["string", "number", "boolean"]
           description: "agentArgumentDescription1"
           default_value: "agentArgumentDefaultValue1"
         - name: "agentArgumentName2"
-          type: "number"
+          type: ["string", "number", "boolean"]
           description: "agentArgumentDescription2"
-          default_value: "42"
+          default_value: 42
     """
     yaml_data_file = io.StringIO(valid_yaml_data)
 
@@ -54,6 +54,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
 
     assert data['name'] == 'Agent'
     assert data['version'] == '1.1.0'
+    assert data['agenArgument'][1]['default_value'] == 42
 
 
 def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError():
@@ -89,13 +90,13 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         agent_path: "some/path/to/agent.py"
         args:
         - name: "agentArgumentName1"
-          type: "string"
+          type: ["string", "number", "boolean"]
           description: "agentArgumentDescription1"
           default_value: "agentArgumentDefaultValue1"
         - name: "agentArgumentName2"
-          type: "number"
+          type: ["string", "number", "boolean"]
           description: "agentArgumentDescription2"
-          default_value: "42"
+          default_value: 42
     """
     yaml_data_file = io.StringIO(invalid_yaml_data)
 
@@ -132,13 +133,13 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
         
         agentGroupArgument:
             - name: "agentGroupArgumentExample1"
-              type: "string"
+              type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription1"
               value: "agentGroupArgumentValue1"
             - name: "agentGroupArgumentExample2"
-              type: "number"
+              type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription2"
-              value: "42"    
+              value: 42   
     """
     yaml_data_file = io.StringIO(valid_yaml_agent_group_data)
 
@@ -179,9 +180,9 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
               description: "agentGroupArgumentDescription1"
               value: "agentGroupArgumentValue1"
             - name: "agentGroupArgumentExample2"
-              type: "number"
+              type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription2"
-              value: "42"
+              value: 42
 
     """
     yaml_data_file = io.StringIO(invalid_yaml_agent_group_data)
