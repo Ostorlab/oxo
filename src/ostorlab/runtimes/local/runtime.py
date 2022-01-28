@@ -135,7 +135,7 @@ class LocalRuntime(runtime.Runtime):
         self._check_agents_healthy(agent_group_definition)
         self._inject_asset(asset)
 
-    def stop(self, scan_id: str):
+    def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
 
         Args:

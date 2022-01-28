@@ -10,7 +10,7 @@ from ostorlab.cli import console as cli_console
 console = cli_console.Console()
 
 @scan.command()
-@click.option('--id', '-id', 'scan_id', help='Id of the scan or universe.', required=True)
+@click.option('--scan-id', '-s', 'scan_id', help='Id of the scan or universe.', required=True)
 @click.pass_context
 def stop(ctx: click.core.Context, scan_id: int) -> None:
     """Stop a scan.\n

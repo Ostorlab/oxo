@@ -60,6 +60,7 @@ class Runtime(abc.ABC):
             None
         """
         raise NotImplementedError()
+
     def list(self, page: int = 1, number_elements: int = 10) -> List[Scan]:
         """Lists scans managed by runtime.
 
@@ -71,4 +72,3 @@ class Runtime(abc.ABC):
             List of scan objects.
         """
         raise NotImplementedError()
-
