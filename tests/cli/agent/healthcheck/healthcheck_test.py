@@ -1,6 +1,5 @@
 """Tests for CLI agent build command."""
 
-import docker
 from click import testing
 
 from ostorlab.cli import rootcli
