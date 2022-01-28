@@ -25,7 +25,7 @@ def ip_cli(ctx: click.core.Context, ip: str) -> None:
         elif ip_network.version == 6:
             asset = ipv6.IPv6(host=ip_network.network_address.exploded, mask=ip_network.prefixlen)
         else:
-            raise NotImplemented()
+            raise NotImplementedError()
 
         logger.debug('scanning asset IP %s', asset)
         runtime.scan(agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)

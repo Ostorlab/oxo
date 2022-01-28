@@ -20,9 +20,9 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str] = None, tlsverify: Opt
     ctx.obj['tlsverify'] = tlsverify
     if verbose is True:
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for logger in loggers:
-            logger.setLevel(logging.INFO)
+        for l in loggers:
+            l.setLevel(logging.INFO)
     if debug is True:
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for logger in loggers:
-            logger.setLevel(logging.DEBUG)
+        for l in loggers:
+            l.setLevel(logging.DEBUG)

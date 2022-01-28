@@ -30,6 +30,6 @@ def healthcheck(host: str, port: int, https: bool = False) -> None:
             raise click.exceptions.Exit(2)
         else:
             console.success(f'Healthcheck OK on {url}!')
-    except requests.ConnectionError:
+    except requests.ConnectionError as e:
         console.error(f'Error checking agent health on {url}')
-        raise click.exceptions.Exit(2)
+        raise click.exceptions.Exit(2) from e
