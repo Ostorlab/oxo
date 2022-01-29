@@ -23,5 +23,5 @@ def testAgentHealthcheckCLI_whenAgentIsHealthy_commandExitsWithoutError():
 
     result = runner.invoke(rootcli.rootcli, ['agent', 'healthcheck', '--host=google.com', '--port=80'])
 
-    assert 'ERROR: Error checking agent health' not in result.output
-    assert result.exit_code == 0
+    assert 'Response status code is 404' in result.output
+    assert result.exit_code == 2
