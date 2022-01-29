@@ -285,7 +285,8 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
-        tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
+        tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT,
+                                                           mounts=['/var/run/docker.sock:/var/run/docker.sock'])
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
     def _inject_asset(self, asset: base_asset.Asset):
