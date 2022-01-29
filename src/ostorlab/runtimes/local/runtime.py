@@ -149,19 +149,32 @@ class LocalRuntime(runtime.Runtime):
             scan_id: The id of the scan to stop.
         """
 
-        scans = []
+        stopped_services = []
+        stopped_network = []
+        stopped_configs = []
         client = docker.from_env()
         services = client.services.list()
         for service in services:
-            try:
-                service_labels = service.attrs['Spec']['Labels']
-                ostorlab_universe_id = service_labels.get('ostorlab.universe')
-                if ostorlab_universe_id == scan_id:
-                    scans.append(service)
-                    service.remove()
-            except KeyError:
-                console.warning('The label ostorlab.universe does not exist.')
-        if len(scans) > 0:
+            service_labels = service.attrs['Spec']['Labels']
+            if service_labels.get('ostorlab.universe') == scan_id:
+                stopped_services.append(service)
+                service.remove()
+
+        networks = client.networks.list()
+        for network in networks:
+            network_labels = network.attrs['Labels']
+            if network_labels.get('ostorlab.universe') == scan_id:
+                stopped_network.append(network)
+                network.remove()
+
+        configs = client.configs.list()
+        for config in configs:
+            config_labels = config.attrs['Spec']['Labels']
+            if config_labels.get('ostorlab.universe') == scan_id:
+                stopped_configs.append(config)
+                config.remove()
+
+        if stopped_services and stopped_network and stopped_configs:
             console.success('Scan stopped successfully.')
         else:
             console.error(f'Scan with id {scan_id} not found.')
@@ -208,6 +221,7 @@ class LocalRuntime(runtime.Runtime):
         """Add agent settings to docker config."""
         agent_instance_settings_proto = agent.to_raw_proto()
         docker_config = self._docker_client.configs.create(name=f'agent_{agent.container_image}_{self._name}',
+                                                           labels={'ostorlab.universe': self._name},
                                                            data=agent_instance_settings_proto)
         return docker.types.ConfigReference(config_id=docker_config.id,
                                                         config_name=f'agent_{agent.container_image}_{self._name}',
@@ -291,12 +305,13 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        asset_config = self._docker_client.configs.create(name='asset',
+        asset_config = self._docker_client.configs.create(name='asset', labels={'ostorlab.universe': self._name},
                                                           data=asset.to_proto())
         asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
                                                               config_name='asset',
                                                               filename='/tmp/asset.binproto')
         selector_config = self._docker_client.configs.create(name='asset_selector',
+                                                             labels={'ostorlab.universe': self._name},
                                                              data=asset.selector)
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name='asset_selector',
