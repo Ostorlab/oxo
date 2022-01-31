@@ -17,9 +17,10 @@ logger = logging.getLogger(__name__)
 
 @agent.command()
 @click.option('--file', '-f', type=click.File('rb'), help='Path to Agent yaml definition.', required=True)
-def build(file: io.FileIO) -> None:
+@click.option('--organization', '-org', help='Organization name.', required=False)
+def build(file: io.FileIO, organization: str = 'ostorlab') -> None:
     """CLI command to build the agent container from a definition.yaml file.
-    Usage : Ostorlab agent build -f path/to/definition.yaml
+    Usage : Ostorlab agent build -f path/to/definition.yaml -org=organization_name
     """
     try:
         agent_def = loader.load_agent_yaml(file)
@@ -30,7 +31,7 @@ def build(file: io.FileIO) -> None:
         console.info(
             f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
             f' at root [bold red]{docker_build_root}[/].')
-        container_name = f'agent__{agent_name}:v{agent_version}'
+        container_name = f'agent_{organization}_{agent_name}:v{agent_version}'
         with console.status(f'Building [bold red]{container_name}[/]'):
             docker_sdk_client = docker.from_env()
             docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag=container_name)
