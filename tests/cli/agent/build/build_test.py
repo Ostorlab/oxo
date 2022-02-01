@@ -34,6 +34,11 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
     """
     dummy_def_yaml_file_path = './assets/dummydef.yaml'
     runner = testing.CliRunner()
-    _ = runner.invoke(rootcli.rootcli, ['agent', 'build', f'--file={dummy_def_yaml_file_path}'])
+    _ = runner.invoke(rootcli.rootcli, [
+                                        'agent',
+                                        'build',
+                                        f'--file={dummy_def_yaml_file_path}',
+                                        '--organization=ostorlab'
+                                        ])
 
-    assert _is_docker_image_present('dummy_agent') is True
+    assert _is_docker_image_present('agent_ostorlab_dummy_agent:v1.0.0') is True
