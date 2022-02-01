@@ -29,7 +29,7 @@ def _is_docker_image_present(image: str):
         return False
 
 
-@pytest.mark.parametrize('image_cleanup', ['dummy'], indirect=True)
+@pytest.mark.parametrize('image_cleanup', [['dummy']], indirect=True)
 def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(image_cleanup):
     """Test ostorlab agent build CLI command : Case where the command is valid.
     The agent container should be built.
