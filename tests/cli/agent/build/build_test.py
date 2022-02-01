@@ -1,5 +1,6 @@
 """Tests for CLI agent build command."""
 
+import pytest
 import docker
 from click import testing
 
@@ -28,10 +29,12 @@ def _is_docker_image_present(image: str):
         return False
 
 
-def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(docker_dummy_image_cleanup):
+@pytest.mark.parametrize('image_cleanup', ['dummy'], indirect=True)
+def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(image_cleanup):
     """Test ostorlab agent build CLI command : Case where the command is valid.
     The agent container should be built.
     """
+    del image_cleanup
     dummy_def_yaml_file_path = './assets/dummydef.yaml'
     runner = testing.CliRunner()
     _ = runner.invoke(rootcli.rootcli, [
