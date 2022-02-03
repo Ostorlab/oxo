@@ -1,3 +1,5 @@
+"""models contain the database engine logic and all the db models and the related operations"""
+
 import enum
 import datetime
 import logging
@@ -20,6 +22,7 @@ Base = declarative_base(metadata=metadata)
 
 
 class RiskRating(enum.Enum):
+    """Enumeration of the risk rating of a scan."""
     high = 'High'
     medium = 'Medium'
     low = 'Low'
@@ -31,12 +34,15 @@ class RiskRating(enum.Enum):
 
 
 class Database:
+    """Handles all Database instantiation and calls."""
 
     def __init__(self):
+        """Constructs the database engine."""
         self.db_engine = create_engine(ENGINE_URL)
         self.db_session = None
 
     def session(self):
+        """Session singleton to run queries on the db engine"""
         if self.db_session is None:
             Session = sessionmaker(expire_on_commit=False)
             Session.configure(bind=self.db_engine)
@@ -46,6 +52,7 @@ class Database:
             return self.db_session
 
     def create_db_tables(self):
+        """Create the database tables."""
         try:
             with self.db_engine.begin() as conn:
                 metadata.create_all(conn)
@@ -55,6 +62,7 @@ class Database:
 
 
 class Scan(Base):
+    """The model a scan."""
     __tablename__ = "scan"
     id = Column(Integer, primary_key=True)
     title = Column(String(255))
@@ -63,8 +71,14 @@ class Scan(Base):
 
     @staticmethod
     def save(title: str = 'My scan'):
-        scan = Scan(title=title, created_time=datetime.datetime.now(), modified_time=datetime.datetime.now(),
-                    risk_rating='info')
+        """Persist the scan in the database.
+
+        Args:
+            title: Scan title.
+        Returns:
+            Scan object.
+        """
+        scan = Scan(title=title, created_time=datetime.datetime.now(), risk_rating='info')
         database = Database()
         database.session().add(scan)
         database.session().commit()
