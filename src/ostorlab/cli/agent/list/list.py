@@ -1,12 +1,8 @@
 """Agent List command."""
-import io
 import logging
 
-import click
 import docker
 
-from ostorlab.agent.schema import loader
-from ostorlab.agent.schema import validator
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
 
@@ -23,8 +19,8 @@ def _human_readable_size(size, decimal_places=3):
     return f'{size:.{decimal_places}f}{unit}'
 
 
-@agent.command()
-def list() -> None:
+@agent.command(name='list')
+def list_cli() -> None:
     """CLI command to list installed agents."""
     docker_client = docker.from_env()
     images = docker_client.images.list()
