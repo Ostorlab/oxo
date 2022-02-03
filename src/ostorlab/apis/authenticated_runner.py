@@ -111,7 +111,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._api_key = None
 
     def execute(self, request: api_request.APIRequest) -> Dict:
-        """Executes a request using the GraphQL API.
+        """Executes a request using the Authenticated GraphQL API.
 
         Args:
             request: The request to be executed
