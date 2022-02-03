@@ -59,7 +59,6 @@ class Scan(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String(255))
     created_time = Column(DateTime)
-    modified_time = Column(DateTime)
     risk_rating = Column(Enum(RiskRating))
 
     @staticmethod
