@@ -1,6 +1,7 @@
 """API runner base class.
 API runners for example : Public API Runner, Authenticated API Runner, inherit from the base class
-to access the different features."""
+to access the different features.
+This module also has classes for authentication errors, API response errors, etc"""
 
 import abc
 from typing import Dict
@@ -12,10 +13,6 @@ from ostorlab.apis import request as api_request
 
 class Error(Exception):
     """Base Error Class"""
-
-
-class AuthenticationError(Error):
-    """Authentication Error."""
 
 
 class ResponseError(Error):
