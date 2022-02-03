@@ -31,13 +31,15 @@ def list_cli() -> None:
             if t.startswith('agent_'):
                 agents.append({
                     'id': im.short_id,
-                    'agent': t,
+                    'agent': t.replace('_', '/', 2).split(':')[0],
+                    'version': t.split(':')[1],
                     'size': _human_readable_size(im.attrs['Size']),
                     'created': im.attrs['Created']
                 })
 
     columns = {
         'Agent': 'agent',
+        'Version': 'version',
         'Id': 'id',
         'Size': 'size',
         'Created': 'created',
