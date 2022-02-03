@@ -60,6 +60,10 @@ class Database:
         except Exception as e:
             logger.error("Error occurred during Table creation with the error {}".format(e))
 
+    def drop_db_tables(self):
+        """Drop the database tables."""
+        metadata.drop_all(self.db_engine)
+        logger.info("Tables dropped")
 
 class Scan(Base):
     """The model a scan."""
