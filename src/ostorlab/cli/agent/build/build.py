@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 @agent.command()
 @click.option('--file', '-f', type=click.File('rb'), help='Path to Agent yaml definition.', required=True)
-@click.option('--organization', '-org', help='Organization name.', required=False)
-def build(file: io.FileIO, organization: str = 'ostorlab') -> None:
+@click.option('--organization', '-o', help='Organization name.', required=False, default='')
+def build(file: io.FileIO, organization: str = '') -> None:
     """CLI command to build the agent container from a definition.yaml file.
     Usage : Ostorlab agent build -f path/to/definition.yaml -org organization_name
     """
