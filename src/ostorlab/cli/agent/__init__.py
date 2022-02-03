@@ -2,3 +2,4 @@
 from ostorlab.cli.agent.agent import agent
 from ostorlab.cli.agent import build
 from ostorlab.cli.agent import healthcheck
+from ostorlab.cli.agent import list
