@@ -37,10 +37,11 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def scan(self, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
+    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
+            title: Scan title
             agent_group_definition: The agent run definition from a set of agents and agent groups.
             asset: The scan target asset.
 

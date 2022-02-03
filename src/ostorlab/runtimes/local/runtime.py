@@ -21,6 +21,8 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import strings as strings_utils
+from ostorlab.models import models
+
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
@@ -104,6 +106,7 @@ class LocalRuntime(runtime.Runtime):
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         # TODO(alaeddine): inject docker client to support more complex use-cases.
         self._docker_client = docker.from_env()
+        self._scan_db = None
 
     @property
     def name(self) -> str:
@@ -122,19 +125,21 @@ class LocalRuntime(runtime.Runtime):
         del agent_group_definition
         return True
 
-    def scan(self, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
+    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
          agents, ensuring they are healthy and then injects the target asset.
 
         Args:
+            title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             asset: the target asset to scan.
 
         Returns:
             None
         """
+        self._scan_db = self._create_scan_db(title)
         self._create_network()
         self._start_services()
         self._check_services_healthy()
@@ -178,6 +183,12 @@ class LocalRuntime(runtime.Runtime):
             console.success('Scan stopped successfully.')
         else:
             console.error(f'Scan with id {scan_id} not found.')
+
+    def _create_scan_db(self, title: str):
+        """Persist the scan in the database"""
+
+        models.Database().create_db_tables()
+        return models.Scan.save(title)
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicates."""
@@ -261,6 +272,7 @@ class LocalRuntime(runtime.Runtime):
             networks=[self._network],
             env=[
                 f'UNIVERSE={self._name}',
+                f'SCAN_ID={self._scan_db.id}',
             ],
             name=f'{agent.container_image}_{self._name}',
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
