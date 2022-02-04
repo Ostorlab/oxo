@@ -74,8 +74,8 @@ def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
 
     mocker.patch('ostorlab.agent.agent.Agent.__init__', return_value=None)
     mocker.patch('ostorlab.agent.agent.Agent.run', return_value=None)
-    mocker.patch('ostorlab.agent.agent.AGENT_DEFINITION_PATH',
-                 return_value=str(pathlib.Path(__file__).parent / 'dummyagent.yaml'))
+    mocker.patch.object(agent, 'AGENT_DEFINITION_PATH',
+                 str(pathlib.Path(__file__).parent / 'dummyagent.yaml'))
 
     SampleAgent.main(['--settings',
                       str(pathlib.Path(__file__).parent / 'settings.binproto')])
