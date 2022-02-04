@@ -11,7 +11,7 @@ a backed up static code in order to complete the authentication process.
 
 from typing import Dict, Optional
 
-from . import request
+from ostorlab.apis import request
 
 
 class UsernamePasswordLoginAPIRequest(request.APIRequest):
@@ -28,10 +28,6 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
         self._username = username
         self._password = password
         self._otp_token = otp_token
-
-    @property
-    def endpoint(self):
-        return request.TOKEN_ENDPOINT
 
     @property
     def query(self) -> Optional[str]:
