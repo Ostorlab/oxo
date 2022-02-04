@@ -2,6 +2,7 @@
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
 from ostorlab.apis import request as api_request
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.runtimes.local import runtime as local_runtime
 
 from unittest import mock
@@ -23,7 +24,7 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(reques
     }
 
     runner = CliRunner()
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scan_data, status_code=200)
     result = runner.invoke(
         rootcli.rootcli, ['scan',  '--runtime=remote', 'stop', '--scan-id=123456'])
@@ -46,7 +47,7 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(requ
     }
 
     runner = CliRunner()
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scan_data, status_code=200)
     result = runner.invoke(
         rootcli.rootcli, ['scan',  '--runtime=remote', 'stop', '--scan-id=123456'])

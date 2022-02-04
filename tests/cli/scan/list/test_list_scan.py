@@ -1,13 +1,13 @@
 """Tests for scan list command."""
 
 from click.testing import CliRunner
+from unittest import mock
+
 from ostorlab.cli import rootcli
 from ostorlab.cli import console
-from ostorlab.apis import request as api_request
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes import runtime
-
-from unittest import mock
 
 
 def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(requests_mock):
@@ -25,7 +25,7 @@ def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(
     }
 
     runner = CliRunner()
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scans_data, status_code=200)
     result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=remote', 'list'])
 
@@ -42,7 +42,7 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
 
     mock_console.return_value = None
     runner = CliRunner()
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=None, status_code=401)
     result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=remote', 'list'])
     assert result.exception is None
