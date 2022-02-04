@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from ostorlab.cli import rootcli
 from ostorlab import configuration_manager
 from ostorlab.apis import request as api_request
-from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import authenticated_runner
 
 from unittest import mock
 
@@ -25,7 +25,7 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
     ).get_api_data() is None
 
 
-@mock.patch.object(apis_runner.APIRunner, 'unauthenticate')
+@mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, 'unauthenticate')
 def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
     mock_console, requests_mock):
     """Test ostorlab auth revoke command with wrong api key id.

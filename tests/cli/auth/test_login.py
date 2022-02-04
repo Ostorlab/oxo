@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from ostorlab import configuration_manager
 from ostorlab.apis import request as api_request
-from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import authenticated_runner
 from ostorlab.cli import rootcli
 
 
@@ -22,7 +22,7 @@ def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
     assert result.exit_code == 2
 
 
-@mock.patch.object(apis_runner.AuthenticationError, '__init__')
+@mock.patch.object(authenticated_runner.AuthenticationError, '__init__')
 def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(
         mock_authentication_error_init, requests_mock):
     """Test ostorlab auth login command with wrong login credentials.
