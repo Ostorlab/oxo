@@ -15,15 +15,6 @@ from ostorlab.apis import request as api_request
 
 class PublicAPIRunner(runner.APIRunner):
     """Responsible for the public API calls, and preparing the responses."""
-    def __init__(self,
-                proxy: str = None,
-                verify: bool = True):
-        """
-        Args:
-            proxy: The proxy through which a request is made. Defaults to None.
-            verify: Whether or not to verify the TLS certificate. Defaults to True.
-        """
-        super().__init__(proxy, verify)
 
     def execute(self, request: api_request.APIRequest) -> Dict:
         """Executes a request using the Public GraphQL API.
