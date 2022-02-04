@@ -14,4 +14,4 @@ def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .APK package file."""
     runtime = ctx.obj['runtime']
     asset = android_apk_asset.AndroidApk(file.read())
-    runtime.scan(agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
