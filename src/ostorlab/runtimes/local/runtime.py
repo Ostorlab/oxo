@@ -239,21 +239,6 @@ class LocalRuntime(runtime.Runtime):
                                                         config_name=f'agent_{agent.container_image}_{self._name}',
                                                         filename='/tmp/settings.binproto')
 
-    def _add_agent_definition_config(self, agent: definitions.AgentSettings):
-        """Add agent definition to docker config."""
-        images = self._docker_client.images.list(agent.container_image)
-        if images is not None and len(images) > 0:
-            image = images[0]
-            if image.labels.get('ostorlab.yaml') is not None:
-                agent_definition = image.labels['ostorlab.yaml']
-                docker_config = self._docker_client.configs.create(
-                    name=f'agent_definition_{agent.container_image}_{self._name}',
-                    labels={'ostorlab.universe': self._name},
-                    data=agent_definition)
-                return docker.types.ConfigReference(config_id=docker_config.id,
-                                                    config_name=f'agent_definition{agent.container_image}_{self._name}',
-                                                    filename='/tmp/ostorlab.yaml')
-
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
         """Start agent based on provided definition.
@@ -277,7 +262,6 @@ class LocalRuntime(runtime.Runtime):
         agent.healthcheck_port = HEALTHCHECK_PORT
 
         extra_configs.append(self._add_settings_config(agent))
-        extra_configs.append(self._add_agent_definition_config(agent))
 
         # wait 2s and check max 5 times with 0.5s between each check.
         healthcheck = docker.types.Healthcheck(test=['CMD', 'ostorlab', 'agent', 'healthcheck'],

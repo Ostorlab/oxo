@@ -35,7 +35,7 @@ def build(file: io.FileIO, organization: str = '') -> None:
         with console.status(f'Building [bold red]{container_name}[/]'):
             docker_sdk_client = docker.from_env()
             docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag=container_name,
-                                           labels={'ostorlab.yaml':file.read().decode('utf-8')})
+                                           labels={'agent_definition':file.read().decode('utf-8')})
         console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
     except validator.SchemaError:
         console.error(
