@@ -14,7 +14,7 @@ import requests
 import click
 
 from ostorlab.apis.runners import runner
-from ostorlab.apis.runners import login_runner 
+from ostorlab.apis.runners import login_runner
 from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
 from ostorlab.cli import console as cli_console
