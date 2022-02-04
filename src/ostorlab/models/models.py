@@ -4,10 +4,9 @@ import enum
 import datetime
 import logging
 
-from sqlalchemy import Column, Integer, Enum, String, DateTime, MetaData
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
+import sqlalchemy
+from sqlalchemy import orm
+from sqlalchemy.ext import declarative
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
@@ -17,8 +16,8 @@ console = cli_console.Console()
 
 ENGINE_URL = f'sqlite:///{config_manager.OSTORLAB_PRIVATE_DIR}/db.sqlite'
 
-metadata = MetaData()
-Base = declarative_base(metadata=metadata)
+metadata = sqlalchemy.MetaData()
+Base = declarative.declarative_base(metadata=metadata)
 
 
 class RiskRating(enum.Enum):
@@ -38,14 +37,14 @@ class Database:
 
     def __init__(self):
         """Constructs the database engine."""
-        self._db_engine = create_engine(ENGINE_URL)
+        self._db_engine = sqlalchemy.create_engine(ENGINE_URL)
         self.db_session = None
 
     @property
     def session(self):
         """Session singleton to run queries on the db engine"""
         if self.db_session is None:
-            session_maker = sessionmaker(expire_on_commit=False)
+            session_maker = orm.sessionmaker(expire_on_commit=False)
             session_maker.configure(bind=self._db_engine)
             self.db_session = session_maker()
             return self.db_session
@@ -67,10 +66,10 @@ class Database:
 class Scan(Base):
     """The Scan model"""
     __tablename__ = 'scan'
-    id = Column(Integer, primary_key=True)
-    title = Column(String(255))
-    created_time = Column(DateTime)
-    risk_rating = Column(Enum(RiskRating))
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    title = sqlalchemy.Column(sqlalchemy.String(255))
+    created_time = sqlalchemy.Column(sqlalchemy.DateTime)
+    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
 
     @staticmethod
     def save(title: str = 'My scan'):
