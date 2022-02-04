@@ -35,6 +35,11 @@ class APIRunner(abc.ABC):
         self._verify = verify
         self._configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
 
+    @property
+    def endpoint(self) -> str:
+        """API endpoint."""
+        raise NotImplementedError('Missing implementation')
+
     @abc.abstractmethod
     def execute(self, request: api_request.APIRequest) -> Dict:
         """Executes a request using the GraphQL API.
@@ -60,8 +65,8 @@ class APIRunner(abc.ABC):
         else:
             proxy = None
         if multipart:
-            return requests.post(request.endpoint, files=request.data, headers=headers,
+            return requests.post(self.endpoint, files=request.data, headers=headers,
                                  proxies=proxy, verify=self._verify)
         else:
-            return requests.post(request.endpoint, data=request.data, headers=headers,
+            return requests.post(self.endpoint, data=request.data, headers=headers,
                                  proxies=proxy, verify=self._verify)

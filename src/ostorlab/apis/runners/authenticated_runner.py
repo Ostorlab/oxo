@@ -13,11 +13,14 @@ from typing import Dict, Optional
 import requests
 import click
 
-from ostorlab.apis import runner
+from ostorlab.apis.runners import runner
+from ostorlab.apis.runners import login_runner 
 from ostorlab.apis import create_api_key
-from ostorlab.apis import login
 from ostorlab.apis import request as api_request
 from ostorlab.cli import console as cli_console
+
+
+AUTHENTICATED_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/graphql'
 
 
 logger = logging.getLogger(__name__)
@@ -58,16 +61,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
 
-    def _login_user(self) -> requests.models.Response:
-        """Logs in the user.
 
-        Returns:
-            The API response.
-        """
+    @property
+    def endpoint(self) -> str:
+        """API endpoint."""
+        return AUTHENTICATED_GRAPHQL_ENDPOINT
 
-        login_request = login.UsernamePasswordLoginAPIRequest(
-            self._username, self._password, self._otp_token)
-        return self._sent_request(login_request)
 
     def authenticate(self) -> None:
         """Authenticates the user.
@@ -76,7 +75,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             AuthenticationError: If user credentials are not valid.
         """
         with console.status('Logging into your account'):
-            response = self._login_user()
+            loggin_api_runner = login_runner.LoginAPIRunner(self._username,
+                                                            self._password,
+                                                            self._token,
+                                                            self._proxy,
+                                                            self._verify)
+            response = loggin_api_runner.login_user()
 
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')
@@ -147,8 +151,8 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         else:
             proxy = None
         if multipart:
-            return requests.post(request.endpoint, files=request.data, headers=headers,
+            return requests.post(self.endpoint, files=request.data, headers=headers,
                                  proxies=proxy, verify=self._verify)
         else:
-            return requests.post(request.endpoint, data=request.data, headers=headers,
+            return requests.post(self.endpoint, data=request.data, headers=headers,
                                  proxies=proxy, verify=self._verify)
