@@ -81,7 +81,7 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, created_time=datetime.datetime.now(), risk_rating='info')
+        scan = Scan(title=title, created_time=datetime.datetime.now(), risk_rating='INFO')
         database = Database()
         database.session.add(scan)
         database.session.commit()

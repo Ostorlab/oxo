@@ -37,7 +37,8 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
+    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
+             asset: base_asset.Asset) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:

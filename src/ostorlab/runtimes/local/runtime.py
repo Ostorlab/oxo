@@ -125,7 +125,8 @@ class LocalRuntime(runtime.Runtime):
         del agent_group_definition
         return True
 
-    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
+    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
+             asset: base_asset.Asset) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
