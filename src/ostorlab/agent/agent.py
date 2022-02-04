@@ -25,6 +25,8 @@ from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 
+AGENT_DEFINITION_PATH = '/tmp/ostorlab.yaml'
+
 logger = logging.getLogger(__name__)
 
 
@@ -272,23 +274,20 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             args = sys.argv[1:]
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-d', '--definition',
-                            default='/app/agent/ostorlab.yaml',
-                            help='Agent YAML definition file.')
         parser.add_argument('-s', '--settings',
                             default='/tmp/settings.binproto',
                             help='Agent binary proto settings.')
         args = parser.parse_args(args)
-        logger.info('running agent with definition %s and settings %s', args.definition, args.settings)
+        logger.info('running agent with definition %s and settings %s', AGENT_DEFINITION_PATH, args.settings)
 
-        if not pathlib.Path(args.definition).exists():
+        if not pathlib.Path(AGENT_DEFINITION_PATH).exists():
             logger.error('definition file does not exist')
             sys.exit(2)
         if not pathlib.Path(args.settings).exists():
             logger.error('settings file does not exist')
             sys.exit(2)
 
-        with open(args.definition, 'r', encoding='utf-8') as f_definition, open(args.settings, 'rb') as f_settings:
+        with open(AGENT_DEFINITION_PATH, 'r', encoding='utf-8') as f_definition, open(args.settings, 'rb') as f_settings:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
             agent_settings = runtime_definitions.AgentSettings.from_proto(f_settings.read())
             instance = cls(agent_definition=agent_definition, agent_settings=agent_settings)
