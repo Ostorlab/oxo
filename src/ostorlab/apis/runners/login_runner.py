@@ -1,9 +1,8 @@
-"""Handles calls to  the token API. """
-"""Handles the public API calls.
+"""Handles calls to the token API.
 
     Typical usage example:
-    public_runner = PublicAPIRunner()
-    public_runner.execute()
+    public_runner = LoginAPIRunner(username, password, otp_token)
+    public_runner.login_user()
 """
 
 import requests
