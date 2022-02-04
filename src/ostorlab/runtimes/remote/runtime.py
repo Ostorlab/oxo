@@ -6,8 +6,8 @@ detection and several other improvements.
 """
 from typing import List
 
-from ostorlab.apis import authenticated_runner
-from ostorlab.apis import runner
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
 from ostorlab.assets import asset as base_asset
