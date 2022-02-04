@@ -21,8 +21,7 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import strings as strings_utils
-from ostorlab.models import models
-
+from ostorlab.runtimes.local.models import models
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
