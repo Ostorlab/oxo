@@ -6,7 +6,8 @@ detection and several other improvements.
 """
 from typing import List
 
-from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import authenticated_runner
+from ostorlab.apis import runner
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
 from ostorlab.assets import asset as base_asset
@@ -52,13 +53,13 @@ class RemoteRuntime(runtime.Runtime):
             scan_id: The id of the scan to stop.
         """
         try:
-            runner = apis_runner.APIRunner()
-            response = runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+            response = api_runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
             if response.get('errors') is not None:
                 console.error(f'Scan with id {scan_id} not found')
             else:
                 console.success('Scan stopped successfully')
-        except apis_runner.Error:
+        except runner.Error:
             console.error('Could not stop scan.')
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
@@ -72,8 +73,8 @@ class RemoteRuntime(runtime.Runtime):
             List of scan objects.
         """
         try:
-            runner = apis_runner.APIRunner()
-            response = runner.execute(scan_list.ScansListAPIRequest(page, number_elements))
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+            response = api_runner.execute(scan_list.ScansListAPIRequest(page, number_elements))
             scans = response['data']['scans']['scans']
 
             return [
@@ -89,5 +90,5 @@ class RemoteRuntime(runtime.Runtime):
                 ) for scan in scans
             ]
 
-        except apis_runner.Error:
+        except runner.Error:
             console.error('Could not fetch scans.')

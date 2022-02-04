@@ -15,9 +15,9 @@ console = cli_console.Console()
 def stop(ctx: click.core.Context, scan_id: int) -> None:
     """Stop a scan.\n
     Usage:\n
-        - ostorlab scan --runtime=source stop --id=id
+        - ostorlab scan --runtime=local stop --id=id
     """
 
     runtime_instance = ctx.obj['runtime']
-    with console.status('Stoping scan'):
+    with console.status('Stopping scan'):
         runtime_instance.stop(scan_id=scan_id)

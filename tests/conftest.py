@@ -98,11 +98,13 @@ def json_schema_file():
 
 
 @pytest.fixture
-def docker_dummy_image_cleanup():
-    """Pytest fixture for removing all dummy images."""
-    client = docker.from_env()
-    yield client
-    for img in client.images.list():
-        for t in img.tags:
-            if 'dummy' in t:
-                client.images.remove(t)
+def image_cleanup():
+    """Pytest fixture for removing docker image with a specified tag."""
+    def _image_cleanup(tag):
+        client = docker.from_env()
+        yield client
+        for img in client.images.list():
+            for t in img.tags:
+                if tag in t:
+                    client.images.remove(t)
+    return _image_cleanup

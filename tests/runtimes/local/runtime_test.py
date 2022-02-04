@@ -64,7 +64,11 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
 
     mocker.patch('docker.DockerClient.services',
                  return_value=services_model.ServiceCollection())
+
     mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
+    mocker.patch('docker.models.networks.NetworkCollection.list', return_value=[])
+    mocker.patch('docker.models.configs.ConfigCollection.list', return_value=[])
+
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
 
     local_runtime.LocalRuntime().stop(scan_id='qmwjef')
@@ -96,6 +100,9 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
     mocker.patch('docker.DockerClient.services',
                  return_value=services_model.ServiceCollection())
     mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
+    mocker.patch('docker.models.networks.NetworkCollection.list', return_value=[])
+    mocker.patch('docker.models.configs.ConfigCollection.list', return_value=[])
+
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
 
     local_runtime.LocalRuntime().stop(scan_id='iiippp')

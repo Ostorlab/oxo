@@ -4,7 +4,7 @@ import logging
 
 import click
 
-from ostorlab.apis import runner as apis_runner
+from ostorlab.apis import authenticated_runner
 from ostorlab.cli.auth import auth
 from ostorlab.cli import console as cli_console
 
@@ -19,9 +19,9 @@ console = cli_console.Console()
 def login(username, password, token_duration):
     """Use this to log into your account."""
     try:
-        api_runner = apis_runner.APIRunner(username=username, password=password,
+        api_runner = authenticated_runner.AuthenticatedAPIRunner(username=username, password=password,
                                            token_duration=token_duration)
         api_runner.authenticate()
-    except apis_runner.AuthenticationError:
+    except authenticated_runner.AuthenticationError:
         console.error(
             'Authentication error, please check that your credentials are valid.')
