@@ -32,24 +32,32 @@ class RiskRating(enum.Enum):
     INFO = 'Info'
 
 
+class ScanProgress(enum.Enum):
+    NOT_STARTED = 'not_started'
+    IN_PROGRESS = 'in_progress'
+    STOPPED = 'stopped'
+    DONE = 'done'
+    ERROR = 'error'
+
+
 class Database:
     """Handles all Database instantiation and calls."""
 
     def __init__(self):
         """Constructs the database engine."""
         self._db_engine = sqlalchemy.create_engine(ENGINE_URL)
-        self.db_session = None
+        self._db_session = None
 
     @property
     def session(self):
         """Session singleton to run queries on the db engine"""
-        if self.db_session is None:
+        if self._db_session is None:
             session_maker = orm.sessionmaker(expire_on_commit=False)
             session_maker.configure(bind=self._db_engine)
-            self.db_session = session_maker()
-            return self.db_session
+            self._db_session = session_maker()
+            return self._db_session
         else:
-            return self.db_session
+            return self._db_session
 
     def create_db_tables(self):
         """Create the database tables."""
@@ -70,9 +78,10 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
+    progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
 
     @staticmethod
-    def save(title: str = 'My scan'):
+    def create(title: str = ''):
         """Persist the scan in the database.
 
         Args:
@@ -80,7 +89,7 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, created_time=datetime.datetime.now(), risk_rating='INFO')
+        scan = Scan(title=title, created_time=datetime.datetime.now(), risk_rating='INFO', progress='NOT_STARTED')
         database = Database()
         database.session.add(scan)
         database.session.commit()

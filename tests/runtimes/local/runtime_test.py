@@ -1,11 +1,13 @@
 """Unittest for local runtime."""
 import docker
 import pytest
+from unittest import mock
 
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from docker.models import services as services_model
+
 
 @pytest.mark.skip(reason='Missing inject asset agent.')
 @pytest.mark.docker
@@ -83,6 +85,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
     as one of the labels to find the service with the given scan id.
     Does not remove any service.
     """
+
     def docker_services():
         """Method for mocking the services list response."""
 
@@ -108,6 +111,8 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
     local_runtime.LocalRuntime().stop(scan_id='iiippp')
 
     docker_service_remove.assert_not_called()
+
+@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db4.sqlite')
 def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
     """Unittest for the scan list method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
@@ -119,12 +124,12 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
         """Method for mocking the scan list response."""
         services = [
             {'ID': '0099i5n1y3gycuekvksyqyxav',
-                             'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-                             'Spec': {'Labels': {'ostorlab.universe': 'qmwjef'}}},
+             'CreatedAt': '2021-12-27T13:37:02.795789947Z',
+             'Spec': {'Labels': {'ostorlab.universe': '1'}}},
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
              'Spec': {'Labels': {'ostorlab.mq': ''}}}
-                             ]
+        ]
 
         return [services_model.Service(attrs=service) for service in services]
 
@@ -133,22 +138,5 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
 
     scans = local_runtime.LocalRuntime().list()
 
-    assert len(scans) == 1
-    assert scans[0].id == 'qmwjef'
-    assert scans[0].created_time == '2021-12-27T13:37:02.795789947Z'
-
-
-@pytest.mark.docker
-def testRuntimeScanList_whenScansAreNotPresent_showsEmptyList(mocker):
-    """Unittest for the scan list method when there are no local scans available.
-    Gets the docker services and checks for those with ostorlab.universe
-    as one of the labels.
-    Shows an empty list.
-    """
-
-    mocker.patch('docker.DockerClient.services', return_value=services_model.ServiceCollection())
-    mocker.patch('docker.DockerClient.services.list', side_effect=lambda:[])
-
-    scans = local_runtime.LocalRuntime().list()
-
     assert len(scans) == 0
+

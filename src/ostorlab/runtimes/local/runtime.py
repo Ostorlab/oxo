@@ -32,7 +32,6 @@ HEALTHCHECK_TIMEOUT = 1 * SECOND
 HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = int(SECOND / 2)
 
-
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
@@ -100,17 +99,19 @@ class LocalRuntime(runtime.Runtime):
 
     def __init__(self, name: Optional[str] = None, network: str = NETWORK) -> None:
         super().__init__()
-        self._name = name or strings_utils.random_string(6)
         self._network = network
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         # TODO(alaeddine): inject docker client to support more complex use-cases.
         self._docker_client = docker.from_env()
-        self._scan_db = None
+        self._scan_db: Optional[models.Scan] = None
 
     @property
     def name(self) -> str:
         """Local runtime instance name."""
-        return self._name
+        if self._scan_db is not None:
+            return str(self._scan_db.id)
+        else:
+            raise ValueError('Scan not created yet')
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent run definition.
@@ -139,13 +140,23 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             None
         """
+        console.info('Creating scan entry')
         self._scan_db = self._create_scan_db(title)
+        console.info('Creating network')
         self._create_network()
+        console.info('Starting services')
         self._start_services()
+        console.info('Checking services are healthy')
         self._check_services_healthy()
+        console.info('Starting agents')
         self._start_agents(agent_group_definition)
+        console.info('Checking agents are healthy')
         self._check_agents_healthy(agent_group_definition)
+        console.info('Injecting asset')
         self._inject_asset(asset)
+        console.info('Updating scan status')
+        self._update_scan_status()
+        console.success('Scan created successfully')
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
@@ -161,6 +172,7 @@ class LocalRuntime(runtime.Runtime):
         services = client.services.list()
         for service in services:
             service_labels = service.attrs['Spec']['Labels']
+            logger.debug(f'comparing {service_labels.get("ostorlab.universe")} and {scan_id}')
             if service_labels.get('ostorlab.universe') == scan_id:
                 stopped_services.append(service)
                 service.remove()
@@ -168,7 +180,7 @@ class LocalRuntime(runtime.Runtime):
         networks = client.networks.list()
         for network in networks:
             network_labels = network.attrs['Labels']
-            if network_labels.get('ostorlab.universe') == scan_id:
+            if network_labels is not None and network_labels.get('ostorlab.universe') == scan_id:
                 stopped_network.append(network)
                 network.remove()
 
@@ -180,15 +192,28 @@ class LocalRuntime(runtime.Runtime):
                 config.remove()
 
         if stopped_services and stopped_network and stopped_configs:
+            console.success('All scan services stopped.')
+            database = models.Database()
+            session = database.session
+            scan = session.query(models.Scan).get(int(scan_id))
+            scan.progress = 'STOPPED'
+            session.commit()
             console.success('Scan stopped successfully.')
         else:
             console.error(f'Scan with id {scan_id} not found.')
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""
-
         models.Database().create_db_tables()
-        return models.Scan.save(title)
+        return models.Scan.create(title)
+
+    def _update_scan_status(self):
+        """Update scan status to in progress"""
+        database = models.Database()
+        session = database.session
+        scan = session.query(models.Scan).get(self._scan_db.id)
+        scan.status = 'IN_PROGRESS'
+        session.commit()
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicates."""
@@ -200,7 +225,7 @@ class LocalRuntime(runtime.Runtime):
                 name=self._network,
                 driver='overlay',
                 attachable=True,
-                labels={'ostorlab.universe': self._name},
+                labels={'ostorlab.universe': self.name},
                 check_duplicate=True
             )
 
@@ -210,7 +235,7 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_mq_service(self):
         """Start a local rabbitmq service."""
-        self._mq_service = mq.LocalRabbitMQ(name=self._name, network=self._network)
+        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self._network)
         self._mq_service.start()
 
     def _check_services_healthy(self):
@@ -231,12 +256,12 @@ class LocalRuntime(runtime.Runtime):
     def _add_settings_config(self, agent: definitions.AgentSettings):
         """Add agent settings to docker config."""
         agent_instance_settings_proto = agent.to_raw_proto()
-        docker_config = self._docker_client.configs.create(name=f'agent_{agent.container_image}_{self._name}',
-                                                           labels={'ostorlab.universe': self._name},
+        docker_config = self._docker_client.configs.create(name=f'agent_{agent.container_image}_{self.name}',
+                                                           labels={'ostorlab.universe': self.name},
                                                            data=agent_instance_settings_proto)
         return docker.types.ConfigReference(config_id=docker_config.id,
-                                                        config_name=f'agent_{agent.container_image}_{self._name}',
-                                                        filename='/tmp/settings.binproto')
+                                            config_name=f'agent_{agent.container_image}_{self.name}',
+                                            filename='/tmp/settings.binproto')
 
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
@@ -254,7 +279,7 @@ class LocalRuntime(runtime.Runtime):
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
         agent.bus_url = self._mq_service.url
-        agent.bus_exchange_topic = f'ostorlab_topic_{self._name}'
+        agent.bus_exchange_topic = f'ostorlab_topic_{self.name}'
         agent.bus_managment_url = self._mq_service.management_url
         agent.bus_vhost = self._mq_service.vhost
         agent.healthcheck_host = HEALTHCHECK_HOST
@@ -265,21 +290,21 @@ class LocalRuntime(runtime.Runtime):
         # wait 2s and check max 5 times with 0.5s between each check.
         healthcheck = docker.types.Healthcheck(test=['CMD', 'ostorlab', 'agent', 'healthcheck'],
                                                retries=HEALTHCHECK_RETRIES, timeout=HEALTHCHECK_TIMEOUT,
-                                               start_period=HEALTHCHECK_START_PERIOD, interval=HEALTHCHECK_INTERVAL,)
+                                               start_period=HEALTHCHECK_START_PERIOD, interval=HEALTHCHECK_INTERVAL, )
 
         agent_service = self._docker_client.services.create(
             image=agent.container_image,
             networks=[self._network],
             env=[
-                f'UNIVERSE={self._name}',
+                f'UNIVERSE={self.name}',
                 f'SCAN_ID={self._scan_db.id}',
             ],
-            name=f'{agent.container_image}_{self._name}',
+            name=f'{agent.container_image}_{self.name}',
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
             mounts=agent.mounts,
             configs=extra_configs,
             healthcheck=healthcheck,
-            labels={'ostorlab.universe': self._name},
+            labels={'ostorlab.universe': self.name},
             constraints=agent.constraints,
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=agent.mem_limit))
@@ -304,7 +329,7 @@ class LocalRuntime(runtime.Runtime):
 
     def _list_agent_services(self):
         """List the services of type agents. All agent service must start with agent_."""
-        services = self._docker_client.services.list(filters={'label': f'ostorlab.universe={self._name}'})
+        services = self._docker_client.services.list(filters={'label': f'ostorlab.universe={self.name}'})
         for service in services:
             if service.name.startswith('agent_'):
                 yield service
@@ -317,13 +342,13 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        asset_config = self._docker_client.configs.create(name='asset', labels={'ostorlab.universe': self._name},
+        asset_config = self._docker_client.configs.create(name='asset', labels={'ostorlab.universe': self.name},
                                                           data=asset.to_proto())
         asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
                                                               config_name='asset',
                                                               filename='/tmp/asset.binproto')
         selector_config = self._docker_client.configs.create(name='asset_selector',
-                                                             labels={'ostorlab.universe': self._name},
+                                                             labels={'ostorlab.universe': self.name},
                                                              data=asset.selector)
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name='asset_selector',
@@ -350,7 +375,25 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             List of scan objects.
         """
-        scans = []
+        if page is not None:
+            console.warning('Local runtime ignores scan list pagination')
+
+        scans = {}
+        database = models.Database()
+        database.create_db_tables()
+        session = database.session
+        for s in session.query(models.Scan):
+            scans[s.id] = runtime.Scan(
+                        id=s.id,
+                        application=None,
+                        version=None,
+                        platform=None,
+                        plan=None,
+                        created_time=s.created_time,
+                        progress=s.progress.value,
+                        risk_rating=s.risk_rating.value,
+                    )
+
         universe_ids = set()
         client = docker.from_env()
         services = client.services.list()
@@ -361,20 +404,12 @@ class LocalRuntime(runtime.Runtime):
                 ostorlab_universe_id = service_labels.get('ostorlab.universe')
                 if 'ostorlab.universe' in service_labels.keys() and ostorlab_universe_id not in universe_ids:
                     universe_ids.add(ostorlab_universe_id)
-                    scan = runtime.Scan(
-                        id=ostorlab_universe_id,
-                        application=None,
-                        version=None,
-                        platform=None,
-                        plan=None,
-                        created_time=s.attrs['CreatedAt'],
-                        progress=None,
-                        risk=None,
-                    )
-                    scans.append(scan)
+                    if int(ostorlab_universe_id) not in scans.keys():
+                        console.warning(f'Scan {ostorlab_universe_id} has not traced in DB.')
             except KeyError:
                 logger.warning('The label ostorlab.universe do not exist.')
-        return scans[:number_elements]
+
+        return list(scans.values())
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=20),
