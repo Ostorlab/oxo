@@ -1,8 +1,10 @@
 """Lists the remote scans."""
 
-from ostorlab.apis import request
 from typing import Dict, Optional
 import json
+
+from ostorlab.apis import request
+
 
 class ScansListAPIRequest(request.APIRequest):
     """Lists the remote scans."""
@@ -40,10 +42,6 @@ class ScansListAPIRequest(request.APIRequest):
             }
          }
         """
-
-    @property
-    def endpoint(self):
-        return request.AUTHENTICATED_GRAPHQL_ENDPOINT
 
     @property
     def data(self) -> Optional[Dict]:

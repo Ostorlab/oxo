@@ -2,7 +2,7 @@
 
 import logging
 
-from ostorlab.apis import authenticated_runner
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import revoke_api_key
 from ostorlab import configuration_manager
 from ostorlab.cli.auth import auth

@@ -43,10 +43,6 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         """
 
     @property
-    def endpoint(self):
-        return request.AUTHENTICATED_GRAPHQL_ENDPOINT
-
-    @property
     def data(self) -> Optional[Dict]:
         """Sets the query and variables to generate an API key.
 

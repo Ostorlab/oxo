@@ -1,12 +1,11 @@
 """Unit Tests for auth revoke command."""
 
 from click.testing import CliRunner
+from unittest import mock
+
 from ostorlab.cli import rootcli
 from ostorlab import configuration_manager
-from ostorlab.apis import request as api_request
-from ostorlab.apis import authenticated_runner
-
-from unittest import mock
+from ostorlab.apis.runners import authenticated_runner
 
 
 def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(requests_mock):
@@ -16,7 +15,7 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
 
     api_data_dict = {'data': {'revokeApiKey': {'result': True}}}
     runner = CliRunner()
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=api_data_dict, status_code=200)
     result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
 
@@ -37,7 +36,7 @@ def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
 
     mock_console.return_value = None
     runner = CliRunner()
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=errors_dict, status_code=200)
     result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
     assert result.exception is None
