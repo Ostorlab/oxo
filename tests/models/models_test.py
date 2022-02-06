@@ -1,5 +1,5 @@
 """Tests for Models class."""
-from ostorlab.models import models
+from ostorlab.runtimes.local import models
 from unittest import mock
 
 
