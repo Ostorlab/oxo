@@ -6,6 +6,7 @@ from unittest import mock
 @mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db.sqlite')
 def testModelsScan_whenDatabaseDoesNotExist_DatabaseAndScanCreated(create_db_tables):
     """Test Scan Model implementation."""
+    del create_db_tables
     init_count = models.Database().session.query(models.Scan).count()
     models.Scan.save('test')
 
@@ -16,6 +17,7 @@ def testModelsScan_whenDatabaseDoesNotExist_DatabaseAndScanCreated(create_db_tab
 @mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db1.sqlite')
 def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(create_scan_db):
     """Test Vulnerability Model implementation."""
+    del create_scan_db
     init_count = models.Database().session.query(models.Vulnerability).count()
     models.Vulnerability.save(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
     recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
@@ -29,6 +31,7 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(crea
 @mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db1.sqlite')
 def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(create_scan_db):
     """Test Scan Status Model implementation."""
+    del create_scan_db
     init_count = models.Database().session.query(models.ScanStatus).count()
     models.ScanStatus.save(key='status', value='in_progress', scan_id=create_scan_db.id)
 
