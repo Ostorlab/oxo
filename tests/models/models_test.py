@@ -33,7 +33,7 @@ def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
     """Test Agent implementation."""
     models.Database().create_db_tables()
     scan = models.Scan.save('test')
-    models.ScanStatus.save(key='status', value= 'in_progress', scan_id=scan.id)
+    models.ScanStatus.save(key='status', value='in_progress', scan_id=scan.id)
 
     assert models.Database().session.query(models.ScanStatus).count() == 1
     assert models.Database().session.query(models.ScanStatus).all()[0].key == 'status'
