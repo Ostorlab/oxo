@@ -70,8 +70,8 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
-    vulnerability = orm.relationship("Vulnerability", back_populates="vulnerabilities")
-    scan_status = orm.relationship("ScanStatus", back_populates="scan_status")
+    vulnerability = orm.relationship('Vulnerability', back_populates='vulnerabilities')
+    scan_status = orm.relationship('ScanStatus', back_populates='scan_status')
 
     @staticmethod
     def save(title: str = 'My scan'):
