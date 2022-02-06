@@ -5,7 +5,7 @@ from unittest import mock
 
 @mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db.sqlite')
 def testModelsScan_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
-    """Test Agent implementation."""
+    """Test Scan Model implementation."""
     models.Database().create_db_tables()
     models.Scan.save('test')
     assert models.Database().session.query(models.Scan).count() == 1
@@ -15,7 +15,7 @@ def testModelsScan_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
 
 @mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db1.sqlite')
 def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
-    """Test Agent implementation."""
+    """Test Vulnerability Model implementation."""
     models.Database().create_db_tables()
     scan = models.Scan.save('test')
     models.Vulnerability.save(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
@@ -30,7 +30,7 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
 
 @mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db1.sqlite')
 def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
-    """Test Agent implementation."""
+    """Test Scan Status Model implementation."""
     models.Database().create_db_tables()
     scan = models.Scan.save('test')
     models.ScanStatus.save(key='status', value='in_progress', scan_id=scan.id)
