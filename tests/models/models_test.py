@@ -26,3 +26,17 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
     assert models.Database().session.query(models.Vulnerability).all()[0].title == 'MyVuln'
     assert models.Database().session.query(models.Vulnerability).all()[0].scan_id == 1
     models.Database().drop_db_tables()
+
+
+@mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db1.sqlite')
+def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
+    """Test Agent implementation."""
+    models.Database().create_db_tables()
+    scan = models.Scan.save('test')
+    models.ScanStatus.save(key='status', value= 'in_progress', scan_id=scan.id)
+
+    assert models.Database().session.query(models.ScanStatus).count() == 1
+    assert models.Database().session.query(models.ScanStatus).all()[0].key == 'status'
+    assert models.Database().session.query(models.ScanStatus).all()[0].value == 'in_progress'
+    assert models.Database().session.query(models.ScanStatus).all()[0].scan_id == 1
+    models.Database().drop_db_tables()

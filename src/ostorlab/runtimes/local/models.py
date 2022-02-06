@@ -143,7 +143,7 @@ class ScanStatus(Base):
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('scan.id'))
 
     @staticmethod
-    def save(key: str, value: str):
+    def save(key: str, value: str, scan_id: int):
         """Persist the scan status in the database.
 
         Args:
@@ -152,7 +152,7 @@ class ScanStatus(Base):
         Returns:
             Scan status object.
         """
-        scan_status = ScanStatus(title=key, created_time=datetime.datetime.now(), value=value)
+        scan_status = ScanStatus(title=key, created_time=datetime.datetime.now(), value=value, scan_id=scan_id)
         database = Database()
         database.session.add(scan_status)
         database.session.commit()
