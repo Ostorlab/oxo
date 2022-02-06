@@ -3,7 +3,7 @@ from ostorlab.runtimes.local import models
 from unittest import mock
 
 
-@mock.patch('ostorlab.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db.sqlite')
+@mock.patch('ostorlab.runtimes.local.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db.sqlite')
 def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
     """Test Agent implementation."""
     models.Database().create_db_tables()
