@@ -7,7 +7,7 @@ import pytest
 import docker
 
 from ostorlab.runtimes.local.services import mq
-
+from ostorlab.runtimes.local import models
 
 @pytest.fixture(scope='session')
 def mq_service():
@@ -108,3 +108,13 @@ def image_cleanup():
                 if tag in t:
                     client.images.remove(t)
     return _image_cleanup
+
+
+@pytest.fixture
+def create_db_tables():
+    models.Database().create_db_tables()
+
+
+@pytest.fixture
+def create_scan_db(create_db_tables):
+    return models.Scan.save('test')
