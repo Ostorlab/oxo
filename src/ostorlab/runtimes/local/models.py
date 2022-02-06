@@ -70,8 +70,8 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
-    vulnerability = orm.relationship('Vulnerability', back_populates='vulnerabilities')
-    scan_status = orm.relationship('ScanStatus', back_populates='scan_status')
+    vulnerability = orm.relationship('Vulnerability')
+    scan_status = orm.relationship('ScanStatus')
 
     @staticmethod
     def save(title: str = 'My scan'):
@@ -107,7 +107,7 @@ class Vulnerability(Base):
     @staticmethod
     def save(title: str, short_description: str, description: str,
              recommendation: str, technical_detail: str, risk_rating: str,
-             cvss_v3_vector: str, dna: str, false_positive: bool):
+             cvss_v3_vector: str, dna: str, false_positive: bool, scan_id: int):
         """Persist the vulnerability in the database.
 
         Args:
@@ -126,7 +126,7 @@ class Vulnerability(Base):
         vuln = Vulnerability(title=title, short_description=short_description, description=description,
                              recommendation=recommendation, technical_detail=technical_detail,
                              risk_rating=risk_rating, cvss_v3_vector=cvss_v3_vector, dna=dna,
-                             false_positive=false_positive)
+                             false_positive=false_positive, scan_id=scan_id)
         database = Database()
         database.session.add(vuln)
         database.session.commit()
