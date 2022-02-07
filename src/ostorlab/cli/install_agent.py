@@ -1,4 +1,4 @@
-"""Module responsible for installing an agent : Pulling the image from the ostorlab registry."""
+"""Module responsible for installing an agent : Pulling the image from the ostorlab store."""
 from typing import Dict, Optional, Generator
 import click
 import docker
