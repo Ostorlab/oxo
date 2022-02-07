@@ -20,7 +20,6 @@ from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
 from ostorlab.cli import console as cli_console
-from ostorlab.utils import strings as strings_utils
 from ostorlab.runtimes.local.models import models
 
 NETWORK = 'ostorlab_local_network'
@@ -97,7 +96,7 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self, name: Optional[str] = None, network: str = NETWORK) -> None:
+    def __init__(self, network: str = NETWORK) -> None:
         super().__init__()
         self._network = network
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
@@ -172,7 +171,7 @@ class LocalRuntime(runtime.Runtime):
         services = client.services.list()
         for service in services:
             service_labels = service.attrs['Spec']['Labels']
-            logger.debug(f'comparing {service_labels.get("ostorlab.universe")} and {scan_id}')
+            logger.debug('comparing %s and %s', service_labels.get('ostorlab.universe'), scan_id)
             if service_labels.get('ostorlab.universe') == scan_id:
                 stopped_services.append(service)
                 service.remove()
@@ -404,7 +403,7 @@ class LocalRuntime(runtime.Runtime):
                 ostorlab_universe_id = service_labels.get('ostorlab.universe')
                 if 'ostorlab.universe' in service_labels.keys() and ostorlab_universe_id not in universe_ids:
                     universe_ids.add(ostorlab_universe_id)
-                    if int(ostorlab_universe_id) not in scans.keys():
+                    if int(ostorlab_universe_id) not in scans:
                         console.warning(f'Scan {ostorlab_universe_id} has not traced in DB.')
             except KeyError:
                 logger.warning('The label ostorlab.universe do not exist.')
