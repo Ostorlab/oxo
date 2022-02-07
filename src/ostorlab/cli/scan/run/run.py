@@ -32,12 +32,14 @@ def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.F
         for agent_key in agents:
             agents_settings.append(
                 definitions.AgentSettings(key=agent_key))
-            install_agent.install(agent_key)
+            if install:
+                install_agent.install(agent_key)
         agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
     elif agent_group_definition:
         agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
-        for agent in agent_group.agents:
-            install_agent.install(agent.key)
+        if install:
+            for agent in agent_group.agents:
+                install_agent.install(agent.key)
     else:
         raise click.ClickException('Missing agent list or agent group definition.')
 
