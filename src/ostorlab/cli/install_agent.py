@@ -1,101 +1,144 @@
 """Module responsible for installing an agent : Pulling the image from the ostorlab registry."""
+from typing import Dict, Optional, Generator
 import click
 import docker
+import docker.errors
 
 from ostorlab.cli import console as cli_console
-from ostorlab.apis import public_runner
-from ostorlab.apis import authenticated_runner
-from ostorlab.apis import get_agent_details
+from ostorlab.apis.runners import public_runner
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis import agent_details as agent_details_api
 from ostorlab import configuration_manager
+from ostorlab.cli.agent.install import install_progress
+
 
 console = cli_console.Console()
 
 
-def _parse_repository_tag(repo_name):
+def _image_name_from_key(agent_key: str) -> str:
+    """Generate docker image name from an agent key.
+
+    Args:
+        agent_key: agent key in the form agent/organization/name.
+
+    Returns:
+        image_name: image name in the form : agent_organization_name.
+    """
+    return agent_key.replace('/', '_').lower()
+
+
+def _parse_repository_tag(repo_name, tag=None):
+    """Get repo name and tag"""
     parts = repo_name.rsplit('@', 1)
     if len(parts) == 2:
         return tuple(parts)
     parts = repo_name.rsplit(':', 1)
     if len(parts) == 2 and '/' not in parts[1]:
         return tuple(parts)
-    return repo_name, None
-
-def get_repo_name_and_tag(repository, tag=None):
-    repository, image_tag = _parse_repository_tag(repository)
-    tag = tag or image_tag or 'latest'
-    return repository, tag
+    return repo_name, tag or 'latest'
 
 
-def get_pull_logs(client, repository, tag=None, all_tags=False,  **kwargs):
-    repository, tag = get_repo_name_and_tag(repository, tag)
-    pull_log = client.api.pull(repository, tag=tag, stream=True, all_tags=all_tags, decode=True, **kwargs)
+def _pull_logs(docker_client: docker.DockerClient, repository: str, tag: Optional[str]=None, all_tags: bool=False,  **kwargs) -> Generator[Dict, None, None]:
+    """Generate logs of the docker pull method."""
+    repository, tag = _parse_repository_tag(repository, tag)
+    pull_log = docker_client.api.pull(repository, tag=tag, stream=True, all_tags=all_tags, decode=True, **kwargs)
     for log in pull_log:
         yield log
 
 
-def get_image(client, repository, tag=None, all_tags=False):
-    repository, tag = get_repo_name_and_tag(repository, tag)
-    name = f'{0}{2}{1}'.format(repository, tag, '@' if tag.startswith('sha256:') else ':')
+def _get_image(docker_client, repository, tag=None, all_tags=False):
+    """Gets a docker image."""
+    repository, tag = _parse_repository_tag(repository, tag)
+    separator = '@' if tag.startswith('sha256:') else ':'
+    name = f'{repository}{separator}{tag}'
 
     if not all_tags:
-        return client.images.get(name)
-    return client.list(repository)
+        return docker_client.images.get(name)
+    return docker_client.list(repository)
 
 
-def install(agent_key: str, tag: str = '') -> None:
+def _is_image_present(docker_client, image_name):
+    """Check if a docker image exists."""
+    try:
+        docker_client.images.get(image_name)
+        return True
+    except docker.errors.ImageNotFound:
+        return False
+
+
+def get_agent_details(agent_key: str) -> Dict:
+    """Sends an API request with the agent key, and retrieve the agent information.
+
+    Args:
+        agent_key: the agent key in the form : agent/org/name
+
+    Returns:
+        dictionary of the agent information like : name, dockerLocation..
+
+    Raises:
+        click Exit exception with satus code 2 when API response is invalid.
+    """
+    config_manager = configuration_manager.ConfigurationManager()
+
+    if config_manager.is_authenticated:
+        runner = authenticated_runner.AuthenticatedAPIRunner()
+    else:
+        runner = public_runner.PublicAPIRunner()
+
+    response = runner.execute(agent_details_api.AgentDetailsAPIRequest(agent_key))
+
+    if 'errors' in response:
+        error_message = f"""\b The provided agent key : {agent_key} does not correspond to any agent.
+        Please make sure you have the correct agent key.
+        """
+        console.error(error_message)
+        raise click.exceptions.Exit(2)
+    else:
+        agent_details = response['data']['agent']
+        return agent_details
+
+
+
+def install(agent_key: str, version: str = '') -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
 
     Args:
         agent_key: key of the agent in agent/org/agentName format.
-        tag: tag of the docker image.
+        version: version of the docker image.
 
     Returns:
         None
+
+    Raises:
+        click Exit exception with satus code 2 when the docker image does not exist.
     """
-    config_manager = configuration_manager.ConfigurationManager()
 
-    if config_manager.get_api_key_id():
-        runner = authenticated_runner.AuthenticatedAPIRunner()
-    else:
-        runner = public_runner.PublicAPIRunner()
+    agent_details = get_agent_details(agent_key)
 
-    response = runner.execute(get_agent_details.AgentAPIRequest(agent_key))
-
-    if 'errors' in response:
-        console.error(f'The provided agent key : {agent_key} does not correspond to any agent.')
-        console.error('Please make sure you have the correct agent key.')
-        raise click.exceptions.Exit(2)
-    else:
-        agent_details = response['data']['agent']
-        agent_docker_location = agent_details['dockerLocation']
-
-    def is_image_present(agent_key):
-        agent_key = agent_key.replace('/', '_').lower()
-        docker_client = docker.from_env()
-        try:
-            docker_client.images.get(agent_key)
-            return True
-        except docker.errors.ImageNotFound:
-            return False
+    agent_docker_location = agent_details['dockerLocation']
+    image_name = _image_name_from_key(agent_details['key'])
 
     try:
-        if is_image_present(agent_key):
-            console.status(f'{agent_key} already exist.')
+        docker_client = docker.from_env()
 
+        if _is_image_present(docker_client, image_name):
+            console.info(f'{agent_key} already exist.')
         else:
-            with console.status('Pulling the image from the ostorlab store.'):
-                docker_client = docker.from_env()
-                pull_logs_generator = get_pull_logs(docker_client, agent_docker_location)
-                console.progress(pull_logs_generator)
-                agent_image = get_image(docker_client, agent_docker_location, tag)
-                agent_key = agent_key.replace('/', '_').lower()
-                agent_image.tag(repository=agent_key, tag=tag)
+            console.info('Pulling the image from the ostorlab store.')
+
+            pull_logs_generator = _pull_logs(docker_client, agent_docker_location)
+
+            progress_foo = install_progress.AgentInstallProgress()
+            progress_foo.display(pull_logs_generator)
+
+            agent_image = _get_image(docker_client, agent_docker_location, version)
+            agent_image.tag(repository=image_name, tag=version)
 
     except docker.errors.ImageNotFound as e:
-        console.error(f'The provided agent key : {agent_key} does not seem to be public.')
-        console.error('Make sure you are logged in and try again.')
-        console.error('To log in use the following command : ostorlab auth login -u <username> -p <password>')
+        error_message = f"""\b The provided agent key : {agent_key} does not seem to be public.
+        Make sure you are logged in and try again.
+        To log in use the following command : ostorlab auth login -u <username> -p <password> 
+        """
+        console.error(error_message)
         raise click.exceptions.Exit(2) from e
-
-    console.success(':white_check_mark: Installation successful.')
