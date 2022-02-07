@@ -109,12 +109,3 @@ def image_cleanup():
                     client.images.remove(t)
     return _image_cleanup
 
-
-@pytest.fixture
-def create_db_tables():
-    return models.Database().create_db_tables()
-
-
-@pytest.fixture
-def create_scan_db(create_db_tables):
-    return models.Scan.save('test')
