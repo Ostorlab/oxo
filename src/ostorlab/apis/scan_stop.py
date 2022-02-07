@@ -1,8 +1,10 @@
 """Stops a remote scan."""
 
-from ostorlab.apis import request
 from typing import Dict, Optional
 import json
+
+from ostorlab.apis import request
+
 
 class ScanStopAPIRequest(request.APIRequest):
     """Stops a remote scan."""
@@ -26,10 +28,6 @@ class ScanStopAPIRequest(request.APIRequest):
             }
          }
         """
-
-    @property
-    def endpoint(self):
-        return request.AUTHENTICATED_GRAPHQL_ENDPOINT
 
     @property
     def data(self) -> Optional[Dict]:

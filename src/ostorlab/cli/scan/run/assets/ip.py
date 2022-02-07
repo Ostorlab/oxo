@@ -28,7 +28,7 @@ def ip_cli(ctx: click.core.Context, ip: str) -> None:
             raise NotImplementedError()
 
         logger.debug('scanning asset IP %s', asset)
-        runtime.scan(agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+        runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
     except ValueError as e:
         console.error(f'{e}')
         click.Abort()

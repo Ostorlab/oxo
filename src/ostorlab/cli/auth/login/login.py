@@ -4,7 +4,7 @@ import logging
 
 import click
 
-from ostorlab.apis import authenticated_runner
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli.auth import auth
 from ostorlab.cli import console as cli_console
 

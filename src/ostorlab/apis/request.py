@@ -3,20 +3,12 @@ import abc
 import logging
 from typing import Dict, Optional
 
-AUTHENTICATED_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/graphql'
-PUBLIC_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/public_graphql'
-TOKEN_ENDPOINT = 'https://api.ostorlab.co/apis/token/'
 
 logger = logging.getLogger(__name__)
 
 
 class APIRequest(abc.ABC):
     """API request base class. ALL requests should inherit from this class."""
-
-    @property
-    def endpoint(self):
-        """Endpoint of the request."""
-        return AUTHENTICATED_GRAPHQL_ENDPOINT
 
     @property
     @abc.abstractmethod

@@ -1,12 +1,11 @@
 """Tests for auth login command."""
 from unittest import mock
-
 import click
 from click.testing import CliRunner
 
 from ostorlab import configuration_manager
-from ostorlab.apis import request as api_request
-from ostorlab.apis import authenticated_runner
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import login_runner
 from ostorlab.cli import rootcli
 
 
@@ -31,7 +30,7 @@ def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthen
 
     mock_authentication_error_init.return_value = None
     runner = CliRunner()
-    requests_mock.post(api_request.TOKEN_ENDPOINT, json={'non_field_errors': [
+    requests_mock.post(login_runner.TOKEN_ENDPOINT, json={'non_field_errors': [
         'Unable to log in with provided credentials.']}, status_code=400)
     result = runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
@@ -51,8 +50,8 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(
             {'expiryDate': None, 'id': '54a6e602-f7c1-47bb-9ca0-af598fcf3cf4'}}}}}
     token_dict = {'token': '2fd7a589-64b4-442e-95aa-eb0d082aab63'}
     runner = CliRunner()
-    requests_mock.post(api_request.TOKEN_ENDPOINT, json=token_dict, status_code=200)
-    requests_mock.post(api_request.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    requests_mock.post(login_runner.TOKEN_ENDPOINT, json=token_dict, status_code=200)
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=api_key_dict, status_code=200)
     result = runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
@@ -71,7 +70,7 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_prom
     mock_prompt.return_value = None
     runner = CliRunner()
     token_dict = {'token': '2fd7a589-64b4-442e-95aa-eb0d082aab63'}
-    requests_mock.post(api_request.TOKEN_ENDPOINT, [{'json': {'non_field_errors': [
+    requests_mock.post(login_runner.TOKEN_ENDPOINT, [{'json': {'non_field_errors': [
         'Must include "otp_token"']}, 'status_code': 400}, {'json': token_dict, 'status_code': 200}])
     runner.invoke(
         rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])

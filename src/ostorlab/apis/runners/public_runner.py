@@ -8,13 +8,20 @@
 import requests
 from typing import Dict
 
-from ostorlab.apis import runner
+from ostorlab.apis.runners import runner
 from ostorlab.apis import request as api_request
 
+
+PUBLIC_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/public'
 
 
 class PublicAPIRunner(runner.APIRunner):
     """Responsible for the public API calls, and preparing the responses."""
+
+    @property
+    def endpoint(self) -> str:
+        """API endpoint."""
+        return PUBLIC_GRAPHQL_ENDPOINT
 
     def execute(self, request: api_request.APIRequest) -> Dict:
         """Executes a request using the Public GraphQL API.
@@ -43,5 +50,5 @@ class PublicAPIRunner(runner.APIRunner):
             }
         else:
             proxy = None
-        return requests.post(request.endpoint, data=request.data,
+        return requests.post(self.endpoint, data=request.data,
                              proxies=proxy, verify=self._verify)

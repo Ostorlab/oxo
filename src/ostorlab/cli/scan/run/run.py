@@ -41,4 +41,4 @@ def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.F
         ctx.obj['agent_group_definition'] = agent_group
         ctx.obj['title'] = title
     else:
-        raise click.ClickException('Runtime do not support provided agent list or group definition.')
+        raise click.ClickException('Runtime does not support the provided agent list or group definition.')

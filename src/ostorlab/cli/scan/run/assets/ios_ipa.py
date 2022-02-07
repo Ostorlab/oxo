@@ -14,4 +14,4 @@ def ios_ipa(ctx, file):
     """Run scan for .IPA package file."""
     runtime = ctx.obj['runtime']
     asset = ios_ipa_asset.IOSIpa(file.read())
-    runtime.scan(agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)

@@ -1,9 +1,11 @@
 """Revokes the API key."""
 
-from ostorlab.apis import request
 from typing import Dict, Optional
 import json
 import logging
+
+from ostorlab.apis import request
+
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +35,6 @@ class RevokeAPIKeyAPIRequest(request.APIRequest):
                }
             }
         """
-
-    @property
-    def endpoint(self):
-        return request.AUTHENTICATED_GRAPHQL_ENDPOINT
 
     @property
     def data(self) -> Optional[Dict]:
