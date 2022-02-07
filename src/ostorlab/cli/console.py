@@ -93,3 +93,6 @@ class Console:
 
         table.box = box.SQUARE_DOUBLE_HEAD
         self._console.print(table)
+
+    def print(self, data):
+        self._console.print(data)
