@@ -296,7 +296,6 @@ class LocalRuntime(runtime.Runtime):
             networks=[self._network],
             env=[
                 f'UNIVERSE={self.name}',
-                f'SCAN_ID={self._scan_db.id}',
             ],
             name=f'{agent.container_image}_{self.name}',
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
