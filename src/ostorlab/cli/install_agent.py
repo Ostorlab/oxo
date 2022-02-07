@@ -38,7 +38,11 @@ def _parse_repository_tag(repo_name, tag=None):
     return repo_name, tag or 'latest'
 
 
-def _pull_logs(docker_client: docker.DockerClient, repository: str, tag: Optional[str]=None, all_tags: bool=False,  **kwargs) -> Generator[Dict, None, None]:
+def _pull_logs(docker_client: docker.DockerClient,
+               repository: str,
+               tag: Optional[str] = None,
+               all_tags: bool = False,
+               **kwargs) -> Generator[Dict, None, None]:
     """Generate logs of the docker pull method."""
     repository, tag = _parse_repository_tag(repository, tag)
     pull_log = docker_client.api.pull(repository, tag=tag, stream=True, all_tags=all_tags, decode=True, **kwargs)
