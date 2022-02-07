@@ -24,7 +24,7 @@ def list_cli(scan_id: int) -> None:
     for vulnerability in vulnerabilities:
         vulnz_list.append({
             'id': str(vulnerability.id),
-            'risk_rating': str(vulnerability.risk_rating),
+            'risk_rating': vulnerability.risk_rating.value,
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
             'title': vulnerability.title,
             'short_description': vulnerability.short_description,
