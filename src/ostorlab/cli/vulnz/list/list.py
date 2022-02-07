@@ -11,6 +11,18 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
+def _style_risk(risk: str) -> str:
+    """Stylize the risk with colors."""
+    if risk.upper() == 'HIGH':
+        return '[bold red]High[/]'
+    elif risk.upper() == 'MEDIUM':
+        return '[bold yellow]Medium[/]'
+    elif risk.upper() == 'LOW':
+        return '[bold bright_yellow]Low[/]'
+    else:
+        return risk
+
+
 @vulnz.command(name='list')
 @click.option('--scan-id', '-s', 'scan_id', help='Id of the scan.', required=True)
 def list_cli(scan_id: int) -> None:
@@ -24,7 +36,7 @@ def list_cli(scan_id: int) -> None:
     for vulnerability in vulnerabilities:
         vulnz_list.append({
             'id': str(vulnerability.id),
-            'risk_rating': vulnerability.risk_rating.value,
+            'risk_rating': _style_risk(vulnerability.risk_rating.value),
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
             'title': vulnerability.title,
             'short_description': vulnerability.short_description,
