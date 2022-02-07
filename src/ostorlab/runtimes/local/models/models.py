@@ -104,7 +104,6 @@ class Vulnerability(Base):
     risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
     cvss_v3_vector = sqlalchemy.Column(sqlalchemy.String(1024))
     dna = sqlalchemy.Column(sqlalchemy.String(256))
-    false_positive = sqlalchemy.Column(sqlalchemy.Boolean)
     title = sqlalchemy.Column(sqlalchemy.String(256))
     short_description = sqlalchemy.Column(sqlalchemy.Text)
     description = sqlalchemy.Column(sqlalchemy.Text)
@@ -112,12 +111,13 @@ class Vulnerability(Base):
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('scan.id'))
 
     @staticmethod
-    def create(title: str, short_description: str, description: str,
+    def create(scan_id: int, title: str, short_description: str, description: str,
              recommendation: str, technical_detail: str, risk_rating: str,
-             cvss_v3_vector: str, dna: str, false_positive: bool, scan_id: int):
+             cvss_v3_vector: str, dna: str):
         """Persist the vulnerability in the database.
 
         Args:
+            scan_id: Scan id of the vulnerability.
             title: Vulnerability title.
             false_positive: Boolean to True if the vulnerability is a false positive.
             dna: A unique string to determine a vulnerability and avoid duplicates in the database.
@@ -130,10 +130,10 @@ class Vulnerability(Base):
         Returns:
             Vulnerability object.
         """
-        vuln = Vulnerability(title=title, short_description=short_description, description=description,
-                             recommendation=recommendation, technical_detail=technical_detail,
-                             risk_rating=risk_rating, cvss_v3_vector=cvss_v3_vector, dna=dna,
-                             false_positive=false_positive, scan_id=scan_id)
+        vuln = Vulnerability(scan_id=scan_id, title=title, short_description=short_description,
+                             description=description, recommendation=recommendation,
+                             technical_detail=technical_detail, risk_rating=risk_rating, cvss_v3_vector=cvss_v3_vector,
+                             dna=dna)
         database = Database()
         database.session.add(vuln)
         database.session.commit()
