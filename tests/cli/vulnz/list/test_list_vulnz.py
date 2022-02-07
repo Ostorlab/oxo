@@ -7,7 +7,7 @@ from ostorlab.cli import rootcli
 from ostorlab.runtimes.local.models import models
 
 
-@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db.sqlite')
+@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
 def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo():
     """Test ostorlab vulnz list command with correct commands and options.
     Should show vulnz information.
