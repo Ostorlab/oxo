@@ -7,7 +7,7 @@ import pytest
 import docker
 
 from ostorlab.runtimes.local.services import mq
-
+from ostorlab.runtimes.local.models import models
 
 @pytest.fixture(scope='session')
 def mq_service():
@@ -109,3 +109,12 @@ def image_cleanup():
                     client.images.remove(t)
     return _image_cleanup
 
+
+@pytest.fixture
+def vuln_db():
+    """Pytest fixture for add a scan and a vulnerability."""
+    models.Database().create_db_tables()
+    create_scan_db = models.Scan.create('test')
+    return models.Vulnerability.create(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
+    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
+    cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
