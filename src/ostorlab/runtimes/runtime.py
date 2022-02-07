@@ -18,7 +18,7 @@ class Scan:
     plan: Optional[str]
     created_time: str
     progress: Optional[str]
-    risk: Optional[str]
+    risk_rating: Optional[str]
 
 
 class Runtime(abc.ABC):

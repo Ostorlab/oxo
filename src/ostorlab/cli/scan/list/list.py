@@ -78,13 +78,13 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
 
             data = [
                 {
-                    'id': s.id,
+                    'id': str(s.id),
                     'application': f'{s.application or ""}: {s.version or ""}',
                     'platform': _style_asset(s.platform),
                     'plan': s.plan,
-                    'created_time': s.created_time,
+                    'created_time': str(s.created_time),
                     'progress': _style_progress(s.progress),
-                    'risk': _style_risk(s.risk),
+                    'risk': _style_risk(s.risk_rating),
                 } for s in scans]
 
             console.table(columns=columns, data=data, title=title)
