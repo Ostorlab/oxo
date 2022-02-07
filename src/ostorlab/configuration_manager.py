@@ -91,3 +91,7 @@ class ConfigurationManager:
     def delete_api_data(self) -> None:
         """Deletes the file containing the API data."""
         self._complete_api_key_path.unlink(missing_ok=True)
+
+    @property
+    def is_authenticated(self):
+        return self.get_api_key_id() is not None
