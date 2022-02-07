@@ -17,11 +17,12 @@ def list_cli(scan_id: int) -> None:
     """CLI command to list vulnerabilities for a scan."""
     database = models.Database()
     session = database.session
-    vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).order_by(models.Vulnerability.title).all()
+    vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).\
+        order_by(models.Vulnerability.title).all()
     console.success('Vulnerabilities listed successfully.')
-    vulnz = []
+    vulnz_list = []
     for vulnerability in vulnerabilities:
-        vulnz.append({
+        vulnz_list.append({
             'id': str(vulnerability.id),
             'risk_rating': str(vulnerability.risk_rating),
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
@@ -36,5 +37,5 @@ def list_cli(scan_id: int) -> None:
         'CVSS V3 Vector': 'cvss_v3_vector',
         'Short Description': 'short_description',
     }
-    title = f'Listing {len(vulnz)} vulnerabilities'
-    console.table(columns=columns, data=vulnz, title=title)
+    title = f'Listing {len(vulnz_list)} vulnerabilities'
+    console.table(columns=columns, data=vulnz_list, title=title)
