@@ -5,19 +5,19 @@ from typing import Dict, Optional
 
 from ostorlab.apis import request
 
-class AgentAPIRequest(request.APIRequest):
+class AgentDetailsAPIRequest(request.APIRequest):
     """Get agent details for a specified agent_key."""
 
     def __init__(self, agent_key: str) -> None:
         """Initializer"""
-        self.agent_key = agent_key
+        self._agent_key = agent_key
 
     @property
     def query(self) -> Optional[str]:
-        """Defines the query to fetch agent details from agent key.
+        """The query to fetch the agent details with an agent key.
 
         Returns:
-            The query fetch agent details.
+            The query to fetch the agent details.
         """
         return """
             query Agent($agentKey: String!){
@@ -34,18 +34,14 @@ class AgentAPIRequest(request.APIRequest):
         """
 
     @property
-    def endpoint(self) -> str:
-        return request.PUBLIC_GRAPHQL_ENDPOINT
-
-    @property
     def data(self) -> Optional[Dict]:
-        """Sets the query to fetch the specific agent.
+        """Sets the body of the API request, to fetch the specific agent.
 
         Returns:
-              The query to agent details.
+            The body of the agent details request.
         """
         data = {
             'query': self.query,
-            'variables': json.dumps({'agentKey': self.agent_key})
+            'variables': json.dumps({'agentKey': self._agent_key})
         }
         return data
