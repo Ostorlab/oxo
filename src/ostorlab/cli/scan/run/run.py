@@ -7,6 +7,7 @@ from typing import List
 import click
 from ostorlab.runtimes import definitions
 from ostorlab.cli.scan import scan
+from ostorlab.cli import install_agent
 
 
 @scan.group()
@@ -18,21 +19,25 @@ from ostorlab.cli.scan import scan
 @click.option('--agent-group-definition', '-g', type=click.File('r'),
               help='Path to agents group definition file (yaml).',
               required=False)
+@click.option('--install', '-i', help='Install missing agents', is_flag=True, required=False)
 @click.pass_context
 def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.FileIO,
-        title: str) -> None:
+        title: str, install: bool) -> None:
     """Start a new scan on a specific asset.\n
-    Usage:\n
-        - ostorlab scan run --agents=agent1,agent2 --title=test_scan android-apk --file=path/to/application.apk
+    Example:\n
+        - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
     if agents:
         agents_settings: List[definitions.AgentSettings] = []
         for agent_key in agents:
             agents_settings.append(
                 definitions.AgentSettings(key=agent_key))
+            install_agent.install(agent_key)
         agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
     elif agent_group_definition:
         agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
+        for agent in agent_group.agents:
+            install_agent.install(agent.key)
     else:
         raise click.ClickException('Missing agent list or agent group definition.')
 
@@ -41,4 +46,4 @@ def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.F
         ctx.obj['agent_group_definition'] = agent_group
         ctx.obj['title'] = title
     else:
-        raise click.ClickException('Runtime does not support the provided agent list or group definition.')
+        raise click.ClickException('Runtime do not support provided agent list or group definition.')
