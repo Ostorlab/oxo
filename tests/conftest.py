@@ -7,7 +7,7 @@ import pytest
 import docker
 
 from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local import models
+
 
 @pytest.fixture(scope='session')
 def mq_service():
