@@ -108,3 +108,4 @@ def image_cleanup():
                 if tag in t:
                     client.images.remove(t)
     return _image_cleanup
+
