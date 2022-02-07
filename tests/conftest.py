@@ -112,7 +112,7 @@ def image_cleanup():
 
 @pytest.fixture
 def create_db_tables():
-    models.Database().create_db_tables()
+    return models.Database().create_db_tables()
 
 
 @pytest.fixture
