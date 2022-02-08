@@ -2,27 +2,19 @@
 import logging
 import click
 
-from rich.markdown import Markdown
+import rich
+from rich import markdown
+from rich import panel
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.vulnz import vulnz
 from ostorlab.runtimes.local.models import models
+from ostorlab.utils import styles
+
 
 console = cli_console.Console()
 
 logger = logging.getLogger(__name__)
-
-
-def _style_risk(risk: str) -> str:
-    """Stylize the risk with colors."""
-    if risk.upper() == 'HIGH':
-        return '[bold red]High[/]'
-    elif risk.upper() == 'MEDIUM':
-        return '[bold yellow]Medium[/]'
-    elif risk.upper() == 'LOW':
-        return '[bold bright_yellow]Low[/]'
-    else:
-        return risk
 
 
 @vulnz.command(name='describe')
@@ -35,10 +27,10 @@ def describe_cli(vuln_id: int) -> None:
     console.success('Vulnerabilities retrieved successfully.')
     vulnz_list = [
         {'id': str(vulnerability.id),
-            'risk_rating': _style_risk(vulnerability.risk_rating.value),
+            'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
             'title': vulnerability.title,
-            'short_description': Markdown(vulnerability.short_description),
+            'short_description': markdown.Markdown(vulnerability.short_description),
          }
     ]
 
@@ -51,9 +43,7 @@ def describe_cli(vuln_id: int) -> None:
     }
     title = f'Describing vulnerability {vuln_id}'
     console.table(columns=columns, data=vulnz_list, title=title)
-    console.info('Description')
-    console.print(Markdown(vulnerability.description))
-    console.info('Recommendation')
-    console.print(Markdown(vulnerability.recommendation))
-    console.info('Technical details')
-    console.print(Markdown(vulnerability.technical_detail))
+    rich.print(panel.Panel(markdown.Markdown(vulnerability.description), title='Description'))
+    rich.print(panel.Panel(markdown.Markdown(vulnerability.recommendation), title='Recommendation'))
+    rich.print(panel.Panel(markdown.Markdown(vulnerability.technical_detail), title='Technical details'))
+
