@@ -7,50 +7,9 @@ import click
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan import scan
+from ostorlab.utils import styles
 
 console = cli_console.Console()
-
-
-def _style_risk(risk: str) -> str:
-    """Stylize the risk with colors."""
-    if risk == 'HIGH':
-        return '[bold red]High[/]'
-    elif risk == 'MEDIUM':
-        return '[bold yellow]Medium[/]'
-    elif risk == 'LOW':
-        return '[bold bright_yellow]Low[/]'
-    else:
-        return risk
-
-
-def _style_progress(progress: str) -> str:
-    """Stylize the scan progress with colors."""
-    if progress == 'done':
-        return '[bold green4]Done[/]'
-    if progress == 'error':
-        return '[bold magenta]Error[/]'
-    if progress == 'not_started':
-        return '[bold bright_black]Not Started[/]'
-    if progress == 'stopped':
-        return '[bold bright_red]Stopped[/]'
-    if progress == 'in_progress':
-        return '[bold bright_cyan]Running[/]'
-    else:
-        return progress
-
-
-def _style_asset(asset: str) -> str:
-    """Stylize the scan asset with colors and emojis."""
-    if asset == 'android_store':
-        return '[bold green4]:iphone: Android Store[/]'
-    elif asset == 'ios_store':
-        return '[bold bright_white]:apple: iOS Store[/]'
-    elif asset == 'android':
-        return '[bold bright_green]:iphone: Android[/]'
-    elif asset == 'ios':
-        return '[bold white]:apple: iOS[/]'
-    else:
-        return asset
 
 
 @scan.command(name='list')
@@ -80,11 +39,11 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                 {
                     'id': str(s.id),
                     'application': f'{s.application or ""}: {s.version or ""}',
-                    'platform': _style_asset(s.platform),
+                    'platform': styles.style_asset(s.platform),
                     'plan': s.plan,
                     'created_time': str(s.created_time),
-                    'progress': _style_progress(s.progress),
-                    'risk': _style_risk(s.risk_rating),
+                    'progress': styles.style_progress(s.progress),
+                    'risk': styles.style_risk(s.risk_rating),
                 } for s in scans]
 
             console.table(columns=columns, data=data, title=title)
