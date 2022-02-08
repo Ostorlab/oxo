@@ -22,4 +22,4 @@ def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInf
     assert vuln_db.scan_id is not None
     assert result.exception is None
     assert 'MyVuln' in result.output
-    assert '[bold red]High[/]' in result.output
+    assert 'High' in result.output
