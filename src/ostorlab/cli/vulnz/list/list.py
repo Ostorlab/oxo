@@ -2,6 +2,8 @@
 import logging
 import click
 
+from rich.markdown import Markdown
+
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.vulnz import vulnz
 from ostorlab.runtimes.local.models import models
@@ -39,7 +41,7 @@ def list_cli(scan_id: int) -> None:
             'risk_rating': _style_risk(vulnerability.risk_rating.value),
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
             'title': vulnerability.title,
-            'short_description': vulnerability.short_description,
+            'short_description': Markdown(vulnerability.short_description),
         })
 
     columns = {
