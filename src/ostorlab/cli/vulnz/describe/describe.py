@@ -2,6 +2,8 @@
 import logging
 import click
 
+from rich.markdown import Markdown
+
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.vulnz import vulnz
 from ostorlab.runtimes.local.models import models
@@ -36,7 +38,7 @@ def describe_cli(vuln_id: int) -> None:
             'risk_rating': _style_risk(vulnerability.risk_rating.value),
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
             'title': vulnerability.title,
-            'short_description': vulnerability.short_description,
+            'short_description': Markdown(vulnerability.short_description),
          }
     ]
 
@@ -50,8 +52,8 @@ def describe_cli(vuln_id: int) -> None:
     title = f'Describing vulnerability {vuln_id}'
     console.table(columns=columns, data=vulnz_list, title=title)
     console.info('Description')
-    console.print(vulnerability.description)
+    console.print(Markdown(vulnerability.description))
     console.info('Recommendation')
-    console.print(vulnerability.recommendation)
+    console.print(Markdown(vulnerability.recommendation))
     console.info('Technical details')
-    console.print(vulnerability.technical_detail)
+    console.print(Markdown(vulnerability.technical_detail))
