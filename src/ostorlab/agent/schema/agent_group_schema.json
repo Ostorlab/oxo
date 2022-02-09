@@ -72,24 +72,6 @@
       "type": "string",
       "pattern": "((?:[^/]*/)*)(.*)"
     },
-    "restart_policy": {
-      "description": "[Optional] - Restart policy of the agent group, e.g., none, any, on-failure.",
-      "type": "string",
-      "maxLength": 1024,
-      "enum": [
-        "on-failure",
-        "none",
-        "any"
-      ]
-    },
-    "restrictions": {
-      "description": "[Optional] - Array of strings explaining the restrictions of the agent group.",
-      "$ref": "#/CustomTypes/ArrayOfStrings"
-    },
-    "constraints": {
-      "description": "[Optional] - Array of strings explaining the constraints of the agent group.",
-      "$ref": "#/CustomTypes/ArrayOfStrings"
-    },
     "agents": {
       "description": "[Required] - List of dictionary-like objects explaining the agents belonging to the current agent group.",
       "type": "array",
