@@ -148,12 +148,12 @@
         "type": "object",
         "properties": {
           "name": {
-            "description": "Name of the agent argument.",
+            "description": "[Required] - Name of the agent argument.",
             "type": "string",
             "maxLength": 2048
           },
           "type": {
-            "description": "Type of the agent argument : respecting the jsonschema types.",
+            "description": "[Required] - Type of the agent argument : respecting the jsonschema types.",
             "type": "string",
             "maxLength": 2048
           },
