@@ -27,7 +27,7 @@ def _image_name_from_key(agent_key: str) -> str:
     return agent_key.replace('/', '_').lower()
 
 
-def _parse_repository_tag(repo_name, tag=None):
+def _parse_repository_tag(repo_name: str, tag: str = None) -> tuple:
     """Get repo name and tag"""
     parts = repo_name.rsplit('@', 1)
     if len(parts) == 2:
@@ -35,7 +35,7 @@ def _parse_repository_tag(repo_name, tag=None):
     parts = repo_name.rsplit(':', 1)
     if len(parts) == 2 and '/' not in parts[1]:
         return tuple(parts)
-    return repo_name, tag or 'latest'
+    return repo_name, tag
 
 
 def _pull_logs(docker_client: docker.DockerClient,
@@ -50,7 +50,10 @@ def _pull_logs(docker_client: docker.DockerClient,
         yield log
 
 
-def _get_image(docker_client, repository, tag=None, all_tags=False):
+def _get_image(docker_client: docker.DockerClient,
+               repository: str,
+               tag: str = None,
+               all_tags: bool = False) -> docker.models.images.Image:
     """Gets a docker image."""
     repository, tag = _parse_repository_tag(repository, tag)
     separator = '@' if tag.startswith('sha256:') else ':'
@@ -61,7 +64,7 @@ def _get_image(docker_client, repository, tag=None, all_tags=False):
     return docker_client.list(repository)
 
 
-def _is_image_present(docker_client, image_name):
+def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bool:
     """Check if a docker image exists."""
     try:
         docker_client.images.get(image_name)
