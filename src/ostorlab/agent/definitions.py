@@ -19,6 +19,12 @@ class AgentDefinition:
     restart_policy: str = 'any'
     mem_limit: int = None
     open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
+    restrictions: str = ''
+    version: str = ''
+    description: str = ''
+    source: str = ''
+    license: str = ''
+    durability: str = ''
 
     @classmethod
     def from_yaml(cls, file: io.FileIO) -> 'AgentDefinition':
@@ -41,4 +47,10 @@ class AgentDefinition:
             restart_policy=definition.get('restart_policy'),
             mem_limit=definition.get('mem_limit'),
             open_ports=definition.get('open_ports'),
+            restrictions=definition.get('restrictions', ''),
+            version=definition.get('version'),
+            description=definition.get('description', ''),
+            source=definition.get('source', ''),
+            license=definition.get('license', ''),
+            durability=definition.get('durability', ''),
         )
