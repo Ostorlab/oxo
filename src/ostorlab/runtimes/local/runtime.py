@@ -119,7 +119,7 @@ class LocalRuntime(runtime.Runtime):
             agent_group_definition: Agent and Agent group definition.
 
         Returns:
-            Always true for the moment as the local runtime don't have restrictions on what it can run.
+            Always true for the moment as the local runtime doesn't have restrictions on what it can run.
         """
         del agent_group_definition
         return True
@@ -249,7 +249,7 @@ class LocalRuntime(runtime.Runtime):
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
-            self._start_agent(agent, [])
+            self._start_agent(agent, extra_configs=[])
         self._start_tracker_agent()
 
     def _add_settings_config(self, agent: definitions.AgentSettings):
@@ -279,7 +279,7 @@ class LocalRuntime(runtime.Runtime):
 
         agent.bus_url = self._mq_service.url
         agent.bus_exchange_topic = f'ostorlab_topic_{self.name}'
-        agent.bus_managment_url = self._mq_service.management_url
+        agent.bus_management_url = self._mq_service.management_url
         agent.bus_vhost = self._mq_service.vhost
         agent.healthcheck_host = HEALTHCHECK_HOST
         agent.healthcheck_port = HEALTHCHECK_PORT

@@ -87,7 +87,7 @@
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "constraints": {
-      "description": "[Optional] - Array of strings explaning the constraints of the agent group.",
+      "description": "[Optional] - Array of strings explaining the constraints of the agent group.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "agents": {
@@ -98,7 +98,11 @@
         "type": "object",
         "properties": {
           "key": {
-            "description": "[Optional] - Key of the agent of the form agent/<organisation prefix>/<agent name>.",
+            "description": "[Required] - Key of the agent of the form agent/<organisation prefix>/<agent name>.",
+            "type": "string"
+          },
+          "version": {
+            "description": "[Optional] - Version of the agent, can either be an exact version like 1.2.3 or a regular expression to match against a version range like 1\\..*.",
             "type": "string"
           },
           "args": {
@@ -109,7 +113,7 @@
             }
           },
           "port_mapping": {
-            "description": "[Optional] - List of the agent port maping.",
+            "description": "[Optional] - List of the agent port mapping.",
             "type": "array",
             "items": {
               "$ref": "#/CustomTypes/agentPortMapping"

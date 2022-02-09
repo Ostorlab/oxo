@@ -12,9 +12,10 @@ from ostorlab.utils import defintions
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
     key: str
+    version: str
     bus_url: Optional[str] = ''
     bus_exchange_topic: Optional[str] = ''
-    bus_managment_url: Optional[str] = ''
+    bus_management_url: Optional[str] = ''
     bus_vhost: Optional[str] = ''
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
@@ -49,7 +50,7 @@ class AgentSettings:
             key=instance.key,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
-            bus_managment_url=instance.bus_managment_url,
+            bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
             args=[defintions.Arg(
                 name=a.name,
@@ -79,7 +80,7 @@ class AgentSettings:
         instance.key = self.key
         instance.bus_url = self.bus_url
         instance.bus_exchange_topic = self.bus_exchange_topic
-        instance.bus_managment_url = self.bus_managment_url
+        instance.bus_management_url = self.bus_management_url
         instance.bus_vhost = self.bus_vhost
 
         for arg in self.args:
@@ -123,6 +124,7 @@ class AgentGroupDefinition:
         for agent in agent_group_def['agents']:
             agent_def = AgentSettings(
                 key=agent.get('key'),
+                version=agent.get('version'),
                 args=[defintions.Arg(name=a.get('name'), description=a.get('description'), type=a.get('type'),
                                      value=a.get('value')) for a in
                       agent.get('args', [])],

@@ -63,7 +63,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         self.passed_args = agent_settings.args
         self.bus_url = agent_settings.bus_url
         self.bus_exchange_topic = agent_settings.bus_exchange_topic
-        self.bus_managment_url = agent_settings.bus_managment_url
+        self.bus_managment_url = agent_settings.bus_management_url
         self.bus_vhost = agent_settings.bus_vhost
         agent_mq_mixin.AgentMQMixin.__init__(self,
                                              name=agent_definition.name,
