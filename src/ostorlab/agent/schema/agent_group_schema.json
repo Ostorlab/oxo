@@ -13,25 +13,25 @@
       }
     },
     "agentArgument": {
-      "description": "Dictionary-like object of the argument.",
+      "description": "[Optional] - Array of dictionary-like objects, defining the agent arguments.",
       "type": "object",
       "properties": {
         "name": {
-          "description": "Name of the agent group argument.",
+          "description": "[Required] - Name of the agent argument.",
           "type": "string",
           "maxLength": 2048
         },
         "type": {
-          "description": "Name of the agent group argument.",
+          "description": "[Required] - Type of the agent argument : respecting the jsonschema types.",
           "type": "string",
           "maxLength": 2048
         },
         "description": {
-          "description": "[Optional] - Description of the agent group argument.",
+          "description": "[Optional] - Description of the agent argument.",
           "type": "string"
         },
         "value": {
-          "description": "[Optional] - Value of the agent group argument.",
+          "description": "[Optional] - Default value of the agent argument.",
           "type": ["string", "number", "boolean"]
         }
       }
@@ -64,7 +64,7 @@
       ]
     },
     "description": {
-      "description": "[Required] - Text fully describing the agent group.",
+      "description": "[Required] - Description of the agent group.",
       "type": "string"
     },
     "image": {
