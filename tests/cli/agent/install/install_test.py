@@ -10,7 +10,7 @@ from ostorlab.apis.runners import public_runner
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
     """Test ostorlab agent install CLI command without the required agent_key option.
-    Should show help message, and confirm the --agent_key option is missing.
+    Should show help message, and confirm the --agent option is missing.
     """
     runner = testing.CliRunner()
 
