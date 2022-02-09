@@ -1,13 +1,7 @@
 """Display the agent install progress."""
-from typing import Generator
+from typing import Dict, Iterator
 
-from rich.progress import (
-    BarColumn,
-    DownloadColumn,
-    Progress,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
-)
+from rich import progress
 
 from ostorlab.cli import console as cli_console
 
@@ -15,21 +9,21 @@ from ostorlab.cli import console as cli_console
 console = cli_console.Console()
 
 
-class AgentInstallProgress(Progress):
+class AgentInstallProgress(progress.Progress):
     """Class reponsible for displaying the progress of the agent installation."""
 
     def __init__(self):
         super().__init__('[progress.description]{task.description}',
-                                   BarColumn(bar_width=None),
+                                   progress.BarColumn(bar_width=None),
                                    '[progress.percentage]{task.percentage:>3.1f}%',
                                    '•',
-                                   DownloadColumn(),
+                                   progress.DownloadColumn(),
                                    '•',
-                                   TransferSpeedColumn(),
+                                   progress.TransferSpeedColumn(),
                                    '•',
-                                   TimeRemainingColumn())
+                                   progress.TimeRemainingColumn())
 
-    def display(self, logs_generator: Generator) -> None:
+    def display(self, logs_generator: Iterator[Dict]) -> None:
         """Display the progress of the agent install command.
 
         Args:
