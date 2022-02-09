@@ -24,7 +24,7 @@ message AgentInstanceSettings {
   required string key = 1;
   required string bus_url = 2;
   required string bus_exchange_topic = 3;
-  optional string bus_managment_url = 4;
+  optional string bus_management_url = 4;
   optional string bus_vhost = 5;
   repeated Arg args = 6;
   repeated string constraints = 7;
