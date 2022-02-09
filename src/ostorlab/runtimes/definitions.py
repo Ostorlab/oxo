@@ -3,6 +3,8 @@ import dataclasses
 import io
 from typing import List, Optional
 
+import docker
+
 from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions
@@ -12,7 +14,7 @@ from ostorlab.utils import defintions
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
     key: str
-    version: str
+    version: Optional[str] = None
     bus_url: Optional[str] = ''
     bus_exchange_topic: Optional[str] = ''
     bus_management_url: Optional[str] = ''
@@ -31,6 +33,11 @@ class AgentSettings:
     def container_image(self):
         """Agent image name."""
         image = self.key.replace('/', '_')
+        client = docker.from_env()
+        for img in client.images.list():
+            for t in img.tags:
+                print(img, t)
+
         # TODO (alaeddine): add container tag resolution.
         return image
 
