@@ -50,15 +50,12 @@ def _pull_logs(docker_client: docker.DockerClient,
 
 def _get_image(docker_client: docker.DockerClient,
                repository: str,
-               tag: str = None,
-               all_tags: bool = False) -> docker.models.images.Image:
+               tag: str = None) -> docker.models.images.Image:
     """Gets a docker image."""
     repository, tag = _parse_repository_tag(repository, tag)
     name = f'{repository}:{tag}'
 
-    if not all_tags:
-        return docker_client.images.get(name)
-    return docker_client.list(repository)
+    return docker_client.images.get(name)
 
 
 def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bool:
@@ -140,9 +137,6 @@ def install(agent_key: str, version: str = '') -> None:
             agent_image.tag(repository=image_name, tag=version)
 
     except docker.errors.ImageNotFound as e:
-        error_message = f"""\b The provided agent key : {agent_key} does not seem to be public.
-        Make sure you are logged in and try again.
-        To log in use the following command : ostorlab auth login -u <username> -p <password> 
-        """
+        error_message = f'Image of the provided agent : {agent_key} was not found.'
         console.error(error_message)
         raise click.exceptions.Exit(2) from e
