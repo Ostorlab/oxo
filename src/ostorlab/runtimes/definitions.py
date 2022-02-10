@@ -1,13 +1,14 @@
 """Agent and Agent group definitions and settings dataclasses."""
 import dataclasses
 import io
+import re
 from typing import List, Optional
 
 import docker
 
 from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
-from ostorlab.utils import defintions
+from ostorlab.utils import defintions, version
 
 
 @dataclasses.dataclass
@@ -34,12 +35,21 @@ class AgentSettings:
         """Agent image name."""
         image = self.key.replace('/', '_')
         client = docker.from_env()
+        matching_tag_versions = []
         for img in client.images.list():
             for t in img.tags:
-                print(img, t)
+                t_name, t_tag = t.split(':')
+                if t_name == image and t.version is None:
+                    matching_tag_versions.append(version.Version(t_tag))
+                elif t_name == image and t.version is not None:
+                    if re.match(self.version, t_tag) is not None:
+                        matching_tag_versions.append(version.Version(t_tag))
 
-        # TODO (alaeddine): add container tag resolution.
-        return image
+        if not matching_tag_versions:
+            raise ValueError()
+
+        tag = max(matching_tag_versions)
+        return f'{image}:{tag}'
 
     @classmethod
     def from_proto(cls, proto: bytes) -> 'AgentSettings':
