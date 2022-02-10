@@ -1,6 +1,8 @@
 """Unittest for runtime definitions."""
 import io
 
+import pytest
+
 from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_definitions
 
@@ -88,7 +90,7 @@ def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
         key='agent/ostorlab/BigFuzzer',
         bus_url='mq',
         bus_exchange_topic='topic',
-        bus_managment_url='mq_managment',
+        bus_management_url='mq_managment',
         bus_vhost='vhost',
         args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
@@ -104,7 +106,7 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
         key='agent/ostorlab/BigFuzzer',
         bus_url='mq',
         bus_exchange_topic='topic',
-        bus_managment_url='mq_managment',
+        bus_management_url='mq_managment',
         bus_vhost='vhost',
         args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
@@ -115,3 +117,18 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
     assert new_instance.bus_url == 'mq'
     assert new_instance.bus_exchange_topic == 'topic'
     assert len(new_instance.args) == 1
+
+
+def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
+    """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+    instance_settings = definitions.AgentSettings(
+        key='agent/ostorlab/BigFuzzer',
+        bus_url='mq',
+        bus_exchange_topic='topic',
+        bus_management_url='mq_managment',
+        bus_vhost='vhost',
+        args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
+    )
+
+    with pytest.raises(ValueError):
+        _ = instance_settings.container_image

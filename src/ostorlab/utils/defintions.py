@@ -1,6 +1,6 @@
 """Common definition types."""
 import dataclasses
-from typing import Optional
+from typing import Optional, Union
 
 
 @dataclasses.dataclass
@@ -10,7 +10,7 @@ class Arg:
     The value is always bytes to support all arg values. The type is defined by the type attribute."""
     name: str
     type: str
-    value: Optional[bytes] = None
+    value: Optional[Union[bytes, int, float, str, bool]] = None
     description: Optional[str] = None
 
 
