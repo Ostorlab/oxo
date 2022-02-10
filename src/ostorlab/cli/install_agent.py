@@ -40,12 +40,10 @@ def _parse_repository_tag(repo_name: str, tag: str = None) -> tuple:
 
 def _pull_logs(docker_client: docker.DockerClient,
                repository: str,
-               tag: Optional[str] = None,
-               all_tags: bool = False,
-               **kwargs) -> Generator[Dict, None, None]:
+               tag: Optional[str] = None) -> Generator[Dict, None, None]:
     """Generate logs of the docker pull method."""
     repository, tag = _parse_repository_tag(repository, tag)
-    pull_log = docker_client.api.pull(repository, tag=tag, stream=True, all_tags=all_tags, decode=True, **kwargs)
+    pull_log = docker_client.api.pull(repository, tag=tag, stream=True, decode=True)
     for log in pull_log:
         yield log
 
@@ -56,8 +54,7 @@ def _get_image(docker_client: docker.DockerClient,
                all_tags: bool = False) -> docker.models.images.Image:
     """Gets a docker image."""
     repository, tag = _parse_repository_tag(repository, tag)
-    separator = '@' if tag.startswith('sha256:') else ':'
-    name = f'{repository}{separator}{tag}'
+    name = f'{repository}:{tag}'
 
     if not all_tags:
         return docker_client.images.get(name)
@@ -139,7 +136,7 @@ def install(agent_key: str, version: str = '') -> None:
             progress_foo = install_progress.AgentInstallProgress()
             progress_foo.display(pull_logs_generator)
 
-            agent_image = _get_image(docker_client, agent_docker_location, version)
+            agent_image = _get_image(docker_client=docker_client, repository=agent_docker_location, tag=version)
             agent_image.tag(repository=image_name, tag=version)
 
     except docker.errors.ImageNotFound as e:
