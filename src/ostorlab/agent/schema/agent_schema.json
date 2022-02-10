@@ -44,8 +44,10 @@
       "enum": ["Agent"]
     },
     "name": {
-      "description": "[Required] - Agent full Name",
-      "type": "string"
+      "description": "[Required] - Agent full Name, accept lower case ascii, number and _, - characters.",
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$",
+      "maxLength": 512
     },
     "version": {
       "description": "[Optional] - Version of the agent respecting the semantic versioning format : major.minor.release.",
