@@ -14,11 +14,17 @@ class AgentDefinition:
     in_selectors: List[str] = dataclasses.field(default_factory=list)
     out_selectors: List[str] = dataclasses.field(default_factory=list)
     args: List[Dict[str, Any]] = dataclasses.field(default_factory=list)
-    constraints: List[str] = None
-    mounts: Optional[List[str]] = None
+    constraints: List[str] = dataclasses.field(default_factory=list)
+    mounts: List[str] = dataclasses.field(default_factory=list)
     restart_policy: str = 'any'
     mem_limit: int = None
     open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
+    restrictions: List[str] = dataclasses.field(default_factory=list)
+    version: Optional[str] = None
+    description: Optional[str] = None
+    source: Optional[str] = None
+    license: Optional[str] = None
+    durability: str = 'published'
 
     @classmethod
     def from_yaml(cls, file: io.FileIO) -> 'AgentDefinition':
@@ -35,10 +41,16 @@ class AgentDefinition:
             name=definition.get('name'),
             in_selectors=definition.get('in_selectors'),
             out_selectors=definition.get('out_selectors'),
-            args=definition.get('args'),
-            constraints=definition.get('constraints'),
-            mounts=definition.get('mounts'),
+            args=definition.get('args', []),
+            constraints=definition.get('constraints', []),
+            mounts=definition.get('mounts', []),
             restart_policy=definition.get('restart_policy'),
             mem_limit=definition.get('mem_limit'),
-            open_ports=definition.get('open_ports'),
+            open_ports=definition.get('open_ports', []),
+            restrictions=definition.get('restrictions', []),
+            version=definition.get('version'),
+            description=definition.get('description'),
+            source=definition.get('source'),
+            license=definition.get('license'),
+            durability=definition.get('durability', 'published'),
         )
