@@ -173,7 +173,6 @@
   },
   "required": [
     "name",
-    "description",
     "in_selectors",
     "out_selectors"
   ]
