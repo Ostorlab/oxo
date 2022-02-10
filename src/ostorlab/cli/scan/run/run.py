@@ -22,8 +22,8 @@ from ostorlab.cli.scan import scan
 def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.FileIO,
         title: str) -> None:
     """Start a new scan on a specific asset.\n
-    Usage:\n
-        - ostorlab scan run --agents=agent1,agent2 --title=test_scan android-apk --file=path/to/application.apk
+    Example:\n
+        - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
     if agents:
         agents_settings: List[definitions.AgentSettings] = []
