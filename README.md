@@ -4,7 +4,7 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-rich%20news-yellowgreen)](https://www.willmcgugan.com/tag/rich/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-![Logo](https://github.com/ostorlab/ostorlab/raw/master/imgs/logo.svg)
+![Logo](https://github.com/Ostorlab/moon/blob/master/static/images/ostorlab.png)
 
 Ostorlab is security scanning platform that enables running complex security scanning tasks involving multiple tools
 in an easy, scalable and distributed way.
