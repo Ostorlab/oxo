@@ -1,7 +1,7 @@
 [![Supported Python Versions](https://img.shields.io/pypi/pyversions/ostorlab/0.1.2)](https://pypi.org/project/ostorlab/) [![PyPI version](https://badge.fury.io/py/ostorlab.svg)](https://badge.fury.io/py/ostorlab)
 
 [![Downloads](https://pepy.tech/badge/ostorlab/month)](https://pepy.tech/project/ostorlab)
-[![Ostorlab blog](https://img.shields.io/badge/blog-rich%20news-yellowgreen)](https://www.willmcgugan.com/tag/rich/)
+[![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-yellowgreen)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
 ![Logo](https://github.com/Ostorlab/moon/blob/master/static/images/ostorlab.png)
