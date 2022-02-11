@@ -402,7 +402,7 @@ class LocalRuntime(runtime.Runtime):
                 ostorlab_universe_id = service_labels.get('ostorlab.universe')
                 if 'ostorlab.universe' in service_labels.keys() and ostorlab_universe_id not in universe_ids:
                     universe_ids.add(ostorlab_universe_id)
-                    if int(ostorlab_universe_id) not in scans:
+                    if ostorlab_universe_id.isnumeric() and int(ostorlab_universe_id) not in scans:
                         console.warning(f'Scan {ostorlab_universe_id} has not traced in DB.')
             except KeyError:
                 logger.warning('The label ostorlab.universe do not exist.')
