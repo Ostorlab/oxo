@@ -5,8 +5,8 @@ import docker
 import docker.errors
 
 from ostorlab.cli import console as cli_console
-from ostorlab.apis.runners import public_runner
-from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner as base_runner
+from ostorlab.apis.runners import public_runner, authenticated_runner
 from ostorlab.apis import agent_details as agent_details_api
 from ostorlab import configuration_manager
 from ostorlab.cli.agent.install import install_progress
@@ -86,7 +86,12 @@ def get_agent_details(agent_key: str) -> Dict:
     else:
         runner = public_runner.PublicAPIRunner()
 
-    response = runner.execute(agent_details_api.AgentDetailsAPIRequest(agent_key))
+    try:
+        response = runner.execute(agent_details_api.AgentDetailsAPIRequest(agent_key))
+    except base_runner.ResponseError as e:
+        console.error('Requested resource not found.')
+        raise click.exceptions.Exit(2) from e
+
 
     if 'errors' in response:
         error_message = f"""\b The provided agent key : {agent_key} does not correspond to any agent.
