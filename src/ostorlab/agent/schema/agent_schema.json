@@ -44,17 +44,19 @@
       "enum": ["Agent"]
     },
     "name": {
-      "description": "[Required] - Agent full Name",
-      "type": "string"
+      "description": "[Required] - Agent full Name, accept lower case ascii, number and _, - characters.",
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$",
+      "maxLength": 512
     },
     "version": {
-      "description": "[Optional] - Version of the agent, respection semantic versionning : major.minor.release.",
+      "description": "[Optional] - Version of the agent respecting the semantic versioning format : major.minor.release.",
       "type": "string",
       "pattern": "^(\\d+\\.)?(\\d+\\.)?(\\d+)$",
       "maxLength": 512
     },
     "description": {
-      "description": "[Required] - Text fully describing the agent.",
+      "description": "[Required] - Description of the agent.",
       "type": "string"
     },
     "image": {
@@ -62,14 +64,14 @@
       "$ref": "#/CustomTypes/Path"
     },
     "source": {
-      "description": "[Optional] - URL to the agent repository.",
+      "description": "[Optional] - URL to the agent source repository.",
       "type": "string",
       "format": "uri",
       "pattern": "^https?://",
       "maxLength": 4096
     },
     "license": {
-      "description": "[Optional] - Agent license",
+      "description": "[Optional] - Source license.",
       "type": "string",
       "maxLength": 1024
     },
@@ -88,11 +90,11 @@
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "in_selectors": {
-      "description": "[Required] : Array of strings explaning the input selectors of the agent.",
+      "description": "[Required] : Array of strings explaining the input selectors of the agent.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "out_selectors": {
-      "description": "[Required] : Array of strings explaning the output selectors of the agent.",
+      "description": "[Required] : Array of strings explaining the output selectors of the agent.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "restart_policy": {
@@ -106,7 +108,7 @@
       ]
     },
     "constraints": {
-      "description": "[Optional] - Array of strings explaning the constraints of the agent.",
+      "description": "[Optional] - Array of strings explaining the constraints of the agent.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
     "mounts": {
@@ -148,12 +150,12 @@
         "type": "object",
         "properties": {
           "name": {
-            "description": "Name of the agent argument.",
+            "description": "[Required] - Name of the agent argument.",
             "type": "string",
             "maxLength": 2048
           },
           "type": {
-            "description": "Type of the agent argument : respecting the jsonschema types.",
+            "description": "[Required] - Type of the agent argument : respecting the jsonschema types.",
             "type": "string",
             "maxLength": 2048
           },
@@ -162,7 +164,7 @@
             "type": "string"
           },
           "value": {
-            "description": "[Optional] - Default value of the agent argument as a binary object.",
+            "description": "[Optional] - Default value of the agent argument.",
             "type": ["string", "number", "boolean"]
           }
         }

@@ -14,7 +14,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
     """
 
     valid_yaml_data = """
-        name: "Agent"
+        name: "agent"
         version : 1.1.0
         description: "Agent1 Description should be here"
         image: "some/path/to/the/image"
@@ -52,7 +52,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
 
     data = loader.load_agent_yaml(yaml_data_file)
 
-    assert data['name'] == 'Agent'
+    assert data['name'] == 'agent'
     assert data['version'] == '1.1.0'
     assert data['agenArgument'][1]['default_value'] == 42
 

@@ -1,20 +1,24 @@
 """Agent and Agent group definitions and settings dataclasses."""
 import dataclasses
 import io
+import re
 from typing import List, Optional
+
+import docker
 
 from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
-from ostorlab.utils import defintions
+from ostorlab.utils import defintions, version
 
 
 @dataclasses.dataclass
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
     key: str
+    version: Optional[str] = None
     bus_url: Optional[str] = ''
     bus_exchange_topic: Optional[str] = ''
-    bus_managment_url: Optional[str] = ''
+    bus_management_url: Optional[str] = ''
     bus_vhost: Optional[str] = ''
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
@@ -30,8 +34,22 @@ class AgentSettings:
     def container_image(self):
         """Agent image name."""
         image = self.key.replace('/', '_')
-        # TODO (alaeddine): add container tag resolution.
-        return image
+        client = docker.from_env()
+        matching_tag_versions = []
+        for img in client.images.list():
+            for t in img.tags:
+                t_name, t_tag = t.split(':')
+                if t_name == image and t.version is None:
+                    matching_tag_versions.append(version.Version(t_tag))
+                elif t_name == image and t.version is not None:
+                    if re.match(self.version, t_tag) is not None:
+                        matching_tag_versions.append(version.Version(t_tag))
+
+        if not matching_tag_versions:
+            raise ValueError()
+
+        tag = max(matching_tag_versions)
+        return f'{image}:{tag}'
 
     @classmethod
     def from_proto(cls, proto: bytes) -> 'AgentSettings':
@@ -49,7 +67,7 @@ class AgentSettings:
             key=instance.key,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
-            bus_managment_url=instance.bus_managment_url,
+            bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
             args=[defintions.Arg(
                 name=a.name,
@@ -79,7 +97,7 @@ class AgentSettings:
         instance.key = self.key
         instance.bus_url = self.bus_url
         instance.bus_exchange_topic = self.bus_exchange_topic
-        instance.bus_managment_url = self.bus_managment_url
+        instance.bus_management_url = self.bus_management_url
         instance.bus_vhost = self.bus_vhost
 
         for arg in self.args:
@@ -123,6 +141,7 @@ class AgentGroupDefinition:
         for agent in agent_group_def['agents']:
             agent_def = AgentSettings(
                 key=agent.get('key'),
+                version=agent.get('version'),
                 args=[defintions.Arg(name=a.get('name'), description=a.get('description'), type=a.get('type'),
                                      value=a.get('value')) for a in
                       agent.get('args', [])],
