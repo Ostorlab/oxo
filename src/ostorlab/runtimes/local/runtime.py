@@ -43,6 +43,11 @@ TRACKER_AGENT_DEFAULT = 'agent/ostorlab/tracker'
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
 
+class DockerNotInstalledError(exceptions.OstorlabError):
+    """Docker is not installed."""
+
+class DockerPermissionsDeniedError(exceptions.OstorlabError):
+    """User does not have permissions to run docker."""
 
 def _is_agent_status_ok(ip: str) -> bool:
     """Agent are expected to expose a healthcheck service on port 5000 that returns status code 200 and `OK` response.
@@ -103,10 +108,11 @@ class LocalRuntime(runtime.Runtime):
         self._network = network
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         # TODO(alaeddine): inject docker client to support more complex use-cases.
+
         if not docker_requirements_checker.is_docker_installed():
-            console.error('Docker is not installed.')
+            raise DockerNotInstalledError('Docker is not installed.')
         elif not docker_requirements_checker.is_user_permitted():
-            console.error('User does not have permissions to run docker.')
+            raise DockerPermissionsDeniedError('User does not have permissions to run docker.')
         else:
             self._docker_client = docker.from_env()
 

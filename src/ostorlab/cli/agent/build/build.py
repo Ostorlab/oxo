@@ -26,8 +26,10 @@ def build(file: io.FileIO, organization: str = '') -> None:
 
     if not docker_requirements_checker.is_docker_installed():
         console.error('Docker is not installed.')
+        raise click.exceptions.Exit(2)
     elif not docker_requirements_checker.is_user_permitted():
         console.error('User does not have permissions to run docker.')
+        raise click.exceptions.Exit(2)
     else:
         try:
             agent_def = loader.load_agent_yaml(file)
