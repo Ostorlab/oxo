@@ -173,8 +173,10 @@
   },
   "required": [
     "name",
+    "kind",
     "in_selectors",
     "out_selectors"
-  ]
+  ],
+  "type": "object"
 }
 

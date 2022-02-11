@@ -7,6 +7,7 @@ from ostorlab.agent import definitions
 def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():
     """Tests the creation of an agent definition from a valid yaml definition file."""
     valid_yaml_data = """
+            kind: Agent
             name: "agent1"
             description: "Agent1 Description should be here"
             image: "some/path/to/the/image"

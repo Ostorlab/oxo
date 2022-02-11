@@ -14,6 +14,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
     """
 
     valid_yaml_data = """
+        kind: Agent
         name: "agent"
         version : 1.1.0
         description: "Agent1 Description should be here"
