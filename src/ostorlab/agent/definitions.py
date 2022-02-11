@@ -44,7 +44,7 @@ class AgentDefinition:
             args=definition.get('args', []),
             constraints=definition.get('constraints', []),
             mounts=definition.get('mounts', []),
-            restart_policy=definition.get('restart_policy'),
+            restart_policy=definition.get('restart_policy', 'any'),
             mem_limit=definition.get('mem_limit'),
             open_ports=definition.get('open_ports', []),
             restrictions=definition.get('restrictions', []),
