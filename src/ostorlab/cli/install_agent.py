@@ -89,7 +89,7 @@ def get_agent_details(agent_key: str) -> Dict:
     try:
         response = runner.execute(agent_details_api.AgentDetailsAPIRequest(agent_key))
     except base_runner.ResponseError as e:
-        console.error('The requested resource was not found on this server.')
+        console.error('Requested resource not found.')
         raise click.exceptions.Exit(2) from e
 
 
