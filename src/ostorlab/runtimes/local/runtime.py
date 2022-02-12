@@ -21,6 +21,8 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.services import mq
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes.local.models import models
+from ostorlab.cli import docker_requirements_checker
+
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
@@ -41,6 +43,11 @@ TRACKER_AGENT_DEFAULT = 'agent/ostorlab/tracker'
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
 
+class DockerNotInstalledError(exceptions.OstorlabError):
+    """Docker is not installed."""
+
+class DockerPermissionsDeniedError(exceptions.OstorlabError):
+    """User does not have permissions to run docker."""
 
 def _is_agent_status_ok(ip: str) -> bool:
     """Agent are expected to expose a healthcheck service on port 5000 that returns status code 200 and `OK` response.
@@ -101,7 +108,14 @@ class LocalRuntime(runtime.Runtime):
         self._network = network
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         # TODO(alaeddine): inject docker client to support more complex use-cases.
-        self._docker_client = docker.from_env()
+
+        if not docker_requirements_checker.is_docker_installed():
+            raise DockerNotInstalledError('Docker is not installed.')
+        elif not docker_requirements_checker.is_user_permitted():
+            raise DockerPermissionsDeniedError('User does not have permissions to run docker.')
+        else:
+            self._docker_client = docker.from_env()
+
         self._scan_db: Optional[models.Scan] = None
 
     @property
