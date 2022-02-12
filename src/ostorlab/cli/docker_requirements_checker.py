@@ -36,7 +36,7 @@ def is_swarm_initialized() -> bool:
     """
     if is_user_permitted():
         docker_client = docker.from_env()
-        if len(docker_client.swarm.attrs.keys()) == 0:
+        if docker_client.swarm.id is None:
             return False
         return True
 
