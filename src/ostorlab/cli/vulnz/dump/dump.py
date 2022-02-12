@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 @vulnz.command(name='dump')
 @click.option('--scan-id', '-s', 'scan_id', help='Id of the scan.', required=True)
 @click.option('--output', '-o', help='Output file path', required=False, default='/output.json')
-@click.option('--format', '-f', 'output_format', help='Output format', required=False, type=click.Choice(['json', 'csv']), default='json')
+@click.option('--format', '-f', 'output_format', help='Output format',
+              required=False, type=click.Choice(['json', 'csv']), default='json')
 def dump(scan_id: int, output: str, output_format: str) -> None:
     """Dump found vulnerabilities of a scan in a specific format."""
     database = models.Database()
