@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 @agent.command(name='search')
-@click.option('--name', '-n', help='Agent name.', required=True)
-def search_cli(search: str) -> None:
+@click.option('--keyword', '-k', help='Keyword to use for the search.', required=True)
+def search_cli(keyword: str) -> None:
     """CLI command to list installed agents."""
-    result_agents = search_agents(search)
+    result_agents = search_agents(keyword)
     console.success('Search agents done.')
     agents = []
     for result_agent in result_agents:
         agents.append({
-            'name': result_agent.name,
-            'key': result_agent.key
+            'name': result_agent['name'],
+            'key': result_agent['key']
         })
 
     columns = {
@@ -60,7 +60,6 @@ def search_agents(search: str) -> Dict:
     except base_runner.ResponseError as e:
         console.error('Requested resource not found.')
         raise click.exceptions.Exit(2) from e
-
 
     if 'errors' in response:
         error_message = f"""\b The provided search : {search} does not correspond to any agent.
