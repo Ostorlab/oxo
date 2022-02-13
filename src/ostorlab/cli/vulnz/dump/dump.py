@@ -24,25 +24,21 @@ def dump(scan_id: int, output: str, output_format: str) -> None:
     database = models.Database()
     session = database.session
     vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).\
-        order_by(models.Vulnerability.title).all()
+        order_by(models.Vulnerability.risk_rating).all()
 
-    vulnz_list = {
-        'vulnerabilities': []
-    }
+    vulnz_list = {}
     for vulnerability in vulnerabilities:
-        vulnz_list['vulnerabilities'].append({
-            'id': str(vulnerability.id),
+        vuln = {
             'risk_rating': vulnerability.risk_rating.value,
             'cvss_v3_vector': vulnerability.cvss_v3_vector,
             'title': vulnerability.title,
             'short_description': vulnerability.short_description
-        })
-
+        }
+        vulnz_list[str(vulnerability.id)] = vuln
     if output_format=='json':
         dumper = dumpers.VulnzJsonDumper(output, vulnz_list)
     if output_format=='csv':
-        fieldnames = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
-        dumper = dumpers.VulnzCsvDumper(output, vulnz_list, fieldnames)
+        dumper = dumpers.VulnzCsvDumper(output, vulnz_list)
 
     try:
         dumper.dump()
