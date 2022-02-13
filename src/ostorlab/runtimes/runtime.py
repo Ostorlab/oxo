@@ -63,6 +63,7 @@ class Runtime(abc.ABC):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def list(self, page: int = 1, number_elements: int = 10) -> List[Scan]:
         """Lists scans managed by runtime.
 
@@ -72,5 +73,14 @@ class Runtime(abc.ABC):
 
         Returns:
             List of scan objects.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def install(self) -> None:
+        """Run runtime installation routine.
+
+        Returns:
+            None
         """
         raise NotImplementedError()

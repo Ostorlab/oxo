@@ -92,3 +92,11 @@ class RemoteRuntime(runtime.Runtime):
 
         except runner.Error:
             console.error('Could not fetch scans.')
+
+    def install(self) -> None:
+        """No installation action.
+
+        Returns:
+            None
+        """
+        pass

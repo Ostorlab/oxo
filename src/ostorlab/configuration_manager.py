@@ -23,6 +23,11 @@ class ConfigurationManager:
         self._private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = self._private_dir / 'key'
 
+
+    @property
+    def conf_path(self) -> pathlib.Path:
+        return self._private_dir.resolve()
+
     def set_api_data(self, secret_key: str, api_key_id: str, expiry_date: Optional[datetime]) -> None:
         """Persists the API data (key, id, expiry date) to a file in the given path.
 
