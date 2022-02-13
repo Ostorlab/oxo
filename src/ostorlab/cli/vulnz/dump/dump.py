@@ -40,7 +40,7 @@ def dump(scan_id: int, output: str, output_format: str) -> None:
         vulnz_list[str(vulnerability.id)] = vuln
     if output_format=='json':
         dumper = dumpers.VulnzJsonDumper(output, vulnz_list)
-    if output_format=='csv':
+    elif output_format=='csv':
         dumper = dumpers.VulnzCsvDumper(output, vulnz_list)
 
     try:
