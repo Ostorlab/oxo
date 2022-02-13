@@ -37,7 +37,7 @@ class VulnzJsonDumper(VulnzDumper):
 
     def dump(self) -> None:
         """Dump vulnerabilities to json file.
-        
+
         Raises:
             FileNotFoundError: in case the path or file name are invalid.
         """
