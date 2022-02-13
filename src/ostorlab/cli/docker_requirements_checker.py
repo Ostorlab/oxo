@@ -38,7 +38,8 @@ def is_swarm_initialized() -> bool:
         docker_client = docker.from_env()
         if docker_client.swarm.id is None:
             return False
-        return True
+        else:
+            return True
 
 def init_swarm() -> None:
     """Initialize docker swarm"""
