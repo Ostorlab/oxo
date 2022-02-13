@@ -2,6 +2,7 @@
 [![Downloads](https://pepy.tech/badge/ostorlab/month)](https://pepy.tech/project/ostorlab)
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-yellowgreen)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
+
 ![Logo](https://github.com/Ostorlab/ostorlab/raw/main/images/Ostorlab.png | width=100)
 
 Ostorlab is security scanning platform that enables running complex security scanning tasks involving multiple tools
