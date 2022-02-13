@@ -17,7 +17,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(tmp_path):
 
     tmp_path : pytest fixture for temporary paths & files.
     """
-    # breakpoint()
+
     runner = CliRunner()
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
@@ -70,6 +70,11 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(tmp_path):
 
 @mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
 def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(tmp_path):
+    """Test ostorlab vulnz dump command with correct commands and options.
+    Should create a json file with the vulnerabilities, ordered by the risk severity.
+
+    tmp_path : pytest fixture for temporary paths & files.
+    """
     runner = CliRunner()
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
