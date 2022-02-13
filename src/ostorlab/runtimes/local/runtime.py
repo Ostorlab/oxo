@@ -114,6 +114,8 @@ class LocalRuntime(runtime.Runtime):
         elif not docker_requirements_checker.is_user_permitted():
             raise DockerPermissionsDeniedError('User does not have permissions to run docker.')
         else:
+            if not docker_requirements_checker.is_swarm_initialized():
+                docker_requirements_checker.init_swarm()
             self._docker_client = docker.from_env()
 
         self._scan_db: Optional[models.Scan] = None
