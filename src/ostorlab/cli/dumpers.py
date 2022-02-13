@@ -3,51 +3,64 @@
 import abc
 import json
 import csv
+from typing import Dict
 
 
-class Dumper(abc.ABC):
+FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
+
+
+class VulnzDumper(abc.ABC):
     """Dumper Base class: All dumpers should inherit from this class to access the dump method."""
 
-    def __init__(self, output_path, data):
-        """Initializer."""
+    def __init__(self, output_path: str, data: Dict[str, Dict]) -> None:
+        """Constructs all the necessary attributes for the object.
+
+        Args:
+            output_path: path to the output file.
+            data: dictionary, with vulnerability id as a key,
+                  and a dictionary of the vulnerability information as values.
+
+        Returns:
+            None
+        """
         self.output_path = output_path
         self.data = data
 
     @abc.abstractmethod
-    def dump(self):
-        """Dump data."""
+    def dump(self) -> None:
+        """Dump the vulnerabilities in the right format."""
         raise NotImplementedError('Missing implementation')
 
-class VulnzJsonDumper(Dumper):
+
+class VulnzJsonDumper(VulnzDumper):
     """Vulnerability dumper to json."""
 
-    def dump(self):
-        """Dump vulnerabilities to json file."""
-        try:
-            if self.output_path.endswith('.json'):
-                self.output_path+= '.json'
-            with open(self.output_path , 'w', encoding='utf-8') as outfile:
-                json.dump(self.data, outfile)
+    def dump(self) -> None:
+        """Dump vulnerabilities to json file.
+        
+        Raises:
+            FileNotFoundError: in case the path or file name are invalid.
+        """
+        if not self.output_path.endswith('.json'):
+            self.output_path+= '.json'
+        with open(self.output_path , 'w', encoding='utf-8') as outfile:
+            json.dump(self.data, outfile)
 
-        except FileNotFoundError as e:
-            raise e
 
-
-class VulnzCsvDumper(Dumper):
+class VulnzCsvDumper(VulnzDumper):
     """Vulnerability dumper to csv."""
-    def __init__(self, output_path, data, fieldnames):
-        """Initializer."""
-        super().__init__(output_path, data)
-        self.fieldnames = fieldnames
 
-    def dump(self):
-        """Dump vulnerabilities to csv file."""
-        try:
-            if self.output_path[-4:] != '.csv':
-                self.output_path+= '.csv'
-            with open(self.output_path , 'w', encoding='utf-8') as outfile:
-                csv_writer = csv.DictWriter(outfile, fieldnames = self.fieldnames)
-                csv_writer.writeheader()
-                csv_writer.writerows(self.data['vulnerabilities'])
-        except FileNotFoundError as e:
-            raise e
+    def dump(self) -> None:
+        """Dump vulnerabilities to csv file.
+
+        Raises:
+            FileNotFoundError: in case the path or file name are invalid.
+        """
+        if not self.output_path.endswith('.csv'):
+            self.output_path+= '.csv'
+        with open(self.output_path , 'w', encoding='utf-8') as outfile:
+            csv_writer = csv.DictWriter(outfile, fieldnames = FIELDNAMES)
+            csv_writer.writeheader()
+            for key in self.data:
+                csv_writer.writerow({field: self.data[key].get(field) or key for field in FIELDNAMES})
+        
