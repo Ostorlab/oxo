@@ -33,7 +33,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(tmp_path):
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
     assert len(list(tmp_path.iterdir())) == 1
-    assert data['vulnerabilities'][0]['risk_rating'] == 'High'
+    assert data[str(vuln_db.id)]['risk_rating'] == 'High'
 
 
 @mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
@@ -51,13 +51,12 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(tmp_path):
     recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
     cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
-    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
+    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'SECURE',
     cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
 
     output_file = tmp_path / 'output.csv'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file,  '-f', 'csv'])
-
     with open(output_file, 'r', encoding='utf-8') as file:
         csvreader = csv.reader(file)
         header = next(csvreader)
