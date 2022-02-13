@@ -24,7 +24,7 @@ class VulnzJsonDumper(Dumper):
     def dump(self):
         """Dump vulnerabilities to json file."""
         try:
-            if self.output_path[-5:] != '.json':
+            if self.output_path.endswith('.json'):
                 self.output_path+= '.json'
             with open(self.output_path , 'w', encoding='utf-8') as outfile:
                 json.dump(self.data, outfile)
