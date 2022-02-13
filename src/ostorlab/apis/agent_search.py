@@ -1,9 +1,10 @@
-"""Search agent from the public api."""
+"""Search agent API request."""
 
 import json
 from typing import Dict, Optional
 
 from ostorlab.apis import request
+
 
 class AgentSearchAPIRequest(request.APIRequest):
     """Search agent from name."""
@@ -24,13 +25,15 @@ class AgentSearchAPIRequest(request.APIRequest):
                 agents(search: $search) {
                     agents {
                         key
-                        name
-                        versions {
+                        versions (orderBy:Version, sort:Desc, numberElements:1, page:1) {
                             versions {
                                 key
                                 version
                                 description
-                            }
+                                inSelectors
+                                outSelectors
+                              }
+              
                         }
                     }
                 }

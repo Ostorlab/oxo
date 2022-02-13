@@ -19,18 +19,37 @@ logger = logging.getLogger(__name__)
 @click.option('--keyword', '-k', help='Keyword to use for the search.', required=True)
 def search_cli(keyword: str) -> None:
     """CLI command to list installed agents."""
-    result_agents = search_agents(keyword)
+    result_agents = search_agents(keyword).get('agents')
     console.success('Search agents done.')
     agents = []
-    for result_agent in result_agents:
-        agents.append({
-            'name': result_agent['name'],
-            'key': result_agent['key']
-        })
+    version = ''
+    description = ''
+    in_selectors = ''
+    out_selectors = ''
+
+    if result_agents is not None:
+        for result_agent in result_agents:
+            versions = result_agent['versions'].get('versions')
+            if len(versions) > 0:
+                version = versions[0].get('version')
+                description = versions[0].get('description')
+                print(versions[0].get('inSelectors'))
+                in_selectors = ', '.join(versions[0].get('inSelectors'))
+                out_selectors = ',' .join(versions[0].get('outSelectors'))
+            agents.append({
+                'key': result_agent['key'],
+                'version': version,
+                'description': description,
+                'in_selectors': in_selectors,
+                'out_selectors': out_selectors
+            })
 
     columns = {
-        'Agent name': 'name',
-        'Key': 'key',
+        'Agent key': 'key',
+        'Version': 'version',
+        'Description': 'description',
+        'In selectors': 'in_selectors',
+        'Out selectors': 'out_selectors',
     }
     title = f'Listing {len(agents)} Agents'
     console.table(columns=columns, data=agents, title=title)
