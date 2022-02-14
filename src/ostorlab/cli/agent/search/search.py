@@ -33,7 +33,6 @@ def search_cli(keyword: str) -> None:
             if len(versions) > 0:
                 version = versions[0].get('version')
                 description = versions[0].get('description')
-                print(versions[0].get('inSelectors'))
                 in_selectors = ', '.join(versions[0].get('inSelectors'))
                 out_selectors = ',' .join(versions[0].get('outSelectors'))
             agents.append({
