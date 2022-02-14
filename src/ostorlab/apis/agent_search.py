@@ -7,7 +7,7 @@ from ostorlab.apis import request
 
 
 class AgentSearchAPIRequest(request.APIRequest):
-    """Search agent from name."""
+    """Search agent API request."""
 
     def __init__(self, search: str) -> None:
         """Initializer"""
