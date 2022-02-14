@@ -80,8 +80,7 @@ def search_agents(search: str) -> Dict:
         raise click.exceptions.Exit(2) from e
 
     if 'errors' in response:
-        error_message = f"""\b The provided search : {search} does not correspond to any agent.
-        """
+        error_message = f'The provided search : {search} does not correspond to any agent.'
         console.error(error_message)
         raise click.exceptions.Exit(2)
     else:
