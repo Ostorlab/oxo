@@ -130,5 +130,5 @@ def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
         args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
     )
 
-    with pytest.raises(ValueError):
-        _ = instance_settings.container_image
+    assert instance_settings.container_image is None
+
