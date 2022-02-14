@@ -49,6 +49,15 @@ class DockerNotInstalledError(exceptions.OstorlabError):
 class DockerPermissionsDeniedError(exceptions.OstorlabError):
     """User does not have permissions to run docker."""
 
+class AgentNotInstalled(exceptions.OstorlabError):
+    """Agent image not installed."""
+
+
+def _has_container_image(agent: definitions.AgentSettings):
+    """Check if container image is available"""
+    return agent.container_image is not None
+
+
 def _is_agent_status_ok(ip: str) -> bool:
     """Agent are expected to expose a healthcheck service on port 5000 that returns status code 200 and `OK` response.
 
@@ -155,23 +164,26 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             None
         """
-        console.info('Creating scan entry')
-        self._scan_db = self._create_scan_db(title)
-        console.info('Creating network')
-        self._create_network()
-        console.info('Starting services')
-        self._start_services()
-        console.info('Checking services are healthy')
-        self._check_services_healthy()
-        console.info('Starting agents')
-        self._start_agents(agent_group_definition)
-        console.info('Checking agents are healthy')
-        self._check_agents_healthy(agent_group_definition)
-        console.info('Injecting asset')
-        self._inject_asset(asset)
-        console.info('Updating scan status')
-        self._update_scan_status()
-        console.success('Scan created successfully')
+        try:
+            console.info('Creating scan entry')
+            self._scan_db = self._create_scan_db(title)
+            console.info('Creating network')
+            self._create_network()
+            console.info('Starting services')
+            self._start_services()
+            console.info('Checking services are healthy')
+            self._check_services_healthy()
+            console.info('Starting agents')
+            self._start_agents(agent_group_definition)
+            console.info('Checking agents are healthy')
+            self._check_agents_healthy(agent_group_definition)
+            console.info('Injecting asset')
+            self._inject_asset(asset)
+            console.info('Updating scan status')
+            self._update_scan_status()
+            console.success('Scan created successfully')
+        except AgentNotInstalled as e:
+            console.error(f'Agent {e} not installed')
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
@@ -227,7 +239,7 @@ class LocalRuntime(runtime.Runtime):
         database = models.Database()
         session = database.session
         scan = session.query(models.Scan).get(self._scan_db.id)
-        scan.status = 'IN_PROGRESS'
+        scan.progress = 'IN_PROGRESS'
         session.commit()
 
     def _create_network(self):
@@ -286,6 +298,10 @@ class LocalRuntime(runtime.Runtime):
             agent: An agent definition containing all the settings of how agent should run and what arguments to pass.
         """
         logger.info('starting agent %s with %s', agent.key, agent.args)
+
+        if _has_container_image(agent) is False:
+            raise AgentNotInstalled(agent.key)
+
         # Port published with ingress mode can't be used with dnsrr mode
         if agent.open_ports:
             endpoint_spec = docker_types_services.EndpointSpec(
@@ -350,8 +366,7 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
-        tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT,
-                                                           mounts=['/var/run/docker.sock:/var/run/docker.sock'])
+        tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
     def _inject_asset(self, asset: base_asset.Asset):
