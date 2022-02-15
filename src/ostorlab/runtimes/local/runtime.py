@@ -507,10 +507,10 @@ class LocalRuntime(runtime.Runtime):
             mounts: List of src:dst paths to mount
         """
 
-        replaced_mounts= list()
+        replaced_mounts= []
         for mount in mounts:
-            for mount_variable in MOUNT_VARIABLES:
+            for mount_variable, mount_value in MOUNT_VARIABLES.items():
                 if mount_variable in mount:
-                    mount = mount.replace(mount_variable, MOUNT_VARIABLES[mount_variable])
+                    mount = mount.replace(mount_variable, mount_value)
             replaced_mounts.append(mount)
         return replaced_mounts
