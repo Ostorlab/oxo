@@ -1,8 +1,6 @@
 """Unittest for runtime definitions."""
 import io
 
-import pytest
-
 from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_definitions
 
