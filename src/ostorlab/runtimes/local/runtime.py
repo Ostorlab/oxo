@@ -47,6 +47,10 @@ DEFAULT_AGENTS = [
     LOCAL_PERSIST_VULNZ_AGENT_DEFAULT
 ]
 
+MOUNT_VARIABLES = {
+    '$CONFIG_HOME': configuration_manager.OSTORLAB_PRIVATE_DIR
+}
+
 
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
@@ -344,7 +348,7 @@ class LocalRuntime(runtime.Runtime):
             ],
             name=f'{agent.container_image}_{self.name}',
             restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
-            mounts=agent.mounts,
+            mounts=self._replace_variable_mounts(agent.mounts),
             configs=extra_configs,
             healthcheck=healthcheck,
             labels={'ostorlab.universe': self.name},
@@ -495,3 +499,18 @@ class LocalRuntime(runtime.Runtime):
         """
         for agent_key in DEFAULT_AGENTS:
             install_agent.install(agent_key=agent_key)
+
+    def _replace_variable_mounts(self, mounts: List[str]):
+        """Replace path variables for the container mounts
+
+        Args:
+            mounts: List of src:dst paths to mount
+        """
+
+        replaced_mounts= list()
+        for mount in mounts:
+            for mount_variable in MOUNT_VARIABLES:
+                if mount_variable in mount:
+                    mount = mount.replace(mount_variable, MOUNT_VARIABLES[mount_variable])
+            replaced_mounts.append(mount)
+        return replaced_mounts
