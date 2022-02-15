@@ -2,6 +2,7 @@
 import dataclasses
 import io
 import re
+import logging
 from typing import List, Optional
 
 import docker
@@ -10,6 +11,7 @@ from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions, version
 
+logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class AgentSettings:
@@ -34,19 +36,26 @@ class AgentSettings:
     def container_image(self):
         """Agent image name."""
         image = self.key.replace('/', '_')
+        logger.debug('Searching container name %s with version %s', image, self.version)
         client = docker.from_env()
         matching_tag_versions = []
         for img in client.images.list():
             for t in img.tags:
                 t_name, t_tag = t.split(':')
                 if t_name == image and t.version is None:
-                    matching_tag_versions.append(version.Version(t_tag))
+                    try:
+                        matching_tag_versions.append(version.Version(t_tag[1:]))
+                    except ValueError:
+                        logger.warning('Invalid version %s', t_tag[1:])
                 elif t_name == image and t.version is not None:
                     if re.match(self.version, t_tag) is not None:
-                        matching_tag_versions.append(version.Version(t_tag))
+                        try:
+                            matching_tag_versions.append(version.Version(t_tag[1:]))
+                        except ValueError:
+                            logger.warning('Invalid version %s', t_tag[1:])
 
         if not matching_tag_versions:
-            raise ValueError()
+            return None
 
         tag = max(matching_tag_versions)
         return f'{image}:{tag}'
