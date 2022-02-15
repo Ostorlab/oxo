@@ -4,10 +4,13 @@ Example of usage:
     - ostorlab scan run --agents=agent1,agent2 --title=test_scan [asset] [options]."""
 import io
 from typing import List
+
 import click
-from ostorlab.runtimes import definitions
-from ostorlab.cli.scan import scan
+
 from ostorlab.cli import install_agent
+from ostorlab.cli.scan import scan
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import runtime
 
 
 @scan.group()
@@ -37,15 +40,18 @@ def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.F
         agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
     elif agent_group_definition:
         agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
-        if install:
-            for agent in agent_group.agents:
-                install_agent.install(agent.key)
     else:
         raise click.ClickException('Missing agent list or agent group definition.')
 
-    runtime_instance = ctx.obj['runtime']
+    runtime_instance: runtime.Runtime = ctx.obj['runtime']
     if runtime_instance.can_run(agent_group_definition=agent_group):
         ctx.obj['agent_group_definition'] = agent_group
         ctx.obj['title'] = title
+
+        if install:
+            # Trigger both the runtime installation routine and install all the provided agents.
+            runtime_instance.install()
+            for agent in agent_group.agents:
+                install_agent.install(agent.key)
     else:
         raise click.ClickException('The runtime does not support the provided agent list or group definition.')

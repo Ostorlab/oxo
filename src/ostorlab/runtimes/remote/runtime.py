@@ -6,10 +6,10 @@ detection and several other improvements.
 """
 from typing import List
 
-from ostorlab.apis.runners import authenticated_runner
-from ostorlab.apis.runners import runner
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
@@ -92,3 +92,11 @@ class RemoteRuntime(runtime.Runtime):
 
         except runner.Error:
             console.error('Could not fetch scans.')
+
+    def install(self) -> None:
+        """No installation action.
+
+        Returns:
+            None
+        """
+        pass

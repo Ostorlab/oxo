@@ -1,7 +1,7 @@
 """models contain the database engine logic and all the db models and the related operations"""
 
-import enum
 import datetime
+import enum
 import logging
 
 import sqlalchemy
@@ -112,8 +112,8 @@ class Vulnerability(Base):
 
     @staticmethod
     def create(scan_id: int, title: str, short_description: str, description: str,
-             recommendation: str, technical_detail: str, risk_rating: str,
-             cvss_v3_vector: str, dna: str):
+               recommendation: str, technical_detail: str, risk_rating: str,
+               cvss_v3_vector: str, dna: str):
         """Persist the vulnerability in the database.
 
         Args:

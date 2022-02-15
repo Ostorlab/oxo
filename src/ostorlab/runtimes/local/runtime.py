@@ -14,15 +14,16 @@ import tenacity
 from docker.models import services as docker_models_services
 from docker.types import services as docker_types_services
 
+from ostorlab import configuration_manager
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
+from ostorlab.cli import console as cli_console
+from ostorlab.cli import docker_requirements_checker
+from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
-from ostorlab.runtimes.local.services import mq
-from ostorlab.cli import console as cli_console
 from ostorlab.runtimes.local.models import models
-from ostorlab.cli import docker_requirements_checker
-
+from ostorlab.runtimes.local.services import mq
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
@@ -38,13 +39,22 @@ console = cli_console.Console()
 
 ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostorlab/inject_asset'
 TRACKER_AGENT_DEFAULT = 'agent/ostorlab/tracker'
+LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = 'agent/ostorlab/local_persist_vulnz'
+
+DEFAULT_AGENTS = [
+    ASSET_INJECTION_AGENT_DEFAULT,
+    TRACKER_AGENT_DEFAULT,
+    LOCAL_PERSIST_VULNZ_AGENT_DEFAULT
+]
 
 
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
 
+
 class DockerNotInstalledError(exceptions.OstorlabError):
     """Docker is not installed."""
+
 
 class DockerPermissionsDeniedError(exceptions.OstorlabError):
     """User does not have permissions to run docker."""
@@ -278,6 +288,7 @@ class LocalRuntime(runtime.Runtime):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
             self._start_agent(agent, extra_configs=[])
+        self._start_persist_vulnz_agent()
         self._start_tracker_agent()
 
     def _add_settings_config(self, agent: definitions.AgentSettings):
@@ -297,6 +308,8 @@ class LocalRuntime(runtime.Runtime):
         Args:
             agent: An agent definition containing all the settings of how agent should run and what arguments to pass.
         """
+        # TODO(alaeddine): add fetching the agent definition from the Image label, consolidate the agent settings and
+        # agent default definition and then set the values.
         logger.info('starting agent %s with %s', agent.key, agent.args)
 
         if _has_container_image(agent) is False:
@@ -369,6 +382,13 @@ class LocalRuntime(runtime.Runtime):
         tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
+    def _start_persist_vulnz_agent(self):
+        """Start the local persistence agent to dump vulnerabilities in the local config."""
+        tracker_agent_settings = definitions.AgentSettings(
+            key=LOCAL_PERSIST_VULNZ_AGENT_DEFAULT,
+            mounts=[f'{configuration_manager.ConfigurationManager().conf_path}:/config'])
+        self._start_agent(agent=tracker_agent_settings, extra_configs=[])
+
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
         asset_config = self._docker_client.configs.create(name='asset', labels={'ostorlab.universe': self.name},
@@ -413,15 +433,15 @@ class LocalRuntime(runtime.Runtime):
         session = database.session
         for s in session.query(models.Scan):
             scans[s.id] = runtime.Scan(
-                        id=s.id,
-                        application=None,
-                        version=None,
-                        platform=None,
-                        plan=None,
-                        created_time=s.created_time,
-                        progress=s.progress.value,
-                        risk_rating=s.risk_rating.value,
-                    )
+                id=s.id,
+                application=None,
+                version=None,
+                platform=None,
+                plan=None,
+                created_time=s.created_time,
+                progress=s.progress.value,
+                risk_rating=s.risk_rating.value,
+            )
 
         universe_ids = set()
         client = docker.from_env()
@@ -466,3 +486,12 @@ class LocalRuntime(runtime.Runtime):
                     if fail_fast:
                         return False
         return True
+
+    def install(self) -> None:
+        """Installs the default agents.
+
+        Returns:
+            None
+        """
+        for agent_key in DEFAULT_AGENTS:
+            install_agent.install(agent_key=agent_key)
