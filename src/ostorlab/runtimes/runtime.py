@@ -1,8 +1,8 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 import abc
 import dataclasses
-
 from typing import List, Optional
+
 from ostorlab.assets import asset as base_asset
 from ostorlab.runtimes import definitions
 
@@ -63,6 +63,7 @@ class Runtime(abc.ABC):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def list(self, page: int = 1, number_elements: int = 10) -> List[Scan]:
         """Lists scans managed by runtime.
 
@@ -72,5 +73,14 @@ class Runtime(abc.ABC):
 
         Returns:
             List of scan objects.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def install(self) -> None:
+        """Run runtime installation routine.
+
+        Returns:
+            None
         """
         raise NotImplementedError()
