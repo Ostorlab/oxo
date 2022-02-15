@@ -67,8 +67,8 @@ class LocalRabbitMQ:
 
     def stop(self):
         for service in self._docker_client.services.list():
-            universe = service.attrs['Spec']['Labels']['ostorlab.universe']
-            if service.name.startswith('mq_') and self._name in universe:
+            universe = service.attrs['Spec']['Labels'].get('ostorlab.universe')
+            if universe is not None and service.name.startswith('mq_') and self._name in universe:
                 service.remove()
 
     def _create_network(self):
