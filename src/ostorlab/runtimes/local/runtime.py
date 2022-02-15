@@ -510,7 +510,6 @@ class LocalRuntime(runtime.Runtime):
         replaced_mounts= []
         for mount in mounts:
             for mount_variable, mount_value in MOUNT_VARIABLES.items():
-                if mount_variable in mount:
-                    mount = mount.replace(mount_variable, mount_value)
+                mount = mount.replace(mount_variable, mount_value)
             replaced_mounts.append(mount)
         return replaced_mounts
