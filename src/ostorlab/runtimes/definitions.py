@@ -57,8 +57,8 @@ class AgentSettings:
         if not matching_tag_versions:
             return None
 
-        tag = max(matching_tag_versions)
-        return f'{image}:v{tag}'
+        matching_version = max(matching_tag_versions)
+        return f'{image}:v{matching_version}'
 
     @classmethod
     def from_proto(cls, proto: bytes) -> 'AgentSettings':
