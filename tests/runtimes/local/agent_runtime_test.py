@@ -22,12 +22,12 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
                                                     restart_policy='any',
                                                     open_ports=[utils_defintions.PortMapping(20000, 30000),
                                                                 utils_defintions.PortMapping(20001, 30001)])
-    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.agent_definition_from_label',
+    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label',
                  return_value=agent_def)
     mocker.patch.object(ostorlab.runtimes.definitions.AgentSettings, 'container_image', property(container_name_mock))
     mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings', return_value=None)
-    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.created_settings_config', return_value=None)
-    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.created_definition_config', return_value=None)
+    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config', return_value=None)
+    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config', return_value=None)
     create_service_mock = mocker.patch('docker.models.services.ServiceCollection.create', return_value=None)
 
     docker_client = docker.from_env()
@@ -62,12 +62,12 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
                                                   restart_policy='any',
                                                   open_ports=[utils_defintions.PortMapping(20000, 30000),
                                                               utils_defintions.PortMapping(20001, 30001)])
-    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.agent_definition_from_label',
+    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label',
                  return_value=agent_def)
     mocker.patch.object(ostorlab.runtimes.definitions.AgentSettings, 'container_image', property(container_name_mock))
     mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings', return_value=None)
-    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.created_settings_config', return_value=None)
-    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.created_definition_config', return_value=None)
+    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config', return_value=None)
+    mocker.patch('ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config', return_value=None)
     create_service_mock = mocker.patch('docker.models.services.ServiceCollection.create', return_value=None)
 
     docker_client = docker.from_env()
