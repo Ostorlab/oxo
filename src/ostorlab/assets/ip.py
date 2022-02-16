@@ -18,3 +18,6 @@ class IP(asset.Asset):
         """Sets the version to the correct value is not set at init."""
         if self.version is None:
             self.version = ipaddress.ip_address(self.host).version
+
+    def __str__(self):
+        return f'{self.host}/{self.mask}'

@@ -76,12 +76,13 @@ class Scan(Base):
     __tablename__ = 'scan'
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String(255))
+    asset = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
 
     @staticmethod
-    def create(title: str = ''):
+    def create(asset, title: str = ''):
         """Persist the scan in the database.
 
         Args:
@@ -89,7 +90,7 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, created_time=datetime.datetime.now(), risk_rating='INFO', progress='NOT_STARTED')
+        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), risk_rating='INFO', progress='NOT_STARTED')
         database = Database()
         database.session.add(scan)
         database.session.commit()
