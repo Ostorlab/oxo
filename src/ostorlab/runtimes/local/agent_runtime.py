@@ -1,7 +1,7 @@
 """Runtime agent module gives access to methods to create the specific agent configurations & run the agent.
 
 Usage
-    agent_runtime = AgentRuntime(agentSettings, runtime_name, docker_client, mq_service)
+    agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
 from typing import List, Optional
