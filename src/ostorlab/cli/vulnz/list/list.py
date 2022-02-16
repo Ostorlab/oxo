@@ -40,5 +40,5 @@ def list_cli(scan_id: int) -> None:
         'CVSS V3 Vector': 'cvss_v3_vector',
         'Short Description': 'short_description',
     }
-    title = f'Listing {len(vulnz_list)} vulnerabilities'
+    title = f'Found {len(vulnz_list)} vulnerabilities'
     console.table(columns=columns, data=vulnz_list, title=title)

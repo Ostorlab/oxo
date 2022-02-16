@@ -50,7 +50,7 @@ def search_cli(keyword: str) -> None:
         'In selectors': 'in_selectors',
         'Out selectors': 'out_selectors',
     }
-    title = f'Listing {len(agents)} Agents'
+    title = f'Found {len(agents)} Agents'
     console.table(columns=columns, data=agents, title=title)
 
 

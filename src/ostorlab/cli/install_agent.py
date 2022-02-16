@@ -123,7 +123,7 @@ def install(agent_key: str, version: str = '') -> None:
 
     agent_details = get_agent_details(agent_key)
     agent_docker_location = agent_details['dockerLocation']
-    if agent_docker_location is None:
+    if agent_docker_location is None or not agent_details.get('versions', {}).get('versions', []):
         console.error('Agent image location is not yet available')
         raise click.exceptions.Exit(2)
 
@@ -137,13 +137,15 @@ def install(agent_key: str, version: str = '') -> None:
         else:
             console.info(f'Pulling the image {agent_docker_location} from the ostorlab store.')
 
-            pull_logs_generator = _pull_logs(docker_client, agent_docker_location)
+            expected_version = version or agent_details['versions']['versions'][0]['version']
+            pull_logs_generator = _pull_logs(docker_client, agent_docker_location, f'v{expected_version}')
 
             agent_install_progress = install_progress.AgentInstallProgress()
             agent_install_progress.display(pull_logs_generator)
 
-            agent_image = _get_image(docker_client=docker_client, repository=agent_docker_location, tag=version)
-            agent_image.tag(repository=image_name, tag=version)
+            agent_image = _get_image(docker_client=docker_client, repository=agent_docker_location,
+                                     tag=f'v{expected_version}')
+            agent_image.tag(repository=image_name, tag=f'v{expected_version}')
 
     except docker.errors.ImageNotFound as e:
         error_message = f'Image of the provided agent : {agent_key} was not found.'

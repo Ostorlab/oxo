@@ -29,6 +29,11 @@ class AgentDetailsAPIRequest(request.APIRequest):
                     access,
                     listable,
                     key
+                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1) {
+                      versions {
+                        version
+                      }
+                    }
                 }
             }
         """

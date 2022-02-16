@@ -14,7 +14,7 @@ def testAgentDeleteCLI_always_listDockerImagesWithAgent(mocker):
 
     runner = testing.CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ['agent', 'delete', '-a', 'agent/ostorlab/big_fuzzer'])
+    result = runner.invoke(rootcli.rootcli, ['agent', 'delete', 'agent/ostorlab/big_fuzzer'])
 
     assert 'ERROR' in result.output
     image_list_mock.assert_called_once()

@@ -1,11 +1,12 @@
 """Unittests for the CLI agent install command."""
 
-from click import testing
-from docker.models import images as images_model
 import re
 
-from ostorlab.cli import rootcli
+from click import testing
+from docker.models import images as images_model
+
 from ostorlab.apis.runners import public_runner
+from ostorlab.cli import rootcli
 
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
@@ -26,7 +27,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
     Should show message.
     """
     api_call_response = {
-        'errors': {'message' : 'some error message.'}
+        'errors': {'message': 'some error message.'}
     }
     requests_mock.post(public_runner.PUBLIC_GRAPHQL_ENDPOINT,
                        json=api_call_response, status_code=200)
@@ -42,19 +43,26 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
 def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, requests_mock):
     """Test ostorlab agent install CLI command with a valid agent_key value should install the agent."""
 
-    image_pull_mock = mocker.patch('docker.api.client.APIClient.pull', reutrn_value = 'dummy_log')
+    image_pull_mock = mocker.patch('docker.api.client.APIClient.pull', reutrn_value='dummy_log')
     image_get_mock = mocker.patch('docker.models.images.ImageCollection.get', return_value=images_model.Image())
     tag_image_mock = mocker.patch('docker.models.images.Image.tag', return_value=True)
     mocker.patch('ostorlab.cli.install_agent._is_image_present', return_value=False)
 
     api_call_response = {
-        'data':{
+        'data': {
             'agent': {
-                'name' : 'bigFuzzer',
-                'gitLocation' : '',
-                'yamlFileLocation' : '',
+                'name': 'bigFuzzer',
+                'gitLocation': '',
+                'yamlFileLocation': '',
                 'dockerLocation': 'ostorlab.store/library/busybox',
-                'key': 'agent/OS/some_agentd'
+                'key': 'agent/OS/some_agentd',
+                'versions': {
+                    'versions': [
+                        {
+                            'version': '1.0.0'
+                        }
+                    ]
+                }
             }
         }
     }
@@ -65,7 +73,7 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, requests_mock):
     # requires mocking all requests. The docker api also sends some requests,
     # thus the following lines.
     matcher = re.compile(r'http\+docker://(.*)/version')
-    requests_mock.get(matcher, json={'ApiVersion':'1.42'}, status_code=200)
+    requests_mock.get(matcher, json={'ApiVersion': '1.42'}, status_code=200)
     matcher = re.compile(r'http\+docker://(.*)/json')
     requests_mock.get(matcher, json={}, status_code=200)
 

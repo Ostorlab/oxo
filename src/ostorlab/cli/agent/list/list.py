@@ -44,5 +44,5 @@ def list_cli() -> None:
         'Size': 'size',
         'Created': 'created',
     }
-    title = f'Listing {len(agents)} Agents'
+    title = f'Found {len(agents)} Agents'
     console.table(columns=columns, data=agents, title=title)
