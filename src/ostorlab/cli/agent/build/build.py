@@ -33,19 +33,28 @@ def build(file: io.FileIO, organization: str = '') -> None:
     else:
         try:
             agent_def = loader.load_agent_yaml(file)
+            file.seek(0)
             dockerfile_path = agent_def['docker_file_path']
             docker_build_root = agent_def['docker_build_root']
             agent_name = agent_def['name']
             agent_version = agent_def.get('version', '0.0.0')
-            console.info(
-                f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
-                f' at root [bold red]{docker_build_root}[/].')
             container_name = f'agent_{organization}_{agent_name}:v{agent_version}'
-            with console.status(f'Building [bold red]{container_name}[/]'):
-                docker_sdk_client = docker.from_env()
-                docker_sdk_client.images.build(path=docker_build_root, dockerfile=dockerfile_path, tag=container_name,
-                                            labels={'agent_definition':file.read().decode('utf-8')})
-            console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
+            docker_sdk_client = docker.from_env()
+
+            try:
+                docker_sdk_client.images.get(container_name)
+                console.info(f'{container_name} already exist.')
+                raise click.exceptions.Exit(0)
+            except docker.errors.ImageNotFound:
+                console.info(
+                    f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
+                    f' at root [bold red]{docker_build_root}[/].')
+                with console.status(f'Building [bold red]{container_name}[/]'):
+                    docker_sdk_client.images.build(path=docker_build_root,
+                                                   dockerfile=dockerfile_path,
+                                                   tag=container_name,
+                                                   labels={'agent_definition':file.read().decode('utf-8')})
+                console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
         except validator.SchemaError:
             console.error(
                 'Schema is invalid, this should not happen, please report an issue at '
