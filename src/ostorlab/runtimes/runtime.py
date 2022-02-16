@@ -10,12 +10,8 @@ from ostorlab.runtimes import definitions
 @dataclasses.dataclass
 class Scan:
     """Scan object."""
-    # TODO(alaeddine): temporary object definition that needs to be refined.
     id: str
-    application: Optional[str]
-    version: Optional[str]
-    platform: Optional[str]
-    plan: Optional[str]
+    asset: Optional[str]
     created_time: str
     progress: Optional[str]
     risk_rating: Optional[str]

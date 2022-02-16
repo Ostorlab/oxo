@@ -9,3 +9,6 @@ from ostorlab.assets import asset
 class DomainName(asset.Asset):
     """Domain Name target asset per RFC 1034 and 1035."""
     name: str
+
+    def __str__(self):
+        return self.name

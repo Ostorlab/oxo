@@ -7,7 +7,7 @@ from unittest import mock
 def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated():
     """Test when database does not exists, scan is populated in a newly created database."""
     models.Database().create_db_tables()
-    models.Scan.create('test')
+    models.Scan.create(title='test', asset='Asset')
     assert models.Database().session.query(models.Scan).count() == 1
     assert models.Database().session.query(models.Scan).all()[0].title == 'test'
     models.Database().drop_db_tables()

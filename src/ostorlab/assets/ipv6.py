@@ -12,3 +12,6 @@ class IPv6(asset.Asset):
     host: str
     version: int = 6
     mask: Optional[str] = None
+
+    def __str__(self):
+        return f'{self.host}/{self.mask}'
