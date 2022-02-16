@@ -21,9 +21,9 @@ def ip_cli(ctx: click.core.Context, ip: str) -> None:
     try:
         ip_network = ipaddress.ip_network(ip, strict=False)
         if ip_network.version == 4:
-            asset = ipv4.IPv4(host=ip_network.network_address.exploded, mask=ip_network.prefixlen)
+            asset = ipv4.IPv4(host=ip_network.network_address.exploded, mask=str(ip_network.prefixlen))
         elif ip_network.version == 6:
-            asset = ipv6.IPv6(host=ip_network.network_address.exploded, mask=ip_network.prefixlen)
+            asset = ipv6.IPv6(host=ip_network.network_address.exploded, mask=str(ip_network.prefixlen))
         else:
             raise NotImplementedError()
 
