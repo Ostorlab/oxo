@@ -309,7 +309,7 @@ class LocalRuntime(runtime.Runtime):
             raise AgentNotInstalled(agent.key)
 
         runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
-        agent_service = runtime_agent.create_agent_service(self._network.name, extra_configs)
+        agent_service = runtime_agent.create_agent_service(self._network, extra_configs)
 
         if agent.replicas > 1:
             # Ensure the agent service had to
@@ -344,10 +344,10 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_persist_vulnz_agent(self):
         """Start the local persistence agent to dump vulnerabilities in the local config."""
-        tracker_agent_settings = definitions.AgentSettings(
+        persist_vulnz_agent_settings = definitions.AgentSettings(
             key=LOCAL_PERSIST_VULNZ_AGENT_DEFAULT,
             mounts=[f'{configuration_manager.ConfigurationManager().conf_path}:/config'])
-        self._start_agent(agent=tracker_agent_settings, extra_configs=[])
+        self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""

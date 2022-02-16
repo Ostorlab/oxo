@@ -42,12 +42,12 @@ class AgentSettings:
         for img in client.images.list():
             for t in img.tags:
                 t_name, t_tag = t.split(':')
-                if t_name == image and t.version is None:
+                if t_name == image and self.version is None:
                     try:
                         matching_tag_versions.append(version.Version(t_tag[1:]))
                     except ValueError:
                         logger.warning('Invalid version %s', t_tag[1:])
-                elif t_name == image and t.version is not None:
+                elif t_name == image and self.version is not None:
                     if re.match(self.version, t_tag) is not None:
                         try:
                             matching_tag_versions.append(version.Version(t_tag[1:]))
@@ -57,8 +57,8 @@ class AgentSettings:
         if not matching_tag_versions:
             return None
 
-        tag = max(matching_tag_versions)
-        return f'{image}:{tag}'
+        matching_version = max(matching_tag_versions)
+        return f'{image}:v{matching_version}'
 
     @classmethod
     def from_proto(cls, proto: bytes) -> 'AgentSettings':

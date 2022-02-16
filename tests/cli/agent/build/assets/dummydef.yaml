@@ -1,4 +1,5 @@
 name: dummy_agent
+kind: Agent
 version: 1.0.0
 description: random text
 in_selectors:

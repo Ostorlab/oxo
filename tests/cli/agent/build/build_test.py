@@ -2,6 +2,8 @@
 
 import pytest
 import docker
+from pathlib import Path
+
 from click import testing
 
 from ostorlab.cli import rootcli
@@ -29,13 +31,14 @@ def _is_docker_image_present(image: str):
         return False
 
 
-@pytest.mark.parametrize('image_cleanup', [['dummy']], indirect=True)
+@pytest.mark.docker
+@pytest.mark.parametrize('image_cleanup', ['dummy'], indirect=True)
 def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(image_cleanup):
     """Test ostorlab agent build CLI command : Case where the command is valid.
     The agent container should be built.
     """
     del image_cleanup
-    dummy_def_yaml_file_path = './assets/dummydef.yaml'
+    dummy_def_yaml_file_path = Path(__file__).parent / 'assets/dummydef.yaml'
     runner = testing.CliRunner()
     _ = runner.invoke(rootcli.rootcli, [
                                         'agent',
@@ -43,5 +46,25 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
                                         f'--file={dummy_def_yaml_file_path}',
                                         '--organization=ostorlab'
                                         ])
-
     assert _is_docker_image_present('agent_ostorlab_dummy_agent:v1.0.0') is True
+
+
+@pytest.mark.docker
+@pytest.mark.parametrize('image_cleanup', ['dummy'], indirect=True)
+def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_ShowsMessageAndExists(image_cleanup):
+    """Test ostorlab agent build CLI command : Case where the command is valid.
+    The agent container should be built.
+    """
+    del image_cleanup
+    dummy_def_yaml_file_path =  Path(__file__).parent / 'assets/dummydef.yaml'
+    runner = testing.CliRunner()
+    _ = runner.invoke(rootcli.rootcli, ['agent',
+                                              'build',
+                                              f'--file={dummy_def_yaml_file_path}',
+                                              '--organization=ostorlab'])
+    result = runner.invoke(rootcli.rootcli, ['agent',
+                                             'build',
+                                             f'--file={dummy_def_yaml_file_path}',
+                                             '--organization=ostorlab'])
+    assert 'already exist' in result.output
+    assert result.exit_code == 0
