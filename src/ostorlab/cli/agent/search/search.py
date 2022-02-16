@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @agent.command(name='search')
 @click.option('--keyword', '-k', help='Keyword to use for the search.', required=True)
 def search_cli(keyword: str) -> None:
-    """CLI command to list installed agents."""
+    """CLI command to search for agents in the Agents store."""
     result_agents = search_agents(keyword).get('agents')
     console.success('Search agents done.')
     agents = []

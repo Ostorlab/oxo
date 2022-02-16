@@ -64,10 +64,7 @@ def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list):
     ]
     scans = [runtime.Scan(
         id=service['Spec']['Labels']['ostorlab.universe'],
-        application=None,
-        version=None,
-        platform=None,
-        plan=None,
+        asset='File(/tmp/test)',
         created_time=service['CreatedAt'],
         progress=None,
         risk_rating=None,

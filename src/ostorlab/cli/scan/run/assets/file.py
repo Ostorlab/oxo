@@ -12,5 +12,5 @@ from ostorlab.cli.scan.run import run
 def file_cli(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj['runtime']
-    asset = file_asset.File(file.read())
+    asset = file_asset.File(content=file.read(), path=file.name)
     runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)

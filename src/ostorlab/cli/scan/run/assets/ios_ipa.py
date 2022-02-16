@@ -13,5 +13,5 @@ from ostorlab.cli.scan.run import run
 def ios_ipa(ctx, file):
     """Run scan for .IPA package file."""
     runtime = ctx.obj['runtime']
-    asset = ios_ipa_asset.IOSIpa(file.read())
+    asset = ios_ipa_asset.IOSIpa(content=file.read(), path=file.name)
     runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)

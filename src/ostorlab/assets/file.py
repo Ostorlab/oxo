@@ -1,5 +1,7 @@
 """File asset."""
 import dataclasses
+from typing import Optional
+
 from ostorlab.assets import asset
 
 
@@ -8,3 +10,7 @@ from ostorlab.assets import asset
 class File(asset.Asset):
     """File target asset."""
     content: bytes
+    path: Optional[str] = None
+
+    def __str__(self):
+        return f'File({self.path})'

@@ -13,5 +13,5 @@ from ostorlab.cli.scan.run import run
 def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for android .APK package file."""
     runtime = ctx.obj['runtime']
-    asset = android_apk_asset.AndroidApk(file.read())
+    asset = android_apk_asset.AndroidApk(content=file.read(), path=file.name)
     runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)

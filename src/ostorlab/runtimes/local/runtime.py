@@ -181,7 +181,7 @@ class LocalRuntime(runtime.Runtime):
         """
         try:
             console.info('Creating scan entry')
-            self._scan_db = self._create_scan_db(title)
+            self._scan_db = self._create_scan_db(asset=str(asset), title=title)
             console.info('Creating network')
             self._create_network()
             console.info('Starting services')
@@ -244,10 +244,10 @@ class LocalRuntime(runtime.Runtime):
         else:
             console.error(f'Scan with id {scan_id} not found.')
 
-    def _create_scan_db(self, title: str):
+    def _create_scan_db(self, title: str, asset: str):
         """Persist the scan in the database"""
         models.Database().create_db_tables()
-        return models.Scan.create(title)
+        return models.Scan.create(title=title, asset=asset)
 
     def _update_scan_status(self):
         """Update scan status to in progress"""
@@ -394,10 +394,7 @@ class LocalRuntime(runtime.Runtime):
         for s in session.query(models.Scan):
             scans[s.id] = runtime.Scan(
                 id=s.id,
-                application=None,
-                version=None,
-                platform=None,
-                plan=None,
+                asset=s.asset,
                 created_time=s.created_time,
                 progress=s.progress.value,
                 risk_rating=s.risk_rating.value,

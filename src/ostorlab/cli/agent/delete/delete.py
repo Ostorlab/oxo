@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 @click.argument('agent', required=True)
 @click.option('--agent-version-regex', '-r', help='Agent version matching regular expression.', required=False)
 def delete(agent: str, agent_version_regex: Optional[str] = None) -> None:
-    """CLI command to list installed agents."""
+    """CLI command to delete installed agents."""
     docker_client = docker.from_env()
     images = docker_client.images.list()
     agent_container_name = agent.replace('/', '_')

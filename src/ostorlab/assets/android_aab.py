@@ -1,5 +1,7 @@
 """Android .AAB asset."""
 import dataclasses
+from typing import Optional
+
 from ostorlab.assets import asset
 
 
@@ -8,3 +10,7 @@ from ostorlab.assets import asset
 class AndroidAab(asset.Asset):
     """Android .AAB target asset."""
     content: bytes
+    path: Optional[str] = None
+
+    def __str__(self):
+        return f'Android AAB({self.path})'

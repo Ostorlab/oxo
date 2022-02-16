@@ -80,10 +80,7 @@ class RemoteRuntime(runtime.Runtime):
             return [
                 runtime.Scan(
                     id=scan['id'],
-                    application=scan['packageName'],
-                    version=scan['version'],
-                    platform=scan['assetType'],
-                    plan=scan['plan'],
+                    asset=scan['asset'],
                     created_time=scan['createdTime'],
                     progress=scan['progress'],
                     risk_rating=scan['riskRating'],
