@@ -50,7 +50,7 @@ class Console:
         Args:
             text: The warning text to show.
         """
-        self._console.print(f'[bold]WARNING:[/] {text}', style='warning')
+        self._console.print(f':tangerine: [bold]WARNING:[/] {text}', style='warning')
 
     def info(self, text: str) -> None:
         """Shows general information message.
@@ -58,7 +58,7 @@ class Console:
         Args:
             text: The general text to show.
         """
-        self._console.print(f':triangular_flag_on_post: {text}')
+        self._console.print(f':fish_cake: {text}')
 
     def status(self, text: str) -> status.Status:
         """Shows loading text.
