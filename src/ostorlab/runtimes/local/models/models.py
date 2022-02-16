@@ -90,7 +90,8 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), risk_rating='INFO', progress='NOT_STARTED')
+        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(),
+                    risk_rating='INFO', progress='NOT_STARTED')
         database = Database()
         database.session.add(scan)
         database.session.commit()
