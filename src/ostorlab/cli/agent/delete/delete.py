@@ -34,4 +34,4 @@ def delete(agent: str, agent_version_regex: Optional[str] = None) -> None:
                     deleted = True
 
     if deleted is False:
-        console.error(f'No agent matching [bold white]{agent}[/] were found')
+        console.error(f'No agent matching [bold white]{agent}[/] was found')
