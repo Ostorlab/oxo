@@ -1,9 +1,11 @@
 """Agent List command."""
-import re
 import logging
+import re
+from typing import Optional
+
 import click
 import docker
-from typing import Optional
+
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent as agent_cli
 
