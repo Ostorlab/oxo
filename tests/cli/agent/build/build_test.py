@@ -2,6 +2,8 @@
 
 import pytest
 import docker
+from pathlib import Path
+
 from click import testing
 
 from ostorlab.cli import rootcli
@@ -36,7 +38,7 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
     The agent container should be built.
     """
     del image_cleanup
-    dummy_def_yaml_file_path = './assets/dummydef.yaml'
+    dummy_def_yaml_file_path = Path(__file__).parent / 'assets/dummydef.yaml'
     runner = testing.CliRunner()
     _ = runner.invoke(rootcli.rootcli, [
                                         'agent',
@@ -54,7 +56,7 @@ def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_ShowsMessageAndExi
     The agent container should be built.
     """
     del image_cleanup
-    dummy_def_yaml_file_path = '/home/haddadi/Documents/Ostorlab/ostorlab/tests/cli/agent/build/assets/dummydef.yaml'
+    dummy_def_yaml_file_path =  Path(__file__).parent / 'assets/dummydef.yaml'
     runner = testing.CliRunner()
     _ = runner.invoke(rootcli.rootcli, ['agent',
                                               'build',
