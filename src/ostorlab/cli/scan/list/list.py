@@ -28,8 +28,6 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
             console.success('Scans listed successfully.')
             columns = {'Id': 'id',
                        'Application': 'application',
-                       'Platform': 'platform',
-                       'Plan': 'plan',
                        'Created Time': 'created_time',
                        'Progress': 'progress',
                        'Risk': 'risk'}
@@ -39,8 +37,6 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                 {
                     'id': str(s.id),
                     'application': f'{s.application or ""}: {s.version or ""}',
-                    'platform': styles.style_asset(s.platform),
-                    'plan': s.plan,
                     'created_time': str(s.created_time),
                     'progress': styles.style_progress(s.progress),
                     'risk': styles.style_risk(s.risk_rating),
