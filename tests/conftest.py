@@ -97,15 +97,14 @@ def json_schema_file():
     return json_schema_file_object
 
 
-@pytest.fixture
-def image_cleanup():
+@pytest.fixture()
+def image_cleanup(request):
     """Pytest fixture for removing docker image with a specified tag."""
-    def _image_cleanup(tag):
-        client = docker.from_env()
-        yield client
-        for img in client.images.list():
-            for t in img.tags:
-                if tag in t:
-                    client.images.remove(t)
-    return _image_cleanup
+    client = docker.from_env()
+    yield client
+    tag = request.param
+    for img in client.images.list():
+        for t in img.tags:
+            if tag in t:
+                client.images.remove(t)
 
