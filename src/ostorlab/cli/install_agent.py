@@ -1,16 +1,19 @@
 """Module responsible for installing an agent : Pulling the image from the ostorlab store."""
+import logging
 from typing import Dict, Optional, Generator
+
 import click
 import docker
 import docker.errors
 
-from ostorlab.cli import console as cli_console
-from ostorlab.apis.runners import runner as base_runner
-from ostorlab.apis.runners import public_runner, authenticated_runner
-from ostorlab.apis import agent_details as agent_details_api
 from ostorlab import configuration_manager
+from ostorlab.apis import agent_details as agent_details_api
+from ostorlab.apis.runners import public_runner, authenticated_runner
+from ostorlab.apis.runners import runner as base_runner
+from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.install import install_progress
 
+logger = logging.getLogger(__name__)
 
 console = cli_console.Console()
 
@@ -92,7 +95,6 @@ def get_agent_details(agent_key: str) -> Dict:
         console.error('Requested resource not found.')
         raise click.exceptions.Exit(2) from e
 
-
     if 'errors' in response:
         error_message = f"""\b The provided agent key : {agent_key} does not correspond to any agent.
         Please make sure you have the correct agent key.
@@ -102,7 +104,6 @@ def get_agent_details(agent_key: str) -> Dict:
     else:
         agent_details = response['data']['agent']
         return agent_details
-
 
 
 def install(agent_key: str, version: str = '') -> None:
@@ -121,8 +122,11 @@ def install(agent_key: str, version: str = '') -> None:
     """
 
     agent_details = get_agent_details(agent_key)
-
     agent_docker_location = agent_details['dockerLocation']
+    if agent_docker_location is None:
+        console.error('Agent image location is not yet available')
+        raise click.exceptions.Exit(2)
+
     image_name = _image_name_from_key(agent_details['key'])
 
     try:
@@ -131,12 +135,12 @@ def install(agent_key: str, version: str = '') -> None:
         if _is_image_present(docker_client, image_name):
             console.info(f'{agent_key} already exist.')
         else:
-            console.info('Pulling the image from the ostorlab store.')
+            console.info(f'Pulling the image {agent_docker_location} from the ostorlab store.')
 
             pull_logs_generator = _pull_logs(docker_client, agent_docker_location)
 
-            progress_foo = install_progress.AgentInstallProgress()
-            progress_foo.display(pull_logs_generator)
+            agent_install_progress = install_progress.AgentInstallProgress()
+            agent_install_progress.display(pull_logs_generator)
 
             agent_image = _get_image(docker_client=docker_client, repository=agent_docker_location, tag=version)
             agent_image.tag(repository=image_name, tag=version)

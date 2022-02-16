@@ -18,7 +18,7 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
 
     assert 'Usage: rootcli agent install [OPTIONS]' in result.output
     assert 'Try \'rootcli agent install --help\' for help.' in result.output
-    assert 'Error: Missing option \'--agent\' / \'-a\'.' in result.output
+    assert 'Error: Missing argument' in result.output
 
 
 def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_mock):
@@ -32,7 +32,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
                        json=api_call_response, status_code=200)
 
     runner = testing.CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['agent', 'install', '--agent', 'agent/wrong/key'])
+    result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/wrong/key'])
 
     assert 'ERROR:' in result.output
     assert 'Please make sure you have the correct agent key.' in result.output
@@ -70,7 +70,7 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, requests_mock):
     requests_mock.get(matcher, json={}, status_code=200)
 
     runner = testing.CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['agent', 'install', '--agent', 'agent/OT1/bigFuzzer'])
+    result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/OT1/bigFuzzer'])
 
     image_pull_mock.assert_called()
     image_get_mock.assert_called()

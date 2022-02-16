@@ -52,6 +52,10 @@ class LocalRabbitMQ:
         return '/'
 
     @property
+    def service(self):
+        return self._mq_service
+
+    @property
     def management_url(self) -> str:
         """URL to connect to the management interface of the RabbitMQ instance."""
         return f'http://guest:guest@{self._mq_host}:15672/'
