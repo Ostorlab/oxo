@@ -5,8 +5,7 @@ a local RabbitMQ.
 """
 import logging
 import socket
-from typing import List
-from typing import Optional
+from typing import List,Optional
 
 import docker
 import requests
