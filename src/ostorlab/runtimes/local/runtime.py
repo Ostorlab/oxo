@@ -12,7 +12,6 @@ import docker
 import requests
 import tenacity
 from docker.models import services as docker_models_services
-from docker.types import services as docker_types_services
 
 from ostorlab import configuration_manager
 from ostorlab import exceptions
