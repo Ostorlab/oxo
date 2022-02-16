@@ -17,7 +17,7 @@ from ostorlab.runtimes.local.services import mq
 
 
 class AgentRuntime:
-    """Methods to consolidate the agent settings and agent default defintion, and create the agent service."""
+    """Class to consolidate the agent settings and agent default definition, and create the agent service."""
 
     def __init__(self,
                  agent: definitions.AgentSettings,
