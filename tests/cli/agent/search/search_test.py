@@ -44,7 +44,7 @@ def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, requests_mock)
 
     result = runner.invoke(rootcli.rootcli, ['agent', 'search', '-k', 'xss'])
 
-    assert 'Listing 1 Agents' in result.output
+    assert 'Found 1 Agents' in result.output
     assert 'agent/jiji/ssss' in result.output
     assert 'vuln' in result.output
 
@@ -86,6 +86,6 @@ def testAgentSearchCLI_WhenPublicRunner_listAgents(mocker, requests_mock):
 
     result = runner.invoke(rootcli.rootcli, ['agent', 'search', '-k', 'xss'])
 
-    assert 'Listing 1 Agents' in result.output
+    assert 'Found 1 Agents' in result.output
     assert 'agent/jiji/ssss' in result.output
     assert 'vuln' in result.output
