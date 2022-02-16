@@ -13,4 +13,4 @@ def file_cli(ctx: click.core.Context, file: io.FileIO) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj['runtime']
     asset = file_asset.File(file.read())
-    runtime.scan(agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
