@@ -24,6 +24,8 @@ from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local import agent_runtime
+
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
@@ -295,16 +297,6 @@ class LocalRuntime(runtime.Runtime):
         self._start_persist_vulnz_agent()
         self._start_tracker_agent()
 
-    def _add_settings_config(self, agent: definitions.AgentSettings):
-        """Add agent settings to docker config."""
-        agent_instance_settings_proto = agent.to_raw_proto()
-        docker_config = self._docker_client.configs.create(name=f'agent_{agent.container_image}_{self.name}',
-                                                           labels={'ostorlab.universe': self.name},
-                                                           data=agent_instance_settings_proto)
-        return docker.types.ConfigReference(config_id=docker_config.id,
-                                            config_name=f'agent_{agent.container_image}_{self.name}',
-                                            filename='/tmp/settings.binproto')
-
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
         """Start agent based on provided definition.
@@ -312,49 +304,14 @@ class LocalRuntime(runtime.Runtime):
         Args:
             agent: An agent definition containing all the settings of how agent should run and what arguments to pass.
         """
-        # TODO(alaeddine): add fetching the agent definition from the Image label, consolidate the agent settings and
-        # agent default definition and then set the values.
         logger.info('starting agent %s with %s', agent.key, agent.args)
 
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
 
-        # Port published with ingress mode can't be used with dnsrr mode
-        if agent.open_ports:
-            endpoint_spec = docker_types_services.EndpointSpec(
-                ports={p.destination_port: p.source_port for p in agent.open_ports})
-        else:
-            endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
+        runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
+        agent_service = runtime_agent.create_agent_service(self._network.name, extra_configs)
 
-        agent.bus_url = self._mq_service.url
-        agent.bus_exchange_topic = f'ostorlab_topic_{self.name}'
-        agent.bus_management_url = self._mq_service.management_url
-        agent.bus_vhost = self._mq_service.vhost
-        agent.healthcheck_host = HEALTHCHECK_HOST
-        agent.healthcheck_port = HEALTHCHECK_PORT
-
-        extra_configs.append(self._add_settings_config(agent))
-
-        # wait 2s and check max 5 times with 0.5s between each check.
-        healthcheck = docker.types.Healthcheck(test=['CMD', 'ostorlab', 'agent', 'healthcheck'],
-                                               retries=HEALTHCHECK_RETRIES, timeout=HEALTHCHECK_TIMEOUT,
-                                               start_period=HEALTHCHECK_START_PERIOD, interval=HEALTHCHECK_INTERVAL, )
-
-        agent_service = self._docker_client.services.create(
-            image=agent.container_image,
-            networks=[self._network],
-            env=[
-                f'UNIVERSE={self.name}',
-            ],
-            name=f'{agent.container_image}_{self.name}',
-            restart_policy=docker_types_services.RestartPolicy(condition=agent.restart_policy),
-            mounts=self._replace_variable_mounts(agent.mounts),
-            configs=extra_configs,
-            healthcheck=healthcheck,
-            labels={'ostorlab.universe': self.name},
-            constraints=agent.constraints,
-            endpoint_spec=endpoint_spec,
-            resources=docker_types_services.Resources(mem_limit=agent.mem_limit))
         if agent.replicas > 1:
             # Ensure the agent service had to
             # TODO(alaeddine): Check if sleep if really needed and if it is, implement a parallel way to start agents
