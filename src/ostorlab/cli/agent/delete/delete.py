@@ -25,8 +25,8 @@ def delete(agent: str, agent_version_regex: Optional[str] = None) -> None:
     deleted = False
     for im in images:
         for t in im.tags:
-            # The agents when they are installed, produce 2 images, one tagged from the agent name and one 
-            # with the remote name. Hence we need to delete both.
+            # The agents when they are installed, produce 2 images, one tagged from the agent name and one with the
+            # remote name. Hence we need to delete both.
             if t.split(':')[0] in (agent_container_name, f'ostorlab.store/agents/{agent_container_name}'):
                 agent_container_version = t.split(':')[1]
                 if agent_version_regex is None or re.match(agent_version_regex, agent_container_version):
