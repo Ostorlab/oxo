@@ -35,6 +35,12 @@ def search_cli(keyword: str) -> None:
                 description = versions[0].get('description')
                 in_selectors = ', '.join(versions[0].get('inSelectors'))
                 out_selectors = ',' .join(versions[0].get('outSelectors'))
+            else:
+                version = '-'
+                description = '-'
+                in_selectors = '-'
+                out_selectors = '-'
+
             agents.append({
                 'key': result_agent['key'],
                 'version': version,
