@@ -26,6 +26,7 @@ class Entry:
     targeted_by_malware: bool = False
     targeted_by_ransomware: bool = False
     targeted_by_nation_state: bool = False
+    cvss_v3_vector: str = ''
 
 
 class MetaKB(type):
@@ -52,6 +53,7 @@ class MetaKB(type):
                 targeted_by_malware=meta.get('targeted_by_malware', False),
                 targeted_by_ransomware=meta.get('targeted_by_ransomware', False),
                 targeted_by_nation_state=meta.get('targeted_by_nation_state', False),
+                cvss_v3_vector=meta.get('cvss_v3_vector', ''),
             )
 
 
