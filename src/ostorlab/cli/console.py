@@ -42,7 +42,7 @@ class Console:
         Args:
             text: The error text to show.
         """
-        self._console.print(f'[bold]ERROR:[/] {text}', style='error')
+        self._console.print(f':apple: [bold]ERROR:[/] {text}', style='error')
 
     def warning(self, text: str) -> None:
         """Shows warning message.
