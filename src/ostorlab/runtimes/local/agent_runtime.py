@@ -20,7 +20,7 @@ class AgentRuntime:
     """Class to consolidate the agent settings and agent default definition, and create the agent service."""
 
     def __init__(self,
-                 agent: definitions.AgentSettings,
+                 agent_settings: definitions.AgentSettings,
                  runtime_name: str,
                  docker_client: docker.DockerClient,
                  mq_service: mq.LocalRabbitMQ) -> None:
@@ -32,13 +32,13 @@ class AgentRuntime:
             docker_client: docker client.
         """
         self._docker_client = docker_client
-        self.agent = agent
-        self.image_name = agent.container_image.split(':', maxsplit=1)[0]
+        self.agent = agent_settings
+        self.image_name = agent_settings.container_image.split(':', maxsplit=1)[0]
         self.runtime_name = runtime_name
         self.mq_service = mq_service
         self.update_agent_settings()
 
-    def created_settings_config(self) -> docker.types.ConfigReference:
+    def create_settings_config(self) -> docker.types.ConfigReference:
         """Create a docker configuration of the  agent settings.
 
         Returns:
@@ -53,7 +53,7 @@ class AgentRuntime:
                                             config_name=config_name,
                                             filename='/tmp/settings.binproto')
 
-    def created_definition_config(self) -> docker.types.ConfigReference:
+    def create_definition_config(self) -> docker.types.ConfigReference:
         """Create a docker configuration of the  agent definition.
 
         Returns:
@@ -68,7 +68,7 @@ class AgentRuntime:
                                             config_name=config_name,
                                             filename='/tmp/ostorlab.yaml')
 
-    def agent_definition_from_label(self) -> agent_definitions.AgentDefinition:
+    def create_agent_definition_from_label(self) -> agent_definitions.AgentDefinition:
         """Read the agent yaml definition from the docker image labels.
 
         Returns:
@@ -117,7 +117,7 @@ class AgentRuntime:
         Returns:
             the agent docker service.
         """
-        agent_definition = self.agent_definition_from_label()
+        agent_definition = self.create_agent_definition_from_label()
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
             endpoint_spec = docker_types_services.EndpointSpec(
@@ -125,8 +125,8 @@ class AgentRuntime:
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
-        extra_configs.append(self.created_settings_config())
-        extra_configs.append(self.created_definition_config())
+        extra_configs.append(self.create_settings_config())
+        extra_configs.append(self.create_definition_config())
 
         mounts = self.agent.mounts or agent_definition.mounts
         constraints = self.agent.constraints or agent_definition.constraints
