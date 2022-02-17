@@ -27,6 +27,7 @@ class AgentDefinition:
     durability: str = 'published'
     docker_file_path: str = 'Dockerfile'
     docker_build_root: str = '.'
+    image: str = None
 
     @classmethod
     def from_yaml(cls, file: io.FileIO) -> 'AgentDefinition':
@@ -57,4 +58,5 @@ class AgentDefinition:
             durability=definition.get('durability', 'published'),
             docker_file_path=definition.get('docker_file_path', 'Dockerfile'),
             docker_build_root=definition.get('docker_build_root', '.'),
+            image=definition.get('image'),
         )
