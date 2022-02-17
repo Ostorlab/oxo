@@ -67,7 +67,6 @@ def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list):
         asset='File(/tmp/test)',
         created_time=service['CreatedAt'],
         progress=None,
-        risk_rating=None,
     ) for service in services]
 
     mock_scan_list.return_value = scans
