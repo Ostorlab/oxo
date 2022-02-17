@@ -346,7 +346,7 @@ class LocalRuntime(runtime.Runtime):
         """Start the local persistence agent to dump vulnerabilities in the local config."""
         persist_vulnz_agent_settings = definitions.AgentSettings(
             key=LOCAL_PERSIST_VULNZ_AGENT_DEFAULT,
-            mounts=[f'{configuration_manager.ConfigurationManager().conf_path}:/config'])
+            mounts=[])
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
 
     def _inject_asset(self, asset: base_asset.Asset):
