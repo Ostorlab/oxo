@@ -29,8 +29,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
             columns = {'Id': 'id',
                        'Asset': 'asset',
                        'Created Time': 'created_time',
-                       'Progress': 'progress',
-                       'Risk': 'risk'}
+                       'Progress': 'progress'}
             title = f'Showing {len(scans)} Scans'
 
             data = [
@@ -39,7 +38,6 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                     'asset': s.asset,
                     'created_time': str(s.created_time),
                     'progress': styles.style_progress(s.progress),
-                    'risk': styles.style_risk(s.risk_rating),
                 } for s in scans]
 
             console.table(columns=columns, data=data, title=title)

@@ -83,7 +83,6 @@ class RemoteRuntime(runtime.Runtime):
                     asset=scan['asset'],
                     created_time=scan['createdTime'],
                     progress=scan['progress'],
-                    risk_rating=scan['riskRating'],
                 ) for scan in scans
             ]
 
