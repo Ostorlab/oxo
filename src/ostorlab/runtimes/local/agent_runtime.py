@@ -13,8 +13,11 @@ from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes import definitions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes.local.services import mq
+from ostorlab import configuration_manager
 
-
+MOUNT_VARIABLES = {
+    '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
+}
 
 class AgentRuntime:
     """Class to consolidate the agent settings and agent default definition, and create the agent service."""
@@ -89,7 +92,6 @@ class AgentRuntime:
         self.agent.healthcheck_host = runtime.HEALTHCHECK_HOST
         self.agent.healthcheck_port = runtime.HEALTHCHECK_PORT
 
-
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for for the agent service.
 
@@ -103,6 +105,21 @@ class AgentRuntime:
                                                start_period=runtime.HEALTHCHECK_START_PERIOD,
                                                interval=runtime.HEALTHCHECK_INTERVAL, )
         return healthcheck
+
+    def replace_variable_mounts(self, mounts: List[str]):
+        """Replace path variables for the container mounts
+
+        Args:
+            mounts: List of src:dst paths to mount
+        """
+
+        replaced_mounts= []
+        for mount in mounts:
+            for mount_variable, mount_value in MOUNT_VARIABLES.items():
+                mount = mount.replace(mount_variable, mount_value)
+            replaced_mounts.append(mount)
+        return replaced_mounts
+
 
     def create_agent_service(self,
                             network_name: str,
@@ -129,6 +146,7 @@ class AgentRuntime:
         extra_configs.append(self.create_definition_config())
 
         mounts = self.agent.mounts or agent_definition.mounts
+        mounts = self.replace_variable_mounts(mounts)
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
