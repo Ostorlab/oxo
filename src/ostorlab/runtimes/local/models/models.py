@@ -78,7 +78,6 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     asset = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
-    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(RiskRating))
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
 
     @staticmethod
@@ -90,8 +89,7 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(),
-                    risk_rating='INFO', progress='NOT_STARTED')
+        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), progress='NOT_STARTED')
         database = Database()
         database.session.add(scan)
         database.session.commit()
