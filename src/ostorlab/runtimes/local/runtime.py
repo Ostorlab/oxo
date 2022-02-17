@@ -13,7 +13,6 @@ import requests
 import tenacity
 from docker.models import services as docker_models_services
 
-from ostorlab import configuration_manager
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
@@ -47,10 +46,6 @@ DEFAULT_AGENTS = [
     TRACKER_AGENT_DEFAULT,
     LOCAL_PERSIST_VULNZ_AGENT_DEFAULT
 ]
-
-MOUNT_VARIABLES = {
-    '$CONFIG_HOME': configuration_manager.OSTORLAB_PRIVATE_DIR
-}
 
 
 class UnhealthyService(exceptions.OstorlabError):
@@ -453,16 +448,3 @@ class LocalRuntime(runtime.Runtime):
         for agent_key in DEFAULT_AGENTS:
             install_agent.install(agent_key=agent_key)
 
-    def _replace_variable_mounts(self, mounts: List[str]):
-        """Replace path variables for the container mounts
-
-        Args:
-            mounts: List of src:dst paths to mount
-        """
-
-        replaced_mounts= []
-        for mount in mounts:
-            for mount_variable, mount_value in MOUNT_VARIABLES.items():
-                mount = mount.replace(mount_variable, mount_value)
-            replaced_mounts.append(mount)
-        return replaced_mounts
