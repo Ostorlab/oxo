@@ -392,7 +392,6 @@ class LocalRuntime(runtime.Runtime):
                 asset=s.asset,
                 created_time=s.created_time,
                 progress=s.progress.value,
-                risk_rating=s.risk_rating.value,
             )
 
         universe_ids = set()
