@@ -16,10 +16,10 @@ class Entry:
     """KB entry with information like title, risk rating and description."""
     title: str
     risk_rating: str
-    short_description: str
-    description: str
-    recommendation: str
     references: Dict[str, str]
+    short_description: str = ''
+    description: str = ''
+    recommendation: str = ''
     security_issue: bool = False
     privacy_issue: bool = False
     has_public_exploit: bool = False
