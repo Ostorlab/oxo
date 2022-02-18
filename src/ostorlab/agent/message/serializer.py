@@ -98,7 +98,7 @@ def _serialize(selector: str, class_name: str, values: Dict[str, Any]):
 
 def _parse_list(values: Any, message) -> None:
     """Parse list to protobuf message."""
-    if isinstance(values[0], dict):  # value needs to be further parsed
+    if len(values) > 0 and isinstance(values[0], dict):  # value needs to be further parsed
         for v in values:
             cmd = message.add()
             _parse_dict(v, cmd)
