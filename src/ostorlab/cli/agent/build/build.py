@@ -8,8 +8,9 @@ import docker
 from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
 from ostorlab.cli import console as cli_console
-from ostorlab.cli.agent import agent
 from ostorlab.cli import docker_requirements_checker
+from ostorlab.cli.agent import agent
+from ostorlab.cli.agent.build import build_progress
 
 console = cli_console.Console()
 
@@ -50,10 +51,14 @@ def build(file: io.FileIO, organization: str = '') -> None:
                     f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
                     f' at root [bold red]{docker_build_root}[/].')
                 with console.status(f'Building [bold red]{container_name}[/]'):
-                    docker_sdk_client.images.build(path=docker_build_root,
-                                                   dockerfile=dockerfile_path,
-                                                   tag=container_name,
-                                                   labels={'agent_definition':file.read().decode('utf-8')})
+                    for log in build_progress.BuildProgress().build(path=docker_build_root,
+                                                         dockerfile=dockerfile_path,
+                                                         tag=container_name,
+                                                         labels={'agent_definition': file.read().decode('utf-8')}):
+
+                        if 'stream' in log and log['stream'] != '\n':
+                            console.info(log['stream'][:-1])
+
                 console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
         except validator.SchemaError:
             console.error(
