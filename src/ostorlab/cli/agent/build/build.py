@@ -4,6 +4,7 @@ import logging
 
 import click
 import docker
+from docker import errors
 
 from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
@@ -52,14 +53,21 @@ def build(file: io.FileIO, organization: str = '') -> None:
                     f' at root [bold red]{docker_build_root}[/].')
                 with console.status(f'Building [bold red]{container_name}[/]'):
                     for log in build_progress.BuildProgress().build(path=docker_build_root,
-                                                         dockerfile=dockerfile_path,
-                                                         tag=container_name,
-                                                         labels={'agent_definition': file.read().decode('utf-8')}):
+                                                                    dockerfile=dockerfile_path,
+                                                                    tag=container_name,
+                                                                    labels={'agent_definition': file.read().decode(
+                                                                        'utf-8')}):
 
                         if 'stream' in log and log['stream'] != '\n':
                             console.info(log['stream'][:-1])
+                        elif 'error' in log:
+                            console.error(log['error'][:-1])
+                        else:
+                            logger.debug(log)
 
                 console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
+        except errors.BuildError:
+            console.error('Error building agent.')
         except validator.SchemaError:
             console.error(
                 'Schema is invalid, this should not happen, please report an issue at '
