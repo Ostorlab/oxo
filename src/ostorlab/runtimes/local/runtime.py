@@ -24,6 +24,7 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local import agent_runtime
 
+from ostorlab.runtimes.local import log_streamer
 
 NETWORK = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
@@ -126,7 +127,7 @@ class LocalRuntime(runtime.Runtime):
         super().__init__()
         self._network = network
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
-        # TODO(alaeddine): inject docker client to support more complex use-cases.
+        self._log_streamer = log_streamer.LogStream()
 
         if not docker_requirements_checker.is_docker_installed():
             raise DockerNotInstalledError('Docker is not installed.')
@@ -274,6 +275,7 @@ class LocalRuntime(runtime.Runtime):
         """Start a local rabbitmq service."""
         self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self._network)
         self._mq_service.start()
+        # self._log_streamer.stream(self._mq_service.service)
 
     def _check_services_healthy(self):
         """Check if the rabbitMQ service is running and healthy."""
@@ -305,6 +307,7 @@ class LocalRuntime(runtime.Runtime):
 
         runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
         agent_service = runtime_agent.create_agent_service(self._network, extra_configs)
+        self._log_streamer.stream(agent_service)
 
         if agent.replicas > 1:
             # Ensure the agent service had to
