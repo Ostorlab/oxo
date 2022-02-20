@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 console = cli_console.Console()
 
+class Error(Exception):
+    """Base Error."""
+
+class AgentDetailsNotFound(Error):
+    """Agent not found error."""
 
 def _image_name_from_key(agent_key: str) -> str:
     """Generate docker image name from an agent key.
@@ -92,15 +97,13 @@ def get_agent_details(agent_key: str) -> Dict:
     try:
         response = runner.execute(agent_details_api.AgentDetailsAPIRequest(agent_key))
     except base_runner.ResponseError as e:
-        console.error('Requested resource not found.')
-        raise click.exceptions.Exit(2) from e
+        raise AgentDetailsNotFound('requested agent not found') from e
 
     if 'errors' in response:
-        error_message = f"""\b The provided agent key : {agent_key} does not correspond to any agent.
+        error_message = f"""The provided agent key : {agent_key} does not correspond to any agent.
         Please make sure you have the correct agent key.
         """
-        console.error(error_message)
-        raise click.exceptions.Exit(2)
+        raise AgentDetailsNotFound(error_message)
     else:
         agent_details = response['data']['agent']
         return agent_details
@@ -128,6 +131,7 @@ def install(agent_key: str, version: str = '') -> None:
         raise click.exceptions.Exit(2)
 
     image_name = _image_name_from_key(agent_details['key'])
+    logger.debug('searching for image name %s', image_name)
 
     try:
         docker_client = docker.from_env()

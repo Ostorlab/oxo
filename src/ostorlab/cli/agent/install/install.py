@@ -24,4 +24,8 @@ def install(agent: str, version: str = '') -> None:
         console.error('User does not have permissions to run docker.')
         raise click.exceptions.Exit(2)
     else:
-        install_agent.install(agent, version)
+        try:
+            install_agent.install(agent, version)
+        except install_agent.AgentDetailsNotFound as e:
+            console.error(e)
+            raise click.exceptions.Exit(2)
