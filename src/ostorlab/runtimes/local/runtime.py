@@ -125,6 +125,7 @@ class LocalRuntime(runtime.Runtime):
 
     def __init__(self) -> None:
         super().__init__()
+        self.follow = []
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._log_streamer = log_streamer.LogStream()
 
@@ -279,7 +280,8 @@ class LocalRuntime(runtime.Runtime):
         """Start a local rabbitmq service."""
         self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network)
         self._mq_service.start()
-        # self._log_streamer.stream(self._mq_service.service)
+        if 'mq' in self.follow:
+            self._log_streamer.stream(self._mq_service.service)
 
     def _check_services_healthy(self):
         """Check if the rabbitMQ service is running and healthy."""
@@ -311,7 +313,8 @@ class LocalRuntime(runtime.Runtime):
 
         runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
-        self._log_streamer.stream(agent_service)
+        if agent.key in self.follow:
+            self._log_streamer.stream(agent_service)
 
         if agent.replicas > 1:
             # Ensure the agent service had to

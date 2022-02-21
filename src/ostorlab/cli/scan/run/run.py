@@ -21,16 +21,17 @@ logger = logging.getLogger(__name__)
 @scan.group()
 @click.option('--agents',
               multiple=True,
-              help='List of agents keys. to use in the scan. ',
+              help='List of agents keys. to use in the scan.',
               required=False)
 @click.option('--title', '-t', help='Scan title.')
 @click.option('--agent-group-definition', '-g', type=click.File('r'),
               help='Path to agents group definition file (yaml).',
               required=False)
-@click.option('--install', '-i', help='Install missing agents', is_flag=True, required=False)
+@click.option('--install', '-i', help='Install missing agents.', is_flag=True, required=False)
+@click.option('--follow', help='Follow logs of provided list of agents and services.', multiple=True, default=[])
 @click.pass_context
 def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.FileIO,
-        title: str, install: bool) -> None:
+        title: str, install: bool, follow: List[str]) -> None:
     """Start a new scan on a specific asset.\n
     Example:\n
         - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
@@ -54,6 +55,9 @@ def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.F
         raise click.ClickException('Missing agent list or agent group definition.')
 
     runtime_instance: runtime.Runtime = ctx.obj['runtime']
+    # set list of log follow.
+    runtime_instance.follow = follow
+
     if runtime_instance.can_run(agent_group_definition=agent_group):
         ctx.obj['agent_group_definition'] = agent_group
         ctx.obj['title'] = title
