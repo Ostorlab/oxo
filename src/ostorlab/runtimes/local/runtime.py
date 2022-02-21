@@ -194,26 +194,14 @@ class LocalRuntime(runtime.Runtime):
                 console.info('Injecting asset')
                 self._inject_asset(asset)
                 console.info('Updating scan status')
-                self._update_scan_status()
+                self._update_scan_progress('IN_PROGRESS')
                 console.success('Scan created successfully')
             else:
                 console.error('Agent not starting')
                 self.stop(self._scan_db.id)
-                self._set_scan_progress_error(self._scan_db.id)
+                self._update_scan_progress('ERROR')
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
-
-    def _set_scan_progress_error(self, scan_id):
-        """Set scan progress to Error.
-
-                Args:
-                    scan_id: The id of the scan to set its progress.
-                """
-        database = models.Database()
-        session = database.session
-        scan = session.query(models.Scan).get(int(scan_id))
-        scan.progress = 'ERROR'
-        session.commit()
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
@@ -265,12 +253,12 @@ class LocalRuntime(runtime.Runtime):
         models.Database().create_db_tables()
         return models.Scan.create(title=title, asset=asset)
 
-    def _update_scan_status(self):
+    def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
         database = models.Database()
         session = database.session
         scan = session.query(models.Scan).get(self._scan_db.id)
-        scan.progress = 'IN_PROGRESS'
+        scan.progress = progress
         session.commit()
 
     def _create_network(self):
