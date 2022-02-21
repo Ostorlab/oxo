@@ -74,6 +74,8 @@ class AgentMQMixin:
         Args:
             delete_queue_first: Used for testing purposes. To delete pending queues first.
         """
+        self._connection_pool = pool.Pool(self._get_connection, max_size=2, loop=self._loop)
+        self._channel_pool = pool.Pool(self._get_channel, max_size=10, loop=self._loop)
         async with self._channel_pool.acquire() as channel:
             await self._declare_mq_queue(channel, delete_queue_first)
             await self._queue.consume(self._mq_process_message, no_ack=False)
