@@ -193,11 +193,20 @@ class LocalRuntime(runtime.Runtime):
             console.info('Checking agents are healthy')
             is_healthy = self._check_agents_healthy(agent_group_definition)
             if is_healthy is True:
-                console.info('Injecting asset')
-                self._inject_asset(asset)
-                console.info('Updating scan status')
-                self._update_scan_progress('IN_PROGRESS')
-                console.success('Scan created successfully')
+                console.info('Starting default agents')
+                self._start_default_agents()
+                console.info('Checking default agents are healthy')
+                is_healthy = self._check_agents_healthy(agent_group_definition)
+                if is_healthy is True:
+                    console.info('Injecting asset')
+                    self._inject_asset(asset)
+                    console.info('Updating scan status')
+                    self._update_scan_progress('IN_PROGRESS')
+                    console.success('Scan created successfully')
+                else:
+                    console.error('Default agents not starting')
+                    self.stop(self._scan_db.id)
+                    self._update_scan_progress('ERROR')
             else:
                 console.error('Agent not starting')
                 self.stop(self._scan_db.id)
@@ -301,6 +310,8 @@ class LocalRuntime(runtime.Runtime):
         """Starts all the agents as list in the agent run definition."""
         for agent in agent_group_definition.agents:
             self._start_agent(agent, extra_configs=[])
+
+    def _start_default_agents(self):
         self._start_persist_vulnz_agent()
         self._start_tracker_agent()
 
