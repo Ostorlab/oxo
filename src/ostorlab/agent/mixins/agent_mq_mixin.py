@@ -43,6 +43,7 @@ class AgentMQMixin:
         self._channel_pool: pool.Pool[aio_pika.Channel] = None
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+        self._queue = None
 
     async def _get_connection(self) -> aio_pika.Connection:
         return await aio_pika.connect_robust(url=self._url, loop=self._loop)
@@ -56,11 +57,17 @@ class AgentMQMixin:
                                               type=aio_pika.ExchangeType.TOPIC,
                                               arguments={'x-max-length': 10000, 'x-overflow': 'reject-publish'})
 
-    async def mq_init(self):
-        """Initialize the channel pools and the executors to process the messages."""
+    async def mq_init(self, delete_queue_first: bool = False):
+        """Initialize the channel pools and the executors to process the messages and declare the queues.
+        Args:
+            delete_queue_first: Used for testing purposes. To delete pending queues first.
+        """
         logger.info('Connecting to %s', self._url)
         self._connection_pool = pool.Pool(self._get_connection, max_size=2, loop=self._loop)
         self._channel_pool = pool.Pool(self._get_channel, max_size=10, loop=self._loop)
+
+        async with self._channel_pool.acquire() as channel:
+            await self._declare_mq_queue(channel, delete_queue_first)
 
     async def mq_run(self, delete_queue_first: bool = False):
         """Use a channel to declare the queue, set the listener on the selectors and consume the received messaged.
@@ -68,20 +75,28 @@ class AgentMQMixin:
             delete_queue_first: Used for testing purposes. To delete pending queues first.
         """
         async with self._channel_pool.acquire() as channel:
-            await channel.set_qos(prefetch_count=1)
-            exchange = await self._get_exchange(channel)
-            if delete_queue_first:
-                await channel.queue_delete(self._queue_name)
+            await self._declare_mq_queue(channel, delete_queue_first)
+            await self._queue.consume(self._mq_process_message, no_ack=False)
 
-            if self._max_priority is not None:
-                queue = await channel.declare_queue(self._queue_name, auto_delete=False, durable=True,
-                                                    arguments={'x-max-priority': self._max_priority})
-            else:
-                queue = await channel.declare_queue(self._queue_name, auto_delete=False, durable=True)
-            for k in self._keys:
-                await queue.bind(exchange, k)
+    async def _declare_mq_queue(self, channel, delete_queue_first: bool = False):
+        """Declare the MQ queue on a given channel.
+        The queue is durable, re-declaring the queue will return the same queue
+        Args:
+            channel: the MQ channel to use for the queues
+            delete_queue_first: Used for testing purposes. To delete pending queues first.
+        """
+        await channel.set_qos(prefetch_count=1)
+        exchange = await self._get_exchange(channel)
+        if delete_queue_first:
+            await channel.queue_delete(self._queue_name)
 
-            await queue.consume(self._mq_process_message, no_ack=False)
+        if self._max_priority is not None:
+            self._queue = await channel.declare_queue(self._queue_name, auto_delete=False, durable=True,
+                                                arguments={'x-max-priority': self._max_priority})
+        else:
+            self._queue = await channel.declare_queue(self._queue_name, auto_delete=False, durable=True)
+        for k in self._keys:
+            await self._queue.bind(exchange, k)
 
     async def _mq_process_message(self, message: aio_pika.IncomingMessage):
         """Consumes the MQ messages and calls the process message callback."""

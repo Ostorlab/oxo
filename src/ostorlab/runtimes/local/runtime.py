@@ -191,16 +191,26 @@ class LocalRuntime(runtime.Runtime):
             console.info('Starting agents')
             self._start_agents(agent_group_definition)
             console.info('Checking agents are healthy')
-            self._check_agents_healthy(agent_group_definition)
-            console.info('Starting default agents')
-            self._start_default_agents()
-            console.info('Checking default agents are healthy')
-            self._check_agents_healthy(agent_group_definition)
-            console.info('Injecting asset')
-            self._inject_asset(asset)
-            console.info('Updating scan status')
-            self._update_scan_status()
-            console.success('Scan created successfully')
+            is_healthy = self._check_agents_healthy(agent_group_definition)
+            if is_healthy is True:
+                console.info('Starting default agents')
+                self._start_default_agents()
+                console.info('Checking default agents are healthy')
+                is_healthy = self._check_agents_healthy(agent_group_definition)
+                if is_healthy is True:
+                    console.info('Injecting asset')
+                    self._inject_asset(asset)
+                    console.info('Updating scan status')
+                    self._update_scan_progress('IN_PROGRESS')
+                    console.success('Scan created successfully')
+                else:
+                    console.error('Default agents not starting')
+                    self.stop(self._scan_db.id)
+                    self._update_scan_progress('ERROR')
+            else:
+                console.error('Agent not starting')
+                self.stop(self._scan_db.id)
+                self._update_scan_progress('ERROR')
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
 
@@ -254,12 +264,12 @@ class LocalRuntime(runtime.Runtime):
         models.Database().create_db_tables()
         return models.Scan.create(title=title, asset=asset)
 
-    def _update_scan_status(self):
+    def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
         database = models.Database()
         session = database.session
         scan = session.query(models.Scan).get(self._scan_db.id)
-        scan.progress = 'IN_PROGRESS'
+        scan.progress = progress
         session.commit()
 
     def _create_network(self):
@@ -337,9 +347,12 @@ class LocalRuntime(runtime.Runtime):
     def _is_service_healthy(self, service: docker_models_services.Service, replicas=None) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug('checking Spec service %s', service.name)
-        if not replicas:
-            replicas = service.attrs['Spec']['Mode']['Replicated']['Replicas']
-        return replicas == len([task for task in service.tasks() if task['Status']['State'] == 'running'])
+        try:
+            if not replicas:
+                replicas = service.attrs['Spec']['Mode']['Replicated']['Replicas']
+            return replicas == len([task for task in service.tasks() if task['Status']['State'] == 'running'])
+        except docker.errors.NotFound:
+            return False
 
     def _list_agent_services(self):
         """List the services of type agents. All agent service must start with agent_."""
@@ -430,7 +443,7 @@ class LocalRuntime(runtime.Runtime):
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=20),
                     # return last value and don't raise RetryError exception.
-                    retry_error_callback=lambda lv: lv.result(),
+                    retry_error_callback=lambda lv: lv.outcome.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
     def _are_agents_ready(self, agents: List[definitions.AgentSettings], fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
