@@ -199,8 +199,21 @@ class LocalRuntime(runtime.Runtime):
             else:
                 console.error('Agent not starting')
                 self.stop(self._scan_db.id)
+                self._set_scan_progress_error(self._scan_db.id)
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
+
+    def _set_scan_progress_error(self, scan_id):
+        """Set scan progress to Error.
+
+                Args:
+                    scan_id: The id of the scan to set its progress.
+                """
+        database = models.Database()
+        session = database.session
+        scan = session.query(models.Scan).get(int(scan_id))
+        scan.progress = 'ERROR'
+        session.commit()
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
