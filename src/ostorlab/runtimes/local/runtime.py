@@ -197,7 +197,7 @@ class LocalRuntime(runtime.Runtime):
                 self._update_scan_status()
                 console.success('Scan created successfully')
             else:
-                console.error(f'Agent not starting')
+                console.error('Agent not starting')
                 self.stop(self._scan_db.id)
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
