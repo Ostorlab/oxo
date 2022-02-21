@@ -26,7 +26,7 @@ from ostorlab.runtimes.local import agent_runtime
 
 from ostorlab.runtimes.local import log_streamer
 
-NETWORK = 'ostorlab_local_network'
+NETWORK_PREFIX = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
 HEALTHCHECK_PORT = 5000
 SECOND = 1000000000
@@ -123,9 +123,8 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self, network: str = NETWORK) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._network = network
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._log_streamer = log_streamer.LogStream()
 
@@ -147,6 +146,10 @@ class LocalRuntime(runtime.Runtime):
             return str(self._scan_db.id)
         else:
             raise ValueError('Scan not created yet')
+
+    @property
+    def network(self) -> str:
+        return f'{NETWORK_PREFIX}_{self.name}'
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent run definition.
@@ -219,6 +222,7 @@ class LocalRuntime(runtime.Runtime):
         for network in networks:
             network_labels = network.attrs['Labels']
             if network_labels is not None and network_labels.get('ostorlab.universe') == scan_id:
+                logger.debug('removing network %s', network_labels)
                 stopped_network.append(network)
                 network.remove()
 
@@ -226,19 +230,19 @@ class LocalRuntime(runtime.Runtime):
         for config in configs:
             config_labels = config.attrs['Spec']['Labels']
             if config_labels.get('ostorlab.universe') == scan_id:
+                logger.debug('removing config %s', config_labels)
                 stopped_configs.append(config)
                 config.remove()
 
-        if stopped_services and stopped_network and stopped_configs:
-            console.success('All scan services stopped.')
-            database = models.Database()
-            session = database.session
-            scan = session.query(models.Scan).get(int(scan_id))
-            scan.progress = 'STOPPED'
-            session.commit()
-            console.success('Scan stopped successfully.')
-        else:
-            console.error(f'Scan with id {scan_id} not found.')
+        if stopped_services or stopped_network or stopped_configs:
+            console.success('All scan components stopped.')
+
+        database = models.Database()
+        session = database.session
+        scan = session.query(models.Scan).get(int(scan_id))
+        scan.progress = 'STOPPED'
+        session.commit()
+        console.success('Scan stopped successfully.')
 
     def _create_scan_db(self, title: str, asset: str):
         """Persist the scan in the database"""
@@ -255,12 +259,12 @@ class LocalRuntime(runtime.Runtime):
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicates."""
-        if any(network.name == self._network for network in self._docker_client.networks.list()):
+        if any(network.name == self.network for network in self._docker_client.networks.list()):
             logger.warning('network already exists.')
         else:
-            logger.info('creating private network %s', self._network)
+            logger.info('creating private network %s', self.network)
             return self._docker_client.networks.create(
-                name=self._network,
+                name=self.network,
                 driver='overlay',
                 attachable=True,
                 labels={'ostorlab.universe': self.name},
@@ -273,7 +277,7 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_mq_service(self):
         """Start a local rabbitmq service."""
-        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self._network)
+        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network)
         self._mq_service.start()
         # self._log_streamer.stream(self._mq_service.service)
 
@@ -306,7 +310,7 @@ class LocalRuntime(runtime.Runtime):
             raise AgentNotInstalled(agent.key)
 
         runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
-        agent_service = runtime_agent.create_agent_service(self._network, extra_configs)
+        agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
         self._log_streamer.stream(agent_service)
 
         if agent.replicas > 1:
