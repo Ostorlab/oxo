@@ -12,6 +12,7 @@ import docker
 import requests
 import tenacity
 from docker.models import services as docker_models_services
+import click
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
@@ -50,14 +51,6 @@ DEFAULT_AGENTS = [
 
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
-
-
-class DockerNotInstalledError(exceptions.OstorlabError):
-    """Docker is not installed."""
-
-
-class DockerPermissionsDeniedError(exceptions.OstorlabError):
-    """User does not have permissions to run docker."""
 
 
 class AgentNotInstalled(exceptions.OstorlabError):
@@ -130,9 +123,11 @@ class LocalRuntime(runtime.Runtime):
         self._log_streamer = log_streamer.LogStream()
 
         if not docker_requirements_checker.is_docker_installed():
-            raise DockerNotInstalledError('Docker is not installed.')
+            console.error('Docker is not installed.')
+            raise click.exceptions.Exit(2)
         elif not docker_requirements_checker.is_user_permitted():
-            raise DockerPermissionsDeniedError('User does not have permissions to run docker.')
+            console.error('User does not have permissions to run docker.')
+            raise click.exceptions.Exit(2)
         else:
             if not docker_requirements_checker.is_swarm_initialized():
                 docker_requirements_checker.init_swarm()
