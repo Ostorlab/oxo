@@ -14,7 +14,7 @@ from ostorlab.cli import console as cli_console
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
-ENGINE_URL = f'sqlite:///{config_manager.OSTORLAB_PRIVATE_DIR}/db.sqlite'
+ENGINE_URL = f'sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite'
 
 metadata = sqlalchemy.MetaData()
 Base = declarative.declarative_base(metadata=metadata)

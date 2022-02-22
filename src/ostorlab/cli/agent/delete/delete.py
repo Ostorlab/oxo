@@ -24,10 +24,10 @@ def delete(agent: str, agent_version_regex: Optional[str] = None) -> None:
     agent_container_name = agent.replace('/', '_')
     deleted = False
     for im in images:
-        for t in im.tags:
-            # The agents when they are installed, produce 2 images, one tagged from the agent name and one with the
-            # remote name. Hence we need to delete both.
-            if t.split(':')[0] in (agent_container_name, f'ostorlab.store/agents/{agent_container_name}'):
+        # If any tag match the agent key tag, we delete all tags. This is because images from the store downloaded with
+        # store URL, and will cause the image to remain if we delete only one tag.
+        if any(t.split(':')[0] == agent_container_name for t in im.tags):
+            for t in im.tags:
                 agent_container_version = t.split(':')[1]
                 if agent_version_regex is None or re.match(agent_version_regex, agent_container_version):
                     console.info(f'deleting container container [bold red]{t}[/]')
