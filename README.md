@@ -60,7 +60,7 @@ ostorlab vulnz describe --vuln-id <vuln-id>
 
 # Publish your first Agent
 
-Coming soon.
+Check the full tutorial [writing an Ostorlab agent](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/)
 
 
 
