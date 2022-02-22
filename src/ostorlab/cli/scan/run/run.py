@@ -1,7 +1,7 @@
 """Module for the command run inside the group scan.
 This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
 Example of usage:
-    - ostorlab scan run --agents=agent1,agent2 --title=test_scan [asset] [options]."""
+    - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
 import io
 import logging
 from typing import List
@@ -19,7 +19,7 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 @scan.group()
-@click.option('--agents',
+@click.option('--agent',
               multiple=True,
               help='List of agents keys. to use in the scan.',
               required=False)
@@ -30,15 +30,15 @@ logger = logging.getLogger(__name__)
 @click.option('--install', '-i', help='Install missing agents.', is_flag=True, required=False)
 @click.option('--follow', help='Follow logs of provided list of agents and services.', multiple=True, default=[])
 @click.pass_context
-def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.FileIO,
+def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.FileIO,
         title: str, install: bool, follow: List[str]) -> None:
     """Start a new scan on a specific asset.\n
     Example:\n
         - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
-    if agents:
+    if agent:
         agents_settings: List[definitions.AgentSettings] = []
-        for agent_key in agents:
+        for agent_key in agent:
             agents_settings.append(
                 definitions.AgentSettings(key=agent_key))
             if install:
@@ -65,10 +65,10 @@ def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.F
         if install:
             # Trigger both the runtime installation routine and install all the provided agents.
             runtime_instance.install()
-            for agent in agent_group.agents:
+            for ag in agent_group.agents:
                 try:
-                    install_agent.install(agent.key)
+                    install_agent.install(ag.key)
                 except install_agent.AgentDetailsNotFound:
-                    console.warning(f'agent {agent.key} not found on the store')
+                    console.warning(f'agent {ag.key} not found on the store')
     else:
         raise click.ClickException('The runtime does not support the provided agent list or group definition.')

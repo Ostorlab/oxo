@@ -38,7 +38,7 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
     runner = CliRunner()
 
     result = runner.invoke(rootcli.rootcli,
-                           ['scan', '--runtime=local', 'run', '--agents=agent1,agent2', '--title=scan1'])
+                           ['scan', '--runtime=local', 'run', '--agent=agent1 --agent=agent2', '--title=scan1'])
 
     assert 'Error: Missing command.' in result.output
     assert result.exit_code == 2
