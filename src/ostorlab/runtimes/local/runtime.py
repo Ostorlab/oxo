@@ -20,11 +20,10 @@ from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.runtimes.local import agent_runtime
+from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local import agent_runtime
-
-from ostorlab.runtimes.local import log_streamer
 
 NETWORK_PREFIX = 'ostorlab_local_network'
 HEALTHCHECK_HOST = '0.0.0.0'
@@ -59,6 +58,7 @@ class DockerNotInstalledError(exceptions.OstorlabError):
 
 class DockerPermissionsDeniedError(exceptions.OstorlabError):
     """User does not have permissions to run docker."""
+
 
 class AgentNotInstalled(exceptions.OstorlabError):
     """Agent image not installed."""
@@ -362,16 +362,17 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        asset_config = self._docker_client.configs.create(name='asset', labels={'ostorlab.universe': self.name},
+        asset_config = self._docker_client.configs.create(name=f'asset_{self.name}',
+                                                          labels={'ostorlab.universe': self.name},
                                                           data=asset.to_proto())
         asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
-                                                              config_name='asset',
+                                                              config_name=f'asset_{self.name}',
                                                               filename='/tmp/asset.binproto')
-        selector_config = self._docker_client.configs.create(name='asset_selector',
+        selector_config = self._docker_client.configs.create(name=f'asset_selector_{self.name}',
                                                              labels={'ostorlab.universe': self.name},
                                                              data=asset.selector)
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
-                                                                 config_name='asset_selector',
+                                                                 config_name=f'asset_selector_{self.name}',
                                                                  filename='/tmp/asset_selector.txt')
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
                                                                 restart_policy='none')
@@ -462,4 +463,3 @@ class LocalRuntime(runtime.Runtime):
         """
         for agent_key in DEFAULT_AGENTS:
             install_agent.install(agent_key=agent_key)
-
