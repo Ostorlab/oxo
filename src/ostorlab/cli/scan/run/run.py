@@ -19,7 +19,7 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 @scan.group()
-@click.option('--agents',
+@click.option('--agent',
               multiple=True,
               help='List of agents keys. to use in the scan.',
               required=False)
@@ -30,15 +30,15 @@ logger = logging.getLogger(__name__)
 @click.option('--install', '-i', help='Install missing agents.', is_flag=True, required=False)
 @click.option('--follow', help='Follow logs of provided list of agents and services.', multiple=True, default=[])
 @click.pass_context
-def run(ctx: click.core.Context, agents: List[str], agent_group_definition: io.FileIO,
+def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.FileIO,
         title: str, install: bool, follow: List[str]) -> None:
     """Start a new scan on a specific asset.\n
     Example:\n
         - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
-    if agents:
+    if agent:
         agents_settings: List[definitions.AgentSettings] = []
-        for agent_key in agents:
+        for agent_key in agent:
             agents_settings.append(
                 definitions.AgentSettings(key=agent_key))
             if install:
