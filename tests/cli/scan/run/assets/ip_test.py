@@ -22,7 +22,7 @@ def testRunScanIp__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandEr
     runner = CliRunner()
 
     result = runner.invoke(rootcli.rootcli,
-                           ['scan', '--runtime=local', 'run', '--agents=agent1,agent2', 'ip', '192.168.1.1'])
+                           ['scan', '--runtime=local', 'run', '--agent=agent1 --agent=agent2', 'ip', '192.168.1.1'])
 
     assert 'Usage:' not in result.output
     assert isinstance(result.exception, SystemExit)
