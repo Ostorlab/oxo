@@ -5,24 +5,24 @@
 
 ![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
 
-Ostorlab is security scanning platform that enables running complex security scanning tasks involving multiple tools
+Ostorlab is a security scanning platform that enables running complex security scanning tasks involving multiple tools
 in an easy, scalable and distributed way.
 
 Ostorlab provides:
 
-* CLI to run scans locally and on Ostorlab's Cloud and access results
-* SDK to build scanner components called Agents
-* Store to publish Agents and share them with the community
-* Automated Agent builder that takes care of automatically building and releasing Agents directly from the source code repo
+* CLI to run scans locally and on Ostorlab's Cloud and access the results.
+* SDK to build scanner components called Agents.
+* Store to publish Agents and share them with the community.
+* Automated Agent builder that takes care of automatically building and releasing Agents directly from the source code repo.
 
 # Requirements
 
-For some task, like running scans locally, Docker is required. To install docker, please see the following
+For some tasks, like running scans locally, Docker is required. To install docker, please see the following
 [instructions](https://docs.docker.com/get-docker/).
 
 # Installing
 
-Ostorlab is shipped as a Python package on Pypi. To install, simply run the following command if you have `pip` alraedy
+Ostorlab is shipped as a Python package on Pypi. To install, simply run the following command if you have `pip` already
 installed.
 
 ```shell
@@ -34,7 +34,7 @@ pip install -U ostorlab
 To perform your first scan, simply run the following command:
 
 ```shell
-ostorlab scan run --install --agents agent/ostorlab/nmap,agent/ostorlab/tsunami,agent/ostorlab/nuclei ip 8.8.8.8
+ostorlab scan run --install --agents agent/ostorlab/nmap --agents agent/ostorlab/tsunami --agents agent/ostorlab/nuclei ip 8.8.8.8
 ```
 
 This command will download and install the following scanning agents:
