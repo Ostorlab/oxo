@@ -41,7 +41,6 @@ This command will download and install the following scanning agents:
 
 * `agent/ostorlab/nmap`
 * `agent/ostorlab/tsunami`
-* `agent/ostorlab/openvas`
 * `agent/ostorlab/nuclei`
 
 And will scan the target IP address `8.8.8.8`
