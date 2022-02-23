@@ -50,7 +50,7 @@ def _parse_mount_string_windows(string):
                 # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
                 source = f'/{source}'
                 mount_type = 'bind'
-            read_only = not (parts[2] == 'rw')
+            read_only = not parts[2] == 'rw'
             return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
         else:
             target = parts[2]
