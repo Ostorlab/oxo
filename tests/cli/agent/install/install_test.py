@@ -26,6 +26,9 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
     """Test ostorlab agent install CLI command with a wrong agent_key value.
     Should show message.
     """
+    matcher = re.compile(r'http\+docker://(.*)/version')
+    requests_mock.get(matcher, json={'ApiVersion': '1.42'}, status_code=200)
+
     api_call_response = {
         'errors': {'message': 'some error message.'}
     }

@@ -39,8 +39,8 @@ def is_docker_working() -> bool:
     """
     try:
         _ = docker.from_env()
-    except errors.DockerException as e:
-            return False
+    except errors.DockerException:
+        return False
     return True
 
 
