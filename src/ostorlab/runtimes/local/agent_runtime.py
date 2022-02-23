@@ -4,20 +4,67 @@ Usage
     agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
-from typing import List, Optional
-import docker
-from docker.types import services as docker_types_services
 import io
+from typing import List, Optional
 
-from ostorlab.runtimes.local import runtime
-from ostorlab.runtimes import definitions
-from ostorlab.agent import definitions as agent_definitions
-from ostorlab.runtimes.local.services import mq
+import docker
+from docker import constants
+from docker import errors
+from docker.types import services as docker_types_services
+
 from ostorlab import configuration_manager
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime
+from ostorlab.runtimes.local.services import mq
 
 MOUNT_VARIABLES = {
     '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
 }
+
+
+def _parse_mount_string(string):
+    """This is a fix to a bug in the Docker Python API by monkey patching the buggy method.
+
+    The method is knowingly not supporting Windows. Until a fix PR is merged, we are hot patching the method to handle
+    windows paths with : like C:/Users/bob/:/root.
+    """
+    if constants.IS_WINDOWS_PLATFORM:
+        parts = string.split(':')
+        if len(parts) > 4:
+            raise errors.InvalidArgument(
+                f'Invalid mount format "{string}"'
+            )
+        if len(parts) == 1:
+            return docker_types_services.Mount(target=parts[0], source=None)
+        else:
+            target = parts[2]
+            source = ':'.join(parts[:1])
+            mount_type = 'volume'
+            if source.startswith('/'):
+                mount_type = 'bind'
+            read_only = not (len(parts) == 3 or parts[3] == 'rw')
+            return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+    else:
+        parts = string.split(':')
+        if len(parts) > 3:
+            raise errors.InvalidArgument(
+                f'Invalid mount format "{string}"'
+            )
+        if len(parts) == 1:
+            return docker_types_services.Mount(target=parts[0], source=None)
+        else:
+            target = parts[1]
+            source = parts[0]
+            mount_type = 'volume'
+            if source.startswith('/'):
+                mount_type = 'bind'
+            read_only = not (len(parts) == 2 or parts[2] == 'rw')
+            return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+
+
+docker_types_services.Mount.parse_mount_string = _parse_mount_string
+
 
 class AgentRuntime:
     """Class to consolidate the agent settings and agent default definition, and create the agent service."""
@@ -113,18 +160,17 @@ class AgentRuntime:
             mounts: List of src:dst paths to mount
         """
 
-        replaced_mounts= []
+        replaced_mounts = []
         for mount in mounts:
             for mount_variable, mount_value in MOUNT_VARIABLES.items():
                 mount = mount.replace(mount_variable, mount_value)
             replaced_mounts.append(mount)
         return replaced_mounts
 
-
     def create_agent_service(self,
-                            network_name: str,
-                            extra_configs: Optional[List[docker.types.ConfigReference]] = None
-                            ) -> docker.models.services.Service:
+                             network_name: str,
+                             extra_configs: Optional[List[docker.types.ConfigReference]] = None
+                             ) -> docker.models.services.Service:
         """Create the agent service.
 
         Args:
@@ -151,7 +197,7 @@ class AgentRuntime:
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
 
-        service_name = self.agent.container_image.replace(':', '_').replace('.','') + '_' + self.runtime_name
+        service_name = self.agent.container_image.replace(':', '_').replace('.', '') + '_' + self.runtime_name
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
