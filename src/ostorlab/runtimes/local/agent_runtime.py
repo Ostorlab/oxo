@@ -23,6 +23,76 @@ MOUNT_VARIABLES = {
 }
 
 
+def _parse_mount_string_windows(string):
+    """Handles parsing mounts on Windows OS."""
+    parts = string.split(':')
+    if len(parts) == 1:
+        # This supposes only having a target like /root.
+        return docker_types_services.Mount(target=parts[0], source=None)
+    elif len(parts) == 2:
+        # This supposes having a source linux style and target. Like /var/run/docker.sock:/var/run/docker.sock.
+        target = parts[1]
+        source = parts[0]
+        mount_type = 'volume'
+        if source.startswith('/'):
+            # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
+            source = f'/{source}'
+            mount_type = 'bind'
+        return docker_types_services.Mount(target, source, read_only=False, type=mount_type)
+    elif len(parts) == 3:
+        # This supposes two cases. First case is windows style with linux, like C:/Users/bob:/root. The second
+        # case is /root:/root:ro
+        if parts[2] in ('ro', 'rw', 'z', 'Z'):
+            target = parts[1]
+            source = parts[0]
+            mount_type = 'volume'
+            if source.startswith('/'):
+                # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
+                source = f'/{source}'
+                mount_type = 'bind'
+            read_only = not (parts[2] == 'rw')
+            return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+        else:
+            target = parts[2]
+            source = ':'.join(parts[:1])
+            mount_type = 'volume'
+            if source.startswith('/'):
+                mount_type = 'bind'
+            return docker_types_services.Mount(target, source, read_only=False, type=mount_type)
+    elif len(parts) == 4:
+        # This covers the case C:/Users/bob:/root:ro
+        target = parts[2]
+        source = ':'.join(parts[:1])
+        mount_type = 'volume'
+        if source.startswith('/'):
+            mount_type = 'bind'
+        read_only = not (len(parts) == 3 or parts[3] == 'rw')
+        return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+    else:
+        raise errors.InvalidArgument(
+            f'Invalid mount format "{string}"'
+        )
+
+
+def _parse_mount_string_unix(string):
+    """Handles parsing of mounts on Unix OS like Linux, Cygwin and MacOS."""
+    parts = string.split(':')
+    if len(parts) > 3:
+        raise errors.InvalidArgument(
+            f'Invalid mount format "{string}"'
+        )
+    if len(parts) == 1:
+        return docker_types_services.Mount(target=parts[0], source=None)
+    else:
+        target = parts[1]
+        source = parts[0]
+        mount_type = 'volume'
+        if source.startswith('/'):
+            mount_type = 'bind'
+        read_only = not (len(parts) == 2 or parts[2] == 'rw')
+        return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+
+
 def _parse_mount_string(string):
     """This is a fix to a bug in the Docker Python API by monkey patching the buggy method.
 
@@ -30,37 +100,9 @@ def _parse_mount_string(string):
     windows paths with : like C:/Users/bob/:/root.
     """
     if constants.IS_WINDOWS_PLATFORM:
-        parts = string.split(':')
-        if len(parts) > 4:
-            raise errors.InvalidArgument(
-                f'Invalid mount format "{string}"'
-            )
-        if len(parts) == 1:
-            return docker_types_services.Mount(target=parts[0], source=None)
-        else:
-            target = parts[2]
-            source = ':'.join(parts[:1])
-            mount_type = 'volume'
-            if source.startswith('/'):
-                mount_type = 'bind'
-            read_only = not (len(parts) == 3 or parts[3] == 'rw')
-            return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+        return _parse_mount_string_windows(string)
     else:
-        parts = string.split(':')
-        if len(parts) > 3:
-            raise errors.InvalidArgument(
-                f'Invalid mount format "{string}"'
-            )
-        if len(parts) == 1:
-            return docker_types_services.Mount(target=parts[0], source=None)
-        else:
-            target = parts[1]
-            source = parts[0]
-            mount_type = 'volume'
-            if source.startswith('/'):
-                mount_type = 'bind'
-            read_only = not (len(parts) == 2 or parts[2] == 'rw')
-            return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+        return _parse_mount_string_unix(string)
 
 
 docker_types_services.Mount.parse_mount_string = _parse_mount_string
