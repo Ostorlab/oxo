@@ -80,7 +80,8 @@ def _selector_to_package_regex(subject):
     """Maps selector to package matching regular expression."""
     splitted = subject.split('.')
     if sys.platform == 'win32':
-        return '.*\\\\message\\\\proto\\\\' + '\\\\'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'..[_a-zA-Z0-9]+\_pb2\.py'
+        return '.*\\\\message\\\\proto\\\\' +\
+               '\\\\'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'..[_a-zA-Z0-9]+\_pb2\.py'
     else:
         return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\.py'
 
