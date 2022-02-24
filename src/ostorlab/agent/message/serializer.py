@@ -4,6 +4,7 @@ import logging
 import os
 import pathlib
 import re
+import sys
 from typing import Dict, Optional, List, Any
 
 from google.protobuf import json_format
@@ -44,12 +45,23 @@ def _find_package_name(selector: str) -> Optional[str]:
     elif len(filtered_matching) == 0:
         raise NoMatchingPackageNameError()
     else:
+        return _replace_module_proto(filtered_matching[0])
+
+
+def _replace_module_proto(proto_path: str) -> str :
+    if sys.platform == 'win32':
         # Remove the path to the current package.
-        matching_package = re.sub(r'^.*/ostorlab/', 'ostorlab/', filtered_matching[0])
+        matching_package = re.sub(r'^.*\\ostorlab', 'ostorlab', proto_path)
+        # Replace \ with .
+        matching_package = matching_package.replace('\\', '.')
+    else:
+        # Remove the path to the current package.
+        matching_package = re.sub(r'^.*/ostorlab/', 'ostorlab/', proto_path)
         # Replace / with .
         matching_package = matching_package.replace('/', '.')
-        # Point to the compiled protobufs.
-        return re.sub(r'_pb2\..*$', '_pb2', re.sub(r'^\.code\.', '', matching_package))
+
+    # Point to the compiled protobufs.
+    return re.sub(r'_pb2\..*$', '_pb2', re.sub(r'^\.code\.', '', matching_package))
 
 
 def _list_message_proto_files() -> List[str]:
@@ -67,7 +79,11 @@ def _list_message_proto_files() -> List[str]:
 def _selector_to_package_regex(subject):
     """Maps selector to package matching regular expression."""
     splitted = subject.split('.')
-    return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\.py'
+    if sys.platform == 'win32':
+        return '.*\\\\message\\\\proto\\\\' +\
+               '\\\\'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'..[_a-zA-Z0-9]+\_pb2\.py'
+    else:
+        return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\.py'
 
 
 def serialize(selector: str, values: Dict[str, Any]):
