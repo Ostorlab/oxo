@@ -15,13 +15,19 @@ from docker.types import services as docker_types_services
 from ostorlab import configuration_manager
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
-from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.services import mq
 
 MOUNT_VARIABLES = {
     '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
 }
 
+HEALTHCHECK_HOST = '0.0.0.0'
+HEALTHCHECK_PORT = 5000
+SECOND = 1000000000
+HEALTHCHECK_RETRIES = 5
+HEALTHCHECK_TIMEOUT = 10 * SECOND
+HEALTHCHECK_START_PERIOD = 2 * SECOND
+HEALTHCHECK_INTERVAL = 2 * SECOND
 
 def _parse_mount_string_windows(string):
     """Handles parsing mounts on Windows OS."""
@@ -176,8 +182,8 @@ class AgentRuntime:
         self.agent.bus_exchange_topic = f'ostorlab_topic_{self.runtime_name}'
         self.agent.bus_management_url = self.mq_service.management_url
         self.agent.bus_vhost = self.mq_service.vhost
-        self.agent.healthcheck_host = runtime.HEALTHCHECK_HOST
-        self.agent.healthcheck_port = runtime.HEALTHCHECK_PORT
+        self.agent.healthcheck_host = HEALTHCHECK_HOST
+        self.agent.healthcheck_port = HEALTHCHECK_PORT
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for for the agent service.
@@ -187,10 +193,10 @@ class AgentRuntime:
         """
         # wait 2s and check max 5 times with 0.5s between each check.
         healthcheck = docker.types.Healthcheck(test=['CMD', 'ostorlab', 'agent', 'healthcheck'],
-                                               retries=runtime.HEALTHCHECK_RETRIES,
-                                               timeout=runtime.HEALTHCHECK_TIMEOUT,
-                                               start_period=runtime.HEALTHCHECK_START_PERIOD,
-                                               interval=runtime.HEALTHCHECK_INTERVAL, )
+                                               retries=HEALTHCHECK_RETRIES,
+                                               timeout=HEALTHCHECK_TIMEOUT,
+                                               start_period=HEALTHCHECK_START_PERIOD,
+                                               interval=HEALTHCHECK_INTERVAL, )
         return healthcheck
 
     def replace_variable_mounts(self, mounts: List[str]):
