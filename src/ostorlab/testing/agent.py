@@ -12,8 +12,6 @@ def agent_mock(mocker):
     emitted_messages: List[msg.Message] = []
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_init', return_value=None)
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run', return_value=None)
-    mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_close', return_value=None)
-    mocker.patch('ostorlab.agent.agent.AgentMixin._is_mq_healthy', return_value=True)
     mocker.patch(
         'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.start_healthcheck',
         return_value=None

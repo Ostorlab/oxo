@@ -56,10 +56,10 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
         services = [
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-             'Spec': {'Labels': {'ostorlab.universe': 'qmwjef'}}},
+             'Spec': {'Labels': {'ostorlab.universe': '1'}}},
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-             'Spec': {'Labels': {'ostorlab.universe': 'fejwmq'}}}
+             'Spec': {'Labels': {'ostorlab.universe': '2'}}}
         ]
 
         return [services_model.Service(attrs=service) for service in services]
@@ -73,7 +73,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
 
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
 
-    local_runtime.LocalRuntime().stop(scan_id='qmwjef')
+    local_runtime.LocalRuntime().stop(scan_id='1')
 
     docker_service_remove.assert_called_once()
 
@@ -92,10 +92,10 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
         services = [
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-             'Spec': {'Labels': {'ostorlab.universe': 'qmwjef'}}},
+             'Spec': {'Labels': {'ostorlab.universe': '1'}}},
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-             'Spec': {'Labels': {'ostorlab.universe': 'fejwmq'}}}
+             'Spec': {'Labels': {'ostorlab.universe': '2'}}}
         ]
 
         return [services_model.Service(attrs=service) for service in services]
@@ -108,7 +108,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
 
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
 
-    local_runtime.LocalRuntime().stop(scan_id='iiippp')
+    local_runtime.LocalRuntime().stop(scan_id='3')
 
     docker_service_remove.assert_not_called()
 

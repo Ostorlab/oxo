@@ -40,7 +40,6 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
     await client.mq_run(delete_queue_first=True)
     await client.async_mq_send_message(key='d.1.2', message=word)
     await asyncio.sleep(1)
-    await client.mq_close()
     stub.assert_called_with(word)
     assert stub.call_count == 1
 
@@ -95,7 +94,6 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
     await client2.mq_init()
     await client2.mq_run(delete_queue_first=True)
     # close the client before the message is received
-    await client2.mq_close()
     # send the message
     # client1.mq_send_message(key='e.1.2', message=word)
     await client1.async_mq_send_message(key='e.1.2', message=word)
@@ -104,8 +102,6 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
     await client2.mq_run()
     await asyncio.sleep(5)
     # close the client to avoid an exception to be raised once the loop is closed.
-    await client1.mq_close()
-    await client2.mq_close()
     # make sure the message is received and was not deleted
     stub.assert_called_with(word)
     assert stub.call_count == 1
