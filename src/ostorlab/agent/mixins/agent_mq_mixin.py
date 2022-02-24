@@ -9,7 +9,6 @@ import logging
 from typing import List
 
 import aio_pika
-from aio_pika import pool
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class AgentMQMixin:
 
         if self._max_priority is not None:
             self._queue = await channel.declare_queue(self._queue_name, auto_delete=False, durable=True,
-                                                arguments={'x-max-priority': self._max_priority})
+                                                      arguments={'x-max-priority': self._max_priority})
         else:
             self._queue = await channel.declare_queue(self._queue_name, auto_delete=False, durable=True)
         for k in self._keys:
@@ -133,4 +132,3 @@ class AgentMQMixin:
             self._loop.run_until_complete(self.async_mq_send_message(key, message, message_priority))
         else:
             self._loop.create_task(self.async_mq_send_message(key, message, message_priority))
-
