@@ -112,7 +112,6 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
 
         Connects to the agent bus, start health check and start listening to new messages.
         """
-        self.add_healthcheck(self._is_mq_healthy)
         self.add_healthcheck(self.is_healthy)
         self.start_healthcheck()
         atexit.register(functools.partial(Agent.at_exit, self))
@@ -133,9 +132,6 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             self._loop.run_until_complete(self.mq_close())
             self._loop.close()
 
-    def _is_mq_healthy(self) -> bool:
-        """Agent health check method, to ensure MQ connection is working."""
-        return self._channel_pool is not None
 
     @abc.abstractmethod
     def is_healthy(self) -> bool:
