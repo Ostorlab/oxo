@@ -27,13 +27,6 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 
 NETWORK_PREFIX = 'ostorlab_local_network'
-HEALTHCHECK_HOST = '0.0.0.0'
-HEALTHCHECK_PORT = 5000
-SECOND = 1000000000
-HEALTHCHECK_RETRIES = 5
-HEALTHCHECK_TIMEOUT = 10 * SECOND
-HEALTHCHECK_START_PERIOD = 2 * SECOND
-HEALTHCHECK_INTERVAL = 2 * SECOND
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
