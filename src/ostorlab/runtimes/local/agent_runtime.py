@@ -54,18 +54,16 @@ def _parse_mount_string_windows(string):
             return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
         else:
             target = parts[2]
-            source = ':'.join(parts[:1])
-            mount_type = 'volume'
-            if source.startswith('/'):
-                mount_type = 'bind'
+            source = ':'.join(parts[:2])
+            source = source.replace('\\', '/')
+            mount_type = 'bind'
             return docker_types_services.Mount(target, source, read_only=False, type=mount_type)
     elif len(parts) == 4:
         # This covers the case C:/Users/bob:/root:ro
         target = parts[2]
-        source = ':'.join(parts[:1])
-        mount_type = 'volume'
-        if source.startswith('/'):
-            mount_type = 'bind'
+        source = ':'.join(parts[:2])
+        source = source.replace('\\', '/')
+        mount_type = 'bind'
         read_only = not (len(parts) == 3 or parts[3] == 'rw')
         return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
     else:
