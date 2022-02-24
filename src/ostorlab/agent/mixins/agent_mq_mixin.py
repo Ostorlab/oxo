@@ -52,19 +52,14 @@ class AgentMQMixin:
                                               arguments={'x-max-length': 10000, 'x-overflow': 'reject-publish'})
 
     async def mq_init(self, delete_queue_first: bool = False):
-        """Initialize the channel pools and the executors to process the messages and declare the queues.
+        """Declares the queue to start preparing for receiving messages.
         Args:
             delete_queue_first: Used for testing purposes. To delete pending queues first.
         """
         logger.info('Connecting to %s', self._url)
-        connection_pool = pool.Pool(self._get_connection, max_size=2, loop=self._loop)
-
-        async def _get_channel() -> aio_pika.Channel:
-            async with connection_pool.acquire() as connection:
-                return await connection.channel()
-
-        channel_pool = pool.Pool(_get_channel, max_size=10, loop=self._loop)
-        async with channel_pool.acquire() as channel:
+        connection = await self._get_connection()
+        async with connection:
+            channel = await connection.channel()
             await self._declare_mq_queue(channel, delete_queue_first)
 
     async def mq_run(self, delete_queue_first: bool = False):
@@ -72,16 +67,10 @@ class AgentMQMixin:
         Args:
             delete_queue_first: Used for testing purposes. To delete pending queues first.
         """
-        connection_pool = pool.Pool(self._get_connection, max_size=2, loop=self._loop)
-
-        async def _get_channel() -> aio_pika.Channel:
-            async with connection_pool.acquire() as connection:
-                return await connection.channel()
-
-        channel_pool = pool.Pool(_get_channel, max_size=10, loop=self._loop)
-        async with channel_pool.acquire() as channel:
-            await self._declare_mq_queue(channel, delete_queue_first)
-            await self._queue.consume(self._mq_process_message, no_ack=False)
+        connection = await self._get_connection()
+        channel = await connection.channel()
+        await self._declare_mq_queue(channel, delete_queue_first)
+        await self._queue.consume(self._mq_process_message, no_ack=False)
 
     async def _declare_mq_queue(self, channel, delete_queue_first: bool = False):
         """Declare the MQ queue on a given channel.
@@ -125,14 +114,9 @@ class AgentMQMixin:
             message_priority: the priority of the message. Default is 0
         """
         logger.debug('sending %s to %s', message, key)
-        connection_pool = pool.Pool(self._get_connection, max_size=2, loop=self._loop)
-
-        async def _get_channel() -> aio_pika.Channel:
-            async with connection_pool.acquire() as connection:
-                return await connection.channel()
-
-        channel_pool = pool.Pool(_get_channel, max_size=10, loop=self._loop)
-        async with channel_pool.acquire() as channel:
+        connection = await self._get_connection()
+        async with connection:
+            channel = await connection.channel()
             exchange = await self._get_exchange(channel)
             pika_message = aio_pika.Message(body=message, priority=message_priority)
             await exchange.publish(routing_key=key, message=pika_message)

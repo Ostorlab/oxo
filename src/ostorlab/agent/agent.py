@@ -129,7 +129,6 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
                 self._loop.run_forever()
         finally:
             logger.debug('closing bus and loop')
-            self._loop.run_until_complete(self.mq_close())
             self._loop.close()
 
 
