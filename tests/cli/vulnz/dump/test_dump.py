@@ -1,8 +1,6 @@
 """Unittest for vulnz dump command."""
-from unittest import mock
 import json
 import csv
-
 
 from click.testing import CliRunner
 
@@ -10,50 +8,50 @@ from ostorlab.cli import rootcli
 from ostorlab.runtimes.local.models import models
 
 
-@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
-def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(tmp_path):
+def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir):
     """Test ostorlab vulnz dump command with correct commands and options.
     Should create a json file with the vulnerabilities.
 
-    tmp_path : pytest fixture for temporary paths & files.
+    tmp_dir : pytest fixture for temporary paths & files.
     """
 
     runner = CliRunner()
+    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db_cli.sqlite')
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create(title='test', asset='android')
-    vuln_db = models.Vulnerability.create(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
-    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
-    cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
-
-    output_file = tmp_path / 'output.json'
+    vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
+                                          recommendation='Sanitize data', technical_detail='a=$input',
+                                          risk_rating='HIGH',
+                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+    output_file = str(tmpdir) + '/output.json'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file, '-f', 'json'])
-    data = json.loads(output_file.read_bytes())
+    data = json.loads(open(output_file, 'r').read())
 
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
-    assert len(list(tmp_path.iterdir())) == 1
     assert data[str(vuln_db.id)]['risk_rating'] == 'High'
 
 
-@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
-def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(tmp_path):
+def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir):
     """Test ostorlab vulnz dump command with correct commands and options.
     Should create a csv file with the vulnerabilities.
 
-    tmp_path : pytest fixture for temporary paths & files.
+    tmp_dir : pytest fixture for temporary paths & files.
     """
 
     runner = CliRunner()
+    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db_cli.sqlite')
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create(title='test', asset='Android')
-    vuln_db = models.Vulnerability.create(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
-    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
-    cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
+    vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
+                                          recommendation='Sanitize data', technical_detail='a=$input',
+                                          risk_rating='HIGH',
+                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
 
-    output_file = tmp_path / 'output.csv'
+    output_file = str(tmpdir) + '/output.csv'
     result = runner.invoke(rootcli.rootcli,
-                           ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file,  '-f', 'csv'])
+                           ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file, '-f', 'csv'])
     with open(output_file, 'r', encoding='utf-8') as file:
         csvreader = csv.reader(file)
         header = next(csvreader)
@@ -63,35 +61,34 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(tmp_path):
 
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
-    assert len(list(tmp_path.iterdir())) == 1
     assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
     assert data[0][2] == 'High'
 
 
-@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
-def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(tmp_path):
+def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir):
     """Test ostorlab vulnz dump command with correct commands and options.
     Should create a json file with the vulnerabilities, ordered by the risk severity.
 
-    tmp_path : pytest fixture for temporary paths & files.
+    tmp_dir : pytest fixture for temporary paths & files.
     """
     runner = CliRunner()
+    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db_cli.sqlite')
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create(title='test', asset='Android')
 
-    vuln_db = models.Vulnerability.create(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
-    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HARDENING',
-    cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
-    _ = models.Vulnerability.create(title='MyVuln2', short_description= 'Xss', description= 'Javascript Vuln',
-    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'LOW',
-    cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
+    vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
+                                          recommendation='Sanitize data', technical_detail='a=$input',
+                                          risk_rating='HARDENING',
+                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+    _ = models.Vulnerability.create(title='MyVuln2', short_description='Xss', description='Javascript Vuln',
+                                    recommendation='Sanitize data', technical_detail='a=$input', risk_rating='LOW',
+                                    cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
 
-
-    output_file = tmp_path / 'output.json'
+    output_file = str(tmpdir) + '/output.json'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file, '-f', 'json'])
-    data = json.loads(output_file.read_bytes())
-
-    assert result.exception is None
-    assert 'Vulnerabilities saved' in result.output
-    assert data[list(data)[0]]['risk_rating'] == 'Low' and data[list(data)[1]]['risk_rating'] == 'Hardening'
+    with open(output_file, 'r') as f:
+        data = json.loads(f.read())
+        assert result.exception is None
+        assert 'Vulnerabilities saved' in result.output
+        assert data[list(data)[0]]['risk_rating'] == 'Low' and data[list(data)[1]]['risk_rating'] == 'Hardening'

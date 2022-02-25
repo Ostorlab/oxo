@@ -1,13 +1,13 @@
 """Unittest for local runtime."""
 import docker
 import pytest
-from unittest import mock
 
+import ostorlab
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from docker.models import services as services_model
-
+from ostorlab.runtimes.local.models import models
 
 @pytest.mark.skip(reason='Missing inject asset agent.')
 @pytest.mark.docker
@@ -44,22 +44,26 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
 
 
 @pytest.mark.docker
-def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
+def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, tmpdir):
     """Unittest for the scan stop method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
     Removes the scan service matching the provided id.
     """
 
+    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db1.sqlite')
+    models.Database().create_db_tables()
+    create_scan_db = models.Scan.create('test')
     def docker_services():
         """Method for mocking the services list response."""
+        scan = models.Database().session.query(models.Scan).first()
         services = [
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-             'Spec': {'Labels': {'ostorlab.universe': '1'}}},
+             'Spec': {'Labels': {'ostorlab.universe': scan.id}}},
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
-             'Spec': {'Labels': {'ostorlab.universe': '2'}}}
+             'Spec': {'Labels': {'ostorlab.universe': 9999}}}
         ]
 
         return [services_model.Service(attrs=service) for service in services]
@@ -72,14 +76,13 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
     mocker.patch('docker.models.configs.ConfigCollection.list', return_value=[])
 
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
-
-    local_runtime.LocalRuntime().stop(scan_id='1')
+    local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
 
     docker_service_remove.assert_called_once()
 
 
 @pytest.mark.docker
-def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
+def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker, tmpdir):
     """Unittest for the scan stop method when the scan id is invalid.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
@@ -108,12 +111,16 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker):
 
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
 
-    local_runtime.LocalRuntime().stop(scan_id='3')
+    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db1.sqlite')
+    models.Database().create_db_tables()
+    create_scan_db = models.Scan.create('test')
+    local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
+
+    local_runtime.LocalRuntime().stop(scan_id='9999')
 
     docker_service_remove.assert_not_called()
 
-@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db4.sqlite')
-def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
+def testRuntimeScanList_whenScansArePresent_showsScans(mocker, tmpdir):
     """Unittest for the scan list method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels.
@@ -133,6 +140,7 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker):
 
         return [services_model.Service(attrs=service) for service in services]
 
+    mocker.patch.object(ostorlab.runtimes.local.models.models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db4.sqlite')
     mocker.patch('docker.DockerClient.services', return_value=services_model.ServiceCollection())
     mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
 
