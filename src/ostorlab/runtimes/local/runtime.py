@@ -211,7 +211,7 @@ class LocalRuntime(runtime.Runtime):
             self._update_scan_progress('IN_PROGRESS')
             console.success('Scan created successfully')
 
-        except AgentNotHealthy as e:
+        except AgentNotHealthy:
             console.error('Agent not starting')
             self.stop(self._scan_db.id)
             self._update_scan_progress('ERROR')
