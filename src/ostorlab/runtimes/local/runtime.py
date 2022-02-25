@@ -8,11 +8,11 @@ import socket
 from typing import List
 from typing import Optional
 
+import click
 import docker
 import requests
 import tenacity
 from docker.models import services as docker_models_services
-import click
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
@@ -48,6 +48,10 @@ class UnhealthyService(exceptions.OstorlabError):
 
 class AgentNotInstalled(exceptions.OstorlabError):
     """Agent image not installed."""
+
+
+class AgentNotHealthy(exceptions.OstorlabError):
+    """Agent not healthy."""
 
 
 def _has_container_image(agent: definitions.AgentSettings):
@@ -179,29 +183,38 @@ class LocalRuntime(runtime.Runtime):
             self._start_services()
             console.info('Checking services are healthy')
             self._check_services_healthy()
-            console.info('Starting default agents')
-            self._start_default_agents()
-            console.info('Checking default agents are healthy')
+
+            console.info('Starting pre-agents')
+            self._start_pre_agents()
+            console.info('Checking pre-agents are healthy')
             is_healthy = self._check_agents_healthy(agent_group_definition)
-            if is_healthy is True:
-                console.info('Starting agents')
-                self._start_agents(agent_group_definition)
-                console.info('Checking agents are healthy')
-                is_healthy = self._check_agents_healthy(agent_group_definition)
-                if is_healthy is True:
-                    console.info('Injecting asset')
-                    self._inject_asset(asset)
-                    console.info('Updating scan status')
-                    self._update_scan_progress('IN_PROGRESS')
-                    console.success('Scan created successfully')
-                else:
-                    console.error('Default agents not starting')
-                    self.stop(self._scan_db.id)
-                    self._update_scan_progress('ERROR')
-            else:
-                console.error('Agent not starting')
-                self.stop(self._scan_db.id)
-                self._update_scan_progress('ERROR')
+            if is_healthy is False:
+                raise AgentNotHealthy()
+
+            console.info('Starting agents')
+            self._start_agents(agent_group_definition)
+            console.info('Checking agents are healthy')
+            is_healthy = self._check_agents_healthy(agent_group_definition)
+            if is_healthy is False:
+                raise AgentNotHealthy()
+
+            console.info('Starting post-agents')
+            self._start_post_agents()
+            console.info('Checking post-agents are healthy')
+            is_healthy = self._check_agents_healthy(agent_group_definition)
+            if is_healthy is False:
+                raise AgentNotHealthy()
+
+            console.info('Injecting asset')
+            self._inject_asset(asset)
+            console.info('Updating scan status')
+            self._update_scan_progress('IN_PROGRESS')
+            console.success('Scan created successfully')
+
+        except AgentNotHealthy as e:
+            console.error('Agent not starting')
+            self.stop(self._scan_db.id)
+            self._update_scan_progress('ERROR')
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
 
@@ -302,8 +315,14 @@ class LocalRuntime(runtime.Runtime):
         for agent in agent_group_definition.agents:
             self._start_agent(agent, extra_configs=[])
 
-    def _start_default_agents(self):
+    def _start_pre_agents(self):
+        """Starting pre-agents that must exist before other agents. This applies to all persistence
+        agents that can start sending data at the start of the agent."""
         self._start_persist_vulnz_agent()
+
+    def _start_post_agents(self):
+        """Starting post-agents that must exist after other agents. This applies to the tracker
+        that needs to monitor other agents."""
         self._start_tracker_agent()
 
     def _start_agent(self, agent: definitions.AgentSettings,
