@@ -2,7 +2,7 @@
 
 import io
 import time
-
+import sys
 import pytest
 import docker
 
@@ -108,3 +108,11 @@ def image_cleanup(request):
             if tag in t:
                 client.images.remove(t)
 
+
+@pytest.fixture()
+def db_engine_path(tmpdir):
+    if sys.platform == 'win32':
+        path = f'sqlite:///{tmpdir}\\ostorlab_db1.sqlite'.replace("\\", "\\\\")
+    else:
+        path = f'sqlite:////{tmpdir}/ostorlab_db1.sqlite'
+    return path

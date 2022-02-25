@@ -2,9 +2,9 @@
 from ostorlab.runtimes.local.models import models
 
 
-def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, tmpdir):
+def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
     """Test when database does not exists, scan is populated in a newly created database."""
-    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db.sqlite')
+    mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
     models.Database().create_db_tables()
     models.Scan.create(title='test', asset='Asset')
     assert models.Database().session.query(models.Scan).count() == 1
@@ -12,9 +12,9 @@ def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, tmpdir):
     models.Database().drop_db_tables()
 
 
-def testScanUpdate_always_updatesExistingScan(mocker, tmpdir):
+def testScanUpdate_always_updatesExistingScan(mocker, db_engine_path):
     """Test Agent save implementation."""
-    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db2.sqlite')
+    mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
     models.Database().create_db_tables()
     models.Scan.create('test')
 
@@ -30,9 +30,9 @@ def testScanUpdate_always_updatesExistingScan(mocker, tmpdir):
     assert scan.title == 'test2'
 
 
-def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, tmpdir):
+def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
     """Test Vulnerability Model implementation."""
-    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db1.sqlite')
+    mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
     init_count = models.Database().session.query(models.Vulnerability).count()
@@ -45,9 +45,9 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mock
     assert models.Database().session.query(models.Vulnerability).all()[0].scan_id == create_scan_db.id
 
 
-def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, tmpdir):
+def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, tmpdir, db_engine_path):
     """Test Scan Status Model implementation."""
-    mocker.patch.object(models, 'ENGINE_URL', f'sqlite:////{tmpdir}/ostorlab_db1.sqlite')
+    mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
     init_count = models.Database().session.query(models.ScanStatus).count()
