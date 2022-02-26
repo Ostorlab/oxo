@@ -41,7 +41,7 @@ def is_docker_working() -> bool:
     """
     error = (errors.DockerException,)
     if sys.platform == 'win32':
-        import pywintypes  # pylint: disable=import-error
+        import pywintypes  # pylint: disable=import-outside-toplevel
         error += (pywintypes.error,)
     try:
         client = docker.from_env()
