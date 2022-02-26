@@ -50,7 +50,7 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
 
 
 @mock.patch.object(local_runtime.LocalRuntime, 'list')
-def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list):
+def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list, mocker):
     """Test ostorlab scan list command with local as the runtime option.
     Should show list of scans.
     """
@@ -70,6 +70,7 @@ def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list):
     ) for service in services]
 
     mock_scan_list.return_value = scans
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=local', 'list'])
 
