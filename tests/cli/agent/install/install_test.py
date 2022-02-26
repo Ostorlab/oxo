@@ -79,10 +79,10 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, requests_mock):
     requests_mock.get(matcher, json={'ApiVersion': '1.42'}, status_code=200)
     matcher = re.compile(r'http\+docker://(.*)/json')
     requests_mock.get(matcher, json={}, status_code=200)
-
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
+    mocker.patch('ostorlab.cli.docker_requirements_checker.is_docker_working', return_value=True)
     runner = testing.CliRunner()
     result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/OT1/bigFuzzer'])
-
     image_pull_mock.assert_called()
     image_get_mock.assert_called()
     tag_image_mock.assert_called()
