@@ -125,7 +125,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker, db_e
 
     docker_service_remove.assert_not_called()
 
-def testRuntimeScanList_whenScansArePresent_showsScans(mocker, tmpdir, db_engine_path):
+def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
     """Unittest for the scan list method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels.
