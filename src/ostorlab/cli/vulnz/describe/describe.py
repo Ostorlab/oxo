@@ -24,6 +24,10 @@ def describe_cli(vuln_id: int) -> None:
     database = models.Database()
     session = database.session
     vulnerability = session.query(models.Vulnerability).get(vuln_id)
+    if vulnerability is None:
+        console.error(f'No vulnerability found matching id {vuln_id}')
+        raise click.exceptions.Exit(2)
+
     console.success('Vulnerabilities retrieved successfully.')
     vulnz_list = [
         {'id': str(vulnerability.id),
