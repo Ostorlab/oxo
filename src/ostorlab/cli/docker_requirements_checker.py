@@ -1,7 +1,7 @@
 """Check if requirements for running docker are satisfied."""
 
 import docker
-import platform
+import sys
 from docker import errors
 
 
@@ -32,15 +32,16 @@ def is_user_permitted() -> bool:
             return False
     return True
 
+
 def is_docker_working() -> bool:
     """Last hope check to see if docker works without being able to give an intelligible recommendation.
 
     Returns:
         True if user has permission to run docker, else False
     """
-    error = (errors.DockerException, )
-    if platform.system() == "Windows":
-        import pywintypes
+    error = (errors.DockerException,)
+    if sys.platform == 'win32':
+        import pywintypes  # pylint: disable=import-error
         error += (pywintypes.error,)
     try:
         client = docker.from_env()
