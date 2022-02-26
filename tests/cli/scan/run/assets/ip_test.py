@@ -20,7 +20,7 @@ def testRunScanIp__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandEr
 
     mocker.patch('ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
     runner = CliRunner()
-
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     result = runner.invoke(rootcli.rootcli,
                            ['scan', '--runtime=local', 'run', '--agent=agent1 --agent=agent2', 'ip', '192.168.1.1'])
 

@@ -1,6 +1,7 @@
 """Check if requirements for running docker are satisfied."""
 
 import docker
+import platform
 import pywintypes
 from docker import errors
 
@@ -38,11 +39,14 @@ def is_docker_working() -> bool:
     Returns:
         True if user has permission to run docker, else False
     """
+    error = (errors.DockerException, )
+    if platform.system() == "Windows":
+        import pywintypes
+        error += (pywintypes.error,)
     try:
-        _ = docker.from_env()
-    except errors.DockerException:
-        return False
-    except pywintypes.error:
+        client = docker.from_env()
+        client.ping()
+    except error:
         return False
     return True
 

@@ -34,7 +34,7 @@ def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.Fi
         title: str, install: bool, follow: List[str]) -> None:
     """Start a new scan on a specific asset.\n
     Example:\n
-        - ostorlab scan run --agent=agent/ostorlab/nmap --agent=agent/google/tsunami --title=test_scan ip 8.8.8.8
+        - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
     if agent:
         agents_settings: List[definitions.AgentSettings] = []
