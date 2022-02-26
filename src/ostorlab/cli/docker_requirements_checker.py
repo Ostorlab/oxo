@@ -1,6 +1,7 @@
 """Check if requirements for running docker are satisfied."""
 
 import docker
+import pywintypes
 from docker import errors
 
 
@@ -40,6 +41,8 @@ def is_docker_working() -> bool:
     try:
         _ = docker.from_env()
     except errors.DockerException:
+        return False
+    except pywintypes.error:
         return False
     return True
 
