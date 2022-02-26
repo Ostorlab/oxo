@@ -187,21 +187,21 @@ class LocalRuntime(runtime.Runtime):
             console.info('Starting pre-agents')
             self._start_pre_agents()
             console.info('Checking pre-agents are healthy')
-            is_healthy = self._check_agents_healthy(agent_group_definition)
+            is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
 
             console.info('Starting agents')
             self._start_agents(agent_group_definition)
             console.info('Checking agents are healthy')
-            is_healthy = self._check_agents_healthy(agent_group_definition)
+            is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
 
             console.info('Starting post-agents')
             self._start_post_agents()
             console.info('Checking post-agents are healthy')
-            is_healthy = self._check_agents_healthy(agent_group_definition)
+            is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
 
@@ -306,9 +306,9 @@ class LocalRuntime(runtime.Runtime):
         if self._mq_service is None or self._mq_service.is_healthy is False:
             raise UnhealthyService('MQ service is unhealthy.')
 
-    def _check_agents_healthy(self, agent_group_definition: definitions.AgentGroupDefinition):
+    def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
-        return self._are_agents_ready(agent_group_definition.agents)
+        return self._are_agents_ready()
 
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
@@ -456,17 +456,11 @@ class LocalRuntime(runtime.Runtime):
                     # return last value and don't raise RetryError exception.
                     retry_error_callback=lambda lv: lv.outcome.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
-    def _are_agents_ready(self, agents: List[definitions.AgentSettings], fail_fast=True) -> bool:
+    def _are_agents_ready(self, fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
          (once vs long-running)."""
         logger.info('listing services ...')
         agent_services = list(self._list_agent_services())
-        if len(agent_services) < len(agents):
-            logger.error('found %d, expecting %d', len(agent_services), len(agents))
-            return False
-        else:
-            logger.info('found correct count of services')
-
         for service in agent_services:
             logger.info('checking %s ...', service.name)
             if not _is_service_type_run(service):
