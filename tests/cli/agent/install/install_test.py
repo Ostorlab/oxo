@@ -22,7 +22,7 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
     assert 'Error: Missing argument' in result.output
 
 
-def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_mock):
+def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_mock, mocker):
     """Test ostorlab agent install CLI command with a wrong agent_key value.
     Should show message.
     """
@@ -35,6 +35,8 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
     requests_mock.post(public_runner.PUBLIC_GRAPHQL_ENDPOINT,
                         json=api_call_response, status_code=200)
 
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
+    mocker.patch('ostorlab.cli.docker_requirements_checker.is_docker_working', return_value=True)
     runner = testing.CliRunner()
     result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/wrong/key'])
 
