@@ -33,7 +33,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
         'errors': {'message': 'some error message.'}
     }
     requests_mock.post(public_runner.PUBLIC_GRAPHQL_ENDPOINT,
-                       json=api_call_response, status_code=200)
+                        json=api_call_response, status_code=200)
 
     runner = testing.CliRunner()
     result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/wrong/key'])

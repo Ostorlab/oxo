@@ -2,7 +2,6 @@
 
 import docker
 import platform
-import pywintypes
 from docker import errors
 
 

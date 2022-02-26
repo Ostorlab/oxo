@@ -145,6 +145,7 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
         return [services_model.Service(attrs=service) for service in services]
 
     mocker.patch.object(ostorlab.runtimes.local.models.models, 'ENGINE_URL', db_engine_path)
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     mocker.patch('docker.DockerClient.services', return_value=services_model.ServiceCollection())
     mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
 
