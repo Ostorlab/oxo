@@ -6,8 +6,9 @@ import ostorlab
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
-from docker.models import services as services_model
 from ostorlab.runtimes.local.models import models
+from docker.models import services as services_model
+
 
 @pytest.mark.skip(reason='Missing inject asset agent.')
 @pytest.mark.docker
@@ -52,7 +53,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, tmpdir):
     """
 
     if sys.platform == 'win32':
-        path = f'sqlite:///{tmpdir}\\ostorlab_db1.sqlite'.replace("\\", "\\\\")
+        path = f'sqlite:///{tmpdir}\\ostorlab_db1.sqlite'.replace('\\', '\\\\')
     else:
         path = f'sqlite:////{tmpdir}/ostorlab_db1.sqlite'
 

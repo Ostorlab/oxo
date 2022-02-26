@@ -27,11 +27,11 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
     output_file = str(tmpdir) + '/output.json'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file, '-f', 'json'])
-    data = json.loads(open(output_file, 'r').read())
-
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
-    assert data[str(vuln_db.id)]['risk_rating'] == 'High'
+    with open(output_file, 'r', encoding='UTF-8') as f:
+        data = json.loads(f.read())
+        assert data[str(vuln_db.id)]['risk_rating'] == 'High'
 
 
 def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_engine_path):
@@ -96,7 +96,7 @@ def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(m
         output_file = str(tmpdir) + '/output.json'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', output_file, '-f', 'json'])
-    with open(output_file, 'r') as f:
+    with open(output_file, 'r', encoding='UTF-8') as f:
         data = json.loads(f.read())
         assert result.exception is None
         assert 'Vulnerabilities saved' in result.output
