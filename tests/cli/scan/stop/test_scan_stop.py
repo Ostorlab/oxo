@@ -55,12 +55,13 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(requ
     assert 'Scan with id 123456 not found' in result.output
 
 @mock.patch.object(local_runtime.LocalRuntime, 'stop')
-def testOstorlabScanStopCLI_whenRuntimeIsLocal_callsStopMethodWithProvidedId(mock_scan_stop):
+def testOstorlabScanStopCLI_whenRuntimeIsLocal_callsStopMethodWithProvidedId(mock_scan_stop, mocker):
     """Test ostorlab scan stop command with a scan id.
     Should call stop method with provided scan id.
     """
 
     mock_scan_stop.return_value = None
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     runner = CliRunner()
 
     runner.invoke(

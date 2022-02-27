@@ -259,8 +259,9 @@ class LocalRuntime(runtime.Runtime):
         database = models.Database()
         session = database.session
         scan = session.query(models.Scan).get(int(scan_id))
-        scan.progress = 'STOPPED'
-        session.commit()
+        if scan:
+            scan.progress = 'STOPPED'
+            session.commit()
         console.success('Scan stopped successfully.')
 
     def _create_scan_db(self, title: str, asset: str):

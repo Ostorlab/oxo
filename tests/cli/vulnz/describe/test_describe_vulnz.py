@@ -1,18 +1,16 @@
 """Tests for vulnz describe command."""
-from unittest import mock
-
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
 from ostorlab.runtimes.local.models import models
 
 
-@mock.patch('ostorlab.runtimes.local.models.models.ENGINE_URL', 'sqlite:////tmp/ostorlab_db_cli.sqlite')
-def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo():
+def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(mocker, db_engine_path):
     """Test ostorlab vulnz describe command with correct commands and options.
     Should show vulnz details.
     """
     runner = CliRunner()
+    mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
     vuln_db = models.Vulnerability.create(title='Secure TLS certificate validation',
