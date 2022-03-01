@@ -35,7 +35,8 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
 
     docker_service_remove = mocker.patch(
         'docker.models.services.Service.remove', return_value=None)
-    lite_local_runtime.LiteLocalRuntime().stop(scan_id='1')
+    lite_local_runtime.LiteLocalRuntime(
+        scan_id='1', bus_host='', bus_password='', bus_username='').stop(scan_id='1')
 
     docker_service_remove.assert_called_once()
 
@@ -71,7 +72,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker, db_e
     docker_service_remove = mocker.patch(
         'docker.models.services.Service.remove', return_value=None)
 
-    lite_local_runtime.LiteLocalRuntime().stop(scan_id='9999')
+    lite_local_runtime.LiteLocalRuntime(
+        scan_id='1', bus_host='', bus_password='', bus_username='').stop(scan_id='9999')
 
     docker_service_remove.assert_not_called()
-

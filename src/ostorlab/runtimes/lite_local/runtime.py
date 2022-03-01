@@ -19,7 +19,7 @@ from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
-from ostorlab.runtimes.local import agent_runtime
+from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.local.models import models
 
 NETWORK_PREFIX = 'ostorlab_lite_local_network'
@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
 ASSET_INJECTION_AGENT_DEFAULT = 'agent/ostorlab/inject_asset'
+
 
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
@@ -63,8 +64,12 @@ class LiteLocalRuntime(runtime.Runtime):
     Lite Local runtime starts all the agents listed in the `AgentRunDefinition`, and then injects the target asset.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, scan_id: str, bus_host: str, bus_username: str, bus_password: str) -> None:
         super().__init__()
+        self.scan_id = scan_id
+        self.bus_host = bus_host
+        self.bus_username = bus_username
+        self.bus_password = bus_password
 
         if not docker_requirements_checker.is_docker_installed():
             console.error('Docker is not installed.')
@@ -80,15 +85,10 @@ class LiteLocalRuntime(runtime.Runtime):
                 docker_requirements_checker.init_swarm()
             self._docker_client = docker.from_env()
 
-        self._scan_db: Optional[models.Scan] = None
-
     @property
     def name(self) -> str:
         """Lite Local runtime instance name."""
-        if self._scan_db is not None:
-            return str(self._scan_db.id)
-        else:
-            raise ValueError('Scan not created yet')
+        return self.scan_id
 
     @property
     def network(self) -> str:
@@ -129,20 +129,17 @@ class LiteLocalRuntime(runtime.Runtime):
         try:
             console.info('Creating network')
             self._create_network()
-
             console.info('Starting agents')
             self._start_agents(agent_group_definition)
             console.info('Checking agents are healthy')
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
-
             console.info('Injecting asset')
             self._inject_asset(asset)
-
         except AgentNotHealthy:
             console.error('Agent not starting')
-            self.stop(self._scan_db.id)
+            self.stop(self.scan_id)
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
 
@@ -160,7 +157,8 @@ class LiteLocalRuntime(runtime.Runtime):
         services = client.services.list()
         for service in services:
             service_labels = service.attrs['Spec']['Labels']
-            logger.debug('comparing %s and %s', service_labels.get('ostorlab.universe'), scan_id)
+            logger.debug('comparing %s and %s', service_labels.get(
+                'ostorlab.universe'), scan_id)
             if service_labels.get('ostorlab.universe') == scan_id:
                 stopped_services.append(service)
                 service.remove()
@@ -219,7 +217,9 @@ class LiteLocalRuntime(runtime.Runtime):
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
 
-        runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
+        runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self.bus_host,
+                                                   self.bus_username,
+                                                   self.bus_password)
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
 
         if agent.replicas > 1:
@@ -246,7 +246,8 @@ class LiteLocalRuntime(runtime.Runtime):
 
     def _list_agent_services(self):
         """List the services of type agents. All agent service must start with agent_."""
-        services = self._docker_client.services.list(filters={'label': f'ostorlab.universe={self.name}'})
+        services = self._docker_client.services.list(
+            filters={'label': f'ostorlab.universe={self.name}'})
         for service in services:
             if service.name.startswith('agent_'):
                 yield service
@@ -254,13 +255,15 @@ class LiteLocalRuntime(runtime.Runtime):
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
         asset_config = self._docker_client.configs.create(name=f'asset_{self.name}',
-                                                          labels={'ostorlab.universe': self.name},
+                                                          labels={
+                                                              'ostorlab.universe': self.name},
                                                           data=asset.to_proto())
         asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
                                                               config_name=f'asset_{self.name}',
                                                               filename='/tmp/asset.binproto')
         selector_config = self._docker_client.configs.create(name=f'asset_selector_{self.name}',
-                                                             labels={'ostorlab.universe': self.name},
+                                                             labels={
+                                                                 'ostorlab.universe': self.name},
                                                              data=asset.selector)
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name=f'asset_selector_{self.name}',
@@ -282,7 +285,6 @@ class LiteLocalRuntime(runtime.Runtime):
                     # return last value and don't raise RetryError exception.
                     retry_error_callback=lambda lv: lv.outcome.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
-
     def list(self):
         raise NotImplementedError()
 
