@@ -48,7 +48,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
 def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, requests_mock):
     """Test ostorlab agent install CLI command with a valid agent_key value should install the agent."""
 
-    image_pull_mock = mocker.patch('docker.api.client.APIClient.pull', return_value='dummy_log')
+    image_pull_mock = mocker.patch('docker.api.client.APIClient.pull')
     image_get_mock = mocker.patch('docker.models.images.ImageCollection.get', return_value=images_model.Image())
     tag_image_mock = mocker.patch('docker.models.images.Image.tag', return_value=True)
     mocker.patch('ostorlab.cli.install_agent._is_image_present', return_value=False)
