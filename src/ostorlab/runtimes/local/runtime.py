@@ -4,13 +4,11 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 import logging
-import socket
 from typing import List
 from typing import Optional
 
 import click
 import docker
-import requests
 import tenacity
 from docker.models import services as docker_models_services
 
@@ -57,42 +55,6 @@ class AgentNotHealthy(exceptions.OstorlabError):
 def _has_container_image(agent: definitions.AgentSettings):
     """Check if container image is available"""
     return agent.container_image is not None
-
-
-def _is_agent_status_ok(ip: str) -> bool:
-    """Agent are expected to expose a healthcheck service on port 5000 that returns status code 200 and `OK` response.
-
-    Args:
-        ip: The agent IP address.
-
-    Returns:
-        True if the agent is healthy, false otherwise.
-    """
-    status_ok = False
-    try:
-        status_ok = requests.get(f'http://{ip}:5000/status').text == 'OK'
-    except requests.exceptions.ConnectionError:
-        logger.error('unable to connect to %s', ip)
-    return status_ok
-
-
-def _get_task_ips(service: docker_models_services.Service) -> List[str]:
-    """Returns list of IP addresses assigned to the tasks of a docker service.
-
-    Args:
-        service: docker service.
-
-    Returns:
-        List of IP addresses.
-    """
-    # current implementation supports only one task per service.
-    logger.info('getting ips for task %s', service.name)
-    try:
-        ips = socket.gethostbyname_ex(f'tasks.{service.name}')
-        logger.info('found ips %s for task %s', ips, service.name)
-        return ips[2]
-    except socket.gaierror:
-        return []
 
 
 def _is_service_type_run(service: docker_models_services.Service) -> bool:
@@ -145,6 +107,11 @@ class LocalRuntime(runtime.Runtime):
 
     @property
     def network(self) -> str:
+        """Local runtime network name.
+
+        Returns:
+            Local runtime network name.
+        """
         return f'{NETWORK_PREFIX}_{self.name}'
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
