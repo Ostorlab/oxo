@@ -41,7 +41,8 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                  password: str = None,
                  token_duration: str = None,
                  proxy: str = None,
-                 verify: bool = True
+                 verify: bool = True,
+                 api_key: str = None
                  ):
         """Constructs all the necessary attributes for the object.
 
@@ -57,7 +58,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._username = username
         self._password = password
         self._token_duration = token_duration
-        self._api_key: Optional[str] = self._configuration_manager.get_api_key()
+        if api_key:
+            self._api_key = api_key
+        else:
+            self._api_key: Optional[str] = self._configuration_manager.get_api_key()
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
 
