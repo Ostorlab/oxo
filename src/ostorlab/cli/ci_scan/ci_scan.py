@@ -34,7 +34,7 @@ def ci_scan(api_key: str, plan: str, file: io.FileIO, title: str, type: str) -> 
             runner.execute(scan_api.CreateMobileScanAPIRequest(title=title,
                                                                           asset_type=scan_api.MobileAssetType[type.upper()],
                                                                           plan= scan_api.Plan[plan.upper()],
-                                                                          application=file.read()))
+                                                                          application=file))
             console.success('Scan created.')
         except base_runner.ResponseError as e:
             console.error(f'Could not start the scan. {e}')

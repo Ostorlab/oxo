@@ -154,9 +154,6 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             }
         else:
             proxy = None
-        if multipart:
-            return requests.post(self.endpoint, files=request.data, headers=headers,
-                                 proxies=proxy, verify=self._verify)
-        else:
-            return requests.post(self.endpoint, data=request.data, headers=headers,
+
+        return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
                                  proxies=proxy, verify=self._verify)

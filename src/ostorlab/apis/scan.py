@@ -47,9 +47,12 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                                                     }
                                       }
                                      ),
-            '0': self._application,
             'map': json.dumps({
                 '0': ['variables.application'],
             })
         }
         return data
+
+    @property
+    def files(self) -> Optional[Dict] :
+        return {'0': self._application,}
