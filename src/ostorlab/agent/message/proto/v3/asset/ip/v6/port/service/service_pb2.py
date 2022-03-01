@@ -16,10 +16,10 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='v3/asset/ip/v6/port/service/service.proto',
-  package='v3.asset.ip.port.service',
+  package='v3.asset.ip.v6.port.service',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n)v3/asset/ip/v6/port/service/service.proto\x12\x18v3.asset.ip.port.service\"y\n\x07Message\x12\x0c\n\x04host\x18\x01 \x02(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x02(\x05:\x01\x34\x12\x0c\n\x04port\x18\x05 \x02(\t\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12\r\n\x05state\x18\x07 \x01(\t\x12\x0f\n\x07service\x18\x08 \x01(\t')
+  serialized_pb=_b('\n)v3/asset/ip/v6/port/service/service.proto\x12\x1bv3.asset.ip.v6.port.service\"y\n\x07Message\x12\x0c\n\x04host\x18\x01 \x02(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x02(\x05:\x01\x34\x12\x0c\n\x04port\x18\x05 \x02(\t\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12\r\n\x05state\x18\x07 \x01(\t\x12\x0f\n\x07service\x18\x08 \x01(\t')
 )
 
 
@@ -27,55 +27,55 @@ DESCRIPTOR = _descriptor.FileDescriptor(
 
 _MESSAGE = _descriptor.Descriptor(
   name='Message',
-  full_name='v3.asset.ip.port.service.Message',
+  full_name='v3.asset.ip.v6.port.service.Message',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='host', full_name='v3.asset.ip.port.service.Message.host', index=0,
+      name='host', full_name='v3.asset.ip.v6.port.service.Message.host', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='mask', full_name='v3.asset.ip.port.service.Message.mask', index=1,
+      name='mask', full_name='v3.asset.ip.v6.port.service.Message.mask', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='version', full_name='v3.asset.ip.port.service.Message.version', index=2,
+      name='version', full_name='v3.asset.ip.v6.port.service.Message.version', index=2,
       number=3, type=5, cpp_type=1, label=2,
       has_default_value=True, default_value=4,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='port', full_name='v3.asset.ip.port.service.Message.port', index=3,
+      name='port', full_name='v3.asset.ip.v6.port.service.Message.port', index=3,
       number=5, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='protocol', full_name='v3.asset.ip.port.service.Message.protocol', index=4,
+      name='protocol', full_name='v3.asset.ip.v6.port.service.Message.protocol', index=4,
       number=6, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='state', full_name='v3.asset.ip.port.service.Message.state', index=5,
+      name='state', full_name='v3.asset.ip.v6.port.service.Message.state', index=5,
       number=7, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='service', full_name='v3.asset.ip.port.service.Message.service', index=6,
+      name='service', full_name='v3.asset.ip.v6.port.service.Message.service', index=6,
       number=8, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -93,8 +93,8 @@ _MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=71,
-  serialized_end=192,
+  serialized_start=74,
+  serialized_end=195,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
@@ -103,7 +103,7 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 Message = _reflection.GeneratedProtocolMessageType('Message', (_message.Message,), dict(
   DESCRIPTOR = _MESSAGE,
   __module__ = 'v3.asset.ip.v6.port.service.service_pb2'
-  # @@protoc_insertion_point(class_scope:v3.asset.ip.port.service.Message)
+  # @@protoc_insertion_point(class_scope:v3.asset.ip.v6.port.service.Message)
   ))
 _sym_db.RegisterMessage(Message)
 
