@@ -2,7 +2,6 @@
 Example of usage:
 - ostorlab --api_key='myKey' ci_scan run --plan=free --break_on_risk_rating=medium --title=test_scan [asset] [options].
 """
-import logging
 import multiprocessing
 import click
 import time
@@ -10,9 +9,8 @@ import time
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
-from ostorlab.cli.ci_scan.run.ci_logger import console_logger, github_logger
-
-logger = logging.getLogger(__name__)
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.cli.ci_scan.run.ci_logger import console_logger, github_logger, logger
 
 MINUTE = 60
 WAIT_MINUTES = 30
@@ -60,11 +58,13 @@ def run(ctx: click.core.Context, plan: str, title: str,
     ctx.obj['ci_logger'] = ci_logger
 
 
-def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner, ci_logger):
+def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wait_minutes: int,
+                                 runner: authenticated_runner.AuthenticatedAPIRunner, ci_logger: logger.Logger):
     """Wait for the scan to finish and raise an exception if its risk is higher than the defined value."""
     if scan_create_api.RiskRating.has_value(break_on_risk_rating.upper()):
+        # run the check on a separate process and join it with a timeout. An exception is raised after the timeout.
         check_scan_process = multiprocessing.Process(
-            target=check_scan_periodically,
+            target=_check_scan_periodically,
             args=(runner, scan_id)
         )
         check_scan_process.start()
@@ -78,14 +78,14 @@ def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes
         scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
         if scan_result['data']['scan']['progress'] == 'done':
             scan_risk_rating = scan_result['data']['scan']['riskRating']
-            check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger)
+            _check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger)
     else:
         ci_logger.error(f'Incorrect risk rating value {break_on_risk_rating}. '
                       f'It should be one of {", ".join(scan_create_api.RiskRating.values())}')
         raise click.exceptions.Exit(2)
 
 
-def check_scan_periodically(runner, scan_id):
+def _check_scan_periodically(runner: authenticated_runner.AuthenticatedAPIRunner, scan_id: int) -> None:
     """Retrieve the scan progress using the API and wait if the progress is different than done"""
     scan_done = False
     while not scan_done:
@@ -96,7 +96,7 @@ def check_scan_periodically(runner, scan_id):
         time.sleep(SLEEP_CHECKS)
 
 
-def check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger):
+def _check_scan_risk_rating(scan_risk_rating: str, break_on_risk_rating, ci_logger: logger.Logger) -> None:
     """Compare the scan risk and raise an exception if the scan risk is higher than the defined value"""
     if scan_risk_rating in RATINGS_ORDER and RATINGS_ORDER[scan_risk_rating] < RATINGS_ORDER[break_on_risk_rating]:
         ci_logger.error(f'The scan risk rating is {scan_risk_rating}.')

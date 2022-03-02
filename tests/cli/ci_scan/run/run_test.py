@@ -10,7 +10,7 @@ def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['ci-scan', 'run', '--plan=free',
-                            '--title=scan1', 'android', 'tests/conftest.py'])
+                            '--title=scan1', 'android-aab', 'tests/conftest.py'])
 
     assert isinstance(result.exception, BaseException)
     assert 'API key not not provided.' in result.output
@@ -30,7 +30,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static','--title=scan1',
-                            'android', 'tests/conftest.py'])
+                            'android-apk', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
 
@@ -50,7 +50,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
                             '--break_on_risk_rating=toto', '--title=scan1',
-                            'ios', 'tests/conftest.py'])
+                            'ios-ipa', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Incorrect risk rating value toto.' in result.output
@@ -84,7 +84,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
                             '--break_on_risk_rating=medium', '--max_wait_minutes=1' ,'--title=scan1',
-                            'android', 'tests/conftest.py'])
+                            'android-apk', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'The scan is still running.' in result.output
@@ -117,7 +117,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
                             '--break_on_risk_rating=low', '--max_wait_minutes=10' ,'--title=scan1',
-                            'android','tests/conftest.py'])
+                            'android-apk','tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Scan done with risk rating info.' in result.output
@@ -149,7 +149,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
                             '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
-                            'ios', 'tests/conftest.py'])
+                            'ios-ipa', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'The scan risk rating is high.' in result.output
@@ -183,7 +183,7 @@ def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
                             '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
-                            '--log_flavor=github', 'ios', 'tests/conftest.py'])
+                            '--log_flavor=github', 'ios-ipa', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert '::set-output name=scan_id::1' in result.output

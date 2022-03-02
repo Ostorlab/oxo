@@ -14,7 +14,7 @@ from ostorlab.apis import scan_create as scan_create_api
 @run.run.command()
 @click.argument('file', type=click.File(mode='rb'), required=True)
 @click.pass_context
-def ios(ctx: click.core.Context, file: io.FileIO):
+def ios_ipa(ctx: click.core.Context, file: io.FileIO):
     """Create scan for iOS .IPA package file."""
     ci_logger = ctx.obj['ci_logger']
     if ctx.obj.get('api_key'):

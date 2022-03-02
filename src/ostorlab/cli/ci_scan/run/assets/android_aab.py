@@ -12,7 +12,7 @@ from ostorlab.apis import scan_create as scan_create_api
 @run.run.command()
 @click.argument('file', type=click.File(mode='rb'), required=True)
 @click.pass_context
-def android(ctx: click.core.Context, file: io.FileIO) -> None:
+def android_aab(ctx: click.core.Context, file: io.FileIO) -> None:
     """Create scan for android .APK package file."""
     ci_logger = ctx.obj['ci_logger']
     if ctx.obj.get('api_key'):

@@ -19,9 +19,7 @@ from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
 from ostorlab.cli import console as cli_console
 
-
 AUTHENTICATED_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/graphql'
-
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -37,12 +35,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     """
 
     def __init__(self,
-                 username: str = None,
+                 username: str = None,  # Username and password to use the token based authentication
                  password: str = None,
-                 token_duration: str = None,
-                 proxy: str = None,
-                 verify: bool = True,
-                 api_key: str = None
+                 token_duration: str = None,  # Set a duration for the token validity
+                 proxy: str = None,  # The proxy through which a request is made
+                 verify: bool = True,  # Whether or not to verify the TLS certificate
+                 api_key: str = None  # Use API KEY based authentication. Used if token is not defined.
                  ):
         """Constructs all the necessary attributes for the object.
 
@@ -65,12 +63,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
 
-
     @property
     def endpoint(self) -> str:
         """API endpoint."""
         return AUTHENTICATED_GRAPHQL_ENDPOINT
-
 
     def authenticate(self) -> None:
         """Authenticates the user.
@@ -156,4 +152,4 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             proxy = None
 
         return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
-                                 proxies=proxy, verify=self._verify)
+                             proxies=proxy, verify=self._verify)
