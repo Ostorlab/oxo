@@ -8,7 +8,6 @@ import click
 import time
 
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
-from ostorlab.cli import console as cli_console
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 from ostorlab.cli.ci_scan.run.ci_logger import console_logger, github_logger

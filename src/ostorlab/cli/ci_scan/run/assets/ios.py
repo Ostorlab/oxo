@@ -44,4 +44,4 @@ def ios(ctx: click.core.Context, file: io.FileIO):
             raise click.exceptions.Exit(2)
     else:
         ci_logger.error('API key not not provided.')
-        raise click.exceptions.Exit(2)
+        raise click.exceptions.Exit(2) from None
