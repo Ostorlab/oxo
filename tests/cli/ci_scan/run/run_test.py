@@ -25,7 +25,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
                     }
             }
         }
-    mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute', return_value=scan_create_dict)
+    mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
+                 return_value=scan_create_dict)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static','--title=scan1',
@@ -43,7 +44,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
                     }
             }
         }
-    mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute', return_value=scan_create_dict)
+    mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
+                 return_value=scan_create_dict)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
