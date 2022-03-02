@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package v3.asset.domain_name;
+
+message Message {
+  required string name = 1;
+}
