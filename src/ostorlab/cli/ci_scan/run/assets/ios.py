@@ -41,7 +41,7 @@ def ios(ctx: click.core.Context, file: io.FileIO):
             raise click.exceptions.Exit(2) from e
         except TimeoutError:
             ci_logger.error('The scan is still running.')
-            raise click.exceptions.Exit(2)
+            raise click.exceptions.Exit(2) from None
     else:
         ci_logger.error('API key not not provided.')
         raise click.exceptions.Exit(2) from None
