@@ -22,10 +22,11 @@ class Plan(enum.Enum):
 
 
 class RiskRating(enum.Enum):
-    potentially = enum.auto()
-    low = enum.auto()
-    medium = enum.auto()
-    high = enum.auto()
+    """Risk rating values to set for the break_on_risk_rating check."""
+    POTENTIALLY = enum.auto()
+    LOW = enum.auto()
+    MEDIUM = enum.auto()
+    HIGH = enum.auto()
 
     @classmethod
     def has_value(cls, value):
@@ -33,7 +34,7 @@ class RiskRating(enum.Enum):
 
     @classmethod
     def values(cls):
-        return set(cls._member_map_.keys())
+        return [key.lower() for key in cls._member_map_.keys()]
 
 
 class CreateMobileScanAPIRequest(request.APIRequest):

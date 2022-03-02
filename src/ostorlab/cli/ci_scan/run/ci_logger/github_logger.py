@@ -1,6 +1,11 @@
 """Logger is in charge of definning the output format based on CI expected output."""
 import abc
 
+from ostorlab.cli import console as cli_console
+
+console = cli_console.Console()
+
+
 class Logger(abc.ABC):
     """Logger is in charge of printing the results based on the CI expected output."""
 
@@ -10,7 +15,7 @@ class Logger(abc.ABC):
         Args:
             message: message to print.
         """
-        print(message)
+        console.info(message)
 
     def error(self, message: str) -> None:
         """Print Error messages.
@@ -18,7 +23,7 @@ class Logger(abc.ABC):
         Args:
             message: message to print.
         """
-        print(message)
+        console.error(message)
 
     def output(self, name: str, value: str) -> None:
         """Pass an output to the next step of the CI.

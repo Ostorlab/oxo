@@ -50,7 +50,11 @@ def run(ctx: click.core.Context, plan: str, title: str,
         ci_logger.error('API key not not provided.')
         raise click.exceptions.Exit(2)
 
-    ctx.obj['plan'] = plan
+    if plan in scan_create_api.PlanMapping:
+        ctx.obj['plan'] = scan_create_api.PlanMapping[plan]
+    else:
+        ci_logger.error(f'plan value {plan} not supported. Possible options: {scan_create_api.PlanMapping.keys()}')
+
     ctx.obj['title'] = title
     ctx.obj['break_on_risk_rating'] = break_on_risk_rating
     ctx.obj['max_wait_minutes'] = max_wait_minutes
@@ -59,7 +63,7 @@ def run(ctx: click.core.Context, plan: str, title: str,
 
 def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner, ci_logger):
     """Wait for the scan to finish and raise an exception if its risk is higher than the defined value."""
-    if scan_create_api.RiskRating.has_value(break_on_risk_rating):
+    if scan_create_api.RiskRating.has_value(break_on_risk_rating.upper()):
         check_scan_process = multiprocessing.Process(
             target=check_scan_periodically,
             args=(runner, scan_id)
@@ -77,7 +81,7 @@ def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes
             scan_risk_rating = scan_result['data']['scan']['riskRating']
             check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger)
     else:
-        ci_logger.error(f'Incorrect risk rating value. '
+        ci_logger.error(f'Incorrect risk rating value {break_on_risk_rating}. '
                       f'It should be one of {", ".join(scan_create_api.RiskRating.values())}')
         raise click.exceptions.Exit(2)
 
