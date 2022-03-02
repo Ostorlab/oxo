@@ -19,6 +19,10 @@ console = cli_console.Console()
 
 
 class CloudRuntime(runtime.Runtime):
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__()
+
     """cloud runtime instance running on Ostorlab cloud.
 
     cloud runtime communicates over a GraphQL API."""

@@ -75,7 +75,7 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         self.follow = []
         self._mq_service: Optional[mq.LocalRabbitMQ] = None

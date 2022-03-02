@@ -299,7 +299,7 @@ class LiteLocalRuntime(runtime.Runtime):
                     # return last value and don't raise RetryError exception.
                     retry_error_callback=lambda lv: lv.outcome.result(),
                     retry=tenacity.retry_if_result(lambda v: v is False))
-    def list(self):
+    def list(self, **kwargs):
         raise NotImplementedError()
 
     def _are_agents_ready(self, fail_fast=True) -> bool:
