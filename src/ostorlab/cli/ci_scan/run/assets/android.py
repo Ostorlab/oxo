@@ -40,8 +40,8 @@ def android(ctx: click.core.Context, file: io.FileIO) -> None:
                 console.error(f'Could not start the scan. {e}')
                 raise click.exceptions.Exit(2) from e
             except TimeoutError:
-                console.error(f'The scan is still running.')
+                console.error('The scan is still running.')
                 raise click.exceptions.Exit(2)
     else:
-        console.error(f'API key not not provided.')
+        console.error('API key not not provided.')
         raise click.exceptions.Exit(2)

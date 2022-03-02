@@ -38,7 +38,7 @@ def run(ctx: click.core.Context, plan: str, title: str,
         break_on_risk_rating: str = None, max_wait_minutes: int = WAIT_MINUTES) -> None:
     """Start a scan based on a plan in the CI.\n"""
     if not ctx.obj.get('api_key'):
-        console.error(f'API key not not provided.')
+        console.error('API key not not provided.')
         raise click.exceptions.Exit(2)
 
     ctx.obj['plan'] = plan

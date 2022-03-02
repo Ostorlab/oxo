@@ -19,31 +19,31 @@ console = cli_console.Console()
 @click.argument('file', type=click.File(mode='rb'), required=True)
 @click.pass_context
 def ios(ctx: click.core.Context, file: io.FileIO):
-        if ctx.obj.get('api_key'):
-            with console.status('Starting the scan'):
-                plan = ctx.obj['plan']
-                title = ctx.obj['title']
-                break_on_risk_rating = ctx.obj['break_on_risk_rating']
-                max_wait_minutes = ctx.obj['max_wait_minutes']
+    if ctx.obj.get('api_key'):
+        with console.status('Starting the scan'):
+            plan = ctx.obj['plan']
+            title = ctx.obj['title']
+            break_on_risk_rating = ctx.obj['break_on_risk_rating']
+            max_wait_minutes = ctx.obj['max_wait_minutes']
 
-                runner = authenticated_runner.AuthenticatedAPIRunner(api_key=ctx.obj.get('api_key'))
-                try:
-                    scan_result = runner.execute(
-                        scan_create_api.CreateMobileScanAPIRequest(title=title,
-                                                                   asset_type=scan_create_api.MobileAssetType.IOS,
-                                                                   plan= scan_create_api.Plan[plan.upper()],
-                                                                   application=file))
-                    scan_id = scan_result.get('data').get('scan').get('id')
-                    console.success(f'Scan created with id {scan_id}.')
-                    if break_on_risk_rating is not None:
-                        run.apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner)
+            runner = authenticated_runner.AuthenticatedAPIRunner(api_key=ctx.obj.get('api_key'))
+            try:
+                scan_result = runner.execute(
+                    scan_create_api.CreateMobileScanAPIRequest(title=title,
+                                                               asset_type=scan_create_api.MobileAssetType.IOS,
+                                                               plan= scan_create_api.Plan[plan.upper()],
+                                                               application=file))
+                scan_id = scan_result.get('data').get('scan').get('id')
+                console.success(f'Scan created with id {scan_id}.')
+                if break_on_risk_rating is not None:
+                    run.apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner)
 
-                except base_runner.ResponseError as e:
-                    console.error(f'Could not start the scan. {e}')
-                    raise click.exceptions.Exit(2) from e
-                except TimeoutError:
-                    console.error(f'The scan is still running.')
-                    raise click.exceptions.Exit(2)
-        else:
-            console.error(f'API key not not provided.')
-            raise click.exceptions.Exit(2)
+            except base_runner.ResponseError as e:
+                console.error(f'Could not start the scan. {e}')
+                raise click.exceptions.Exit(2) from e
+            except TimeoutError:
+                console.error('The scan is still running.')
+                raise click.exceptions.Exit(2)
+    else:
+        console.error('API key not not provided.')
+        raise click.exceptions.Exit(2)
