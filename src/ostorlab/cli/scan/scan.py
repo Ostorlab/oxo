@@ -19,13 +19,13 @@ from ostorlab.runtimes import registry
                    """,
               default='local',
               required=True)
-@click.option('--bus-url', help='Bus URL, this flag is restricted to the local runtime.', required=False)
-@click.option('--bus-vhost', help='Bus vhost, this flag is restricted to the local runtime.', required=False)
-@click.option('--bus-management-url', help='Bus management URL, this flag is restricted to the local runtime.',
+@click.option('--bus-url', help='Bus URL, this flag is restricted to the lite local runtime.', required=False)
+@click.option('--bus-vhost', help='Bus vhost, this flag is restricted to the lite local runtime.', required=False)
+@click.option('--bus-management-url', help='Bus management URL, this flag is restricted to the lite local runtime.',
               required=False)
-@click.option('--bus-exchange-topic', help='Bus exchange topic, this flag is restricted to the local runtime.',
+@click.option('--bus-exchange-topic', help='Bus exchange topic, this flag is restricted to the lite local runtime.',
               required=False)
-@click.option('--scan_id', help='Scan id, this flag is restricted to the local runtime..', required=False)
+@click.option('--scan_id', help='Scan id, this flag is restricted to the lite local runtime..', required=False)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str,
          bus_url: Optional[str] = None,
