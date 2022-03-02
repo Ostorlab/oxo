@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.asset.dns.a_record;
+package v3.asset.domain_name;
 
 message Message {
   required string name = 1;
