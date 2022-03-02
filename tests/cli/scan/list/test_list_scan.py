@@ -27,7 +27,7 @@ def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(
     runner = CliRunner()
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scans_data, status_code=200)
-    result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=remote', 'list'])
+    result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=cloud', 'list'])
 
     assert result.exception is None
 
@@ -44,7 +44,7 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
     runner = CliRunner()
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=None, status_code=401)
-    result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=remote', 'list'])
+    result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=cloud', 'list'])
     assert result.exception is None
     mock_console.assert_called()
 
