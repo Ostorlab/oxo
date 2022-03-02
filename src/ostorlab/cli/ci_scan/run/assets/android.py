@@ -1,5 +1,5 @@
 """Asset of type .APK package file.
-This module takes care of preparing a file of type .APK before injecting it to the runtime instance.
+This module takes care of preparing a file of type .APK before calling the create mobile scan API.
 """
 import io
 import click
@@ -16,7 +16,7 @@ console = cli_console.Console()
 @click.argument('file', type=click.File(mode='rb'), required=True)
 @click.pass_context
 def android(ctx: click.core.Context, file: io.FileIO) -> None:
-    """Run scan for android .APK package file."""
+    """Create scan for android .APK package file."""
     if ctx.obj.get('api_key'):
         with console.status('Starting the scan'):
             plan = ctx.obj['plan']

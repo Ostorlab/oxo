@@ -1,5 +1,5 @@
-"""Asset of type .IPA (IOS App Store Package).
-This module takes care of preparing a file of type .IPA before injecting it to the runtime instance.
+"""Asset of type .IPA.
+This module takes care of preparing a file of type .IPA before calling the create mobile scan API.
 """
 
 import click
@@ -19,6 +19,7 @@ console = cli_console.Console()
 @click.argument('file', type=click.File(mode='rb'), required=True)
 @click.pass_context
 def ios(ctx: click.core.Context, file: io.FileIO):
+    """Create scan for iOS .IPA package file."""
     if ctx.obj.get('api_key'):
         with console.status('Starting the scan'):
             plan = ctx.obj['plan']

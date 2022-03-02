@@ -1,7 +1,6 @@
-"""Module for the command run inside the group scan.
-This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
+"""Module for the command run inside the group ci_scan.
 Example of usage:
-    - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
+    - ostorlab --api_key='myKey' ci_scan run --plan=free --break_on_risk_rating=medium --title=test_scan [asset] [options]."""
 import logging
 import multiprocessing
 import click
@@ -48,6 +47,7 @@ def run(ctx: click.core.Context, plan: str, title: str,
 
 
 def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner):
+    """Wait for the scan to finish and raise an exception if its risk is higher than the defined value."""
     if scan_create_api.RiskRating.has_value(break_on_risk_rating):
         check_scan_process = multiprocessing.Process(
             target=check_scan_periodically,
@@ -72,6 +72,7 @@ def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes
 
 
 def check_scan_periodically(runner, scan_id):
+    """Retrieve the scan progress using the API and wait if the progress is different than done"""
     scan_done = False
     while not scan_done:
         scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
@@ -82,6 +83,7 @@ def check_scan_periodically(runner, scan_id):
 
 
 def check_scan_risk_rating(scan_risk_rating, break_on_risk_rating):
+    """Compare the scan risk and raise an exception if the scan risk is higher than the defined value"""
     if scan_risk_rating in RATINGS_ORDER and RATINGS_ORDER[scan_risk_rating] < RATINGS_ORDER[break_on_risk_rating]:
         console.error(f'The scan risk rating is {scan_risk_rating}.')
         raise click.exceptions.Exit(2)
