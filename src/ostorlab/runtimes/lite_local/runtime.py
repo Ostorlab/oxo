@@ -3,7 +3,6 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services.
 """
 import logging
-import socket
 from typing import List
 from typing import Optional
 
@@ -20,7 +19,6 @@ from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.lite_local import agent_runtime
-from ostorlab.runtimes.local.models import models
 
 NETWORK_PREFIX = 'ostorlab_lite_local_network'
 
@@ -64,12 +62,23 @@ class LiteLocalRuntime(runtime.Runtime):
     Lite Local runtime starts all the agents listed in the `AgentRunDefinition`, and then injects the target asset.
     """
 
-    def __init__(self, scan_id: str, bus_host: str, bus_username: str, bus_password: str) -> None:
+    def __init__(self, scan_id: str, bus_url: str, bus_vhost: str, bus_management_url: str,
+                 bus_exchange_topic: str) -> None:
+        """Set runtime attributes.
+
+        Args:
+            scan_id: Provided scan identifier, will be used to define the runtime name.
+            bus_url: Bus URL, may contain credentials.
+            bus_vhost: Bus virtual host, common default is / but none is provided here.
+            bus_management_url: Bus management URL, typically runs on a separate port over https.
+            bus_exchange_topic: Bus exchange topic.
+        """
         super().__init__()
         self.scan_id = scan_id
-        self.bus_host = bus_host
-        self.bus_username = bus_username
-        self.bus_password = bus_password
+        self._bus_url = bus_url
+        self._bus_vhost = bus_vhost
+        self._bus_management_url = bus_management_url
+        self._bus_exchange_topic = bus_exchange_topic
 
         if not docker_requirements_checker.is_docker_installed():
             console.error('Docker is not installed.')
@@ -217,9 +226,14 @@ class LiteLocalRuntime(runtime.Runtime):
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
 
-        runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self.bus_host,
-                                                   self.bus_username,
-                                                   self.bus_password)
+        runtime_agent = agent_runtime.AgentRuntime(agent,
+                                                   self.name,
+                                                   self._docker_client,
+                                                   self._bus_url,
+                                                   self._bus_vhost,
+                                                   self._bus_management_url,
+                                                   self._bus_exchange_topic
+                                                   )
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
 
         if agent.replicas > 1:

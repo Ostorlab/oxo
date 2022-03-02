@@ -16,7 +16,6 @@ from docker.types import services as docker_types_services
 from ostorlab import configuration_manager
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
-from ostorlab.runtimes.local.services import mq
 
 MOUNT_VARIABLES = {
     '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
@@ -29,6 +28,7 @@ HEALTHCHECK_RETRIES = 5
 HEALTHCHECK_TIMEOUT = 10 * SECOND
 HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = 2 * SECOND
+
 
 def _parse_mount_string_windows(string):
     """Handles parsing mounts on Windows OS."""
@@ -120,23 +120,29 @@ class AgentRuntime:
                  agent_settings: definitions.AgentSettings,
                  runtime_name: str,
                  docker_client: docker.DockerClient,
-                 bus_host: str,
-                 bus_username: str,
-                 bus_password: str) -> None:
-        """Constructs all the necessary attributes for the object.
+                 bus_url: str,
+                 bus_vhost: str,
+                 bus_management_url: str,
+                 bus_exchange_topic: str) -> None:
+        """Prepare all the necessary attributes for the agent runtime.
 
         Args:
-            agent: an agent definition containing all the settings of how agent should run and what arguments to pass.
-            runtime_name: local runtime instance name.
-            docker_client: docker client.
+            agent_settings: Agent settings object that will updated with bus configs.
+            runtime_name: runtime name to add to all object names.
+            docker_client: standard docker client.
+            bus_url: Bus URL, may contain credentials.
+            bus_vhost: Bus virtual host, common default is / but none is provided here.
+            bus_management_url: Bus management URL, typically runs on a separate port over https.
+            bus_exchange_topic: Bus exchange topic.
         """
         self._docker_client = docker_client
         self.agent = agent_settings
         self.image_name = agent_settings.container_image.split(':', maxsplit=1)[0]
         self.runtime_name = runtime_name
-        self.bus_host = bus_host
-        self.bus_username = bus_username
-        self.bus_password = bus_password
+        self.bus_url = bus_url
+        self.bus_vhost = bus_vhost
+        self.bus_management_url = bus_management_url
+        self.bus_exchange_topic = bus_exchange_topic
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -173,7 +179,7 @@ class AgentRuntime:
         """Read the agent yaml definition from the docker image labels.
 
         Returns:
-            the agent defintion.
+            the agent definition.
         """
         docker_image = self._docker_client.images.get(self.agent.container_image)
         yaml_definition_string = docker_image.labels.get('agent_definition')
@@ -183,15 +189,15 @@ class AgentRuntime:
 
     def update_agent_settings(self) -> None:
         """Update agent settings with values from the local runtime."""
-        # self.agent.bus_url = self.bus_host
-        self.agent.bus_exchange_topic = f'ostorlab_topic_{self.runtime_name}'
-        # self.agent.bus_management_url = self.mq_service.management_url
-        self.agent.bus_vhost = self.bus_host
+        self.agent.bus_url = self.bus_url
+        self.agent.bus_exchange_topic = self.bus_exchange_topic
+        self.agent.bus_management_url = self.bus_management_url
+        self.agent.bus_vhost = self.bus_vhost
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
-        """Create a docker healthcheck configuration for for the agent service.
+        """Create a docker healthcheck configuration for the agent service.
 
         Returns:
             docker healthcheck configuration.
@@ -222,7 +228,7 @@ class AgentRuntime:
                              network_name: str,
                              extra_configs: Optional[List[docker.types.ConfigReference]] = None
                              ) -> docker.models.services.Service:
-        """Create the agent service.
+        """Create the docker agent service with proper configs and policies.
 
         Args:
             network_name: network name to attach the service to.
