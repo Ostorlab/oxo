@@ -1,0 +1,1 @@
+from ostorlab.cli.ci_scan.run import run

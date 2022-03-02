@@ -6,6 +6,12 @@ from typing import Dict, Optional, BinaryIO
 from . import request
 
 
+PlanMapping = {
+    'rapid_static': 'free',
+    'full_analysis': 'static_dynamic_backend'
+}
+
+
 class MobileAssetType(enum.Enum):
     ANDROID = enum.auto()
     IOS = enum.auto()
@@ -13,6 +19,21 @@ class MobileAssetType(enum.Enum):
 
 class Plan(enum.Enum):
     FREE = enum.auto()
+
+
+class RiskRating(enum.Enum):
+    potentially = enum.auto()
+    low = enum.auto()
+    medium = enum.auto()
+    high = enum.auto()
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._member_map_
+
+    @classmethod
+    def values(cls):
+        return set(cls._member_map_.keys())
 
 
 class CreateMobileScanAPIRequest(request.APIRequest):
