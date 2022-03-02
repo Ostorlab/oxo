@@ -1,4 +1,4 @@
-"""TODO(mohsine):Wrtite docstring."""
+"""Create mobile scan API."""
 import enum
 import json
 from typing import Dict, Optional, BinaryIO

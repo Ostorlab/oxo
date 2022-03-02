@@ -152,3 +152,38 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
     assert 'Scan created with id 1.' in result.output
     assert 'The scan risk rating is high.' in result.output
     assert isinstance(result.exception, BaseException)
+
+
+
+def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
+    """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
+    scan_create_dict = {
+        'data': {
+            'scan': {
+                        'id': 1,
+                    }
+            }
+        }
+
+    scan_info_dict = {
+        'data': {
+            'scan': {
+                        'progress': 'done',
+                        'riskRating': 'high',
+                    }
+            }
+        }
+    mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
+                 side_effect=[scan_create_dict, scan_info_dict, scan_info_dict])
+    mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
+
+    runner = CliRunner()
+    result = runner.invoke(rootcli.rootcli,
+                           ['--api_key=12', 'ci-scan', 'run', '--plan=free',
+                            '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
+                            '--log_flavor=github', 'ios', 'tests/conftest.py'])
+
+    assert 'Scan created with id 1.' in result.output
+    assert '::set-output name=scan_id::1' in result.output
+    assert 'The scan risk rating is high.' in result.output
+    assert isinstance(result.exception, BaseException)
