@@ -2,16 +2,13 @@
 This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
 Example of usage:
     - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
-import io
 import logging
 import multiprocessing
 import click
 import time
 
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
-from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
-from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 
@@ -31,49 +28,33 @@ RATINGS_ORDER = {
 }
 
 
-@ci_scan.command()
+@ci_scan.group()
 @click.option('--plan', help='Scan plan to execute.', required=True)
-@click.option('--file', type=click.File(mode='rb'), help='Path to .APK or IPA file.', required=True)
-@click.option('--type', help='Scan type.', required=True)
 @click.option('--title', help='Scan title.')
 @click.option('--break_on_risk_rating', help='Fail if the scan risk rating is higher than the defined value.')
 @click.option('--max_wait_minutes', help='Time to wait for the scan results.')
 @click.pass_context
-def run(ctx: click.core.Context, plan: str, file: io.FileIO,
-            title: str, type: str, break_on_risk_rating: str = None, max_wait_minutes: int = WAIT_MINUTES) -> None:
+def run(ctx: click.core.Context, plan: str, title: str,
+        break_on_risk_rating: str = None, max_wait_minutes: int = WAIT_MINUTES) -> None:
     """Start a scan based on a plan in the CI.\n"""
-    if ctx.obj.get('api_key'):
-        with console.status('Starting the scan'):
-            runner = authenticated_runner.AuthenticatedAPIRunner(api_key=ctx.obj.get('api_key'))
-            try:
-                scan_result = runner.execute(scan_create_api.CreateMobileScanAPIRequest(title=title,
-                                                                              asset_type=scan_create_api.MobileAssetType[type.upper()],
-                                                                              plan= scan_create_api.Plan[plan.upper()],
-                                                                              application=file))
-                scan_id = scan_result.get('data').get('scan').get('id')
-                console.success(f'Scan created with id {scan_id}.')
-                if break_on_risk_rating is not None:
-                    apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner)
-
-            except base_runner.ResponseError as e:
-                console.error(f'Could not start the scan. {e}')
-                raise click.exceptions.Exit(2) from e
-            except TimeoutError:
-                console.error(f'The scan is still running')
-                raise click.exceptions.Exit(2)
-    else:
+    if not ctx.obj.get('api_key'):
         console.error(f'API key not not provided.')
         raise click.exceptions.Exit(2)
+
+    ctx.obj['plan'] = plan
+    ctx.obj['title'] = title
+    ctx.obj['break_on_risk_rating'] = break_on_risk_rating
+    ctx.obj['max_wait_minutes'] = max_wait_minutes
 
 
 def apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner):
     if scan_create_api.RiskRating.has_value(break_on_risk_rating):
         check_scan_process = multiprocessing.Process(
             target=check_scan_periodically,
-            args=(runner, scan_id, break_on_risk_rating)
+            args=(runner, scan_id)
         )
         check_scan_process.start()
-        check_scan_process.join(int(max_wait_minutes) * MINUTE)
+        check_scan_process.join(int(max_wait_minutes)*MINUTE)
 
         if check_scan_process.is_alive():
             check_scan_process.kill()
@@ -94,7 +75,7 @@ def check_scan_periodically(runner, scan_id):
     scan_done = False
     while not scan_done:
         scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
-        scan_progress = scan_result['data']['progress']
+        scan_progress = scan_result['data']['scan']['progress']
         if scan_progress == 'done':
             scan_done = True
         time.sleep(SLEEP_CHECKS)

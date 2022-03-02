@@ -9,8 +9,8 @@ def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute', return_value=True)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
-                           ['ci-scan', 'run', '--plan=free', '--type=android',
-                            '--title=scan1', '--file=tests/conftest.py'])
+                           ['ci-scan', 'run', '--plan=free',
+                            '--title=scan1', 'android', 'tests/conftest.py'])
 
     assert isinstance(result.exception, BaseException)
     assert 'API key not not provided.' in result.output
@@ -28,8 +28,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute', return_value=scan_create_dict)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
-                           ['--api_key=12', 'ci-scan', 'run', '--plan=free', '--type=android','--title=scan1',
-                            '--file=tests/conftest.py'])
+                           ['--api_key=12', 'ci-scan', 'run', '--plan=free','--title=scan1',
+                            'android', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
 
@@ -47,8 +47,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=free',
-                            '--type=android','--break_on_risk_rating=toto', '--title=scan1',
-                            '--file=tests/conftest.py'])
+                            '--break_on_risk_rating=toto', '--title=scan1',
+                            'ios', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Incorrect risk rating value.' in result.output
@@ -74,15 +74,15 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
             }
         }
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
-                 side_effect=[scan_create_dict, scan_info_dict])
+                 side_effect=[scan_create_dict, scan_info_dict, scan_info_dict, scan_info_dict, scan_info_dict])
     mocker.patch.object(run.run, 'MINUTE', 1)
-    mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
+    mocker.patch.object(run.run, 'SLEEP_CHECKS', 5)
 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=free',
-                            '--type=android','--break_on_risk_rating=medium', '--max_wait_minutes=1' ,'--title=scan1',
-                            '--file=tests/conftest.py'])
+                            '--break_on_risk_rating=medium', '--max_wait_minutes=1' ,'--title=scan1',
+                            'android', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'The scan is still running.' in result.output
@@ -114,8 +114,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=free',
-                            '--type=android','--break_on_risk_rating=low', '--max_wait_minutes=10' ,'--title=scan1',
-                            '--file=tests/conftest.py'])
+                            '--break_on_risk_rating=low', '--max_wait_minutes=10' ,'--title=scan1',
+                            'android','tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Scan done with risk rating info.' in result.output
@@ -146,8 +146,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=free',
-                            '--type=android','--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
-                            '--file=tests/conftest.py'])
+                            '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
+                            'ios', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'The scan risk rating is high.' in result.output
