@@ -18,10 +18,15 @@ from ostorlab.runtimes import runtime
 console = cli_console.Console()
 
 
-class RemoteRuntime(runtime.Runtime):
-    """Remote runtime instance running on Ostorlab cloud.
+class CloudRuntime(runtime.Runtime):
+    """Cloud runtime runs agents from Ostorlab Cloud."""
 
-    Remote runtime communicates over a GraphQL API."""
+    def __init__(self, *args, **kwargs) -> None:
+        """cloud runtime instance running on Ostorlab cloud.
+        cloud runtime communicates over a GraphQL API.
+        """
+        super().__init__()
+        del args, kwargs
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime is capable of running the provided agent run definition.
