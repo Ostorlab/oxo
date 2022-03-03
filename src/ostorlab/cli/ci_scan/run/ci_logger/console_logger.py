@@ -1,12 +1,11 @@
 """Logger is in charge of definning the output format based on CI expected output."""
-import abc
-
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.ci_scan.run.ci_logger import logger
 
 console = cli_console.Console()
 
 
-class Logger(abc.ABC):
+class Logger(logger.Logger):
     """Logger is in charge of printing the results based on the CI expected output."""
 
     def info(self, message: str) -> None:

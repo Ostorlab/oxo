@@ -35,31 +35,29 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     """
 
     def __init__(self,
-                 username: str = None,  # Username and password to use the token based authentication
+                 username: str = None,
                  password: str = None,
-                 token_duration: str = None,  # Set a duration for the token validity
-                 proxy: str = None,  # The proxy through which a request is made
-                 verify: bool = True,  # Whether or not to verify the TLS certificate
-                 api_key: str = None  # Use API KEY based authentication. Used if token is not defined.
+                 token_duration: str = None,
+                 proxy: str = None,
+                 verify: bool = True,
+                 api_key: str = None
                  ):
         """Constructs all the necessary attributes for the object.
 
         Args:
-            username: the username (email) used to login.
-            password: the password used to login.
+            username: the username (email) used to login to use the token based authentication.
+            password: the password used to login to use the token based authentication.
             token_duration: The duration for which the token is valid
             (Can be in minutes, hours, days, or a combination of any two or all three).
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether or not to verify the TLS certificate. Defaults to True.
+            api_key: Use API KEY based authentication. Used if token is not defined.
         """
         super().__init__(proxy, verify)
         self._username = username
         self._password = password
         self._token_duration = token_duration
-        if api_key:
-            self._api_key = api_key
-        else:
-            self._api_key: Optional[str] = self._configuration_manager.get_api_key()
+        self._api_key = api_key or self._configuration_manager.get_api_key()
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
 

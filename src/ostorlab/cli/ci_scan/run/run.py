@@ -11,21 +11,17 @@ from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli.ci_scan.run.ci_logger import console_logger, github_logger, logger
+from ostorlab.utils import risk_rating
 
 MINUTE = 60
 WAIT_MINUTES = 30
 SLEEP_CHECKS = 10 # seconds
-
-RATINGS_ORDER = {
-    'high': 0,
-    'medium': 1,
-    'low': 2,
-    'potentially': 3
-}
+SCAN_PROGRESS_NOT_STARTED = 'not_started'
+SCAN_PROGRESS_DONE = 'done'
 
 CI_LOGGER = {
-    'console': console_logger.Logger(),
-    'github': github_logger.Logger()
+    'console': console_logger.Logger,
+    'github': github_logger.Logger
 }
 
 @ci_scan.group()
@@ -39,9 +35,9 @@ def run(ctx: click.core.Context, plan: str, title: str,
         break_on_risk_rating: str, max_wait_minutes: int, log_flavor: str) -> None:
     """Start a scan based on a plan in the CI.\n"""
     if log_flavor not in CI_LOGGER:
-        CI_LOGGER['console'].error(f'log_flavor value {log_flavor} not supported. Possible options: {CI_LOGGER.keys()}')
+        CI_LOGGER['console']().error(f'log_flavor value {log_flavor} not supported. Possible options: {CI_LOGGER.keys()}')
     else:
-        ci_logger = CI_LOGGER.get(log_flavor)
+        ci_logger = CI_LOGGER.get(log_flavor)()
 
     if not ctx.obj.get('api_key'):
         ci_logger.error('API key not not provided.')
@@ -61,7 +57,7 @@ def run(ctx: click.core.Context, plan: str, title: str,
 def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wait_minutes: int,
                                  runner: authenticated_runner.AuthenticatedAPIRunner, ci_logger: logger.Logger):
     """Wait for the scan to finish and raise an exception if its risk is higher than the defined value."""
-    if scan_create_api.RiskRating.has_value(break_on_risk_rating.upper()):
+    if risk_rating.RiskRating.has_value(break_on_risk_rating.upper()):
         # run the check on a separate process and join it with a timeout. An exception is raised after the timeout.
         check_scan_process = multiprocessing.Process(
             target=_check_scan_periodically,
@@ -73,7 +69,7 @@ def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wa
         if check_scan_process.is_alive():
             check_scan_process.kill()
             check_scan_process.join()
-            raise TimeoutError()
+            _handle_scan_timeout(runner, scan_id, break_on_risk_rating, ci_logger)
 
         scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
         if scan_result['data']['scan']['progress'] == 'done':
@@ -81,7 +77,7 @@ def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wa
             _check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger)
     else:
         ci_logger.error(f'Incorrect risk rating value {break_on_risk_rating}. '
-                      f'It should be one of {", ".join(scan_create_api.RiskRating.values())}')
+                      f'It should be one of {", ".join(risk_rating.RiskRating.values())}')
         raise click.exceptions.Exit(2)
 
 
@@ -98,8 +94,32 @@ def _check_scan_periodically(runner: authenticated_runner.AuthenticatedAPIRunner
 
 def _check_scan_risk_rating(scan_risk_rating: str, break_on_risk_rating, ci_logger: logger.Logger) -> None:
     """Compare the scan risk and raise an exception if the scan risk is higher than the defined value"""
-    if scan_risk_rating in RATINGS_ORDER and RATINGS_ORDER[scan_risk_rating] < RATINGS_ORDER[break_on_risk_rating]:
+    if _is_scan_risk_rating_higher(scan_risk_rating, break_on_risk_rating):
         ci_logger.error(f'The scan risk rating is {scan_risk_rating}.')
         raise click.exceptions.Exit(2)
     else:
         ci_logger.info(f'Scan done with risk rating {scan_risk_rating}.')
+
+
+def _is_scan_risk_rating_higher(scan_risk_rating: str, break_on_risk_rating: str) -> bool:
+    """Returns a boolean of the scan risk Comparison with the defined break value"""
+    if scan_risk_rating.upper() in risk_rating.RATINGS_ORDER and risk_rating.RATINGS_ORDER[scan_risk_rating.upper()] \
+            < risk_rating.RATINGS_ORDER[break_on_risk_rating.upper()]:
+        return True
+    else:
+        return False
+
+
+def _handle_scan_timeout(runner: authenticated_runner.AuthenticatedAPIRunner,
+                         scan_id: int, break_on_risk_rating: str, ci_logger: logger.Logger) -> None:
+    """when the scan triggers a timeout, we check if the scan has started and if the risk rating is higher
+     than the defined break value. In this case we reprot the risk rating and we exit code 2
+     otherwise we raise the timeout exception
+     """
+    scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
+    if scan_result['data']['scan']['progress'] != SCAN_PROGRESS_NOT_STARTED:
+        scan_risk_rating = scan_result['data']['scan']['riskRating']
+        if _is_scan_risk_rating_higher(scan_risk_rating, break_on_risk_rating):
+            ci_logger.error(f'The scan risk rating is {scan_risk_rating}.')
+            raise click.exceptions.Exit(2)
+    raise TimeoutError()
