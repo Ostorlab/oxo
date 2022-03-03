@@ -118,7 +118,7 @@ def _handle_scan_timeout(runner: authenticated_runner.AuthenticatedAPIRunner,
     scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
     if scan_result['data']['scan']['progress'] != SCAN_PROGRESS_NOT_STARTED:
         scan_risk_rating = scan_result['data']['scan']['riskRating']
-        if _is_scan_risk_rating_higher(scan_risk_rating, break_on_risk_rating):
+        if scan_risk_rating is not None and _is_scan_risk_rating_higher(scan_risk_rating, break_on_risk_rating):
             ci_logger.error(f'The scan risk rating is {scan_risk_rating}.')
             raise click.exceptions.Exit(2)
     raise TimeoutError()
