@@ -19,6 +19,7 @@ class MobileAssetType(enum.Enum):
 
 class Plan(enum.Enum):
     FREE = enum.auto()
+    STATIC_DYNAMIC_BACKEND = enum.auto()
 
 
 class CreateMobileScanAPIRequest(request.APIRequest):
