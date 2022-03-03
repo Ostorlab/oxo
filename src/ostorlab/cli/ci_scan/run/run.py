@@ -29,7 +29,7 @@ CI_LOGGER = {
 @click.option('--title', help='Scan title.')
 @click.option('--break_on_risk_rating', help='Fail if the scan risk rating is higher than the defined value.')
 @click.option('--max_wait_minutes', help='Time to wait for the scan results.', required=False, default=WAIT_MINUTES)
-@click.option('--log_flavor', help='Type of expected output based on the CI.', required=False, default='console')
+@click.option('--log-flavor', help='Type of expected output based on the CI.', required=False, default='console')
 @click.pass_context
 def run(ctx: click.core.Context, plan: str, title: str,
         break_on_risk_rating: str, max_wait_minutes: int, log_flavor: str) -> None:
