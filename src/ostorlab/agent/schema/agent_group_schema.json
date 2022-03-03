@@ -87,6 +87,11 @@
             "description": "[Optional] - Version of the agent, can either be an exact version like 1.2.3 or a regular expression to match against a version range like 1\\..*.",
             "type": "string"
           },
+          "replicas":{
+            "description": "[Optional] - Replicas of the agent, default value is 1.",
+            "type": "number",
+            "default": 1
+          },
           "args": {
             "description": "[Optional] - List of the agent arguments.",
             "type": "array",
