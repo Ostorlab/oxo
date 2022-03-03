@@ -23,7 +23,7 @@ class ScanInfoAPIRequest(request.APIRequest):
          query scan($scanId: Int) {
             scan(scanId: $scanId) {
                 progress
-                risk_rating
+                riskRating
             }
          }
         """

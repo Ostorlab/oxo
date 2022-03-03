@@ -18,18 +18,13 @@ def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
 
 def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
     """Test ostorlab ci_scan with no break_on_risk_rating. it should create the scan and returns its id."""
-    scan_create_dict = {
-        'data': {
-            'scan': {
-                        'id': 1,
-                    }
-            }
-        }
+    scan_create_dict = {'data': {'createMobileScan': {'scan': {'id': '1'}}}}
+
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
                  return_value=scan_create_dict)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
-                           ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static','--title=scan1',
+                           ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static', '--title=scan1',
                             'android-apk', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
@@ -37,13 +32,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
 
 def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
-    scan_create_dict = {
-        'data': {
-            'scan': {
-                        'id': 1,
-                    }
-            }
-        }
+    scan_create_dict = {'data': {'createMobileScan': {'scan': {'id': '1'}}}}
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
                  return_value=scan_create_dict)
     runner = CliRunner()
@@ -59,22 +48,16 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
 
 def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
-    scan_create_dict = {
-        'data': {
-            'scan': {
-                        'id': 1,
-                    }
-            }
-        }
+    scan_create_dict = {'data': {'createMobileScan': {'scan': {'id': '1'}}}}
 
     scan_info_dict = {
         'data': {
             'scan': {
-                        'progress': 'not_started',
-                        'riskRating': 'info',
-                    }
+                'progress': 'not_started',
+                'riskRating': 'info',
             }
         }
+    }
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
                  side_effect=[scan_create_dict, scan_info_dict, scan_info_dict, scan_info_dict, scan_info_dict])
     mocker.patch.object(run.run, 'MINUTE', 1)
@@ -83,7 +66,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
-                            '--break_on_risk_rating=medium', '--max_wait_minutes=1' ,'--title=scan1',
+                            '--break_on_risk_rating=medium', '--max_wait_minutes=1', '--title=scan1',
                             'android-apk', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
@@ -93,22 +76,16 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
 
 def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
-    scan_create_dict = {
-        'data': {
-            'scan': {
-                        'id': 1,
-                    }
-            }
-        }
+    scan_create_dict = {'data': {'createMobileScan': {'scan': {'id': '1'}}}}
 
     scan_info_dict = {
         'data': {
             'scan': {
-                        'progress': 'done',
-                        'riskRating': 'info',
-                    }
+                'progress': 'done',
+                'riskRating': 'info',
             }
         }
+    }
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
                  side_effect=[scan_create_dict, scan_info_dict, scan_info_dict])
     mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
@@ -116,8 +93,8 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
-                            '--break_on_risk_rating=low', '--max_wait_minutes=10' ,'--title=scan1',
-                            'android-apk','tests/conftest.py'])
+                            '--break_on_risk_rating=low', '--max_wait_minutes=10', '--title=scan1',
+                            'android-apk', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Scan done with risk rating info.' in result.output
@@ -125,22 +102,16 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
 
 def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(mocker):
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
-    scan_create_dict = {
-        'data': {
-            'scan': {
-                        'id': 1,
-                    }
-            }
-        }
+    scan_create_dict = {'data': {'createMobileScan': {'scan': {'id': '1'}}}}
 
     scan_info_dict = {
         'data': {
             'scan': {
-                        'progress': 'done',
-                        'riskRating': 'high',
-                    }
+                'progress': 'done',
+                'riskRating': 'high',
             }
         }
+    }
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
                  side_effect=[scan_create_dict, scan_info_dict, scan_info_dict])
     mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
@@ -148,7 +119,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
-                            '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
+                            '--break_on_risk_rating=medium', '--max_wait_minutes=10', '--title=scan1',
                             'ios-ipa', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
@@ -156,25 +127,18 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
     assert isinstance(result.exception, BaseException)
 
 
-
 def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
-    scan_create_dict = {
-        'data': {
-            'scan': {
-                        'id': 1,
-                    }
-            }
-        }
+    scan_create_dict = {'data': {'createMobileScan': {'scan': {'id': '1'}}}}
 
     scan_info_dict = {
         'data': {
             'scan': {
-                        'progress': 'done',
-                        'riskRating': 'high',
-                    }
+                'progress': 'done',
+                'riskRating': 'high',
             }
         }
+    }
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
                  side_effect=[scan_create_dict, scan_info_dict, scan_info_dict])
     mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
@@ -182,7 +146,7 @@ def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
-                            '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
+                            '--break_on_risk_rating=medium', '--max_wait_minutes=10', '--title=scan1',
                             '--log-flavor=github', 'ios-ipa', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
