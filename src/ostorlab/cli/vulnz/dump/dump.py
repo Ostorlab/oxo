@@ -24,7 +24,8 @@ def dump(scan_id: int, output: str, output_format: str) -> None:
     """Dump found vulnerabilities of a scan in a specific format."""
     database = models.Database()
     session = database.session
-    severity_sort_logic = case(value=models.Vulnerability.risk_rating, whens=risk_rating.RATINGS_ORDER).label('severity')
+    severity_sort_logic = case(value=models.Vulnerability.risk_rating,
+                               whens=risk_rating.RATINGS_ORDER).label('severity')
     vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).\
         order_by(severity_sort_logic).all()
 

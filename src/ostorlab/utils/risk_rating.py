@@ -1,3 +1,4 @@
+"""Utils to handle scan risk rating."""
 import enum
 
 

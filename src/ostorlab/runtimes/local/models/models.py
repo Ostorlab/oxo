@@ -10,7 +10,7 @@ from sqlalchemy.ext import declarative
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
-from ostorlab.utils import risk_rating
+from ostorlab.utils import risk_rating as utils_rik_rating
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -90,7 +90,7 @@ class Vulnerability(Base):
     __tablename__ = 'vulnerability'
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     technical_detail = sqlalchemy.Column(sqlalchemy.Text)
-    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(risk_rating.RiskRating))
+    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(utils_rik_rating.RiskRating))
     cvss_v3_vector = sqlalchemy.Column(sqlalchemy.String(1024))
     dna = sqlalchemy.Column(sqlalchemy.String(256))
     title = sqlalchemy.Column(sqlalchemy.String(256))

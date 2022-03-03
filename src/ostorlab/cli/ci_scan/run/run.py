@@ -35,7 +35,8 @@ def run(ctx: click.core.Context, plan: str, title: str,
         break_on_risk_rating: str, max_wait_minutes: int, log_flavor: str) -> None:
     """Start a scan based on a plan in the CI.\n"""
     if log_flavor not in CI_LOGGER:
-        CI_LOGGER['console']().error(f'log_flavor value {log_flavor} not supported. Possible options: {CI_LOGGER.keys()}')
+        CI_LOGGER['console']().error(f'log_flavor value {log_flavor} not supported.'
+                                     f' Possible options: {CI_LOGGER.keys()}')
     else:
         ci_logger = CI_LOGGER.get(log_flavor)()
 
@@ -103,11 +104,9 @@ def _check_scan_risk_rating(scan_risk_rating: str, break_on_risk_rating, ci_logg
 
 def _is_scan_risk_rating_higher(scan_risk_rating: str, break_on_risk_rating: str) -> bool:
     """Returns a boolean of the scan risk Comparison with the defined break value"""
-    if scan_risk_rating.upper() in risk_rating.RATINGS_ORDER and risk_rating.RATINGS_ORDER[scan_risk_rating.upper()] \
-            < risk_rating.RATINGS_ORDER[break_on_risk_rating.upper()]:
-        return True
-    else:
-        return False
+    return scan_risk_rating.upper() in risk_rating.RATINGS_ORDER \
+           and risk_rating.RATINGS_ORDER[scan_risk_rating.upper()] \
+           < risk_rating.RATINGS_ORDER[break_on_risk_rating.upper()]
 
 
 def _handle_scan_timeout(runner: authenticated_runner.AuthenticatedAPIRunner,
