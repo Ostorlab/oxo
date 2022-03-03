@@ -65,7 +65,7 @@ class LocalRabbitMQ:
         self._create_network()
         self._mq_service = self._start_mq()
 
-        if not self._is_service_healthy():
+        if self._mq_service is not None and not self._is_service_healthy():
             logger.error('MQ container for service %s is not ready', self._mq_service.id)
             return
 
@@ -89,22 +89,27 @@ class LocalRabbitMQ:
             )
 
     def _start_mq(self) -> services.Service:
-        logger.info('starting MQ')
-        endpoint_spec = types.services.EndpointSpec(mode='vip', ports=self._exposed_ports)
-        service_mode = types.services.ServiceMode('replicated', replicas=1)
-        return self._docker_client.services.create(
-            image=self._mq_image,
-            networks=[self._network],
-            name=self._mq_host,
-            env=[
-                'TASK_ID={{.Task.Slot}}',
-                f'MQ_SERVICE_NAME={self._mq_host}',
-                f'RABBITMQ_ERLANG_COOKIE={binascii.hexlify(os.urandom(10)).decode()}',
-            ],
-            restart_policy=types.RestartPolicy(condition='any'),
-            mode=service_mode,
-            labels={'ostorlab.universe': self._name, 'ostorlab.mq': ''},
-            endpoint_spec=endpoint_spec)
+        try:
+            logger.info('starting MQ')
+            endpoint_spec = types.services.EndpointSpec(mode='vip', ports=self._exposed_ports)
+            service_mode = types.services.ServiceMode('replicated', replicas=1)
+            return self._docker_client.services.create(
+                image=self._mq_image,
+                networks=[self._network],
+                name=self._mq_host,
+                env=[
+                    'TASK_ID={{.Task.Slot}}',
+                    f'MQ_SERVICE_NAME={self._mq_host}',
+                    f'RABBITMQ_ERLANG_COOKIE={binascii.hexlify(os.urandom(10)).decode()}',
+                ],
+                restart_policy=types.RestartPolicy(condition='any'),
+                mode=service_mode,
+                labels={'ostorlab.universe': self._name, 'ostorlab.mq': ''},
+                endpoint_spec=endpoint_spec)
+        except docker.errors.APIError as e:
+            error_message = f'MQ service could not be started. Reason: {e}.'
+            logger.error(error_message)
+            return
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=12),
@@ -118,6 +123,7 @@ class LocalRabbitMQ:
     @property
     def is_healthy(self) -> bool:
         try:
-            return len([task for task in self._mq_service.tasks() if task['Status']['State'] == 'running']) == 1
+            return self._mq_service is not None and \
+                   len([task for task in self._mq_service.tasks() if task['Status']['State'] == 'running']) == 1
         except errors.DockerException:
             return False
