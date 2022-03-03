@@ -25,7 +25,7 @@ def run_mobile_scan(ctx: click.core.Context, file: io.FileIO, asset_type: scan_c
                                                            asset_type=asset_type,
                                                            plan= scan_create_api.Plan[plan.upper()],
                                                            application=file))
-            scan_id = scan_result.get('data').get('scan').get('id')
+            scan_id = scan_result.get('data').get('createMobileScan').get('scan').get('id')
             ci_logger.output(name='scan_id', value=scan_id)
             ci_logger.info(f'Scan created with id {scan_id}.')
             if break_on_risk_rating is not None:
