@@ -19,9 +19,7 @@ from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
 from ostorlab.cli import console as cli_console
 
-
 AUTHENTICATED_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/graphql'
-
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -41,32 +39,32 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                  password: str = None,
                  token_duration: str = None,
                  proxy: str = None,
-                 verify: bool = True
+                 verify: bool = True,
+                 api_key: str = None
                  ):
         """Constructs all the necessary attributes for the object.
 
         Args:
-            username: the username (email) used to login.
-            password: the password used to login.
+            username: the username (email) used to login to use the token based authentication.
+            password: the password used to login to use the token based authentication.
             token_duration: The duration for which the token is valid
             (Can be in minutes, hours, days, or a combination of any two or all three).
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether or not to verify the TLS certificate. Defaults to True.
+            api_key: Use API KEY based authentication. Used if token is not defined.
         """
         super().__init__(proxy, verify)
         self._username = username
         self._password = password
         self._token_duration = token_duration
-        self._api_key: Optional[str] = self._configuration_manager.get_api_key()
+        self._api_key = api_key or self._configuration_manager.get_api_key()
         self._token: Optional[str] = None
         self._otp_token: Optional[str] = None
-
 
     @property
     def endpoint(self) -> str:
         """API endpoint."""
         return AUTHENTICATED_GRAPHQL_ENDPOINT
-
 
     def authenticate(self) -> None:
         """Authenticates the user.
@@ -150,9 +148,6 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             }
         else:
             proxy = None
-        if multipart:
-            return requests.post(self.endpoint, files=request.data, headers=headers,
-                                 proxies=proxy, verify=self._verify)
-        else:
-            return requests.post(self.endpoint, data=request.data, headers=headers,
-                                 proxies=proxy, verify=self._verify)
+
+        return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
+                             proxies=proxy, verify=self._verify)

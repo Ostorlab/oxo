@@ -1,9 +1,15 @@
-"""TODO(mohsine):Wrtite docstring."""
+"""Create mobile scan API."""
 import enum
 import json
 from typing import Dict, Optional, BinaryIO
 
 from . import request
+
+
+PlanMapping = {
+    'rapid_static': 'free',
+    'full_analysis': 'static_dynamic_backend'
+}
 
 
 class MobileAssetType(enum.Enum):
@@ -13,10 +19,11 @@ class MobileAssetType(enum.Enum):
 
 class Plan(enum.Enum):
     FREE = enum.auto()
+    STATIC_DYNAMIC_BACKEND = enum.auto()
 
 
 class CreateMobileScanAPIRequest(request.APIRequest):
-    """TODO(mohsine):Wrtite docstring."""
+    """Create mobile scan API from a file."""
 
     def __init__(self, title: str, asset_type: MobileAssetType, plan: Plan, application: BinaryIO):
         self._title = title
@@ -26,6 +33,11 @@ class CreateMobileScanAPIRequest(request.APIRequest):
 
     @property
     def query(self) -> Optional[str]:
+        """Defines the query to create a mobile scan.
+
+        Returns:
+            The query to create a mobile scan
+        """
         return """
 mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $plan: String!) {
       createMobileScan(title: $title, assetType:$assetType, application: $application, plan: $plan) {
@@ -38,6 +50,11 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
 
     @property
     def data(self) -> Optional[Dict]:
+        """Sets the query and variables to create the scan.
+
+         Returns:
+               The query and variables to create a scan.
+         """
         data = {
             'operations': json.dumps({'query': self.query,
                                       'variables': {'title': self._title,
@@ -47,9 +64,17 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                                                     }
                                       }
                                      ),
-            '0': self._application,
             'map': json.dumps({
                 '0': ['variables.application'],
             })
         }
         return data
+
+    @property
+    def files(self) -> Optional[Dict] :
+        """Sets the file for multipart upload to create the mobile scan.
+
+                 Returns:
+                       The file mapping to create a scan.
+        """
+        return {'0': self._application,}

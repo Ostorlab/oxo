@@ -21,3 +21,8 @@ class APIRequest(abc.ABC):
     def data(self) -> Optional[Dict]:
         """Body of the API request, containing the query & any additional data."""
         raise NotImplementedError('Missing implementation')
+
+    @property
+    def files(self) -> Optional[Dict]:
+        """Files of the API request, containing the binary data."""
+        return None

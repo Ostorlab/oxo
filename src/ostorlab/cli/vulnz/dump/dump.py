@@ -8,7 +8,7 @@ from ostorlab.cli import console as cli_console
 from ostorlab.cli.vulnz import vulnz
 from ostorlab.cli import dumpers
 from ostorlab.runtimes.local.models import models
-
+from ostorlab.utils import risk_rating
 
 console = cli_console.Console()
 
@@ -24,9 +24,8 @@ def dump(scan_id: int, output: str, output_format: str) -> None:
     """Dump found vulnerabilities of a scan in a specific format."""
     database = models.Database()
     session = database.session
-    severities = {'HIGH': 0, 'MEDIUM': 1, 'LOW': 2, 'POTENTIALLY': 3,
-                  'HARDENING': 4, 'SECURE': 5, 'IMPORTANT': 6, 'INFO': 7}
-    severity_sort_logic = case(value=models.Vulnerability.risk_rating, whens=severities).label('severity')
+    severity_sort_logic = case(value=models.Vulnerability.risk_rating,
+                               whens=risk_rating.RATINGS_ORDER).label('severity')
     vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).\
         order_by(severity_sort_logic).all()
 
