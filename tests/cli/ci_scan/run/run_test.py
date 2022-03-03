@@ -183,7 +183,7 @@ def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api_key=12', 'ci-scan', 'run', '--plan=rapid_static',
                             '--break_on_risk_rating=medium', '--max_wait_minutes=10' ,'--title=scan1',
-                            '--log_flavor=github', 'ios-ipa', 'tests/conftest.py'])
+                            '--log-flavor=github', 'ios-ipa', 'tests/conftest.py'])
 
     assert 'Scan created with id 1.' in result.output
     assert '::set-output name=scan_id::1' in result.output
