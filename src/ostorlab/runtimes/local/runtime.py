@@ -186,7 +186,7 @@ class LocalRuntime(runtime.Runtime):
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
         except UnhealthyService as e:
-            console.error(e)
+            console.error(f'Unhealthy service {e}')
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
