@@ -3,7 +3,9 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-# The sales pitch
+# Ostorlab Open-Source Security Scanner
+
+## The Sales Pitch
 
 If this is the first time you are visiting the Ostorlab github page, here is the sales pitch.
 
