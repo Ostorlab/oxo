@@ -7,28 +7,37 @@
 
 ## The Sales Pitch
 
-If this is the first time you are visiting the Ostorlab github page, here is the sales pitch.
+If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
 
-A lot of the security testing work is about chaining tools together, taking the output from one file, mangle it, filter
-it, prepare it and push it to another tool. Many have tried to have it automated, most have failed.
+Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
+pushing it to another tool. Several tools have tried to make the process less painful, often to end up as yet another
+tool to take output from because they only support a certain use-case.
 
-Ostorlab succeeds where all the rest have failed (shamelessly staring with an air of over-confidence) by simplifying the
-hardest part and automated the boring and tedious part.
+Ostorlab tries to succeed in simplifying the process by simplifying the hardest part and automated the boring and
+tedious part while making it its explicit goal to cover all use-cases, from scanning all assets to detecting all
+vulnerabilities classes (hopefully).
 
-In layman's term, Ostorlab is:
+To do that, Ostorlab focuses on solving:
 
-* Lovely SDK in a lovely langauge (Python). We make the simple cases effortless while supporting the complex one. Either
-  it is distributed locking, QPS limiting, multiple instance parallelization, we got you covered.
-* A battle tested framework that has been powering Ostorlab Platform for years and used to perform complex dyanmic
-  analysis setup and demanding static analysis workloads
-* Performant and scalable platform, thanks to the use of message queue, binary and compact message serialisation with
-  Protbuf, resilient thanks to docker swarm mode to cite a few
+* Extensibility power
+* Developer experience
+* Ease of use
+
+To do that, Ostorlab ships with:
+
+* A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, lkie distributed
+  locking, QPS limiting, multiple instance parallelization ... 
+* A battle tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
+  analysis setup and demanding static analysis workloads running on multiple machines.
+* Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message serialisation with
+  protbuf, universal file format using docker image, resilient thanks to docker swarm mode to cite a few
 * A store of agents that make is to use and discover tools to add your toolset
 * An automated builder for all the open-source supported tools. The moment they release, new version appear on the store
   within minutes
 * A GUI to prepare and write down your tool collection setup, no more upper arrow to find that one command.
 * Serious focus on documentation, hence this superb sales pitch, a documentation page, multiple tutorials and upcoming
-  videos and conference presentations
+  videos and conference presentations 
+* A ready to use one-click template repo to get started.
 
 ![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
 
@@ -86,7 +95,17 @@ ostorlab vulnz list --scan-id <scan-id>
 ostorlab vulnz describe --vuln-id <vuln-id>
 ```
 
+# The Store
+
+// TODO
+
+# The Agent Group Builder
+
+// TODO
+
 # Publish your first Agent
+
+// TODO
 
 Check the full tutorial [writing an Ostorlab agent](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/)
 
