@@ -3,6 +3,39 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
+# Ostorlab Open-Source Security Scanner
+
+## The Sales Pitch
+
+If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
+
+Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
+pushing it to another tool. Several tools have tried to make the process less painful with limited success. Ostorlab addresses the same
+challenge by simplifying the hardest part and automating the boring and tedious part. Ostorlab has also an explicit goal
+to cover all use-cases, from scanning all assets to detecting all vulnerabilities classes.
+
+To do that, Ostorlab focuses on the following:
+
+* Ease of use with simple one command-line to perform all tasks
+* Developer experience through project documentation, tutorials, SDK and templates
+* Scalability and performance by using efficient serialisation format and proven industry standard for all of its components
+
+
+To do that, Ostorlab ships with:
+
+* A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, like distributed locking,
+  QPS limiting, multiple instance parallelization ...
+* A battle-tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
+  analysis setup and demanding static analysis workloads running on multiple machines.
+* Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message
+  serialisation with protbuf, universal file format using docker image, resilient thanks to docker swarm mode to cite a
+  few
+* A store of agents that make is to use and discover tools to add your toolset
+* An automated builder to take the hassle away of building and publishing.
+* A GUI to prepare and write down your tool collection setup
+* Focus on documentation, multiple tutorials and upcoming videos and conference presentations
+* A ready to use one-click template repo to get started.
+
 ![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
 # Ostorlab Open-Source Security Scanner
 
