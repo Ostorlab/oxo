@@ -10,33 +10,30 @@
 If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
 
 Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
-pushing it to another tool. Several tools have tried to make the process less painful, often to end up as yet another
-tool to take output from because they only support a certain use-case.
+pushing it to another tool. Several tools have tried to make the process less painful with limited success. Ostorlab addresses the same
+challenge by simplifying the hardest part and automating the boring and tedious part. Ostorlab has also an explicit goal
+to cover all use-cases, from scanning all assets to detecting all vulnerabilities classes.
 
-Ostorlab tries to succeed in simplifying the process by simplifying the hardest part and automated the boring and
-tedious part while making it its explicit goal to cover all use-cases, from scanning all assets to detecting all
-vulnerabilities classes (hopefully).
+To do that, Ostorlab focuses on the following:
 
-To do that, Ostorlab focuses on solving:
+* Ease of use with simple one command-line to perform all tasks
+* Developer experience through project documentation, tutorials, SDK and templates
+* Scalability and performance by using efficient serialisation format and proven industry standard for all of its components
 
-* Extensibility power
-* Developer experience
-* Ease of use
 
 To do that, Ostorlab ships with:
 
-* A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, lkie distributed
-  locking, QPS limiting, multiple instance parallelization ... 
-* A battle tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
+* A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, like distributed locking,
+  QPS limiting, multiple instance parallelization ...
+* A battle-tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
   analysis setup and demanding static analysis workloads running on multiple machines.
-* Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message serialisation with
-  protbuf, universal file format using docker image, resilient thanks to docker swarm mode to cite a few
+* Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message
+  serialisation with protbuf, universal file format using docker image, resilient thanks to docker swarm mode to cite a
+  few
 * A store of agents that make is to use and discover tools to add your toolset
-* An automated builder for all the open-source supported tools. The moment they release, new version appear on the store
-  within minutes
-* A GUI to prepare and write down your tool collection setup, no more upper arrow to find that one command.
-* Serious focus on documentation, hence this superb sales pitch, a documentation page, multiple tutorials and upcoming
-  videos and conference presentations 
+* An automated builder to take the hassle away of building and publishing.
+* A GUI to prepare and write down your tool collection setup
+* Focus on documentation, multiple tutorials and upcoming videos and conference presentations
 * A ready to use one-click template repo to get started.
 
 ![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
@@ -97,17 +94,25 @@ ostorlab vulnz describe --vuln-id <vuln-id>
 
 # The Store
 
-// TODO
+Ostorlab lists all agents on a public store where you can search and also publish your own agents.
 
-# The Agent Group Builder
+![Store](images/store2.gif)
 
-// TODO
+In addition, the store, a graphical agent group builder is also available to compose multiple agents and see how
+they would interact with each other.
+
+![Store](images/store.gif)
+
+The builder also helps with generating the agent group YAML file to set special arguments that can be passed to agents
+to control their behavior.
+
+![Build](images/agent_group.gif)
 
 # Publish your first Agent
 
-// TODO
+To write your first agent, check out the full tutorial [here](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/).
 
-Check the full tutorial [writing an Ostorlab agent](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/)
+Once you have written your agent, you can publish it on the store for others to use and discover it. The store even
+handles agent building and will automatically pick up new releases from the git repo.
 
-
-
+![Build](images/build.gif)
