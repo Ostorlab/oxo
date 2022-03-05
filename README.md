@@ -5,6 +5,8 @@
 
 # Ostorlab Open-Source Security Scanner
 
+![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
+
 ## The Sales Pitch
 
 If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
@@ -34,19 +36,6 @@ To do that, Ostorlab ships with:
 * A GUI to prepare and write down your tool collection setup
 * Focus on documentation, multiple tutorials and upcoming videos and conference presentations
 * A ready to use one-click template repo to get started.
-
-![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
-
-Ostorlab is a security scanning platform that enables running complex security scanning tasks involving multiple tools
-in an easy, scalable and distributed way.
-
-Ostorlab provides:
-
-* CLI to run scans locally and on Ostorlab's Cloud and access the results.
-* SDK to build scanner components called Agents.
-* Store to publish Agents and share them with the community.
-* Automated Agent builder that takes care of automatically building and releasing Agents directly from the source code
-  repo.
 
 # Requirements
 
