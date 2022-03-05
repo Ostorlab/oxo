@@ -3,6 +3,39 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
+# Ostorlab Open-Source Security Scanner
+
+## The Sales Pitch
+
+If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
+
+Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
+pushing it to another tool. Several tools have tried to make the process less painful with limited success. Ostorlab addresses the same
+challenge by simplifying the hardest part and automating the boring and tedious part. Ostorlab has also an explicit goal
+to cover all use-cases, from scanning all assets to detecting all vulnerabilities classes.
+
+To do that, Ostorlab focuses on the following:
+
+* Ease of use with simple one command-line to perform all tasks
+* Developer experience through project documentation, tutorials, SDK and templates
+* Scalability and performance by using efficient serialisation format and proven industry standard for all of its components
+
+
+To do that, Ostorlab ships with:
+
+* A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, like distributed locking,
+  QPS limiting, multiple instance parallelization ...
+* A battle-tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
+  analysis setup and demanding static analysis workloads running on multiple machines.
+* Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message
+  serialisation with protbuf, universal file format using docker image, resilient thanks to docker swarm mode to cite a
+  few
+* A store of agents that make is to use and discover tools to add your toolset
+* An automated builder to take the hassle away of building and publishing.
+* A GUI to prepare and write down your tool collection setup
+* Focus on documentation, multiple tutorials and upcoming videos and conference presentations
+* A ready to use one-click template repo to get started.
+
 ![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
 
 Ostorlab is a security scanning platform that enables running complex security scanning tasks involving multiple tools
@@ -13,7 +46,8 @@ Ostorlab provides:
 * CLI to run scans locally and on Ostorlab's Cloud and access the results.
 * SDK to build scanner components called Agents.
 * Store to publish Agents and share them with the community.
-* Automated Agent builder that takes care of automatically building and releasing Agents directly from the source code repo.
+* Automated Agent builder that takes care of automatically building and releasing Agents directly from the source code
+  repo.
 
 # Requirements
 
@@ -58,9 +92,27 @@ ostorlab vulnz list --scan-id <scan-id>
 ostorlab vulnz describe --vuln-id <vuln-id>
 ```
 
+# The Store
+
+Ostorlab lists all agents on a public store where you can search and also publish your own agents.
+
+![Store](images/store2.gif)
+
+In addition, the store, a graphical agent group builder is also available to compose multiple agents and see how
+they would interact with each other.
+
+![Store](images/store.gif)
+
+The builder also helps with generating the agent group YAML file to set special arguments that can be passed to agents
+to control their behavior.
+
+![Build](images/agent_group.gif)
+
 # Publish your first Agent
 
-Check the full tutorial [writing an Ostorlab agent](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/)
+To write your first agent, check out the full tutorial [here](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/).
 
+Once you have written your agent, you can publish it on the store for others to use and discover it. The store even
+handles agent building and will automatically pick up new releases from the git repo.
 
-
+![Build](images/build.gif)
