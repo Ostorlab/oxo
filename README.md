@@ -11,14 +11,13 @@ If this is the first time you are visiting the Ostorlab Github page, here is the
 
 Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
 pushing it to another tool. Several tools have tried to make the process less painful with limited success. Ostorlab addresses the same
-challenge by simplifying the hardest part and automating the boring and tedious part. Ostorlab has also an explicit goal
-to cover all use-cases, from scanning all assets to detecting all vulnerabilities classes.
+challenge by simplifying the hardest part and automating the boring and tedious part.
 
 To do that, Ostorlab focuses on the following:
 
-* Ease of use with simple one command-line to perform all tasks
-* Developer experience through project documentation, tutorials, SDK and templates
-* Scalability and performance by using efficient serialisation format and proven industry standard for all of its components
+* __Ease of use__ with simple one command-line to perform all tasks
+* __Developer Experience__ through project documentation, tutorials, SDK and templates
+* __Scalability and Performance__ by using efficient serialisation format and proven industry standard for all of its components
 
 
 To do that, Ostorlab ships with:
