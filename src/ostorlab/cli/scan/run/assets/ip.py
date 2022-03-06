@@ -1,16 +1,19 @@
 """Asset of type IP.
 This module takes care of preparing an IP asset, either single address, a range with mask for both v4 and v6."""
-import logging
 import ipaddress
+import logging
+
 import click
-from ostorlab.cli import console as cli_console
+
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
+from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 
 logger = logging.getLogger(__name__)
 
 console = cli_console.Console()
+
 
 @run.run.command(name='ip')
 @click.argument('ip', required=True)
