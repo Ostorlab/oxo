@@ -39,7 +39,7 @@
   },
   "properties": {
     "kind": {
-      "description": "[Required] - Agent kind.",
+      "description": "[Required] - Only expected value : Agent.",
       "type": "string",
       "enum": ["Agent"]
     },

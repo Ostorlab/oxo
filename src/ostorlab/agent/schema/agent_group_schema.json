@@ -57,11 +57,17 @@
   },
   "properties": {
     "kind": {
-      "description": "[Required] - Full name of the agent group.",
+      "description": "[Required] - Only expected value : AgentGroup.",
       "type": "string",
       "enum": [
         "AgentGroup"
       ]
+    },
+    "name":{
+      "description": "[Optional] - Agent group full Name, accept lower case ascii, number and _, - characters.",
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$",
+      "maxLength": 512
     },
     "description": {
       "description": "[Required] - Description of the agent group.",
@@ -85,7 +91,8 @@
           },
           "version": {
             "description": "[Optional] - Version of the agent, can either be an exact version like 1.2.3 or a regular expression to match against a version range like 1\\..*.",
-            "type": "string"
+            "type": "string",
+            "pattern": "^(\\d+\\.)?(\\d+\\.)?(\\d+)$"
           },
           "replicas":{
             "description": "[Optional] - Count of replicas of the agent instances, default value is 1.",
