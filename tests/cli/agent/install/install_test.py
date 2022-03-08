@@ -30,18 +30,30 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_moc
     requests_mock.get(matcher, json={'ApiVersion': '1.42'}, status_code=200)
 
     api_call_response = {
-        'errors': {'message': 'some error message.'}
+        'errors': [
+            {
+                'message': 'Agent with key : agent/os/not_found does not exist.',
+                'locations': [
+                    {
+                        'line': 2,
+                        'column': 3
+                    }
+                ],
+                'path': [
+                    'agent'
+                ]
+            }
+        ]
     }
     requests_mock.post(public_runner.PUBLIC_GRAPHQL_ENDPOINT,
-                        json=api_call_response, status_code=200)
+                       json=api_call_response, status_code=200)
 
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     mocker.patch('ostorlab.cli.docker_requirements_checker.is_docker_working', return_value=True)
     runner = testing.CliRunner()
     result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/wrong/key'])
 
-    assert 'ERROR:' in result.output
-    assert 'Please make sure you have the correct agent key.' in result.output
+    assert 'ERROR:' in result.output, result.output
     assert result.exit_code == 2
 
 

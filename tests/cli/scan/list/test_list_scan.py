@@ -43,7 +43,7 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
     mock_console.return_value = None
     runner = CliRunner()
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-                       json=None, status_code=401)
+                       json={}, status_code=401)
     result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=cloud', 'list'])
     assert result.exception is None
     mock_console.assert_called()
