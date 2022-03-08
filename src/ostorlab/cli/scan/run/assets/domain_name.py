@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name='domain-name')
 @click.argument('name', required=True)
 @click.pass_context
-def domain_name(ctx: click.core.Context, name: str) -> None:
+def domain_name_cli(ctx: click.core.Context, name: str) -> None:
     """Run scan for Domain Name asset."""
     runtime = ctx.obj['runtime']
     asset = domain_name.DomainName(name=name)
