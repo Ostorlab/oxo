@@ -73,12 +73,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             AuthenticationError: If user credentials are not valid.
         """
         with console.status('Logging into your account'):
-            loggin_api_runner = login_runner.LoginAPIRunner(self._username,
-                                                            self._password,
-                                                            self._token,
-                                                            self._proxy,
-                                                            self._verify)
-            response = loggin_api_runner.login_user()
+            login_api_runner = login_runner.LoginAPIRunner(username=self._username,
+                                                           password=self._password,
+                                                           otp_token=self._otp_token,
+                                                           proxy=self._proxy,
+                                                           verify=self._verify)
+            response = login_api_runner.login_user()
 
         if response.status_code != 200:
             field_errors = response.json().get('non_field_errors')

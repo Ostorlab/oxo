@@ -85,7 +85,7 @@ class CloudRuntime(runtime.Runtime):
             return [
                 runtime.Scan(
                     id=scan['id'],
-                    asset=scan['asset'],
+                    asset=scan['assetType'],
                     created_time=scan['createdTime'],
                     progress=scan['progress'],
                 ) for scan in scans
