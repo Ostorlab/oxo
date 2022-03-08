@@ -52,7 +52,6 @@
       "version": {
         "description": "[Optional] - Version of the agent respecting the semantic versioning format : major.minor.release.",
         "type": "string",
-        "pattern": "^(\\d+\\.)?(\\d+\\.)?(\\d+)$",
         "maxLength": 512
       },
       "description": {
