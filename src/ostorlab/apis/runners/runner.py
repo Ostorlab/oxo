@@ -55,8 +55,7 @@ class APIRunner(abc.ABC):
         """
         raise NotImplementedError('Missing implementation')
 
-    def _sent_request(self, request: api_request.APIRequest, headers=None,
-                      multipart=False) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest, headers=None) -> requests.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {
@@ -64,9 +63,6 @@ class APIRunner(abc.ABC):
             }
         else:
             proxy = None
-        if multipart:
-            return requests.post(self.endpoint, files=request.data, headers=headers,
-                                 proxies=proxy, verify=self._verify)
-        else:
-            return requests.post(self.endpoint, data=request.data, headers=headers,
-                                 proxies=proxy, verify=self._verify)
+
+        return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
+                             proxies=proxy, verify=self._verify)
