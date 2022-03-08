@@ -139,8 +139,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         else:
             return response.json()
 
-    def _sent_request(self, request: api_request.APIRequest, headers=None,
-                      multipart=False) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest, headers=None) -> requests.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {
