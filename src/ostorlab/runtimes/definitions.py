@@ -136,6 +136,8 @@ class AgentSettings:
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
+    name: str
+    description: str
     agents: List[AgentSettings]
 
     @classmethod
@@ -147,7 +149,9 @@ class AgentGroupDefinition:
         """
         agent_group_def = loader.load_agent_group_yaml(group)
         agent_settings = []
+        agents_names = []
         for agent in agent_group_def['agents']:
+            agents_names.append(agent.get('key').split('/')[-1])
             agent_def = AgentSettings(
                 key=agent.get('key'),
                 version=agent.get('version'),
@@ -164,5 +168,8 @@ class AgentGroupDefinition:
             )
 
             agent_settings.append(agent_def)
-
-        return cls(agent_settings)
+        name = agent_group_def.get('name', '')
+        description = agent_group_def.get('description', '')
+        if description=='':
+            description = 'Agent group : ' + ','.join(agents_names)
+        return cls(name, description, agent_settings)
