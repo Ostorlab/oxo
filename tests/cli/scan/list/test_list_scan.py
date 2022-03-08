@@ -10,8 +10,8 @@ from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes import runtime
 
 
-def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(requests_mock):
-    """Test ostorlab scan list command with correct commands and options.
+def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
+    """Test ostorlab scan list command with correct commands and CLoud runtime.
     Should show scans information.
     """
 
@@ -19,7 +19,28 @@ def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(
         'data': {
             'scans': {
                 'pageInfo': {},
-                'scans': []
+                'scans': [
+                    {
+                        "id": "58215",
+                        "assetType": "android_store",
+                        "plan": "FREE",
+                        "riskRating": "LOW",
+                        "title": "scan Birrapps - FREE app for homebrewers",
+                        "name": "",
+                        "createdTime": "2022-03-08T00:00:12.308967+00:00",
+                        "progress": "done"
+                    },
+                    {
+                        "id": "58208",
+                        "assetType": "android_store",
+                        "plan": "FREE",
+                        "riskRating": "LOW",
+                        "title": "scan Bite Squad - Restaurant Food Delivery",
+                        "name": "",
+                        "createdTime": "2022-03-07T18:00:10.751840+00:00",
+                        "progress": "done"
+                    }
+                ]
             }
         }
     }
@@ -30,6 +51,7 @@ def testOstorlabScanListCLI_whenCorrectCommandsAndOptionsProvided_showsScanInfo(
     result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=cloud', 'list'])
 
     assert result.exception is None
+    assert "Scans listed successfully" in result.output
 
 
 @mock.patch.object(console.Console, 'error')
