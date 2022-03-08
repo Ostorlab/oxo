@@ -1,4 +1,4 @@
-"""Create Agent Group with via an API Request."""
+"""Create Agent Group via an API Request."""
 import json
 from typing import Any, Dict, List, Optional
 
