@@ -41,12 +41,6 @@ def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.Fi
         for agent_key in agent:
             agents_settings.append(
                 definitions.AgentSettings(key=agent_key))
-            if install:
-                logger.debug('attempting to install %s', agent_key)
-                try:
-                    install_agent.install(agent_key)
-                except install_agent.AgentDetailsNotFound:
-                    console.warning(f'agent {agent_key} not found on the store')
 
         agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
     elif agent_group_definition:
