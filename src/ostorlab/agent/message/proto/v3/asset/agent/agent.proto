@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package v3.asset.agent;
+
+message Message {
+  required string key = 1;
+  required string version = 2;
+  required string docker_file_path = 3;
+  required string docker_build_root = 4;
+  required int32 organisation = 5;
+  required string provider = 6;
+  required string repo_owner = 7;
+  required string repo = 8;
+  required string yaml_definition = 9;
+}
