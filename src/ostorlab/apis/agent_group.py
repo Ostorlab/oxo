@@ -8,7 +8,7 @@ from ostorlab.apis import request
 class CreateAgentGroupAPIRequest(request.APIRequest):
     """Persist agent group API request."""
 
-    def __init__(self, name: str, description: str, agents: List[Dict[str:Any]]) -> None:
+    def __init__(self, name: str, description: str, agents: List[Dict[str,Any]]) -> None:
         """Initializer"""
         self._name = name
         self._description = description
