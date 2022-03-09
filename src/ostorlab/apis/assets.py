@@ -109,7 +109,7 @@ class CreateAssetAPIRequest(request.APIRequest):
 
     def __get_asset_variables(self, asset_type):
         asset_type_variables = {}
-        if asset_type == 'AndroidAab' or asset_type == 'AndroidApk':
+        if asset_type in ('AndroidAab', 'AndroidApk'):
             asset_type_variables = {
                 'androidFile': {
                     'file': self._asset.content
