@@ -161,13 +161,13 @@ class AgentRuntime:
             settings_config.remove()
         except docker.errors.NotFound:
             logging.debug('all good, config %s is new', config_name)
-        finally:
-            docker_config = self._docker_client.configs.create(name=config_name,
-                                                               labels={'ostorlab.universe': self.runtime_name},
-                                                               data=agent_instance_settings_proto)
-            return docker.types.ConfigReference(config_id=docker_config.id,
-                                                config_name=config_name,
-                                                filename='/tmp/settings.binproto')
+
+        docker_config = self._docker_client.configs.create(name=config_name,
+                                                           labels={'ostorlab.universe': self.runtime_name},
+                                                           data=agent_instance_settings_proto)
+        return docker.types.ConfigReference(config_id=docker_config.id,
+                                            config_name=config_name,
+                                            filename='/tmp/settings.binproto')
 
     def create_definition_config(self) -> docker.types.ConfigReference:
         """Create a docker configuration of the  agent definition.
