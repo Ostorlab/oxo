@@ -21,24 +21,24 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
                 'pageInfo': {},
                 'scans': [
                     {
-                        "id": "58215",
-                        "assetType": "android_store",
-                        "plan": "FREE",
-                        "riskRating": "LOW",
-                        "title": "scan Birrapps - FREE app for homebrewers",
-                        "name": "",
-                        "createdTime": "2022-03-08T00:00:12.308967+00:00",
-                        "progress": "done"
+                        'id': '58215',
+                        'assetType': 'android_store',
+                        'plan': 'FREE',
+                        'riskRating': 'LOW',
+                        'title': 'scan Birrapps - FREE app for homebrewers',
+                        'name': '',
+                        'createdTime': '2022-03-08T00:00:12.308967+00:00',
+                        'progress': 'done'
                     },
                     {
-                        "id": "58208",
-                        "assetType": "android_store",
-                        "plan": "FREE",
-                        "riskRating": "LOW",
-                        "title": "scan Bite Squad - Restaurant Food Delivery",
-                        "name": "",
-                        "createdTime": "2022-03-07T18:00:10.751840+00:00",
-                        "progress": "done"
+                        'id': '58208',
+                        'assetType': 'android_store',
+                        'plan': 'FREE',
+                        'riskRating': 'LOW',
+                        'title': 'scan Bite Squad - Restaurant Food Delivery',
+                        'name': '',
+                        'createdTime': '2022-03-07T18:00:10.751840+00:00',
+                        'progress': 'done'
                     }
                 ]
             }
@@ -51,7 +51,7 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
     result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=cloud', 'list'])
 
     assert result.exception is None
-    assert "Scans listed successfully" in result.output
+    assert 'Scans listed successfully' in result.output
 
 
 @mock.patch.object(console.Console, 'error')
