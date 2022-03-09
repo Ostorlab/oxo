@@ -25,7 +25,7 @@ from ostorlab.runtimes import registry
               required=False)
 @click.option('--bus-exchange-topic', help='Bus exchange topic, this flag is restricted to the lite local runtime.',
               required=False)
-@click.option('--scan_id', help='Scan id, this flag is restricted to the lite local runtime..', required=False)
+@click.option('--scan-id', help='Scan id, this flag is restricted to the lite local runtime..', required=False)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str,
          bus_url: Optional[str] = None,
