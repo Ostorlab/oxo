@@ -74,6 +74,10 @@ class LiteLocalRuntime(runtime.Runtime):
             bus_exchange_topic: Bus exchange topic.
         """
         super().__init__()
+
+        if not all([scan_id, bus_url, bus_vhost, bus_management_url, bus_exchange_topic]):
+            raise ValueError('Missing required fields.')
+
         self.scan_id = scan_id
         self._bus_url = bus_url
         self._bus_vhost = bus_vhost
