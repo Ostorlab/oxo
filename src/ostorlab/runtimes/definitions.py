@@ -136,9 +136,9 @@ class AgentSettings:
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
-    name: str
-    description: str
     agents: List[AgentSettings]
+    name: Optional[str] = ''
+    description: Optional[str] = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -173,3 +173,10 @@ class AgentGroupDefinition:
         if description=='':
             description = 'Agent group : ' + ','.join(agents_names)
         return cls(name, description, agent_settings)
+
+    def __post_init__(self):
+        if self.agents:
+            agents_names = []
+            for agent in self.agents:
+                agents_names.append(agent.key.split('/')[-1])
+            self.description = 'Agent group : ' + ','.join(agents_names)
