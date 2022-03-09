@@ -154,9 +154,9 @@ class AgentGroupDefinition:
                 args=[defintions.Arg(name=a.get('name'), description=a.get('description'), type=a.get('type'),
                                      value=a.get('value')) for a in
                       agent.get('args', [])],
-                constraints=agent.get('constraints'),
-                mounts=agent.get('mounts'),
-                restart_policy=agent.get('restart_policy'),
+                constraints=agent.get('constraints', []),
+                mounts=agent.get('mounts', []),
+                restart_policy=agent.get('restart_policy', 'any'),
                 mem_limit=agent.get('mem_limit'),
                 open_ports=[defintions.PortMapping(source_port=p.get('src_port'), destination_port=p.get('dest_port'))
                             for p

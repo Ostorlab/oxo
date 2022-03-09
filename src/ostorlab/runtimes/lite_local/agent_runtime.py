@@ -6,6 +6,7 @@ Usage
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
 import io
+import logging
 from typing import List, Optional
 
 import docker
@@ -153,6 +154,14 @@ class AgentRuntime:
         """
         agent_instance_settings_proto = self.agent.to_raw_proto()
         config_name = f'config_settings_{self.image_name}_{self.runtime_name}'
+
+        try:
+            settings_config = self._docker_client.configs.get(config_name)
+            logging.warning('found existing config %s, config will removed', config_name)
+            settings_config.remove()
+        except docker.errors.NotFound:
+            logging.debug('all good, config %s is new', config_name)
+
         docker_config = self._docker_client.configs.create(name=config_name,
                                                            labels={'ostorlab.universe': self.runtime_name},
                                                            data=agent_instance_settings_proto)

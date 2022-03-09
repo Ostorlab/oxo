@@ -11,43 +11,13 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         kind: "AgentGroup"
         description: "AgentGroup1 Should be here"
         image: "some/path/to/the/image"
-        restart_policy: "any"
         agents:
           - key: "agent/ostorlab/BigFuzzer"
-            constraints:
-              - "constraint1"
-              - "constraint2"
-            in_selectors: 
-              - "in_selector1"
-              - "in_selector2"
-            out_selectors:
-              - "out_selector1"
-              - "out_selector2"  
-            mounts:
-              - "mount1"
-              - "mount2"
-            restart_policy: "any"
-            open_ports:
-                - src_port: 50000
-                  dest_port: 50300
             args:
               - name: "color"
                 type: "string"
                 value: "red"
           - key: "agent/ostorlab/SmallFuzzer"
-            constraints:
-              - "constraint3"
-              - "constraint4"
-            in_selectors: 
-              - "in_selector3"
-              - "in_selector4"
-            out_selectors:
-              - "out_selector3"
-              - "out_selector4"
-            mounts:
-              - "mount3"
-              - "mount4"
-            restart_policy: "any"
             replicas: 1
             open_ports:
                 - src_port: 50800
@@ -60,16 +30,16 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
     dummy_agent_def1 = definitions.AgentSettings(
         key='agent/ostorlab/BigFuzzer',
         args=[utils_definitions.Arg(name='color', type='string', value='red')],
-        constraints=['constraint1', 'constraint2'],
-        mounts=['mount1', 'mount2'],
+        constraints=[],
+        mounts=[],
         restart_policy='any',
-        open_ports=[utils_definitions.PortMapping(source_port=50000, destination_port=50300)],
+        open_ports=[],
     )
     dummy_agent_def2 = definitions.AgentSettings(
         key='agent/ostorlab/SmallFuzzer',
         args=[utils_definitions.Arg(name='color', type='string', value='blue')],
-        constraints=['constraint3', 'constraint4'],
-        mounts=['mount3', 'mount4'],
+        constraints=[],
+        mounts=[],
         restart_policy='any',
         open_ports=[utils_definitions.PortMapping(source_port=50800, destination_port=55000)],
     )
