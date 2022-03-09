@@ -177,6 +177,13 @@ class AgentRuntime:
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
         config_name = f'config_definition_{self.image_name}__{self.runtime_name}'
+        try:
+            settings_config = self._docker_client.configs.get(config_name)
+            logging.warning('found existing config %s, config will removed', config_name)
+            settings_config.remove()
+        except docker.errors.NotFound:
+            logging.debug('all good, config %s is new', config_name)
+
         docker_config = self._docker_client.configs.create(name=config_name,
                                                            labels={'ostorlab.universe': self.runtime_name},
                                                            data=str.encode(agent_definition))

@@ -50,3 +50,5 @@ def scan(ctx: click.core.Context, runtime: str,
         ctx.obj['runtime'] = runtime_instance
     except registry.RuntimeNotFoundError as e:
         raise click.ClickException(f'The selected runtime {runtime} is not supported.') from e
+    except ValueError as e:
+        raise click.ClickException(f'Error initializing runtime {runtime}.') from e
