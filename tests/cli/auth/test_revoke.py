@@ -41,4 +41,4 @@ def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
                        json=errors_dict, status_code=200)
     result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
     assert result.exception is None
-    assert "ERROR: Could not revoke your API key" in result.output
+    assert 'ERROR: Could not revoke your API key' in result.output
