@@ -5,7 +5,7 @@
 
 # Ostorlab Open-Source Security Scanner
 
-![Ostorlab Open source](https://blog.ostorlab.co/static/img/ostorlab_open_source/new_scan_run.gif)
+![Scan Run](images/scan_run.gif)
 
 ## The Sales Pitch
 
