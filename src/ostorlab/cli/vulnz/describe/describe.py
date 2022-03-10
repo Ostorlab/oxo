@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def describe_cli(ctx, vuln_id: Optional[int] = None, scan_id: Optional[int] = None) -> None:
     """CLI command to describe a vulnerability."""
+    if vuln_id is None and scan_id is None:
+        raise click.BadParameter("You should provide --vuln_id or --scan_id.")
     runtime_instance = ctx.obj['runtime']
     with console.status(f'Fetching vulnerabilities for scan {scan_id}'):
         runtime_instance.describe_vuln(scan_id=scan_id, vuln_id=vuln_id)
