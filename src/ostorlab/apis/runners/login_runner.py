@@ -73,5 +73,9 @@ class LoginAPIRunner(runner.APIRunner):
         if response.status_code != 200:
             raise runner.ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
+        data = response.json()
+        if data.get('errors') is not None:
+            error = data.get('errors')[0]['message']
+            raise runner.ResponseError(f'Response errors: {error}')
         else:
-            return response.json()
+            return data

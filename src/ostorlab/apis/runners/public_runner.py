@@ -5,12 +5,12 @@
     public_runner.execute()
 """
 
-import requests
 from typing import Dict
 
-from ostorlab.apis.runners import runner
-from ostorlab.apis import request as api_request
+import requests
 
+from ostorlab.apis import request as api_request
+from ostorlab.apis.runners import runner
 
 PUBLIC_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/public_graphql'
 
@@ -39,8 +39,12 @@ class PublicAPIRunner(runner.APIRunner):
         if response.status_code != 200:
             raise runner.ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
+        data = response.json()
+        if data.get('errors') is not None:
+            error = data.get('errors')[0]['message']
+            raise runner.ResponseError(f'Response errors: {error}')
         else:
-            return response.json()
+            return data
 
     def _sent_request(self, request: api_request.APIRequest) -> requests.Response:
         """Sends an API request."""

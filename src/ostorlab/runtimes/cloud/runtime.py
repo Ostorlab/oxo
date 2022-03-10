@@ -6,14 +6,18 @@ detection and several other improvements.
 """
 from typing import List
 
+from rich import markdown
+
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
+from ostorlab.apis import vulnz_list
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.utils import styles
 
 console = cli_console.Console()
 
@@ -101,3 +105,29 @@ class CloudRuntime(runtime.Runtime):
             None
         """
         pass
+
+    def list_vulnz(self, scan_id: int):
+        try:
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+            response = api_runner.execute(vulnz_list.VulnzListAPIRequest(scan_id))
+            vulnerabilities = response['data']['scan']['kbVulnerabilities']
+            vulnz_list_table = []
+            for vulnerability in vulnerabilities:
+                vulnz_list_table.append({
+                    'id': str(vulnerability['kb']['id']),
+                    'highestRiskRating': styles.style_risk(vulnerability['highestRiskRating'].upper()),
+                    'cvss_v3_vector': vulnerability['kb']['cvssV3Vector'],
+                    'title': vulnerability['kb']['title'],
+                    'short_description': markdown.Markdown(vulnerability['kb']['shortDescription']),
+                })
+            columns = {
+                'Id': 'id',
+                'Title': 'title',
+                'highest Risk Rating': 'highestRiskRating',
+                'CVSS V3 Vector': 'cvss_v3_vector',
+                'Short Description': 'short_description',
+            }
+            title = f'Scan {scan_id}: Found {len(vulnz_list_table)} vulnerabilities.'
+            console.table(columns=columns, data=vulnz_list_table, title=title)
+        except runner.Error:
+            console.error(f'scan with id {scan_id} does not exist.')

@@ -9,8 +9,10 @@ from typing import Optional
 
 import click
 import docker
+import sqlalchemy
 import tenacity
 from docker.models import services as docker_models_services
+from rich import markdown
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
@@ -23,6 +25,7 @@ from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
+from ostorlab.utils import styles
 
 NETWORK_PREFIX = 'ostorlab_local_network'
 
@@ -81,21 +84,6 @@ class LocalRuntime(runtime.Runtime):
         self.follow = []
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._log_streamer = log_streamer.LogStream()
-
-        if not docker_requirements_checker.is_docker_installed():
-            console.error('Docker is not installed.')
-            raise click.exceptions.Exit(2)
-        elif not docker_requirements_checker.is_user_permitted():
-            console.error('User does not have permissions to run docker.')
-            raise click.exceptions.Exit(2)
-        elif not docker_requirements_checker.is_docker_working():
-            console.error('Error using docker.')
-            raise click.exceptions.Exit(2)
-        else:
-            if not docker_requirements_checker.is_swarm_initialized():
-                docker_requirements_checker.init_swarm()
-            self._docker_client = docker.from_env()
-
         self._scan_db: Optional[models.Scan] = None
 
     @property
@@ -125,7 +113,25 @@ class LocalRuntime(runtime.Runtime):
             Always true for the moment as the local runtime doesn't have restrictions on what it can run.
         """
         del agent_group_definition
+        self._docker_checks()
         return True
+
+    def _docker_checks(self):
+        """checking the requirements (docker, swarm,permissions) for ostorlab."""
+        if not docker_requirements_checker.is_docker_installed():
+            console.error('Docker is not installed.')
+            raise click.exceptions.Exit(2)
+        elif not docker_requirements_checker.is_user_permitted():
+            console.error('User does not have permissions to run docker.')
+            raise click.exceptions.Exit(2)
+        elif not docker_requirements_checker.is_docker_working():
+            console.error('Error using docker.')
+            raise click.exceptions.Exit(2)
+        else:
+            if not docker_requirements_checker.is_swarm_initialized():
+                docker_requirements_checker.init_swarm()
+
+        self._docker_client = docker.from_env()
 
     def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
              asset: base_asset.Asset) -> None:
@@ -198,8 +204,8 @@ class LocalRuntime(runtime.Runtime):
         stopped_services = []
         stopped_network = []
         stopped_configs = []
-        client = docker.from_env()
-        services = client.services.list()
+        self._docker_checks()
+        services = self._docker_client.services.list()
         for service in services:
             service_labels = service.attrs['Spec']['Labels']
             logger.debug('comparing %s and %s', service_labels.get('ostorlab.universe'), scan_id)
@@ -207,7 +213,7 @@ class LocalRuntime(runtime.Runtime):
                 stopped_services.append(service)
                 service.remove()
 
-        networks = client.networks.list()
+        networks = self._docker_client.networks.list()
         for network in networks:
             network_labels = network.attrs['Labels']
             if network_labels is not None and network_labels.get('ostorlab.universe') == scan_id:
@@ -215,7 +221,7 @@ class LocalRuntime(runtime.Runtime):
                 stopped_network.append(network)
                 network.remove()
 
-        configs = client.configs.list()
+        configs = self._docker_client.configs.list()
         for config in configs:
             config_labels = config.attrs['Spec']['Labels']
             if config_labels.get('ostorlab.universe') == scan_id:
@@ -471,3 +477,32 @@ class LocalRuntime(runtime.Runtime):
         """
         for agent_key in DEFAULT_AGENTS:
             install_agent.install(agent_key=agent_key)
+
+    def list_vulnz(self, scan_id: int):
+        try:
+            database = models.Database()
+            session = database.session
+            vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+                order_by(models.Vulnerability.title).all()
+            console.success('Vulnerabilities listed successfully.')
+            vulnz_list = []
+            for vulnerability in vulnerabilities:
+                vulnz_list.append({
+                    'id': str(vulnerability.id),
+                    'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
+                    'cvss_v3_vector': vulnerability.cvss_v3_vector,
+                    'title': vulnerability.title,
+                    'short_description': markdown.Markdown(vulnerability.short_description),
+                })
+
+            columns = {
+                'Id': 'id',
+                'Title': 'title',
+                'Risk rating': 'risk_rating',
+                'CVSS V3 Vector': 'cvss_v3_vector',
+                'Short Description': 'short_description',
+            }
+            title = f'Scan {scan_id}: Found {len(vulnz_list)} vulnerabilities.'
+            console.table(columns=columns, data=vulnz_list, title=title)
+        except sqlalchemy.exc.OperationalError:
+            console.error(f'scan with id {scan_id} does not exist.', )

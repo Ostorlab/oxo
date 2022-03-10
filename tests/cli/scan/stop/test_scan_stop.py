@@ -52,7 +52,7 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(requ
         rootcli.rootcli, ['scan',  '--runtime=cloud', 'stop', '123456'])
 
     assert result.exception is None
-    assert 'Scan with id 123456 not found' in result.output
+    assert 'Could not stop scan' in result.output
 
 @mock.patch.object(local_runtime.LocalRuntime, 'stop')
 def testOstorlabScanStopCLI_whenRuntimeIsLocal_callsStopMethodWithProvidedId(mock_scan_stop, mocker):

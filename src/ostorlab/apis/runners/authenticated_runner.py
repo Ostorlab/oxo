@@ -7,16 +7,15 @@
 """
 
 import logging
-
 from typing import Dict, Optional
 
-import requests
 import click
+import requests
 
-from ostorlab.apis.runners import runner
-from ostorlab.apis.runners import login_runner
 from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
+from ostorlab.apis.runners import login_runner
+from ostorlab.apis.runners import runner
 from ostorlab.cli import console as cli_console
 
 AUTHENTICATED_GRAPHQL_ENDPOINT = 'https://api.ostorlab.co/apis/graphql'
@@ -136,8 +135,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         if response.status_code != 200:
             raise runner.ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
+        data = response.json()
+        if data.get('errors') is not None:
+            error = data.get('errors')[0]['message']
+            raise runner.ResponseError(f'Response errors: {error}')
         else:
-            return response.json()
+            return data
 
     def _sent_request(self, request: api_request.APIRequest, headers=None) -> requests.Response:
         """Sends an API request."""
