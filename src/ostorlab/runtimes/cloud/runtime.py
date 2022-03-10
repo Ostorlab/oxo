@@ -111,29 +111,37 @@ class CloudRuntime(runtime.Runtime):
         """
         pass
 
-    def list_vulnz(self, scan_id: int):
+    def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
-            response = api_runner.execute(vulnz_list.VulnzListAPIRequest(scan_id))
-            vulnerabilities = response['data']['scan']['kbVulnerabilities']
+            response = api_runner.execute(
+                vulnz_list.VulnzListAPIRequest(scan_id=scan_id, number_elements=number_elements, page=page))
+            vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
             vulnz_list_table = []
             for vulnerability in vulnerabilities:
                 vulnz_list_table.append({
-                    'id': str(vulnerability['kb']['id']),
-                    'highestRiskRating': styles.style_risk(vulnerability['highestRiskRating'].upper()),
-                    'cvss_v3_vector': vulnerability['kb']['cvssV3Vector'],
-                    'title': vulnerability['kb']['title'],
-                    'short_description': markdown.Markdown(vulnerability['kb']['shortDescription']),
+                    'id': str(vulnerability['id']),
+                    'riskRating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
+                    'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
+                    'title': vulnerability['detail']['title'],
+                    'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
                 })
             columns = {
                 'Id': 'id',
                 'Title': 'title',
-                'highest Risk Rating': 'highestRiskRating',
+                'Risk Rating': 'riskRating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
             }
             title = f'Scan {scan_id}: Found {len(vulnz_list_table)} vulnerabilities.'
             console.table(columns=columns, data=vulnz_list_table, title=title)
+            has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
+            num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
+            if has_next_page is True:
+                console.info('Show the next page?')
+                page = page + 1
+                if click.confirm(f'page {page + 1} of {num_pages}'):
+                    self.list_vulnz(scan_id=scan_id, page=page, number_elements=number_elements)
         except runner.Error:
             console.error(f'scan with id {scan_id} does not exist.')
 
@@ -164,9 +172,9 @@ class CloudRuntime(runtime.Runtime):
         rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
                                title='Technical details'))
 
-    def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1):
+    def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
         try:
-            if vuln_id is None :
+            if vuln_id is None:
                 click.BadParameter('You should at least provide --vuln_id or --scan_id.')
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
@@ -175,14 +183,14 @@ class CloudRuntime(runtime.Runtime):
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 for v in vulnerabilities:
                     self._print_vulnerability(v)
-                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
                 num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
                 console.success(f'Vulnerabilities listed successfully. page {page} of {num_pages} pages')
+                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
                 if has_next_page is True:
                     console.info('Show the next page?')
                     page = page + 1
                     if click.confirm(f'page {page + 1} of {num_pages}'):
-                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page)
+                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements)
 
         except runner.ResponseError:
             console.error(f'Scan with ID {scan_id} not found')
