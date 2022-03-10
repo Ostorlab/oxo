@@ -7,6 +7,7 @@ detection and several other improvements.
 
 from typing import List
 
+import click
 import markdownify
 import rich
 from rich import markdown, panel
@@ -14,7 +15,6 @@ from rich import markdown, panel
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
 from ostorlab.apis import scan_vulnz
-from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
@@ -164,21 +164,25 @@ class CloudRuntime(runtime.Runtime):
         rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
                                title='Technical details'))
 
-    def describe_vuln(self, scan_id: int, vuln_id: int):
+    def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1):
         try:
-            vulnerabilities = []
+            if vuln_id is None :
+                click.BadParameter('You should at least provide --vuln_id or --scan_id.')
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
-            if vuln_id is not None:
-                response = api_runner.execute(vulnz_describe.VulnDescribeAPIRequest(vuln_id))
-                vulnerability = response['data']['0']
-                vulnerabilities.append(vulnerability)
-                console.success('Vulnerabilities listed successfully.')
-            elif scan_id is not None:
-                response = api_runner.execute(scan_vulnz.ScanVulnzDescribeAPIRequest(scan_id))
+            if scan_id is not None:
+                response = api_runner.execute(
+                    scan_vulnz.ScanVulnzDescribeAPIRequest(scan_id=scan_id, vuln_id=vuln_id, page=page))
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+                for v in vulnerabilities:
+                    self._print_vulnerability(v)
+                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
+                num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
+                console.success(f'Vulnerabilities listed successfully. page {page} of {num_pages} pages')
+                if has_next_page is True:
+                    console.info('Show the next page?')
+                    page = page + 1
+                    if click.confirm(f'page {page + 1} of {num_pages}'):
+                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page)
 
-            for v in vulnerabilities:
-                self._print_vulnerability(v)
-            console.success('Vulnerabilities listed successfully.')
         except runner.ResponseError:
             console.error(f'Scan with ID {scan_id} not found')

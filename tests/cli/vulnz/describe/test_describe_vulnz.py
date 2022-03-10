@@ -34,7 +34,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
     assert 'TLS certificate validation' in result.output
 
 
-def testOstorlabCloudRuntimeVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):
+def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):
     mock_response = {
         'data': {
             'scan': {
@@ -81,7 +81,7 @@ def testOstorlabCloudRuntimeVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvid
                        json=mock_response, status_code=200)
     runner = CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ['vulnz', '--runtime', 'cloud', 'describe', '-v', '502152'])
+    result = runner.invoke(rootcli.rootcli, ['vulnz', '--runtime', 'cloud', 'describe', '-scan-id=502152'])
 
-    assert 'Custom permissions used in' in result.output
-    assert 'https://hackerone.com/reports/440749' in result.output
+    assert 'Applications can expose their functionality to other apps' in result.output
+    assert 'Vulnerabilities listed successfully' in result.output
