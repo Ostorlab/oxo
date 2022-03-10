@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\rlibrary.proto\x12\"v3.fingerprint.domain_name.library\"b\n\x07Message\x12\x13\n\x0b\x64omain_name\x18\x01 \x02(\t\x12\x13\n\x0blibary_name\x18\x02 \x02(\t\x12\x17\n\x0flibrary_version\x18\x03 \x01(\t\x12\x14\n\x0clibrary_type\x18\x04 \x02(\t'
+  serialized_pb=b'\n\rlibrary.proto\x12\"v3.fingerprint.domain_name.library\"c\n\x07Message\x12\x13\n\x0b\x64omain_name\x18\x01 \x02(\t\x12\x14\n\x0clibrary_name\x18\x02 \x02(\t\x12\x17\n\x0flibrary_version\x18\x03 \x01(\t\x12\x14\n\x0clibrary_type\x18\x04 \x02(\t'
 )
 
 
@@ -41,7 +41,7 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='libary_name', full_name='v3.fingerprint.domain_name.library.Message.libary_name', index=1,
+      name='library_name', full_name='v3.fingerprint.domain_name.library.Message.library_name', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -74,7 +74,7 @@ _MESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=53,
-  serialized_end=151,
+  serialized_end=152,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
