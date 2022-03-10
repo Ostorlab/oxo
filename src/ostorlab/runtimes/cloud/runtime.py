@@ -4,12 +4,17 @@ The remote runtime provides capabilities identical to local runtime with extra f
 improved data visualization, automated scaling for improved performance, agent improved data warehouse for improved
 detection and several other improvements.
 """
+
 from typing import List
 
-from rich import markdown
+import markdownify
+import rich
+from rich import markdown, panel
 
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
+from ostorlab.apis import scan_vulnz
+from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
@@ -131,3 +136,49 @@ class CloudRuntime(runtime.Runtime):
             console.table(columns=columns, data=vulnz_list_table, title=title)
         except runner.Error:
             console.error(f'scan with id {scan_id} does not exist.')
+
+    def _print_vulnerability(self, vulnerability):
+        """Print vulnerability details"""
+        if vulnerability is None:
+            return
+
+        vulnz_list_data = [
+            {'id': str(vulnerability['id']),
+             'risk_rating': styles.style_risk(vulnerability['customRiskRating'].upper()),
+             'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
+             'title': vulnerability['detail']['title'],
+             'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
+             }
+        ]
+        columns = {
+            'Id': 'id',
+            'Title': 'title',
+            'Risk rating': 'risk_rating',
+            'CVSS V3 Vector': 'cvss_v3_vector',
+            'Short Description': 'short_description',
+        }
+        title = f'Describing vulnerability {vulnerability["id"]}'
+        console.table(columns=columns, data=vulnz_list_data, title=title)
+        rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['description']), title='Description'))
+        rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['recommendation']), title='Recommendation'))
+        rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
+                               title='Technical details'))
+
+    def describe_vuln(self, scan_id: int, vuln_id: int):
+        try:
+            vulnerabilities = []
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+            if vuln_id is not None:
+                response = api_runner.execute(vulnz_describe.VulnDescribeAPIRequest(vuln_id))
+                vulnerability = response['data']['0']
+                vulnerabilities.append(vulnerability)
+                console.success('Vulnerabilities listed successfully.')
+            elif scan_id is not None:
+                response = api_runner.execute(scan_vulnz.ScanVulnzDescribeAPIRequest(scan_id))
+                vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+
+            for v in vulnerabilities:
+                self._print_vulnerability(v)
+            console.success('Vulnerabilities listed successfully.')
+        except runner.ResponseError:
+            console.error(f'Scan with ID {scan_id} not found')
