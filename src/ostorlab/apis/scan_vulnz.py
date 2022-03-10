@@ -1,4 +1,4 @@
-"""Lists the remote vulnz."""
+"""Lists full details of vulnz."""
 
 import json
 from typing import Dict, Optional

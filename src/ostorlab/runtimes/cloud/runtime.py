@@ -112,6 +112,13 @@ class CloudRuntime(runtime.Runtime):
         pass
 
     def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+        """
+        list vulnz from the cloud using and render them in a table
+        Args:
+            scan_id: scan id to list vulnz from.
+            page: optional page number
+            number_elements: optional number of elements per page.
+        """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(
@@ -173,6 +180,14 @@ class CloudRuntime(runtime.Runtime):
                                title='Technical details'))
 
     def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
+        """
+        fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
+        Args:
+            scan_id: scan id to show all vulnerabilities.
+            vuln_id: optional vuln id to describe
+            page: page number
+            number_elements: number of items to show per page.
+        """
         try:
             if vuln_id is None:
                 click.BadParameter('You should at least provide --vuln_id or --scan_id.')

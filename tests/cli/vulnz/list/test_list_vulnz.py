@@ -85,4 +85,4 @@ def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(reques
     requests_mock.post('https://api.ostorlab.co/apis/graphql', json=mock_response)
     result = runner.invoke(rootcli.rootcli, ['vulnz', '--runtime', 'cloud', 'list', '--scan-id', '56835'])
     assert 'Title' in result.output, result.output
-    assert 'Scan 56835: Found 1 vulnerabilities' in result.output, result.output
+    assert 'Scan 56835: Found 2 vulnerabilities' in result.output, result.output

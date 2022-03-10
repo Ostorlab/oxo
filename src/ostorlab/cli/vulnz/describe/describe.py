@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 @click.option('--scan-id', '-s', 'scan_id', help='Id of the scan.', required=False)
 @click.pass_context
 def describe_cli(ctx, vuln_id: Optional[int] = None, scan_id: Optional[int] = None) -> None:
-    """CLI command to describe a vulnerability."""
+    """Describe a vuln by id (--vuln-id) or all the vulnz for as specific scan.
+        example of usage:
+            - ostorlab vulnz --runtime cloud describe --scan-id 54821 """
     if isinstance(ctx.obj['runtime'], cloud_runtime.CloudRuntime) and scan_id is None:
         raise click.BadParameter('You should provide --scan-id. when using cloud runtime')
     if isinstance(ctx.obj['runtime'], local_runtime.LocalRuntime) and scan_id is None and vuln_id is None:
