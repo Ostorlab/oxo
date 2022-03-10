@@ -30,7 +30,7 @@ def delete(agent: str, agent_version_regex: Optional[str] = None) -> None:
             for t in im.tags:
                 agent_container_version = t.split(':')[1]
                 if agent_version_regex is None or re.match(agent_version_regex, agent_container_version):
-                    console.info(f'deleting container container [bold red]{t}[/]')
+                    console.info(f'deleting container [bold red]{t}[/]')
                     docker_client.images.remove(t, force=True)
                     console.success(f'container image [bold red]{t}[/] deleted successfully')
                     deleted = True

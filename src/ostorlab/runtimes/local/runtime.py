@@ -356,14 +356,33 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        asset_config = self._docker_client.configs.create(name=f'asset_{self.name}',
-                                                          labels={'ostorlab.universe': self.name},
+        config_name = f'asset_{self.name}'
+        try:
+            settings_config = self._docker_client.configs.get(config_name)
+            logging.warning('found existing config %s, config will removed', config_name)
+            settings_config.remove()
+        except docker.errors.NotFound:
+            logging.debug('all good, config %s is new', config_name)
+
+        asset_config = self._docker_client.configs.create(name=config_name,
+                                                          labels={
+                                                              'ostorlab.universe': self.name},
                                                           data=asset.to_proto())
         asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
                                                               config_name=f'asset_{self.name}',
                                                               filename='/tmp/asset.binproto')
-        selector_config = self._docker_client.configs.create(name=f'asset_selector_{self.name}',
-                                                             labels={'ostorlab.universe': self.name},
+
+        config_name = f'asset_selector_{self.name}'
+        try:
+            settings_config = self._docker_client.configs.get(config_name)
+            logging.warning('found existing config %s, config will removed', config_name)
+            settings_config.remove()
+        except docker.errors.NotFound:
+            logging.debug('all good, config %s is new', config_name)
+
+        selector_config = self._docker_client.configs.create(name=config_name,
+                                                             labels={
+                                                                 'ostorlab.universe': self.name},
                                                              data=asset.selector)
         selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
                                                                  config_name=f'asset_selector_{self.name}',
@@ -372,6 +391,7 @@ class LocalRuntime(runtime.Runtime):
                                                                 restart_policy='none')
         self._start_agent(agent=inject_asset_agent_settings,
                           extra_configs=[asset_config_reference, selector_config_reference])
+
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing

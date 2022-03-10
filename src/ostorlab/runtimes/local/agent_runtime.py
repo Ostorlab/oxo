@@ -5,6 +5,7 @@ Usage
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
 import io
+import logging
 from typing import List, Optional
 
 import docker
@@ -16,6 +17,8 @@ from ostorlab import configuration_manager
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.services import mq
+
+logger = logging.getLogger(__name__)
 
 MOUNT_VARIABLES = {
     '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
@@ -142,6 +145,15 @@ class AgentRuntime:
         """
         agent_instance_settings_proto = self.agent.to_raw_proto()
         config_name = f'config_settings_{self.image_name}_{self.runtime_name}'
+
+        try:
+            settings_config = self._docker_client.configs.get(config_name)
+            logging.warning('found existing config %s, config will removed', config_name)
+            settings_config.remove()
+        except docker.errors.NotFound:
+            logging.debug('all good, config %s is new', config_name)
+
+
         docker_config = self._docker_client.configs.create(name=config_name,
                                                            labels={'ostorlab.universe': self.runtime_name},
                                                            data=agent_instance_settings_proto)
@@ -157,6 +169,14 @@ class AgentRuntime:
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
         config_name = f'config_definition_{self.image_name}__{self.runtime_name}'
+
+        try:
+            settings_config = self._docker_client.configs.get(config_name)
+            logging.warning('found existing config %s, config will removed', config_name)
+            settings_config.remove()
+        except docker.errors.NotFound:
+            logging.debug('all good, config %s is new', config_name)
+
         docker_config = self._docker_client.configs.create(name=config_name,
                                                            labels={'ostorlab.universe': self.runtime_name},
                                                            data=str.encode(agent_definition))
