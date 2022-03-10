@@ -56,7 +56,7 @@ pip install -U ostorlab
 To perform your first scan, simply run the following command:
 
 ```shell
-ostorlab scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
+ostorlab scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
 ```
 
 This command will download and install the following scanning agents:
@@ -64,6 +64,7 @@ This command will download and install the following scanning agents:
 * `agent/ostorlab/nmap`
 * `agent/ostorlab/tsunami`
 * `agent/ostorlab/nuclei`
+* `agent/ostorlab/openvas`
 
 And will scan the target IP address `8.8.8.8`
 
