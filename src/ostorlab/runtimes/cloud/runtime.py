@@ -128,7 +128,7 @@ class CloudRuntime(runtime.Runtime):
             for vulnerability in vulnerabilities:
                 vulnz_list_table.append({
                     'id': str(vulnerability['id']),
-                    'riskRating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
+                    'risk_rating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
                     'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
                     'title': vulnerability['detail']['title'],
                     'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
@@ -136,7 +136,7 @@ class CloudRuntime(runtime.Runtime):
             columns = {
                 'Id': 'id',
                 'Title': 'title',
-                'Risk Rating': 'riskRating',
+                'Risk Rating': 'risk_rating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
             }
