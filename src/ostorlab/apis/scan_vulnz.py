@@ -7,7 +7,7 @@ from ostorlab.apis import request
 
 
 class ScanVulnzDescribeAPIRequest(request.APIRequest):
-    """Lists the remote vulnz of a scan."""
+    """Lists vulnerabilities of a scan."""
 
     def __init__(self, scan_id: int, vuln_id: int = None, page: int = 1):
         self._scan_id = scan_id
