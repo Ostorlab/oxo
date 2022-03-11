@@ -169,7 +169,7 @@ class CloudRuntime(runtime.Runtime):
             'Id': 'id',
             'Title': 'title',
             'Risk Rating': 'risk_rating',
-            'CVSS V3 Vector': 'cvss_v3_vector',
+            'CVSSv3 Vector': 'cvss_v3_vector',
             'Short Description': 'short_description',
         }
         title = f'Describing vulnerability {vulnerability["id"]}'
