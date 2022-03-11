@@ -194,7 +194,10 @@ class CloudRuntime(runtime.Runtime):
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
                 response = api_runner.execute(
-                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements))
+                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id,
+                                                               vuln_id=vuln_id,
+                                                               page=page,
+                                                               number_elements=number_elements))
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 for v in vulnerabilities:
                     self._print_vulnerability(v)
