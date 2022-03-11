@@ -202,7 +202,7 @@ class CloudRuntime(runtime.Runtime):
                 console.success(f'Vulnerabilities listed successfully. page {page} of {num_pages} pages')
                 has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
                 if has_next_page is True:
-                    console.info('Show the next page?')
+                    console.info('Fetch next page?')
                     page = page + 1
                     if click.confirm(f'page {page + 1} of {num_pages}'):
                         self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements)
