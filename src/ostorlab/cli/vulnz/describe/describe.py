@@ -25,7 +25,7 @@ def describe_cli(ctx, vuln_id: Optional[int] = None, scan_id: Optional[int] = No
     if isinstance(ctx.obj['runtime'], cloud_runtime.CloudRuntime) and scan_id is None:
         raise click.BadParameter('You should provide --scan-id. when using cloud runtime')
     if isinstance(ctx.obj['runtime'], local_runtime.LocalRuntime) and scan_id is None and vuln_id is None:
-        raise click.BadParameter('You should provide --scan-id. or --vuln-id when using local runtime')
+        raise click.BadParameter('Please provide --scan-id / -s or --vuln-id / -v when using local runtime')
     runtime_instance = ctx.obj['runtime']
     console.info('Fetching vulnerabilities...')
     runtime_instance.describe_vuln(scan_id=scan_id, vuln_id=vuln_id)
