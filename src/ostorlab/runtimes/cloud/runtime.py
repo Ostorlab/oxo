@@ -208,4 +208,4 @@ class CloudRuntime(runtime.Runtime):
                         self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements)
 
         except runner.ResponseError:
-            console.error(f'Scan with ID {scan_id} not found')
+            console.error(f'Scan {scan_id} not found')
