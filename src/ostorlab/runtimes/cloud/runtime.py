@@ -168,7 +168,7 @@ class CloudRuntime(runtime.Runtime):
         columns = {
             'Id': 'id',
             'Title': 'title',
-            'Risk rating': 'risk_rating',
+            'Risk Rating': 'risk_rating',
             'CVSS V3 Vector': 'cvss_v3_vector',
             'Short Description': 'short_description',
         }
