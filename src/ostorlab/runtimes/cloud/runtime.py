@@ -4,12 +4,17 @@ The remote runtime provides capabilities identical to local runtime with extra f
 improved data visualization, automated scaling for improved performance, agent improved data warehouse for improved
 detection and several other improvements.
 """
+
 from typing import List
 
-from rich import markdown
+import click
+import markdownify
+import rich
+from rich import markdown, panel
 
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
+from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
@@ -106,28 +111,104 @@ class CloudRuntime(runtime.Runtime):
         """
         pass
 
-    def list_vulnz(self, scan_id: int):
+    def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+        """
+        list vulnz from the cloud using and render them in a table
+        Args:
+            scan_id: scan id to list vulnz from.
+            page: optional page number
+            number_elements: optional number of elements per page.
+        """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
-            response = api_runner.execute(vulnz_list.VulnzListAPIRequest(scan_id))
-            vulnerabilities = response['data']['scan']['kbVulnerabilities']
+            response = api_runner.execute(
+                vulnz_list.VulnzListAPIRequest(scan_id=scan_id, number_elements=number_elements, page=page))
+            vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
             vulnz_list_table = []
             for vulnerability in vulnerabilities:
                 vulnz_list_table.append({
-                    'id': str(vulnerability['kb']['id']),
-                    'highestRiskRating': styles.style_risk(vulnerability['highestRiskRating'].upper()),
-                    'cvss_v3_vector': vulnerability['kb']['cvssV3Vector'],
-                    'title': vulnerability['kb']['title'],
-                    'short_description': markdown.Markdown(vulnerability['kb']['shortDescription']),
+                    'id': str(vulnerability['id']),
+                    'risk_rating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
+                    'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
+                    'title': vulnerability['detail']['title'],
+                    'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
                 })
             columns = {
                 'Id': 'id',
                 'Title': 'title',
-                'highest Risk Rating': 'highestRiskRating',
+                'Risk Rating': 'risk_rating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
             }
             title = f'Scan {scan_id}: Found {len(vulnz_list_table)} vulnerabilities.'
             console.table(columns=columns, data=vulnz_list_table, title=title)
+            has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
+            num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
+            if has_next_page is True:
+                console.info('Fetch next page?')
+                page = page + 1
+                if click.confirm(f'page {page + 1} of {num_pages}'):
+                    self.list_vulnz(scan_id=scan_id, page=page, number_elements=number_elements)
         except runner.Error:
             console.error(f'scan with id {scan_id} does not exist.')
+
+    def _print_vulnerability(self, vulnerability):
+        """Print vulnerability details"""
+        if vulnerability is None:
+            return
+
+        vulnz_list_data = [
+            {'id': str(vulnerability['id']),
+             'risk_rating': styles.style_risk(vulnerability['customRiskRating'].upper()),
+             'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
+             'title': vulnerability['detail']['title'],
+             'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
+             }
+        ]
+        columns = {
+            'Id': 'id',
+            'Title': 'title',
+            'Risk Rating': 'risk_rating',
+            'CVSSv3 Vector': 'cvss_v3_vector',
+            'Short Description': 'short_description',
+        }
+        title = f'Describing vulnerability {vulnerability["id"]}'
+        console.table(columns=columns, data=vulnz_list_data, title=title)
+        rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['description']), title='Description'))
+        rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['recommendation']), title='Recommendation'))
+        rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
+                               title='Technical details'))
+
+    def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
+        """
+        fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
+        Args:
+            scan_id: scan id to show all vulnerabilities.
+            vuln_id: optional vuln id to describe
+            page: page number
+            number_elements: number of items to show per page.
+        """
+        try:
+            if vuln_id is None:
+                click.BadParameter('You should at least provide --vuln_id or --scan_id.')
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+            if scan_id is not None:
+                response = api_runner.execute(
+                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id,
+                                                               vuln_id=vuln_id,
+                                                               page=page,
+                                                               number_elements=number_elements))
+                vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+                for v in vulnerabilities:
+                    self._print_vulnerability(v)
+                num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
+                console.success(f'Vulnerabilities listed successfully. page {page} of {num_pages} pages')
+                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
+                if has_next_page is True:
+                    console.info('Fetch next page?')
+                    page = page + 1
+                    if click.confirm(f'page {page + 1} of {num_pages}'):
+                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements)
+
+        except runner.ResponseError:
+            console.error(f'Scan {scan_id} not found')

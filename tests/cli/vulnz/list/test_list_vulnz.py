@@ -56,18 +56,28 @@ def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(reques
     mock_response = {
         'data': {
             'scan': {
-                'kbVulnerabilities': [
-                    {
-                        'highestRiskRating': 'POTENTIALLY',
-                        'highestCvssV3BaseScore': 3.9,
-                        'kb': {
-                            'id': '35',
-                            'title': 'Backup mode enabled',
-                            'shortDescription': 'Application is enabling backup mode',
-                            'cvssV3Vector': 'CVSS:3.0/AV:P/AC:L/PR:H/UI:N/S:U/C:H/I:N/A:N'
-                        }
-                    }
-                ]
+                'vulnerabilities': {
+                    'vulnerabilities': [
+                        {
+                            'id': '38312829',
+                            'detail': {
+                                'title': 'Intent Spoofing',
+                                'shortDescription': 'The application is vulnerable to intent spoofing which ..',
+                                'cvssV3Vector': 'CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H',
+                                'riskRating': 'POTENTIALLY'
+                            }
+                        },
+                        {
+                            'id': '38312828',
+                            'detail': {
+                                'title': 'Intent Spoofing',
+                                'shortDescription': 'The application is vulner...',
+                                'cvssV3Vector': 'CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H',
+                                'riskRating': 'POTENTIALLY'
+                            }
+                        },
+                    ]
+                }
             }
         }
     }
@@ -75,4 +85,4 @@ def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(reques
     requests_mock.post('https://api.ostorlab.co/apis/graphql', json=mock_response)
     result = runner.invoke(rootcli.rootcli, ['vulnz', '--runtime', 'cloud', 'list', '--scan-id', '56835'])
     assert 'Title' in result.output, result.output
-    assert 'Scan 56835: Found 1 vulnerabilities' in result.output, result.output
+    assert 'Scan 56835: Found 2 vulnerabilities' in result.output, result.output

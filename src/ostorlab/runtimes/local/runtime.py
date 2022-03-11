@@ -9,10 +9,12 @@ from typing import Optional
 
 import click
 import docker
+import rich
 import sqlalchemy
 import tenacity
 from docker.models import services as docker_models_services
 from rich import markdown
+from rich import panel
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
@@ -78,7 +80,7 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self, *args, ** kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__()
         del args, kwargs
         self.follow = []
@@ -398,7 +400,6 @@ class LocalRuntime(runtime.Runtime):
         self._start_agent(agent=inject_asset_agent_settings,
                           extra_configs=[asset_config_reference, selector_config_reference])
 
-
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
          the service object, then calling the scale API."""
@@ -505,4 +506,47 @@ class LocalRuntime(runtime.Runtime):
             title = f'Scan {scan_id}: Found {len(vulnz_list)} vulnerabilities.'
             console.table(columns=columns, data=vulnz_list, title=title)
         except sqlalchemy.exc.OperationalError:
-            console.error(f'scan with id {scan_id} does not exist.', )
+            console.error(f'scan with id {scan_id} does not exist.')
+
+    def _print_vulnerability(self, vulnerability):
+        """Print vulnerability details"""
+        if vulnerability is None:
+            return
+
+        vulnz_list = [
+            {'id': str(vulnerability.id),
+             'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
+             'cvss_v3_vector': vulnerability.cvss_v3_vector,
+             'title': vulnerability.title,
+             'short_description': markdown.Markdown(vulnerability.short_description),
+             }
+        ]
+        columns = {
+            'Id': 'id',
+            'Title': 'title',
+            'Risk rating': 'risk_rating',
+            'CVSS V3 Vector': 'cvss_v3_vector',
+            'Short Description': 'short_description',
+        }
+        title = f'Describing vulnerability {vulnerability.id}'
+        console.table(columns=columns, data=vulnz_list, title=title)
+        rich.print(panel.Panel(markdown.Markdown(vulnerability.description), title='Description'))
+        rich.print(panel.Panel(markdown.Markdown(vulnerability.recommendation), title='Recommendation'))
+        rich.print(panel.Panel(markdown.Markdown(vulnerability.technical_detail), title='Technical details'))
+
+    def describe_vuln(self, scan_id: int, vuln_id: int):
+        try:
+            database = models.Database()
+            session = database.session
+            vulnerabilities = []
+            if vuln_id is not None:
+                vulnerability = session.query(models.Vulnerability).get(vuln_id)
+                vulnerabilities.append(vulnerability)
+            elif scan_id is not None:
+                vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+                    order_by(models.Vulnerability.title).all()
+            for v in vulnerabilities:
+                self._print_vulnerability(v)
+            console.success('Vulnerabilities listed successfully.')
+        except sqlalchemy.exc.OperationalError:
+            console.error('Vulnerability / scan not Found.')
