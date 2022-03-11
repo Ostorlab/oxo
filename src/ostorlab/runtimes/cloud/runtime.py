@@ -168,8 +168,8 @@ class CloudRuntime(runtime.Runtime):
         columns = {
             'Id': 'id',
             'Title': 'title',
-            'Risk rating': 'risk_rating',
-            'CVSS V3 Vector': 'cvss_v3_vector',
+            'Risk Rating': 'risk_rating',
+            'CVSSv3 Vector': 'cvss_v3_vector',
             'Short Description': 'short_description',
         }
         title = f'Describing vulnerability {vulnerability["id"]}'
@@ -202,10 +202,10 @@ class CloudRuntime(runtime.Runtime):
                 console.success(f'Vulnerabilities listed successfully. page {page} of {num_pages} pages')
                 has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
                 if has_next_page is True:
-                    console.info('Show the next page?')
+                    console.info('Fetch next page?')
                     page = page + 1
                     if click.confirm(f'page {page + 1} of {num_pages}'):
                         self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements)
 
         except runner.ResponseError:
-            console.error(f'Scan with ID {scan_id} not found')
+            console.error(f'Scan {scan_id} not found')
