@@ -23,7 +23,7 @@ def describe_cli(ctx, vuln_id: Optional[int] = None, scan_id: Optional[int] = No
         example of usage:
             - ostorlab vulnz --runtime cloud describe --scan-id 54821 """
     if isinstance(ctx.obj['runtime'], cloud_runtime.CloudRuntime) and scan_id is None:
-        raise click.BadParameter('You should provide --scan-id. when using cloud runtime')
+        raise click.BadParameter('Please provide --scan-id / -s when using the cloud runtime')
     if isinstance(ctx.obj['runtime'], local_runtime.LocalRuntime) and scan_id is None and vuln_id is None:
         raise click.BadParameter('Please provide --scan-id / -s or --vuln-id / -v when using local runtime')
     runtime_instance = ctx.obj['runtime']
