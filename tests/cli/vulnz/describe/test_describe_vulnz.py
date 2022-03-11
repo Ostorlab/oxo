@@ -35,6 +35,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):
+    """Test ostorlab describe command when Correct command and correct scan id should show list of vulnz."""
     mock_response = {
         'data': {
             'scan': {
@@ -85,3 +86,30 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
     assert 'Applications can expose their functionality to other apps' in result.output
     assert 'Vulnerabilities listed successfully' in result.output
+
+
+def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(requests_mock):
+    """Test ostorlab describe command when Correct command and scan does not exist."""
+    mock_response = {
+        'errors': [
+            {
+                'message': 'Scan matching query does not exist.',
+                'locations': [
+                    {
+                        'line': 2,
+                        'column': 13
+                    }
+                ],
+                'path': [
+                    'scan'
+                ]
+            }
+        ]
+    }
+    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+                       json=mock_response, status_code=200)
+    runner = CliRunner()
+
+    result = runner.invoke(rootcli.rootcli, ['vulnz', '--runtime', 'cloud', 'describe', '-scan-id=502152'])
+
+    assert 'Scan with ID can-id=502152 not found' in result.output
