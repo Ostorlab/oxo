@@ -20,6 +20,7 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
+from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import styles
@@ -128,7 +129,7 @@ class CloudRuntime(runtime.Runtime):
             for vulnerability in vulnerabilities:
                 vulnz_list_table.append({
                     'id': str(vulnerability['id']),
-                    'riskRating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
+                    'risk_rating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
                     'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
                     'title': vulnerability['detail']['title'],
                     'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
@@ -136,7 +137,7 @@ class CloudRuntime(runtime.Runtime):
             columns = {
                 'Id': 'id',
                 'Title': 'title',
-                'Risk Rating': 'riskRating',
+                'Risk Rating': 'risk_rating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
             }
@@ -176,8 +177,11 @@ class CloudRuntime(runtime.Runtime):
         console.table(columns=columns, data=vulnz_list_data, title=title)
         rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['description']), title='Description'))
         rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['recommendation']), title='Recommendation'))
-        rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
-                               title='Technical details'))
+        if vulnerability['technicalDetailFormat'] == 'HTML':
+            rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
+                                   title='Technical details'))
+        else:
+            rich.print(panel.Panel(markdown.Markdown(vulnerability['technicalDetail']), title='Technical details'))
 
     def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
         """
@@ -194,7 +198,10 @@ class CloudRuntime(runtime.Runtime):
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
                 response = api_runner.execute(
-                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements))
+                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id,
+                                                               vuln_id=vuln_id,
+                                                               page=page,
+                                                               number_elements=number_elements))
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 for v in vulnerabilities:
                     self._print_vulnerability(v)
@@ -205,7 +212,47 @@ class CloudRuntime(runtime.Runtime):
                     console.info('Fetch next page?')
                     page = page + 1
                     if click.confirm(f'page {page + 1} of {num_pages}'):
-                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page,number_elements=number_elements)
+                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page, number_elements=number_elements)
 
         except runner.ResponseError:
-            console.error(f'Scan {scan_id} not found')
+            console.error('Vulnerability / scan not Found.')
+
+    def _fetch_scan_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+        api_runner = authenticated_runner.AuthenticatedAPIRunner()
+        return api_runner.execute(
+            vulnz_list.VulnzListAPIRequest(scan_id=scan_id, number_elements=number_elements, page=page))
+
+    def dump_vulnz(self, scan_id: int, output_format: str, output: str, page: int = 1, number_elements: int = 10):
+        """fetch vulnz from the cloud runtime.
+        fetching all vulnz for a specific scan and saving in a specific format, in order to fetch all vulnerabilities
+        {number_elements|10} for each request, this function run in an infinity loop (recursive)
+        Args:
+            scan_id: scan id to dump vulnz from.
+            output_format: output format for saving vulnerabilities.
+            output: output file
+            page: page number
+            number_elements: number of elements per reach page
+        """
+        has_next_page = True
+        with console.status(f'fetching vulnerabilities for scan scan-id={scan_id}'):
+            while has_next_page:
+                response = self._fetch_scan_vulnz(scan_id, page=page, number_elements=number_elements)
+                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext'] | False
+                page = page + 1
+                vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+                vulnz_list_table = []
+                for vulnerability in vulnerabilities:
+                    vuln = {
+                        'id': str(vulnerability['id']),
+                        'risk_rating': vulnerability['detail']['riskRating'],
+                        'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
+                        'title': vulnerability['detail']['title'],
+                        'short_description': vulnerability['detail']['shortDescription']
+                    }
+                    vulnz_list_table.append(vuln)
+                if output_format == 'csv':
+                    dumper = dumpers.VulnzCsvDumper(output, vulnz_list_table)
+                else:
+                    dumper = dumpers.VulnzJsonDumper(output, vulnz_list_table)
+                dumper.dump()
+                console.success(f'{len(vulnerabilities)} Vulnerabilities saved to {output}')

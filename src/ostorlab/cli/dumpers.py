@@ -1,10 +1,10 @@
 """Module responsible for dumping data to different formats."""
 
 import abc
-import json
 import csv
-from typing import Dict
+import typing
 
+import jsonlines
 
 FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
 
@@ -12,7 +12,7 @@ FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description
 class VulnzDumper(abc.ABC):
     """Dumper Base class: All dumpers should inherit from this class to access the dump method."""
 
-    def __init__(self, output_path: str, data: Dict[str, Dict]) -> None:
+    def __init__(self, output_path: str, data: typing.List) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -23,7 +23,7 @@ class VulnzDumper(abc.ABC):
         Returns:
             None
         """
-        self.output_path = output_path
+        self.output_path:str = output_path
         self.data = data
 
     @abc.abstractmethod
@@ -41,10 +41,11 @@ class VulnzJsonDumper(VulnzDumper):
         Raises:
             FileNotFoundError: in case the path or file name are invalid.
         """
-        if not self.output_path.endswith('.json'):
-            self.output_path+= '.json'
-        with open(self.output_path , 'w', encoding='utf-8') as outfile:
-            json.dump(self.data, outfile)
+        if not self.output_path.endswith('.jsonl'):
+            self.output_path += '.jsonl'
+        with jsonlines.open(self.output_path, 'a') as writer:
+            for item in self.data:
+                writer.write(item)
 
 
 class VulnzCsvDumper(VulnzDumper):
@@ -57,10 +58,9 @@ class VulnzCsvDumper(VulnzDumper):
             FileNotFoundError: in case the path or file name are invalid.
         """
         if not self.output_path.endswith('.csv'):
-            self.output_path+= '.csv'
-        with open(self.output_path , 'w', encoding='utf-8') as outfile:
-            csv_writer = csv.DictWriter(outfile, fieldnames = FIELDNAMES)
+            self.output_path += '.csv'
+        with open(self.output_path, 'a', encoding='utf-8') as outfile:
+            csv_writer = csv.DictWriter(outfile, fieldnames=FIELDNAMES)
             csv_writer.writeheader()
-            for key in self.data:
-                csv_writer.writerow({field: self.data[key].get(field) or key for field in FIELDNAMES})
-        
+            for item in self.data:
+                csv_writer.writerow(item)
