@@ -14,7 +14,7 @@ from rich import markdown, panel
 
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
-from ostorlab.apis import scan_vulnz
+from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
@@ -194,7 +194,7 @@ class CloudRuntime(runtime.Runtime):
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
                 response = api_runner.execute(
-                    scan_vulnz.ScanVulnzDescribeAPIRequest(scan_id=scan_id, vuln_id=vuln_id, page=page))
+                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id, vuln_id=vuln_id, page=page))
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 for v in vulnerabilities:
                     self._print_vulnerability(v)
