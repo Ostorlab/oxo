@@ -137,6 +137,8 @@ class AgentSettings:
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
     agents: List[AgentSettings]
+    name: Optional[str] = 'Agent Group'
+    description: Optional[str] = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -147,7 +149,9 @@ class AgentGroupDefinition:
         """
         agent_group_def = loader.load_agent_group_yaml(group)
         agent_settings = []
+        agents_names = []
         for agent in agent_group_def['agents']:
+            agents_names.append(agent.get('key').split('/')[-1])
             agent_def = AgentSettings(
                 key=agent.get('key'),
                 version=agent.get('version'),
@@ -165,4 +169,14 @@ class AgentGroupDefinition:
 
             agent_settings.append(agent_def)
 
-        return cls(agent_settings)
+        name = agent_group_def.get('name', 'Agent Group')
+        description = agent_group_def.get('description', 'Agent group : ' + ','.join(agents_names))
+        return cls(agent_settings, name, description)
+
+    def __post_init__(self):
+        """Set agent group description when it is not provided for object initialization."""
+        if self.description is None:
+            agents_names = []
+            for agent in self.agents:
+                agents_names.append(agent.key.split('/')[-1])
+            self.description = 'Agent group : ' + ','.join(agents_names)
