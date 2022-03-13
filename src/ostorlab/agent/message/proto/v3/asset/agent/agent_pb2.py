@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x1av3/asset/agent/agent.proto\x12\x0ev3.asset.agent\"\xbf\x01\n\x07Message\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\x0f\n\x07version\x18\x02 \x02(\t\x12\x18\n\x10\x64ocker_file_path\x18\x03 \x02(\t\x12\x19\n\x11\x64ocker_build_root\x18\x04 \x02(\t\x12\x14\n\x0corganisation\x18\x05 \x02(\x05\x12\x10\n\x08provider\x18\x06 \x02(\t\x12\x12\n\nrepo_owner\x18\x07 \x02(\t\x12\x0c\n\x04repo\x18\x08 \x02(\t\x12\x17\n\x0fyaml_definition\x18\t \x02(\t'
+  serialized_pb=b'\n\x1av3/asset/agent/agent.proto\x12\x0ev3.asset.agent\"r\n\x07Message\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x14\n\x0cgit_location\x18\x03 \x01(\t\x12\x17\n\x0f\x64ocker_location\x18\x04 \x01(\t\x12\x1a\n\x12yaml_file_location\x18\x05 \x01(\t'
 )
 
 
@@ -42,56 +42,28 @@ _MESSAGE = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='version', full_name='v3.asset.agent.Message.version', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='docker_file_path', full_name='v3.asset.agent.Message.docker_file_path', index=2,
-      number=3, type=9, cpp_type=9, label=2,
+      name='git_location', full_name='v3.asset.agent.Message.git_location', index=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='docker_build_root', full_name='v3.asset.agent.Message.docker_build_root', index=3,
-      number=4, type=9, cpp_type=9, label=2,
+      name='docker_location', full_name='v3.asset.agent.Message.docker_location', index=3,
+      number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='organisation', full_name='v3.asset.agent.Message.organisation', index=4,
-      number=5, type=5, cpp_type=1, label=2,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='provider', full_name='v3.asset.agent.Message.provider', index=5,
-      number=6, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='repo_owner', full_name='v3.asset.agent.Message.repo_owner', index=6,
-      number=7, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='repo', full_name='v3.asset.agent.Message.repo', index=7,
-      number=8, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='yaml_definition', full_name='v3.asset.agent.Message.yaml_definition', index=8,
-      number=9, type=9, cpp_type=9, label=2,
+      name='yaml_file_location', full_name='v3.asset.agent.Message.yaml_file_location', index=4,
+      number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -108,8 +80,8 @@ _MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=47,
-  serialized_end=238,
+  serialized_start=46,
+  serialized_end=160,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE

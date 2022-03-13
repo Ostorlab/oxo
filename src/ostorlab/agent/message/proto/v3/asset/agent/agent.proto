@@ -5,8 +5,7 @@ package v3.asset.agent;
 message Message {
   required string key = 1;
   optional string version = 2;
-  required string git_repo_location = 3;
-  required string docker_location = 4;
-  required string docker_build_root = 5;
-  required string yaml_definition = 6;
+  optional string git_location = 3;
+  optional string docker_location = 4;
+  optional string yaml_file_location = 5;
 }
