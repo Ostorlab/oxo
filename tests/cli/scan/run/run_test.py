@@ -44,6 +44,11 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
 
 
 def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(mocker):
+    """Unittest ostorlab scan run in cloud runtime with all valid options and arguments.
+    Should send api requests for creating Agent group, asset & scan.
+    And displays Scan created successfully.
+    """
+
     mocker.patch('ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run', return_value=True)
     api_requests = mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute')
     agent_details_reponse = {'data': {'agent': {'versions': {'versions': [{'version': '0.0.1'}]}}}}
