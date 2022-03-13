@@ -5,7 +5,7 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
-from typing import List
+from typing import List, Optional
 
 import click
 import markdownify
@@ -16,6 +16,10 @@ from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
 from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
+from ostorlab.apis import agent_details
+from ostorlab.apis import agent_group
+from ostorlab.apis import assets
+from ostorlab.apis import create_agent_scan
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
@@ -23,6 +27,8 @@ from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import styles
+from ostorlab import configuration_manager
+
 
 console = cli_console.Console()
 
@@ -46,19 +52,83 @@ class CloudRuntime(runtime.Runtime):
         Returns:
             True if can run, false otherwise.
         """
-        pass
+        try:
+            config_manager = configuration_manager.ConfigurationManager()
 
-    def scan(self, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
+            if config_manager.is_authenticated:
+                api_runner = authenticated_runner.AuthenticatedAPIRunner()
+            else:
+                console.error('You need to be authenticated before using the cloud runtime.')
+                return False
+
+            for agent in agent_group_definition.agents:
+                response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent.key))
+                if response.get('errors') is not None:
+                    console.errors('The agent {agent.key} does not exists')
+                    return False
+            return True
+        except runner.ResponseError as error_msg:
+            console.error(error_msg)
+            return False
+
+    def scan(
+        self,
+        title: Optional[str],
+        agent_group_definition: definitions.AgentGroupDefinition,
+        asset: base_asset.Asset,
+        ) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
+            title: The title of the scan.
             agent_group_definition: The agent run definition from a set of agents and agent groups.
             asset: The scan target asset.
 
         Returns:
             None
         """
-        pass
+        try:
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+
+            agent_names = []
+            agents = []
+            for agent_def in agent_group_definition.agents:
+                agent_detail = response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent_def.key))
+                agent_version = agent_detail['data']['agent']['versions']['versions'][0]['version']
+                agent_names.append(agent_def.key.split('/')[-1])
+                agent = {}
+                agent['agentKey'] = agent_def.key
+                agent['version'] = agent_version
+
+                agent_args = []
+                for arg in agent_def.args:
+                    agent_args.append({
+                        'name': arg.name,
+                        'type': arg.type,
+                        'value': arg.value
+                    })
+                agent['args'] = agent_args
+                agents.append(agent)
+            name = agent_group_definition.name
+            description = agent_group_definition.description
+            console.info('Creating agent group')
+            request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
+            response = api_runner.execute(request)
+            agent_group_id = response['data']['publishAgentGroup']['agentGroup']['id']
+
+            console.info('Creating asset')
+            request = assets.CreateAssetAPIRequest(asset)
+            response = api_runner.execute(request)
+            asset_id = response['data']['createAsset']['asset']['id']
+
+            console.info('Creating scan')
+            request = create_agent_scan.CreateAgentScanAPIRequest(title, asset_id, agent_group_id)
+            response = api_runner.execute(request)
+
+            console.success('Scan created successfully.')
+        except runner.ResponseError as error_msg:
+            console.error(error_msg)
+
 
     def stop(self, scan_id: int) -> None:
         """Stops a scan.
