@@ -5,7 +5,7 @@ from typing import Dict, Optional
 from ostorlab.apis import request
 
 
-class StartAgentScanAPIRequest(request.APIRequest):
+class CreateAgentScanAPIRequest(request.APIRequest):
     """Persist scan API request."""
 
     def __init__(self, title: str, asset_id: int, agent_group_id: int) -> None:
