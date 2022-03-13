@@ -169,6 +169,6 @@ class AgentGroupDefinition:
 
             agent_settings.append(agent_def)
 
-        name = agent_group_def.get('name', 'Agent Group')
+        name = agent_group_def.get('name')
         description = agent_group_def.get('description', 'Agent group : ' + ','.join(agents_names))
         return cls(agent_settings, name, description)
