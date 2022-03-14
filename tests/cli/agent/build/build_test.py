@@ -70,7 +70,7 @@ def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_showsMessageAndExi
 
 @pytest.mark.docker
 @pytest.mark.parametrize('image_cleanup', ['dummy'], indirect=True)
-def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExistsAndForceFlagPassed_buildCompletedAndNoRaiseImageNotFoundExcep(
+def testAgentBuildCLI_whenImageAlreadyExistsAndForceFlagPassed_buildCompletedAndNoRaiseImageNotFoundExcep(
         image_cleanup):
     """Test ostorlab agent build CLI command : Case where the command is valid, the image exists and force flag is
      passed. The agent container should be built.
