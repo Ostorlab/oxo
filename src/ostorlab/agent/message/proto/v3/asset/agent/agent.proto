@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package v3.asset.agent;
+
+message Message {
+  required string key = 1;
+  optional string version = 2;
+  optional string git_location = 3;
+  optional string docker_location = 4;
+  optional string yaml_file_location = 5;
+}
