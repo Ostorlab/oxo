@@ -1,8 +1,8 @@
 """Unittest for vulnz dump command."""
 import csv
+import json
 import pathlib
 
-import jsonlines
 from click.testing import CliRunner
 
 from ostorlab.apis.runners import authenticated_runner
@@ -25,15 +25,26 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
                                           recommendation='Sanitize data', technical_detail='a=$input',
                                           risk_rating='HIGH',
                                           cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+    models.Vulnerability.create(title='OtherVuln', short_description='Xss', description='Javascript Vuln',
+                                recommendation='Sanitize data', technical_detail='a=$input',
+                                risk_rating='HIGH',
+                                cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
     output_file = pathlib.Path(tmpdir) / 'output.jsonl'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', str(output_file), '-f', 'jsonl'])
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
-    with jsonlines.open(output_file) as reader:
-        for obj in reader:
-            assert obj['id'] == 1
-            assert obj['risk_rating'] in 'High'
+    with open(output_file, 'r', encoding='utf-8') as f:
+        data = []
+        for obj in f:
+            data.append(json.loads(obj))
+    assert data[0]['id'] == 1
+    assert data[0]['risk_rating'] == 'High'
+    assert data[0]['cvss_v3_vector'] == '5:6:7'
+    assert data[0]['title'] == 'MyVuln'
+    assert data[1]['id'] == 2
+    assert data[1]['risk_rating'] == 'High'
+    assert data[1]['title'] == 'OtherVuln'
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(requests_mock, tmpdir):
@@ -68,10 +79,12 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
                            ['vulnz', '--runtime', 'cloud', 'dump', '-s', '5858', '-o', str(output_file), '-f', 'jsonl'])
     assert result.exception is None
     assert 'Vulnerabilities saved to' in result.output
-    with jsonlines.open(output_file) as reader:
-        vulnz = reader.read()
-        assert vulnz['id'] == '37200006'
-        assert 'Use of Outdated Vulnerable Component' in vulnz['title']
+    with open(output_file, 'r', encoding='utf-8') as f:
+        data = []
+        for obj in f:
+            data.append(json.loads(obj))
+    assert data[0]['id'] == '37200006'
+    assert 'Use of Outdated Vulnerable Component' in data[0]['title']
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(requests_mock, tmpdir):
@@ -229,9 +242,10 @@ def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(m
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', str(output_file), '-f', 'jsonl'])
 
     assert 'Vulnerabilities saved' in result.output
-    with jsonlines.Reader(open(output_file, 'r', encoding='utf-8')) as reader:
-        assert result.exception is None
-        for obj in reader:
-            assert 'MyVuln' in obj['title']
-            assert obj['risk_rating'] == 'Hardening'
-            assert obj['id'] == 1
+    with open(output_file, 'r', encoding='utf-8') as f:
+        data = []
+        for obj in f:
+            data.append(json.loads(obj))
+    assert 'MyVuln' in data[0]['title']
+    assert data[0]['risk_rating'] == 'Hardening'
+    assert data[0]['id'] == 1

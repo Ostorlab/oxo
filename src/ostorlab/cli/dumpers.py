@@ -2,9 +2,8 @@
 
 import abc
 import csv
+import json
 import typing
-
-import jsonlines
 
 FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
 
@@ -23,7 +22,7 @@ class VulnzDumper(abc.ABC):
         Returns:
             None
         """
-        self.output_path:str = output_path
+        self.output_path: str = output_path
         self.data = data
 
     @abc.abstractmethod
@@ -43,9 +42,9 @@ class VulnzJsonDumper(VulnzDumper):
         """
         if not self.output_path.endswith('.jsonl'):
             self.output_path += '.jsonl'
-        with jsonlines.open(self.output_path, 'a') as writer:
+        with open(self.output_path, 'a', encoding='utf-8') as f:
             for item in self.data:
-                writer.write(item)
+                f.write(json.dumps(item) + '\n')
 
 
 class VulnzCsvDumper(VulnzDumper):
