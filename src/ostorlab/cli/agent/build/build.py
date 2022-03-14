@@ -28,7 +28,8 @@ def _image_exists(image: str) -> bool:
         return False
 
 
-def _build_image(agent_name: str, container_name: str, dockerfile_path: str, docker_build_root: str, agent_definition_file: io.FileIO) -> None:
+def _build_image(agent_name: str, container_name: str, dockerfile_path: str, docker_build_root: str,
+                 agent_definition_file: io.FileIO) -> None:
     """Build agent image from agent settings."""
     console.info(
         f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
@@ -48,6 +49,7 @@ def _build_image(agent_name: str, container_name: str, dockerfile_path: str, doc
                 logger.debug(log)
 
     console.success(f'Agent {agent_name} built, container [bold red]{container_name}[/] created.')
+
 
 @agent.command()
 @click.option('--file', '-f', type=click.File('rb'), help='Path to Agent yaml definition.', required=True)
