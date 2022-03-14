@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _image_exists(image: str) -> bool:
+    """Checks if container images exists."""
     try:
         docker_sdk_client = docker.from_env()
         docker_sdk_client.images.get(image)
@@ -27,7 +28,8 @@ def _image_exists(image: str) -> bool:
         return False
 
 
-def _build_image(agent_name, container_name, dockerfile_path, docker_build_root, agent_definition_file):
+def _build_image(agent_name: str, container_name: str, dockerfile_path: str, docker_build_root: str, agent_definition_file: io.FileIO) -> None:
+    """Build agent image from agent settings."""
     console.info(
         f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
         f' at root [bold red]{docker_build_root}[/].')
