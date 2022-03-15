@@ -4,7 +4,10 @@ from typing import Dict, Optional
 
 from ostorlab.apis import request
 from ostorlab.assets import asset as base_asset
-from ostorlab import assets 
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import file
+from ostorlab.assets import ios_ipa
 
 
 class CreateAssetAPIRequest(request.APIRequest):
@@ -107,10 +110,8 @@ class CreateAssetAPIRequest(request.APIRequest):
         Returns:
             The file mapping of the create asset request.
         """
-        asset_type = type(self._asset).__name__
-        assets
-        if any([
-            isinstance(self._asset, t) for t in [assets.AndroidAab, assets.AndroidApk, assets.assetsFile, assets.IOSIpa]]):
+        if any(isinstance(self._asset, t)
+               for t in (android_aab.AndroidAab, android_apk.AndroidApk, file.File, ios_ipa.IOSIpa)):
             return {'0': self._asset.content}
         else:
             return None
