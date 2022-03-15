@@ -4,13 +4,14 @@ from typing import Dict, Optional
 
 from ostorlab.apis import request
 from ostorlab.assets import asset as base_asset
+from ostorlab import assets 
 
 
 class CreateAssetAPIRequest(request.APIRequest):
     """Persist asset API request"""
 
     def __init__(self, asset: base_asset.Asset) -> None:
-        """Initializer"""
+        """Constructs all the necessary attributes for the object."""
         self._asset = asset
 
     @property
@@ -107,7 +108,9 @@ class CreateAssetAPIRequest(request.APIRequest):
             The file mapping of the create asset request.
         """
         asset_type = type(self._asset).__name__
-        if asset_type in ('AndroidAab', 'AndroidApk', 'File', 'IOSIpa'):
+        assets
+        if any([
+            isinstance(self._asset, t) for t in [assets.AndroidAab, assets.AndroidApk, assets.assetsFile, assets.IOSIpa]]):
             return {'0': self._asset.content}
         else:
             return None
@@ -165,7 +168,7 @@ class CreateAssetAPIRequest(request.APIRequest):
                 }
             }
         else:
-            raise NotImplementedError('Unknown asset type')
+            raise NotImplementedError(f'Unknown asset type : {asset_type}')
 
         return asset_type_variables
 
