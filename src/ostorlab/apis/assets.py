@@ -125,19 +125,19 @@ class CreateAssetAPIRequest(request.APIRequest):
         if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
             asset_type_variables = {
                 'androidFile': {
-                    'file': self._asset.content
+                    'file': None
                 }
             }
         elif isinstance(self._asset, ios_ipa.IOSIpa):
             asset_type_variables = {
                 'iosFile':{
-                    'file': self._asset.content
+                    'file': None
                 }
             }
         elif isinstance(self._asset, file.File):
             asset_type_variables = {
                 'file':{
-                    'content': self._asset.content,
+                    'content': None,
                     'path': self._asset.path
                 }
             }
