@@ -5,7 +5,7 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 
 import click
 import markdownify
@@ -30,8 +30,8 @@ from ostorlab.utils import styles
 from ostorlab import configuration_manager
 
 
+AgentType = Dict[str, Union[str, List]]
 console = cli_console.Console()
-
 
 class CloudRuntime(runtime.Runtime):
     """Cloud runtime runs agents from Ostorlab Cloud."""
@@ -55,18 +55,12 @@ class CloudRuntime(runtime.Runtime):
         try:
             config_manager = configuration_manager.ConfigurationManager()
 
-            if config_manager.is_authenticated:
-                api_runner = authenticated_runner.AuthenticatedAPIRunner()
-            else:
+            if not config_manager.is_authenticated:
                 console.error('You need to be authenticated before using the cloud runtime.')
                 return False
 
-            for agent in agent_group_definition.agents:
-                response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent.key))
-                if response.get('errors') is not None:
-                    console.errors('The agent {agent.key} does not exists')
-                    return False
-            return True
+            do_agents_exist = self._check_agents_exist(agent_group_definition)
+            return do_agents_exist
         except runner.ResponseError as error_msg:
             console.error(error_msg)
             return False
@@ -90,27 +84,10 @@ class CloudRuntime(runtime.Runtime):
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
-            agent_names = []
-            agents = []
-            for agent_def in agent_group_definition.agents:
-                agent_detail = response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent_def.key))
-                agent_version = agent_detail['data']['agent']['versions']['versions'][0]['version']
-                agent_names.append(agent_def.key.split('/')[-1])
-                agent = {}
-                agent['agentKey'] = agent_def.key
-                agent['version'] = agent_version
-
-                agent_args = []
-                for arg in agent_def.args:
-                    agent_args.append({
-                        'name': arg.name,
-                        'type': arg.type,
-                        'value': arg.value
-                    })
-                agent['args'] = agent_args
-                agents.append(agent)
+            agents = self._agents_from_agent_group_def(api_runner, agent_group_definition)
             name = agent_group_definition.name
             description = agent_group_definition.description
+
             console.info('Creating agent group')
             request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
             response = api_runner.execute(request)
@@ -282,3 +259,35 @@ class CloudRuntime(runtime.Runtime):
 
         except runner.ResponseError:
             console.error(f'Scan {scan_id} not found')
+
+    def _check_agents_exist(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
+        api_runner = authenticated_runner.AuthenticatedAPIRunner()
+
+        for agent in agent_group_definition.agents:
+            response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent.key))
+            if response.get('errors') is not None:
+                console.errors('The agent {agent.key} does not exists')
+                return False
+        return True
+
+    def _agents_from_agent_group_def(self,
+                                     api_runner: runner.APIRunner,
+                                     agent_group_definition: definitions.AgentGroupDefinition) -> List[AgentType]:
+        agents = []
+        for agent_def in agent_group_definition.agents:
+            agent_detail = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent_def.key))
+            agent_version = agent_detail['data']['agent']['versions']['versions'][0]['version']
+            agent = {}
+            agent['agentKey'] = agent_def.key
+            agent['version'] = agent_version
+
+            agent_args = []
+            for arg in agent_def.args:
+                agent_args.append({
+                    'name': arg.name,
+                    'type': arg.type,
+                    'value': arg.value
+                })
+            agent['args'] = agent_args
+            agents.append(agent)
+        return agents
