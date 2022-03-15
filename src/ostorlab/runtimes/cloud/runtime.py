@@ -89,18 +89,13 @@ class CloudRuntime(runtime.Runtime):
             description = agent_group_definition.description
 
             console.info('Creating agent group')
-            request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
-            response = api_runner.execute(request)
-            agent_group_id = response['data']['publishAgentGroup']['agentGroup']['id']
+            agent_group_id = self._create_agent_group(api_runner, name, description, agents)
 
             console.info('Creating asset')
-            request = assets.CreateAssetAPIRequest(asset)
-            response = api_runner.execute(request)
-            asset_id = response['data']['createAsset']['asset']['id']
+            asset_id = self._create_asset(api_runner, asset)
 
             console.info('Creating scan')
-            request = create_agent_scan.CreateAgentScanAPIRequest(title, asset_id, agent_group_id)
-            response = api_runner.execute(request)
+            self._create_scan(api_runner, asset_id, agent_group_id, title)
 
             console.success('Scan created successfully.')
         except runner.ResponseError as error_msg:
@@ -232,7 +227,7 @@ class CloudRuntime(runtime.Runtime):
         Args:
             scan_id: scan id to show all vulnerabilities.
             vuln_id: optional vuln id to describe
-            page: page number
+            page: page number            asset_id =
             number_elements: number of items to show per page.
         """
         try:
@@ -261,6 +256,7 @@ class CloudRuntime(runtime.Runtime):
             console.error(f'Scan {scan_id} not found')
 
     def _check_agents_exist(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
+        """Send API requests to check if agents exist."""
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
         for agent in agent_group_definition.agents:
@@ -273,6 +269,7 @@ class CloudRuntime(runtime.Runtime):
     def _agents_from_agent_group_def(self,
                                      api_runner: runner.APIRunner,
                                      agent_group_definition: definitions.AgentGroupDefinition) -> List[AgentType]:
+        """Creates list of agents dicts from an agent group definition."""
         agents = []
         for agent_def in agent_group_definition.agents:
             agent_detail = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent_def.key))
@@ -291,3 +288,30 @@ class CloudRuntime(runtime.Runtime):
             agent['args'] = agent_args
             agents.append(agent)
         return agents
+
+    def _create_agent_group(self, api_runner: runner.APIRunner, name: str, description:str, agents: List[AgentType]):
+        """Sends an API request to create an agent group.
+
+        Returns:
+            id opf the created agent group.
+        """
+        request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
+        response = api_runner.execute(request)
+        agent_group_id = response['data']['publishAgentGroup']['agentGroup']['id']
+        return agent_group_id
+
+    def _create_asset(self, api_runner: runner.APIRunner, asset: base_asset.Asset):
+        """Sends an API request to create an asset.
+
+        Returns:
+            id of the created asset.
+        """
+        request = assets.CreateAssetAPIRequest(asset)
+        response = api_runner.execute(request)
+        asset_id = response['data']['createAsset']['asset']['id']
+        return asset_id
+
+    def _create_scan(self, api_runner: runner.APIRunner, asset_id: int, agent_group_id: int, title: str):
+        """Sends an API request to create a scan."""
+        request = create_agent_scan.CreateAgentScanAPIRequest(title, asset_id, agent_group_id)
+        _ = api_runner.execute(request)
