@@ -8,6 +8,10 @@ from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import file
 from ostorlab.assets import ios_ipa
+from ostorlab.assets import domain_name
+from ostorlab.assets import ip
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
 
 
 class CreateAssetAPIRequest(request.APIRequest):
@@ -79,18 +83,17 @@ class CreateAssetAPIRequest(request.APIRequest):
         Returns:
             The body of the create asset request.
         """
-        asset_type = type(self._asset).__name__
-
         variables = {
             'asset': {
                 'tags': []
             }
         }
-        asset_type_variables = self.__get_asset_variables(asset_type)
+        asset_type_variables = self.__get_asset_variables()
         variables['asset'].update(asset_type_variables)
 
-        if asset_type in ('AndroidAab', 'AndroidApk', 'File', 'IOSIpa'):
-            map_variables = _get_map_variables(asset_type)
+        if any(isinstance(self._asset, t)
+               for t in (android_aab.AndroidAab, android_apk.AndroidApk, file.File, ios_ipa.IOSIpa)):
+            map_variables = self._get_map_variables()
             data = {
                 'operations': json.dumps({'query': self.query,
                                           'variables': json.dumps(variables)}),
@@ -116,35 +119,35 @@ class CreateAssetAPIRequest(request.APIRequest):
         else:
             return None
 
-    def __get_asset_variables(self, asset_type: str) -> Dict[str, Dict]:
+    def __get_asset_variables(self) -> Dict[str, Dict]:
         """Creates asset variables for the API request, depending on the type of the asset."""
         asset_type_variables = {}
-        if asset_type in ('AndroidAab', 'AndroidApk'):
+        if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
             asset_type_variables = {
                 'androidFile': {
                     'file': self._asset.content
                 }
             }
-        elif asset_type == 'IOSIpa':
+        elif isinstance(self._asset, ios_ipa.IOSIpa):
             asset_type_variables = {
                 'iosFile':{
                     'file': self._asset.content
                 }
             }
-        elif asset_type == 'File':
+        elif isinstance(self._asset, file.File):
             asset_type_variables = {
                 'file':{
                     'content': self._asset.content,
                     'path': self._asset.path
                 }
             }
-        elif asset_type == 'DomainName':
+        elif isinstance(self._asset, domain_name.DomainName):
             asset_type_variables = {
                 'domain':{
                     'domain': self._asset.name
                 }
             }
-        elif asset_type == 'IP':
+        elif isinstance(self._asset, ip.IP):
             asset_type_variables = {
                 'ip':{
                     'host': self._asset.host,
@@ -152,7 +155,7 @@ class CreateAssetAPIRequest(request.APIRequest):
                     'version': self._asset.version
                 }
             }
-        elif asset_type == 'IPv4':
+        elif isinstance(self._asset, ipv4.IPv4):
             asset_type_variables = {
                 'ipV4':{
                     'host': self._asset.host,
@@ -160,7 +163,7 @@ class CreateAssetAPIRequest(request.APIRequest):
                     'version': self._asset.version
                 }
             }
-        elif asset_type == 'IPv6':
+        elif isinstance(self._asset, ipv6.IPv6):
             asset_type_variables = {
                 'ipV6':{
                     'host': self._asset.host,
@@ -169,25 +172,25 @@ class CreateAssetAPIRequest(request.APIRequest):
                 }
             }
         else:
-            raise NotImplementedError(f'Unknown asset type : {asset_type}')
+            raise NotImplementedError(f'Unknown asset type : {type(self._asset)}')
 
         return asset_type_variables
 
 
-def _get_map_variables(asset_type):
-    """Creates map variables for the API request, depending on the type of the asset."""
-    map_variables = {}
-    if asset_type in ['AndroidAab', 'AndroidApk'] :
-        map_variables = {
-            '0': ['variables.asset.androidFile.file']
-        }
-    elif asset_type == 'IOSIpa':
-        map_variables = {
-            '0': ['variables.asset.iosFile.file']
-        }
-    elif asset_type == 'File':
-        map_variables = {
-            '0': ['variables.asset.file.content']
-        }
+    def _get_map_variables(self):
+        """Creates map variables for the API request, depending on the type of the asset."""
+        map_variables = {}
+        if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
+            map_variables = {
+                '0': ['variables.asset.androidFile.file']
+            }
+        elif isinstance(self._asset, ios_ipa.IOSIpa):
+            map_variables = {
+                '0': ['variables.asset.iosFile.file']
+            }
+        elif isinstance(self._asset, file.File):
+            map_variables = {
+                '0': ['variables.asset.file.content']
+            }
 
-    return map_variables
+        return map_variables
