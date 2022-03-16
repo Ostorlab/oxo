@@ -79,3 +79,11 @@ class Runtime(abc.ABC):
             None
         """
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def dump_vulnz(self, scan_id: int, output: str, output_format: str):
+        """Dump vulnerabilities to a file in a specific format.
+            Returns:
+            None
+        """
+        raise NotImplementedError()
