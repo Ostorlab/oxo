@@ -3,7 +3,7 @@
 import abc
 import csv
 import json
-import typing
+from typing import List
 
 FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
 
@@ -11,7 +11,7 @@ FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description
 class VulnzDumper(abc.ABC):
     """Dumper Base class: All dumpers should inherit from this class to access the dump method."""
 
-    def __init__(self, output_path: str, data: typing.List) -> None:
+    def __init__(self, output_path: str, data: List) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:
