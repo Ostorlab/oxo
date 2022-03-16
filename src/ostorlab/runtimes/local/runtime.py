@@ -554,8 +554,10 @@ class LocalRuntime(runtime.Runtime):
         except sqlalchemy.exc.OperationalError:
             console.error('Vulnerability / scan not Found.')
 
-    def dump_vulnz(self, scan_id: int, output: str, output_format: str):
+    def dump_vulnz(self, scan_id: int, output_format: str, output: str, page: int = 1, number_elements: int = 10):
         """Dump found vulnerabilities of a scan in a specific format."""
+        del page
+        del number_elements
         database = models.Database()
         session = database.session
         severity_sort_logic = case(value=models.Vulnerability.risk_rating,
@@ -566,7 +568,7 @@ class LocalRuntime(runtime.Runtime):
         vulnz_list = []
         for vulnerability in vulnerabilities:
             vuln = {
-                'id':vulnerability.id,
+                'id': vulnerability.id,
                 'risk_rating': vulnerability.risk_rating.value,
                 'cvss_v3_vector': vulnerability.cvss_v3_vector,
                 'title': vulnerability.title,
