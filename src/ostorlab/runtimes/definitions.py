@@ -137,7 +137,7 @@ class AgentSettings:
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
     agents: List[AgentSettings]
-    name: Optional[str] = 'Agent Group'
+    name: Optional[str] = None
     description: Optional[str] = None
 
     @classmethod
@@ -151,7 +151,7 @@ class AgentGroupDefinition:
         agent_settings = []
         agents_names = []
         for agent in agent_group_def['agents']:
-            agents_names.append(agent.get('key').split('/')[-1])
+            agents_names.append(agent.get('key'))
             agent_def = AgentSettings(
                 key=agent.get('key'),
                 version=agent.get('version'),
@@ -169,14 +169,6 @@ class AgentGroupDefinition:
 
             agent_settings.append(agent_def)
 
-        name = agent_group_def.get('name', 'Agent Group')
-        description = agent_group_def.get('description', 'Agent group : ' + ','.join(agents_names))
+        name = agent_group_def.get('name')
+        description = agent_group_def.get('description', f"""Agent group : {','.join(agents_names)}""")
         return cls(agent_settings, name, description)
-
-    def __post_init__(self):
-        """Set agent group description when it is not provided for object initialization."""
-        if self.description is None:
-            agents_names = []
-            for agent in self.agents:
-                agents_names.append(agent.key.split('/')[-1])
-            self.description = 'Agent group : ' + ','.join(agents_names)
