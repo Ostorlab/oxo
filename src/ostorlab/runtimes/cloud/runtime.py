@@ -47,7 +47,7 @@ class CloudRuntime(runtime.Runtime):
         """Checks if the runtime is capable of running the provided agent run definition.
 
         Args:
-            agent_group_definition: The agent run definition from a set of agents and agent groups.
+            agent_group_definition: The agent group definition of a set of agents.
 
         Returns:
             True if can run, false otherwise.
@@ -71,11 +71,11 @@ class CloudRuntime(runtime.Runtime):
         agent_group_definition: definitions.AgentGroupDefinition,
         asset: base_asset.Asset,
         ) -> None:
-        """Triggers a scan using the provided agent run definition and asset target.
+        """Triggers a scan using the provided agent group definition and asset target.
 
         Args:
             title: The title of the scan.
-            agent_group_definition: The agent run definition from a set of agents and agent groups.
+            agent_group_definition: The agent group definition of a set of agents.
             asset: The scan target asset.
 
         Returns:
@@ -154,11 +154,11 @@ class CloudRuntime(runtime.Runtime):
         pass
 
     def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
-        """
-        list vulnz from the cloud using and render them in a table
+        """List vulnz from the cloud using and render them in a table.
+
         Args:
             scan_id: scan id to list vulnz from.
-            page: optional page number
+            page: optional page number.
             number_elements: optional number of elements per page.
         """
         try:
@@ -222,12 +222,12 @@ class CloudRuntime(runtime.Runtime):
                                title='Technical details'))
 
     def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
-        """
-        fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
+        """Fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
+
         Args:
             scan_id: scan id to show all vulnerabilities.
-            vuln_id: optional vuln id to describe
-            page: page number            asset_id =
+            vuln_id: optional vuln id to describe.
+            page: page number.
             number_elements: number of items to show per page.
         """
         try:
