@@ -11,7 +11,6 @@ class CreateAgentScanAPIRequest(request.APIRequest):
     def __init__(self, title: str, asset_id: int, agent_group_id: int) -> None:
         """Initializer"""
         self._title = title
-        self._plan = 'agent_scan'
         self.asset_id = asset_id
         self._agent_group_id = agent_group_id
 
