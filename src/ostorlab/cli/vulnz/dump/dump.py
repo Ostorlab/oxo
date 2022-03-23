@@ -6,6 +6,7 @@ import sqlalchemy
 from ostorlab.apis.runners import runner
 
 from ostorlab.cli import console as cli_console
+from ostorlab.cli import dumpers
 from ostorlab.cli.vulnz import vulnz
 
 console = cli_console.Console()
@@ -24,7 +25,11 @@ def dump(ctx, scan_id: int, output: str, output_format: str) -> None:
     try:
         runtime_instance = ctx.obj['runtime']
         console.info(f'Fetching vulnerabilities for scan {scan_id}')
-        runtime_instance.dump_vulnz(scan_id=scan_id, output=output, output_format=output_format)
+        if output_format == 'csv':
+            dumper = dumpers.VulnzCsvDumper(output)
+        else:
+            dumper = dumpers.VulnzJsonDumper(output)
+        runtime_instance.dump_vulnz(scan_id=scan_id, dumper=dumper)
     except FileNotFoundError as e:
         console.error(f'No such file or directory: {output}')
         raise click.exceptions.Exit(2) from e

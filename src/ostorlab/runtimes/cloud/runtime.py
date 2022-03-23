@@ -222,14 +222,13 @@ class CloudRuntime(runtime.Runtime):
         return api_runner.execute(
             vulnz_list.VulnzListAPIRequest(scan_id=scan_id, number_elements=number_elements, page=page))
 
-    def dump_vulnz(self, scan_id: int, output_format: str, output: str, page: int = 1, number_elements: int = 10):
+    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper, page: int = 1, number_elements: int = 10):
         """fetch vulnz from the cloud runtime.
         fetching all vulnz for a specific scan and saving in a specific format, in order to fetch all vulnerabilities
         {number_elements|10} for each request, this function run in an infinity loop (recursive)
         Args:
+            dumper: VulnzDumper class
             scan_id: scan id to dump vulnz from.
-            output_format: output format for saving vulnerabilities.
-            output: output file
             page: page number
             number_elements: number of elements per reach page
         """
@@ -250,9 +249,5 @@ class CloudRuntime(runtime.Runtime):
                         'short_description': vulnerability['detail']['shortDescription']
                     }
                     vulnz_list_table.append(vuln)
-                if output_format == 'csv':
-                    dumper = dumpers.VulnzCsvDumper(output, vulnz_list_table)
-                else:
-                    dumper = dumpers.VulnzJsonDumper(output, vulnz_list_table)
-                dumper.dump()
-                console.success(f'{len(vulnerabilities)} Vulnerabilities saved to {output}')
+                dumper.dump(vulnz_list_table)
+                console.success(f'{len(vulnerabilities)} Vulnerabilities saved to {dumper.output_path}')

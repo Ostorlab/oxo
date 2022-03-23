@@ -4,6 +4,7 @@ import dataclasses
 from typing import List, Optional
 
 from ostorlab.assets import asset as base_asset
+from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 
 
@@ -81,7 +82,7 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def dump_vulnz(self, scan_id: int, output: str, output_format: str):
+    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
         """Dump vulnerabilities to a file in a specific format.
             Returns:
             None
