@@ -38,6 +38,7 @@ class ScansListAPIRequest(request.APIRequest):
                     progress
                     createdTime
                     plan
+                    toberemoved.
                 }
             }
          }
