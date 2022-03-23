@@ -1,6 +1,7 @@
 """Module for the command run inside the group ci_scan.
 Example of usage:
-- ostorlab --api_key='myKey' ci_scan run --scan-profile=full_scan --break_on_risk_rating=medium --title=test_scan [asset] [options].
+- ostorlab --api_key='myKey' ci_scan run --scan-profile=full_scan \
+           --break_on_risk_rating=medium --title=test_scan [asset] [options].
 """
 import multiprocessing
 import click
