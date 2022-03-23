@@ -112,4 +112,4 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundEr
 
     result = runner.invoke(rootcli.rootcli, ['vulnz', '--runtime', 'cloud', 'describe', '-scan-id=502152'])
 
-    assert 'Vulnerability / scan not Foun' in result.output
+    assert 'Vulnerability/scan not found.' in result.output
