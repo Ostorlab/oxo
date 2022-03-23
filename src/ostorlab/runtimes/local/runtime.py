@@ -15,11 +15,13 @@ import tenacity
 from docker.models import services as docker_models_services
 from rich import markdown
 from rich import panel
+from sqlalchemy import case
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker
+from ostorlab.cli import dumpers
 from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
@@ -27,6 +29,7 @@ from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
+from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 
 NETWORK_PREFIX = 'ostorlab_local_network'
@@ -550,3 +553,25 @@ class LocalRuntime(runtime.Runtime):
             console.success('Vulnerabilities listed successfully.')
         except sqlalchemy.exc.OperationalError:
             console.error('Vulnerability / scan not Found.')
+
+    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
+        """Dump found vulnerabilities of a scan in a specific format."""
+        database = models.Database()
+        session = database.session
+        severity_sort_logic = case(value=models.Vulnerability.risk_rating,
+                                   whens=risk_rating.RATINGS_ORDER).label('severity')
+        vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+            order_by(severity_sort_logic).all()
+
+        vulnz_list = []
+        for vulnerability in vulnerabilities:
+            vuln = {
+                'id': vulnerability.id,
+                'risk_rating': vulnerability.risk_rating.value,
+                'cvss_v3_vector': vulnerability.cvss_v3_vector,
+                'title': vulnerability.title,
+                'short_description': vulnerability.short_description
+            }
+            vulnz_list.append(vuln)
+        dumper.dump(vulnz_list)
+        console.success(f'{len(vulnerabilities)} Vulnerabilities saved to  : {dumper.output_path}')
