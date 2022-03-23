@@ -1,6 +1,6 @@
 """Module for the command run inside the group ci_scan.
 Example of usage:
-- ostorlab --api_key='myKey' ci_scan run --plan=free --break_on_risk_rating=medium --title=test_scan [asset] [options].
+- ostorlab --api_key='myKey' ci_scan run --scan-profile=full_scan --break_on_risk_rating=medium --title=test_scan [asset] [options].
 """
 import multiprocessing
 import click
@@ -25,15 +25,15 @@ CI_LOGGER = {
 }
 
 @ci_scan.group()
-@click.option('--plan', help='Scan plan to execute.', required=True)
+@click.option('--scan-profile', help='Scan profile to execute.', required=True)
 @click.option('--title', help='Scan title.')
 @click.option('--break-on-risk-rating', help='Fail if the scan risk rating is higher than the defined value.')
 @click.option('--max-wait-minutes', help='Time to wait for the scan results.', required=False, default=WAIT_MINUTES)
 @click.option('--log-flavor', help='Type of expected output based on the CI.', required=False, default='console')
 @click.pass_context
-def run(ctx: click.core.Context, plan: str, title: str,
+def run(ctx: click.core.Context, scan_profile: str, title: str,
         break_on_risk_rating: str, max_wait_minutes: int, log_flavor: str) -> None:
-    """Start a scan based on a plan in the CI.\n"""
+    """Start a scan based on a scan profile in the CI.\n"""
     if log_flavor not in CI_LOGGER:
         CI_LOGGER['console']().error(f'log_flavor value {log_flavor} not supported.'
                                      f' Possible options: {CI_LOGGER.keys()}')
@@ -44,10 +44,11 @@ def run(ctx: click.core.Context, plan: str, title: str,
         ci_logger.error('API key not not provided.')
         raise click.exceptions.Exit(2)
 
-    if plan in scan_create_api.PlanMapping:
-        ctx.obj['plan'] = scan_create_api.PlanMapping[plan]
+    if scan_profile in scan_create_api.SCAN_PROFILES:
+        ctx.obj['scan_profile'] = scan_create_api.SCAN_PROFILES[scan_profile]
     else:
-        ci_logger.error(f'plan value {plan} not supported. Possible options: {scan_create_api.PlanMapping.keys()}')
+        ci_logger.error(
+            f'Scan profile {scan_profile} not supported. Possible options: {scan_create_api.SCAN_PROFILES.keys()}')
 
     ctx.obj['title'] = title
     ctx.obj['break_on_risk_rating'] = break_on_risk_rating
