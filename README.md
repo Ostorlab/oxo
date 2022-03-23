@@ -12,7 +12,7 @@
 If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
 
 Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
-pushing it to another tool. Several tools have tried to make the process less painful with limited success. Ostorlab addresses the same
+pushing it to another tool. Several tools have tried to make the process less painful. Ostorlab addresses the same
 challenge by simplifying the hardest part and automating the boring and tedious part.
 
 To do that, Ostorlab focuses on the following:
@@ -29,12 +29,11 @@ To do that, Ostorlab ships with:
 * A battle-tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
   analysis setup and demanding static analysis workloads running on multiple machines.
 * Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message
-  serialisation with protbuf, universal file format using docker image, resilient thanks to docker swarm mode to cite a
-  few
-* A store of agents that make is to use and discover tools to add your toolset
+  serialisation with protobuf, universal file format using docker image and resilient deployment thanks to docker swarm.
+* A store of agents that makes it easy to use and discover tools to add your toolset.
 * An automated builder to take the hassle away of building and publishing.
-* A GUI to prepare and write down your tool collection setup
-* Focus on documentation, multiple tutorials and upcoming videos and conference presentations
+* A GUI to prepare and write down your tool collection setup.
+* Focus on documentation, multiple tutorials and upcoming videos and conference presentations.
 * A ready to use one-click template repo to get started.
 
 # Requirements

@@ -41,3 +41,28 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
 
     assert 'Error: Missing command.' in result.output
     assert result.exit_code == 2
+
+
+def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(mocker):
+    """Unittest ostorlab scan run in cloud runtime with all valid options and arguments.
+    Should send api requests for creating Agent group, asset & scan.
+    And displays Scan created successfully.
+    """
+
+    mocker.patch('ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run', return_value=True)
+    api_requests = mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute')
+    agent_details_reponse = {'data': {'agent': {'versions': {'versions': [{'version': '0.0.1'}]}}}}
+    agent_group_response = {'data': {'publishAgentGroup': {'agentGroup': {'id': 1}}}}
+    asset_response = {'data': {'createAsset': {'asset': {'id': 1}}}}
+    scan_response = {'data': {'createAgentScan': {'scan': {'id': 1}}}}
+    api_responses = [agent_details_reponse, agent_group_response, asset_response, scan_response]
+    api_requests.side_effect = api_responses
+
+    runner = CliRunner()
+    result = runner.invoke(rootcli.rootcli,
+                           ['scan', '--runtime=cloud', 'run',
+                            '--agent=agent/ostorlab/nmap', '--title=scan1', 'ip', '127.0.0.1'])
+
+    assert result.exception is None
+    api_requests.assert_called()
+    assert 'Scan created successfully' in result.output

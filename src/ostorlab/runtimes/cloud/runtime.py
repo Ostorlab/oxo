@@ -5,7 +5,7 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
-from typing import List
+from typing import List, Optional, Dict, Union
 
 import click
 import markdownify
@@ -16,6 +16,10 @@ from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
 from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
+from ostorlab.apis import agent_details
+from ostorlab.apis import agent_group
+from ostorlab.apis import assets
+from ostorlab.apis import create_agent_scan
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
@@ -24,9 +28,11 @@ from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import styles
+from ostorlab import configuration_manager
 
+
+AgentType = Dict[str, Union[str, List]]
 console = cli_console.Console()
-
 
 class CloudRuntime(runtime.Runtime):
     """Cloud runtime runs agents from Ostorlab Cloud."""
@@ -42,24 +48,60 @@ class CloudRuntime(runtime.Runtime):
         """Checks if the runtime is capable of running the provided agent run definition.
 
         Args:
-            agent_group_definition: The agent run definition from a set of agents and agent groups.
+            agent_group_definition: The agent group definition of a set of agents.
 
         Returns:
             True if can run, false otherwise.
         """
-        pass
+        try:
+            config_manager = configuration_manager.ConfigurationManager()
 
-    def scan(self, agent_group_definition: definitions.AgentGroupDefinition, asset: base_asset.Asset) -> None:
-        """Triggers a scan using the provided agent run definition and asset target.
+            if not config_manager.is_authenticated:
+                console.error('You need to be authenticated before using the cloud runtime.')
+                return False
+
+            do_agents_exist = self._check_agents_exist(agent_group_definition)
+            return do_agents_exist
+        except runner.ResponseError as error_msg:
+            console.error(error_msg)
+            return False
+
+    def scan(
+        self,
+        title: Optional[str],
+        agent_group_definition: definitions.AgentGroupDefinition,
+        asset: base_asset.Asset,
+        ) -> None:
+        """Triggers a scan using the provided agent group definition and asset target.
 
         Args:
-            agent_group_definition: The agent run definition from a set of agents and agent groups.
+            title: The title of the scan.
+            agent_group_definition: The agent group definition of a set of agents.
             asset: The scan target asset.
 
         Returns:
             None
         """
-        pass
+        try:
+            api_runner = authenticated_runner.AuthenticatedAPIRunner()
+
+            agents = self._agents_from_agent_group_def(api_runner, agent_group_definition)
+            name = agent_group_definition.name
+            description = agent_group_definition.description
+
+            console.info('Creating agent group')
+            agent_group_id = self._create_agent_group(api_runner, name, description, agents)
+
+            console.info('Creating asset')
+            asset_id = self._create_asset(api_runner, asset)
+
+            console.info('Creating scan')
+            self._create_scan(api_runner, asset_id, agent_group_id, title)
+
+            console.success('Scan created successfully.')
+        except runner.ResponseError as error_msg:
+            console.error(error_msg)
+
 
     def stop(self, scan_id: int) -> None:
         """Stops a scan.
@@ -113,11 +155,11 @@ class CloudRuntime(runtime.Runtime):
         pass
 
     def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
-        """
-        list vulnz from the cloud using and render them in a table
+        """List vulnz from the cloud using and render them in a table.
+
         Args:
             scan_id: scan id to list vulnz from.
-            page: optional page number
+            page: optional page number.
             number_elements: optional number of elements per page.
         """
         try:
@@ -184,12 +226,12 @@ class CloudRuntime(runtime.Runtime):
             rich.print(panel.Panel(markdown.Markdown(vulnerability['technicalDetail']), title='Technical details'))
 
     def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
-        """
-        fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
+        """Fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
+
         Args:
             scan_id: scan id to show all vulnerabilities.
-            vuln_id: optional vuln id to describe
-            page: page number
+            vuln_id: optional vuln id to describe.
+            page: page number.
             number_elements: number of items to show per page.
         """
         try:
@@ -251,3 +293,64 @@ class CloudRuntime(runtime.Runtime):
                     vulnz_list_table.append(vuln)
                 dumper.dump(vulnz_list_table)
                 console.success(f'{len(vulnerabilities)} Vulnerabilities saved to {dumper.output_path}')
+
+    def _check_agents_exist(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
+        """Send API requests to check if agents exist."""
+        api_runner = authenticated_runner.AuthenticatedAPIRunner()
+
+        for agent in agent_group_definition.agents:
+            response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent.key))
+            if response.get('errors') is not None:
+                console.errors('The agent {agent.key} does not exists')
+                return False
+        return True
+
+    def _agents_from_agent_group_def(self,
+                                     api_runner: runner.APIRunner,
+                                     agent_group_definition: definitions.AgentGroupDefinition) -> List[AgentType]:
+        """Creates list of agents dicts from an agent group definition."""
+        agents = []
+        for agent_def in agent_group_definition.agents:
+            agent_detail = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent_def.key))
+            agent_version = agent_detail['data']['agent']['versions']['versions'][0]['version']
+            agent = {}
+            agent['agentKey'] = agent_def.key
+            agent['version'] = agent_version
+
+            agent_args = []
+            for arg in agent_def.args:
+                agent_args.append({
+                    'name': arg.name,
+                    'type': arg.type,
+                    'value': arg.value
+                })
+            agent['args'] = agent_args
+            agents.append(agent)
+        return agents
+
+    def _create_agent_group(self, api_runner: runner.APIRunner, name: str, description:str, agents: List[AgentType]):
+        """Sends an API request to create an agent group.
+
+        Returns:
+            id opf the created agent group.
+        """
+        request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
+        response = api_runner.execute(request)
+        agent_group_id = response['data']['publishAgentGroup']['agentGroup']['id']
+        return agent_group_id
+
+    def _create_asset(self, api_runner: runner.APIRunner, asset: base_asset.Asset):
+        """Sends an API request to create an asset.
+
+        Returns:
+            id of the created asset.
+        """
+        request = assets.CreateAssetAPIRequest(asset)
+        response = api_runner.execute(request)
+        asset_id = response['data']['createAsset']['asset']['id']
+        return asset_id
+
+    def _create_scan(self, api_runner: runner.APIRunner, asset_id: int, agent_group_id: int, title: str):
+        """Sends an API request to create a scan."""
+        request = create_agent_scan.CreateAgentScanAPIRequest(title, asset_id, agent_group_id)
+        _ = api_runner.execute(request)
