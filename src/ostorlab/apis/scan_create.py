@@ -7,7 +7,7 @@ from . import request
 
 
 SCAN_PROFILES = {
-    'fast_can': 'Fast Scan',
+    'fast_scan': 'Fast Scan',
     'full_scan': 'Full Scan'
 }
 
