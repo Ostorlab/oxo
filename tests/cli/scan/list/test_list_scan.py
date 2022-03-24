@@ -23,7 +23,7 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
                     {
                         'id': '58215',
                         'assetType': 'android_store',
-                        'plan': 'FREE',
+                        'scanProfile': 'Fast Scan',
                         'riskRating': 'LOW',
                         'title': 'scan Birrapps - FREE app for homebrewers',
                         'name': '',
@@ -33,7 +33,7 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
                     {
                         'id': '58208',
                         'assetType': 'android_store',
-                        'plan': 'FREE',
+                        'scanProfile': 'Fast Scan',
                         'riskRating': 'LOW',
                         'title': 'scan Bite Squad - Restaurant Food Delivery',
                         'name': '',

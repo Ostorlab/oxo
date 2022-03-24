@@ -37,7 +37,7 @@ class ScansListAPIRequest(request.APIRequest):
                     id
                     progress
                     createdTime
-                    plan
+                    scanProfile
                 }
             }
          }

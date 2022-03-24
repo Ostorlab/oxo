@@ -14,7 +14,7 @@ def run_mobile_scan(ctx: click.core.Context, file: io.FileIO, asset_type: scan_c
     """Create scan for mobile application package file."""
     ci_logger = ctx.obj['ci_logger']
     if ctx.obj.get('api_key'):
-        plan = ctx.obj['plan']
+        scan_profile = ctx.obj['scan_profile']
         title = ctx.obj['title']
         break_on_risk_rating = ctx.obj['break_on_risk_rating']
         max_wait_minutes = ctx.obj['max_wait_minutes']
@@ -23,7 +23,7 @@ def run_mobile_scan(ctx: click.core.Context, file: io.FileIO, asset_type: scan_c
             scan_result = runner.execute(
                 scan_create_api.CreateMobileScanAPIRequest(title=title,
                                                            asset_type=asset_type,
-                                                           plan= scan_create_api.Plan[plan.upper()],
+                                                           scan_profile=scan_profile,
                                                            application=file))
             scan_id = scan_result.get('data').get('createMobileScan').get('scan').get('id')
             ci_logger.output(name='scan_id', value=scan_id)
