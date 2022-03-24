@@ -8,7 +8,20 @@ from typing import Dict, Optional
 OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / '.ostorlab'
 
 
-class ConfigurationManager:
+class SingletonMeta(type):
+    """Metaclass implementation of a singleton pattern."""
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class ConfigurationManager(metaclass=SingletonMeta):
     """Handles any configurations related to Ostorlab, such as storing and retrieving
        API keys.
     """
@@ -22,10 +35,41 @@ class ConfigurationManager:
         self._private_dir = private_dir
         self._private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = self._private_dir / 'key'
+        self._api_key = None
 
     @property
     def conf_path(self) -> pathlib.Path:
+        """Private configuration path to store scan result, settings and authentication materials."""
         return self._private_dir.resolve()
+
+    @property
+    def api_key(self):
+        """API key their either uses a predefined value, or retrieve the one in the configuration folder."""
+        if self._api_key is not None:
+            return self._api_key
+        else:
+            api_data = self._get_api_data()
+            if api_data is not None:
+                return api_data.get('secret_key')
+            else:
+                return None
+
+    @api_key.setter
+    def api_key(self, key: Optional[str]):
+        """Set API key"""
+        self._api_key = key
+
+    @property
+    def api_key_id(self) -> Optional[str]:
+        """API key id from the location in which it is saved."""
+        if self._api_key is not None:
+            return None
+        else:
+            api_data = self._get_api_data()
+            if api_data is not None:
+                return api_data.get('api_key_id')
+            else:
+                return None
 
     def set_api_data(self, secret_key: str, api_key_id: str, expiry_date: Optional[datetime]) -> None:
         """Persists the API data (key, id, expiry date) to a file in the given path.
@@ -49,7 +93,7 @@ class ConfigurationManager:
             data = json.dumps(api_data, indent=4)
             file.write(data)
 
-    def get_api_data(self) -> Optional[Dict]:
+    def _get_api_data(self) -> Optional[Dict]:
         """Gets the API data from the location in which it is saved.
 
         Returns:
@@ -61,46 +105,10 @@ class ConfigurationManager:
         except FileNotFoundError:
             return None
 
-    def get_api_key(self) -> Optional[str]:
-        """Gets the API key from the location in which it is saved.
-
-        Returns:
-            The user's API key if it exists, otherwise returns None.
-        """
-        api_data = self.get_api_data()
-        if api_data is not None:
-            return api_data.get('secret_key')
-        else:
-            return None
-
-    def get_api_key_id(self) -> Optional[str]:
-        """Gets the API key id from the location in which it is saved.
-
-        Returns:
-            The user's API key id if it exists, otherwise returns None.
-        """
-        api_data = self.get_api_data()
-        if api_data is not None:
-            return api_data.get('api_key_id')
-        else:
-            return None
-
-    def get_api_key_expiry_date(self) -> Optional[datetime]:
-        """Gets the API key expiry date from the location in which it is saved.
-
-        Returns:
-            The user's API key expiry date if it exists, otherwise returns None.
-        """
-        api_data = self.get_api_data()
-        if api_data is not None:
-            return api_data.get('expiry_date')
-        else:
-            return None
-
     def delete_api_data(self) -> None:
         """Deletes the file containing the API data."""
         self._complete_api_key_path.unlink(missing_ok=True)
 
     @property
     def is_authenticated(self):
-        return self.get_api_key_id() is not None
+        return self.api_key is not None

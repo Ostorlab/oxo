@@ -58,7 +58,7 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(
 
     assert result.exception is None
     assert configuration_manager.ConfigurationManager(
-    ).get_api_key() == api_key_dict['data']['createApiKey']['apiKey']['secretKey']
+    ).api_key == api_key_dict['data']['createApiKey']['apiKey']['secretKey']
 
 
 @mock.patch.object(click, 'prompt')

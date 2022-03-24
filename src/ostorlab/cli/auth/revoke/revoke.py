@@ -20,7 +20,7 @@ def revoke():
     config_manager = configuration_manager.ConfigurationManager()
 
     try:
-        api_key_id = config_manager.get_api_key_id()
+        api_key_id = config_manager.api_key_id
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
         with console.status('Revoking API key'):
