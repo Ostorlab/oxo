@@ -4,6 +4,8 @@ from typing import Optional
 
 import click
 
+from ostorlab import configuration_manager
+
 logger = logging.getLogger('CLI')
 
 
@@ -22,6 +24,11 @@ def rootcli(ctx: click.core.Context, proxy: Optional[str] = None, tlsverify: Opt
     ctx.obj['proxy'] = proxy
     ctx.obj['tlsverify'] = tlsverify
     ctx.obj['api_key'] = api_key
+    # Configuration is a singleton class. One initiated with the provided API key, others will make use of it.
+    conf_manager = configuration_manager.ConfigurationManager()
+    conf_manager.api_key = api_key
+    ctx.obj['config_manager'] = conf_manager
+
     if verbose is True:
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
         for l in loggers:
