@@ -92,7 +92,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         arguments = {}
         # First read the agent default values.
         for a in self.definition.args:
-            arguments[a['name']] = a['value']
+            arguments[a['name']] = a.get('value')
         # Override the default values from settings.
         for a in self.settings.args:
             arguments[a.name] = a.value
