@@ -113,7 +113,16 @@ class AgentSettings:
             arg_instance = instance.args.add()
             arg_instance.name = arg.name
             arg_instance.type = arg.type
-            arg_instance.value = arg.value
+            if isinstance(arg.value, str):
+                arg_instance.value = arg.value.encode()
+            elif isinstance(arg.value, int):
+                arg_instance.value = str(arg.value).encode()
+            elif isinstance(arg.value, float):
+                arg_instance.value = str(arg.value).encode()
+            elif isinstance(arg.value, bytes):
+                arg_instance.value = arg.value
+            else:
+                raise NotImplementedError(f'unsupported format byte serialization {type(arg.value)}')
 
         instance.constraints.extend(self.constraints)
         instance.mounts.extend(self.mounts)

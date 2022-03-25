@@ -60,7 +60,55 @@ def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
         bus_exchange_topic='topic',
         bus_management_url='mq_managment',
         bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
+        args=[utils_definitions.Arg(name='speed', type='string', value='fast')]
+    )
+
+    proto = instance_settings.to_raw_proto()
+
+    assert isinstance(proto, bytes)
+
+
+def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
+    """Test supported serializing int number."""
+    instance_settings = definitions.AgentSettings(
+        key='agent/ostorlab/BigFuzzer',
+        bus_url='mq',
+        bus_exchange_topic='topic',
+        bus_management_url='mq_managment',
+        bus_vhost='vhost',
+        args=[utils_definitions.Arg(name='speed', type='number', value=1)]
+    )
+
+    proto = instance_settings.to_raw_proto()
+
+    assert isinstance(proto, bytes)
+
+
+def testAgentInstanceSettingsTo_whenProtoHasFloatField_returnsBytes():
+    """Test supported serializing float number."""
+    instance_settings = definitions.AgentSettings(
+        key='agent/ostorlab/BigFuzzer',
+        bus_url='mq',
+        bus_exchange_topic='topic',
+        bus_management_url='mq_managment',
+        bus_vhost='vhost',
+        args=[utils_definitions.Arg(name='speed', type='number', value=1.1)]
+    )
+
+    proto = instance_settings.to_raw_proto()
+
+    assert isinstance(proto, bytes)
+
+
+def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes():
+    """Test supported serializing bytes."""
+    instance_settings = definitions.AgentSettings(
+        key='agent/ostorlab/BigFuzzer',
+        bus_url='mq',
+        bus_exchange_topic='topic',
+        bus_management_url='mq_managment',
+        bus_vhost='vhost',
+        args=[utils_definitions.Arg(name='speed', type='string', value=b'test')]
     )
 
     proto = instance_settings.to_raw_proto()
@@ -76,7 +124,7 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
         bus_exchange_topic='topic',
         bus_management_url='mq_managment',
         bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
+        args=[utils_definitions.Arg(name='speed', type='string', value='fast')]
     )
 
     proto = instance_settings.to_raw_proto()
@@ -95,8 +143,7 @@ def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
         bus_exchange_topic='topic',
         bus_management_url='mq_managment',
         bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='str', value=b'fast')]
+        args=[utils_definitions.Arg(name='speed', type='string', value='fast')]
     )
 
     assert instance_settings.container_image is None
-
