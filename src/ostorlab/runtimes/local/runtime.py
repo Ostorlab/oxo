@@ -198,6 +198,9 @@ class LocalRuntime(runtime.Runtime):
             console.error(f'Agent {e} not installed')
         except UnhealthyService as e:
             console.error(f'Unhealthy service {e}')
+        except agent_runtime.MissingAgentDefinitionLabel as e:
+            console.error(f'Missing agent definition {e}. This is probably due to building the image directly with'
+                          f' docker instead of `ostorlab agent build` command')
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
