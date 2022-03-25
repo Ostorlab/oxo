@@ -69,13 +69,14 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
 
 def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
     """Test agent main with proper arguments, agent runs."""
+
     class SampleAgent(agent.Agent):
         """Sample agent"""
 
     mocker.patch('ostorlab.agent.agent.Agent.__init__', return_value=None)
     mocker.patch('ostorlab.agent.agent.Agent.run', return_value=None)
     mocker.patch.object(agent, 'AGENT_DEFINITION_PATH',
-                 str(pathlib.Path(__file__).parent / 'dummyagent.yaml'))
+                        str(pathlib.Path(__file__).parent / 'dummyagent.yaml'))
 
     SampleAgent.main(['--settings',
                       str(pathlib.Path(__file__).parent / 'settings.binproto')])
@@ -86,6 +87,7 @@ def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
 
 def testAgentMain_whithNonExistingFile_exits(mocker):
     """Test agent when missing definition or settings files to ensure the command exits."""
+
     class SampleAgent(agent.Agent):
         """Sample agent"""
 
@@ -102,7 +104,6 @@ def testAgentMain_whithNonExistingFile_exits(mocker):
         assert wrapper_exception.value.code == 42
 
 
-
 def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
     class TestAgent(agent.Agent):
         """Test Agent"""
@@ -110,8 +111,8 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
     test_agent = TestAgent(
         agent_definitions.AgentDefinition(name='start_test_agent', out_selectors=['v3.healthcheck.ping'],
                                           args=[
-                                              {'name':'color', 'type':'string', 'value':None},
-                                              {'name':'speed', 'type':'string', 'value':b'fast'},
+                                              {'name': 'color', 'type': 'string', 'value': None},
+                                              {'name': 'speed', 'type': 'string', 'value': b'fast'},
                                           ]),
         runtime_definitions.AgentSettings(
             key='agent/ostorlab/start_test_agent',
@@ -123,7 +124,6 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
         ))
 
     assert test_agent.args == {
-        'color': b'red',
+        'color': 'red',
         'speed': b'fast'
     }
-
