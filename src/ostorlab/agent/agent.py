@@ -95,7 +95,12 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             arguments[a['name']] = a.get('value')
         # Override the default values from settings.
         for a in self.settings.args:
-            arguments[a.name] = a.value
+            if a.type == 'string':
+                arguments[a.name] = a.value.decode()
+            elif a.type == 'number':
+                arguments[a.name] = int(a.value.decode())
+            else:
+                arguments[a.name] = a.value
 
         return arguments
 
