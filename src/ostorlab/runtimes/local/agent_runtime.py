@@ -14,6 +14,7 @@ from docker import errors
 from docker.types import services as docker_types_services
 
 from ostorlab import configuration_manager
+from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.services import mq
@@ -31,6 +32,16 @@ HEALTHCHECK_RETRIES = 5
 HEALTHCHECK_TIMEOUT = 10 * SECOND
 HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = 2 * SECOND
+
+
+class Error(exceptions.OstorlabError):
+    """Base Error."""
+
+
+class MissingAgentDefinitionLabel(Error):
+    """Agent definition label is missing from the agent image. This is likely due to the agent built directly with a
+     docker command and not agent build."""
+
 
 def _parse_mount_string_windows(string):
     """Handles parsing mounts on Windows OS."""
@@ -153,7 +164,6 @@ class AgentRuntime:
         except docker.errors.NotFound:
             logging.debug('all good, config %s is new', config_name)
 
-
         docker_config = self._docker_client.configs.create(name=config_name,
                                                            labels={'ostorlab.universe': self.runtime_name},
                                                            data=agent_instance_settings_proto)
@@ -192,6 +202,8 @@ class AgentRuntime:
         """
         docker_image = self._docker_client.images.get(self.agent.container_image)
         yaml_definition_string = docker_image.labels.get('agent_definition')
+        if yaml_definition_string is None:
+            raise MissingAgentDefinitionLabel(f'agent definition label is missing from image {docker_image.tags[0]}')
         with io.StringIO(yaml_definition_string) as file:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(file)
             return agent_definition
