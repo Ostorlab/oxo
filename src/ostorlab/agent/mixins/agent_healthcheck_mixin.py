@@ -91,7 +91,7 @@ class HealthcheckWebThread(Thread):
             OK if all checks are work, NOK if not.
         """
         if all(healthcheck() for healthcheck in self._healthcheck_callbacks):
-            logger.info('Health checks status OK')
+            logger.debug('Health checks status OK')
             return 'OK'
         else:
             logger.error('Health checks status NOK')

@@ -194,13 +194,17 @@ class LocalRuntime(runtime.Runtime):
             console.error('Agent not starting')
             self.stop(self._scan_db.id)
             self._update_scan_progress('ERROR')
+            self.stop(str(self._scan_db.id))
         except AgentNotInstalled as e:
             console.error(f'Agent {e} not installed')
+            self.stop(str(self._scan_db.id))
         except UnhealthyService as e:
             console.error(f'Unhealthy service {e}')
+            self.stop(str(self._scan_db.id))
         except agent_runtime.MissingAgentDefinitionLabel as e:
             console.error(f'Missing agent definition {e}. This is probably due to building the image directly with'
                           f' docker instead of `ostorlab agent build` command')
+            self.stop(str(self._scan_db.id))
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
@@ -208,7 +212,7 @@ class LocalRuntime(runtime.Runtime):
         Args:
             scan_id: The id of the scan to stop.
         """
-
+        logger.info('stopping scan id %s', scan_id)
         stopped_services = []
         stopped_network = []
         stopped_configs = []
@@ -216,7 +220,7 @@ class LocalRuntime(runtime.Runtime):
         services = self._docker_client.services.list()
         for service in services:
             service_labels = service.attrs['Spec']['Labels']
-            logger.debug('comparing %s and %s', service_labels.get('ostorlab.universe'), scan_id)
+            logger.info('comparing %s and %s', service_labels.get('ostorlab.universe'), scan_id)
             if service_labels.get('ostorlab.universe') == scan_id:
                 stopped_services.append(service)
                 service.remove()
@@ -225,7 +229,7 @@ class LocalRuntime(runtime.Runtime):
         for network in networks:
             network_labels = network.attrs['Labels']
             if network_labels is not None and network_labels.get('ostorlab.universe') == scan_id:
-                logger.debug('removing network %s', network_labels)
+                logger.info('removing network %s', network_labels)
                 stopped_network.append(network)
                 network.remove()
 
@@ -233,7 +237,7 @@ class LocalRuntime(runtime.Runtime):
         for config in configs:
             config_labels = config.attrs['Spec']['Labels']
             if config_labels.get('ostorlab.universe') == scan_id:
-                logger.debug('removing config %s', config_labels)
+                logger.info('removing config %s', config_labels)
                 stopped_configs.append(config)
                 config.remove()
 
