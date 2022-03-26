@@ -1,14 +1,16 @@
 """Agent search command."""
 import logging
 from typing import Dict
-import click
 
+import click
+from rich import markdown
+
+from ostorlab import configuration_manager
+from ostorlab.apis import agent_search as agent_search_api
+from ostorlab.apis.runners import public_runner, authenticated_runner
+from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
-from ostorlab.apis.runners import runner as base_runner
-from ostorlab import configuration_manager
-from ostorlab.apis.runners import public_runner, authenticated_runner
-from ostorlab.apis import agent_search as agent_search_api
 
 console = cli_console.Console()
 
@@ -34,7 +36,7 @@ def search_cli(keyword: str) -> None:
                 version = versions[0].get('version')
                 description = versions[0].get('description')
                 in_selectors = ', '.join(versions[0].get('inSelectors'))
-                out_selectors = ',' .join(versions[0].get('outSelectors'))
+                out_selectors = ','.join(versions[0].get('outSelectors'))
             else:
                 version = '-'
                 description = '-'
@@ -44,7 +46,7 @@ def search_cli(keyword: str) -> None:
             agents.append({
                 'key': result_agent['key'],
                 'version': version,
-                'description': description,
+                'description': markdown.Markdown(description),
                 'in_selectors': in_selectors,
                 'out_selectors': out_selectors
             })
