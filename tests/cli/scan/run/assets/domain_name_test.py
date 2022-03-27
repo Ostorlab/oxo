@@ -5,7 +5,7 @@ from ostorlab.cli import rootcli
 
 
 def testScanRunDomainName_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):
-    """Test ostorlab scan run ip command with no options and no sub command.
+    """Test ostorlab scan run domain-name command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
     runner = CliRunner()
@@ -17,7 +17,7 @@ def testScanRunDomainName_whenNoOptionsProvided_showsAvailableOptionsAndCommands
 
 
 def testRunScanDomainName__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(mocker):
-    """Test ostorlab scan run ip with non supported runtime, should exit with return code 1."""
+    """Test ostorlab scan run domain-name with non-supported runtime, should exit with return code 1."""
 
     mocker.patch('ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
     runner = CliRunner()
