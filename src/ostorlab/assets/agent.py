@@ -7,7 +7,7 @@ from ostorlab.assets import asset
 
 @dataclasses.dataclass
 @asset.selector('v3.asset.agent')
-class AndroidAab(asset.Asset):
+class Agent(asset.Asset):
     """Agent asset."""
     key: str
     version: Optional[str] = None
