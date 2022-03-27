@@ -40,6 +40,12 @@ class HealthcheckWebThread(Thread):
         self._app = flask.Flask(name)
         self._server = serving.make_server(host=host, port=port, app=self._app, threaded=True)
         self._healthcheck_callbacks = []
+        self._disable_verbose_logging()
+
+    def _disable_verbose_logging(self):
+        """Disable Flaskserver verbose logging."""
+        log = logging.getLogger('werkzeug')
+        log.setLevel(logging.ERROR)
 
     def run(self) -> None:
         """Starts a long-running web service.
