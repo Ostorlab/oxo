@@ -17,6 +17,6 @@ class Agent(asset.Asset):
 
     def __str__(self):
         if self.version is not None:
-            return f'Agent {self.agent}:{self.version}'
+            return f'Agent {self.key}:{self.version}'
         else:
-            return f'Agent {self.agent}'
+            return f'Agent {self.key}'
