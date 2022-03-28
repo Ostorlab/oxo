@@ -70,7 +70,7 @@ And will scan the target IP address `8.8.8.8`
 To check the scan status:
 
 ```shell
-ostrlab scan list
+ostorlab scan list
 ```
 
 Once the scan has completed, to access the scan results:
