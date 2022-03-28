@@ -7,7 +7,7 @@
 
 ![Scan Run](images/scan_run.gif)
 
-## The Sales Pitch
+## The Pitch
 
 If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
 
