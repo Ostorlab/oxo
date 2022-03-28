@@ -9,7 +9,7 @@
 
 ## The Pitch
 
-If this is the first time you are visiting the Ostorlab Github page, here is the sales pitch.
+If this is the first time you are visiting the Ostorlab Github page, here is the pitch.
 
 Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
 pushing it to another tool. Several tools have tried to make the process less painful. Ostorlab addresses the same
