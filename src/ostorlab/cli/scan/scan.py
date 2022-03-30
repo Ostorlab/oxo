@@ -19,25 +19,33 @@ from ostorlab.runtimes import registry
                    """,
               default='local',
               required=True)
-@click.option('--bus-url', help='Bus URL, this flag is restricted to the lite local runtime.', required=False)
-@click.option('--bus-vhost', help='Bus vhost, this flag is restricted to the lite local runtime.', required=False)
+@click.option('--bus-url', help='Bus URL, this flag is restricted to the lite local runtime.', required=False,
+              hidden=True)
+@click.option('--bus-vhost', help='Bus vhost, this flag is restricted to the lite local runtime.', required=False,
+              hidden=True)
 @click.option('--bus-management-url', help='Bus management URL, this flag is restricted to the lite local runtime.',
-              required=False)
+              required=False, hidden=True)
 @click.option('--bus-exchange-topic', help='Bus exchange topic, this flag is restricted to the lite local runtime.',
-              required=False)
-@click.option('--scan-id', help='Scan id, this flag is restricted to the lite local runtime..', required=False)
+              required=False, hidden=True)
+@click.option('--network', help='Docker network to attach service and agents to.',
+              required=False, hidden=True)
+@click.option('--scan-id', help='Scan id, this flag is restricted to the lite local runtime..', required=False,
+              hidden=True)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str,
          bus_url: Optional[str] = None,
          bus_vhost: Optional[str] = None,
          bus_management_url: Optional[str] = None,
          bus_exchange_topic: Optional[str] = None,
-         scan_id: Optional[str] = None
+         scan_id: Optional[str] = None,
+         network: Optional[str] = None
          ) -> None:
-    """You can use scan [subcommand] to list, start or stop a scan.\n
+    """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
-        - Show list of scans: ostorlab scan --list\n
-        - Show full details of a scan: ostorlab scan describe --scan=scan_id.\n
+        - To show list of scans:\n
+        ostorlab scan list\n
+        - To stop a scan:\n
+        ostorlab scan stop <scan-id>\n
     """
     try:
         runtime_instance = registry.select_runtime(runtime,
@@ -45,7 +53,8 @@ def scan(ctx: click.core.Context, runtime: str,
                                                    bus_url=bus_url,
                                                    bus_vhost=bus_vhost,
                                                    bus_management_url=bus_management_url,
-                                                   bus_exchange_topic=bus_exchange_topic
+                                                   bus_exchange_topic=bus_exchange_topic,
+                                                   network=network,
                                                    )
         ctx.obj['runtime'] = runtime_instance
     except registry.RuntimeNotFoundError as e:
