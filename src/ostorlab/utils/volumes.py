@@ -53,12 +53,11 @@ class VolumeWriter:
     def _prepare_tar(self, path: str, content: bytes):
         """Copy API expects a tar, this api prepares one with the file content."""
         pw_tarstream = io.BytesIO()
-        pw_tar = tarfile.TarFile(fileobj=pw_tarstream, mode='w')
-        tarinfo = tarfile.TarInfo(name=path)
-        tarinfo.size = len(content)
-        tarinfo.mtime = time.time()
-        pw_tar.addfile(tarinfo, io.BytesIO(content))
-        pw_tar.close()
+        with tarfile.TarFile(fileobj=pw_tarstream, mode='w') as pw_tar:
+            tarinfo = tarfile.TarInfo(name=path)
+            tarinfo.size = len(content)
+            tarinfo.mtime = time.time()
+            pw_tar.addfile(tarinfo, io.BytesIO(content))
         pw_tarstream.seek(0)
         return pw_tarstream
 
