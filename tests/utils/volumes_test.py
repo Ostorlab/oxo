@@ -7,6 +7,7 @@ from ostorlab.utils import volumes
 
 @pytest.mark.docker
 def testWriteContentVolume_always_contentIsPersistedToVolume():
+    """Creates a volumes, a check its content by reading it using a mounted container."""
     volumes.create_volume('unitest_ostorlab_volume', 'test', b'Cat is alive! :)')
 
     client = docker.from_env()
