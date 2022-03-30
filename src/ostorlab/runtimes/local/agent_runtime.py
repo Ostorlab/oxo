@@ -247,7 +247,8 @@ class AgentRuntime:
 
     def create_agent_service(self,
                              network_name: str,
-                             extra_configs: Optional[List[docker.types.ConfigReference]] = None
+                             extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+                             extra_mounts: Optional[List[docker.types.Mount]] = None
                              ) -> docker.models.services.Service:
         """Create the agent service.
 
@@ -271,6 +272,7 @@ class AgentRuntime:
 
         mounts = self.agent.mounts or agent_definition.mounts
         mounts = self.replace_variable_mounts(mounts)
+        mounts.extend(extra_mounts)
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy

@@ -18,6 +18,7 @@ from rich import panel
 from sqlalchemy import case
 
 from ostorlab import exceptions
+from ostorlab.utils import volumes
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker
@@ -315,7 +316,9 @@ class LocalRuntime(runtime.Runtime):
         self._start_tracker_agent()
 
     def _start_agent(self, agent: definitions.AgentSettings,
-                     extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
+                     extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+                     extra_mounts: Optional[List[docker.types.Mount]] = None
+                     ) -> None:
         """Start agent based on provided definition.
 
         Args:
@@ -327,7 +330,7 @@ class LocalRuntime(runtime.Runtime):
             raise AgentNotInstalled(agent.key)
 
         runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
-        agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
+        agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)
 
@@ -382,33 +385,18 @@ class LocalRuntime(runtime.Runtime):
         except docker.errors.NotFound:
             logging.debug('all good, config %s is new', config_name)
 
-        asset_config = self._docker_client.configs.create(name=config_name,
-                                                          labels={
-                                                              'ostorlab.universe': self.name},
-                                                          data=asset.to_proto())
-        asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
-                                                              config_name=f'asset_{self.name}',
-                                                              filename='/tmp/asset.binproto')
+        volumes.create_volume(f'asset_{self.name}',
+                              {
+                                  'asset.binproto': asset.to_proto(),
+                                  'asset_selector.txt': asset.selector
+                               })
 
-        config_name = f'asset_selector_{self.name}'
-        try:
-            settings_config = self._docker_client.configs.get(config_name)
-            logging.warning('found existing config %s, config will removed', config_name)
-            settings_config.remove()
-        except docker.errors.NotFound:
-            logging.debug('all good, config %s is new', config_name)
-
-        selector_config = self._docker_client.configs.create(name=config_name,
-                                                             labels={
-                                                                 'ostorlab.universe': self.name},
-                                                             data=asset.selector)
-        selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
-                                                                 config_name=f'asset_selector_{self.name}',
-                                                                 filename='/tmp/asset_selector.txt')
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
                                                                 restart_policy='none')
         self._start_agent(agent=inject_asset_agent_settings,
-                          extra_configs=[asset_config_reference, selector_config_reference])
+                          extra_mounts=docker.types.Mount(
+                              target='/tmp', source=f'asset_{self.name}', type='volume'
+                          ))
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
