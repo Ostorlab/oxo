@@ -63,7 +63,7 @@ class LiteLocalRuntime(runtime.Runtime):
     """
 
     def __init__(self, scan_id: str, bus_url: str, bus_vhost: str, bus_management_url: str,
-                 bus_exchange_topic: str) -> None:
+                 bus_exchange_topic: str, network: str) -> None:
         """Set runtime attributes.
 
         Args:
@@ -72,10 +72,11 @@ class LiteLocalRuntime(runtime.Runtime):
             bus_vhost: Bus virtual host, common default is / but none is provided here.
             bus_management_url: Bus management URL, typically runs on a separate port over https.
             bus_exchange_topic: Bus exchange topic.
+            network: Docker network name to attach to.
         """
         super().__init__()
 
-        if not all([scan_id, bus_url, bus_vhost, bus_management_url, bus_exchange_topic]):
+        if not all([scan_id, bus_url, bus_vhost, bus_management_url, bus_exchange_topic, network]):
             raise ValueError('Missing required fields.')
 
         self.scan_id = scan_id
@@ -83,6 +84,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self._bus_vhost = bus_vhost
         self._bus_management_url = bus_management_url
         self._bus_exchange_topic = bus_exchange_topic
+        self._network = network
 
         if not docker_requirements_checker.is_docker_installed():
             console.error('Docker is not installed.')
@@ -110,7 +112,7 @@ class LiteLocalRuntime(runtime.Runtime):
         Returns:
             Lite Local runtime network name.
         """
-        return f'{NETWORK_PREFIX}_{self.name}'
+        return self._network
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent run definition.
@@ -140,8 +142,6 @@ class LiteLocalRuntime(runtime.Runtime):
             None
         """
         try:
-            console.info('Creating network')
-            self._create_network()
             console.info('Starting agents')
             self._start_agents(agent_group_definition)
             console.info('Checking agents are healthy')
@@ -199,20 +199,6 @@ class LiteLocalRuntime(runtime.Runtime):
 
         if stopped_services or stopped_network or stopped_configs:
             console.success('All scan components stopped.')
-
-    def _create_network(self):
-        """Creates a docker swarm network where all services and agents can communicate."""
-        if any(network.name == self.network for network in self._docker_client.networks.list()):
-            logger.warning('network already exists.')
-        else:
-            logger.info('creating private network %s', self.network)
-            return self._docker_client.networks.create(
-                name=self.network,
-                driver='overlay',
-                attachable=True,
-                labels={'ostorlab.universe': self.name},
-                check_duplicate=True
-            )
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
