@@ -288,7 +288,10 @@ class CloudRuntime(runtime.Runtime):
                         'risk_rating': vulnerability['detail']['riskRating'],
                         'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
                         'title': vulnerability['detail']['title'],
-                        'short_description': vulnerability['detail']['shortDescription']
+                        'short_description': vulnerability['detail']['shortDescription'],
+                        'description': vulnerability['detail']['description'],
+                        'recommendation': vulnerability['detail']['recommendation'],
+                        'technical_detail': vulnerability['technicalDetail'],
                     }
                     vulnz_list_table.append(vuln)
                 dumper.dump(vulnz_list_table)

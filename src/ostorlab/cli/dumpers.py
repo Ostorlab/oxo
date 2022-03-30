@@ -5,7 +5,8 @@ import csv
 import json
 from typing import List
 
-FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
+FIELDNAMES = ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description', 'recommendation',
+              'technical_detail']
 
 
 class VulnzDumper(abc.ABC):

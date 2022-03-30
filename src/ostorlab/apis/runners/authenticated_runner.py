@@ -133,6 +133,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
 
         response = self._sent_request(request, headers)
         if response.status_code != 200:
+            logger.debug(f'Response status code is %s: %s', response.status_code, response.content)
             raise runner.ResponseError(
                 f'Response status code is {response.status_code}: {response.content}')
         data = response.json()

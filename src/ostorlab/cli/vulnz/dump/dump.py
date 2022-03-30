@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @vulnz.command(name='dump')
 @click.option('--scan-id', '-s', 'scan_id', help='Id of the scan.', required=True)
-@click.option('--output', '-o', help='Output file path', required=False, default='./output.jsonl')
+@click.option('--output', '-o', help='Output file path', required=False, default='./output')
 @click.option('--format', '-f', 'output_format', help='Output format',
               required=False, type=click.Choice(['jsonl', 'csv']), default='jsonl')
 @click.pass_context
