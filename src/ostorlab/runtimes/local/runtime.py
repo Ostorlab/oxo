@@ -581,7 +581,6 @@ class LocalRuntime(runtime.Runtime):
                 'description': vulnerability.description,
                 'recommendation': vulnerability.recommendation,
                 'technical_detail': vulnerability.technical_detail,
-                'dna': vulnerability.dna,
             }
             vulnz_list.append(vuln)
         dumper.dump(vulnz_list)
