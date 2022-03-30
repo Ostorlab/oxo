@@ -31,9 +31,12 @@ class VulnzListAPIRequest(request.APIRequest):
                     }
                     vulnerabilities{
                         id
+                        technicalDetail
                         detail{
                           title
                           shortDescription
+                          description
+                          recommendation
                           cvssV3Vector
                           riskRating
                         }

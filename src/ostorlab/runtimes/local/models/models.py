@@ -119,10 +119,16 @@ class Vulnerability(Base):
         Returns:
             Vulnerability object.
         """
-        vuln = Vulnerability(scan_id=scan_id, title=title, short_description=short_description,
-                             description=description, recommendation=recommendation,
-                             technical_detail=technical_detail, risk_rating=risk_rating, cvss_v3_vector=cvss_v3_vector,
-                             dna=dna)
+        vuln = Vulnerability(
+            scan_id=scan_id,
+            title=title,
+            short_description=short_description,
+            description=description,
+            recommendation=recommendation,
+            technical_detail=technical_detail,
+            risk_rating=risk_rating,
+            cvss_v3_vector=cvss_v3_vector,
+            dna=dna)
         database = Database()
         database.session.add(vuln)
         database.session.commit()

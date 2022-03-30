@@ -577,7 +577,10 @@ class LocalRuntime(runtime.Runtime):
                 'risk_rating': vulnerability.risk_rating.value,
                 'cvss_v3_vector': vulnerability.cvss_v3_vector,
                 'title': vulnerability.title,
-                'short_description': vulnerability.short_description
+                'short_description': vulnerability.short_description,
+                'description': vulnerability.description,
+                'recommendation': vulnerability.recommendation,
+                'technical_detail': vulnerability.technical_detail,
             }
             vulnz_list.append(vuln)
         dumper.dump(vulnz_list)

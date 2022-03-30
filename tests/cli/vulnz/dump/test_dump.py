@@ -55,19 +55,30 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
     """
     list_vulnz = {'data': {'scan': {'vulnerabilities': {'pageInfo': {'hasNext': False, 'numPages': 2},
                                                         'vulnerabilities': [
-                                                            {'id': '37200006', 'detail': {
-                                                                'title': 'Use of Outdated Vulnerable Component',
-                                                                'shortDescription': 'The application uses an outdated '
-                                                                                    'component or library with '
-                                                                                    'publicly known vulnerabilities',
-                                                                'cvssV3Vector': None, 'riskRating': 'LOW'}},
-                                                            {'id': '37199942', 'detail': {
-                                                                'title': 'Use of Outdated Vulnerable Component',
-                                                                'shortDescription': 'The application uses an outdated '
-                                                                                    'component or library with '
-                                                                                    'publicly known vulnerabilities',
-                                                                'cvssV3Vector': None,
-                                                                'riskRating': 'LOW'}},
+                                                            {'id': '37200006',
+                                                             'technicalDetail': 'someData',
+                                                             'detail': {
+                                                                 'title': 'Use of Outdated Vulnerable Component',
+                                                                 'shortDescription': 'The application uses an outdated '
+                                                                                     'component or library with '
+                                                                                     'publicly known vulnerabilities',
+                                                                 'description': 'someDescription',
+                                                                 'recommendation': 'someRecommendation',
+                                                                 'cvssV3Vector': None,
+                                                                 'riskRating': 'LOW'
+                                                             }},
+                                                            {'id': '37199942',
+                                                             'technicalDetail': 'someData',
+                                                             'detail': {
+                                                                 'title': 'Use of Outdated Vulnerable Component',
+                                                                 'shortDescription': 'The application uses an outdated '
+                                                                                     'component or library with '
+                                                                                     'publicly known vulnerabilities',
+                                                                 'description': 'someDescription',
+                                                                 'recommendation': 'someRecommendation',
+                                                                 'cvssV3Vector': None,
+                                                                 'riskRating': 'LOW'
+                                                             }},
                                                         ]}}}}
 
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
@@ -104,20 +115,26 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(request
                     'vulnerabilities': [
                         {
                             'id': '37200006',
+                            'technicalDetail': 'someData',
                             'detail': {
                                 'title': 'Use of Outdated Vulnerable Component',
                                 'shortDescription': 'The application uses an outdated component or library with '
                                                     'publicly known vulnerabilities',
+                                'description': 'someDescription',
+                                'recommendation': 'someRecommendation',
                                 'cvssV3Vector': 'None',
                                 'riskRating': 'LOW'
                             }
                         },
                         {
                             'id': '37199942',
+                            'technicalDetail': 'someData',
                             'detail': {
                                 'title': 'Use of Outdated Vulnerable Component',
                                 'shortDescription': 'The application uses an outdated ''component or library with '
                                                     'publicly known vulnerabilities',
+                                'description': 'someDescription',
+                                'recommendation': 'someRecommendation',
                                 'cvssV3Vector': 'None',
                                 'riskRating': 'LOW'
                             }
@@ -146,7 +163,8 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(request
 
     assert result.exception is None
     assert 'Vulnerabilities saved to' in result.output
-    assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
+    assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
+                      'recommendation', 'technical_detail']
     assert data[0][2] == 'LOW'
 
 
@@ -217,7 +235,8 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
 
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
-    assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description']
+    assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
+                      'recommendation', 'technical_detail']
     assert data[0][2] == 'High'
 
 
