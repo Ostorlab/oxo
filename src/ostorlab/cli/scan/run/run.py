@@ -61,7 +61,7 @@ def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.Fi
             runtime_instance.install()
             for ag in agent_group.agents:
                 try:
-                    install_agent.install(ag.key)
+                    install_agent.install(ag.key, ag.version)
                 except install_agent.AgentDetailsNotFound:
                     console.warning(f'agent {ag.key} not found on the store')
     else:
