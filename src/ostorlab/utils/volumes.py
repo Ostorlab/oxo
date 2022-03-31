@@ -17,7 +17,7 @@ TEMP_DESTINATION = '/dst'
 class VolumeWriter:
     """Volume Writer helper class.
 
-    This class users a temp image to spawn a container with a target volume attached, write content to it using the
+    This class uses a temp image to spawn a container with a target volume attached, write content to it using the
     copy API, and then kill everything.
     """
 
