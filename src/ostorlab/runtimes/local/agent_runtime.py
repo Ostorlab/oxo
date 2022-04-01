@@ -198,7 +198,7 @@ class AgentRuntime:
         """Read the agent yaml definition from the docker image labels.
 
         Returns:
-            the agent defintion.
+            the agent definition.
         """
         docker_image = self._docker_client.images.get(self.agent.container_image)
         yaml_definition_string = docker_image.labels.get('agent_definition')
@@ -218,7 +218,7 @@ class AgentRuntime:
         self.agent.healthcheck_port = HEALTHCHECK_PORT
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
-        """Create a docker healthcheck configuration for for the agent service.
+        """Create a docker healthcheck configuration for the agent service.
 
         Returns:
             docker healthcheck configuration.
@@ -250,7 +250,7 @@ class AgentRuntime:
                              extra_configs: Optional[List[docker.types.ConfigReference]] = None,
                              extra_mounts: Optional[List[docker.types.Mount]] = None
                              ) -> docker.models.services.Service:
-        """Create the agent service.
+        """Create the docker agent service with proper configs and policies.
 
         Args:
             network_name: network name to attach the service to.
@@ -267,12 +267,17 @@ class AgentRuntime:
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
-        extra_configs.append(self.create_settings_config())
-        extra_configs.append(self.create_definition_config())
+        configs = []
+        configs.append(self.create_settings_config())
+        configs.append(self.create_definition_config())
+        if extra_configs is not None:
+            configs.extend(extra_configs)
 
         mounts = self.agent.mounts or agent_definition.mounts
         mounts = self.replace_variable_mounts(mounts)
-        mounts.extend(extra_mounts)
+        if extra_mounts is not None:
+            mounts.extend(extra_mounts)
+
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
@@ -289,7 +294,7 @@ class AgentRuntime:
             mounts=mounts,
             healthcheck=self.create_docker_healthchek(),
             labels={'ostorlab.universe': self.runtime_name},
-            configs=extra_configs,
+            configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit))

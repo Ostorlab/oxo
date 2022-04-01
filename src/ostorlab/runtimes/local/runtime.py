@@ -18,7 +18,6 @@ from rich import panel
 from sqlalchemy import case
 
 from ostorlab import exceptions
-from ostorlab.utils import volumes
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker
@@ -32,6 +31,7 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
+from ostorlab.utils import volumes
 
 NETWORK_PREFIX = 'ostorlab_local_network'
 
@@ -377,26 +377,19 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        config_name = f'asset_{self.name}'
-        try:
-            settings_config = self._docker_client.configs.get(config_name)
-            logging.warning('found existing config %s, config will removed', config_name)
-            settings_config.remove()
-        except docker.errors.NotFound:
-            logging.debug('all good, config %s is new', config_name)
-
         volumes.create_volume(f'asset_{self.name}',
                               {
-                                  'asset.binproto': asset.to_proto(),
-                                  'asset_selector.txt': asset.selector
-                               })
+                                  'asset.binproto_1': asset.to_proto(),
+                                  'selector.txt_1': asset.selector.encode()
+                              })
 
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
                                                                 restart_policy='none')
         self._start_agent(agent=inject_asset_agent_settings,
-                          extra_mounts=docker.types.Mount(
-                              target='/tmp', source=f'asset_{self.name}', type='volume'
-                          ))
+                          extra_mounts=[
+                              docker.types.Mount(
+                                  target='/asset', source=f'asset_{self.name}', type='volume'
+                              )])
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
