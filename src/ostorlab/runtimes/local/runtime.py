@@ -79,7 +79,7 @@ def _is_service_type_run(service: docker_models_services.Service) -> bool:
 
 
 class LocalRuntime(runtime.Runtime):
-    """Local runtime runes agents locally using Docker Swarm.
+    """Local runtime runs agents locally using Docker Swarm.
     Local runtime starts a Vanilla RabbitMQ service, starts all the agents listed in the `AgentRunDefinition`, checks
     their status and then inject the target asset.
     """
@@ -267,7 +267,7 @@ class LocalRuntime(runtime.Runtime):
         session.commit()
 
     def _create_network(self):
-        """Creates a docker swarm network where all services and agents can communicates."""
+        """Creates a docker swarm network where all services and agents can communicate."""
         if any(network.name == self.network for network in self._docker_client.networks.list()):
             logger.warning('network already exists.')
         else:

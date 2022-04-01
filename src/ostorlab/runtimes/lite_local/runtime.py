@@ -225,7 +225,9 @@ class LiteLocalRuntime(runtime.Runtime):
             self._start_agent(agent, extra_configs=[])
 
     def _start_agent(self, agent: definitions.AgentSettings,
-                     extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
+                     extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+                     extra_mounts: Optional[List[docker.types.Mount]] = None
+                     ) -> None:
         """Start agent based on provided definition.
 
         Args:
@@ -244,7 +246,7 @@ class LiteLocalRuntime(runtime.Runtime):
                                                    self._bus_management_url,
                                                    self._bus_exchange_topic
                                                    )
-        agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
+        agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
 
         if agent.replicas > 1:
             # Ensure the agent service had to
