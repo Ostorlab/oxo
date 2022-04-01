@@ -19,6 +19,8 @@ from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 
+logger = logging.getLogger(__name__)
+
 MOUNT_VARIABLES = {
     '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
 }
@@ -187,6 +189,7 @@ class AgentRuntime:
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
         config_name = f'config_definition_{self.image_name}__{self.runtime_name}'
+
         try:
             settings_config = self._docker_client.configs.get(config_name)
             logging.warning('found existing config %s, config will removed', config_name)
@@ -254,7 +257,8 @@ class AgentRuntime:
 
     def create_agent_service(self,
                              network_name: str,
-                             extra_configs: Optional[List[docker.types.ConfigReference]] = None
+                             extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+                             extra_mounts: Optional[List[docker.types.Mount]] = None
                              ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
 
@@ -273,11 +277,17 @@ class AgentRuntime:
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
 
-        extra_configs.append(self.create_settings_config())
-        extra_configs.append(self.create_definition_config())
+        configs = []
+        configs.append(self.create_settings_config())
+        configs.append(self.create_definition_config())
+        if extra_configs is not None:
+            configs.extend(extra_configs)
 
         mounts = self.agent.mounts or agent_definition.mounts
         mounts = self.replace_variable_mounts(mounts)
+        if extra_mounts is not None:
+            mounts.extend(extra_mounts)
+
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
@@ -294,7 +304,7 @@ class AgentRuntime:
             mounts=mounts,
             healthcheck=self.create_docker_healthchek(),
             labels={'ostorlab.universe': self.runtime_name},
-            configs=extra_configs,
+            configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit))

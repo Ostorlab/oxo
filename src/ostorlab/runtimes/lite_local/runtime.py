@@ -11,6 +11,7 @@ import docker
 import tenacity
 from docker.models import services as docker_models_services
 
+from ostorlab.utils import volumes
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console, dumpers
@@ -210,7 +211,9 @@ class LiteLocalRuntime(runtime.Runtime):
             self._start_agent(agent, extra_configs=[])
 
     def _start_agent(self, agent: definitions.AgentSettings,
-                     extra_configs: Optional[List[docker.types.ConfigReference]] = None) -> None:
+                     extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+                     extra_mounts: Optional[List[docker.types.Mount]] = None
+                     ) -> None:
         """Start agent based on provided definition.
 
         Args:
@@ -229,7 +232,7 @@ class LiteLocalRuntime(runtime.Runtime):
                                                    self._bus_management_url,
                                                    self._bus_exchange_topic
                                                    )
-        agent_service = runtime_agent.create_agent_service(self.network, extra_configs)
+        agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
 
         if agent.replicas > 1:
             # Ensure the agent service had to
@@ -263,41 +266,19 @@ class LiteLocalRuntime(runtime.Runtime):
 
     def _inject_asset(self, asset: base_asset.Asset):
         """Injects the scan target assets."""
-        config_name = f'asset_{self.name}'
-        try:
-            settings_config = self._docker_client.configs.get(config_name)
-            logging.warning('found existing config %s, config will removed', config_name)
-            settings_config.remove()
-        except docker.errors.NotFound:
-            logging.debug('all good, config %s is new', config_name)
+        volumes.create_volume(f'asset_{self.name}',
+                              {
+                                  'asset.binproto_1': asset.to_proto(),
+                                  'selector.txt_1': asset.selector.encode()
+                              })
 
-        asset_config = self._docker_client.configs.create(name=config_name,
-                                                          labels={
-                                                              'ostorlab.universe': self.name},
-                                                          data=asset.to_proto())
-        asset_config_reference = docker.types.ConfigReference(config_id=asset_config.id,
-                                                              config_name=f'asset_{self.name}',
-                                                              filename='/tmp/asset.binproto')
-
-        config_name = f'asset_selector_{self.name}'
-        try:
-            settings_config = self._docker_client.configs.get(config_name)
-            logging.warning('found existing config %s, config will removed', config_name)
-            settings_config.remove()
-        except docker.errors.NotFound:
-            logging.debug('all good, config %s is new', config_name)
-
-        selector_config = self._docker_client.configs.create(name=config_name,
-                                                             labels={
-                                                                 'ostorlab.universe': self.name},
-                                                             data=asset.selector)
-        selector_config_reference = docker.types.ConfigReference(config_id=selector_config.id,
-                                                                 config_name=f'asset_selector_{self.name}',
-                                                                 filename='/tmp/asset_selector.txt')
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
                                                                 restart_policy='none')
         self._start_agent(agent=inject_asset_agent_settings,
-                          extra_configs=[asset_config_reference, selector_config_reference])
+                          extra_mounts=[
+                              docker.types.Mount(
+                                  target='/asset', source=f'asset_{self.name}', type='volume'
+                              )])
 
     def _scale_service(self, service: docker_models_services.Service, replicas: int) -> None:
         """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
