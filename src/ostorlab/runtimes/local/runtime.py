@@ -295,7 +295,7 @@ class LocalRuntime(runtime.Runtime):
             self._log_streamer.stream(self._mq_service.service)
 
     def _start_redis_service(self):
-        """Start a local rabbitmq service."""
+        """Start a local Redis service."""
         self._redis_service = redis.LocalRedis(name=self.name, network=self.network)
         self._redis_service.start()
         if 'redis' in self.follow:
