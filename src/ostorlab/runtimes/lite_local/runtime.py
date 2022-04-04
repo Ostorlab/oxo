@@ -64,7 +64,7 @@ class LiteLocalRuntime(runtime.Runtime):
     """
 
     def __init__(self, scan_id: str, bus_url: str, bus_vhost: str, bus_management_url: str,
-                 bus_exchange_topic: str, network: str) -> None:
+                 bus_exchange_topic: str, network: str, redis_url: str) -> None:
         """Set runtime attributes.
 
         Args:
@@ -74,10 +74,11 @@ class LiteLocalRuntime(runtime.Runtime):
             bus_management_url: Bus management URL, typically runs on a separate port over https.
             bus_exchange_topic: Bus exchange topic.
             network: Docker network name to attach to.
+            redis_url: Redis URL.
         """
         super().__init__()
 
-        if not all([scan_id, bus_url, bus_vhost, bus_management_url, bus_exchange_topic, network]):
+        if not all([scan_id, bus_url, bus_vhost, bus_management_url, bus_exchange_topic, network, redis_url]):
             raise ValueError('Missing required fields.')
 
         self.scan_id = scan_id
@@ -86,6 +87,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self._bus_management_url = bus_management_url
         self._bus_exchange_topic = bus_exchange_topic
         self._network = network
+        self._redis_url = redis_url
 
         if not docker_requirements_checker.is_docker_installed():
             console.error('Docker is not installed.')
@@ -230,7 +232,8 @@ class LiteLocalRuntime(runtime.Runtime):
                                                    self._bus_url,
                                                    self._bus_vhost,
                                                    self._bus_management_url,
-                                                   self._bus_exchange_topic
+                                                   self._bus_exchange_topic,
+                                                   self._redis_url
                                                    )
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
 
