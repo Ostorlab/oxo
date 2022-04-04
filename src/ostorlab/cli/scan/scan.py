@@ -29,6 +29,8 @@ from ostorlab.runtimes import registry
               required=False, hidden=True)
 @click.option('--network', help='Docker network to attach service and agents to.',
               required=False, hidden=True)
+@click.option('--redis-url', help='Redis URL, this flag is restricted to the lite local runtime.',
+              required=False, hidden=True)
 @click.option('--scan-id', help='Scan id, this flag is restricted to the lite local runtime..', required=False,
               hidden=True)
 @click.pass_context
@@ -38,7 +40,8 @@ def scan(ctx: click.core.Context, runtime: str,
          bus_management_url: Optional[str] = None,
          bus_exchange_topic: Optional[str] = None,
          scan_id: Optional[str] = None,
-         network: Optional[str] = None
+         network: Optional[str] = None,
+         redis_url: Optional[str] = None
          ) -> None:
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
@@ -55,6 +58,7 @@ def scan(ctx: click.core.Context, runtime: str,
                                                    bus_management_url=bus_management_url,
                                                    bus_exchange_topic=bus_exchange_topic,
                                                    network=network,
+                                                   redis_url=redis_url
                                                    )
         ctx.obj['runtime'] = runtime_instance
     except registry.RuntimeNotFoundError as e:
