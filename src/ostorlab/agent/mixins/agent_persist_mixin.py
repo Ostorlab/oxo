@@ -17,12 +17,14 @@ from ostorlab.runtimes import definitions as runtime_definitions
 
 
 class AgentPersistMixin:
+    """Agent mixin to persist data. The mixin enables distributed storage of a group of agent replicas or for a single
+     agent that needs reliable storage."""
 
     def __init__(self, agent_settings: runtime_definitions.AgentSettings) -> None:
         """Initializes the mixin from the agent settings.
 
         Args:
-            agent_settings:
+            agent_settings: Agent runtime settings.
         """
         if agent_settings.redis_url is None:
             raise ValueError('agent settings is missing redis url')
