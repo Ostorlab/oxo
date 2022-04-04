@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.timeout(60)
 @pytest.mark.docker
-def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt(mq_service):
+def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt(mq_service, redis_service):
     """The setup of this test seems complicated, but it is the most robust implementation iteration.
 
     The test also tests for many things at the same time, like start and process lifecycle, message emit and message

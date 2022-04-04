@@ -1,7 +1,7 @@
 """Runtime agent module gives access to methods to create the specific agent configurations & run the agent.
 
 Usage
-    agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service)
+    agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service, redis_service)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
 import io
@@ -18,6 +18,7 @@ from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local.services import redis
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +134,9 @@ class AgentRuntime:
                  agent_settings: definitions.AgentSettings,
                  runtime_name: str,
                  docker_client: docker.DockerClient,
-                 mq_service: mq.LocalRabbitMQ) -> None:
+                 mq_service: mq.LocalRabbitMQ,
+                 redis_service: redis.LocalRedis
+                 ) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -146,6 +149,7 @@ class AgentRuntime:
         self.image_name = agent_settings.container_image.split(':', maxsplit=1)[0]
         self.runtime_name = runtime_name
         self.mq_service = mq_service
+        self.redis_service = redis_service
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -216,6 +220,7 @@ class AgentRuntime:
         self.agent.bus_vhost = self.mq_service.vhost
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
+        self.agent.redis_url = self.redis_service.url
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.

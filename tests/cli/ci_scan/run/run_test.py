@@ -1,8 +1,11 @@
 """Tests for scan run command."""
+import pathlib
+
 from click.testing import CliRunner
 from ostorlab.cli.ci_scan import run
 from ostorlab.cli import rootcli
 
+TEST_FILE_PATH = str(pathlib.Path(__file__).parent / 'test_file')
 
 def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
     """Test ostorlab ci_scan with no api key. it should exit with error exit_code = 2."""
@@ -10,7 +13,7 @@ def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['ci-scan', 'run', '--scan-profile=fast_scan',
-                            '--title=scan1', 'android-aab', 'tests/conftest.py'])
+                            '--title=scan1', 'android-aab', TEST_FILE_PATH])
 
     assert isinstance(result.exception, BaseException)
     assert 'API key not not provided.' in result.output
@@ -25,7 +28,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli,
                            ['--api-key=12', 'ci-scan', 'run', '--scan-profile=full_scan', '--title=scan1',
-                            'android-apk', 'tests/conftest.py'])
+                            'android-apk', TEST_FILE_PATH])
 
     assert 'Scan created with id 1.' in result.output
 
@@ -39,7 +42,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api-key=12', 'ci-scan', 'run', '--scan-profile=full_scan',
                             '--break-on-risk-rating=toto', '--title=scan1',
-                            'ios-ipa', 'tests/conftest.py'])
+                            'ios-ipa', TEST_FILE_PATH])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Incorrect risk rating value toto.' in result.output
@@ -67,7 +70,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api-key=12', 'ci-scan', 'run', '--scan-profile=full_scan',
                             '--break-on-risk-rating=medium', '--max-wait-minutes=1', '--title=scan1',
-                            'android-apk', 'tests/conftest.py'])
+                            'android-apk', TEST_FILE_PATH])
 
     assert 'Scan created with id 1.' in result.output
     assert 'The scan is still running.' in result.output
@@ -94,7 +97,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api-key=12', 'ci-scan', 'run', '--scan-profile=full_scan',
                             '--break-on-risk-rating=low', '--max-wait-minutes=10', '--title=scan1',
-                            'android-apk', 'tests/conftest.py'])
+                            'android-apk', TEST_FILE_PATH])
 
     assert 'Scan created with id 1.' in result.output
     assert 'Scan done with risk rating info.' in result.output
@@ -120,7 +123,7 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
     result = runner.invoke(rootcli.rootcli,
                            ['--api-key=12', 'ci-scan', 'run', '--scan-profile=full_scan',
                             '--break-on-risk-rating=medium', '--max-wait-minutes=10', '--title=scan1',
-                            'ios-ipa', 'tests/conftest.py'])
+                            'ios-ipa', TEST_FILE_PATH])
 
     assert 'Scan created with id 1.' in result.output
     assert 'The scan risk rating is high.' in result.output
@@ -147,7 +150,7 @@ def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
     result = runner.invoke(rootcli.rootcli,
                            ['--api-key=12', 'ci-scan', 'run', '--scan-profile=full_scan',
                             '--break-on-risk-rating=medium', '--max-wait-minutes=10', '--title=scan1',
-                            '--log-flavor=github', 'ios-ipa', 'tests/conftest.py'])
+                            '--log-flavor=github', 'ios-ipa', TEST_FILE_PATH])
 
     assert 'Scan created with id 1.' in result.output
     assert '::set-output name=scan_id::1' in result.output

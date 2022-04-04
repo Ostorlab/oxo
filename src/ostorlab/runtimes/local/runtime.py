@@ -29,6 +29,7 @@ from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local.services import redis
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
@@ -89,6 +90,7 @@ class LocalRuntime(runtime.Runtime):
         del args, kwargs
         self.follow = []
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
+        self._redis_service: Optional[redis.LocalRedis] = None
         self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
 
@@ -283,6 +285,7 @@ class LocalRuntime(runtime.Runtime):
     def _start_services(self):
         """Start all the local runtime services."""
         self._start_mq_service()
+        self._start_redis_service()
 
     def _start_mq_service(self):
         """Start a local rabbitmq service."""
@@ -291,10 +294,19 @@ class LocalRuntime(runtime.Runtime):
         if 'mq' in self.follow:
             self._log_streamer.stream(self._mq_service.service)
 
+    def _start_redis_service(self):
+        """Start a local rabbitmq service."""
+        self._redis_service = redis.LocalRedis(name=self.name, network=self.network)
+        self._redis_service.start()
+        if 'redis' in self.follow:
+            self._log_streamer.stream(self._redis_service.service)
+
     def _check_services_healthy(self):
         """Check if the rabbitMQ service is running and healthy."""
         if self._mq_service is None or self._mq_service.is_healthy is False:
             raise UnhealthyService('MQ service is unhealthy.')
+        if self._redis_service is None or self._redis_service.is_healthy is False:
+            raise UnhealthyService('Redis service is unhealthy.')
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
@@ -329,7 +341,8 @@ class LocalRuntime(runtime.Runtime):
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
 
-        runtime_agent = agent_runtime.AgentRuntime(agent, self.name, self._docker_client, self._mq_service)
+        runtime_agent = agent_runtime.AgentRuntime(
+            agent, self.name, self._docker_client, self._mq_service, self._redis_service)
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)

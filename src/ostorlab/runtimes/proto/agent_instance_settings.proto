@@ -35,4 +35,5 @@ message AgentInstanceSettings {
   required sint32 replicas = 12;
   required string healthcheck_host = 13;
   required sint32 healthcheck_port = 14;
+  optional string redis_url = 15;
 }
