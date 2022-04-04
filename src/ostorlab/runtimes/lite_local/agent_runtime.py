@@ -136,7 +136,9 @@ class AgentRuntime:
                  bus_url: str,
                  bus_vhost: str,
                  bus_management_url: str,
-                 bus_exchange_topic: str) -> None:
+                 bus_exchange_topic: str,
+                 redis_url: str
+                 ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
 
         Args:
@@ -147,6 +149,7 @@ class AgentRuntime:
             bus_vhost: Bus virtual host, common default is / but none is provided here.
             bus_management_url: Bus management URL, typically runs on a separate port over https.
             bus_exchange_topic: Bus exchange topic.
+            redis_url: Redis URL.
         """
         self._docker_client = docker_client
         self.agent = agent_settings
@@ -156,6 +159,7 @@ class AgentRuntime:
         self.bus_vhost = bus_vhost
         self.bus_management_url = bus_management_url
         self.bus_exchange_topic = bus_exchange_topic
+        self.redis_url = redis_url
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -226,6 +230,7 @@ class AgentRuntime:
         self.agent.bus_vhost = self.bus_vhost
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
+        self.agent.redis_url = self.redis_url
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.

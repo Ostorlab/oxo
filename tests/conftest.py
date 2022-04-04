@@ -7,6 +7,7 @@ import pytest
 import docker
 
 from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local.services import redis
 
 
 @pytest.fixture(scope='session')
@@ -17,6 +18,15 @@ def mq_service():
     time.sleep(3)
     yield lrm
     lrm.stop()
+
+@pytest.fixture(scope='session')
+def redis_service():
+    """Start Redis Docker service"""
+    lr = redis.LocalRedis(name='core_redis', network='test_network', exposed_ports={6379: 6379})
+    lr.start()
+    time.sleep(3)
+    yield lr
+    lr.stop()
 
 
 @pytest.fixture

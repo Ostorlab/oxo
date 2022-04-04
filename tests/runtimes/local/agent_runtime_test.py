@@ -40,7 +40,8 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
                                             constraints=['constraint1'],
                                             open_ports=settings_open_ports)
 
-    runtime_agent = agent_runtime.AgentRuntime(agent_settings, '42', docker_client, mq_service=None)
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings, '42', docker_client, mq_service=None, redis_service=None)
     runtime_agent.create_agent_service(network_name='test', extra_configs=[])
 
     kwargs = create_service_mock.call_args.kwargs
@@ -73,7 +74,8 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
     docker_client = docker.from_env()
     agent_settings = definitions.AgentSettings(key='agent/org/name')
 
-    runtime_agent = agent_runtime.AgentRuntime(agent_settings, '42', docker_client, mq_service=None)
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings, '42', docker_client, mq_service=None, redis_service=None)
     runtime_agent.create_agent_service(network_name='test', extra_configs=[])
 
     kwargs = create_service_mock.call_args.kwargs
