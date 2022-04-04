@@ -42,7 +42,7 @@ class LocalRedis:
     @property
     def url(self) -> str:
         """URL to connect to the local Redis instance."""
-        return f'redis://{self._redis_host}:6379/0'
+        return f'redis://{self._redis_host}:6379/'
 
     @property
     def service(self):
