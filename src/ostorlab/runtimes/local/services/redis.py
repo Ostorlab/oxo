@@ -58,6 +58,7 @@ class LocalRedis:
             return
 
     def stop(self):
+        """Stop the local Redis instance."""
         for service in self._docker_client.services.list():
             universe = service.attrs['Spec']['Labels'].get('ostorlab.universe')
             if universe is not None and service.name.startswith('redis_') and self._name in universe:
