@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package v3.asset.domain_name.dns_record;
+
+message Message {
+  required string name = 1;
+  required string record =2;
+  repeated string value =3;
+}
