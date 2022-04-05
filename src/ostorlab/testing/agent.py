@@ -35,5 +35,32 @@ def agent_mock(mocker):
     emitted_messages = []
 
 
+@pytest.fixture(scope='function')
+def agent_persist_mock(mocker):
+    """This fixtures patches the Agent persist component and returns the list storage state"""
+    storage = {}
+
+    def _set_is_member(key, value):
+        """Check values are present in the storage dict."""
+        return key in storage and value in storage[key]
+
+    def _set_add(key, value):
+        """Add members to the storage dict and emulate return value."""
+        if _set_is_member(key, value):
+            return False
+        else:
+            storage.setdefault(key, set()).add(value)
+            return True
+
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add',
+                 side_effect=_set_add)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_is_member',
+                 side_effect=_set_is_member)
+    yield storage
+    storage = {}
+
+
+
+
 
 
