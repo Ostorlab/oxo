@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n0v3/asset/domain_name/dns_record/dns_record.proto\x12\x1fv3.asset.domain_name.dns_record\"6\n\x07Message\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0e\n\x06record\x18\x02 \x02(\t\x12\r\n\x05value\x18\x03 \x03(\t'
+  serialized_pb=b'\n0v3/asset/domain_name/dns_record/dns_record.proto\x12\x1fv3.asset.domain_name.dns_record\"7\n\x07Message\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0e\n\x06record\x18\x02 \x02(\t\x12\x0e\n\x06values\x18\x03 \x03(\t'
 )
 
 
@@ -48,7 +48,7 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='value', full_name='v3.asset.domain_name.dns_record.Message.value', index=2,
+      name='values', full_name='v3.asset.domain_name.dns_record.Message.values', index=2,
       number=3, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -67,7 +67,7 @@ _MESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=85,
-  serialized_end=139,
+  serialized_end=140,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
