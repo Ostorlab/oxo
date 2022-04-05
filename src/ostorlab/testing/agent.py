@@ -42,10 +42,7 @@ def agent_persist_mock(mocker):
 
     def _set_is_member(key, value):
         """Check values are present in the storage dict."""
-        if key in storage and value in storage[key]:
-            return True
-        else:
-            return False
+        return key in storage and value in storage[key]
 
     def _set_add(key, value):
         """Add members to the storage dict and emulate return value."""
@@ -55,8 +52,10 @@ def agent_persist_mock(mocker):
             storage.setdefault(key, set()).add(value)
             return True
 
-    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add', side_effect=_set_add)
-    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_is_member', side_effect=_set_is_member)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add',
+                 side_effect=_set_add)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_is_member',
+                 side_effect=_set_is_member)
     yield storage
     storage = {}
 
