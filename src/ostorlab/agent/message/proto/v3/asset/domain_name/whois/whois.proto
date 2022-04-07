@@ -3,7 +3,7 @@ syntax = "proto2";
 package v3.asset.domain_name.whois;
 
 message Message {
-  repeated string domain_name = 1;
+  repeated string name = 1;
   optional string registrar = 2;
   optional string whois_server = 3;
   optional string referral_url = 4;
@@ -14,7 +14,7 @@ message Message {
   repeated string status = 9;
   repeated string emails = 10;
   optional string dnssec = 11;
-  optional string name = 12;
+  optional string contact_name = 12;
   optional string org = 13;
   optional string address = 14;
   optional string city = 15;
