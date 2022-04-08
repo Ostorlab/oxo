@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package v3.asset.ip.v4.geolocation;
+
+message Message {
+  required string host = 1;
+  optional string mask = 2;
+  required int32 version = 3 [default = 4];
+  optional string continent = 5;
+  optional string continent_code = 6;
+  optional string country = 7;
+  optional string country_code = 8;
+  optional string region = 9;
+  optional string region_name = 10;
+  optional string city = 11;
+  optional string zip = 12;
+  optional string latitude = 13;
+  optional string longitude = 14;
+  optional string timezone = 15;
+}
