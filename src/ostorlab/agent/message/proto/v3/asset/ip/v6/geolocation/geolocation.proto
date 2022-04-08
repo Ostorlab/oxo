@@ -17,10 +17,4 @@ message Message {
     optional float latitude = 13;
     optional float longitude = 14;
     optional string timezone = 15;
-    optional string isp_name = 16;
-    optional string organisation = 17;
-    optional string as_name = 18;
-    optional bool is_cellular = 19;
-    optional bool is_proxy = 20;
-    optional bool is_hosting = 21;
 }
