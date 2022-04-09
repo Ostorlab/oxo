@@ -14,7 +14,7 @@ message Message {
   optional string region_name = 10;
   optional string city = 11;
   optional string zip = 12;
-  optional string latitude = 13;
-  optional string longitude = 14;
+  optional float latitude = 13;
+  optional float longitude = 14;
   optional string timezone = 15;
 }
