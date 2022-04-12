@@ -21,5 +21,5 @@ def file_cli(ctx: click.core.Context, files: List[io.FileIO]) -> None:
     assets = []
     for f in files:
         assets.append(file_asset.File(content=f.read(), path=f.name))
-    logger.debug('scanning asset %s', [str(asset) for asset in assets])
+    logger.debug('scanning assets %s', [str(asset) for asset in assets])
     runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)
