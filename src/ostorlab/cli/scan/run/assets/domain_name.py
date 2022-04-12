@@ -1,5 +1,6 @@
 """Asset of type Domain Name."""
 import logging
+from typing import List
 
 import click
 
