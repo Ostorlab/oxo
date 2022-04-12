@@ -17,7 +17,7 @@ def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
     asset = android_apk.AndroidApk(content=b'APK')
     agent_group_definition = definitions.AgentGroupDefinition(agents=[])
 
-    local_runtime_instance.scan(title='test local', agent_group_definition=agent_group_definition, asset=asset)
+    local_runtime_instance.scan(title='test local', agent_group_definition=agent_group_definition, assets=[asset])
 
     docker_client = docker.from_env()
 
@@ -32,7 +32,7 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
     asset = android_apk.AndroidApk(content=b'APK')
     agent_group_definition = definitions.AgentGroupDefinition(agents=[])
 
-    local_runtime_instance.scan(title='test local', agent_group_definition=agent_group_definition, asset=asset)
+    local_runtime_instance.scan(title='test local', agent_group_definition=agent_group_definition, assets=[asset])
 
     docker_client = docker.from_env()
 
