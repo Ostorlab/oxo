@@ -24,4 +24,4 @@ def agent(ctx: click.core.Context, key: str, version: Optional[str] = None, git_
     asset = agent_asset.Agent(key=key, version=version, git_location=git_location, docker_location=docker_location,
                               yaml_file_location=yaml_file_location)
     logger.debug('scanning asset %s', asset)
-    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=[asset])

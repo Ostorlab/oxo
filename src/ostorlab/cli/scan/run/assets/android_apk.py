@@ -3,6 +3,7 @@ This module takes care of preparing a file of type .APK before injecting it to t
 """
 import io
 import logging
+from typing import List
 
 import click
 
@@ -13,11 +14,13 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command()
-@click.option('--file', type=click.File(mode='rb'), help='Path to .APK file.', required=True)
+@click.argument('files', type=click.File(mode='rb'), nargs=-1, required=True)
 @click.pass_context
-def android_apk(ctx: click.core.Context, file: io.FileIO) -> None:
+def android_apk(ctx: click.core.Context, files: List[io.FileIO]) -> None:
     """Run scan for android .APK package file."""
     runtime = ctx.obj['runtime']
-    asset = android_apk_asset.AndroidApk(content=file.read(), path=file.name)
-    logger.debug('scanning asset %s', asset)
-    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+    assets = []
+    for f in files:
+        assets.append(android_apk_asset.AndroidApk(content=f.read(), path=f.name))
+    logger.debug('scanning asset %s', [str(asset) for asset in assets])
+    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)

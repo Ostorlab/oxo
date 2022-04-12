@@ -11,7 +11,6 @@ import docker
 import tenacity
 from docker.models import services as docker_models_services
 
-from ostorlab.utils import volumes
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console, dumpers
@@ -20,6 +19,7 @@ from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.lite_local import agent_runtime
+from ostorlab.utils import volumes
 
 NETWORK_PREFIX = 'ostorlab_lite_local_network'
 
@@ -130,7 +130,7 @@ class LiteLocalRuntime(runtime.Runtime):
         return True
 
     def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
-             asset: base_asset.Asset) -> None:
+             assets: List[base_asset.Asset]) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -139,7 +139,7 @@ class LiteLocalRuntime(runtime.Runtime):
         Args:
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
-            asset: the target asset to scan.
+            assets: the target asset to scan.
 
         Returns:
             None
@@ -151,8 +151,8 @@ class LiteLocalRuntime(runtime.Runtime):
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
-            console.info('Injecting asset')
-            self._inject_asset(asset)
+            console.info('Injecting assets')
+            self._inject_assets(assets=assets)
         except AgentNotHealthy:
             console.error('Agent not starting')
             self.stop(self.scan_id)
@@ -267,13 +267,16 @@ class LiteLocalRuntime(runtime.Runtime):
             if service.name.startswith('agent_'):
                 yield service
 
-    def _inject_asset(self, asset: base_asset.Asset):
+    def _inject_assets(self, assets: List[base_asset.Asset]):
         """Injects the scan target assets."""
-        volumes.create_volume(f'asset_{self.name}',
-                              {
-                                  'asset.binproto_1': asset.to_proto(),
-                                  'selector.txt_1': asset.selector.encode()
-                              })
+
+        contents = {}
+        for i, asset in enumerate(assets):
+            console.info(f'Injecting asset: {asset}')
+            contents[f'asset.binproto_{i}'] = asset.to_proto()
+            contents[f'selector.txt_{i}'] = asset.selector.encode()
+
+        volumes.create_volume(f'asset_{self.name}', contents)
 
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
                                                                 restart_policy='none')
