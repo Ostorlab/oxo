@@ -272,7 +272,6 @@ class LiteLocalRuntime(runtime.Runtime):
 
         contents = {}
         for i, asset in enumerate(assets):
-            console.info(f'Injecting asset: {asset}')
             contents[f'asset.binproto_{i}'] = asset.to_proto()
             contents[f'selector.txt_{i}'] = asset.selector.encode()
 
