@@ -83,7 +83,7 @@ class CloudRuntime(runtime.Runtime):
             None
         """
         try:
-            if len(assets) > 0:
+            if len(assets) > 1:
                 raise NotImplementedError()
             else:
                 asset = assets[0]
