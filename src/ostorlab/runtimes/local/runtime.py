@@ -159,7 +159,7 @@ class LocalRuntime(runtime.Runtime):
         try:
             console.info('Creating scan entry')
             assets_str = f'{", ".join([str(asset) for asset in assets])}'
-            # TODO: we need to add support for storing multiple assets and rename this to target.
+            # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
             self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
             console.info('Creating network')
             self._create_network()
