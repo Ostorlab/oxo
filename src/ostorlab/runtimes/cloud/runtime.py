@@ -88,8 +88,8 @@ class CloudRuntime(runtime.Runtime):
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
             agents = self._agents_from_agent_group_def(api_runner, agent_group_definition)
-            name = agent_group_definition.name or ''
-            description = agent_group_definition.description or ''
+            name = agent_group_definition.name
+            description = agent_group_definition.description
 
             console.info('Creating agent group')
             agent_group_id = self._create_agent_group(api_runner, name, description, agents)
