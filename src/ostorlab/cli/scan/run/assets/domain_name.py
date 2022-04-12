@@ -18,5 +18,5 @@ def domain_name_cli(ctx: click.core.Context, names: List[str]) -> None:
     assets = []
     for d in names:
         assets.append(domain_name.DomainName(name=d))
-    logger.debug('scanning asset %s', [str(asset) for asset in assets])
+    logger.debug('scanning assets %s', [str(asset) for asset in assets])
     runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)
