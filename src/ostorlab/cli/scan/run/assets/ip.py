@@ -30,7 +30,7 @@ def ip_cli(ctx: click.core.Context, ips: str) -> None:
             elif ip_network.version == 6:
                 assets.append(ipv6.IPv6(host=ip_network.network_address.exploded, mask=str(ip_network.prefixlen)))
             else:
-                raise NotImplementedError()
+                console.error(f'Invalid Ip address {ip}')
 
         logger.debug('scanning assets %s', assets)
         runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)
