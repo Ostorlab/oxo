@@ -159,7 +159,7 @@ class LocalRuntime(runtime.Runtime):
         try:
             console.info('Creating scan entry')
             assets_str = f'{", ".join([str(asset) for asset in assets])}'
-            self._scan_db = self._create_scan_db(asset=assets_str, title=title)
+            self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
             console.info('Creating network')
             self._create_network()
             console.info('Starting services')
