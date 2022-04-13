@@ -2,6 +2,7 @@
 This module takes care of preparing a generic file of type before injecting it to the runtime instance."""
 import io
 import logging
+from typing import List
 
 import click
 
@@ -12,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command(name='file')
-@click.option('--file', type=click.File(mode='rb'), help='Path to file.', required=True)
+@click.argument('files', type=click.File(mode='rb'), nargs=-1, required=True)
 @click.pass_context
-def file_cli(ctx: click.core.Context, file: io.FileIO) -> None:
+def file_cli(ctx: click.core.Context, files: List[io.FileIO]) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj['runtime']
-    asset = file_asset.File(content=file.read(), path=file.name)
-    logger.debug('scanning asset %s', asset)
-    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], asset=asset)
+    assets = []
+    for f in files:
+        assets.append(file_asset.File(content=f.read(), path=f.name))
+    logger.debug('scanning assets %s', [str(asset) for asset in assets])
+    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)

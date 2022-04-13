@@ -142,7 +142,7 @@ class LocalRuntime(runtime.Runtime):
         self._docker_client = docker.from_env()
 
     def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
-             asset: base_asset.Asset) -> None:
+             assets: List[base_asset.Asset]) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -151,14 +151,16 @@ class LocalRuntime(runtime.Runtime):
         Args:
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
-            asset: the target asset to scan.
+            assets: the target asset to scan.
 
         Returns:
             None
         """
         try:
             console.info('Creating scan entry')
-            self._scan_db = self._create_scan_db(asset=str(asset), title=title)
+            assets_str = f'{", ".join([str(asset) for asset in assets])}'
+            # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
+            self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
             console.info('Creating network')
             self._create_network()
             console.info('Starting services')
@@ -186,9 +188,7 @@ class LocalRuntime(runtime.Runtime):
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
-
-            console.info('Injecting asset')
-            self._inject_asset(asset)
+            self._inject_assets(assets)
             console.info('Updating scan status')
             self._update_scan_progress('IN_PROGRESS')
             console.success('Scan created successfully')
@@ -388,13 +388,15 @@ class LocalRuntime(runtime.Runtime):
             mounts=[])
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
 
-    def _inject_asset(self, asset: base_asset.Asset):
+    def _inject_assets(self, assets: List[base_asset.Asset]):
         """Injects the scan target assets."""
-        volumes.create_volume(f'asset_{self.name}',
-                              {
-                                  'asset.binproto_1': asset.to_proto(),
-                                  'selector.txt_1': asset.selector.encode()
-                              })
+        contents = {}
+        for i, asset in enumerate(assets):
+            console.info(f'Injecting asset: {asset}')
+            contents[f'asset.binproto_{i}'] = asset.to_proto()
+            contents[f'selector.txt_{i}'] = asset.selector.encode()
+
+        volumes.create_volume(f'asset_{self.name}', contents)
 
         inject_asset_agent_settings = definitions.AgentSettings(key=ASSET_INJECTION_AGENT_DEFAULT,
                                                                 restart_policy='none')

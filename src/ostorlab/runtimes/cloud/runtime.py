@@ -12,14 +12,15 @@ import markdownify
 import rich
 from rich import markdown, panel
 
+from ostorlab import configuration_manager
+from ostorlab.apis import agent_details
+from ostorlab.apis import agent_group
+from ostorlab.apis import assets as api_assets
+from ostorlab.apis import create_agent_scan
 from ostorlab.apis import scan_list
 from ostorlab.apis import scan_stop
 from ostorlab.apis import vulnz_describe
 from ostorlab.apis import vulnz_list
-from ostorlab.apis import agent_details
-from ostorlab.apis import agent_group
-from ostorlab.apis import assets
-from ostorlab.apis import create_agent_scan
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
@@ -28,11 +29,10 @@ from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import styles
-from ostorlab import configuration_manager
-
 
 AgentType = Dict[str, Union[str, List]]
 console = cli_console.Console()
+
 
 class CloudRuntime(runtime.Runtime):
     """Cloud runtime runs agents from Ostorlab Cloud."""
@@ -67,22 +67,27 @@ class CloudRuntime(runtime.Runtime):
             return False
 
     def scan(
-        self,
-        title: Optional[str],
-        agent_group_definition: definitions.AgentGroupDefinition,
-        asset: base_asset.Asset,
-        ) -> None:
+            self,
+            title: Optional[str],
+            agent_group_definition: definitions.AgentGroupDefinition,
+            assets: List[base_asset.Asset]
+    ) -> None:
         """Triggers a scan using the provided agent group definition and asset target.
 
         Args:
             title: The title of the scan.
             agent_group_definition: The agent group definition of a set of agents.
-            asset: The scan target asset.
+            assets: The scan target asset.
 
         Returns:
             None
         """
         try:
+            if len(assets) > 1:
+                raise NotImplementedError()
+            else:
+                asset = assets[0]
+            # we support multiple assets for local runtime for the cloud runtime. we take just the first asset.
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
             agents = self._agents_from_agent_group_def(api_runner, agent_group_definition)
@@ -101,7 +106,6 @@ class CloudRuntime(runtime.Runtime):
             console.success('Scan created successfully.')
         except runner.ResponseError as error_msg:
             console.error(error_msg)
-
 
     def stop(self, scan_id: int) -> None:
         """Stops a scan.
@@ -331,7 +335,7 @@ class CloudRuntime(runtime.Runtime):
             agents.append(agent)
         return agents
 
-    def _create_agent_group(self, api_runner: runner.APIRunner, name: str, description:str, agents: List[AgentType]):
+    def _create_agent_group(self, api_runner: runner.APIRunner, name: str, description: str, agents: List[AgentType]):
         """Sends an API request to create an agent group.
 
         Returns:
@@ -348,7 +352,7 @@ class CloudRuntime(runtime.Runtime):
         Returns:
             id of the created asset.
         """
-        request = assets.CreateAssetAPIRequest(asset)
+        request = api_assets.CreateAssetAPIRequest(asset)
         response = api_runner.execute(request)
         asset_id = response['data']['createAsset']['asset']['id']
         return asset_id
