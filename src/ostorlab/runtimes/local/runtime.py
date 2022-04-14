@@ -182,17 +182,18 @@ class LocalRuntime(runtime.Runtime):
             if is_healthy is False:
                 raise AgentNotHealthy()
 
+            self._inject_assets(assets)
+            console.info('Updating scan status')
+            self._update_scan_progress('IN_PROGRESS')
+
             console.info('Starting post-agents')
             self._start_post_agents()
             console.info('Checking post-agents are healthy')
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
-            self._inject_assets(assets)
-            console.info('Updating scan status')
-            self._update_scan_progress('IN_PROGRESS')
-            console.success('Scan created successfully')
 
+            console.success('Scan created successfully')
         except AgentNotHealthy:
             console.error('Agent not starting')
             self.stop(self._scan_db.id)
