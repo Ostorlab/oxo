@@ -4,6 +4,5 @@ package v3.asset.store.ios.ios_store;
 
 
 message Message {
-  required string application_name = 1;
-  optional string package_name = 2;
+  required string bundle_id = 1;
 }

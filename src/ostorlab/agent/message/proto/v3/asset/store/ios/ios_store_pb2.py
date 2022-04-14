@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.store.ios.ios_store',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\"v3/asset/store/ios/ios_store.proto\x12\x1cv3.asset.store.ios.ios_store\"9\n\x07Message\x12\x18\n\x10\x61pplication_name\x18\x01 \x02(\t\x12\x14\n\x0cpackage_name\x18\x02 \x01(\t')
+  serialized_pb=_b('\n\"v3/asset/store/ios/ios_store.proto\x12\x1cv3.asset.store.ios.ios_store\"\x1c\n\x07Message\x12\x11\n\tbundle_id\x18\x01 \x02(\t')
 )
 
 
@@ -33,15 +33,8 @@ _MESSAGE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='application_name', full_name='v3.asset.store.ios.ios_store.Message.application_name', index=0,
+      name='bundle_id', full_name='v3.asset.store.ios.ios_store.Message.bundle_id', index=0,
       number=1, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='package_name', full_name='v3.asset.store.ios.ios_store.Message.package_name', index=1,
-      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -59,7 +52,7 @@ _MESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=68,
-  serialized_end=125,
+  serialized_end=96,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
