@@ -3,7 +3,6 @@ FROM base as builder
 RUN mkdir /install
 WORKDIR /ostorlab
 COPY . /ostorlab
-RUN pip install . --prefix=/install
 RUN pip install .[agent] --prefix=/install
 FROM base
 COPY --from=builder /install /usr/local
