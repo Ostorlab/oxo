@@ -59,13 +59,14 @@ jobs:
           registry: ostorlab.store
           username: ${{ secrets.store_user }}
           password: ${{ secrets.store_password }}
-
+      - name: truncate current tag
+        run: echo "TAG=$(echo $GITHUB_REF | cut -c12-17)" >> $GITHUB_ENV
       - name: Build image and push to ostorlab Container Registry
         uses: docker/build-push-action@v2
         with:
           # relative path to the place where source code with Dockerfile is located
           context: .
           tags: |
-            ostorlab.store/test_project/test_agent:${{github.ref_name}}
+            ostorlab.store/test_project/test_agent:${{env.TAG}}
             ostorlab.store/test_project/test_agent:latest
           push: true
