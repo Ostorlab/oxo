@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package v3.asset.store.android.android_store;
+
+
+message Message {
+  required string package_name = 1;
+}
