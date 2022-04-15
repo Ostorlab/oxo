@@ -41,9 +41,15 @@ class AgentMQMixin:
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._queue = None
+        self._connection_pool = aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
+        self._channel_pool = aio_pika.pool.Pool(self._get_channel, max_size=64, loop=self._loop)
 
     async def _get_connection(self) -> aio_pika.Connection:
         return await aio_pika.connect_robust(url=self._url, loop=self._loop)
+
+    async def _get_channel(self) -> aio_pika.Channel:
+        async with self._connection_pool.acquire() as connection:
+            return await connection.channel()
 
     async def _get_exchange(self, channel: aio_pika.Channel) -> aio_pika.Exchange:
         return await channel.declare_exchange(self._topic,
@@ -113,9 +119,7 @@ class AgentMQMixin:
             message_priority: the priority of the message. Default is 0
         """
         logger.debug('sending %s to %s', message, key)
-        connection = await self._get_connection()
-        async with connection:
-            channel = await connection.channel()
+        async with self._channel_pool.acquire() as channel:
             exchange = await self._get_exchange(channel)
             pika_message = aio_pika.Message(body=message, priority=message_priority)
             await exchange.publish(routing_key=key, message=pika_message)
