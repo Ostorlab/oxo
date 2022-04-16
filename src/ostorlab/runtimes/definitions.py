@@ -178,7 +178,8 @@ class AgentGroupDefinition:
                 mem_limit=agent.get('mem_limit'),
                 open_ports=[defintions.PortMapping(source_port=p.get('src_port'), destination_port=p.get('dest_port'))
                             for p
-                            in agent.get('open_ports', [])]
+                            in agent.get('open_ports', [])],
+                replicas=agent.get('replicas', 1)
             )
 
             agent_settings.append(agent_def)
