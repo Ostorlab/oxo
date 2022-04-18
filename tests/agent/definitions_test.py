@@ -23,6 +23,15 @@ def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():
             - "out_selector1"
             - "out_selector2"
             restart_policy: "any"
+            args:
+              - name: "template_urls"
+                type: "array"
+                description: "list of template urls to run."
+                value:
+                  - 'https://google.com'
+                  - 1
+              - name: "domain"
+                type: "string"
         """
 
     yaml_data_file = io.StringIO(valid_yaml_data)
