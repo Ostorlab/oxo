@@ -164,7 +164,7 @@
           },
           "value": {
             "description": "[Optional] - Default value of the agent argument.",
-            "type": ["string", "number", "boolean"]
+            "type": ["string", "number", "boolean", "array"]
           }
         }
       }
