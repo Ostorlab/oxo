@@ -218,9 +218,9 @@ class LocalRuntime(runtime.Runtime):
         """
         try:
             int_scan_id = int(scan_id)
-        except ValueError:
+        except ValueError as e:
             console.error('Scan id must be an integer.')
-            raise click.exceptions.Exit(2)
+            raise click.exceptions.Exit(2) from e
 
         logger.info('stopping scan id %s', scan_id)
         stopped_services = []
