@@ -216,6 +216,12 @@ class LocalRuntime(runtime.Runtime):
         Args:
             scan_id: The id of the scan to stop.
         """
+        try:
+            int_scan_id = int(scan_id)
+        except ValueError as e:
+            console.error('Scan id must be an integer.')
+            raise click.exceptions.Exit(2) from e
+
         logger.info('stopping scan id %s', scan_id)
         stopped_services = []
         stopped_network = []
@@ -250,11 +256,13 @@ class LocalRuntime(runtime.Runtime):
 
         database = models.Database()
         session = database.session
-        scan = session.query(models.Scan).get(int(scan_id))
+        scan = session.query(models.Scan).get(int_scan_id)
         if scan:
             scan.progress = 'STOPPED'
             session.commit()
-        console.success('Scan stopped successfully.')
+            console.success('Scan stopped successfully.')
+        else:
+            console.info(f'Scan {scan_id} was not found.')
 
     def _create_scan_db(self, title: str, asset: str):
         """Persist the scan in the database"""
