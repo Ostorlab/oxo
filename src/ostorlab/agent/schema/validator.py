@@ -59,6 +59,6 @@ class Validator:
         try:
             jsonschema.validate(instance=yaml_data, schema=self._json_schema)
         except jsonschema.exceptions.ValidationError as e:
-            raise ValidationError('Validation did not pass well.') from e
+            raise ValidationError(f'Validation did not pass: {e.message} for field {".".join(e.schema_path)}.') from e
         except jsonschema.exceptions.SchemaError as e:
             raise SchemaError('Schema is invalid.') from e
