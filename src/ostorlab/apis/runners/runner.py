@@ -35,6 +35,7 @@ class APIRunner(abc.ABC):
         self._verify = verify
         self._configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
 
+
     @property
     def endpoint(self) -> str:
         """API endpoint."""

@@ -13,6 +13,7 @@ from ostorlab.cli.scan import scan
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.cli import console as cli_console
+from ostorlab.agent.schema import validator
 
 console = cli_console.Console()
 
@@ -44,7 +45,11 @@ def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.Fi
 
         agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
     elif agent_group_definition:
-        agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
+        try:
+            agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
+        except validator.ValidationError as e:
+            console.error(f'{e}')
+            raise click.ClickException('Invalid Agent Group Definition.') from e
     else:
         raise click.ClickException('Missing agent list or agent group definition.')
 

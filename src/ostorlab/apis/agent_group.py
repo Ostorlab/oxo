@@ -4,7 +4,6 @@ from typing import Dict, List, Optional, Union
 
 from ostorlab.apis import request
 
-
 AgentType = Dict[str, Union[str, List]]
 
 
@@ -33,7 +32,6 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
                 }
             }
         """
-
 
     @property
     def data(self) -> Optional[Dict]:
