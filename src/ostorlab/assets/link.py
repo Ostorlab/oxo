@@ -1,6 +1,5 @@
 """Link asset."""
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
