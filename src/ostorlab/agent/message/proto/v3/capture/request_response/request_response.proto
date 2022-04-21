@@ -1,3 +1,7 @@
+syntax = "proto2";
+
+package v3.capture.request_response;
+
 message header {
   required string name = 1;
   required string value = 2;
@@ -21,8 +25,7 @@ message response {
   optional bytes body = 8;
 }
 
-message request_response {
-  required int32 scan_id = 1;
-  required request request = 2;
-  optional response response = 3;
+message Message {
+  required request request = 1;
+  optional response response = 2;
 }

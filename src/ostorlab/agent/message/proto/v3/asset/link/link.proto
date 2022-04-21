@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+package v3.asset.link;
+
 message link_extra_header {
   required string name = 1;
   required string value = 2;
@@ -28,17 +30,15 @@ message link_credential {
   optional string url = 4;
 }
 
-message link {
-  required int32 scan_id = 1;
-  optional int32 link_id = 2;
-  required string url = 3;
-  required string method = 4;
+message Message {
+  required string url = 1;
+  required string method = 2;
   oneof body_oneof {
-    bytes body = 5;
-    link_form form = 6;
+    bytes body = 3;
+    link_form form = 4;
   }
-  repeated link_extra_header extra_headers = 7;
-  repeated link_cookie cookies = 8;
-  optional link_credential credential = 9;
-  optional link parent = 10;
+  repeated link_extra_header extra_headers = 5;
+  repeated link_cookie cookies = 6;
+  optional link_credential credential = 7;
+  optional Message parent = 8;
 }
