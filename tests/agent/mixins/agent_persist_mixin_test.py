@@ -14,8 +14,14 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(mocker, redis_serv
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
 
     assert mixin.set_is_member('test', 'A') is False
-    mixin.set_add('test', 'A')
+    mixin.set_add('test', b'A')
     mixin.set_add('test', 'B')
     assert mixin.set_is_member('test', 'A') is True
     assert mixin.set_is_member('test', 'B') is True
     assert mixin.set_is_member('test', 'C') is False
+    assert mixin.set_card('test') == 2
+    assert mixin.set_members('test') == {b'A', b'B'}
+    mixin.add('myKey', b'myVal')
+    assert mixin.get('myKey') == b'myVal'
+    assert mixin.get('myKey1') is None
+

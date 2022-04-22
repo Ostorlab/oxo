@@ -57,3 +57,51 @@ class AgentPersistMixin:
             True if it is a member, False otherwise.
         """
         return self._redis_client.sismember(key, value)
+
+    def set_len(self, key) -> bool:
+        """Helper function that returns the set cardinality (number of elements) of the set stored at key.
+        The method can be used to sync multiple agents that may receive test inputs but need to test
+        less than X test inputs.
+        Storage is shared between agents, ensure the keys used are unique.
+
+        Args:
+            key: Set key.
+
+        Returns:
+            the cardinality (number of elements) of the set, or 0 if key does not exist.
+        """
+        return self._redis_client.scard(key)
+
+    def set_members(self, key) -> bool:
+        """Helper function that returns the value of key.
+
+        Args:
+            key: Set key.
+
+        Returns:
+             the value of key, or nil when key does not exist.
+        """
+        return self._redis_client.smembers(key)
+
+    def add(self, key, value) -> bool:
+        """Helper function that Set key to hold the string value.
+
+        Args:
+            key: key.
+            value: String.
+
+        Returns:
+            String status of the set command.
+        """
+        return self._redis_client.set(key, value)
+
+    def get(self, key) -> bool:
+        """Get the value of key. If the key does not exist the special value nil is returned.
+
+        Args:
+            key: key.
+
+        Returns:
+            the value of key, or nil when key does not exist.
+        """
+        return self._redis_client.get(key)

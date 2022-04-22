@@ -52,10 +52,34 @@ def agent_persist_mock(mocker):
             storage.setdefault(key, set()).add(value)
             return True
 
+    def _set_len(key):
+        if key in storage:
+            return len(storage[key])
+
+    def _set_members(key):
+        if key in storage:
+            return storage[key]
+
+    def _get(key):
+        if key in storage:
+            return storage[key]
+
+    def _add(key, value):
+        """Check values are present in the storage dict."""
+        storage[key] = value
+
     mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add',
                  side_effect=_set_add)
     mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_is_member',
                  side_effect=_set_is_member)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_len',
+                 side_effect=_set_len)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_members',
+                 side_effect=_set_members)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.get',
+                 side_effect=_get)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.add',
+                 side_effect=_add)
     yield storage
     storage = {}
 
