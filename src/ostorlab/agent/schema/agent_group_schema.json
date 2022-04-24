@@ -32,7 +32,11 @@
         },
         "value": {
           "description": "[Optional] - Default value of the agent argument.",
-          "type": ["string", "number", "boolean"]
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
         }
       }
     },
@@ -63,7 +67,7 @@
         "AgentGroup"
       ]
     },
-    "name":{
+    "name": {
       "description": "[Optional] - Agent group full Name, accept lower case ascii, number and _, - characters.",
       "type": "string",
       "pattern": "^[a-z0-9_\\-]+$",
@@ -93,7 +97,7 @@
             "description": "[Optional] - Version of the agent, can either be an exact version like 1.2.3 or a regular expression to match against a version range like 1\\..*.",
             "type": "string"
           },
-          "replicas":{
+          "replicas": {
             "description": "[Optional] - Count of replicas of the agent instances, default value is 1.",
             "type": "number",
             "default": 1
@@ -110,6 +114,14 @@
             "type": "array",
             "items": {
               "$ref": "#/CustomTypes/agentPortMapping"
+            }
+          },
+          "mounts": {
+            "description": "[Optional] - Array of strings of the mounts of the agent, this will override default mounts.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 4096
             }
           }
         }
