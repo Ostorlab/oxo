@@ -12,6 +12,7 @@ from ostorlab.cli import install_agent
 from ostorlab.cli.scan import scan
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.runtimes.cloud import runtime as cloud_runtime 
 from ostorlab.cli import console as cli_console
 from ostorlab.agent.schema import validator
 
@@ -40,12 +41,17 @@ def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.Fi
     Example:\n
         - ostorlab scan run --agent=agent/ostorlab/nmap --agent=agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
+    print('runtime : ', ctx.obj['runtime'])
     if no_asset is True and ctx.invoked_subcommand in ASSET_SUB_COMMANDS:
         console.error(f'Sub-command {ctx.invoked_subcommand} specified with --no-asset flag.')
         raise click.exceptions.Exit(2)
     if no_asset is False and ctx.invoked_subcommand is None:
         console.error('Error: Missing command.')
         click.echo(ctx.get_help())
+        raise click.exceptions.Exit(2)
+
+    if no_asset is True and isinstance(ctx.obj['runtime'], cloud_runtime.CloudRuntime):
+        console.error('Cloud runtime does not support --no-asset flag.')
         raise click.exceptions.Exit(2)
 
     if agent:
