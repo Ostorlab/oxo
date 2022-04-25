@@ -10,7 +10,7 @@ def testScanRunDomainName_whenNoOptionsProvided_showsAvailableOptionsAndCommands
 
     runner = CliRunner()
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
-    result = runner.invoke(rootcli.rootcli, ['scan', 'run', '--agents=agent1,agent2', 'domain-name'])
+    result = runner.invoke(rootcli.rootcli, ['scan', 'run', '--agent=agent1 --agent=agent2', 'domain-name'])
 
     assert 'Usage:' in result.output
     assert result.exit_code == 2

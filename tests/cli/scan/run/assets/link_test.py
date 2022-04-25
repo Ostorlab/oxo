@@ -10,7 +10,7 @@ def testScanRunLink_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocke
 
     runner = CliRunner()
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
-    result = runner.invoke(rootcli.rootcli, ['scan', 'run', '--agents=agent1,agent2', 'link'])
+    result = runner.invoke(rootcli.rootcli, ['scan', 'run', '--agent=agent1 --agent=agent2', 'link'])
 
     assert 'Usage:' in result.output
     assert result.exit_code == 2
