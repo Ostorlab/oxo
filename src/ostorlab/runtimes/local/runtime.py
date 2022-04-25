@@ -142,7 +142,7 @@ class LocalRuntime(runtime.Runtime):
         self._docker_client = docker.from_env()
 
     def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
-             assets: List[base_asset.Asset]) -> None:
+             assets: Optional[List[base_asset.Asset]]) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -158,8 +158,11 @@ class LocalRuntime(runtime.Runtime):
         """
         try:
             console.info('Creating scan entry')
-            assets_str = f'{", ".join([str(asset) for asset in assets])}'
-            # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
+            if assets is None:
+                assets_str='no asset'
+            else:
+                assets_str = f'{", ".join([str(asset) for asset in assets])}'
+                # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
             self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
             console.info('Creating network')
             self._create_network()
@@ -182,7 +185,8 @@ class LocalRuntime(runtime.Runtime):
             if is_healthy is False:
                 raise AgentNotHealthy()
 
-            self._inject_assets(assets)
+            if assets is not None:
+                self._inject_assets(assets)
             console.info('Updating scan status')
             self._update_scan_progress('IN_PROGRESS')
 
