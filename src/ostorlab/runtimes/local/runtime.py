@@ -159,7 +159,7 @@ class LocalRuntime(runtime.Runtime):
         try:
             console.info('Creating scan entry')
             if assets is None:
-                assets_str='no asset'
+                assets_str='N/A'
             else:
                 assets_str = f'{", ".join([str(asset) for asset in assets])}'
                 # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
