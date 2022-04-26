@@ -16,6 +16,7 @@ import pathlib
 import sys
 import threading
 import uuid
+import json
 from typing import Dict, Any, NoReturn
 
 from ostorlab import exceptions
@@ -95,12 +96,10 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             arguments[a['name']] = a.get('value')
         # Override the default values from settings.
         for a in self.settings.args:
-            if a.type == 'string':
-                arguments[a.name] = a.value.decode()
-            elif a.type == 'number':
-                arguments[a.name] = int(a.value.decode())
-            else:
+            if a.type == 'binary':
                 arguments[a.name] = a.value
+            else:
+                arguments[a.name] = json.loads(a.value.decode())
 
         return arguments
 

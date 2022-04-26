@@ -3,6 +3,7 @@ import dataclasses
 import io
 import re
 import logging
+import json
 from typing import List, Optional
 
 import docker
@@ -115,16 +116,17 @@ class AgentSettings:
             arg_instance = instance.args.add()
             arg_instance.name = arg.name
             arg_instance.type = arg.type
-            if isinstance(arg.value, str):
-                arg_instance.value = arg.value.encode()
-            elif isinstance(arg.value, int):
-                arg_instance.value = str(arg.value).encode()
-            elif isinstance(arg.value, float):
-                arg_instance.value = str(arg.value).encode()
-            elif isinstance(arg.value, bytes):
+            if isinstance(arg.value, bytes) and arg_instance.type != 'binary':
+                raise ValueError(f'type {arg_instance.type} for not match value of type binary')
+
+            if isinstance(arg.value, bytes) and arg_instance.type == 'binary':
                 arg_instance.value = arg.value
             else:
-                raise NotImplementedError(f'unsupported format byte serialization {type(arg.value)}')
+                try:
+                    arg_instance.value = json.dumps(arg.value).encode()
+                except TypeError as e:
+                    raise ValueError(f'type {arg_instance.value} is not JSON serializable') from e
+
 
         instance.constraints.extend(self.constraints)
         instance.mounts.extend(self.mounts)

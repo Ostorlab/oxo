@@ -108,7 +108,7 @@ def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes():
         bus_exchange_topic='topic',
         bus_management_url='mq_managment',
         bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='string', value=b'test')]
+        args=[utils_definitions.Arg(name='speed', type='string', value='test')]
     )
 
     proto = instance_settings.to_raw_proto()
