@@ -1,8 +1,9 @@
 syntax = "proto2";
 
-package v3.report.screenshot;
+package v3.capture.artifact;
 
 message Message {
     required string content = 1;
     required string description = 2;
+    required string type = 3;
 }
