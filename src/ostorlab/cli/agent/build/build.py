@@ -29,7 +29,7 @@ def _image_exists(image: str) -> bool:
 
 
 def _build_image(agent_name: str, container_name: str, dockerfile_path: str, docker_build_root: str,
-                 agent_definition_file: io.FileIO) -> None:
+                 agent_definition_file: io.FileIO, no_cache: bool) -> None:
     """Build agent image from agent settings."""
     console.info(
         f'Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]'
@@ -39,7 +39,7 @@ def _build_image(agent_name: str, container_name: str, dockerfile_path: str, doc
                                                         dockerfile=dockerfile_path,
                                                         tag=container_name,
                                                         labels={'agent_definition': agent_definition_file.read().decode(
-                                                            'utf-8')}):
+                                                            'utf-8')}, nocache=no_cache):
 
             if 'stream' in log and log['stream'] != '\n':
                 console.info(log['stream'][:-1])
@@ -55,7 +55,8 @@ def _build_image(agent_name: str, container_name: str, dockerfile_path: str, doc
 @click.option('--file', '-f', type=click.File('rb'), help='Path to Agent yaml definition.', required=True)
 @click.option('--organization', '-o', help='Organization name.', required=False, default='')
 @click.option('--force/--no-force', default=False)
-def build(file: io.FileIO, organization: str = '', force: bool = False) -> None:
+@click.option('--no-cache', is_flag=True, default=False)
+def build(file: io.FileIO, organization: str = '', force: bool = False, no_cache: bool = False) -> None:
     """CLI command to build the agent container from a definition.yaml file.
     Usage : Ostorlab agent build -f path/to/definition.yaml -org organization_name
     """
@@ -87,8 +88,7 @@ def build(file: io.FileIO, organization: str = '', force: bool = False) -> None:
             else:
                 console.warning(f'{container_name} already exist, deleting image.')
                 client.images.remove(container_name, force=True)
-
-        _build_image(agent_name, container_name, dockerfile_path, docker_build_root, file)
+        _build_image(agent_name, container_name, dockerfile_path, docker_build_root, file, no_cache)
 
     except errors.BuildError:
         console.error('Error building agent.')

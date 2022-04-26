@@ -6,3 +6,4 @@ from ostorlab.cli.scan.run.assets import domain_name
 from ostorlab.cli.scan.run.assets import file
 from ostorlab.cli.scan.run.assets import ios_ipa
 from ostorlab.cli.scan.run.assets import ip
+from ostorlab.cli.scan.run.assets import link
