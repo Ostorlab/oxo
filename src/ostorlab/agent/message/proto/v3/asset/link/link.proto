@@ -2,32 +2,35 @@ syntax = "proto2";
 
 package v3.asset.link;
 
-message link_extra_header {
+message Header {
   required string name = 1;
   required string value = 2;
 }
 
-message link_cookie {
+message Cookie {
   required string name = 1;
   required string value = 2;
 }
 
-message link_form_input {
+message FormInput {
   optional string name = 1;
   required string value = 2;
   required string type = 3;
 }
 
-message link_form {
-  repeated link_form_input inputs = 1;
+message Form {
+  repeated FormInput inputs = 1;
   required string enctype = 2;
 }
 
-message link_credential {
-  required string type = 1;
-  optional string login = 2;
-  optional string password = 3;
-  optional string url = 4;
+message FormCredential {
+  optional string login = 1;
+  optional string password = 2;
+  optional string url = 3;
+}
+
+message ScriptCredential {
+  optional string script = 1;
 }
 
 message Message {
@@ -35,10 +38,13 @@ message Message {
   required string method = 2;
   oneof body_oneof {
     bytes body = 3;
-    link_form form = 4;
+    Form form = 4;
   }
-  repeated link_extra_header extra_headers = 5;
-  repeated link_cookie cookies = 6;
-  optional link_credential credential = 7;
-  optional Message parent = 8;
+  repeated Header extra_headers = 5;
+  repeated Cookie cookies = 6;
+  oneof credential_oneof {
+    FormCredential form_credential = 7;
+    ScriptCredential script_credential = 8;
+  }
+  optional Message parent = 9;
 }
