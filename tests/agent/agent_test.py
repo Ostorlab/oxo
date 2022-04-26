@@ -1,5 +1,6 @@
 """Agent class unit tests."""
 import datetime
+import json
 import logging
 import multiprocessing as mp
 import pathlib
@@ -119,11 +120,12 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
             bus_url='amqp://guest:guest@localhost:5672/', bus_exchange_topic='ostorlab_test',
             healthcheck_port=5301,
             args=[
-                utils_definitions.Arg(name='color', type='string', value=b'red'),
+                utils_definitions.Arg(name='speed', type='binary', value=b'slow'),
+                utils_definitions.Arg(name='color', type='string', value=json.dumps('red').encode()),
             ]
         ))
 
     assert test_agent.args == {
         'color': 'red',
-        'speed': b'fast'
+        'speed': b'slow'
     }
