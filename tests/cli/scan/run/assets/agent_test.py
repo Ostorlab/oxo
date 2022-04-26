@@ -10,6 +10,7 @@ def testScanRunAgent_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mock
 
     runner = CliRunner()
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.can_run', return_value=True)
     result = runner.invoke(rootcli.rootcli, ['scan', 'run', '--agent=agent1 --agent=agent2', 'agent'])
 
     assert 'Usage:' in result.output
