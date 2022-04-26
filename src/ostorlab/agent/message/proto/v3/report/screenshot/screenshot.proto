@@ -4,5 +4,5 @@ package v3.report.screenshot;
 
 message Message {
     required string content = 1;
-    required string label = 2;
+    required string description = 2;
 }

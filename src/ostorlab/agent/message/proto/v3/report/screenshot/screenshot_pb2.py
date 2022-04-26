@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='v3/report/screenshot/screenshot.proto',
   package='v3.report.screenshot',
   syntax='proto2',
-  serialized_pb=_b('\n%v3/report/screenshot/screenshot.proto\x12\x14v3.report.screenshot\")\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x02(\t\x12\r\n\x05label\x18\x02 \x02(\t')
+  serialized_pb=_b('\n%v3/report/screenshot/screenshot.proto\x12\x14v3.report.screenshot\"/\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x02(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x02(\t')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -41,7 +41,7 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='label', full_name='v3.report.screenshot.Message.label', index=1,
+      name='description', full_name='v3.report.screenshot.Message.description', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -60,7 +60,7 @@ _MESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=63,
-  serialized_end=104,
+  serialized_end=110,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
