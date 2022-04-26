@@ -130,7 +130,7 @@ class LiteLocalRuntime(runtime.Runtime):
         return True
 
     def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
-             assets: List[base_asset.Asset]) -> None:
+             assets: Optional[List[base_asset.Asset]]) -> None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -151,8 +151,9 @@ class LiteLocalRuntime(runtime.Runtime):
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
                 raise AgentNotHealthy()
-            console.info('Injecting assets')
-            self._inject_assets(assets=assets)
+            if assets is not None:
+                console.info('Injecting assets')
+                self._inject_assets(assets=assets)
         except AgentNotHealthy:
             console.error('Agent not starting')
             self.stop(self.scan_id)

@@ -15,11 +15,12 @@ from ostorlab.runtimes import runtime
 from ostorlab.cli import console as cli_console
 from ostorlab.agent.schema import validator
 
+
 console = cli_console.Console()
 
 logger = logging.getLogger(__name__)
 
-@scan.group()
+@scan.group(invoke_without_command=True)
 @click.option('--agent',
               multiple=True,
               help='List of agents keys. to use in the scan.',
@@ -30,13 +31,22 @@ logger = logging.getLogger(__name__)
               required=False)
 @click.option('--install', '-i', help='Install missing agents.', is_flag=True, required=False)
 @click.option('--follow', help='Follow logs of provided list of agents and services.', multiple=True, default=[])
+@click.option('--no-asset', help='Start the environement without injeccting assets', is_flag=True, required=False)
 @click.pass_context
 def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.FileIO,
-        title: str, install: bool, follow: List[str]) -> None:
+        title: str, install: bool, follow: List[str], no_asset: bool) -> None:
     """Start a new scan on a specific asset.\n
     Example:\n
-        - ostorlab scan run --agents=agent/ostorlab/nmap,agent/google/tsunami --title=test_scan ip 8.8.8.8
+        - ostorlab scan run --agent=agent/ostorlab/nmap --agent=agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
+    if no_asset is True and ctx.invoked_subcommand is not None:
+        console.error(f'Sub-command {ctx.invoked_subcommand} specified with --no-asset flag.')
+        raise click.exceptions.Exit(2)
+    if no_asset is False and ctx.invoked_subcommand is None:
+        console.error('Error: Missing command.')
+        click.echo(ctx.get_help())
+        raise click.exceptions.Exit(2)
+
     if agent:
         agents_settings: List[definitions.AgentSettings] = []
         for agent_key in agent:
@@ -69,5 +79,10 @@ def run(ctx: click.core.Context, agent: List[str], agent_group_definition: io.Fi
                     install_agent.install(ag.key, ag.version)
                 except install_agent.AgentDetailsNotFound:
                     console.warning(f'agent {ag.key} not found on the store')
+
+        if ctx.invoked_subcommand is None:
+            runtime_instance.scan(title=ctx.obj['title'],
+                                  agent_group_definition=ctx.obj['agent_group_definition'],
+                                  assets=None)
     else:
         raise click.ClickException('The runtime does not support the provided agent list or group definition.')

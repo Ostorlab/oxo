@@ -13,7 +13,7 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
     assert 'Usage: rootcli scan run [OPTIONS] COMMAND [ARGS]...' in result.output
     assert 'Commands:' in result.output
     assert 'Options:' in result.output
-    assert result.exit_code == 0
+    assert result.exit_code == 2
 
 
 def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
@@ -24,7 +24,7 @@ def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
     runner = CliRunner()
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     result = runner.invoke(rootcli.rootcli,
-                           ['scan', '--runtime=local', 'run', '--agents=agent1,agent2', '--title=scan1', 'android-apk'])
+                           ['scan', '--runtime=local', 'run', '--agent=agent1', '--title=scan1', 'android-apk'])
 
     assert isinstance(result.exception, BaseException)
 
@@ -66,3 +66,16 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
     assert result.exception is None
     api_requests.assert_called()
     assert 'Scan created successfully' in result.output
+
+
+def testScanRun_whenNoassetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
+    """Unittest to ensure scan run command fails when both --no-asset flag and
+    inject asset sub-commands are provided."""
+    mocker.patch('ostorlab.runtimes.local.runtime.LocalRuntime.can_run', return_value=False)
+    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(rootcli.rootcli,
+                           ['scan', 'run', '--no-asset', '--agent=agent1', '--title=scan1', 'ip', '8.8.8.8'])
+
+    assert 'Sub-command ip specified with --no-asset flag.' in result.output

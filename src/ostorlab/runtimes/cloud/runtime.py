@@ -70,7 +70,7 @@ class CloudRuntime(runtime.Runtime):
             self,
             title: Optional[str],
             agent_group_definition: definitions.AgentGroupDefinition,
-            assets: List[base_asset.Asset]
+            assets: Optional[List[base_asset.Asset]]
     ) -> None:
         """Triggers a scan using the provided agent group definition and asset target.
 

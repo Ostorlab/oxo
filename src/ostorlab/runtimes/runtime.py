@@ -34,7 +34,7 @@ class Runtime(abc.ABC):
 
     @abc.abstractmethod
     def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
-             assets: List[base_asset.Asset]) -> None:
+             assets: Optional[List[base_asset.Asset]]) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
