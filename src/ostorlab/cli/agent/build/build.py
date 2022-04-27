@@ -92,9 +92,12 @@ def build(file: io.FileIO, organization: str = '', force: bool = False, no_cache
 
     except errors.BuildError:
         console.error('Error building agent.')
+        raise click.exceptions.Exit(2)
     except validator.SchemaError:
         console.error(
             'Schema is invalid, this should not happen, please report an issue at '
             'https://github.com/Ostorlab/ostorlab/issues.')
+        raise click.exceptions.Exit(2)
     except validator.ValidationError:
         console.error('Definition file does not conform to the provided specification.')
+        raise click.exceptions.Exit(2)
