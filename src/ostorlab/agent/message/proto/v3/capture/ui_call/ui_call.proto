@@ -5,6 +5,6 @@ package v3.capture.ui_call;
 message Message{
     required string path = 1; 
     required string dna = 2;
-    optional string screenshot = 3;
+    optional bytes screenshot = 3;
     optional string parent_dna = 4;
 }
