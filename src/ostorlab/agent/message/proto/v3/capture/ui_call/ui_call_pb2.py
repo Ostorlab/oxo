@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.capture.ui_call',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n v3/capture/ui_call/ui_call.proto\x12\x12v3.capture.ui_call\"L\n\x07Message\x12\x0c\n\x04path\x18\x01 \x02(\t\x12\x0b\n\x03\x64na\x18\x02 \x02(\t\x12\x12\n\nscreenshot\x18\x03 \x01(\t\x12\x12\n\nparent_dna\x18\x04 \x01(\t')
+  serialized_pb=_b('\n v3/capture/ui_call/ui_call.proto\x12\x12v3.capture.ui_call\"L\n\x07Message\x12\x0c\n\x04path\x18\x01 \x02(\t\x12\x0b\n\x03\x64na\x18\x02 \x02(\t\x12\x12\n\nscreenshot\x18\x03 \x01(\x0c\x12\x12\n\nparent_dna\x18\x04 \x01(\t')
 )
 
 
@@ -48,8 +48,8 @@ _MESSAGE = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='screenshot', full_name='v3.capture.ui_call.Message.screenshot', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      number=3, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
