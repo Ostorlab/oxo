@@ -31,7 +31,7 @@ class AgentPersistMixin:
             raise ValueError('agent settings is missing redis url')
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
 
-    def set_add(self, key: str, *value: List) -> bool:
+    def set_add(self, key: str, *value: str) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
         as tested.
         The method can be used to sync multiple agents that may encounter the same test input but need to test it
@@ -40,7 +40,7 @@ class AgentPersistMixin:
 
         Args:
             key: Set key.
-            value: List of values to add to set.
+            value: values to add to set.
 
         Returns:
             True if it is a new member, False otherwise.

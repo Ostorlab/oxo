@@ -46,10 +46,11 @@ def agent_persist_mock(mocker):
 
     def _set_add(key, *value):
         """Add members to the storage dict and emulate return value."""
-        if _set_is_member(key, value):
+        if all(_set_is_member(key, v) for v in value):
             return False
         else:
-            storage.setdefault(key, set()).add(value)
+            for v in value:
+                storage.setdefault(key, set()).add(v)
             return True
 
     def _set_len(key):
