@@ -11,7 +11,7 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 """
-from typing import Dict, List, Set
+from typing import Dict, Set
 import redis
 
 from ostorlab.runtimes import definitions as runtime_definitions
