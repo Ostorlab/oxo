@@ -19,6 +19,7 @@ def mq_service():
     yield lrm
     lrm.stop()
 
+
 @pytest.fixture(scope='session')
 def redis_service():
     """Start Redis Docker service"""
