@@ -11,7 +11,7 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 """
-from typing import Dict, Set
+from typing import Dict, List, Set, Union
 import redis
 
 from ostorlab.runtimes import definitions as runtime_definitions
@@ -31,7 +31,7 @@ class AgentPersistMixin:
             raise ValueError('agent settings is missing redis url')
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
 
-    def set_add(self, key: str, *value: str) -> bool:
+    def set_add(self, key: str, *value: List) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
         as tested.
         The method can be used to sync multiple agents that may encounter the same test input but need to test it
@@ -51,7 +51,7 @@ class AgentPersistMixin:
         """Indicates whether value is member of the set identified by key.
 
         Args:
-            key: The set key.
+            key: Set key.
             value: The value to check.
 
         Returns:
@@ -84,23 +84,23 @@ class AgentPersistMixin:
         """
         return self._redis_client.smembers(key)
 
-    def add(self, key: str, value) -> bool:
+    def add(self, key: Union[bytes, str], value: bytes) -> bool:
         """Helper function that Set key to hold the string value.
 
         Args:
-            key: Key.
-            value: String value.
+            key: Key for string value.
+            value: Bytes value.
 
         Returns:
             Status of the set command.
         """
         return self._redis_client.set(key, value)
 
-    def get(self, key: str) -> bytes:
+    def get(self, key: Union[bytes, str]) -> bytes:
         """Get the value of key. If the key does not exist None is returned.
 
         Args:
-            key: Key.
+            key: Key for string value.
 
         Returns:
             Value of key, or None when key does not exist.
@@ -155,22 +155,22 @@ class AgentPersistMixin:
         """
         return self._redis_client.hgetall(hash_name)
 
-    def delete(self: str, key) -> bool:
+    def delete(self, key: Union[bytes, str]) -> bool:
         """Delete a specific key.
 
         Args:
-            key: Key.
+            key: Key of any type.
 
         Returns:
             True if the key is delete, False otherwise.
         """
         return bool(self._redis_client.delete(key))
 
-    def value_type(self, key:str)-> str:
+    def value_type(self, key: Union[bytes, str])-> str:
         """Return a string representation of the type of the value stored at key.
 
         Args:
-            key: Key.
+            key: Key in redis.
 
         Returns:
             String representation of the type of value stored at key. eg: set, string.
