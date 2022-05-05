@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='v3/capture/artifact/artifact.proto',
   package='v3.capture.artifact',
   syntax='proto2',
-  serialized_pb=_b('\n\"v3/capture/artifact/artifact.proto\x12\x13v3.capture.artifact\"=\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x02(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x02(\t\x12\x0c\n\x04type\x18\x03 \x02(\t')
+  serialized_pb=_b('\n\"v3/capture/artifact/artifact.proto\x12\x13v3.capture.artifact\"=\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x02(\x0c\x12\x13\n\x0b\x64\x65scription\x18\x02 \x02(\t\x12\x0c\n\x04type\x18\x03 \x02(\t')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -35,8 +35,8 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='content', full_name='v3.capture.artifact.Message.content', index=0,
-      number=1, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      number=1, type=12, cpp_type=9, label=2,
+      has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
