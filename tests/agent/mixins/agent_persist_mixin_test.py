@@ -1,20 +1,19 @@
 """Tests for AgentPersistMixin module."""
 
 import pytest
-import redis
 
 from ostorlab.agent.mixins import agent_persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 
 
+@pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(mocker, redis_service):
+async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(mocker, redis_service, clean_redis_data):
     """Test proper storage and access of set API."""
-    del mocker, redis_service
+    del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(key='agent/ostorlab/debug', redis_url='redis://localhost:6379')
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
-    _clean_redis_data(settings.redis_url)
 
     assert mixin.set_is_member('test', 'A') is False
     mixin.set_add('test', b'A')
@@ -32,28 +31,28 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(mocker, redis_serv
     assert mixin.value_type('myKey1') == 'none'
 
 
+@pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testAgentPersistMixinDeleteKey_whenKeyExists_keyIsDeleted(mocker, redis_service):
+async def testAgentPersistMixinDeleteKey_whenKeyExists_keyIsDeleted(mocker, redis_service, clean_redis_data):
     """Test proper storage and access of set API."""
-    del mocker, redis_service
+    del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(key='agent/ostorlab/debug', redis_url='redis://localhost:6379')
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
-    _clean_redis_data(settings.redis_url)
 
     mixin.set_add('test1', b'A')
     mixin.delete('test1')
     assert mixin.set_members('test')  == set()
 
 
+@pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_service):
+async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_service, clean_redis_data):
     """Test proper storage and access of Hash API."""
-    del mocker, redis_service
+    del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(key='agent/ostorlab/debug', redis_url='redis://localhost:6379')
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
-    _clean_redis_data(settings.redis_url)
 
     assert mixin.hash_exists('hash_name', 'key1') is False
     mixin.hash_add('hash_name', {'key1': 'val1', 'key2': 'val2'})
@@ -62,11 +61,3 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_se
     assert mixin.hash_get('hash_name', 'NoneExistingKey') is None
     assert b'key1' in mixin.hash_get_all('hash_name')
     assert b'key2' in mixin.hash_get_all('hash_name')
-
-
-def _clean_redis_data(redis_url: str) -> None:
-    """Clean all redis data."""
-    redis_client = redis.Redis.from_url(redis_url)
-    keys = redis_client.keys()
-    for key in keys:
-        redis_client.delete(key)
