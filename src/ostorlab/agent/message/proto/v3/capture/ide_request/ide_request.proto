@@ -1,0 +1,27 @@
+syntax = "proto2";
+
+package v3.capture.ide_request;
+
+message header {
+  required bytes name = 1;
+  required bytes value = 2;
+  required int32 index = 3;
+}
+
+message request {
+  required string uuid = 1;
+  required string method = 2;
+  repeated header headers = 3;
+  optional bytes content = 4;
+  optional string host = 5;
+  optional int32 port = 5;
+  optional bytes http_version = 6;
+  optional bytes scheme = 7;
+  optional bytes path = 8;
+  optional float time_start = 9;
+  optional float time_end = 10;
+}
+
+message Message {
+  repeated request requests = 1;
+}
