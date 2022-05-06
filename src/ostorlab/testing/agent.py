@@ -44,12 +44,13 @@ def agent_persist_mock(mocker):
         """Check values are present in the storage dict."""
         return key in storage and value in storage[key]
 
-    def _set_add(key, value):
+    def _set_add(key, *value):
         """Add members to the storage dict and emulate return value."""
-        if _set_is_member(key, value):
+        if all(_set_is_member(key, v) for v in value):
             return False
         else:
-            storage.setdefault(key, set()).add(value)
+            for v in value:
+                storage.setdefault(key, set()).add(v)
             return True
 
     def _set_len(key):
@@ -66,7 +67,38 @@ def agent_persist_mock(mocker):
 
     def _add(key, value):
         """Check values are present in the storage dict."""
-        storage[key] = value
+        storage[key] = str(value).encode()
+
+    def _hash_add(hash_name, mapping):
+        mapping = {k: str(v).encode() for k,v in mapping.items()}
+        storage.setdefault(hash_name, {}).update(mapping)
+
+    def _hash_exists(hash_name, key):
+        if isinstance(storage.get(hash_name), dict):
+            return key in storage.get(hash_name)
+        return False
+
+    def _hash_get(hash_name, key):
+        if isinstance(storage.get(hash_name), dict):
+            return storage.get(hash_name).get(key, None)
+        else:
+            return None
+
+    def _hash_get_all(hash_name):
+        return storage.get(hash_name, {})
+
+    def _delete(key):
+        storage.pop(key)
+
+    def _value_type(key):
+        if isinstance(storage.get(key), set):
+            return 'set'
+        elif isinstance(storage.get(key), bytes):
+            return 'string'
+        elif isinstance(storage.get(key), dict):
+            return 'hash'
+        else:
+            return 'none'
 
     mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add',
                  side_effect=_set_add)
@@ -80,6 +112,19 @@ def agent_persist_mock(mocker):
                  side_effect=_get)
     mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.add',
                  side_effect=_add)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.hash_add',
+                 side_effect=_hash_add)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.hash_exists',
+                 side_effect=_hash_exists)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.hash_get',
+                 side_effect=_hash_get)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.hash_get_all',
+                 side_effect=_hash_get_all)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.delete',
+                 side_effect=_delete)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.value_type',
+                 side_effect=_value_type)
+
     yield storage
     storage = {}
 

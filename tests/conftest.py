@@ -3,11 +3,13 @@
 import io
 import time
 import sys
+
 import pytest
 import docker
+import redis
 
 from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local.services import redis
+from ostorlab.runtimes.local.services import redis as local_redis_service
 
 
 @pytest.fixture(scope='session')
@@ -19,10 +21,11 @@ def mq_service():
     yield lrm
     lrm.stop()
 
+
 @pytest.fixture(scope='session')
 def redis_service():
     """Start Redis Docker service"""
-    lr = redis.LocalRedis(name='core_redis', network='test_network', exposed_ports={6379: 6379})
+    lr = local_redis_service.LocalRedis(name='core_redis', network='test_network', exposed_ports={6379: 6379})
     lr.start()
     time.sleep(3)
     yield lr
@@ -126,3 +129,14 @@ def db_engine_path(tmpdir):
     else:
         path = f'sqlite:////{tmpdir}/ostorlab_db1.sqlite'
     return path
+
+
+@pytest.fixture()
+def clean_redis_data(request) -> None:
+    """Clean all redis data."""
+    yield
+    redis_url = request.param
+    redis_client = redis.Redis.from_url(redis_url)
+    keys = redis_client.keys()
+    for key in keys:
+        redis_client.delete(key)

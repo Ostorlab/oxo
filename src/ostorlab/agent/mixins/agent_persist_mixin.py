@@ -11,6 +11,7 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 """
+from typing import Dict, List, Set
 import redis
 
 from ostorlab.runtimes import definitions as runtime_definitions
@@ -30,7 +31,7 @@ class AgentPersistMixin:
             raise ValueError('agent settings is missing redis url')
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
 
-    def set_add(self, key, value) -> bool:
+    def set_add(self, key: bytes, *value: List) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
         as tested.
         The method can be used to sync multiple agents that may encounter the same test input but need to test it
@@ -39,18 +40,18 @@ class AgentPersistMixin:
 
         Args:
             key: Set key.
-            value: List of values to add to set.
+            value: values to add to set.
 
         Returns:
             True if it is a new member, False otherwise.
         """
-        return bool(self._redis_client.sadd(key, value))
+        return bool(self._redis_client.sadd(key, *value))
 
-    def set_is_member(self, key, value) -> bool:
+    def set_is_member(self, key: bytes, value: bytes) -> bool:
         """Indicates whether value is member of the set identified by key.
 
         Args:
-            key: The set key.
+            key: Set key.
             value: The value to check.
 
         Returns:
@@ -58,7 +59,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.sismember(key, value)
 
-    def set_len(self, key) -> bool:
+    def set_len(self, key: bytes) -> int:
         """Helper function that returns the set cardinality (number of elements) of the set stored at key.
         The method can be used to sync multiple agents that may receive test inputs but need to test
         less than X test inputs.
@@ -68,40 +69,110 @@ class AgentPersistMixin:
             key: Set key.
 
         Returns:
-            the cardinality (number of elements) of the set, or 0 if key does not exist.
+            The cardinality (number of elements) of the set, or 0 if key does not exist.
         """
         return self._redis_client.scard(key)
 
-    def set_members(self, key) -> bool:
-        """Helper function that returns the value of key.
+    def set_members(self, key: str) -> Set:
+        """Helper function that returns all the members of the set value stored at key.
 
         Args:
             key: Set key.
 
         Returns:
-             the value of key, or nil when key does not exist.
+             The value of key, or empty set when key does not exist.
         """
         return self._redis_client.smembers(key)
 
-    def add(self, key, value) -> bool:
+    def add(self, key: bytes, value: bytes) -> bool:
         """Helper function that Set key to hold the string value.
 
         Args:
-            key: key.
-            value: String.
+            key: Key for string value.
+            value: Bytes value.
 
         Returns:
-            String status of the set command.
+            Status of the set command.
         """
         return self._redis_client.set(key, value)
 
-    def get(self, key) -> bool:
-        """Get the value of key. If the key does not exist the special value nil is returned.
+    def get(self, key: bytes) -> bytes:
+        """Get the value of key. If the key does not exist None is returned.
 
         Args:
-            key: key.
+            key: Key for string value.
 
         Returns:
-            the value of key, or nil when key does not exist.
+            Value of key, or None when key does not exist.
         """
         return self._redis_client.get(key)
+
+    def hash_add(self, hash_name: bytes, mapping: Dict) -> bool:
+        """Set mapping within hash hash_name. If hash_name does not exist a new hash is created.
+        If key exists, value is overriden.
+
+        Args:
+            hash_name: Name of the hash.
+            mapping: Dict of key/value pairs that will be hadded to hash_name
+
+        Returns:
+            True if the key does not exist, False otherwise
+        """
+        return bool(self._redis_client.hset(name=hash_name, mapping=mapping))
+
+    def hash_exists(self, hash_name: bytes, key: bytes)-> bool:
+        """Returns a boolean indicating if key exists within hash hash_name.
+
+        Args:
+            hash_name: Name of the hash.
+            key: Key in the hash.
+
+        Returns:
+            True if the key exists in the hash.
+        """
+        return self._redis_client.hexists(hash_name, key)
+
+    def hash_get(self, hash_name: bytes, key: bytes):
+        """Return the value of key within the hash hash_name.
+
+        Args:
+            hash_name: Name of the hash.
+            key: Key in the hash.
+
+        Returns:
+            Value of the key stored in hash_name, None if the key does not exist.
+        """
+        return self._redis_client.hget(hash_name, key)
+
+    def hash_get_all(self, hash_name: bytes)-> Dict:
+        """Returns a dict of the hash’s name/value pairs.
+
+        Args:
+            hash_name: Name of the hash.
+
+        Returns:
+            Dict of the hash’s name/value pairs.
+        """
+        return self._redis_client.hgetall(hash_name)
+
+    def delete(self, key: bytes) -> bool:
+        """Delete a specific key.
+
+        Args:
+            key: Key of any type.
+
+        Returns:
+            True if the key is delete, False otherwise.
+        """
+        return bool(self._redis_client.delete(key))
+
+    def value_type(self, key: bytes)-> str:
+        """Return a string representation of the type of the value stored at key.
+
+        Args:
+            key: Key in redis.
+
+        Returns:
+            String representation of the type of value stored at key. eg: set, string.
+        """
+        return self._redis_client.type(key).decode()
