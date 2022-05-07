@@ -9,7 +9,7 @@ message header {
 }
 
 message response {
-  required string uuid = 1;
+  required string id = 1;
   required int32 status_code = 2;
   repeated header headers = 3;
   optional bytes content = 4;
