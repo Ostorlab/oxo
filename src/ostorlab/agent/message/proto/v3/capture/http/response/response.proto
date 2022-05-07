@@ -5,10 +5,9 @@ package v3.capture.http.response;
 message header {
   required bytes name = 1;
   required bytes value = 2;
-  required int32 index = 3;
 }
 
-message response {
+message Message {
   optional string id = 1;
   required int32 status_code = 2;
   repeated header headers = 3;
@@ -17,8 +16,4 @@ message response {
   optional string reason = 6;
   optional float time_start = 7;
   optional float time_end = 8;
-}
-
-message Message {
-  repeated response responses = 1;
 }

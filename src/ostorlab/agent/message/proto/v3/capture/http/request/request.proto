@@ -5,11 +5,10 @@ package v3.capture.http.request;
 message header {
   required bytes name = 1;
   required bytes value = 2;
-  required int32 index = 3;
 }
 
-message request {
-  optional string id = 1;
+message Message {
+   optional string id = 1;
   required string method = 2;
   repeated header headers = 3;
   optional bytes content = 4;
@@ -20,8 +19,4 @@ message request {
   optional bytes path = 9;
   optional float time_start = 10;
   optional float time_end = 11;
-}
-
-message Message {
-  repeated request requests = 1;
 }

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n%v3/capture/http/request/request.proto\x12\x17v3.capture.http.request\"4\n\x06header\x12\x0c\n\x04name\x18\x01 \x02(\x0c\x12\r\n\x05value\x18\x02 \x02(\x0c\x12\r\n\x05index\x18\x03 \x02(\x05\"\xde\x01\n\x07request\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x02(\t\x12\x30\n\x07headers\x18\x03 \x03(\x0b\x32\x1f.v3.capture.http.request.header\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\x0c\x12\x0c\n\x04host\x18\x05 \x01(\t\x12\x0c\n\x04port\x18\x06 \x01(\x05\x12\x14\n\x0chttp_version\x18\x07 \x01(\x0c\x12\x0e\n\x06scheme\x18\x08 \x01(\x0c\x12\x0c\n\x04path\x18\t \x01(\x0c\x12\x12\n\ntime_start\x18\n \x01(\x02\x12\x10\n\x08time_end\x18\x0b \x01(\x02\"=\n\x07Message\x12\x32\n\x08requests\x18\x01 \x03(\x0b\x32 .v3.capture.http.request.request'
+  serialized_pb=b'\n%v3/capture/http/request/request.proto\x12\x17v3.capture.http.request\"%\n\x06header\x12\x0c\n\x04name\x18\x01 \x02(\x0c\x12\r\n\x05value\x18\x02 \x02(\x0c\"\xde\x01\n\x07Message\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x02(\t\x12\x30\n\x07headers\x18\x03 \x03(\x0b\x32\x1f.v3.capture.http.request.header\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\x0c\x12\x0c\n\x04host\x18\x05 \x01(\t\x12\x0c\n\x04port\x18\x06 \x01(\x05\x12\x14\n\x0chttp_version\x18\x07 \x01(\x0c\x12\x0e\n\x06scheme\x18\x08 \x01(\x0c\x12\x0c\n\x04path\x18\t \x01(\x0c\x12\x12\n\ntime_start\x18\n \x01(\x02\x12\x10\n\x08time_end\x18\x0b \x01(\x02'
 )
 
 
@@ -47,13 +47,6 @@ _HEADER = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='index', full_name='v3.capture.http.request.header.index', index=2,
-      number=3, type=5, cpp_type=1, label=2,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -67,90 +60,90 @@ _HEADER = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=66,
-  serialized_end=118,
+  serialized_end=103,
 )
 
 
-_REQUEST = _descriptor.Descriptor(
-  name='request',
-  full_name='v3.capture.http.request.request',
+_MESSAGE = _descriptor.Descriptor(
+  name='Message',
+  full_name='v3.capture.http.request.Message',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='v3.capture.http.request.request.id', index=0,
+      name='id', full_name='v3.capture.http.request.Message.id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='method', full_name='v3.capture.http.request.request.method', index=1,
+      name='method', full_name='v3.capture.http.request.Message.method', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='headers', full_name='v3.capture.http.request.request.headers', index=2,
+      name='headers', full_name='v3.capture.http.request.Message.headers', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='content', full_name='v3.capture.http.request.request.content', index=3,
+      name='content', full_name='v3.capture.http.request.Message.content', index=3,
       number=4, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='host', full_name='v3.capture.http.request.request.host', index=4,
+      name='host', full_name='v3.capture.http.request.Message.host', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='port', full_name='v3.capture.http.request.request.port', index=5,
+      name='port', full_name='v3.capture.http.request.Message.port', index=5,
       number=6, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='http_version', full_name='v3.capture.http.request.request.http_version', index=6,
+      name='http_version', full_name='v3.capture.http.request.Message.http_version', index=6,
       number=7, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='scheme', full_name='v3.capture.http.request.request.scheme', index=7,
+      name='scheme', full_name='v3.capture.http.request.Message.scheme', index=7,
       number=8, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='path', full_name='v3.capture.http.request.request.path', index=8,
+      name='path', full_name='v3.capture.http.request.Message.path', index=8,
       number=9, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='time_start', full_name='v3.capture.http.request.request.time_start', index=9,
+      name='time_start', full_name='v3.capture.http.request.Message.time_start', index=9,
       number=10, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='time_end', full_name='v3.capture.http.request.request.time_end', index=10,
+      name='time_end', full_name='v3.capture.http.request.Message.time_end', index=10,
       number=11, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
@@ -168,46 +161,12 @@ _REQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=121,
-  serialized_end=343,
+  serialized_start=106,
+  serialized_end=328,
 )
 
-
-_MESSAGE = _descriptor.Descriptor(
-  name='Message',
-  full_name='v3.capture.http.request.Message',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='requests', full_name='v3.capture.http.request.Message.requests', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto2',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=345,
-  serialized_end=406,
-)
-
-_REQUEST.fields_by_name['headers'].message_type = _HEADER
-_MESSAGE.fields_by_name['requests'].message_type = _REQUEST
+_MESSAGE.fields_by_name['headers'].message_type = _HEADER
 DESCRIPTOR.message_types_by_name['header'] = _HEADER
-DESCRIPTOR.message_types_by_name['request'] = _REQUEST
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -217,13 +176,6 @@ header = _reflection.GeneratedProtocolMessageType('header', (_message.Message,),
   # @@protoc_insertion_point(class_scope:v3.capture.http.request.header)
   })
 _sym_db.RegisterMessage(header)
-
-request = _reflection.GeneratedProtocolMessageType('request', (_message.Message,), {
-  'DESCRIPTOR' : _REQUEST,
-  '__module__' : 'v3.capture.http.request.request_pb2'
-  # @@protoc_insertion_point(class_scope:v3.capture.http.request.request)
-  })
-_sym_db.RegisterMessage(request)
 
 Message = _reflection.GeneratedProtocolMessageType('Message', (_message.Message,), {
   'DESCRIPTOR' : _MESSAGE,
