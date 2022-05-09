@@ -3,10 +3,6 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-<p align="center">
-<img src="https://github.com/Ostorlab/ostorlab/blob/main/images/logo.png" alt="ostorlab-oss-logo" />
-</p>
-
 # Ostorlab Security Scanner
 
 Ostorlab is security scanner framework with the mantra of do one thing and do it well.
