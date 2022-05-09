@@ -67,7 +67,8 @@ ostorlab vulnz describe --vuln-id <vuln-id>
 Agents accept argument to tweak their behavior, like setting the default ports for nmap or passing the API key to
 Virustotal. Agents composition can also be saved to a YAML file for latter use. See below some examples
 
-Run a network scan:
+* Run a network scan:
+
 ```yaml
 # file: agent_group.yaml
 kind: AgentGroup
@@ -100,8 +101,7 @@ agents:
 ostorlab scan run --install -g agent_group.yaml ip 8.8.8.8 8.8.4.4
 ```
 
-
-Run a web scan:
+* Run a web scan:
 
 ```yaml
 # file: agent_group.yaml
@@ -118,7 +118,7 @@ agents:
 ostorlab scan run --install -g agent_group.yaml domain-name example.com
 ```
 
-List all subdomains, resolve their IP addresses and run a network scan:
+* List all subdomains, resolve their IP addresses and run a network scan:
 
 ```yaml
 # file: agent_group.yaml
@@ -134,8 +134,11 @@ agents:
     args: []
 ```
 
+```shell
+ostorlab scan run --install -g agent_group.yaml domain-name example.com
+```
 
-Brute force all TLDs of a subdomain and resolve their IP addresses:
+* Brute force all TLDs of a subdomain and resolve their IP addresses:
 
 ```yaml
 # file: agent_group.yaml
@@ -151,6 +154,11 @@ agents:
   - key: agent/ostorlab/dnsx
     args: []
 ```
+
+```shell
+ostorlab scan run --install -g agent_group.yaml domain-name example.com
+```
+
 
 ## The Pitch
 
