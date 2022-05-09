@@ -3,26 +3,172 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-# Ostorlab Open-Source Security Scanner
+# Ostorlab Security Scanner
+
+Ostorlab is security scanner framework with the mantra of do one thing and do it well.
+
+Ostorlab provides unparalleled and limitless extensibility by combining specialized tools to work cohesively to find
+vulnerabilities.
 
 ![Scan Run](images/scan_run.gif)
 
+# Requirements
+
+Docker is required to run scans locally. To install docker, please follow these
+[instructions](https://docs.docker.com/get-docker/).
+
+# Installing
+
+Ostorlab ships as a Python package on Pypi. To install it, simply run the following command if you have `pip` already
+installed.
+
+```shell
+pip install -U ostorlab
+```
+
+# Getting Started
+
+Ostorlab ships with a store that boasts dozens of agents, from network scanning agents like nmap, openvas, nuclei or tsunami,
+web scanner like Zap, web fingerprinting tools like Whatweb and Wappalyzer, DNS brute forcing like Subfinder and Dnsx,
+malware file scanning like Virustotal and much more.
+
+To run any of these tools combined, simply run the following command:
+
+```shell
+ostorlab scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
+```
+
+This command will download and install the following scanning agents:
+
+* `agent/ostorlab/nmap`
+* `agent/ostorlab/tsunami`
+* `agent/ostorlab/nuclei`
+* `agent/ostorlab/openvas`
+
+And will scan the target IP address `8.8.8.8`.
+
+Agents are shipped as standard docker images.
+
+To check the scan status, run:
+
+```shell
+ostorlab scan list
+```
+
+Once the scan has completed, to access the scan results, run:
+
+```shell
+ostorlab vulnz list --scan-id <scan-id>
+ostorlab vulnz describe --vuln-id <vuln-id>
+```
+
+# Examples
+
+Agents accept argument to tweak their behavior, like setting the default ports for nmap or passing the API key to
+Virustotal. Agents composition can also be saved to a YAML file for latter use. See below some examples
+
+Run a network scan:
+```yaml
+# file: agent_group.yaml
+kind: AgentGroup
+description: Grouping of 6 agents.
+agents:
+  - key: agent/ostorlab/nmap
+    args:
+      - name: ports
+        type: string
+        description: List of ports to scan.
+        value: '22,443,80'
+  - key: agent/ostorlab/tsunami
+    args: []
+  - key: agent/ostorlab/openvas
+    args: []
+  - key: agent/ostorlab/nuclei
+    args:
+      - name: template_urls
+        type: array
+        description: List of template urls to run. These will be fetched by the agent
+          and passed to Nuclei.
+        value: ""
+      - name: use_default_templates
+        type: boolean
+        description: use nuclei's default templates to scan.
+        value: true
+```
+
+```shell
+ostorlab scan run --install -g agent_group.yaml ip 8.8.8.8 8.8.4.4
+```
+
+
+Run a web scan:
+
+```yaml
+# file: agent_group.yaml
+kind: AgentGroup
+description: Grouping of 4 agents.
+agents:
+  - key: agent/ostorlab/zap
+    args: []
+  - key: agent/ostorlab/whatweb
+    args: []
+```
+
+```shell
+ostorlab scan run --install -g agent_group.yaml domain-name example.com
+```
+
+List all subdomains, resolve their IP addresses and run a network scan:
+
+```yaml
+# file: agent_group.yaml
+kind: AgentGroup
+description: Grouping of 5 agents.
+agents:
+  - key: agent/ostorlab/nmap
+    args: []
+    port_mapping: []
+  - key: agent/ostorlab/subfinder
+    args: []
+  - key: agent/ostorlab/dnsx
+    args: []
+```
+
+
+Brute force all TLDs of a subdomain and resolve their IP addresses:
+
+```yaml
+# file: agent_group.yaml
+kind: AgentGroup
+description: Grouping of 5 agents.
+agents:
+  - key: agent/ostorlab/nmap
+    args: []
+  - key: agent/ostorlab/all_tlds
+    args: []
+  - key: agent/ostorlab/subfinder
+    args: []
+  - key: agent/ostorlab/dnsx
+    args: []
+```
+
 ## The Pitch
 
-If this is the first time you are visiting the Ostorlab Github page, here is the pitch.
+Testing for even the most simple vulnerabilities often requires chaining multiple tools. Take for instance scanning
+for a Log4J bug, this requires:
 
-Security testing requires often chaining tools together, taking the output from one, mangling it, filtering it and then
-pushing it to another tool. Several tools have tried to make the process less painful. Ostorlab addresses the same
-challenge by simplifying the hardest part and automating the boring and tedious part.
+* Crawling
+* Path brute forcing
+* Request Injection Point fuzzing
+* Callback interception
 
-To do that, Ostorlab focuses on the following:
+Tools will often re-invent the wheel by poorly re-implementing all of these and then add their detection. These often
+results in poor detectors as most of these are complex tasks that requires specialized tools.
 
-* __Ease of use__ with simple one command-line to perform all tasks
-* __Developer Experience__ through project documentation, tutorials, SDK and templates
-* __Scalability and Performance__ by using efficient serialisation format and proven industry standard for all of its components
+Ostorlab offers the ease of chaining the specialized tools to focus on perform the required task, offering increased
+detection, faster delivery.
 
-
-To do that, Ostorlab ships with:
+To do that, Ostorlab provides on the following:
 
 * A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, like distributed locking,
   QPS limiting, multiple instance parallelization ...
@@ -36,49 +182,6 @@ To do that, Ostorlab ships with:
 * Focus on documentation, multiple tutorials and upcoming videos and conference presentations.
 * A ready to use one-click template repo to get started.
 
-# Requirements
-
-For some tasks, like running scans locally, Docker is required. To install docker, please see the following
-[instructions](https://docs.docker.com/get-docker/).
-
-# Installing
-
-Ostorlab is shipped as a Python package on Pypi. To install, simply run the following command if you have `pip` already
-installed.
-
-```shell
-pip install -U ostorlab
-```
-
-# Getting Started
-
-To perform your first scan, simply run the following command:
-
-```shell
-ostorlab scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
-```
-
-This command will download and install the following scanning agents:
-
-* `agent/ostorlab/nmap`
-* `agent/ostorlab/tsunami`
-* `agent/ostorlab/nuclei`
-* `agent/ostorlab/openvas`
-
-And will scan the target IP address `8.8.8.8`
-
-To check the scan status:
-
-```shell
-ostorlab scan list
-```
-
-Once the scan has completed, to access the scan results:
-
-```shell
-ostorlab vulnz list --scan-id <scan-id>
-ostorlab vulnz describe --vuln-id <vuln-id>
-```
 
 # The Store
 
