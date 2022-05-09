@@ -28,7 +28,8 @@ pip install -U ostorlab
 
 # Getting Started
 
-Ostorlab ships with a store that boasts dozens of agents, from network scanning agents like nmap, openvas, nuclei or tsunami,
+Ostorlab ships with a store that boasts dozens of agents, from network scanning agents like nmap, openvas, nuclei or
+tsunami,
 web scanner like Zap, web fingerprinting tools like Whatweb and Wappalyzer, DNS brute forcing like Subfinder and Dnsx,
 malware file scanning like Virustotal and much more.
 
@@ -81,9 +82,9 @@ agents:
         description: List of ports to scan.
         value: '22,443,80'
   - key: agent/ostorlab/tsunami
-    args: []
+    args: [ ]
   - key: agent/ostorlab/openvas
-    args: []
+    args: [ ]
   - key: agent/ostorlab/nuclei
     args:
       - name: template_urls
@@ -109,9 +110,9 @@ kind: AgentGroup
 description: Grouping of 4 agents.
 agents:
   - key: agent/ostorlab/zap
-    args: []
+    args: [ ]
   - key: agent/ostorlab/whatweb
-    args: []
+    args: [ ]
 ```
 
 ```shell
@@ -126,12 +127,12 @@ kind: AgentGroup
 description: Grouping of 5 agents.
 agents:
   - key: agent/ostorlab/nmap
-    args: []
-    port_mapping: []
+    args: [ ]
+    port_mapping: [ ]
   - key: agent/ostorlab/subfinder
-    args: []
+    args: [ ]
   - key: agent/ostorlab/dnsx
-    args: []
+    args: [ ]
 ```
 
 ```shell
@@ -146,19 +147,18 @@ kind: AgentGroup
 description: Grouping of 5 agents.
 agents:
   - key: agent/ostorlab/nmap
-    args: []
+    args: [ ]
   - key: agent/ostorlab/all_tlds
-    args: []
+    args: [ ]
   - key: agent/ostorlab/subfinder
-    args: []
+    args: [ ]
   - key: agent/ostorlab/dnsx
-    args: []
+    args: [ ]
 ```
 
 ```shell
 ostorlab scan run --install -g agent_group.yaml domain-name example.com
 ```
-
 
 ## The Pitch
 
@@ -205,7 +205,6 @@ Ostorlab supports scanning of multiple asset types, below is the list of current
 | ios-ipa     | Run scan for iOS .IPA file.                                                        |
 | domain-name | Run scan for Domain Name asset with specifying protocol or port.                   |
 
-
 # The Store
 
 Ostorlab lists all agents on a public store where you can search and also publish your own agents.
@@ -224,9 +223,35 @@ to control their behavior.
 
 # Publish your first Agent
 
-To write your first agent, check out the full tutorial [here](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/).
+To write your first agent, you can check out a full
+tutorial [here](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent/).
 
-Once you have written your agent, you can publish it on the store for others to use and discover it. The store even
-handles agent building and will automatically pick up new releases from the git repo.
+The steps are basically the following:
+
+* Clone a template agent with all files already setup.
+* Change the `template_agent.py` file to add your logic.
+* Change the `Dockerfile` adding any extra building steps.
+* Change the `ostorlab.yaml` adding selectors, documentation, image, license.
+* Publish on the store.
+* Profit!
+
+Once you have written your agent, you can publish it on the store for others to use and discover it. The store
+will handle agent building and will automatically pick up new releases from your git repo.
 
 ![Build](images/build.gif)
+
+## Ideas for Agents to Build
+
+Implementation of popular tools like:
+
+* [semgrep](https://github.com/returntocorp/semgrep) for source code scanning.
+* [nbtscan](http://www.unixwiz.net/tools/nbtscan.html): Scans for open NETBIOS nameservers on your target’s network.
+* [onesixtyone](https://github.com/trailofbits/onesixtyone): Fast scanner to find publicly exposed SNMP services.
+* [Retire.js](http://retirejs.github.io/retire.js/): Scanner detecting the use of JavaScript libraries with known
+  vulnerabilities.
+* [snallygaster](https://github.com/hannob/snallygaster): Finds file leaks and other security problems on HTTP servers.
+* [testssl.sh](https://testssl.sh/): Identify various TLS/SSL weaknesses, including Heartbleed, CRIME and ROBOT.
+* [TruffleHog](https://github.com/trufflesecurity/truffleHog): Searches through git repositories for high entropy
+  strings and secrets, digging deep into commit history.
+* [cve-bin-tool](https://github.com/intel/cve-bin-tool): Scan binaries for vulnerable components.
+* [XSStrike](https://github.com/s0md3v/XSStrike): XSS web vulnerability scanner with generative payload.
