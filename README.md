@@ -190,6 +190,21 @@ To do that, Ostorlab provides on the following:
 * Focus on documentation, multiple tutorials and upcoming videos and conference presentations.
 * A ready to use one-click template repo to get started.
 
+# Assets
+
+Ostorlab supports scanning of multiple asset types, below is the list of currently supported:
+
+| Asset       | Description                                                                        |
+|-------------|------------------------------------------------------------------------------------|
+| agent       | Run scan for agent. This is used for agents scanning themselves (meta-scanning :). |
+| ip          | Run scan for IP address or an IP range .                                           |
+| link        | Run scan for web link accepting a URL, method, headers and request body.           |
+| file        | Run scan for a generic file.                                                       |
+| android-aab | Run scan for an Android .AAB package file.                                         |
+| android-apk | Run scan for an Android .APK package file.                                         |
+| ios-ipa     | Run scan for iOS .IPA file.                                                        |
+| domain-name | Run scan for Domain Name asset with specifying protocol or port.                   |
+
 
 # The Store
 
