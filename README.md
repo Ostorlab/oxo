@@ -240,7 +240,7 @@ will handle agent building and will automatically pick up new releases from your
 
 ![Build](images/build.gif)
 
-## Ideas for Agents to Build
+## Ideas for Agents to build
 
 Implementation of popular tools like:
 
