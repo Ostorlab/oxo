@@ -114,6 +114,6 @@ def _check_build_root(docker_build_root, file):
     """
     yaml_file_dir = pathlib.Path(file.name).parent.resolve()
     docker_build_root_path = (yaml_file_dir / docker_build_root).resolve()
-    if not str(yaml_file_dir) in str(docker_build_root_path):
+    if str(yaml_file_dir) not in str(docker_build_root_path):
         console.error(f'Invalid docker build path {docker_build_root}.')
         raise click.exceptions.Exit(3)
