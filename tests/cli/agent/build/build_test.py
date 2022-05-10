@@ -31,6 +31,21 @@ def _is_docker_image_present(image: str):
         return False
 
 
+def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
+    """Test ostorlab agent build CLI command : Case where the command is valid. The agent container should be built.
+    """
+    dummy_def_yaml_file_path = Path(__file__).parent / 'assets/illegal_build_root_dummydef.yaml'
+    runner = testing.CliRunner()
+    result = runner.invoke(rootcli.rootcli, [
+        'agent',
+        'build',
+        f'--file={dummy_def_yaml_file_path}',
+        '--organization=ostorlab'
+    ])
+    assert 'ERROR: Invalid docker build path' in result.output
+
+
+
 @pytest.mark.docker
 @pytest.mark.parametrize('image_cleanup', ['dummy'], indirect=True)
 def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(image_cleanup):

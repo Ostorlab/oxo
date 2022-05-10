@@ -1,6 +1,7 @@
 """Agent Build commands."""
 import io
 import logging
+import pathlib
 
 import click
 import docker
@@ -76,6 +77,9 @@ def build(file: io.FileIO, organization: str = '', force: bool = False, no_cache
         file.seek(0)
         dockerfile_path = agent_def['docker_file_path']
         docker_build_root = agent_def['docker_build_root']
+
+        _check_build_root(docker_build_root, file)
+
         agent_name = agent_def['name']
         agent_version = agent_def.get('version', '0.0.0')
         container_name = f'agent_{organization}_{agent_name}:v{agent_version}'
@@ -101,3 +105,15 @@ def build(file: io.FileIO, organization: str = '', force: bool = False, no_cache
     except validator.ValidationError as e:
         console.error('Definition file does not conform to the provided specification.')
         raise click.exceptions.Exit(2) from e
+
+
+def _check_build_root(docker_build_root, file):
+    """Check whether build root is valid.
+
+    Checks if docker build root is a subfolder of yaml file path.
+    """
+    yaml_file_dir = pathlib.Path(file.name).parent.resolve()
+    docker_build_root_path = (yaml_file_dir / docker_build_root).resolve()
+    if str(yaml_file_dir) not in str(docker_build_root_path):
+        console.error(f'Invalid docker build path {docker_build_root}.')
+        raise click.exceptions.Exit(3)
