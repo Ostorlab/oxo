@@ -1,0 +1,33 @@
+syntax = "proto2";
+
+package v3.asset.ip.v6.whois;
+
+message Network {
+  optional string cidr = 1;
+  optional string name = 2;
+  optional string handle = 3;
+  optional string parent_handle = 4;
+}
+
+message Contact {
+  optional string name = 1;
+  optional string kind = 2;
+  optional string address = 3;
+}
+
+
+message Entity {
+  optional string name = 1;
+}
+
+message Message {
+  required string host = 1;
+  optional string mask = 2;
+  required int32 version = 3 [default = 6];
+  optional string asn_registry = 4;
+  optional sint32 asn_number = 5;
+  optional string asn_country_code = 6;
+  optional string asn_date = 7;
+  optional string asn_description = 8;
+  optional Network network = 9;
+}
