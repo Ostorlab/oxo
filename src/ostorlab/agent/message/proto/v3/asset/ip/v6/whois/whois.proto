@@ -18,6 +18,8 @@ message Contact {
 
 message Entity {
   optional string name = 1;
+  optional Contact contact = 2;
+
 }
 
 message Message {
@@ -30,4 +32,5 @@ message Message {
   optional string asn_date = 7;
   optional string asn_description = 8;
   optional Network network = 9;
+  repeated Entity entities = 10;
 }
