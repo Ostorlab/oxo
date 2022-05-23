@@ -27,7 +27,7 @@ message Message {
   optional string mask = 2;
   required int32 version = 3 [default = 4];
   optional string asn_registry = 4;
-  optional sint32 asn_number = 5;
+  optional int32 asn_number = 5;
   optional string asn_country_code = 6;
   optional string asn_date = 7;
   optional string asn_description = 8;
