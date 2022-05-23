@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.asset.ip.v6.port.service;
+package v3.asset.ip.v4.port.service.http;
 
 message Message {
   required string host = 1;
@@ -11,4 +11,5 @@ message Message {
   optional string state = 7;
   optional string service = 8;
   optional string banner = 9;
+  optional bool tls =10 [default = false];
 }
