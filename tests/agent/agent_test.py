@@ -105,7 +105,7 @@ def testAgentMain_whithNonExistingFile_exits(mocker):
         assert wrapper_exception.value.code == 42
 
 
-def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs():
+def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs(agent_mock):
     class TestAgent(agent.Agent):
         """Test Agent"""
 
