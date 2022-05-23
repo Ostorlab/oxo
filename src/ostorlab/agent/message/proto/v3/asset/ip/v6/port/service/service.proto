@@ -10,4 +10,5 @@ message Message {
   optional string protocol = 6;
   optional string state = 7;
   optional string service = 8;
+  optional string banner = 9;
 }
