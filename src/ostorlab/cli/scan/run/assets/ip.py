@@ -2,6 +2,7 @@
 This module takes care of preparing an IP asset, either single address, a range with mask for both v4 and v6."""
 import ipaddress
 import logging
+from typing import List
 
 import click
 
@@ -18,7 +19,7 @@ console = cli_console.Console()
 @run.run.command(name='ip')
 @click.argument('ips', required=True, nargs=-1)
 @click.pass_context
-def ip_cli(ctx: click.core.Context, ips: str) -> None:
+def ip_cli(ctx: click.core.Context, ips: List[str]) -> None:
     """Run scan for IP asset."""
     runtime = ctx.obj['runtime']
     try:
