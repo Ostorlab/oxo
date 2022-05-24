@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package v3.asset.store.ios_store.developer;
+
+
+message Message {
+  required string bundle_id = 1;
+  optional string developer = 2;
+  optional string developer_url = 3;
+  optional string developer_email = 4;
+}
