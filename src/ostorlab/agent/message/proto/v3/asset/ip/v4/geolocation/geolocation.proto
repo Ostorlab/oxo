@@ -17,4 +17,5 @@ message Message {
   optional float latitude = 13;
   optional float longitude = 14;
   optional string timezone = 15;
+  optional string district = 16;
 }
