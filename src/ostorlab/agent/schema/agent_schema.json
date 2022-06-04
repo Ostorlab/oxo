@@ -137,6 +137,10 @@
       "description": "[Optional] - How to start the agent.",
       "type": "string"
     },
+    "service_name": {
+      "description": "[Optional] - Docker service name to use.",
+      "type": "string"
+    },
     "agent_path": {
       "description": "[Optional] - Path to the agent code or executable",
       "$ref": "#/CustomTypes/Path"
