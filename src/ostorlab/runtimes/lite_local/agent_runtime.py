@@ -296,8 +296,9 @@ class AgentRuntime:
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
+        service_name = agent_definition.service_name or self.agent.container_image.replace(':', '_').\
+            replace('.', '') + '_' + self.runtime_name
 
-        service_name = self.agent.container_image.replace(':', '_').replace('.', '') + '_' + self.runtime_name
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
