@@ -255,3 +255,4 @@ Implementation of popular tools like:
   strings and secrets, digging deep into commit history.
 * [cve-bin-tool](https://github.com/intel/cve-bin-tool): Scan binaries for vulnerable components.
 * [XSStrike](https://github.com/s0md3v/XSStrike): XSS web vulnerability scanner with generative payload.
+* [Subjack](https://github.com/haccer/subjack): Subdomain takeover scanning tool.
