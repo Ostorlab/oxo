@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.link',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x18v3/asset/link/link.proto\x12\rv3.asset.link\"%\n\x06Header\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"%\n\x06\x43ookie\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"7\n\x0cLocalStorage\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0b\n\x03key\x18\x02 \x02(\t\x12\r\n\x05value\x18\x03 \x02(\t\"6\n\tFormInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x02(\t\x12\x0c\n\x04type\x18\x03 \x02(\t\"A\n\x04\x46orm\x12(\n\x06inputs\x18\x01 \x03(\x0b\x32\x18.v3.asset.link.FormInput\x12\x0f\n\x07\x65nctype\x18\x02 \x02(\t\">\n\x0e\x46ormCredential\x12\r\n\x05login\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0b\n\x03url\x18\x03 \x01(\t\"\"\n\x10ScriptCredential\x12\x0e\n\x06script\x18\x01 \x01(\t\"\xab\x03\n\x07Message\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0e\n\x06method\x18\x02 \x02(\t\x12\x0e\n\x04\x62ody\x18\x03 \x01(\x0cH\x00\x12#\n\x04\x66orm\x18\x04 \x01(\x0b\x32\x13.v3.asset.link.FormH\x00\x12,\n\rextra_headers\x18\x05 \x03(\x0b\x32\x15.v3.asset.link.Header\x12&\n\x07\x63ookies\x18\x06 \x03(\x0b\x32\x15.v3.asset.link.Cookie\x12\x38\n\x0f\x66orm_credential\x18\x07 \x01(\x0b\x32\x1d.v3.asset.link.FormCredentialH\x01\x12<\n\x11script_credential\x18\x08 \x01(\x0b\x32\x1f.v3.asset.link.ScriptCredentialH\x01\x12&\n\x06parent\x18\t \x01(\x0b\x32\x16.v3.asset.link.Message\x12\x36\n\x11localstorageitems\x18\n \x03(\x0b\x32\x1b.v3.asset.link.LocalStorageB\x0c\n\nbody_oneofB\x12\n\x10\x63redential_oneof')
+  serialized_pb=_b('\n\x18v3/asset/link/link.proto\x12\rv3.asset.link\"%\n\x06Header\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"%\n\x06\x43ookie\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"7\n\x0cLocalStorage\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0b\n\x03key\x18\x02 \x02(\t\x12\r\n\x05value\x18\x03 \x02(\t\"6\n\tFormInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x02(\t\x12\x0c\n\x04type\x18\x03 \x02(\t\"A\n\x04\x46orm\x12(\n\x06inputs\x18\x01 \x03(\x0b\x32\x18.v3.asset.link.FormInput\x12\x0f\n\x07\x65nctype\x18\x02 \x02(\t\">\n\x0e\x46ormCredential\x12\r\n\x05login\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0b\n\x03url\x18\x03 \x01(\t\"\"\n\x10ScriptCredential\x12\x0e\n\x06script\x18\x01 \x01(\t\"\xac\x03\n\x07Message\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0e\n\x06method\x18\x02 \x02(\t\x12\x0e\n\x04\x62ody\x18\x03 \x01(\x0cH\x00\x12#\n\x04\x66orm\x18\x04 \x01(\x0b\x32\x13.v3.asset.link.FormH\x00\x12,\n\rextra_headers\x18\x05 \x03(\x0b\x32\x15.v3.asset.link.Header\x12&\n\x07\x63ookies\x18\x06 \x03(\x0b\x32\x15.v3.asset.link.Cookie\x12\x38\n\x0f\x66orm_credential\x18\x07 \x01(\x0b\x32\x1d.v3.asset.link.FormCredentialH\x01\x12<\n\x11script_credential\x18\x08 \x01(\x0b\x32\x1f.v3.asset.link.ScriptCredentialH\x01\x12&\n\x06parent\x18\t \x01(\x0b\x32\x16.v3.asset.link.Message\x12\x37\n\x12localstorage_items\x18\n \x03(\x0b\x32\x1b.v3.asset.link.LocalStorageB\x0c\n\nbody_oneofB\x12\n\x10\x63redential_oneof')
 )
 
 
@@ -376,7 +376,7 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='localstorageitems', full_name='v3.asset.link.Message.localstorageitems', index=9,
+      name='localstorage_items', full_name='v3.asset.link.Message.localstorage_items', index=9,
       number=10, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -401,7 +401,7 @@ _MESSAGE = _descriptor.Descriptor(
       index=1, containing_type=None, fields=[]),
   ],
   serialized_start=402,
-  serialized_end=829,
+  serialized_end=830,
 )
 
 _FORM.fields_by_name['inputs'].message_type = _FORMINPUT
@@ -411,7 +411,7 @@ _MESSAGE.fields_by_name['cookies'].message_type = _COOKIE
 _MESSAGE.fields_by_name['form_credential'].message_type = _FORMCREDENTIAL
 _MESSAGE.fields_by_name['script_credential'].message_type = _SCRIPTCREDENTIAL
 _MESSAGE.fields_by_name['parent'].message_type = _MESSAGE
-_MESSAGE.fields_by_name['localstorageitems'].message_type = _LOCALSTORAGE
+_MESSAGE.fields_by_name['localstorage_items'].message_type = _LOCALSTORAGE
 _MESSAGE.oneofs_by_name['body_oneof'].fields.append(
   _MESSAGE.fields_by_name['body'])
 _MESSAGE.fields_by_name['body'].containing_oneof = _MESSAGE.oneofs_by_name['body_oneof']

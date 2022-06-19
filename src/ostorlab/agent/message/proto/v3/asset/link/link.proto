@@ -53,5 +53,5 @@ message Message {
     ScriptCredential script_credential = 8;
   }
   optional Message parent = 9;
-  repeated LocalStorage localstorageitems = 10;
+  repeated LocalStorage localstorage_items = 10;
 }
