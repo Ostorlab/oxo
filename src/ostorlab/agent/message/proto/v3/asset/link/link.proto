@@ -12,6 +12,12 @@ message Cookie {
   required string value = 2;
 }
 
+message LocalStorage {
+  required string url = 1;
+  required string key = 2;
+  required string value = 3;
+}
+
 message FormInput {
   optional string name = 1;
   required string value = 2;
@@ -47,4 +53,5 @@ message Message {
     ScriptCredential script_credential = 8;
   }
   optional Message parent = 9;
+  repeated LocalStorage localstorage_items = 10;
 }
