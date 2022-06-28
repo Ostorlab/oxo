@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package v3.fingerprint.ip.v4.library;
+
+message Message {
+  required string host = 1;
+  optional string mask = 2;
+  required int32 version = 3 [default = 4];
+  required string library_type = 5;
+  optional string library_version = 6;
+  required string detail = 7;
+}
