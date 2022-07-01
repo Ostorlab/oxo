@@ -2,18 +2,6 @@ syntax = "proto2";
 
 package v3.fingerprint.ip.v6.library;
 
-//{
-//        'host': '8.8.8.8',
-//        'mask': 32
-//        'version': 4,
-//        'library_type': 'BACKEND_COMPONENT',
-//        'library_name': 'Apache',
-//        'service': 'HTTP',
-//        'port': 80,
-//        'protocol': 'TCP,
-//        'library_version': '1.0',
-//        'detail': ' 220 FTP version 1.0',
-//    }
 message Message {
   required string host = 1;
   optional string mask = 2;
@@ -22,7 +10,7 @@ message Message {
   required string library_name = 5;
   optional string library_version = 6;
   required string detail = 7;
-  optional string service =  8;
+  optional string service = 8;
   optional int32 port = 9;
   optional string protocol = 10;
 }
