@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n*v3/asset/domain_name/service/service.proto\x12\x1cv3.asset.domain_name.service\"9\n\x07Message\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04port\x18\x02 \x02(\t\x12\x12\n\x03tls\x18\x03 \x02(\x08:\x05\x66\x61lse'
+  serialized_pb=b'\n*v3/asset/domain_name/service/service.proto\x12\x1cv3.asset.domain_name.service\"<\n\x07Message\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04port\x18\x02 \x02(\t\x12\x15\n\x06schema\x18\x03 \x02(\x08:\x05\x66\x61lse'
 )
 
 
@@ -48,7 +48,7 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='tls', full_name='v3.asset.domain_name.service.Message.tls', index=2,
+      name='schema', full_name='v3.asset.domain_name.service.Message.schema', index=2,
       number=3, type=8, cpp_type=7, label=2,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -67,7 +67,7 @@ _MESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=76,
-  serialized_end=133,
+  serialized_end=136,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
