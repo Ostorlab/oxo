@@ -8,4 +8,6 @@ message Message {
   optional string library_version = 3;
   required string library_type = 4;
   required string detail = 5;
+  required string port = 6;
+  required string schema = 7;
 }
