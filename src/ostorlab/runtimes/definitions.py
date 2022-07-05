@@ -46,7 +46,7 @@ class AgentSettings:
                 splitted_tag = t.split(':')
                 if len(splitted_tag) == 2:
                     t_name, t_tag = splitted_tag
-                else:                    
+                else:
                     t_name = ':'.join(splitted_tag[:-1])
                     t_tag = splitted_tag[-1]
                 if t_name == image and self.version is None:
