@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package v3.fingerprint.domain_name.service.library;
+
+message Message {
+  required string name = 1;
+  required string port = 2;
+  required string schema = 3;
+  required string library_name = 4;
+  optional string library_version = 5;
+  required string library_type = 6;
+  required string detail = 7;
+}
