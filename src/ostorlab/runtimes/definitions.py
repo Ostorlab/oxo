@@ -43,7 +43,12 @@ class AgentSettings:
         matching_tag_versions = []
         for img in client.images.list():
             for t in img.tags:
-                t_name, t_tag = t.split(':')
+                splitted_tag = t.split(':')
+                if len(splitted_tag) == 2:
+                    t_name, t_tag = splitted_tag
+                else:                    
+                    t_name = ':'.join(splitted_tag[:-1])
+                    t_tag = splitted_tag[-1]
                 if t_name == image and self.version is None:
                     try:
                         matching_tag_versions.append(version.Version(t_tag[1:]))
