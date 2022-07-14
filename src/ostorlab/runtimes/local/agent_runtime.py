@@ -6,6 +6,7 @@ Usage
 """
 import io
 import logging
+import hashlib
 from typing import List, Optional
 
 import docker
@@ -160,6 +161,7 @@ class AgentRuntime:
         """
         agent_instance_settings_proto = self.agent.to_raw_proto()
         config_name = f'config_settings_{self.image_name}_{self.runtime_name}'
+        config_name = hashlib.md5(config_name.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
@@ -183,6 +185,7 @@ class AgentRuntime:
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
         config_name = f'config_definition_{self.image_name}__{self.runtime_name}'
+        config_name = hashlib.md5(config_name.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
