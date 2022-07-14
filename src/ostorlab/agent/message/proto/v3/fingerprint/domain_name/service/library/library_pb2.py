@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n8v3/fingerprint/domain_name/service/library/library.proto\x12*v3.fingerprint.domain_name.service.library\"\x91\x01\n\x07Message\x12\x13\n\x0b\x64omain_name\x18\x01 \x02(\t\x12\x14\n\x0clibrary_name\x18\x02 \x02(\t\x12\x17\n\x0flibrary_version\x18\x03 \x01(\t\x12\x14\n\x0clibrary_type\x18\x04 \x02(\t\x12\x0e\n\x06\x64\x65tail\x18\x05 \x02(\t\x12\x0c\n\x04port\x18\x06 \x02(\t\x12\x0e\n\x06schema\x18\x07 \x02(\t'
+  serialized_pb=b'\n8v3/fingerprint/domain_name/service/library/library.proto\x12*v3.fingerprint.domain_name.service.library\"\x8a\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04port\x18\x02 \x02(\t\x12\x0e\n\x06schema\x18\x03 \x02(\t\x12\x14\n\x0clibrary_name\x18\x04 \x02(\t\x12\x17\n\x0flibrary_version\x18\x05 \x01(\t\x12\x14\n\x0clibrary_type\x18\x06 \x02(\t\x12\x0e\n\x06\x64\x65tail\x18\x07 \x02(\t'
 )
 
 
@@ -34,49 +34,49 @@ _MESSAGE = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='domain_name', full_name='v3.fingerprint.domain_name.service.library.Message.domain_name', index=0,
+      name='name', full_name='v3.fingerprint.domain_name.service.library.Message.name', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='library_name', full_name='v3.fingerprint.domain_name.service.library.Message.library_name', index=1,
+      name='port', full_name='v3.fingerprint.domain_name.service.library.Message.port', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='library_version', full_name='v3.fingerprint.domain_name.service.library.Message.library_version', index=2,
-      number=3, type=9, cpp_type=9, label=1,
+      name='schema', full_name='v3.fingerprint.domain_name.service.library.Message.schema', index=2,
+      number=3, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='library_type', full_name='v3.fingerprint.domain_name.service.library.Message.library_type', index=3,
+      name='library_name', full_name='v3.fingerprint.domain_name.service.library.Message.library_name', index=3,
       number=4, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='detail', full_name='v3.fingerprint.domain_name.service.library.Message.detail', index=4,
-      number=5, type=9, cpp_type=9, label=2,
+      name='library_version', full_name='v3.fingerprint.domain_name.service.library.Message.library_version', index=4,
+      number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='port', full_name='v3.fingerprint.domain_name.service.library.Message.port', index=5,
+      name='library_type', full_name='v3.fingerprint.domain_name.service.library.Message.library_type', index=5,
       number=6, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='schema', full_name='v3.fingerprint.domain_name.service.library.Message.schema', index=6,
+      name='detail', full_name='v3.fingerprint.domain_name.service.library.Message.detail', index=6,
       number=7, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -95,7 +95,7 @@ _MESSAGE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=105,
-  serialized_end=250,
+  serialized_end=243,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
