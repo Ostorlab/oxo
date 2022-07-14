@@ -170,8 +170,7 @@ class AgentRuntime:
             docker ConfigReference of the settings configuration
         """
         agent_instance_settings_proto = self.agent.to_raw_proto()
-        config_name = f'config_settings_{self.image_name}_{self.runtime_name}'
-        config_name = hashlib.md5(config_name.encode()).hexdigest()
+        config_name = hashlib.md5(f'config_settings_{self.image_name}_{self.runtime_name}'.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
@@ -194,8 +193,7 @@ class AgentRuntime:
             docker configuration reference of the agent defintion configuration.
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
-        config_name = f'config_definition_{self.image_name}__{self.runtime_name}'
-        config_name = hashlib.md5(config_name.encode()).hexdigest()
+        config_name = hashlib.md5(f'config_definition_{self.image_name}__{self.runtime_name}'.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
