@@ -3,13 +3,13 @@ syntax = "proto2";
 package v3.capture.http.request;
 
 message header {
-  required bytes name = 1;
-  required bytes value = 2;
+  optional bytes name = 1;
+  optional bytes value = 2;
 }
 
 message Message {
-   optional string id = 1;
-  required string method = 2;
+  optional string id = 1;
+  optional string method = 2;
   repeated header headers = 3;
   optional bytes content = 4;
   optional string host = 5;
