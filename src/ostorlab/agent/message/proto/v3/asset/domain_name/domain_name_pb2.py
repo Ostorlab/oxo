@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.domain_name',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n&v3/asset/domain_name/domain_name.proto\x12\x14v3.asset.domain_name\"\x17\n\x07Message\x12\x0c\n\x04name\x18\x01 \x02(\t')
+  serialized_pb=_b('\n&v3/asset/domain_name/domain_name.proto\x12\x14v3.asset.domain_name\"\x17\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t')
 )
 
 
@@ -34,7 +34,7 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='name', full_name='v3.asset.domain_name.Message.name', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,

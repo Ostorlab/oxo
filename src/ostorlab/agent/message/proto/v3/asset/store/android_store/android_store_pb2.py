@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.store.android_store',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n0v3/asset/store/android_store/android_store.proto\x12\x1cv3.asset.store.android_store\"\x1f\n\x07Message\x12\x14\n\x0cpackage_name\x18\x01 \x02(\t')
+  serialized_pb=_b('\n0v3/asset/store/android_store/android_store.proto\x12\x1cv3.asset.store.android_store\"\x1f\n\x07Message\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t')
 )
 
 
@@ -34,7 +34,7 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='package_name', full_name='v3.asset.store.android_store.Message.package_name', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,

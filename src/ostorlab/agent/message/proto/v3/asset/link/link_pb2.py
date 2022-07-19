@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.link',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x18v3/asset/link/link.proto\x12\rv3.asset.link\"%\n\x06Header\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"%\n\x06\x43ookie\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\r\n\x05value\x18\x02 \x02(\t\"7\n\x0cLocalStorage\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0b\n\x03key\x18\x02 \x02(\t\x12\r\n\x05value\x18\x03 \x02(\t\"6\n\tFormInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x02(\t\x12\x0c\n\x04type\x18\x03 \x02(\t\"A\n\x04\x46orm\x12(\n\x06inputs\x18\x01 \x03(\x0b\x32\x18.v3.asset.link.FormInput\x12\x0f\n\x07\x65nctype\x18\x02 \x02(\t\">\n\x0e\x46ormCredential\x12\r\n\x05login\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0b\n\x03url\x18\x03 \x01(\t\"\"\n\x10ScriptCredential\x12\x0e\n\x06script\x18\x01 \x01(\t\"\xac\x03\n\x07Message\x12\x0b\n\x03url\x18\x01 \x02(\t\x12\x0e\n\x06method\x18\x02 \x02(\t\x12\x0e\n\x04\x62ody\x18\x03 \x01(\x0cH\x00\x12#\n\x04\x66orm\x18\x04 \x01(\x0b\x32\x13.v3.asset.link.FormH\x00\x12,\n\rextra_headers\x18\x05 \x03(\x0b\x32\x15.v3.asset.link.Header\x12&\n\x07\x63ookies\x18\x06 \x03(\x0b\x32\x15.v3.asset.link.Cookie\x12\x38\n\x0f\x66orm_credential\x18\x07 \x01(\x0b\x32\x1d.v3.asset.link.FormCredentialH\x01\x12<\n\x11script_credential\x18\x08 \x01(\x0b\x32\x1f.v3.asset.link.ScriptCredentialH\x01\x12&\n\x06parent\x18\t \x01(\x0b\x32\x16.v3.asset.link.Message\x12\x37\n\x12localstorage_items\x18\n \x03(\x0b\x32\x1b.v3.asset.link.LocalStorageB\x0c\n\nbody_oneofB\x12\n\x10\x63redential_oneof')
+  serialized_pb=_b('\n\x18v3/asset/link/link.proto\x12\rv3.asset.link\"%\n\x06Header\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"%\n\x06\x43ookie\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"7\n\x0cLocalStorage\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"6\n\tFormInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\"A\n\x04\x46orm\x12(\n\x06inputs\x18\x01 \x03(\x0b\x32\x18.v3.asset.link.FormInput\x12\x0f\n\x07\x65nctype\x18\x02 \x01(\t\">\n\x0e\x46ormCredential\x12\r\n\x05login\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0b\n\x03url\x18\x03 \x01(\t\"\"\n\x10ScriptCredential\x12\x0e\n\x06script\x18\x01 \x01(\t\"\xac\x03\n\x07Message\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\x0e\n\x04\x62ody\x18\x03 \x01(\x0cH\x00\x12#\n\x04\x66orm\x18\x04 \x01(\x0b\x32\x13.v3.asset.link.FormH\x00\x12,\n\rextra_headers\x18\x05 \x03(\x0b\x32\x15.v3.asset.link.Header\x12&\n\x07\x63ookies\x18\x06 \x03(\x0b\x32\x15.v3.asset.link.Cookie\x12\x38\n\x0f\x66orm_credential\x18\x07 \x01(\x0b\x32\x1d.v3.asset.link.FormCredentialH\x01\x12<\n\x11script_credential\x18\x08 \x01(\x0b\x32\x1f.v3.asset.link.ScriptCredentialH\x01\x12&\n\x06parent\x18\t \x01(\x0b\x32\x16.v3.asset.link.Message\x12\x37\n\x12localstorage_items\x18\n \x03(\x0b\x32\x1b.v3.asset.link.LocalStorageB\x0c\n\nbody_oneofB\x12\n\x10\x63redential_oneof')
 )
 
 
@@ -34,14 +34,14 @@ _HEADER = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='name', full_name='v3.asset.link.Header.name', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='v3.asset.link.Header.value', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -72,14 +72,14 @@ _COOKIE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='name', full_name='v3.asset.link.Cookie.name', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='v3.asset.link.Cookie.value', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -110,21 +110,21 @@ _LOCALSTORAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='url', full_name='v3.asset.link.LocalStorage.url', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='key', full_name='v3.asset.link.LocalStorage.key', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='v3.asset.link.LocalStorage.value', index=2,
-      number=3, type=9, cpp_type=9, label=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -162,14 +162,14 @@ _FORMINPUT = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='v3.asset.link.FormInput.value', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='type', full_name='v3.asset.link.FormInput.type', index=2,
-      number=3, type=9, cpp_type=9, label=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -207,7 +207,7 @@ _FORM = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='enctype', full_name='v3.asset.link.Form.enctype', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -314,14 +314,14 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='url', full_name='v3.asset.link.Message.url', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='method', full_name='v3.asset.link.Message.method', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
