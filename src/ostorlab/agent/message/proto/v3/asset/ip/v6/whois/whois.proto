@@ -13,6 +13,7 @@ message Contact {
   optional string name = 1;
   optional string kind = 2;
   optional string address = 3;
+  optional string email = 4;
 }
 
 
