@@ -13,8 +13,8 @@ message Arg {
 
 message PortMapping {
   // Defines container port mapping. All ports are mapping on 0.0.0.0.
-  optional sint32 source_port = 1;
-  optional sint32 destination_port = 2;
+  optional uint32 source_port = 1;
+  optional uint32 destination_port = 2;
 }
 
 
@@ -30,10 +30,10 @@ message AgentInstanceSettings {
   repeated string constraints = 7;
   repeated string mounts = 8;
   optional string restart_policy = 9;
-  optional sint64 mem_limit = 10;
+  optional uint64 mem_limit = 10;
   repeated PortMapping open_ports = 11;
-  optional sint32 replicas = 12;
+  optional uint32 replicas = 12;
   optional string healthcheck_host = 13;
-  optional sint32 healthcheck_port = 14;
+  optional uint32 healthcheck_port = 14;
   optional string redis_url = 15;
 }
