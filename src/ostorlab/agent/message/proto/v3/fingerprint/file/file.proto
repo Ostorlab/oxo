@@ -3,5 +3,5 @@ syntax = "proto2";
 package v3.fingerprint.file;
 
 message Message {
-  required string path = 1;
+  optional string path = 1;
 }

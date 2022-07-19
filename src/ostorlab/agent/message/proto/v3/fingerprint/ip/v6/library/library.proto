@@ -3,13 +3,13 @@ syntax = "proto2";
 package v3.fingerprint.ip.v6.library;
 
 message Message {
-  required string host = 1;
+  optional string host = 1;
   optional string mask = 2;
-  required int32 version = 3 [default = 6];
-  required string library_type = 4;
-  required string library_name = 5;
+  optional int32 version = 3 [default = 6];
+  optional string library_type = 4;
+  optional string library_name = 5;
   optional string library_version = 6;
-  required string detail = 7;
+  optional string detail = 7;
   optional string service = 8;
   optional int32 port = 9;
   optional string protocol = 10;
