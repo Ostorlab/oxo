@@ -3,7 +3,7 @@ syntax = "proto2";
 package v3.asset.file;
 
 message Message {
-  required bytes content = 1;
+  optional bytes content = 1;
   optional string path = 2;
   optional string language = 3;
 }

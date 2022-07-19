@@ -3,7 +3,7 @@ syntax = "proto2";
 package v3.asset.ip.v4;
 
 message Message {
-  required string host = 1;
+  optional string host = 1;
   optional string mask = 2;
-  required int32 version = 3 [default = 4];
+  optional int32 version = 3 [default = 4];
 }

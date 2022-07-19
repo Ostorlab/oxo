@@ -4,7 +4,7 @@ package v3.asset.store.android_store.developer;
 
 
 message Message {
-  required string package_name = 1;
+  optional string package_name = 1;
   optional string developer = 2;
   optional string developer_url = 3;
   optional string developer_email = 4;
