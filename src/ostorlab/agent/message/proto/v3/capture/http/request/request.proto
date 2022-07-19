@@ -13,7 +13,7 @@ message Message {
   repeated header headers = 3;
   optional bytes content = 4;
   optional string host = 5;
-  optional int32 port = 6;
+  optional uint32 port = 6;
   optional bytes http_version = 7;
   optional bytes scheme = 8;
   optional bytes path = 9;

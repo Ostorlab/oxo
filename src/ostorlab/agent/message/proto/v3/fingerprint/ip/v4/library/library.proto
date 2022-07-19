@@ -11,6 +11,6 @@ message Message {
   optional string library_version = 6;
   optional string detail = 7;
   optional string service =  8;
-  optional int32 port = 9;
+  optional uint32 port = 9;
   optional string protocol = 10;
 }

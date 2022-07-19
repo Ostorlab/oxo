@@ -4,7 +4,7 @@ package v3.fingerprint.domain_name.service.library;
 
 message Message {
   optional string name = 1;
-  optional int32 port = 2;
+  optional uint32 port = 2;
   optional string schema = 3;
   optional string library_name = 4;
   optional string library_version = 5;
