@@ -3,9 +3,9 @@ syntax = "proto2";
 package v3.fingerprint.file.library;
 
 message Message {
-  required string library_path = 1;
-  required string library_name = 2;
+  optional string library_path = 1;
+  optional string library_name = 2;
   optional string library_version = 3;
-  required string library_type = 4;
-  required string detail = 5;
+  optional string library_type = 4;
+  optional string detail = 5;
 }

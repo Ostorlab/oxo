@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='ostorlab.runtimes.proto',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x1d\x61gent_instance_settings.proto\x12\x17ostorlab.runtimes.proto\"0\n\x03\x41rg\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x0c\n\x04type\x18\x02 \x02(\t\x12\r\n\x05value\x18\x03 \x02(\x0c\"<\n\x0bPortMapping\x12\x13\n\x0bsource_port\x18\x01 \x02(\x11\x12\x18\n\x10\x64\x65stination_port\x18\x02 \x02(\x11\"\x8f\x03\n\x15\x41gentInstanceSettings\x12\x0b\n\x03key\x18\x01 \x02(\t\x12\x0f\n\x07\x62us_url\x18\x02 \x02(\t\x12\x1a\n\x12\x62us_exchange_topic\x18\x03 \x02(\t\x12\x1a\n\x12\x62us_management_url\x18\x04 \x01(\t\x12\x11\n\tbus_vhost\x18\x05 \x01(\t\x12*\n\x04\x61rgs\x18\x06 \x03(\x0b\x32\x1c.ostorlab.runtimes.proto.Arg\x12\x13\n\x0b\x63onstraints\x18\x07 \x03(\t\x12\x0e\n\x06mounts\x18\x08 \x03(\t\x12\x16\n\x0erestart_policy\x18\t \x02(\t\x12\x11\n\tmem_limit\x18\n \x01(\x12\x12\x38\n\nopen_ports\x18\x0b \x03(\x0b\x32$.ostorlab.runtimes.proto.PortMapping\x12\x10\n\x08replicas\x18\x0c \x02(\x11\x12\x18\n\x10healthcheck_host\x18\r \x02(\t\x12\x18\n\x10healthcheck_port\x18\x0e \x02(\x11\x12\x11\n\tredis_url\x18\x0f \x01(\t')
+  serialized_pb=_b('\n\x1d\x61gent_instance_settings.proto\x12\x17ostorlab.runtimes.proto\"0\n\x03\x41rg\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\x0c\"<\n\x0bPortMapping\x12\x13\n\x0bsource_port\x18\x01 \x01(\r\x12\x18\n\x10\x64\x65stination_port\x18\x02 \x01(\r\"\x8f\x03\n\x15\x41gentInstanceSettings\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x0f\n\x07\x62us_url\x18\x02 \x01(\t\x12\x1a\n\x12\x62us_exchange_topic\x18\x03 \x01(\t\x12\x1a\n\x12\x62us_management_url\x18\x04 \x01(\t\x12\x11\n\tbus_vhost\x18\x05 \x01(\t\x12*\n\x04\x61rgs\x18\x06 \x03(\x0b\x32\x1c.ostorlab.runtimes.proto.Arg\x12\x13\n\x0b\x63onstraints\x18\x07 \x03(\t\x12\x0e\n\x06mounts\x18\x08 \x03(\t\x12\x16\n\x0erestart_policy\x18\t \x01(\t\x12\x11\n\tmem_limit\x18\n \x01(\x04\x12\x38\n\nopen_ports\x18\x0b \x03(\x0b\x32$.ostorlab.runtimes.proto.PortMapping\x12\x10\n\x08replicas\x18\x0c \x01(\r\x12\x18\n\x10healthcheck_host\x18\r \x01(\t\x12\x18\n\x10healthcheck_port\x18\x0e \x01(\r\x12\x11\n\tredis_url\x18\x0f \x01(\t')
 )
 
 
@@ -34,21 +34,21 @@ _ARG = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='name', full_name='ostorlab.runtimes.proto.Arg.name', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='type', full_name='ostorlab.runtimes.proto.Arg.type', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='value', full_name='ostorlab.runtimes.proto.Arg.value', index=2,
-      number=3, type=12, cpp_type=9, label=2,
+      number=3, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -79,14 +79,14 @@ _PORTMAPPING = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='source_port', full_name='ostorlab.runtimes.proto.PortMapping.source_port', index=0,
-      number=1, type=17, cpp_type=1, label=2,
+      number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='destination_port', full_name='ostorlab.runtimes.proto.PortMapping.destination_port', index=1,
-      number=2, type=17, cpp_type=1, label=2,
+      number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -117,21 +117,21 @@ _AGENTINSTANCESETTINGS = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='key', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.key', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='bus_url', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.bus_url', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='bus_exchange_topic', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.bus_exchange_topic', index=2,
-      number=3, type=9, cpp_type=9, label=2,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -173,14 +173,14 @@ _AGENTINSTANCESETTINGS = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='restart_policy', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.restart_policy', index=8,
-      number=9, type=9, cpp_type=9, label=2,
+      number=9, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='mem_limit', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.mem_limit', index=9,
-      number=10, type=18, cpp_type=2, label=1,
+      number=10, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -194,21 +194,21 @@ _AGENTINSTANCESETTINGS = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='replicas', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.replicas', index=11,
-      number=12, type=17, cpp_type=1, label=2,
+      number=12, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='healthcheck_host', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.healthcheck_host', index=12,
-      number=13, type=9, cpp_type=9, label=2,
+      number=13, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='healthcheck_port', full_name='ostorlab.runtimes.proto.AgentInstanceSettings.healthcheck_port', index=13,
-      number=14, type=17, cpp_type=1, label=2,
+      number=14, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,

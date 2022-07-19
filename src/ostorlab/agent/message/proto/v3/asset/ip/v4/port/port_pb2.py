@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.ip.v4.port',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n\x1ev3/asset/ip/v4/port/port.proto\x12\x13v3.asset.ip.v4.port\"h\n\x07Message\x12\x0c\n\x04host\x18\x01 \x02(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x02(\x05:\x01\x34\x12\x0c\n\x04port\x18\x05 \x02(\t\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12\r\n\x05state\x18\x07 \x01(\t')
+  serialized_pb=_b('\n\x1ev3/asset/ip/v4/port/port.proto\x12\x13v3.asset.ip.v4.port\"h\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x34\x12\x0c\n\x04port\x18\x05 \x01(\r\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12\r\n\x05state\x18\x07 \x01(\t')
 )
 
 
@@ -34,7 +34,7 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='host', full_name='v3.asset.ip.v4.port.Message.host', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -48,15 +48,15 @@ _MESSAGE = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='version', full_name='v3.asset.ip.v4.port.Message.version', index=2,
-      number=3, type=5, cpp_type=1, label=2,
+      number=3, type=5, cpp_type=1, label=1,
       has_default_value=True, default_value=4,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='port', full_name='v3.asset.ip.v4.port.Message.port', index=3,
-      number=5, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      number=5, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),

@@ -3,7 +3,7 @@ syntax = "proto2";
 package v3.asset.domain_name.service;
 
 message Message {
-  required string name = 1;
-  required string port = 2;
-  required string schema = 3;
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
 }

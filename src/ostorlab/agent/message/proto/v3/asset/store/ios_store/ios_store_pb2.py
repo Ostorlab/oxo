@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.store.ios_store',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n(v3/asset/store/ios_store/ios_store.proto\x12\x18v3.asset.store.ios_store\"\x1c\n\x07Message\x12\x11\n\tbundle_id\x18\x01 \x02(\t')
+  serialized_pb=_b('\n(v3/asset/store/ios_store/ios_store.proto\x12\x18v3.asset.store.ios_store\"\x1c\n\x07Message\x12\x11\n\tbundle_id\x18\x01 \x01(\t')
 )
 
 
@@ -34,7 +34,7 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='bundle_id', full_name='v3.asset.store.ios_store.Message.bundle_id', index=0,
-      number=1, type=9, cpp_type=9, label=2,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,

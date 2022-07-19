@@ -3,10 +3,10 @@ syntax = "proto2";
 package v3.asset.ip.v4.port.service;
 
 message Message {
-  required string host = 1;
+  optional string host = 1;
   optional string mask = 2;
-  required int32 version = 3 [default = 4];
-  required string port = 5;
+  optional int32 version = 3 [default = 4];
+  optional uint32 port = 5;
   optional string protocol = 6;
   optional string state = 7;
   optional string service = 8;
