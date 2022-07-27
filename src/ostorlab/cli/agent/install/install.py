@@ -21,7 +21,6 @@ def install(agent: str, version: str = '') -> None:
         console.error('Docker is not installed.')
         raise click.exceptions.Exit(2)
     elif not docker_requirements_checker.is_sys_arch_supported():
-        console.info("install call")
         console.error('System architecture is not supported.')
         raise click.exceptions.Exit(2)
     elif not docker_requirements_checker.is_user_permitted():
