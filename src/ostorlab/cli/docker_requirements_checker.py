@@ -1,6 +1,7 @@
 """Check if requirements for running docker are satisfied."""
 
 import docker
+import platform
 import sys
 from docker import errors
 
@@ -18,6 +19,24 @@ def is_docker_installed() -> bool:
             return False
     return True
 
+def is_sys_arch_supported() -> bool:
+    """Checks if the systems cpu architecture is supported
+       The architecture is checked with a return value that's based on the kernel implementation of the uname(2)
+       system call. So it might be necesarry to handle the same arch with various strings e.g. linux returns x86_64
+       or AMD64 on windows.
+    Returns:
+        True if the architecture is supported, else False
+    """
+    supported_arch_types = ["x86_64", "AMD64"]
+    if sys.platform == 'darwin' and 'ARM' in platform.version():
+        """On mac os, uname returns x86 even on arm64 if the process calling it is running via rosetta. We parse for ARM
+           in platform.version() to determine the arch on mac os
+        """
+        return False
+    else: 
+        if platform.machine() not in supported_arch_types:
+            return False
+    return True
 
 def is_user_permitted() -> bool:
     """Check if the user got permissions to run docker.

@@ -125,9 +125,12 @@ class LocalRuntime(runtime.Runtime):
         return True
 
     def _docker_checks(self):
-        """checking the requirements (docker, swarm,permissions) for ostorlab."""
+        """checking the requirements (docker,swarm,arch,permissions) for ostorlab."""
         if not docker_requirements_checker.is_docker_installed():
             console.error('Docker is not installed.')
+            raise click.exceptions.Exit(2)
+        elif not docker_requirements_checker.is_sys_arch_supported():
+            console.error('System architecture is not supported.')
             raise click.exceptions.Exit(2)
         elif not docker_requirements_checker.is_user_permitted():
             console.error('User does not have permissions to run docker.')
