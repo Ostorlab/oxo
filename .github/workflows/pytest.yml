@@ -27,11 +27,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install SSH key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.WORKFLOW_SSH_KEY }}
-        known_hosts: ${{ secrets.KNOWN_HOSTS }}
     - name: Init and update data submodule.
       run: |
         git submodule init

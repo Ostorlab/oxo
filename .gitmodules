@@ -1,5 +1,5 @@
 [submodule "KB"]
 	path = src/ostorlab/agent/kb/KB
-	url = git@github.com:Ostorlab/KB.git
+	url = https://github.com/Ostorlab/KB.git
     branch = master
 
