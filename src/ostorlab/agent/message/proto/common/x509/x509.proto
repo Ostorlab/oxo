@@ -1,0 +1,53 @@
+syntax = "proto2";
+
+package common;
+
+message X509Org {
+  optional string C = 1;
+  optional string O = 2;
+  optional string OU = 3;
+  optional string CN = 4;
+  optional string L = 5;
+  optional string ST = 6;
+}
+
+message Validity {
+  // The format is timestamp.
+  optional uint64 not_before = 1;
+  optional uint64 not_after = 2;
+}
+
+message X509Fingerprint {
+  optional string fingerprint_algorithm = 1;
+  // String hexadecimal format.
+  optional string fingerprint_value = 2;
+}
+
+message X509Extension {
+  optional string oid = 1;
+  optional bool critical = 2;
+  optional string value = 3;
+}
+
+message X509PublicKey {
+  optional string public_key_algorithm = 1;
+  // String hexadecimal format.
+  optional string public_key_value = 2;
+}
+
+message X509Signature {
+  optional string signature_algorithm = 1;
+  // String hexadecimal format.
+  optional string signature_value = 2;
+}
+
+message X509Cert {
+  optional uint32 version_number = 1;
+  optional string serial_number = 2;
+  optional X509Org issuer = 3;
+  optional Validity validity = 4;
+  optional X509Org subject = 5;
+  optional X509PublicKey public_key = 6;
+  optional X509Signature signature = 7;
+  repeated X509Fingerprint fingerprint = 8;
+}
