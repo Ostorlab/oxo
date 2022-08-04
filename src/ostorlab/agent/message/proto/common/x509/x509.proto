@@ -49,5 +49,6 @@ message X509Cert {
   optional X509Org subject = 5;
   optional X509PublicKey public_key = 6;
   optional X509Signature signature = 7;
-  repeated X509Fingerprint fingerprint = 8;
+  repeated X509Fingerprint computed_fingerprint = 8;
+  repeated X509Extension extensions = 9;
 }

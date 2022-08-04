@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x16\x63ommon/x509/x509.proto\x12\x06\x63ommon\"N\n\x07X509Org\x12\t\n\x01\x43\x18\x01 \x01(\t\x12\t\n\x01O\x18\x02 \x01(\t\x12\n\n\x02OU\x18\x03 \x01(\t\x12\n\n\x02\x43N\x18\x04 \x01(\t\x12\t\n\x01L\x18\x05 \x01(\t\x12\n\n\x02ST\x18\x06 \x01(\t\"1\n\x08Validity\x12\x12\n\nnot_before\x18\x01 \x01(\x04\x12\x11\n\tnot_after\x18\x02 \x01(\x04\"K\n\x0fX509Fingerprint\x12\x1d\n\x15\x66ingerprint_algorithm\x18\x01 \x01(\t\x12\x19\n\x11\x66ingerprint_value\x18\x02 \x01(\t\"=\n\rX509Extension\x12\x0b\n\x03oid\x18\x01 \x01(\t\x12\x10\n\x08\x63ritical\x18\x02 \x01(\x08\x12\r\n\x05value\x18\x03 \x01(\t\"G\n\rX509PublicKey\x12\x1c\n\x14public_key_algorithm\x18\x01 \x01(\t\x12\x18\n\x10public_key_value\x18\x02 \x01(\t\"E\n\rX509Signature\x12\x1b\n\x13signature_algorithm\x18\x01 \x01(\t\x12\x17\n\x0fsignature_value\x18\x02 \x01(\t\"\xa3\x02\n\x08X509Cert\x12\x16\n\x0eversion_number\x18\x01 \x01(\r\x12\x15\n\rserial_number\x18\x02 \x01(\t\x12\x1f\n\x06issuer\x18\x03 \x01(\x0b\x32\x0f.common.X509Org\x12\"\n\x08validity\x18\x04 \x01(\x0b\x32\x10.common.Validity\x12 \n\x07subject\x18\x05 \x01(\x0b\x32\x0f.common.X509Org\x12)\n\npublic_key\x18\x06 \x01(\x0b\x32\x15.common.X509PublicKey\x12(\n\tsignature\x18\x07 \x01(\x0b\x32\x15.common.X509Signature\x12,\n\x0b\x66ingerprint\x18\x08 \x03(\x0b\x32\x17.common.X509Fingerprint'
+  serialized_pb=b'\n\x16\x63ommon/x509/x509.proto\x12\x06\x63ommon\"N\n\x07X509Org\x12\t\n\x01\x43\x18\x01 \x01(\t\x12\t\n\x01O\x18\x02 \x01(\t\x12\n\n\x02OU\x18\x03 \x01(\t\x12\n\n\x02\x43N\x18\x04 \x01(\t\x12\t\n\x01L\x18\x05 \x01(\t\x12\n\n\x02ST\x18\x06 \x01(\t\"1\n\x08Validity\x12\x12\n\nnot_before\x18\x01 \x01(\x04\x12\x11\n\tnot_after\x18\x02 \x01(\x04\"K\n\x0fX509Fingerprint\x12\x1d\n\x15\x66ingerprint_algorithm\x18\x01 \x01(\t\x12\x19\n\x11\x66ingerprint_value\x18\x02 \x01(\t\"=\n\rX509Extension\x12\x0b\n\x03oid\x18\x01 \x01(\t\x12\x10\n\x08\x63ritical\x18\x02 \x01(\x08\x12\r\n\x05value\x18\x03 \x01(\t\"G\n\rX509PublicKey\x12\x1c\n\x14public_key_algorithm\x18\x01 \x01(\t\x12\x18\n\x10public_key_value\x18\x02 \x01(\t\"E\n\rX509Signature\x12\x1b\n\x13signature_algorithm\x18\x01 \x01(\t\x12\x17\n\x0fsignature_value\x18\x02 \x01(\t\"\xd7\x02\n\x08X509Cert\x12\x16\n\x0eversion_number\x18\x01 \x01(\r\x12\x15\n\rserial_number\x18\x02 \x01(\t\x12\x1f\n\x06issuer\x18\x03 \x01(\x0b\x32\x0f.common.X509Org\x12\"\n\x08validity\x18\x04 \x01(\x0b\x32\x10.common.Validity\x12 \n\x07subject\x18\x05 \x01(\x0b\x32\x0f.common.X509Org\x12)\n\npublic_key\x18\x06 \x01(\x0b\x32\x15.common.X509PublicKey\x12(\n\tsignature\x18\x07 \x01(\x0b\x32\x15.common.X509Signature\x12\x35\n\x14\x63omputed_fingerprint\x18\x08 \x03(\x0b\x32\x17.common.X509Fingerprint\x12)\n\nextensions\x18\t \x03(\x0b\x32\x15.common.X509Extension'
 )
 
 
@@ -352,8 +352,15 @@ _X509CERT = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='fingerprint', full_name='common.X509Cert.fingerprint', index=7,
+      name='computed_fingerprint', full_name='common.X509Cert.computed_fingerprint', index=7,
       number=8, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='extensions', full_name='common.X509Cert.extensions', index=8,
+      number=9, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -371,7 +378,7 @@ _X509CERT = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=450,
-  serialized_end=741,
+  serialized_end=793,
 )
 
 _X509CERT.fields_by_name['issuer'].message_type = _X509ORG
@@ -379,7 +386,8 @@ _X509CERT.fields_by_name['validity'].message_type = _VALIDITY
 _X509CERT.fields_by_name['subject'].message_type = _X509ORG
 _X509CERT.fields_by_name['public_key'].message_type = _X509PUBLICKEY
 _X509CERT.fields_by_name['signature'].message_type = _X509SIGNATURE
-_X509CERT.fields_by_name['fingerprint'].message_type = _X509FINGERPRINT
+_X509CERT.fields_by_name['computed_fingerprint'].message_type = _X509FINGERPRINT
+_X509CERT.fields_by_name['extensions'].message_type = _X509EXTENSION
 DESCRIPTOR.message_types_by_name['X509Org'] = _X509ORG
 DESCRIPTOR.message_types_by_name['Validity'] = _VALIDITY
 DESCRIPTOR.message_types_by_name['X509Fingerprint'] = _X509FINGERPRINT
