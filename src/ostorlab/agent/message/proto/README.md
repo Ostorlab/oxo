@@ -24,3 +24,8 @@ import "ostorlab/agent/message/proto/common/x509/x509.proto";
     ....
 repeated ostorlab.agent.messsage.proto.common.x509.X509Cert cert_chain = 4;
 ```
+
+4. Recompile from src using:
+```
+find . -path '*v3/*' -name '*.proto' | xargs -I {} protoc --python_out=. {}
+```
