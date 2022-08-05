@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.ip.v6.geolocation',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n,v3/asset/ip/v6/geolocation/geolocation.proto\x12\x1av3.asset.ip.v6.geolocation\"\x94\x02\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x34\x12\x11\n\tcontinent\x18\x05 \x01(\t\x12\x16\n\x0e\x63ontinent_code\x18\x06 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x07 \x01(\t\x12\x14\n\x0c\x63ountry_code\x18\x08 \x01(\t\x12\x0e\n\x06region\x18\t \x01(\t\x12\x13\n\x0bregion_name\x18\n \x01(\t\x12\x0c\n\x04\x63ity\x18\x0b \x01(\t\x12\x0b\n\x03zip\x18\x0c \x01(\t\x12\x10\n\x08latitude\x18\r \x01(\x02\x12\x11\n\tlongitude\x18\x0e \x01(\x02\x12\x10\n\x08timezone\x18\x0f \x01(\t\x12\x10\n\x08\x64istrict\x18\x10 \x01(\t')
+  serialized_pb=_b('\n,v3/asset/ip/v6/geolocation/geolocation.proto\x12\x1av3.asset.ip.v6.geolocation\"\x94\x02\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x36\x12\x11\n\tcontinent\x18\x05 \x01(\t\x12\x16\n\x0e\x63ontinent_code\x18\x06 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x07 \x01(\t\x12\x14\n\x0c\x63ountry_code\x18\x08 \x01(\t\x12\x0e\n\x06region\x18\t \x01(\t\x12\x13\n\x0bregion_name\x18\n \x01(\t\x12\x0c\n\x04\x63ity\x18\x0b \x01(\t\x12\x0b\n\x03zip\x18\x0c \x01(\t\x12\x10\n\x08latitude\x18\r \x01(\x02\x12\x11\n\tlongitude\x18\x0e \x01(\x02\x12\x10\n\x08timezone\x18\x0f \x01(\t\x12\x10\n\x08\x64istrict\x18\x10 \x01(\t')
 )
 
 
@@ -49,7 +49,7 @@ _MESSAGE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='version', full_name='v3.asset.ip.v6.geolocation.Message.version', index=2,
       number=3, type=5, cpp_type=1, label=1,
-      has_default_value=True, default_value=4,
+      has_default_value=True, default_value=6,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),

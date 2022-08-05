@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.asset.ip.v6.port.service',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\n+v3/asset/ip/v6/port/service/http/http.proto\x12\x1bv3.asset.ip.v6.port.service\"\x9d\x01\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x34\x12\x0c\n\x04port\x18\x05 \x01(\r\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12\r\n\x05state\x18\x07 \x01(\t\x12\x0f\n\x07service\x18\x08 \x01(\t\x12\x0e\n\x06\x62\x61nner\x18\t \x01(\t\x12\x12\n\x03tls\x18\n \x01(\x08:\x05\x66\x61lse')
+  serialized_pb=_b('\n+v3/asset/ip/v6/port/service/http/http.proto\x12\x1bv3.asset.ip.v6.port.service\"\x9d\x01\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x36\x12\x0c\n\x04port\x18\x05 \x01(\r\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12\r\n\x05state\x18\x07 \x01(\t\x12\x0f\n\x07service\x18\x08 \x01(\t\x12\x0e\n\x06\x62\x61nner\x18\t \x01(\t\x12\x12\n\x03tls\x18\n \x01(\x08:\x05\x66\x61lse')
 )
 
 
@@ -49,7 +49,7 @@ _MESSAGE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='version', full_name='v3.asset.ip.v6.port.service.Message.version', index=2,
       number=3, type=5, cpp_type=1, label=1,
-      has_default_value=True, default_value=4,
+      has_default_value=True, default_value=6,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
