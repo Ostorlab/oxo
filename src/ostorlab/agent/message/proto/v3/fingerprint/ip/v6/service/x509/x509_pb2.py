@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='v3.fingerprint.ip.v6.service.x509',
   syntax='proto2',
   serialized_options=None,
-  serialized_pb=_b('\nIostorlab/agent/message/proto/v3/fingerprint/ip/v6/service/x509/x509.proto\x12!v3.fingerprint.ip.v6.service.x509\x1a\x33ostorlab/agent/message/proto/common/x509/x509.proto\"\xb3\x01\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x34\x12\x0f\n\x07service\x18\x04 \x01(\t\x12\x0c\n\x04port\x18\x05 \x01(\r\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12G\n\ncert_chain\x18\x07 \x03(\x0b\x32\x33.ostorlab.agent.messsage.proto.common.x509.X509Cert')
+  serialized_pb=_b('\nIostorlab/agent/message/proto/v3/fingerprint/ip/v6/service/x509/x509.proto\x12!v3.fingerprint.ip.v6.service.x509\x1a\x33ostorlab/agent/message/proto/common/x509/x509.proto\"\xb3\x01\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x36\x12\x0f\n\x07service\x18\x04 \x01(\t\x12\x0c\n\x04port\x18\x05 \x01(\r\x12\x10\n\x08protocol\x18\x06 \x01(\t\x12G\n\ncert_chain\x18\x07 \x03(\x0b\x32\x33.ostorlab.agent.messsage.proto.common.x509.X509Cert')
   ,
   dependencies=[ostorlab_dot_agent_dot_message_dot_proto_dot_common_dot_x509_dot_x509__pb2.DESCRIPTOR,])
 
@@ -51,7 +51,7 @@ _MESSAGE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='version', full_name='v3.fingerprint.ip.v6.service.x509.Message.version', index=2,
       number=3, type=5, cpp_type=1, label=1,
-      has_default_value=True, default_value=4,
+      has_default_value=True, default_value=6,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),

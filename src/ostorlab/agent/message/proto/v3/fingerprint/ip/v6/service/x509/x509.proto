@@ -8,7 +8,7 @@ package v3.fingerprint.ip.v6.service.x509;
 message Message {
   optional string host = 1;
   optional string mask = 2;
-  optional int32 version = 3 [default = 4];
+  optional int32 version = 3 [default = 6];
   optional string service =  4;
   optional uint32 port = 5;
   optional string protocol = 6;
