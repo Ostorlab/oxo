@@ -5,7 +5,7 @@ package ostorlab.agent.message.proto.v3.asset.ip.v6.geolocation;
 message Message {
     optional string host = 1;
     optional string mask = 2;
-    optional int32 version = 3 [default = 4];
+    optional int32 version = 3 [default = 6];
     optional string continent = 5;
     optional string continent_code = 6;
     optional string country = 7;
