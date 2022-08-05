@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.asset.domain_name.service;
+package ostorlab.agent.message.proto.v3.asset.domain_name.service;
 
 message Message {
   optional string name = 1;

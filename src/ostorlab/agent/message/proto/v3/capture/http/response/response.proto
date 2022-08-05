@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.capture.http.response;
+package ostorlab.agent.message.proto.v3.capture.http.response;
 
 message header {
   optional bytes name = 1;

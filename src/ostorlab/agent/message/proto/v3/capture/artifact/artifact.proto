@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.capture.artifact;
+package ostorlab.agent.message.proto.v3.capture.artifact;
 
 message Message {
     optional bytes content = 1;
