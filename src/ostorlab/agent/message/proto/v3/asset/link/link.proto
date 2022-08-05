@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.asset.link;
+package ostorlab.agent.message.proto.v3.asset.link;
 
 message Header {
   optional string name = 1;

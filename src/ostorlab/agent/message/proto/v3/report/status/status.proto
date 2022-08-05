@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.report.status;
+package ostorlab.agent.message.proto.v3.report.status;
 
 message Message {
     optional string key = 1;

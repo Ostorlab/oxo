@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.report.event.post_scan.start;
+package ostorlab.agent.message.proto.v3.report.event.post_scan.start;
 
 message Message {
 }

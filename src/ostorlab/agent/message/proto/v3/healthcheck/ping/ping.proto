@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.healthcheck.ping;
+package ostorlab.agent.message.proto.v3.healthcheck.ping;
 
 message Message {
   optional string body = 1;

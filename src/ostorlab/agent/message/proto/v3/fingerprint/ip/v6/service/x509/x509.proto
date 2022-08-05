@@ -2,7 +2,7 @@ syntax = "proto2";
 
 import "ostorlab/agent/message/proto/common/x509/x509.proto";
 
-package v3.fingerprint.ip.v6.service.x509;
+package ostorlab.agent.message.proto.v3.fingerprint.ip.v6.service.x509;
 
 
 message Message {
@@ -12,5 +12,5 @@ message Message {
   optional string service =  4;
   optional uint32 port = 5;
   optional string protocol = 6;
-  repeated ostorlab.agent.messsage.proto.common.x509.X509Cert cert_chain = 7;
+  repeated ostorlab.agent.message.proto.common.x509.X509Cert cert_chain = 7;
 }

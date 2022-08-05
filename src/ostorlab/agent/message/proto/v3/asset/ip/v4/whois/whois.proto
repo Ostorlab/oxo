@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package v3.asset.ip.v4.whois;
+package ostorlab.agent.message.proto.v3.asset.ip.v4.whois;
 
 message Network {
   optional string cidr = 1;
