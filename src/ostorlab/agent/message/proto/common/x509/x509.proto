@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package common;
+package ostorlab.agent.messsage.proto.common.x509;
 
 message X509Org {
   optional string C = 1;
