@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-import "common/x509/x509.proto";
+import "ostorlab/agent/message/proto/common/x509/x509.proto";
 
 package v3.fingerprint.domain_name.service.x509;
 
@@ -9,5 +9,5 @@ message Message {
   optional string name = 1;
   optional uint32 port = 2;
   optional string schema = 3;
-  repeated common.X509Cert cert_chain = 4;
+  repeated ostorlab.agent.messsage.proto.common.x509.X509Cert cert_chain = 4;
 }
