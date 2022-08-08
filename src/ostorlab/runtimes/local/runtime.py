@@ -31,6 +31,7 @@ from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
+from ostorlab.runtimes.local.services import jaeger
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
@@ -86,12 +87,14 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, tracing: bool = False, *args, **kwargs) -> None:
         super().__init__()
         del args, kwargs
         self.follow = []
+        self._tracing = tracing
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._redis_service: Optional[redis.LocalRedis] = None
+        self._jaeger_service: Optional[jaeger.LocalJaeger] = None
         self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
 
@@ -303,6 +306,8 @@ class LocalRuntime(runtime.Runtime):
         """Start all the local runtime services."""
         self._start_mq_service()
         self._start_redis_service()
+        if self._tracing is True:
+            self._start_jaeger_service()
 
     def _start_mq_service(self):
         """Start a local rabbitmq service."""
@@ -317,6 +322,13 @@ class LocalRuntime(runtime.Runtime):
         self._redis_service.start()
         if 'redis' in self.follow:
             self._log_streamer.stream(self._redis_service.service)
+
+    def _start_jaeger_service(self):
+        """Start a local Jaeger service."""
+        self._jaeger_service = jaeger.LocalJaeger(name=self.name, network=self.network)
+        self._jaeger_service.start()
+        if 'jaeger' in self.follow:
+            self._log_streamer.stream(self._jaeger_service.service)
 
     def _check_services_healthy(self):
         """Check if the rabbitMQ service is running and healthy."""
