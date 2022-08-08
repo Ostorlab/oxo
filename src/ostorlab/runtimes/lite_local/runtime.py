@@ -215,10 +215,10 @@ class LiteLocalRuntime(runtime.Runtime):
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         with futures.ThreadPoolExecutor() as executor:
-            future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in agent_group_definition.agents}
+            future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in
+                               agent_group_definition.agents}
             for future in futures.as_complete(future_to_agent):
                 future.result()
-
 
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None,
@@ -327,6 +327,7 @@ class LiteLocalRuntime(runtime.Runtime):
             None
         """
         install_agent.install(agent_key=ASSET_INJECTION_AGENT_DEFAULT)
+
     def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
         """Dump vulnerabilities to a file in a specific format.
             Returns:

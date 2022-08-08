@@ -163,7 +163,7 @@ class LocalRuntime(runtime.Runtime):
         try:
             console.info('Creating scan entry')
             if assets is None:
-                assets_str='N/A'
+                assets_str = 'N/A'
             else:
                 assets_str = f'{", ".join([str(asset) for asset in assets])}'
                 # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
@@ -332,7 +332,8 @@ class LocalRuntime(runtime.Runtime):
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
         with futures.ThreadPoolExecutor() as executor:
-            future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in agent_group_definition.agents}
+            future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in
+                               agent_group_definition.agents}
             for future in futures.as_complete(future_to_agent):
                 future.result()
 
