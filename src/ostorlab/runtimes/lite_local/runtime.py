@@ -206,8 +206,7 @@ class LiteLocalRuntime(runtime.Runtime):
                 config.remove()
 
         if stopped_services or stopped_network or stopped_configs:
-            console.success\
-                ('All scan components stopped.')
+            console.success('All scan components stopped.')
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
