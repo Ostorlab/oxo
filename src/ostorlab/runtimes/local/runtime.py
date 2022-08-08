@@ -6,6 +6,7 @@ a local RabbitMQ.
 import logging
 from typing import List
 from typing import Optional
+from concurrent import futures
 
 import click
 import docker
@@ -330,8 +331,10 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
-        for agent in agent_group_definition.agents:
-            self._start_agent(agent, extra_configs=[])
+        with futures.ThreadPoolExecutor() as executor:
+            future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in agent_group_definition.agents}
+            for future in futures.as_complete(future_to_agent):
+                future.result()
 
     def _start_pre_agents(self):
         """Starting pre-agents that must exist before other agents. This applies to all persistence
@@ -364,10 +367,6 @@ class LocalRuntime(runtime.Runtime):
             self._log_streamer.stream(agent_service)
 
         if agent.replicas > 1:
-            # Ensure the agent service had to
-            # TODO(alaeddine): Check if sleep if really needed and if it is, implement a parallel way to start agents
-            #  and scale them.
-            # time.sleep(10)
             self._scale_service(agent_service, agent.replicas)
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),

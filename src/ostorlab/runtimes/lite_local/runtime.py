@@ -5,6 +5,7 @@ The local runtime requires Docker Swarm to run robust long-running services with
 import logging
 from typing import List
 from typing import Optional
+from concurrent import futures
 
 import click
 import docker
@@ -205,7 +206,8 @@ class LiteLocalRuntime(runtime.Runtime):
                 config.remove()
 
         if stopped_services or stopped_network or stopped_configs:
-            console.success('All scan components stopped.')
+            console.success\
+                ('All scan components stopped.')
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
@@ -213,8 +215,11 @@ class LiteLocalRuntime(runtime.Runtime):
 
     def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
         """Starts all the agents as list in the agent run definition."""
-        for agent in agent_group_definition.agents:
-            self._start_agent(agent, extra_configs=[])
+        with futures.ThreadPoolExecutor() as executor:
+            future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in agent_group_definition.agents}
+            for future in futures.as_complete(future_to_agent):
+                future.result()
+
 
     def _start_agent(self, agent: definitions.AgentSettings,
                      extra_configs: Optional[List[docker.types.ConfigReference]] = None,
@@ -242,10 +247,6 @@ class LiteLocalRuntime(runtime.Runtime):
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
 
         if agent.replicas > 1:
-            # Ensure the agent service had to
-            # TODO(alaeddine): Check if sleep if really needed and if it is, implement a parallel way to start agents
-            #  and scale them.
-            # time.sleep(10)
             self._scale_service(agent_service, agent.replicas)
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
