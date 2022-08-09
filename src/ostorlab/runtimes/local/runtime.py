@@ -87,7 +87,7 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self, tracing: bool = False, *args, **kwargs) -> None:
+    def __init__(self, *args, tracing: bool = False, **kwargs) -> None:
         super().__init__()
         del args, kwargs
         self.follow = []
