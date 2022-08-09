@@ -217,7 +217,7 @@ class LiteLocalRuntime(runtime.Runtime):
         with futures.ThreadPoolExecutor() as executor:
             future_to_agent = {executor.submit(self._start_agent, agent, extra_configs=[]): agent for agent in
                                agent_group_definition.agents}
-            for future in futures.as_complete(future_to_agent):
+            for future in futures.as_completed(future_to_agent):
                 future.result()
 
     def _start_agent(self, agent: definitions.AgentSettings,
