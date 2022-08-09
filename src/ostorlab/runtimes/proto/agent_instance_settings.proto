@@ -21,19 +21,34 @@ message PortMapping {
 message AgentInstanceSettings {
   // Proto definition of agent instance settings. This is use to serialize all the settings passed from the runtime to
   // the agent.
+  // Agent Key in the form of agent/<org_name>/<agent_name>.
   optional string key = 1;
+  // Bus settings to exchange message. These are specific to RabbitMQ.
   optional string bus_url = 2;
   optional string bus_exchange_topic = 3;
   optional string bus_management_url = 4;
   optional string bus_vhost = 5;
+  // Agents arguments to customize agent behavior.
   repeated Arg args = 6;
+  // Docker deployment constraints.
   repeated string constraints = 7;
+  // Filesystem mounts with host system.
   repeated string mounts = 8;
+  // Restart policy, check docker service documentation of more information.
   optional string restart_policy = 9;
+  // Memory limit.
   optional uint64 mem_limit = 10;
+  // Mapping of port to be exposed externally.
   repeated PortMapping open_ports = 11;
+  // Count of agent replicas.
   optional uint32 replicas = 12;
+  // Host on which the healthcheck server listens on.
   optional string healthcheck_host = 13;
+  // Port on which the healthcheck server listens on.
   optional uint32 healthcheck_port = 14;
+  // Standard Redis URL used for distributed storage and distributed locking.
   optional string redis_url = 15;
+  // Tracing collector URL supporting Open Telemetry. The URL are custom that pass the export type in the schema and
+  // the values in the body of the url.
+  optional string tracing_collector_url = 16;
 }

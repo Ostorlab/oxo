@@ -336,6 +336,8 @@ class LocalRuntime(runtime.Runtime):
             raise UnhealthyService('MQ service is unhealthy.')
         if self._redis_service is None or self._redis_service.is_healthy is False:
             raise UnhealthyService('Redis service is unhealthy.')
+        if self._tracing is True and (self._jaeger_service is None or self._jaeger_service.is_healthy is False):
+            raise UnhealthyService('Jaeger service is unhealthy.')
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
@@ -374,7 +376,7 @@ class LocalRuntime(runtime.Runtime):
             raise AgentNotInstalled(agent.key)
 
         runtime_agent = agent_runtime.AgentRuntime(
-            agent, self.name, self._docker_client, self._mq_service, self._redis_service)
+            agent, self.name, self._docker_client, self._mq_service, self._redis_service, self._jaeger_service)
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)

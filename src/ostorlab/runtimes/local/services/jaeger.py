@@ -11,7 +11,8 @@ from docker.models import services
 logger = logging.getLogger(__name__)
 
 JAEGER_IMAGE = 'jaegertracing/all-in-one:latest'
-DEFAULT_EXPOSED_PORTS = {5775:5775, 6831:6831, 6832:6832, 5778: 5778, 16686: 16686, 14268: 14268, 9411:9411}
+DEFAULT_EXPOSED_PORTS = {5775: 5775, 6831: 6831, 6832: 6832, 5778: 5778, 16686: 16686, 14268: 14268, 9411: 9411}
+
 
 class LocalJaeger:
     """Jaeger service spawned a docker swarm service."""
@@ -21,12 +22,12 @@ class LocalJaeger:
                  network: str,
                  exposed_ports: Dict[int, int] = None,
                  image: str = JAEGER_IMAGE) -> None:
-        """Initialize the Redis service parameters.
+        """Initialize the Jaeger service parameters.
         Args:
             name: Name of the service.
-            network: Network used for the Docker Redis service.
-            exposed_ports: The list of Redis service exposed ports
-            image: Redis Docker image
+            network: Network used for the Docker Jaeger service.
+            exposed_ports: The list of Jaeger service exposed ports
+            image: Jaeger Docker image
         """
         self._name = name
         self._docker_client = docker.from_env()
@@ -41,15 +42,15 @@ class LocalJaeger:
 
     @property
     def url(self) -> str:
-        """URL to connect to the local Redis instance."""
-        return f'redis://{self._jaeger_host}:6379/'
+        """URL to connect to the local Jaeger instance."""
+        return f'jaeger://{self._jaeger_host}/'
 
     @property
     def service(self):
         return self._jaeger_service
 
     def start(self) -> None:
-        """Start local Redis instance."""
+        """Start local Jaeger instance."""
         self._create_network()
         self._jaeger_service = self._start_jaeger()
 

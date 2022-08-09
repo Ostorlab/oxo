@@ -34,6 +34,9 @@ from ostorlab.runtimes import registry
 @click.option('--scan-id', help='Scan id, this flag is restricted to the lite local runtime..', required=False,
               hidden=True)
 @click.option('--tracing/--no-tracing', help='Enable tracing mode', default=False)
+@click.option('--tracing-collector-url',
+              help='Tracing Collector URL, this flag is restricted to the lite local runtime.',
+              required=False, hidden=True)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str,
          bus_url: Optional[str] = None,
@@ -44,6 +47,7 @@ def scan(ctx: click.core.Context, runtime: str,
          network: Optional[str] = None,
          redis_url: Optional[str] = None,
          tracing: bool = False,
+         tracing_collector_url: Optional[str] = None
          ) -> None:
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
@@ -61,7 +65,8 @@ def scan(ctx: click.core.Context, runtime: str,
                                                    bus_exchange_topic=bus_exchange_topic,
                                                    network=network,
                                                    redis_url=redis_url,
-                                                   tracing=False
+                                                   tracing=tracing,
+                                                   tracing_collector_url=tracing_collector_url
                                                    )
         ctx.obj['runtime'] = runtime_instance
     except registry.RuntimeNotFoundError as e:

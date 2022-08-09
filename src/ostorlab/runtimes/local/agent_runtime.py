@@ -1,12 +1,13 @@
 """Runtime agent module gives access to methods to create the specific agent configurations & run the agent.
 
 Usage
-    agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service, redis_service)
+    agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service, redis_service, jaeger_service)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
 import io
 import logging
 import hashlib
+import uuid
 from typing import List, Optional
 
 import docker
@@ -20,6 +21,7 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
+from ostorlab.runtimes.local.services import jaeger
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +138,8 @@ class AgentRuntime:
                  runtime_name: str,
                  docker_client: docker.DockerClient,
                  mq_service: mq.LocalRabbitMQ,
-                 redis_service: redis.LocalRedis
+                 redis_service: redis.LocalRedis,
+                 jaeger_service: jaeger.LocalJaeger
                  ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -145,12 +148,15 @@ class AgentRuntime:
             runtime_name: local runtime instance name.
             docker_client: docker client.
         """
+        # Unique identifier to allow running multiple instance of the same agent with different configs.
+        self._uuid = uuid.uuid4()
         self._docker_client = docker_client
         self.agent = agent_settings
         self.image_name = agent_settings.container_image.split(':', maxsplit=1)[0]
         self.runtime_name = runtime_name
         self.mq_service = mq_service
         self.redis_service = redis_service
+        self.jaeger_service = jaeger_service
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -160,7 +166,9 @@ class AgentRuntime:
             docker ConfigReference of the settings configuration
         """
         agent_instance_settings_proto = self.agent.to_raw_proto()
-        config_name = hashlib.md5(f'config_settings_{self.image_name}_{self.runtime_name}'.encode()).hexdigest()
+        # The name is hashed to work around size limitation of Docker Config.
+        config_name = hashlib.md5(
+            f'config_settings_{self.image_name}_{self.runtime_name}_{self._uuid}'.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
@@ -183,7 +191,9 @@ class AgentRuntime:
             docker configuration reference of the agent defintion configuration.
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
-        config_name = hashlib.md5(f'config_definition_{self.image_name}__{self.runtime_name}'.encode()).hexdigest()
+        # The name is hashed to work around size limitation of Docker Config.
+        config_name = hashlib.md5(
+            f'config_definition_{self.image_name}__{self.runtime_name}_{self._uuid}'.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
@@ -222,6 +232,7 @@ class AgentRuntime:
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
         self.agent.redis_url = self.redis_service.url
+        self.agent.tracing_collector_url = self.jaeger_service.url
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.
@@ -287,9 +298,9 @@ class AgentRuntime:
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
-
-        service_name = agent_definition.service_name or self.agent.container_image.replace(':', '_').\
+        service_name = agent_definition.service_name or self.agent.container_image.replace(':', '_'). \
             replace('.', '') + '_' + self.runtime_name
+
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
