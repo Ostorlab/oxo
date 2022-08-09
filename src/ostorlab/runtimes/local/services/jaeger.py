@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 JAEGER_IMAGE = 'jaegertracing/all-in-one:latest'
 DEFAULT_EXPOSED_PORTS = {5775: 5775, 6831: 6831, 6832: 6832, 5778: 5778, 16686: 16686, 14268: 14268, 9411: 9411}
-
+DEFAULT_JAEGER_PORT = 6831
 
 class LocalJaeger:
     """Jaeger service spawned a docker swarm service."""
@@ -43,7 +43,7 @@ class LocalJaeger:
     @property
     def url(self) -> str:
         """URL to connect to the local Jaeger instance."""
-        return f'jaeger://{self._jaeger_host}/'
+        return f'jaeger://{self._jaeger_host}:{DEFAULT_JAEGER_PORT}/'
 
     @property
     def service(self):
