@@ -65,7 +65,7 @@ class LiteLocalRuntime(runtime.Runtime):
     """
 
     def __init__(self, scan_id: str, bus_url: str, bus_vhost: str, bus_management_url: str,
-                 bus_exchange_topic: str, network: str, redis_url: str) -> None:
+                 bus_exchange_topic: str, network: str, redis_url: str, tracing_collector_url: str) -> None:
         """Set runtime attributes.
 
         Args:
@@ -76,6 +76,8 @@ class LiteLocalRuntime(runtime.Runtime):
             bus_exchange_topic: Bus exchange topic.
             network: Docker network name to attach to.
             redis_url: Redis URL.
+            tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
+             exporter and its arguments.
         """
         super().__init__()
 
@@ -89,6 +91,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self._bus_exchange_topic = bus_exchange_topic
         self._network = network
         self._redis_url = redis_url
+        self._tracing_collector_url = tracing_collector_url
 
         if not docker_requirements_checker.is_docker_installed():
             console.error('Docker is not installed.')
@@ -241,7 +244,8 @@ class LiteLocalRuntime(runtime.Runtime):
                                                    self._bus_vhost,
                                                    self._bus_management_url,
                                                    self._bus_exchange_topic,
-                                                   self._redis_url
+                                                   self._redis_url,
+                                                   self._tracing_collector_url
                                                    )
         agent_service = runtime_agent.create_agent_service(self.network, extra_configs, extra_mounts)
 

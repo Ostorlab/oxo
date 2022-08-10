@@ -33,6 +33,7 @@ class AgentSettings:
     healthcheck_host: str = '0.0.0.0'
     healthcheck_port: int = 5000
     redis_url: Optional[str] = None
+    tracing_collector_url: Optional[str] = None
 
     @property
     def container_image(self):
@@ -101,7 +102,8 @@ class AgentSettings:
             replicas=instance.replicas,
             healthcheck_host=instance.healthcheck_host,
             healthcheck_port=instance.healthcheck_port,
-            redis_url=instance.redis_url
+            redis_url=instance.redis_url,
+            tracing_collector_url=instance.tracing_collector_url
         )
 
     def to_raw_proto(self) -> bytes:

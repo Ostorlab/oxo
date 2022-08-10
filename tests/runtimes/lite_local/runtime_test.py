@@ -48,7 +48,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
         'docker.models.services.Service.remove', return_value=None)
     lite_local_runtime.LiteLocalRuntime(
         scan_id='1', bus_url='bus', bus_vhost='/', bus_management_url='mgmt', bus_exchange_topic='top',
-        network='privnet', redis_url='redis://redis').stop(
+        network='privnet', redis_url='redis://redis', tracing_collector_url='jaeger://localhost/').stop(
         scan_id='1')
 
     docker_service_remove.assert_called_once()
@@ -87,7 +87,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker, db_e
 
     lite_local_runtime.LiteLocalRuntime(
         scan_id='1', bus_url='bus', bus_vhost='/', bus_management_url='mgmt', bus_exchange_topic='topic',
-        network='privnet', redis_url='redis://redis').stop(
+        network='privnet', redis_url='redis://redis', tracing_collector_url='jaeger://localhost/').stop(
         scan_id='9999')
 
     docker_service_remove.assert_not_called()
@@ -98,10 +98,10 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     some attributes, the agent settings values should override.
     """
     agent_def = agent_definitions.AgentDefinition(name='agent_name_from_def',
-                                                    mounts=['def_mount1', 'def_mount2'],
-                                                    mem_limit=420000,
-                                                    service_name='my_service',
-                                                    restart_policy='any')
+                                                  mounts=['def_mount1', 'def_mount2'],
+                                                  mem_limit=420000,
+                                                  service_name='my_service',
+                                                  restart_policy='any')
     mocker.patch('ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label',
                  return_value=agent_def)
     mocker.patch.object(ostorlab.runtimes.definitions.AgentSettings, 'container_image', property(container_name_mock))
@@ -113,18 +113,18 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     docker_client = docker.from_env()
 
     agent_settings = definitions.AgentSettings(key='agent/org/name',
-                                            mounts=['settings_mount1'],
-                                            mem_limit=700000,
-                                            restart_policy='on-failure',
-                                            constraints=['constraint1'])
+                                               mounts=['settings_mount1'],
+                                               mem_limit=700000,
+                                               restart_policy='on-failure',
+                                               constraints=['constraint1'])
 
     runtime_agent = agent_runtime.AgentRuntime(agent_settings, '42', docker_client, bus_url='bus', bus_vhost='/',
                                                bus_management_url='mgmt', bus_exchange_topic='topic',
-                                               redis_url='redis://redis')
+                                               redis_url='redis://redis', tracing_collector_url='jaeger://localhost/')
     runtime_agent.create_agent_service(network_name='test', extra_configs=[])
 
     kwargs = create_service_mock.call_args.kwargs
-    #assert arguments were overridden by the agent settings.
+    # assert arguments were overridden by the agent settings.
     assert kwargs['resources']['Limits']['MemoryBytes'] == 700000
     assert kwargs['mounts'] == ['settings_mount1']
     assert kwargs['restart_policy']['Condition'] == 'on-failure'

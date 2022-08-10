@@ -138,7 +138,8 @@ class AgentRuntime:
                  bus_vhost: str,
                  bus_management_url: str,
                  bus_exchange_topic: str,
-                 redis_url: str
+                 redis_url: str,
+                 tracing_collector_url: str
                  ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
 
@@ -151,6 +152,8 @@ class AgentRuntime:
             bus_management_url: Bus management URL, typically runs on a separate port over https.
             bus_exchange_topic: Bus exchange topic.
             redis_url: Redis URL.
+            tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
+             exporter and its arguments.
         """
         self._docker_client = docker_client
         self.agent = agent_settings
@@ -161,6 +164,7 @@ class AgentRuntime:
         self.bus_management_url = bus_management_url
         self.bus_exchange_topic = bus_exchange_topic
         self.redis_url = redis_url
+        self.tracing_collector_url = tracing_collector_url
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -170,7 +174,9 @@ class AgentRuntime:
             docker ConfigReference of the settings configuration
         """
         agent_instance_settings_proto = self.agent.to_raw_proto()
-        config_name = hashlib.md5(f'config_settings_{self.image_name}_{self.runtime_name}'.encode()).hexdigest()
+        # The name is hashed to work around size limitation of Docker Config.
+        config_name = hashlib.md5(
+            f'config_settings_{self.image_name}_{self.runtime_name}_{self._uuid}'.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
@@ -193,7 +199,9 @@ class AgentRuntime:
             docker configuration reference of the agent defintion configuration.
         """
         agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
-        config_name = hashlib.md5(f'config_definition_{self.image_name}__{self.runtime_name}'.encode()).hexdigest()
+        # The name is hashed to work around size limitation of Docker Config.
+        config_name = hashlib.md5(
+            f'config_definition_{self.image_name}__{self.runtime_name}_{self._uuid}'.encode()).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
@@ -232,6 +240,7 @@ class AgentRuntime:
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
         self.agent.redis_url = self.redis_url
+        self.agent.tracing_collector_url = self.tracing_collector_url
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.
@@ -297,7 +306,7 @@ class AgentRuntime:
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
-        service_name = agent_definition.service_name or self.agent.container_image.replace(':', '_').\
+        service_name = agent_definition.service_name or self.agent.container_image.replace(':', '_'). \
             replace('.', '') + '_' + self.runtime_name
 
         agent_service = self._docker_client.services.create(
