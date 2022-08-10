@@ -256,3 +256,4 @@ Implementation of popular tools like:
 * [cve-bin-tool](https://github.com/intel/cve-bin-tool): Scan binaries for vulnerable components.
 * [XSStrike](https://github.com/s0md3v/XSStrike): XSS web vulnerability scanner with generative payload.
 * [Subjack](https://github.com/haccer/subjack): Subdomain takeover scanning tool.
+* [DnsReaper](https://github.com/punk-security/dnsReaper): Subdomain takeover scanning tool.
