@@ -232,7 +232,7 @@ class AgentRuntime:
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
         self.agent.redis_url = self.redis_service.url
-        self.agent.tracing_collector_url = self.jaeger_service.url
+        self.agent.tracing_collector_url = self.jaeger_service.url if self.jaeger_service is not None else None
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.
