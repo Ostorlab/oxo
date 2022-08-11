@@ -23,7 +23,13 @@ def testOpenTelemtryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
         out_selectors=['v3.report.vulnerability'])
     agent_settings = runtime_definitions.AgentSettings(
         key='some_key',
-        tracing_collector_url='file://spans_output.json')
+        tracing_collector_url='console')
     test_agent = TestAgent(
         agent_definition=agent_definition,
         agent_settings=agent_settings)
+
+    test_agent.emit('v3.report.vulnerability', {
+        'title': 'some_title',
+        'technical_detail': 'some_details',
+        'risk_rating': 'MEDIUM'
+    })
