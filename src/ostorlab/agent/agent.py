@@ -302,7 +302,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             instance.run()
 
 
-class Agent(open_telemtry_mixin.OpenTelemtryMixin, AgentMixin):
+class Agent(open_telemtry_mixin.OpenTelemetryMixin, AgentMixin):
     """Agent class.
 
     An agent can either be a message processor or standalone. Standalone agents can either be long-running or run-once.
