@@ -43,7 +43,7 @@ class LocalJaeger:
     @property
     def url(self) -> str:
         """URL to connect to the local Jaeger instance."""
-        return f'jaeger://{self._jaeger_host}:{DEFAULT_JAEGER_PORT}/'
+        return f'jaeger://{self._jaeger_host}:{DEFAULT_JAEGER_PORT}'
 
     @property
     def service(self):

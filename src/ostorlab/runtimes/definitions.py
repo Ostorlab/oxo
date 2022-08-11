@@ -153,6 +153,9 @@ class AgentSettings:
         if self.redis_url is not None:
             instance.redis_url = self.redis_url
 
+        if self.tracing_collector_url is not None:
+            instance.tracing_collector_url = self.tracing_collector_url
+
         return instance.SerializeToString()
 
 
