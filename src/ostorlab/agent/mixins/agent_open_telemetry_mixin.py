@@ -16,6 +16,8 @@ from opentelemetry.sdk import resources
 
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.agent import message as agent_message
+
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +101,7 @@ class OpenTelemetryMixin:
         self._span_processor.force_flush()
 
     def process_message(self, selector: str, message: bytes) -> None:
-        """Overridden process message method of the agent to add OpenTelemetry traces.
+        """Overridden agent process message method to add OpenTelemetry traces.
         Processes raw message received from BS.
 
         Args:
@@ -111,12 +113,33 @@ class OpenTelemetryMixin:
         """
         if self._agent_settings.tracing_collector_url is not None:
             logger.debug('recording process message trace..')
-            with self.tracer.start_as_current_span('process_message') as process_span:
+            with self.tracer.start_as_current_span('process_message') as process_msg_span:
                 super().process_message(selector, message)
-                process_span.set_attribute('agent.name ', self.name)
-                process_span.set_attribute('message.selector', selector)
+                process_msg_span.set_attribute('agent.name', self.name)
+                process_msg_span.set_attribute('message.selector', selector)
         else:
             super().process_message(selector, message)
+
+
+    def process(self, message: agent_message.Message) -> None:
+        """Overridden agen process method to add OpenTelemetry traces.
+        Method responsible for processing a message.
+
+        Args:
+            message: message received from with selector and data.
+
+        Returns:
+            None
+        """
+        if self._agent_settings.tracing_collector_url is not None:
+            logger.debug('recording process trace..')
+            with self.tracer.start_as_current_span('process') as process_span:
+                super().process(message)
+                process_span.set_attribute('agent.name', self.name)
+                process_span.set_attribute('message.selector', message.selector)
+        else:
+            super().process(message)
+
 
     def emit(self, selector: str, data: Dict[str, Any]) -> None:
         """Overriden emit method of the agent to add OpenTelemetry traces.
@@ -133,8 +156,58 @@ class OpenTelemetryMixin:
         """
         if self._agent_settings.tracing_collector_url is not None:
             with self.tracer.start_as_current_span('emit_message') as emit_span:
+                logger.debug('recording emit message trace..')
                 super().emit(selector, data)
-                emit_span.set_attribute('agent.name ', self.name)
+                emit_span.set_attribute('agent.name', self.name)
                 emit_span.set_attribute('message.selector', selector)
         else:
             super().emit(selector, data)
+
+
+    def start(self) -> None:
+        """Overriden agent start method to add OpenTelemetry traces.
+        The method implements one-off or long-processing non-receiving agents
+
+        Returns:
+            None
+        """
+        if self._agent_settings.tracing_collector_url is not None:
+            with self.tracer.start_as_current_span('start_agent') as start_span:
+                logger.debug('recording start agent trace..')
+                super().start()
+                start_span.set_attribute('agent.name', self.name)
+        else:
+            super().start()
+
+
+    def process_cleanup(self) -> None:
+        """Overriden agent message cleanup to add OpenTelemetry traces
+        The method will be called once process is completed or even in the case of a failure.
+
+        Returns:
+            None
+        """
+        if self._agent_settings.tracing_collector_url is not None:
+            with self.tracer.start_as_current_span('process_cleanup') as cleanup_span:
+                logger.debug('recording agent process cleanup trace..')
+                super().process_cleanup()
+                cleanup_span.set_attribute('agent.name', self.name)
+        else:
+            super().process_cleanup()
+
+
+    def at_exit(self) -> None:
+        """Overridable at exit method to perform cleanup in the case of expected and unexpected agent termination.
+
+        Returns:
+            None
+        """
+        if self._agent_settings.tracing_collector_url is not None:
+            with self.tracer.start_as_current_span('at_exit') as at_exit_span:
+                logger.debug('recording agent at exit trace..')
+                self.force_flush()
+                self._file.close()
+                at_exit_span.set_attribute('agent.name', self.name)
+                super().at_exit()
+        else:
+            super().at_exit()
