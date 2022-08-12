@@ -32,7 +32,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
         'technical_detail': 'some_details',
         'risk_rating': 'MEDIUM'
     })
-    test_agent.force_flush()
+    test_agent.force_flush_file_exporter()
 
     with open('/tmp/trace.json', 'r', encoding='utf-8') as trace_file:
         trace_content = trace_file.read()
