@@ -52,7 +52,7 @@ class TraceExporter:
 
     def _get_file_exporter(self, parsed_url):
         file_path = parsed_url.path
-        self._file = open(file_path, 'w', encoding='utf-8')
+        self._file = open(file_path, 'w', encoding='utf-8') #pylint: disable=R1732
         file_exporter = sdk_export.ConsoleSpanExporter(out=self._file)
         logger.info('Configuring file exporter..')
         return file_exporter
