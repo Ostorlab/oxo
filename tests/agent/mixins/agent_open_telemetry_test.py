@@ -26,7 +26,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     if _is_windows() is True:
         output_path = tmp_file_obj.name
     else:
-        output_path = tmp_file_obj.name.split('C://')[-1]
+        output_path = tmp_file_obj.name.split('C:\\')[-1]
     agent_definition = agent_definitions.AgentDefinition(
         name='some_name',
         out_selectors=['v3.report.vulnerability'])
@@ -60,7 +60,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     if _is_windows() is True:
         output_path = tmp_file_obj.name
     else:
-        output_path = tmp_file_obj.name.split('C://')[-1]
+        output_path = tmp_file_obj.name.split('C:\\')[-1]
     agent_definition = agent_definitions.AgentDefinition(
         name='some_name',
         in_selectors=['v3.report.vulnerability'])
