@@ -7,6 +7,7 @@ import io
 import logging
 from typing import Any, Dict, Optional
 from urllib import parse
+import json
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
@@ -16,6 +17,9 @@ from opentelemetry.sdk import resources
 
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.utils import dictionary_minifier
+from ostorlab.agent import message as agent_message
+
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +105,13 @@ class OpenTelemetryMixin:
         """Ensures persistence of the span details in the file for the case of the file Span exporters."""
         self._span_processor.force_flush()
 
+    def _stringify_bytes_values(self, value: bytes):
+        """Method that will be used as a handler to json dump the message dictionary values."""
+        if isinstance(value, bytes):
+            return value.decode()
+        else:
+            return value
+
     def process_message(self, selector: str, message: bytes) -> None:
         """Overridden agent process message method to add OpenTelemetry traces.
         Processes raw message received from BS.
@@ -116,10 +127,16 @@ class OpenTelemetryMixin:
             logger.debug('recording process message trace..')
             with self.tracer.start_as_current_span('process_message') as process_msg_span:
                 super().process_message(selector, message)
+                selector = '.'.join(selector.split('.')[: -1])
                 process_msg_span.set_attribute('agent.name', self.name)
                 process_msg_span.set_attribute('message.selector', selector)
+                data = agent_message.Message.from_raw(selector, message).data
+                minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
+                stringified_msg_data= json.dumps(minified_msg_data, default=self._stringify_bytes_values)
+                process_msg_span.set_attribute('message.data', stringified_msg_data)
         else:
             super().process_message(selector, message)
+
 
     def emit(self, selector: str, data: Dict[str, Any]) -> None:
         """Overriden emit method of the agent to add OpenTelemetry traces.
@@ -140,5 +157,7 @@ class OpenTelemetryMixin:
                 super().emit(selector, data)
                 emit_span.set_attribute('agent.name', self.name)
                 emit_span.set_attribute('message.selector', selector)
+                minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
+                emit_span.set_attribute('message.data', json.dumps(minified_msg_data))
         else:
             super().emit(selector, data)
