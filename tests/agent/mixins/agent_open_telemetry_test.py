@@ -8,7 +8,6 @@ from ostorlab.agent import message as agent_message
 from ostorlab.agent.message import serializer
 
 
-
 class TestAgent(agent.Agent):
     """Helper class to test OpenTelemetry mixin implementation."""
 
@@ -58,11 +57,10 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
         agent_definition=agent_definition,
         agent_settings=agent_settings)
     data = {
-            'title': 'some_title',
-            'technical_detail': 'some_details',
-            'risk_rating': 'MEDIUM'
-
-        }
+        'title': 'some_title',
+        'technical_detail': 'some_details',
+        'risk_rating': 'MEDIUM'
+    }
     raw = serializer.serialize('v3.report.vulnerability', data).SerializeToString()
 
     test_agent.process_message(selector='v3.report.vulnerability', message=raw)
