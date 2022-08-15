@@ -23,7 +23,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
         out_selectors=['v3.report.vulnerability'])
     agent_settings = runtime_definitions.AgentSettings(
         key='some_key',
-        tracing_collector_url='file:///emit_trace.json')
+        tracing_collector_url='file:///tmp/emit_trace.json')
     test_agent = TestAgent(
         agent_definition=agent_definition,
         agent_settings=agent_settings)
@@ -35,7 +35,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     })
     test_agent.force_flush_file_exporter()
 
-    with open('/emit_trace.json', 'r', encoding='utf-8') as trace_file:
+    with open('/tmp/emit_trace.json', 'r', encoding='utf-8') as trace_file:
         trace_content = trace_file.read()
         trace_object = json.loads(trace_content)
 
@@ -52,7 +52,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
         in_selectors=['v3.report.vulnerability'])
     agent_settings = runtime_definitions.AgentSettings(
         key='some_key',
-        tracing_collector_url='file:///process_trace.json')
+        tracing_collector_url='file:///tmp/process_trace.json')
     test_agent = TestAgent(
         agent_definition=agent_definition,
         agent_settings=agent_settings)
@@ -66,7 +66,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     test_agent.process_message(selector='v3.report.vulnerability', message=raw)
     test_agent.force_flush_file_exporter()
 
-    with open('/process_trace.json', 'r', encoding='utf-8') as trace_file:
+    with open('/tmp/process_trace.json', 'r', encoding='utf-8') as trace_file:
         trace_content = trace_file.read()
         trace_object = json.loads(trace_content)
 
