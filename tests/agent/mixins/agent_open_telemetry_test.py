@@ -23,9 +23,9 @@ def _is_windows() -> bool:
 def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
-    tmp_file_obj = tempfile.NamedTemporaryFile() # pylint: disable=R1732
+    tmp_file_obj = tempfile.NamedTemporaryFile(suffix='.json') # pylint: disable=R1732
     if _is_windows() is True:
-        file_name = tmp_file_obj.name.split('.')[-1]
+        file_name = tmp_file_obj.name.split('\\')[-1]
         output_path = f'/Users/{os.getlogin()}/AppData/Local/Temp/{file_name}'
     else:
         output_path = tmp_file_obj.name
@@ -58,9 +58,9 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
 def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
-    tmp_file_obj = tempfile.NamedTemporaryFile() # pylint: disable=R1732
+    tmp_file_obj = tempfile.NamedTemporaryFile(suffix='.json') # pylint: disable=R1732
     if _is_windows() is True:
-        file_name = tmp_file_obj.name.split('.')[-1]
+        file_name = tmp_file_obj.name.split('\\')[-1]
         output_path = f'/Users/{os.getlogin()}/AppData/Local/Temp/{file_name}'
     else:
         output_path = tmp_file_obj.name
