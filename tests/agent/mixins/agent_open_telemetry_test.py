@@ -1,6 +1,7 @@
-"""Unit tests for OpenTelemtryMixin module."""
+"""Unit tests for OpenTelemetryMixin module."""
 import json
 import os
+import sys
 import tempfile
 
 from ostorlab.agent import agent
@@ -18,15 +19,14 @@ class TestAgent(agent.Agent):
 
 def _is_windows() -> bool:
     """Returns true if current platform is windows."""
-    return os.name == 'nt'
+    return sys.platform == 'win32'
 
 def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
     tmp_file_obj = tempfile.NamedTemporaryFile(suffix='.json') # pylint: disable=R1732
     if _is_windows() is True:
-        file_name = tmp_file_obj.name.split('\\')[-1]
-        output_path = f'/Users/{os.getlogin()}/AppData/Local/Temp/{file_name}'
+        output_path = tmp_file_obj.name[2:].replace('\\', '/')
     else:
         output_path = tmp_file_obj.name
     agent_definition = agent_definitions.AgentDefinition(
@@ -60,8 +60,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     del agent_mock
     tmp_file_obj = tempfile.NamedTemporaryFile(suffix='.json') # pylint: disable=R1732
     if _is_windows() is True:
-        file_name = tmp_file_obj.name.split('\\')[-1]
-        output_path = f'/Users/{os.getlogin()}/AppData/Local/Temp/{file_name}'
+        output_path = tmp_file_obj.name[2:].replace('\\', '/')
     else:
         output_path = tmp_file_obj.name
     agent_definition = agent_definitions.AgentDefinition(
