@@ -18,7 +18,7 @@ class TestAgent(agent.Agent):
         pass
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+@pytest.mark.skipif(sys.platform == 'win32', reason='does not run on windows')
 def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     """Unit test for the OpenTelemetry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
@@ -49,7 +49,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
             assert trace_object['attributes']['message.selector'] == 'v3.report.vulnerability'
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+@pytest.mark.skipif(sys.platform == 'win32', reason='does not run on windows')
 def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
