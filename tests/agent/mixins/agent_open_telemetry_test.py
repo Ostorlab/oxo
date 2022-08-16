@@ -27,6 +27,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     del agent_mock
     with tempfile.NamedTemporaryFile(suffix='.json') as tmp_file_obj:
         if _is_windows() is True:
+            print(tmp_file_obj.name)
             output_path = tmp_file_obj.name[2:].replace('\\', '/')
         else:
             output_path = tmp_file_obj.name
@@ -61,6 +62,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     del agent_mock
     with tempfile.NamedTemporaryFile(suffix='.json') as tmp_file_obj:
         if _is_windows() is True:
+            print(tmp_file_obj.name)
             output_path = tmp_file_obj.name[2:].replace('\\', '/')
         else:
             output_path = tmp_file_obj.name
