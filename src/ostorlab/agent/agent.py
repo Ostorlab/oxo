@@ -17,14 +17,14 @@ import sys
 import threading
 import uuid
 import json
-from typing import Dict, Any, NoReturn
+from typing import Dict, Any, NoReturn, Optional
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
-from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemtry_mixin
+from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 
 AGENT_DEFINITION_PATH = '/tmp/ostorlab.yaml'
@@ -213,7 +213,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         raise NotImplementedError('Missing process method implementation.')
 
 
-    def emit(self, selector: str, data: Dict[str, Any]) -> None:
+    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str]=None) -> None:
         """Sends a message to all listening agents on the specified selector.
 
         Args:
@@ -226,10 +226,10 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             None
         """
         message = agent_message.Message.from_data(selector, data)
-        self.emit_raw(selector, message.raw)
+        self.emit_raw(selector, message.raw, message_id=message_id)
 
 
-    def emit_raw(self, selector: str, raw: bytes) -> None:
+    def emit_raw(self, selector: str, raw: bytes, message_id: Optional[str]=None) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
         Args:
@@ -249,7 +249,11 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         logger.debug('call to send message with %s', selector)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
-        selector = f'{selector}.{uuid.uuid1()}'
+        if message_id is None:
+            selector = f'{selector}.{uuid.uuid1()}'
+        else:
+            selector = f'{selector}.{message_id}'
+
         self.mq_send_message(selector, raw)
         logger.debug('done call to send_message')
 
@@ -302,7 +306,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             instance.run()
 
 
-class Agent(open_telemtry_mixin.OpenTelemetryMixin, AgentMixin):
+class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
     """Agent class.
 
     An agent can either be a message processor or standalone. Standalone agents can either be long-running or run-once.
