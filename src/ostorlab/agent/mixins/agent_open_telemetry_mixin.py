@@ -102,7 +102,7 @@ class OpenTelemetryMixin:
             trace.set_tracer_provider(provider)
             self._span_processor = sdk_export.SimpleSpanProcessor(self._exporter.get_trace_exporter())
             trace.get_tracer_provider().add_span_processor(self._span_processor)
-            self._tracertracer = trace.get_tracer(__name__)
+            self._tracer = trace.get_tracer(__name__)
 
     @property
     def tracer(self) -> trace.Tracer:
