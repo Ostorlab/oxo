@@ -252,7 +252,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
         if message_id is None:
-            selector = f'{selector}.{uuid.uuid1()}'
+            selector = f'{selector}.{uuid.uuid4()}'
         else:
             selector = f'{selector}.{message_id}'
 
