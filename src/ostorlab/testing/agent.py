@@ -1,9 +1,25 @@
 """mock agent implements the required methods to test the agent's behavior without using external components."""
+import dataclasses
+
 import pytest
 
 from typing import List
 
 from ostorlab.agent import message as msg
+
+
+@dataclasses.dataclass
+class RawMessage:
+    """Raw message as key selector without transformation and message body."""
+    key: str
+    message: bytes
+
+
+@dataclasses.dataclass
+class AgentRunInstance:
+    """An instance run to collect all aspects of an agent instance."""
+    emitted_messages: List[msg.Message]
+    raw_messages: List[RawMessage]
 
 
 @pytest.fixture(scope='function')
@@ -70,7 +86,7 @@ def agent_persist_mock(mocker):
         storage[key] = str(value).encode()
 
     def _hash_add(hash_name, mapping):
-        mapping = {k: str(v).encode() for k,v in mapping.items()}
+        mapping = {k: str(v).encode() for k, v in mapping.items()}
         storage.setdefault(hash_name, {}).update(mapping)
 
     def _hash_exists(hash_name, key):
@@ -129,7 +145,33 @@ def agent_persist_mock(mocker):
     storage = {}
 
 
+@pytest.fixture(scope='function')
+def agent_run_mock(mocker) -> AgentRunInstance:
+    """Improved fixture implementation to capture all aspects of an agent run in an `AgentRunInstance` object."""
 
+    agent_run_instance = AgentRunInstance(raw_messages=[], emitted_messages=[])
 
+    mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_init', return_value=None)
+    mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run', return_value=None)
+    mocker.patch(
+        'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.start_healthcheck',
+        return_value=None
+    )
+    mocker.patch(
+        'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.add_healthcheck',
+        return_value=None
+    )
+    mocker.patch(
+        'ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__',
+        return_value=None
+    )
 
+    def mq_send_message(key, message):
+        # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
+        agent_run_instance.raw_messages.append(RawMessage(key=key, message=message))
+        agent_message = msg.Message.from_raw('.'.join(key.split('.')[:-1]), message)
+        agent_run_instance.emitted_messages.append(agent_message)
 
+    mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_send_message', side_effect=mq_send_message)
+    yield agent_run_instance
+    agent_run_instance = AgentRunInstance(raw_messages=[], emitted_messages=[])

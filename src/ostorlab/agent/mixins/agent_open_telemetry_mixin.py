@@ -5,8 +5,10 @@ metadata, metrics and exceptions.
 """
 import io
 import logging
+import uuid
 from typing import Any, Dict, Optional
 from urllib import parse
+import json
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
@@ -16,6 +18,8 @@ from opentelemetry.sdk import resources
 
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.utils import dictionary_minifier
+from ostorlab.agent import message as agent_message
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +77,8 @@ class OpenTelemetryMixin:
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.
     """
 
+    _tracer: Optional[trace.Tracer] = None
+
     def __init__(self, agent_definition: agent_definitions.AgentDefinition,
                  agent_settings: runtime_definitions.AgentSettings) -> None:
         """Initializes the mixin from the agent settings.
@@ -95,11 +101,32 @@ class OpenTelemetryMixin:
             trace.set_tracer_provider(provider)
             self._span_processor = sdk_export.SimpleSpanProcessor(self._exporter.get_trace_exporter())
             trace.get_tracer_provider().add_span_processor(self._span_processor)
-            self.tracer = trace.get_tracer(__name__)
+            self._tracer = trace.get_tracer(__name__)
+
+    @property
+    def tracer(self) -> trace.Tracer:
+        """Tracer object to report traces to the configured opentelemetry collector.
+        To use:
+
+        ```python
+        ...
+        with self.tracer.start_as_current_span('<action>') as process_msg_span:
+                process_msg_span.set_attribute('<attr1>', <value1>)
+                ...
+        ```
+        """
+        return self._tracer
 
     def force_flush_file_exporter(self) -> None:
         """Ensures persistence of the span details in the file for the case of the file Span exporters."""
         self._span_processor.force_flush()
+
+    def _stringify_bytes_values(self, value: bytes):
+        """Method that will be used as a handler to json dump the message dictionary values."""
+        if isinstance(value, bytes):
+            return value.decode()
+        else:
+            return value
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Overridden agent process message method to add OpenTelemetry traces.
@@ -113,21 +140,48 @@ class OpenTelemetryMixin:
             None
         """
         if self._tracing_collector_url is not None:
-            logger.debug('recording process message trace..')
-            with self.tracer.start_as_current_span('process_message') as process_msg_span:
-                super().process_message(selector, message)
+            logger.debug('recording process message trace.')
+
+            selector_split = selector.split('.')
+            message_id = selector_split[-1]
+
+            message_id_split = message_id.split('-')
+            if len(message_id_split) > 5:
+                # message is passing the message id, trace id and span id.
+                trace_uuid = int(message_id_split[5])
+                span_uuid = int(message_id_split[6])
+                parent_span_context = trace.SpanContext(
+                    trace_id=trace_uuid,
+                    span_id=span_uuid,
+                    is_remote=True,
+                    trace_flags=trace.TraceFlags(0x01)
+                )
+                context = trace.set_span_in_context(trace.NonRecordingSpan(parent_span_context))
+            else:
+                context = {}
+
+            raw_selector = '.'.join(selector_split[: -1])
+            data = agent_message.Message.from_raw(raw_selector, message).data
+            minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
+            stringified_msg_data = json.dumps(minified_msg_data, default=self._stringify_bytes_values)
+
+            with self.tracer.start_as_current_span('process_message', context=context) as process_msg_span:
                 process_msg_span.set_attribute('agent.name', self.name)
-                process_msg_span.set_attribute('message.selector', selector)
+                process_msg_span.set_attribute('message.selector', raw_selector)
+                process_msg_span.set_attribute('message.data', stringified_msg_data)
+
+                super().process_message(selector, message)
         else:
             super().process_message(selector, message)
 
-    def emit(self, selector: str, data: Dict[str, Any]) -> None:
+    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None) -> None:
         """Overriden emit method of the agent to add OpenTelemetry traces.
         Sends a message to all listening agents on the specified selector.
 
         Args:
             selector: target selector.
             data: message data to be serialized.
+            message_id: An id that will be added to the tail of the message.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
@@ -137,8 +191,15 @@ class OpenTelemetryMixin:
         if self._tracing_collector_url is not None:
             with self.tracer.start_as_current_span('emit_message') as emit_span:
                 logger.debug('recording emit message trace..')
-                super().emit(selector, data)
+
+                trace_id = emit_span.get_span_context().trace_id
+                span_id = emit_span.get_span_context().span_id
+
                 emit_span.set_attribute('agent.name', self.name)
                 emit_span.set_attribute('message.selector', selector)
+                minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
+                emit_span.set_attribute('message.data', json.dumps(minified_msg_data))
+
+                super().emit(selector, data, f'{message_id or uuid.uuid4()}-{trace_id}-{span_id}')
         else:
             super().emit(selector, data)
