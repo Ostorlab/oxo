@@ -24,6 +24,7 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
+from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemtry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 
 AGENT_DEFINITION_PATH = '/tmp/ostorlab.yaml'
@@ -35,7 +36,9 @@ class NonListedMessageSelectorError(exceptions.OstorlabError):
     """Emit selector is not listed in the out_selector list."""
 
 
-class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealthcheckMixin, abc.ABC):
+class AgentMixin(agent_mq_mixin.AgentMQMixin,
+                 agent_healthcheck_mixin.AgentHealthcheckMixin,
+                 abc.ABC):
     """Agent mixin handles all the heavy lifting.
 
     The agent mixin start the healthcheck service, connects the MQ and start listening to the process message.
@@ -76,6 +79,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(self, name=agent_definition.name,
                                                                host=agent_settings.healthcheck_host,
                                                                port=agent_settings.healthcheck_port)
+
 
     @property
     def definition(self) -> agent_definitions.AgentDefinition:
@@ -145,6 +149,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         """
         raise NotImplementedError()
 
+
     def process_message(self, selector: str, message: bytes) -> None:
         """Processes raw message received from BS.
 
@@ -207,6 +212,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         """
         raise NotImplementedError('Missing process method implementation.')
 
+
     def emit(self, selector: str, data: Dict[str, Any]) -> None:
         """Sends a message to all listening agents on the specified selector.
 
@@ -221,6 +227,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
         """
         message = agent_message.Message.from_data(selector, data)
         self.emit_raw(selector, message.raw)
+
 
     def emit_raw(self, selector: str, raw: bytes) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
@@ -295,7 +302,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealt
             instance.run()
 
 
-class Agent(AgentMixin):
+class Agent(open_telemtry_mixin.OpenTelemetryMixin, AgentMixin):
     """Agent class.
 
     An agent can either be a message processor or standalone. Standalone agents can either be long-running or run-once.
