@@ -16,7 +16,8 @@ class TestAgent(agent.Agent):
     def process(self, message: agent_message.Message) -> None:
         pass
 
-def _is_windows():
+def _is_windows() -> bool:
+    """Returns true if current platform is windows."""
     return os.name == 'nt'
 
 def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
@@ -24,9 +25,10 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     del agent_mock
     tmp_file_obj = tempfile.NamedTemporaryFile(suffix='trace.json') # pylint: disable=R1732
     if _is_windows() is True:
-        output_path = tmp_file_obj.name
+        file_name = tmp_file_obj.name.split('.')[-1]
+        output_path = f'/Users/{os.getlogin()}/AppData/Local/Temp/{file_name}'
     else:
-        output_path = tmp_file_obj.name.split('C:\\')[-1]
+        output_path = tmp_file_obj.name
     agent_definition = agent_definitions.AgentDefinition(
         name='some_name',
         out_selectors=['v3.report.vulnerability'])
@@ -58,9 +60,10 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
     del agent_mock
     tmp_file_obj = tempfile.NamedTemporaryFile(suffix='trace.json') # pylint: disable=R1732
     if _is_windows() is True:
-        output_path = tmp_file_obj.name
+        file_name = tmp_file_obj.name.split('.')[-1]
+        output_path = f'/Users/{os.getlogin()}/AppData/Local/Temp/{file_name}'
     else:
-        output_path = tmp_file_obj.name.split('C:\\')[-1]
+        output_path = tmp_file_obj.name
     agent_definition = agent_definitions.AgentDefinition(
         name='some_name',
         in_selectors=['v3.report.vulnerability'])
