@@ -1,7 +1,7 @@
 """Module offering methods to minify a dictionary,
 by truncating its string & bytes values to a specific configurable size.
 """
-from typing import Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 from queue import Queue, Empty
 
 TRUNCATE_SIZE = 256
@@ -20,7 +20,7 @@ def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
         value = value[:TRUNCATE_SIZE]
     return value
 
-def minify_dict(dic: Dict, handler: Callable) -> Dict:
+def minify_dict(value: Any, handler: Callable) -> Dict:
     """Recursive approach to minify dictionary values.
 
     Args:
@@ -30,15 +30,14 @@ def minify_dict(dic: Dict, handler: Callable) -> Dict:
     Returns:
         the minified version of the dict.
     """
-    for key, value in dic.items():
-        if isinstance(value, list):
-            value = [minify_dict(v, handler) for v in value]
-        elif isinstance(value, dict):
-            value = minify_dict(value, handler)
-        else:
-            dic[key] = handler(value)
-
-    return dic
+    if isinstance(value, list):
+        return [minify_dict(v, handler) for v in value]
+    elif isinstance(value, dict):
+        for key, v in value.items():
+            value[key] = minify_dict(v, handler)
+        return value
+    else:
+        return handler(value)
 
 
 def _nested_set(dic: Dict, keys: List, value: any) -> Dict:
