@@ -1,6 +1,5 @@
 """Unit tests for OpenTelemetryMixin module."""
 import json
-import os
 import sys
 import tempfile
 
@@ -17,9 +16,11 @@ class TestAgent(agent.Agent):
     def process(self, message: agent_message.Message) -> None:
         pass
 
+
 def _is_windows() -> bool:
     """Returns true if current platform is windows."""
     return sys.platform == 'win32'
+
 
 def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_mock):
     """Unit test for the OpenTelemetry Mixin, ensure the correct exporter has been used and trace span has been sent."""
