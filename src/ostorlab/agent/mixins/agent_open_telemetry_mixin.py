@@ -10,7 +10,6 @@ from typing import Any, Dict, Optional
 from urllib import parse
 import json
 
-import opentelemetry.trace
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
 from opentelemetry.sdk import trace as trace_provider
@@ -151,7 +150,7 @@ class OpenTelemetryMixin:
                 # message is passing the message id, trace id and span id.
                 trace_uuid = int(message_id_split[5])
                 span_uuid = int(message_id_split[6])
-                parent_span_context = opentelemetry.trace.SpanContext(
+                parent_span_context = trace.SpanContext(
                     trace_id=trace_uuid,
                     span_id=span_uuid,
                     is_remote=True,
