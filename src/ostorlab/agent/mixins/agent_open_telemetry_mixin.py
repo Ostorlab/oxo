@@ -78,6 +78,8 @@ class OpenTelemetryMixin:
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.
     """
 
+    _tracer: Optional[trace.Tracer] = None
+
     def __init__(self, agent_definition: agent_definitions.AgentDefinition,
                  agent_settings: runtime_definitions.AgentSettings) -> None:
         """Initializes the mixin from the agent settings.
@@ -100,7 +102,21 @@ class OpenTelemetryMixin:
             trace.set_tracer_provider(provider)
             self._span_processor = sdk_export.SimpleSpanProcessor(self._exporter.get_trace_exporter())
             trace.get_tracer_provider().add_span_processor(self._span_processor)
-            self.tracer = trace.get_tracer(__name__)
+            self._tracertracer = trace.get_tracer(__name__)
+
+    @property
+    def tracer(self) -> trace.Tracer:
+        """Tracer object to report traces to the configured opentelemetry collector.
+        To use:
+
+        ```python
+        ...
+        with self.tracer.start_as_current_span('<action>') as process_msg_span:
+                process_msg_span.set_attribute('<attr1>', <value1>)
+                ...
+        ```
+        """
+        return self._tracer
 
     def force_flush_file_exporter(self) -> None:
         """Ensures persistence of the span details in the file for the case of the file Span exporters."""
