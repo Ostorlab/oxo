@@ -182,6 +182,7 @@ class OpenTelemetryMixin:
         Args:
             selector: target selector.
             data: message data to be serialized.
+            message_id: An id that will be added to the tail of the message.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 

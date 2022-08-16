@@ -219,6 +219,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         Args:
             selector: target selector.
             data: message data to be serialized.
+            message_id: An id that will be added to the tail of the message.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
@@ -235,6 +236,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         Args:
             selector: target selector.
             raw: raw message to send.
+            message_id: An id that will be added to the tail of the message.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
