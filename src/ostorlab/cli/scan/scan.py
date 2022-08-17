@@ -6,6 +6,7 @@ import click
 
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.runtimes import registry
+from ostorlab.cli import input_validators
 
 
 @rootcli.group()
@@ -37,6 +38,9 @@ from ostorlab.runtimes import registry
 @click.option('--tracing-collector-url',
               help='Tracing Collector URL, this flag is restricted to the lite local runtime.',
               required=False, hidden=True)
+@click.option('--bind-mq-port',
+              help='Ports to expose on RabbitMQ service_port1:host_port1,service_port2:host_port2',
+              required=False, hidden=True, callback=input_validators.validate_port_binding_input)
 @click.pass_context
 def scan(ctx: click.core.Context, runtime: str,
          bus_url: Optional[str] = None,
@@ -47,8 +51,9 @@ def scan(ctx: click.core.Context, runtime: str,
          network: Optional[str] = None,
          redis_url: Optional[str] = None,
          tracing: bool = False,
-         tracing_collector_url: Optional[str] = None
-         ) -> None:
+         tracing_collector_url: Optional[str] = None,
+         bind_mq_port: Optional[str] = None,
+        ) -> None:
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
         - To show list of scans:\n
@@ -66,7 +71,8 @@ def scan(ctx: click.core.Context, runtime: str,
                                                    network=network,
                                                    redis_url=redis_url,
                                                    tracing=tracing,
-                                                   tracing_collector_url=tracing_collector_url
+                                                   tracing_collector_url=tracing_collector_url,
+                                                   bind_mq_port = bind_mq_port
                                                    )
         ctx.obj['runtime'] = runtime_instance
     except registry.RuntimeNotFoundError as e:
