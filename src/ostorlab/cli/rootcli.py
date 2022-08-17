@@ -11,6 +11,7 @@ logger = logging.getLogger('CLI')
 
 @click.group()
 @click.pass_context
+@click.version_option()
 @click.option('--api-key', help='API key to login to the platform.', required=False)
 @click.option('--proxy', '-X', help='Proxy to route HTTPS requests through.')
 @click.option('--tlsverify/--no-tlsverify', help='Control TLS server certificate verification.', default=True)
