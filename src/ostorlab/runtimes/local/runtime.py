@@ -89,7 +89,7 @@ class LocalRuntime(runtime.Runtime):
 
     def __init__(self, *args, tracing: bool = False, **kwargs) -> None:
         super().__init__()
-        del args, kwargs
+        del args
         self.follow = []
         self._tracing = tracing
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
@@ -97,6 +97,7 @@ class LocalRuntime(runtime.Runtime):
         self._jaeger_service: Optional[jaeger.LocalJaeger] = None
         self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
+        self._mq_exposed_ports: Optional[str] = kwargs.get('bind_mq_port')
 
     @property
     def name(self) -> str:
@@ -311,7 +312,10 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_mq_service(self):
         """Start a local rabbitmq service."""
-        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network)
+        if self._mq_exposed_ports is not None:
+            ports = self._mq_exposed_ports.split(',')
+            self._mq_exposed_ports = {int(port.split(':')[0]):int(port.split(':')[1]) for port in ports }
+        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network, exposed_ports=self._mq_exposed_ports)
         self._mq_service.start()
         if 'mq' in self.follow:
             self._log_streamer.stream(self._mq_service.service)
