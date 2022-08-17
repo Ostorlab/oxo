@@ -314,8 +314,8 @@ class LocalRuntime(runtime.Runtime):
         """Start a local rabbitmq service."""
         if self._mq_exposed_ports is not None:
             ports = self._mq_exposed_ports.split(',')
-            mq_exposed_ports = {int(port.split(':')[0]):int(port.split(':')[1]) for port in ports }
-        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network, exposed_ports=mq_exposed_ports)
+            self._mq_exposed_ports = {int(port.split(':')[0]):int(port.split(':')[1]) for port in ports }
+        self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network, exposed_ports=self._mq_exposed_ports)
         self._mq_service.start()
         if 'mq' in self.follow:
             self._log_streamer.stream(self._mq_service.service)

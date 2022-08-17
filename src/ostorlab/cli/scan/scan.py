@@ -38,7 +38,7 @@ from ostorlab.cli import input_validators
 @click.option('--tracing-collector-url',
               help='Tracing Collector URL, this flag is restricted to the lite local runtime.',
               required=False, hidden=True)
-@click.option('--bind-mq-port',
+@click.option('--mq-exposed-ports',
               help='Ports to expose on RabbitMQ service_port1:host_port1,service_port2:host_port2',
               required=False, hidden=True, callback=input_validators.validate_port_binding_input)
 @click.pass_context
