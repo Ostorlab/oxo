@@ -9,18 +9,6 @@ from ostorlab.apis.runners import login_runner
 from ostorlab.cli import rootcli
 
 
-def testOstorlabAuthLoginCLI_whenNoOptionsProvided_showsUsage():
-    """Test ostorlab auth login command when used with no options.
-    Should show usage.
-    """
-
-    runner = CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['auth', 'login'])
-
-    assert 'Usage: rootcli auth login [OPTIONS]' in result.output
-    assert result.exit_code == 2
-
-
 @mock.patch.object(authenticated_runner.AuthenticationError, '__init__')
 def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(
         mock_authentication_error_init, requests_mock):
@@ -33,7 +21,7 @@ def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthen
     requests_mock.post(login_runner.TOKEN_ENDPOINT, json={'non_field_errors': [
         'Unable to log in with provided credentials.']}, status_code=400)
     result = runner.invoke(
-        rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+        rootcli.rootcli, ['auth', 'login'], input='username\npassword')
 
     assert result.exception is None
     mock_authentication_error_init.assert_called()
@@ -54,7 +42,7 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=api_key_dict, status_code=200)
     result = runner.invoke(
-        rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+        rootcli.rootcli, ['auth', 'login'], input='username\npassword')
 
     assert result.exception is None
     assert configuration_manager.ConfigurationManager(
@@ -73,6 +61,6 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_prom
     requests_mock.post(login_runner.TOKEN_ENDPOINT, [{'json': {'non_field_errors': [
         'Must include "otp_token"']}, 'status_code': 400}, {'json': token_dict, 'status_code': 200}])
     runner.invoke(
-        rootcli.rootcli, ['auth', 'login', '--username=username', '--password=password'])
+        rootcli.rootcli, ['auth', 'login'], input='username\npassword')
 
     mock_prompt.assert_called()
