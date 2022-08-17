@@ -52,7 +52,7 @@ def scan(ctx: click.core.Context, runtime: str,
          redis_url: Optional[str] = None,
          tracing: bool = False,
          tracing_collector_url: Optional[str] = None,
-         bind_mq_port: Optional[str] = None,
+         mq_exposed_ports: Optional[str] = None,
         ) -> None:
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
@@ -72,7 +72,7 @@ def scan(ctx: click.core.Context, runtime: str,
                                                    redis_url=redis_url,
                                                    tracing=tracing,
                                                    tracing_collector_url=tracing_collector_url,
-                                                   bind_mq_port = bind_mq_port
+                                                   mq_exposed_ports = mq_exposed_ports
                                                    )
         ctx.obj['runtime'] = runtime_instance
     except registry.RuntimeNotFoundError as e:
