@@ -327,6 +327,7 @@ class LocalRuntime(runtime.Runtime):
         """Start a local Jaeger service."""
         self._jaeger_service = jaeger.LocalJaeger(name=self.name, network=self.network)
         self._jaeger_service.start()
+        click.launch(self._jaeger_service.management_interface_ui)
         if 'jaeger' in self.follow:
             self._log_streamer.stream(self._jaeger_service.service)
 
