@@ -13,8 +13,8 @@ console = cli_console.Console()
 
 
 @auth.auth.command()
-@click.option('--username', '-u', help='Ostorlab platform username.', required=True)
-@click.option('--password', '-p', help='Ostorlab platform password.', required=True)
+@click.option('--username', '-u', help='Ostorlab platform username.', required=True, prompt=True)
+@click.option('--password', '-p', help='Ostorlab platform password.', required=True, prompt=True, hide_input=True)
 @click.option('--token-duration', help='Expiration time for token (m for minutes, h for hours, and d for days).')
 def login(username, password, token_duration):
     """Use this to log into your account."""
