@@ -64,8 +64,8 @@ class LiteLocalRuntime(runtime.Runtime):
     Lite Local runtime starts all the agents listed in the `AgentRunDefinition`, and then injects the target asset.
     """
 
-    def __init__(self, scan_id: str, bus_url: str, bus_vhost: str, bus_management_url: str,
-                 bus_exchange_topic: str, network: str, redis_url: str, tracing_collector_url: str) -> None:
+    def __init__(self, *args, scan_id: str, bus_url: str, bus_vhost: str, bus_management_url: str,
+                 bus_exchange_topic: str, network: str, redis_url: str, tracing_collector_url: str, **kwargs) -> None:
         """Set runtime attributes.
 
         Args:
