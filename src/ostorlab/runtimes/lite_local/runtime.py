@@ -79,6 +79,8 @@ class LiteLocalRuntime(runtime.Runtime):
             tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
              exporter and its arguments.
         """
+        del args
+        del kwargs
         super().__init__()
 
         if not all([scan_id, bus_url, bus_vhost, bus_management_url, bus_exchange_topic, network, redis_url]):
