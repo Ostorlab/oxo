@@ -4,7 +4,7 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 import logging
-from typing import List
+from typing import Dict, List
 from typing import Optional
 from concurrent import futures
 
@@ -87,7 +87,9 @@ class LocalRuntime(runtime.Runtime):
     their status and then inject the target asset.
     """
 
-    def __init__(self, *args, tracing: bool = False, mq_exposed_ports: str = None, **kwargs) -> None:
+    def __init__(self, *args,
+                 tracing: Optional[bool] = False,
+                 mq_exposed_ports: Optional[Dict[int, int]] = None, **kwargs) -> None:
         super().__init__()
         del args, kwargs
         self.follow = []
@@ -97,7 +99,7 @@ class LocalRuntime(runtime.Runtime):
         self._jaeger_service: Optional[jaeger.LocalJaeger] = None
         self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
-        self._mq_exposed_ports: Optional[str] = mq_exposed_ports
+        self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
 
     @property
     def name(self) -> str:
@@ -312,9 +314,6 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_mq_service(self):
         """Start a local rabbitmq service."""
-        if self._mq_exposed_ports is not None:
-            ports = self._mq_exposed_ports.split(',')
-            self._mq_exposed_ports = {int(port.split(':')[0]):int(port.split(':')[1]) for port in ports }
         self._mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network, exposed_ports=self._mq_exposed_ports)
         self._mq_service.start()
         if 'mq' in self.follow:

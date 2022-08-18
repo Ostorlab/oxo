@@ -62,6 +62,9 @@ def scan(ctx: click.core.Context, runtime: str,
         ostorlab scan stop <scan-id>\n
     """
     try:
+        if mq_exposed_ports is not None:
+            exposed_ports_list = mq_exposed_ports.split(',')
+            mq_exposed_ports = {int(port.split(':')[0]):int(port.split(':')[1]) for port in exposed_ports_list}
         runtime_instance = registry.select_runtime(runtime,
                                                    scan_id=scan_id,
                                                    bus_url=bus_url,
