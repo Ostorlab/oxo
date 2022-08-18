@@ -5,9 +5,10 @@ Usage
                  bus_username, bus_password)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
+import hashlib
 import io
 import logging
-import hashlib
+import uuid
 from typing import List, Optional
 
 import docker
@@ -155,6 +156,7 @@ class AgentRuntime:
             tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
              exporter and its arguments.
         """
+        self._uuid = uuid.uuid4()
         self._docker_client = docker_client
         self.agent = agent_settings
         self.image_name = agent_settings.container_image.split(':', maxsplit=1)[0]
