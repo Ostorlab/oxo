@@ -11,10 +11,15 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 """
+import ipaddress
+import logging
 from typing import Dict, List, Set
+
 import redis
 
 from ostorlab.runtimes import definitions as runtime_definitions
+
+logger = logging.getLogger(__name__)
 
 
 class AgentPersistMixin:
@@ -120,7 +125,7 @@ class AgentPersistMixin:
         """
         return bool(self._redis_client.hset(name=hash_name, mapping=mapping))
 
-    def hash_exists(self, hash_name: bytes, key: bytes)-> bool:
+    def hash_exists(self, hash_name: bytes, key: bytes) -> bool:
         """Returns a boolean indicating if key exists within hash hash_name.
 
         Args:
@@ -144,7 +149,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hget(hash_name, key)
 
-    def hash_get_all(self, hash_name: bytes)-> Dict:
+    def hash_get_all(self, hash_name: bytes) -> Dict:
         """Returns a dict of the hash’s name/value pairs.
 
         Args:
@@ -166,7 +171,7 @@ class AgentPersistMixin:
         """
         return bool(self._redis_client.delete(key))
 
-    def value_type(self, key: bytes)-> str:
+    def value_type(self, key: bytes) -> str:
         """Return a string representation of the type of the value stored at key.
 
         Args:
@@ -176,3 +181,21 @@ class AgentPersistMixin:
             String representation of the type of value stored at key. eg: set, string.
         """
         return self._redis_client.type(key).decode()
+
+    def add_ip_range(self, key: bytes, ip_range: bytes) -> bool:
+        """
+        Returns True if ip range have never been persisted before, else it's returns False
+        this method takes
+        Args:
+            key: unique key for the set
+            ip_range: ip range to persist
+
+        Returns:
+            returns True if ip_range is added and False if the ip_range or one of his supersets already exits
+        """
+        ip_network = ipaddress.ip_network(ip_range.decode(), strict=False)
+        while ip_network.prefixlen > 0:
+            if self.set_is_member(key, ip_network.exploded) is True:
+                return False
+            ip_network = ip_network.supernet()
+        return self.set_add(key, ip_range)

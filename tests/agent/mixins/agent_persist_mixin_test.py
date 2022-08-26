@@ -42,7 +42,7 @@ async def testAgentPersistMixinDeleteKey_whenKeyExists_keyIsDeleted(mocker, redi
 
     mixin.set_add('test1', b'A')
     mixin.delete('test1')
-    assert mixin.set_members('test')  == set()
+    assert mixin.set_members('test') == set()
 
 
 @pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
@@ -61,3 +61,19 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_se
     assert mixin.hash_get('hash_name', 'NoneExistingKey') is None
     assert b'key1' in mixin.hash_get_all('hash_name')
     assert b'key2' in mixin.hash_get_all('hash_name')
+
+
+@pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
+async def testAgentPersistMixinCheckIpRangeExist_WhenIpRangeIsSaned_ReturnTrue(mocker, redis_service, clean_redis_data):
+    """Test mixin.add_ip_range returns True if ip_range is added and False if the ip_range or one of his supersets already exits """
+    del mocker, redis_service, clean_redis_data
+    settings = runtime_definitions.AgentSettings(key='agent/ostorlab/debug', redis_url='redis://localhost:6379')
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    assert mixin.add_ip_range(b'test_ip', b'8.8.8.0/23') is True
+    assert mixin.add_ip_range(b'test_ip', b'8.8.8.0/24') is False
+    assert mixin.add_ip_range(b'test_ip', b'8.8.8.0/32') is False
+    assert mixin.add_ip_range(b'test_ip', b'10.10.10.0/23') is True
+    assert mixin.add_ip_range(b'test_ip', b'10.10.10.0/28') is False
