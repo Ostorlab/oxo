@@ -68,7 +68,8 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_se
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinCheckIpRangeExist_WhenIpRangeIsSaned_ReturnTrue(mocker, redis_service, clean_redis_data):
-    """Test mixin.add_ip_network returns True if ip_range is added and False if the ip_range or one of his supersets already exits """
+    """Test mixin.add_ip_network returns True if ip_range is added and False if the ip_range
+    or one of his supersets already exits """
     del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(key='agent/ostorlab/debug', redis_url='redis://localhost:6379')
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
