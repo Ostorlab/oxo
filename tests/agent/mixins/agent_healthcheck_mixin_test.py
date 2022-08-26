@@ -12,7 +12,7 @@ def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsTrue_statusReturnsOK
     status_agent.add_healthcheck(lambda: True)
     status_agent.start_healthcheck()
     time.sleep(0.5)
-    response = requests.get('http://127.0.1.2:5006/status')
+    response = requests.get('http://127.0.1.2:5006/status', timeout=10)
     assert response.status_code == 200
     assert response.content == b'OK'
     status_agent.stop_healthcheck()
@@ -24,7 +24,7 @@ def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsFalse_statusReturnsN
     status_agent.add_healthcheck(lambda: False)
     status_agent.start_healthcheck()
     time.sleep(0.5)
-    response = requests.get('http://127.0.1.3:5006/status')
+    response = requests.get('http://127.0.1.3:5006/status', timeout=10)
     assert response.status_code == 200
     assert response.content == b'NOK'
     status_agent.stop_healthcheck()
@@ -38,7 +38,7 @@ def testHealthcheckAgentMixin_whenMultipleHealthcheckCallbacksAndOneReturnsFalse
     status_agent.add_healthcheck(lambda: True)
     status_agent.start_healthcheck()
     time.sleep(0.5)
-    response = requests.get('http://127.0.1.4:5006/status')
+    response = requests.get('http://127.0.1.4:5006/status', timeout=10)
     assert response.status_code == 200
     assert response.content == b'NOK'
     status_agent.stop_healthcheck()
