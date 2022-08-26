@@ -191,7 +191,7 @@ class AgentPersistMixin:
             ip_range: ip range to persist
 
         Returns:
-            returns True if ip_range is added and False if the ip_range or one of his supersets already exits
+            returns True if ip_range is added and False if the ip_range or one of it super nets already exits.
         """
         ip_network = ipaddress.ip_network(ip_range.decode(), strict=False)
         while ip_network.prefixlen > 0:
