@@ -1,4 +1,5 @@
 """Tests for AgentPersistMixin module."""
+import ipaddress
 
 import pytest
 
@@ -67,13 +68,15 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_se
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinCheckIpRangeExist_WhenIpRangeIsSaned_ReturnTrue(mocker, redis_service, clean_redis_data):
-    """Test mixin.add_ip_range returns True if ip_range is added and False if the ip_range or one of his supersets already exits """
+    """Test mixin.add_ip_network returns True if ip_range is added and False if the ip_range or one of his supersets already exits """
     del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(key='agent/ostorlab/debug', redis_url='redis://localhost:6379')
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
 
-    assert mixin.add_ip_range(b'test_ip', b'8.8.8.0/23') is True
-    assert mixin.add_ip_range(b'test_ip', b'8.8.8.0/24') is False
-    assert mixin.add_ip_range(b'test_ip', b'8.8.8.0/32') is False
-    assert mixin.add_ip_range(b'test_ip', b'10.10.10.0/23') is True
-    assert mixin.add_ip_range(b'test_ip', b'10.10.10.0/28') is False
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('8.8.8.0/23')) is True
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('8.8.8.0/24')) is False
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('8.8.8.0/23')) is False
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('8.8.8.0/24')) is False
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('8.8.8.0/31')) is False
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('10.10.10.0/23')) is True
+    assert mixin.add_ip_network(b'test_ip', ipaddress.ip_network('10.10.10.0/28')) is False

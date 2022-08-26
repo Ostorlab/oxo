@@ -13,6 +13,7 @@ Typical usage:
 """
 import ipaddress
 import logging
+import typing
 from typing import Dict, List, Set
 
 import redis
@@ -182,20 +183,20 @@ class AgentPersistMixin:
         """
         return self._redis_client.type(key).decode()
 
-    def add_ip_range(self, key: bytes, ip_range: bytes) -> bool:
+    def add_ip_network(self, key: bytes, ip_range: typing.Union[ipaddress.IPv6Network, ipaddress.IPv4Network]) -> bool:
         """
-        Returns True if ip range have never been persisted before, else it's returns False
+        Returns True if a network have never been persisted before, else it's returns False
         this method takes
         Args:
             key: unique key for the set
-            ip_range: ip range to persist
+            ip_range: IPv4Network or IPv4Network network to persist
 
         Returns:
-            returns True if ip_range is added and False if the ip_range or one of it super nets already exits.
+            returns True if network is added and False if the network or one of it's super nets already exits.
         """
-        ip_network = ipaddress.ip_network(ip_range.decode(), strict=False)
+        ip_network = ip_range
         while ip_network.prefixlen > 0:
             if self.set_is_member(key, ip_network.exploded) is True:
                 return False
             ip_network = ip_network.supernet()
-        return self.set_add(key, ip_range)
+        return self.set_add(key, ip_range.exploded)
