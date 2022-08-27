@@ -1,8 +1,8 @@
 """Agent Healthcheck commands."""
-import requests
 import logging
 
 import click
+import requests
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
@@ -24,7 +24,7 @@ def healthcheck(host: str, port: int, https: bool = False) -> None:
         url = f'http://{host}:{port}/status'
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         if response.status_code != 200:
             console.error(f'Response status code is {response.status_code}')
             raise click.exceptions.Exit(2)

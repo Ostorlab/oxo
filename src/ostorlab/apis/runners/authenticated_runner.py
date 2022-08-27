@@ -153,4 +153,4 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             proxy = None
 
         return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
-                             proxies=proxy, verify=self._verify)
+                             proxies=proxy, verify=self._verify, timeout=runner.REQUEST_TIMEOUT)
