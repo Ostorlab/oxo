@@ -11,6 +11,8 @@ import requests
 from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import request as api_request
 
+REQUEST_TIMEOUT = 10
+
 
 class Error(Exception):
     """Base Error Class"""
@@ -66,4 +68,4 @@ class APIRunner(abc.ABC):
             proxy = None
 
         return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
-                             proxies=proxy, verify=self._verify, timeout=10)
+                             proxies=proxy, verify=self._verify, timeout=REQUEST_TIMEOUT)

@@ -55,4 +55,4 @@ class PublicAPIRunner(runner.APIRunner):
         else:
             proxy = None
         return requests.post(self.endpoint, data=request.data,
-                             proxies=proxy, verify=self._verify,timeout=10)
+                             proxies=proxy, verify=self._verify, timeout=runner.REQUEST_TIMEOUT)
