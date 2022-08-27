@@ -5,10 +5,9 @@
 
 # Ostorlab Security Scanner
 
-Ostorlab is security scanner framework with the mantra of do one thing and do it well.
+Ostorlab is a security scanning framework built for modualrity, scalability and simplicity.
 
-Ostorlab provides unparalleled and limitless extensibility by combining specialized tools to work cohesively to find
-vulnerabilities.
+Ostorlab Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
 
 ![Scan Run](images/scan_run.gif)
 
@@ -19,7 +18,7 @@ Docker is required to run scans locally. To install docker, please follow these
 
 # Installing
 
-Ostorlab ships as a Python package on Pypi. To install it, simply run the following command if you have `pip` already
+Ostorlab ships as a Python package on pypi. To install it, simply run the following command if you have `pip` already
 installed.
 
 ```shell
