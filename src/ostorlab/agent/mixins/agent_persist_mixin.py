@@ -13,7 +13,7 @@ Typical usage:
 """
 import ipaddress
 import logging
-from typing import Dict, Set, Callable, Optional
+from typing import Dict, Set, Callable, Optional, Union
 
 import redis
 
@@ -36,7 +36,7 @@ class AgentPersistMixin:
             raise ValueError('agent settings is missing redis url')
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
 
-    def set_add(self, key: bytes | str, *value: bytes | str) -> bool:
+    def set_add(self, key: Union[bytes, str], *value: Union[bytes, str]) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
         as tested.
         The method can be used to sync multiple agents that may encounter the same test input but need to test it
@@ -52,7 +52,7 @@ class AgentPersistMixin:
         """
         return bool(self._redis_client.sadd(key, *value))
 
-    def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
+    def set_is_member(self, key: Union[bytes, str], value: Union[bytes, str]) -> bool:
         """Indicates whether value is member of the set identified by key.
 
         Args:
@@ -64,7 +64,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.sismember(key, value)
 
-    def set_len(self, key: bytes | str) -> int:
+    def set_len(self, key: Union[bytes, str]) -> int:
         """Helper function that returns the set cardinality (number of elements) of the set stored at key.
         The method can be used to sync multiple agents that may receive test inputs but need to test
         less than X test inputs.
@@ -78,7 +78,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.scard(key)
 
-    def set_members(self, key: bytes | str) -> Set:
+    def set_members(self, key: Union[bytes, str]) -> Set:
         """Helper function that returns all the members of the set value stored at key.
 
         Args:
@@ -89,7 +89,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.smembers(key)
 
-    def add(self, key: bytes | str, value: bytes) -> bool:
+    def add(self, key: Union[bytes, str], value: bytes) -> bool:
         """Helper function that Set key to hold the string value.
 
         Args:
@@ -101,7 +101,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.set(key, value)
 
-    def get(self, key: bytes | str) -> bytes:
+    def get(self, key: Union[bytes, str]) -> bytes:
         """Get the value of key. If the key does not exist None is returned.
 
         Args:
@@ -112,7 +112,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.get(key)
 
-    def hash_add(self, hash_name: bytes | str, mapping: Dict) -> bool:
+    def hash_add(self, hash_name: Union[bytes, str], mapping: Dict) -> bool:
         """Set mapping within hash hash_name. If hash_name does not exist a new hash is created.
         If key exists, value is overriden.
 
@@ -125,7 +125,7 @@ class AgentPersistMixin:
         """
         return bool(self._redis_client.hset(name=hash_name, mapping=mapping))
 
-    def hash_exists(self, hash_name: bytes | str, key: bytes | str) -> bool:
+    def hash_exists(self, hash_name: Union[bytes, str], key: Union[bytes, str]) -> bool:
         """Returns a boolean indicating if key exists within hash hash_name.
 
         Args:
@@ -137,7 +137,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hexists(hash_name, key)
 
-    def hash_get(self, hash_name: bytes | str, key: bytes | str):
+    def hash_get(self, hash_name: Union[bytes, str], key: Union[bytes, str]):
         """Return the value of key within the hash hash_name.
 
         Args:
@@ -149,7 +149,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hget(hash_name, key)
 
-    def hash_get_all(self, hash_name: bytes | str) -> Dict:
+    def hash_get_all(self, hash_name: Union[bytes, str]) -> Dict:
         """Returns a dict of the hash’s name/value pairs.
 
         Args:
@@ -160,7 +160,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hgetall(hash_name)
 
-    def delete(self, key: bytes | str) -> bool:
+    def delete(self, key: Union[bytes, str]) -> bool:
         """Delete a specific key.
 
         Args:
@@ -171,7 +171,7 @@ class AgentPersistMixin:
         """
         return bool(self._redis_client.delete(key))
 
-    def value_type(self, key: bytes | str) -> str:
+    def value_type(self, key: Union[bytes, str]) -> str:
         """Return a string representation of the type of the value stored at key.
 
         Args:
@@ -182,9 +182,10 @@ class AgentPersistMixin:
         """
         return self._redis_client.type(key).decode()
 
-    def add_ip_network(self, key: bytes | str,
-                       ip_range: ipaddress.IPv6Network | ipaddress.IPv4Network,
-                       value: Optional[Callable[[ipaddress.IPv6Network | ipaddress.IPv4Network], bytes | str]] = None
+    def add_ip_network(self, key: Union[bytes, str],
+                       ip_range: Union[ipaddress.IPv6Network, ipaddress.IPv4Network],
+                       value: Optional[
+                           Callable[[Union[ipaddress.IPv6Network, ipaddress.IPv4Network]], Union[bytes, str]]] = None
                        ) -> bool:
         """
         Returns True if a network have never been persisted before, else it's returns False
