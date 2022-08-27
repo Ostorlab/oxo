@@ -85,6 +85,25 @@ def agent_persist_mock(mocker):
         """Check values are present in the storage dict."""
         storage[key] = str(value).encode()
 
+    def _add_ip_network(key, ip_range, value):
+        """Check values are present in the storage dict."""
+        ip_network = ip_range
+        while ip_network.prefixlen != 0:
+            if value is not None:
+                member_value = value(ip_network)
+            else:
+                member_value = ip_network.exploded
+            if _set_is_member(key, member_value) is True:
+                return False
+            ip_network = ip_network.supernet()
+
+        if value is not None:
+            member_value = value(ip_range)
+        else:
+            member_value = ip_range.exploded
+
+        return _set_add(key, member_value)
+
     def _hash_add(hash_name, mapping):
         mapping = {k: str(v).encode() for k, v in mapping.items()}
         storage.setdefault(hash_name, {}).update(mapping)
@@ -140,6 +159,8 @@ def agent_persist_mock(mocker):
                  side_effect=_delete)
     mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.value_type',
                  side_effect=_value_type)
+    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.add_ip_network',
+                 side_effect=_add_ip_network)
 
     yield storage
     storage = {}
