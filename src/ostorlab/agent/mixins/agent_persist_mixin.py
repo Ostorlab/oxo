@@ -212,5 +212,5 @@ class AgentPersistMixin:
         if value is not None:
             member_value = value(ip_range)
         else:
-            member_value = ip_network.exploded
+            member_value = ip_range.exploded
         return self.set_add(key, member_value)

@@ -67,7 +67,8 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(mocker, redis_se
 @pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue(mocker, redis_service, clean_redis_data):
+async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue(mocker, redis_service,
+                                                                                 clean_redis_data):
     """Test mixin.add_ip_network returns True if ip_range is added and False if the ip_range
     or one of his supersets already exits """
     del mocker, redis_service, clean_redis_data
@@ -82,6 +83,7 @@ async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue
     assert mixin.add_ip_network('test_ip', ipaddress.ip_network('8.8.8.0/22')) is True
     assert mixin.add_ip_network('test_ip', ipaddress.ip_network('10.10.10.0/23')) is True
     assert mixin.add_ip_network('test_ip', ipaddress.ip_network('10.10.10.0/28')) is False
+
 
 @pytest.mark.parametrize('clean_redis_data', ['redis://localhost:6379'], indirect=True)
 @pytest.mark.asyncio
@@ -101,4 +103,3 @@ async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(mock
     assert mixin.add_ip_network('test_ip', ipaddress.ip_network('8.8.8.0/22'), lambda net: f'X_{net}_Y') is True
     assert mixin.add_ip_network('test_ip', ipaddress.ip_network('10.10.10.0/23'), lambda net: f'X_{net}_Y') is True
     assert mixin.add_ip_network('test_ip', ipaddress.ip_network('10.10.10.0/28'), lambda net: f'X_{net}_Y') is False
-
