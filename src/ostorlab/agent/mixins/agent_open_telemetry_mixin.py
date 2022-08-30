@@ -10,6 +10,7 @@ import uuid
 from typing import Any, Dict, Optional
 from urllib import parse
 import json
+import tempfile
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
@@ -46,8 +47,8 @@ class TraceExporter:
             name_of_the_tracing_tool:hostname:port
             eg: jaeger:jaeger-host:8631
             for gcp the format is:
-            name_of_the_tracing_tool:project_id:service_account_json_path
-            eg: gcp:project_1:/tmp/key.json
+            name_of_the_tracing_tool://project_id/service_account_json_base64
+            eg: gcp://project_1/service_account_json_base64
         """
         parsed_url = parse.urlparse(self._tracing_collector_url)
         scheme = parsed_url.scheme
@@ -78,18 +79,19 @@ class TraceExporter:
         logger.info('Configuring jaeger exporter..')
         return jaeger_exporter
 
-    def _get_gcp_exporter(self, parsed_url: str) -> cloud_trace.CloudTraceSpanExporter:
+    def _get_gcp_exporter(self, parsed_url) -> cloud_trace.CloudTraceSpanExporter:
         """
         Returns a CloudTraceSpan exporter instance.
         The urls should respect the following format:
-            project_id:service_account_json_path
-            eg: project_1:/tmp/key.json
+            project_id/service_account_json_base64_value
         """
-        parsed_path = parsed_url.path.split(':')
-        project_id = parsed_path[0]
-        service_account_key = parsed_path[1]
+        project_id = parsed_url.netloc
+        # write service account key to temp file
+        service_account_key_temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        service_account_key_temp_file.write(parsed_url.path[1:])
+        service_account_key_temp_file.close()
         # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
-        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_temp_file.name
         return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 
