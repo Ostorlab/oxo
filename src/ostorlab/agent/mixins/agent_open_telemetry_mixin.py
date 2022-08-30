@@ -13,7 +13,7 @@ import json
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
-from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.exporter import cloud_trace
 from opentelemetry.sdk import trace as trace_provider
 from opentelemetry.sdk.trace import export as sdk_export
 from opentelemetry.sdk import resources
@@ -78,12 +78,19 @@ class TraceExporter:
         logger.info('Configuring jaeger exporter..')
         return jaeger_exporter
 
-    def _get_gcp_exporter(self, parsed_url):
+    def _get_gcp_exporter(self, parsed_url: str) -> cloud_trace.CloudTraceSpanExporter:
+        """
+        Returns a CloudTraceSpan exporter instance.
+        The urls should respect the following format:
+            project_id:service_account_json_path
+            eg: project_1:/tmp/key.json
+        """
         parsed_path = parsed_url.path.split(':')
         project_id = parsed_path[0]
         service_account_key = parsed_path[1]
+        # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key
-        return CloudTraceSpanExporter(project_id=project_id)
+        return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 
 class OpenTelemetryMixin:
