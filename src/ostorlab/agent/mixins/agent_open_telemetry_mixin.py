@@ -4,6 +4,7 @@ The mixin overrides the behaviour of the main methods of the agent, mainly emit 
 metadata, metrics and exceptions.
 """
 import io
+import os
 import logging
 import uuid
 from typing import Any, Dict, Optional
@@ -12,6 +13,7 @@ import json
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 from opentelemetry.sdk import trace as trace_provider
 from opentelemetry.sdk.trace import export as sdk_export
 from opentelemetry.sdk import resources
@@ -32,6 +34,7 @@ class TraceExporter:
         # specialized fields for the different collectors.
         self._file: Optional[io.IOBase] = None
 
+
     def close(self):
         if self._file is not None:
             self._file.close()
@@ -42,6 +45,9 @@ class TraceExporter:
         The urls are customized to respect the following format:
             name_of_the_tracing_tool:hostname:port
             eg: jaeger:jaeger-host:8631
+            for gcp the format is:
+            name_of_the_tracing_tool:project_id:service_account_json_path
+            eg: gcp:project_1:/tmp/key.json
         """
         parsed_url = parse.urlparse(self._tracing_collector_url)
         scheme = parsed_url.scheme
@@ -49,6 +55,8 @@ class TraceExporter:
             return self._get_jaeger_exporter(parsed_url)
         elif scheme == 'file':
             return self._get_file_exporter(parsed_url)
+        elif scheme == 'gcp':
+            return self._get_gcp_exporter(parsed_url)
         else:
             raise NotImplementedError(f'Invalid tracer type {scheme}')
 
@@ -69,6 +77,13 @@ class TraceExporter:
         )
         logger.info('Configuring jaeger exporter..')
         return jaeger_exporter
+
+    def _get_gcp_exporter(self, parsed_url):
+        parsed_path = parsed_url.path.split(':')
+        project_id = parsed_path[0]
+        service_account_key = parsed_path[1]
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key
+        return CloudTraceSpanExporter(project_id=project_id)
 
 
 class OpenTelemetryMixin:
