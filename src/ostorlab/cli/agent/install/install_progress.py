@@ -23,6 +23,7 @@ class AgentInstallProgress(progress.Progress):
                                    '•',
                                    progress.TimeRemainingColumn())
 
+
     def display(self, logs_generator: Iterator[Dict], ) -> None:
         """Display the progress of the agent install command.
 
