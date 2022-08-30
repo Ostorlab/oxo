@@ -124,7 +124,7 @@ class OpenTelemetryMixin:
     def _stringify_bytes_values(self, value: bytes):
         """Method that will be used as a handler to json dump the message dictionary values."""
         if isinstance(value, bytes):
-            return value.decode()
+            return value.decode(errors='replace')
         else:
             return value
 
