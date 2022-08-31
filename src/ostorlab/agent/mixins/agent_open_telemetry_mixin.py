@@ -4,14 +4,17 @@ The mixin overrides the behaviour of the main methods of the agent, mainly emit 
 metadata, metrics and exceptions.
 """
 import io
+import os
 import logging
 import uuid
 from typing import Any, Dict, Optional
 from urllib import parse
 import json
+import tempfile
 
 from opentelemetry import trace
 from opentelemetry.exporter.jaeger import thrift as jaeger
+from opentelemetry.exporter import cloud_trace
 from opentelemetry.sdk import trace as trace_provider
 from opentelemetry.sdk.trace import export as sdk_export
 from opentelemetry.sdk import resources
@@ -32,6 +35,7 @@ class TraceExporter:
         # specialized fields for the different collectors.
         self._file: Optional[io.IOBase] = None
 
+
     def close(self):
         if self._file is not None:
             self._file.close()
@@ -42,6 +46,9 @@ class TraceExporter:
         The urls are customized to respect the following format:
             name_of_the_tracing_tool:hostname:port
             eg: jaeger:jaeger-host:8631
+            for gcp the format is:
+            name_of_the_tracing_tool://project_id/service_account_json_base64
+            eg: gcp://project_1/service_account_json_base64
         """
         parsed_url = parse.urlparse(self._tracing_collector_url)
         scheme = parsed_url.scheme
@@ -49,6 +56,8 @@ class TraceExporter:
             return self._get_jaeger_exporter(parsed_url)
         elif scheme == 'file':
             return self._get_file_exporter(parsed_url)
+        elif scheme == 'gcp':
+            return self._get_gcp_exporter(parsed_url)
         else:
             raise NotImplementedError(f'Invalid tracer type {scheme}')
 
@@ -69,6 +78,20 @@ class TraceExporter:
         )
         logger.info('Configuring jaeger exporter..')
         return jaeger_exporter
+
+    def _get_gcp_exporter(self, parsed_url) -> cloud_trace.CloudTraceSpanExporter:
+        """
+        Returns a CloudTraceSpan exporter instance.
+        The urls should respect the following format:
+            project_id/service_account_json_base64_value
+        """
+        project_id = parsed_url.netloc
+        # write service account key to temp file
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as service_account_key_temp_file:
+            service_account_key_temp_file.write(parsed_url.path[1:])
+            # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_temp_file.name
+        return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 
 class OpenTelemetryMixin:
