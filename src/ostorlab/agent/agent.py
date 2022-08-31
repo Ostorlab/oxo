@@ -270,7 +270,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         connect to. Some of these settings are consumed by the scan runtime, others are consumed by the agent itself.
 
         Args:
-            parsed_args: Arguments passed to the argument parser. These are added for testability.
+            args: Arguments passed to the argument parser. These are added for testability.
 
         Returns:
             The function do not return unless an error is detected. The agent instance starts running and never returns.
