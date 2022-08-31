@@ -2,7 +2,7 @@
 import datetime
 import logging
 
-from ostorlab.agent import message as agent_message
+from ostorlab.agent.message import message as agent_message
 from ostorlab.agent import agent
 
 logger = logging.getLogger(__name__)
