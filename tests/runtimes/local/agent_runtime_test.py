@@ -34,11 +34,11 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
     settings_open_ports = [utils_defintions.PortMapping(20000, 40000),
                             utils_defintions.PortMapping(20002, 40002)]
     agent_settings = definitions.AgentSettings(key='agent/org/name',
-                                            mounts=['settings_mount1'],
-                                            mem_limit=700000,
-                                            restart_policy='on-failure',
-                                            constraints=['constraint1'],
-                                            open_ports=settings_open_ports)
+                                               mounts=['settings_mount1'],
+                                               mem_limit=700000,
+                                               restart_policy='on-failure',
+                                               constraints=['constraint1'],
+                                               open_ports=settings_open_ports)
 
     runtime_agent = agent_runtime.AgentRuntime(
         agent_settings, '42', docker_client, mq_service=None, redis_service=None, jaeger_service=None)

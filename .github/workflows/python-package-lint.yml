@@ -3,7 +3,7 @@
 #  - Run pylint for each of the supported Python versions. 
 # Pylint will only fail without fixing any of the errors or warnings.
 
-name: Pylint
+name: Pylint & Mypy
 
 on:
   push:
@@ -30,9 +30,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install pylint pylint-quotes
+        python -m pip install mypy types-click types-protobuf types-redis types-requests types-urllib3 typing_extensions
         python -m pip install -e .
-    - name: Runnning linter.
+    - name: Running linter.
       run: |
         pylint --load-plugins pylint_quotes --rcfile=.pylintrc src/
         pylint --load-plugins pylint_quotes --rcfile=.pylintrc -d C0103,W0613 tests/
-
+    - name: Running static types checker.
+      run: |
+        mypy src/ostorlab/agent/schema

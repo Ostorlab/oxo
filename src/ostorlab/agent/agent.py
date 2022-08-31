@@ -17,11 +17,11 @@ import sys
 import threading
 import uuid
 import json
-from typing import Dict, Any, NoReturn, Optional
+from typing import Dict, Any, Optional, Type, List
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
-from ostorlab.agent import message as agent_message
+from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
@@ -80,7 +80,6 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
                                                                host=agent_settings.healthcheck_host,
                                                                port=agent_settings.healthcheck_port)
 
-
     @property
     def definition(self) -> agent_definitions.AgentDefinition:
         """Agent definition property."""
@@ -108,7 +107,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         return arguments
 
     @property
-    def universe(self):
+    def universe(self) -> Optional[str]:
         """Returns the current scan universe.
 
         A universe is the group of agents and services in charge of running a scan. The universe is defined
@@ -139,7 +138,6 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             logger.debug('closing bus and loop')
             self._loop.close()
 
-
     @abc.abstractmethod
     def is_healthy(self) -> bool:
         """Overridable agent health check method to add custom health check logic.
@@ -148,7 +146,6 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             bool to indicate if the agent is healthy of not.
         """
         raise NotImplementedError()
-
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Processes raw message received from BS.
@@ -163,9 +160,9 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         try:
             # remove the UUID from the selector:
             selector = '.'.join(selector.split('.')[: -1])
-            message = agent_message.Message.from_raw(selector, message)
+            object_message = agent_message.Message.from_raw(selector, message)
             logger.debug('call to process with message=%s', message)
-            self.process(message)
+            self.process(object_message)
         # pylint: disable=W0703
         except Exception as e:
             logger.exception('exception raised: %s', e)
@@ -212,8 +209,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         """
         raise NotImplementedError('Missing process method implementation.')
 
-
-    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str]=None) -> None:
+    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None) -> None:
         """Sends a message to all listening agents on the specified selector.
 
         Args:
@@ -229,8 +225,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         message = agent_message.Message.from_data(selector, data)
         self.emit_raw(selector, message.raw, message_id=message_id)
 
-
-    def emit_raw(self, selector: str, raw: bytes, message_id: Optional[str]=None) -> None:
+    def emit_raw(self, selector: str, raw: bytes, message_id: Optional[str] = None) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
         Args:
@@ -260,7 +255,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         logger.debug('done call to send_message')
 
     @classmethod
-    def main(cls, args=None) -> NoReturn:
+    def main(cls: Type['AgentMixin'], args: Optional[List[str]] = None) -> None:
         """Prepares the agents class by reading the agent definition and runtime settings.
 
         By the default, the class main expects the definition file to be at `agent.yaml` and settings to be at
@@ -289,18 +284,18 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         parser.add_argument('-s', '--settings',
                             default='/tmp/settings.binproto',
                             help='Agent binary proto settings.')
-        args = parser.parse_args(args)
-        logger.info('running agent with definition %s and settings %s', AGENT_DEFINITION_PATH, args.settings)
+        parsed_args = parser.parse_args(args)
+        logger.info('running agent with definition %s and settings %s', AGENT_DEFINITION_PATH, parsed_args.settings)
 
         if not pathlib.Path(AGENT_DEFINITION_PATH).exists():
             logger.error('definition file does not exist')
             sys.exit(2)
-        if not pathlib.Path(args.settings).exists():
+        if not pathlib.Path(parsed_args.settings).exists():
             logger.error('settings file does not exist')
             sys.exit(2)
 
-        with open(AGENT_DEFINITION_PATH, 'r', encoding='utf-8') as f_definition,\
-                open(args.settings, 'rb') as f_settings:
+        with open(AGENT_DEFINITION_PATH, 'r', encoding='utf-8') as f_definition, \
+                open(parsed_args.settings, 'rb') as f_settings:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
             agent_settings = runtime_definitions.AgentSettings.from_proto(f_settings.read())
             instance = cls(agent_definition=agent_definition, agent_settings=agent_settings)

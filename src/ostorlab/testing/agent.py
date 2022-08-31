@@ -5,7 +5,7 @@ import pytest
 
 from typing import List
 
-from ostorlab.agent import message as msg
+from ostorlab.agent.message import message as msg
 
 
 @dataclasses.dataclass

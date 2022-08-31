@@ -26,7 +26,7 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(reques
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scan_data, status_code=200)
     result = runner.invoke(
-        rootcli.rootcli, ['scan',  '--runtime=cloud', 'stop', '123456'])
+        rootcli.rootcli, ['scan', '--runtime=cloud', 'stop', '123456'])
 
     assert result.exception is None
     assert 'Scan stopped successfully' in result.output
@@ -49,7 +49,7 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(requ
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scan_data, status_code=200)
     result = runner.invoke(
-        rootcli.rootcli, ['scan',  '--runtime=cloud', 'stop', '123456'])
+        rootcli.rootcli, ['scan', '--runtime=cloud', 'stop', '123456'])
 
     assert result.exception is None
     assert 'Could not stop scan' in result.output
@@ -65,6 +65,6 @@ def testOstorlabScanStopCLI_whenRuntimeIsLocal_callsStopMethodWithProvidedId(moc
     runner = CliRunner()
 
     runner.invoke(
-        rootcli.rootcli, ['scan',  '--runtime=local', 'stop', '123456'])
+        rootcli.rootcli, ['scan', '--runtime=local', 'stop', '123456'])
 
     mock_scan_stop.assert_called_once_with(scan_id='123456')

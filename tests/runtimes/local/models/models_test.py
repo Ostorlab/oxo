@@ -36,9 +36,9 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mock
     models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
     init_count = models.Database().session.query(models.Vulnerability).count()
-    models.Vulnerability.create(title='MyVuln', short_description= 'Xss', description= 'Javascript Vuln',
-    recommendation= 'Sanitize data', technical_detail= 'a=$input', risk_rating= 'HIGH',
-    cvss_v3_vector= '5:6:7', dna= '121312', scan_id=create_scan_db.id)
+    models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
+                                recommendation='Sanitize data', technical_detail='a=$input', risk_rating='HIGH',
+                                cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
 
     assert models.Database().session.query(models.Vulnerability).count() == init_count + 1
     assert models.Database().session.query(models.Vulnerability).all()[0].title == 'MyVuln'

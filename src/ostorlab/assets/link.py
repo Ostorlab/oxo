@@ -8,8 +8,10 @@ from ostorlab.assets import asset
 @asset.selector('v3.asset.link')
 class Link(asset.Asset):
     """Agent asset."""
-    url: str
-    method: str
+
+    def __init__(self, url: str, method: str):
+        self.url = url
+        self.method = method
 
     def __str__(self):
         return f'Link {self.url} with method {self.method}'
