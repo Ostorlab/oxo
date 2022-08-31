@@ -8,7 +8,7 @@ from ostorlab.assets import asset
 class AndroidAab(asset.Asset):
     """Android .AAB target asset."""
 
-    def __init__(self, content: bytes, path: Optional[str]):
+    def __init__(self, content: bytes, path: Optional[str] = None):
         self.content = content
         self.path = path
 
