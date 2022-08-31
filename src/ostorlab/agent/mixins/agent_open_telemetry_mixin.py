@@ -22,7 +22,7 @@ from opentelemetry.sdk import resources
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.utils import dictionary_minifier
-from ostorlab.agent import message as agent_message
+from ostorlab.agent.message import message as agent_message
 
 logger = logging.getLogger(__name__)
 
