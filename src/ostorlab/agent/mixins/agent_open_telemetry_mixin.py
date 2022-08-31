@@ -89,7 +89,7 @@ class TraceExporter:
         """
         project_id = parsed_url.netloc
         # write service account key to temp file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as service_account_key_temp_file:
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as service_account_key_temp_file:
             service_account_json_content = base64.b64decode(parsed_url.path[1:].encode())
             service_account_key_temp_file.write(service_account_json_content)
             # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
