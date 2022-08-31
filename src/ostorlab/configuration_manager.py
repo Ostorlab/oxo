@@ -11,9 +11,9 @@ OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / '.ostorlab'
 class SingletonMeta(type):
     """Metaclass implementation of a singleton pattern."""
 
-    _instances = {}
+    _instances: Dict[object, object] = {}
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs) -> object:
         """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
         if cls not in cls._instances:
             instance = super().__call__(*args, **kwargs)
@@ -43,7 +43,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         return self._private_dir.resolve()
 
     @property
-    def api_key(self):
+    def api_key(self) -> Optional[str]:
         """API key their either uses a predefined value, or retrieve the one in the configuration folder."""
         if self._api_key is not None:
             return self._api_key
@@ -55,7 +55,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
                 return None
 
     @api_key.setter
-    def api_key(self, key: Optional[str]):
+    def api_key(self, key: Optional[str]) -> Optional[str]:
         """Set API key"""
         self._api_key = key
 

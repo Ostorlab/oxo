@@ -11,7 +11,7 @@ AGENT_SPEC_PATH = pathlib.Path(__file__).parent / 'agent_schema.json'
 AGENT_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / 'agent_group_schema.json'
 
 
-def _load_spec_yaml(file, spec):
+def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> object:
     """Loads file based on spec"""
     with open(spec, 'r', encoding='utf8') as agent_spec:
         yaml_def_validator = validator.Validator(agent_spec)
@@ -22,7 +22,7 @@ def _load_spec_yaml(file, spec):
         return agent_def
 
 
-def load_agent_yaml(file: io.FileIO) -> Dict:
+def load_agent_yaml(file: io.TextIOWrapper) -> object:
     """Loads and validates agent yaml definition file.
 
     Args:
@@ -36,7 +36,7 @@ def load_agent_yaml(file: io.FileIO) -> Dict:
     return _load_spec_yaml(file, spec)
 
 
-def load_agent_group_yaml(file: io.FileIO) -> Dict:
+def load_agent_group_yaml(file: io.TextIOWrapper) -> object:
     """Loads and validates agent gorup yaml definition file.
 
     Args:

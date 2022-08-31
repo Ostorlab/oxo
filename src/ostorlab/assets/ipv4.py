@@ -9,9 +9,11 @@ from ostorlab.assets import asset
 @asset.selector('v3.asset.ip.v4')
 class IPv4(asset.Asset):
     """IPv4 Address target asset."""
-    host: str
-    version: int = 4
-    mask: Optional[str] = None
+
+    def __init__(self, host: str, version: Optional[int] = 4, mask: Optional[str] = None):
+        self.host = host
+        self.version = version
+        self.mask = mask
 
     def __str__(self):
         return f'{self.host}/{self.mask}'

@@ -8,7 +8,9 @@ from ostorlab.assets import asset
 @asset.selector('v3.asset.domain_name')
 class DomainName(asset.Asset):
     """Domain Name target asset per RFC 1034 and 1035."""
-    name: str
+
+    def __init__(self, name: str):
+        self.name = name
 
     def __str__(self):
         return self.name

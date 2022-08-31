@@ -124,7 +124,7 @@ class AgentMQMixin:
             pika_message = aio_pika.Message(body=message, priority=message_priority)
             await exchange.publish(routing_key=key, message=pika_message)
 
-    def mq_send_message(self, key, message, message_priority=None):
+    def mq_send_message(self, key: str, message: bytes, message_priority: int = None) -> None:
         """the method sends the message to the selected key with the defined priority in async mode .
         Args:
             keys: Selectors that the queue listens to.

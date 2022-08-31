@@ -29,7 +29,7 @@ class SchemaError(Error):
 class Validator:
     """Creates validator that checks yaml files with a json schema."""
 
-    def __init__(self, json_schema_file_object: io.FileIO):
+    def __init__(self, json_schema_file_object: io.TextIOWrapper):
         """Inits Validator class.
 
         Args:
@@ -44,7 +44,7 @@ class Validator:
         except jsonschema.exceptions.SchemaError as e:
             raise SchemaError('Schema is invalid.') from e
 
-    def validate(self, yaml_file_object):
+    def validate(self, yaml_file_object: io.TextIOWrapper) -> None:
         """ Validates a yaml file against a json schema .
 
         Args:

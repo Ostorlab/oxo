@@ -31,7 +31,7 @@ class AgentDefinition:
     service_name: str = None
 
     @classmethod
-    def from_yaml(cls, file: io.FileIO) -> 'AgentDefinition':
+    def from_yaml(cls, file: io.TextIOWrapper) -> 'AgentDefinition':
         """Constructs an agent definition from a yaml definition file.
 
         Args:
