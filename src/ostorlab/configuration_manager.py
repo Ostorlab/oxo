@@ -3,7 +3,7 @@
 import json
 import pathlib
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / '.ostorlab'
 
@@ -13,7 +13,7 @@ class SingletonMeta(type):
 
     _instances: Dict[object, object] = {}
 
-    def __call__(cls, *args, **kwargs) -> object:
+    def __call__(cls: 'SingletonMeta', *args: Tuple[object], **kwargs: Dict[object, object]) -> object:
         """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
         if cls not in cls._instances:
             instance = super().__call__(*args, **kwargs)
@@ -35,7 +35,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         self._private_dir = private_dir
         self._private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = self._private_dir / 'key'
-        self._api_key = None
+        self._api_key: Optional[str] = None
 
     @property
     def conf_path(self) -> pathlib.Path:
@@ -50,12 +50,13 @@ class ConfigurationManager(metaclass=SingletonMeta):
         else:
             api_data = self._get_api_data()
             if api_data is not None:
-                return api_data.get('secret_key')
+                secret_key: Optional[str] = api_data.get('secret_key')
+                return secret_key
             else:
                 return None
 
     @api_key.setter
-    def api_key(self, key: Optional[str]) -> Optional[str]:
+    def api_key(self, key: Optional[str]) -> None:
         """Set API key"""
         self._api_key = key
 
@@ -93,7 +94,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
             data = json.dumps(api_data, indent=4)
             file.write(data)
 
-    def _get_api_data(self) -> Optional[Dict]:
+    def _get_api_data(self) -> Optional[Dict[str, str]]:
         """Gets the API data from the location in which it is saved.
 
         Returns:
@@ -101,7 +102,8 @@ class ConfigurationManager(metaclass=SingletonMeta):
         """
         try:
             with open(self._complete_api_key_path, 'r', encoding='utf-8') as file:
-                return json.loads(file.read())
+                api_data: Dict[str, str] = json.loads(file.read())
+                return api_data
         except FileNotFoundError:
             return None
 
@@ -110,5 +112,5 @@ class ConfigurationManager(metaclass=SingletonMeta):
         self._complete_api_key_path.unlink(missing_ok=True)
 
     @property
-    def is_authenticated(self):
+    def is_authenticated(self) -> bool:
         return self.api_key is not None

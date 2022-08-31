@@ -88,6 +88,8 @@ def is_swarm_initialized() -> bool:
             return False
         else:
             return True
+    else:
+        return False
 
 
 def init_swarm() -> None:

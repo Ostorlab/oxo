@@ -1,6 +1,6 @@
 """Utils to handle scan risk rating."""
 import enum
-
+from typing import List
 
 class RiskRating(enum.Enum):
     """Enumeration of the risk rating of a scan."""
@@ -14,11 +14,11 @@ class RiskRating(enum.Enum):
     INFO = 'Info'
 
     @classmethod
-    def has_value(cls, value):
+    def has_value(cls, value: str) -> bool:
         return value in cls._member_map_
 
     @classmethod
-    def values(cls):
+    def values(cls) -> List[str]:
         return [key.lower() for key in cls._member_map_.keys()]
 
 
