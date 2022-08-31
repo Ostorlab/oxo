@@ -25,6 +25,8 @@ from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.utils import dictionary_minifier
 from ostorlab.agent.message import message as agent_message
+from ostorlab.agent.mixins.protocols import emit
+from ostorlab.agent.mixins.protocols import process
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +99,7 @@ class TraceExporter:
         return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 
-class OpenTelemetryMixin:
+class OpenTelemetryMixin(emit.EmitProtocol, process.ProcessProtocol):
     """OpenTelemetryMixin to send telemetry data of the agent behaviour. The mixin enables tracking information
     like when was a message processed or emitted, using which selector,
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.

@@ -6,6 +6,8 @@ import ruamel.yaml
 
 from ostorlab.agent.schema import validator
 
+from typing import Dict, Any
+
 AGENT_SPEC_PATH = pathlib.Path(__file__).parent / 'agent_schema.json'
 AGENT_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / 'agent_group_schema.json'
 
@@ -21,7 +23,7 @@ def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> object:
         return agent_def
 
 
-def load_agent_yaml(file: io.TextIOWrapper) -> object:
+def load_agent_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
     """Loads and validates agent yaml definition file.
 
     Args:

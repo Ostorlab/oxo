@@ -20,6 +20,8 @@ class Scan:
 class Runtime(abc.ABC):
     """Runtime is in charge of preparing the environment to trigger a scan."""
 
+    follow: bool
+
     @abc.abstractmethod
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime is capable of running the provided agent run definition.

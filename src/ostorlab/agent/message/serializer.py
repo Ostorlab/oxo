@@ -32,7 +32,7 @@ class NoMatchingPackageNameError(SerializationError):
     """There are no matching package name."""
 
 
-def _find_package_name(selector: str) -> Optional[str]:
+def _find_package_name(selector: str) -> str:
     """Finds matching package name to selector."""
     files = _list_message_proto_files()
     regex_pattern = _selector_to_package_regex(selector)
@@ -76,7 +76,7 @@ def _list_message_proto_files() -> List[str]:
     return files
 
 
-def _selector_to_package_regex(subject):
+def _selector_to_package_regex(subject: str) -> str:
     """Maps selector to package matching regular expression."""
     splitted = subject.split('.')
     if sys.platform == 'win32':
@@ -86,7 +86,7 @@ def _selector_to_package_regex(subject):
         return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\.py'
 
 
-def serialize(selector: str, values: Dict[str, Any]):
+def serialize(selector: str, values: Dict[str, Any]) -> Any:
     """Serializes a Request message using the proper format defined using the seelctor value.
     If the subject is a.b.c. The corresponding proto is located at message/a/b/c/xxx.proto.
 
@@ -103,7 +103,7 @@ def serialize(selector: str, values: Dict[str, Any]):
         raise SerializationError('Error serializing message') from e
 
 
-def _serialize(selector: str, class_name: str, values: Dict[str, Any]):
+def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
     """Serializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
     class_object = getattr(importlib.import_module(package_name), class_name)
@@ -112,7 +112,7 @@ def _serialize(selector: str, class_name: str, values: Dict[str, Any]):
     return proto_message
 
 
-def _parse_list(values: Any, message) -> None:
+def _parse_list(values: Any, message: Any) -> None:
     """Parse list to protobuf message."""
     if len(values) > 0 and isinstance(values[0], dict):  # value needs to be further parsed
         for v in values:
@@ -122,7 +122,7 @@ def _parse_list(values: Any, message) -> None:
         message.extend(values)
 
 
-def _parse_dict(values: Any, message) -> None:
+def _parse_dict(values: Any, message: Any) -> None:
     """Parse dict to protobuf message."""
     for k, v in values.items():
         if isinstance(v, dict):  # value needs to be further parsed
@@ -147,7 +147,7 @@ def _parse_dict(values: Any, message) -> None:
                 raise SerializationError(f'invalid attribute {k}') from e
 
 
-def deserialize(selector: str, serialized: bytes):
+def deserialize(selector: str, serialized: bytes) -> Any:
     """Deserializes a Request message using the proper format defined using the selector value.
 
     Args:
@@ -160,7 +160,7 @@ def deserialize(selector: str, serialized: bytes):
     return _deserialize(selector, PROTO_CLASS_NAME, serialized)
 
 
-def _deserialize(selector: str, class_name: str, serialized: bytes):
+def _deserialize(selector: str, class_name: str, serialized: bytes) -> Any:
     """Deserializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
     class_object = getattr(importlib.import_module(package_name), class_name)

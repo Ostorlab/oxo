@@ -32,7 +32,7 @@ class Entry:
 class MetaKB(type):
     """Handles KB mapping to appropriate folder."""
 
-    def __getattr__(cls, item):
+    def __getattr__(cls, item: str) -> Entry:
         kb_path = pathlib.Path(__file__).parent / KB_FOLDER / item
 
         if not (kb_path / META_JSON).exists():

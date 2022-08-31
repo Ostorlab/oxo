@@ -13,7 +13,7 @@ Typical usage:
 """
 import logging
 from threading import Thread
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 
 import flask
 from werkzeug import serving
@@ -39,10 +39,10 @@ class HealthcheckWebThread(Thread):
         logger.info('Preparing flask')
         self._app = flask.Flask(name)
         self._server = serving.make_server(host=host, port=port, app=self._app, threaded=True)
-        self._healthcheck_callbacks = []
+        self._healthcheck_callbacks: List[Callable[[], bool]] = []
         self._disable_verbose_logging()
 
-    def _disable_verbose_logging(self):
+    def _disable_verbose_logging(self) -> None:
         """Disable Flaskserver verbose logging."""
         log = logging.getLogger('werkzeug')
         log.setLevel(logging.ERROR)
@@ -90,7 +90,7 @@ class HealthcheckWebThread(Thread):
         logger.info('Adding healthcheck callback')
         self._healthcheck_callbacks.append(healthcheck_callback)
 
-    def _status(self):
+    def _status(self) -> str:
         """Healthcheck status endpoint.
 
         Returns:
@@ -115,7 +115,7 @@ class AgentHealthcheckMixin:
     for the presence of the OK and not the absence of NOK.
     """
 
-    def __init__(self, name: Optional[str] = None, host=DEFAULT_HOST, port=DEFAULT_PORT) -> None:
+    def __init__(self, name: Optional[str] = None, host: str=DEFAULT_HOST, port: int=DEFAULT_PORT) -> None:
         """Inits the health check web service thread and provides sane defaults.
 
         Args:
