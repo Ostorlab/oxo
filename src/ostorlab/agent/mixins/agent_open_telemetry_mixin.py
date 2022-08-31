@@ -3,6 +3,7 @@
 The mixin overrides the behaviour of the main methods of the agent, mainly emit and process to send traces,
 metadata, metrics and exceptions.
 """
+import base64
 import io
 import os
 import logging
@@ -89,7 +90,8 @@ class TraceExporter:
         project_id = parsed_url.netloc
         # write service account key to temp file
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as service_account_key_temp_file:
-            service_account_key_temp_file.write(parsed_url.path[1:])
+            service_account_json_content = base64.b64decode(parsed_url.path[1:].encode())
+            service_account_key_temp_file.write(service_account_json_content)
             # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_temp_file.name
         return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
