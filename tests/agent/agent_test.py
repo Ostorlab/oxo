@@ -8,9 +8,7 @@ import time
 
 import pytest
 
-from ostorlab.agent import agent
-from ostorlab.agent import definitions as agent_definitions
-from ostorlab.agent import message as agent_message
+from ostorlab.agent import agent, definitions as agent_definitions, message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.utils import defintions as utils_definitions
 

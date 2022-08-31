@@ -48,7 +48,7 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
     runner = CliRunner()
     requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
                        json=scans_data, status_code=200)
-    result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=cloud', 'list'])
+    result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=cloud', 'list'])
 
     assert result.exception is None
     assert 'Scans listed successfully' in result.output
@@ -94,7 +94,7 @@ def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list, 
     mock_scan_list.return_value = scans
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     runner = CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['scan',  '--runtime=local', 'list'])
+    result = runner.invoke(rootcli.rootcli, ['scan', '--runtime=local', 'list'])
 
     assert all(scan.id in result.output for scan in scans)
     mock_scan_list.assert_called()
