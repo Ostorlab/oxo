@@ -19,7 +19,7 @@ def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> Dict[str, Any
         yaml_def_validator.validate(file)
         file.seek(0)
         yaml = ruamel.yaml.YAML(typ='safe')
-        agent_def = yaml.load(file)
+        agent_def: Dict[str, Any] = yaml.load(file)
         return agent_def
 
 
