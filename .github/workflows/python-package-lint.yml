@@ -39,3 +39,6 @@ jobs:
     - name: Running static types checker.
       run: |
         mypy src/ostorlab/agent/schema
+        mypy src/ostorlab/agent/kb
+        mypy src/ostorlab/agent/message
+        mypy src/ostorlab/utils

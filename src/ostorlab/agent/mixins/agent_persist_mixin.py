@@ -78,7 +78,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.scard(key)
 
-    def set_members(self, key: Union[bytes, str]) -> Set:
+    def set_members(self, key: Union[bytes, str]) -> Set[bytes]:
         """Helper function that returns all the members of the set value stored at key.
 
         Args:
@@ -89,7 +89,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.smembers(key)
 
-    def add(self, key: Union[bytes, str], value: bytes) -> bool:
+    def add(self, key: Union[bytes, str], value: bytes) -> Optional[bool]:
         """Helper function that Set key to hold the string value.
 
         Args:
@@ -101,7 +101,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.set(key, value)
 
-    def get(self, key: Union[bytes, str]) -> bytes:
+    def get(self, key: Union[bytes, str]) -> Optional[bytes]:
         """Get the value of key. If the key does not exist None is returned.
 
         Args:
@@ -112,7 +112,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.get(key)
 
-    def hash_add(self, hash_name: Union[bytes, str], mapping: Dict) -> bool:
+    def hash_add(self, hash_name: Union[bytes, str], mapping: Dict[Union[bytes, str], Union[bytes, str]]) -> bool:
         """Set mapping within hash hash_name. If hash_name does not exist a new hash is created.
         If key exists, value is overriden.
 
@@ -137,7 +137,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hexists(hash_name, key)
 
-    def hash_get(self, hash_name: Union[bytes, str], key: Union[bytes, str]):
+    def hash_get(self, hash_name: Union[bytes, str], key: Union[bytes, str]) -> Optional[bytes]:
         """Return the value of key within the hash hash_name.
 
         Args:

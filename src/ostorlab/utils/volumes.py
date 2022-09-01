@@ -22,10 +22,10 @@ class VolumeWriter:
     copy API, and then kill everything.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._client = docker.from_env()
 
-    def write(self, volume_name: str, contents: Dict[str, bytes]):
+    def write(self, volume_name: str, contents: Dict[str, bytes]) -> None:
         """Write content volume at path.
 
         Args:
@@ -38,11 +38,11 @@ class VolumeWriter:
         self._create_volume(volume_name)
         self._write_content(volume_name, contents)
 
-    def _install_image(self):
+    def _install_image(self) -> None:
         """Installs a busybox image for the form."""
         self._client.images.pull(TEMP_IMAGE)
 
-    def _create_volume(self, name: str):
+    def _create_volume(self, name: str) -> None:
         """Override existing images."""
         try:
             self._client.volumes.get(name).remove()
@@ -50,19 +50,19 @@ class VolumeWriter:
             pass
         self._client.volumes.create(name)
 
-    def _prepare_tar(self, contents: Dict[str, bytes]):
+    def _prepare_tar(self, contents: Dict[str, bytes]) -> io.BytesIO:
         """Copy API expects a tar, this api prepares one with the file content."""
         pw_tarstream = io.BytesIO()
         with tarfile.TarFile(fileobj=pw_tarstream, mode='w') as pw_tar:
             for path, content in contents.items():
                 tarinfo = tarfile.TarInfo(name=path)
                 tarinfo.size = len(content)
-                tarinfo.mtime = time.time()
+                tarinfo.mtime = int(time.time())
                 pw_tar.addfile(tarinfo, io.BytesIO(content))
         pw_tarstream.seek(0)
         return pw_tarstream
 
-    def _write_content(self, volume_name: str, contents: Dict[str, bytes]):
+    def _write_content(self, volume_name: str, contents: Dict[str, bytes]) -> None:
         """Use the docker copy API to write content to target volume."""
         temp_container_name = strings.random_string(9)
         self._client.containers.run(

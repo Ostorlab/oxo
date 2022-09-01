@@ -40,7 +40,7 @@ class AgentDefinition:
         Returns:
             Agent definition.
         """
-        definition = loader.load_agent_yaml(file)
+        definition: Dict[str, Any] = loader.load_agent_yaml(file)
         return cls(
             name=definition.get('name'),
             in_selectors=definition.get('in_selectors'),

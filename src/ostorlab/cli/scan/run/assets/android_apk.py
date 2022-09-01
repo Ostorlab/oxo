@@ -21,6 +21,6 @@ def android_apk(ctx: click.core.Context, files: List[io.FileIO]) -> None:
     runtime = ctx.obj['runtime']
     assets = []
     for f in files:
-        assets.append(android_apk_asset.AndroidApk(content=f.read(), path=f.name))
+        assets.append(android_apk_asset.AndroidApk(content=f.read(), path=str(f.name)))
     logger.debug('scanning assets %s', [str(asset) for asset in assets])
     runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)

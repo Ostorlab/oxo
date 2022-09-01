@@ -7,7 +7,7 @@ contributions from Nino Walker, Jonathan Klaassen, and Tristram Gräbener.
  """
 from google.protobuf.descriptor import FieldDescriptor
 from ostorlab import exceptions
-from typing import Dict, Callable
+from typing import Dict, Callable, Any
 
 
 class UnrecognisedTypeError(exceptions.OstorlabError):
@@ -36,17 +36,18 @@ TYPE_CALLABLE_MAP = {
 EXTENSION_CONTAINER = '___X'
 
 
-def _repeated(type_callable) -> Callable:
+def _repeated(type_callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
     """Function handler of repeated fields."""
     return lambda value_list: [type_callable(value) for value in value_list]
 
 
-def _enum_label_name(field, value) -> Callable:
+def _enum_label_name(field: Any, value: Any) -> str:
     """Function handler of enum fields. Generates name instead of int."""
-    return field.enum_type.values_by_number[int(value)].name
+    name: str = field.enum_type.values_by_number[int(value)].name
+    return name
 
 
-def _get_field_value_adaptor(pb, field, use_enum_labels=False) -> Callable:
+def _get_field_value_adaptor(pb: Any, field: Any, use_enum_labels: bool=False) -> Callable[[Any], Any]:
     """Matches proto message or field to the proper handler."""
     if field.type == FieldDescriptor.TYPE_MESSAGE:
         # recursively encode protobuf sub-message
@@ -61,7 +62,7 @@ def _get_field_value_adaptor(pb, field, use_enum_labels=False) -> Callable:
     raise UnrecognisedTypeError(f'Field {pb.__class__.__name__}.{field.name} has unrecognised type id {field.type}')
 
 
-def protobuf_to_dict(pb, use_enum_labels: bool = False) -> Dict:
+def protobuf_to_dict(pb: Any, use_enum_labels: bool = False) -> Dict[Any, Any]:
     """Transforms Protobuf message to dict.
 
     The Method maintains bytes format and do not use intermediary representation like JSON.
