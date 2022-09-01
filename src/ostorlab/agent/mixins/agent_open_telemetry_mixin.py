@@ -5,28 +5,26 @@ metadata, metrics and exceptions.
 """
 import base64
 import io
-import os
+import json
 import logging
+import os
 import sys
+import tempfile
 import uuid
 from typing import Any, Dict, Optional
 from urllib import parse
-import json
-import tempfile
 
 from opentelemetry import trace
-from opentelemetry.exporter.jaeger import thrift as jaeger
 from opentelemetry.exporter import cloud_trace
+from opentelemetry.exporter.jaeger import thrift as jaeger
+from opentelemetry.sdk import resources
 from opentelemetry.sdk import trace as trace_provider
 from opentelemetry.sdk.trace import export as sdk_export
-from opentelemetry.sdk import resources
 
-from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import definitions as agent_definitions
-from ostorlab.utils import dictionary_minifier
 from ostorlab.agent.message import message as agent_message
-from ostorlab.agent.mixins.protocols import emit
-from ostorlab.agent.mixins.protocols import process
+from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import dictionary_minifier
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +36,6 @@ class TraceExporter:
         self._tracing_collector_url = tracing_collector_url
         # specialized fields for the different collectors.
         self._file: Optional[io.IOBase] = None
-
 
     def close(self):
         if self._file is not None:
