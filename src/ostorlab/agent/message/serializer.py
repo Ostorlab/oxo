@@ -5,7 +5,7 @@ import os
 import pathlib
 import re
 import sys
-from typing import Dict, Optional, List, Any
+from typing import Dict, List, Any
 
 from google.protobuf import json_format
 

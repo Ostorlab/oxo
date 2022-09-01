@@ -99,7 +99,7 @@ class TraceExporter:
         return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 
-class OpenTelemetryMixin(emit.EmitProtocol, process.ProcessProtocol):
+class OpenTelemetryMixin:
     """OpenTelemetryMixin to send telemetry data of the agent behaviour. The mixin enables tracking information
     like when was a message processed or emitted, using which selector,
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.

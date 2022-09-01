@@ -4,8 +4,6 @@ from typing import Protocol
 
 class ProcessProtocol(Protocol):
 
-    name: str
-
     def process_message(self, selector: str, message: bytes) -> None:
         """Processes raw message received from BS.
 

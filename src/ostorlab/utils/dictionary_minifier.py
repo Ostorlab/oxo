@@ -20,12 +20,12 @@ def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
         value = value[:TRUNCATE_SIZE]
     return value
 
-def minify_dict(value: Any, handler: Callable) -> Dict:
+def minify_dict(value: Any, handler: Callable[[object], object]) -> Union[Dict[object, object], List[object], object]:
     """Recursive approach to minify dictionary values.
 
     Args:
         dic: The dictionary to minify.
-        handler: Method that will be applyed to all the values.
+        handler: Method that will be applied to all the values.
 
     Returns:
         the minified version of the dict.
@@ -40,7 +40,7 @@ def minify_dict(value: Any, handler: Callable) -> Dict:
         return handler(value)
 
 
-def _nested_set(dic: Dict, keys: List, value: any) -> Dict:
+def _nested_set(dic: Dict[object, object], keys: List[object], value: Any) -> None:
     """Populates value in the correct place following the path."""
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
