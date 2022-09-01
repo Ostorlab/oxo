@@ -23,8 +23,8 @@ class AgentRunInstance:
 
 
 @pytest.fixture(scope='function')
-def agent_mock(mocker):
-    """This fixtures patches all the Agent components and returns the list of messages emitted """
+def agent_mock(mocker) -> List[object]:
+    """Fixture patches all the Agent components and returns the list of messages emitted """
     emitted_messages: List[msg.Message] = []
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_init', return_value=None)
     mocker.patch('ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run', return_value=None)

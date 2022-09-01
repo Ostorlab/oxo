@@ -1,16 +1,18 @@
 """Unit tests for OpenTelemetryMixin module."""
 import json
-import tempfile
 import sys
+import tempfile
 import uuid
+from typing import List
 
 import pytest
 
 from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
-from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent.message import serializer
+from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.testing import agent as agent_testing
 
 
 class TestAgent(agent.Agent):
@@ -21,7 +23,7 @@ class TestAgent(agent.Agent):
 
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='does not run on windows')
-def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_run_mock):
+def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_run_mock: agent_testing.AgentRunInstance) -> None:
     """Unit test for the OpenTelemetry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     with tempfile.NamedTemporaryFile(suffix='.json') as tmp_file_obj:
         agent_definition = agent_definitions.AgentDefinition(
@@ -56,7 +58,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_run_mock):
 
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='does not run on windows')
-def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
+def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock: List[object]) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
     with tempfile.NamedTemporaryFile(suffix='.json') as tmp_file_obj:
@@ -90,7 +92,8 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(agent_mock):
 
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='does not run on windows')
-def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInContext(agent_mock):
+def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInContext(
+        agent_mock: List[object]) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
     with tempfile.NamedTemporaryFile(suffix='.json') as tmp_file_obj:
