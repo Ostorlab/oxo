@@ -2,9 +2,9 @@
 by truncating its string & bytes values to a specific configurable size.
 """
 from typing import Any, Callable, Dict, List, Union
-from queue import Queue, Empty
 
 TRUNCATE_SIZE = 256
+
 
 def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
     """Truncate a string or bytes value.
@@ -19,6 +19,7 @@ def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
     if isinstance(value, (str, bytes)):
         value = value[:TRUNCATE_SIZE]
     return value
+
 
 def minify_dict(value: Any, handler: Callable[[object], object]) -> Union[Dict[object, object], List[object], object]:
     """Recursive approach to minify dictionary values.
@@ -45,4 +46,3 @@ def _nested_set(dic: Any, keys: List[object], value: Any) -> None:
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})
     dic[keys[-1]] = value
-
