@@ -34,7 +34,8 @@
           "description": "[Optional] - Default value of the agent argument.",
           "type": ["string", "number", "boolean", "array", "object"]
         }
-      }
+      },
+      "required": ["name", "type"]
     },
     "agentPortMapping": {
       "description": "[Optional] - Array of dictionary-like objects, defining the port mapping.",
@@ -103,7 +104,8 @@
             "type": "array",
             "items": {
               "$ref": "#/CustomTypes/agentArgument"
-            }
+            },
+            "default": []
           },
           "port_mapping": {
             "description": "[Optional] - List of the agent port mapping.",
@@ -120,7 +122,8 @@
               "maxLength": 4096
             }
           }
-        }
+        },
+        "required": ["key"]
       }
     }
   },

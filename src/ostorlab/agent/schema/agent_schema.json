@@ -170,7 +170,8 @@
             "description": "[Optional] - Default value of the agent argument.",
             "type": ["string", "number", "boolean", "array", "object"]
           }
-        }
+        },
+        "required": ["name", "type"]
       }
     }
   },

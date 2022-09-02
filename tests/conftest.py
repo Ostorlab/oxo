@@ -100,9 +100,94 @@ def json_schema_file():
                 },
                 "mem_limit":{
                     "type": "number"
+                },
+                "args": {
+                    "description": "[Optional] - Array of dictionary-like objects, defining the agent arguments.",
+                    "type": "array",
+                    "items": {
+                        "description": "Dictionary-like object of the argument.",
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "description": "[Required] - Name of the agent argument.",
+                                "type": "string",
+                                "maxLength": 2048
+                            },
+                            "type": {
+                                "description": "[Required] - Type of the agent argument : respecting the jsonschema types.",
+                                "type": "string",
+                                "maxLength": 2048
+                            }
+                        },
+                        "required": ["name", "type"]
+                    }
                 }
             },
-            "required": ["name", "image", "source", "durability", "restrictions", "in_selectors", "out_selectors", "restart_policy"]
+            "required": ["name", "image", "source", "durability", "restrictions", "in_selectors", "out_selectors", "restart_policy", "args"]
+        }
+
+    """
+    json_schema_file_object = io.StringIO(json_schema)
+    return json_schema_file_object
+
+
+@pytest.fixture
+def agent_group_json_schema_file():
+    """Agent group json schema is made a fixture since it will be used by multiple unit tests.
+
+    Returns:
+      json_schema_file_object : a file object of the agent group json schema file.
+
+    """
+    json_schema = """
+        {
+            "CustomTypes": {
+                "agentArgument": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "maxLength": 2048
+                        },
+                        "type": {
+                            "type": "string",
+                            "maxLength": 2048
+                        }
+                    },
+                    "required": ["name", "type"]
+                }
+            },
+            "properties": {
+                "description":{
+                    "type": "string"
+                },
+                "kind":{
+                    "type": "string",
+                    "enum": [
+                        "AgentGroup"
+                    ]
+                },
+                "agents": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key": {
+                                "type": "string"
+                            },
+                            "args": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/CustomTypes/agentArgument"
+                                },
+                                "default": []
+                            }
+                        },
+                        "required": ["key", "args"]
+                    }
+                }
+            },
+            "required": ["kind", "description", "agents"]
         }
 
     """
