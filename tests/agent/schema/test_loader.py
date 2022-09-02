@@ -8,7 +8,7 @@ from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
 
 
-def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
+def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
     """Unit test to check the validity of the Agent json-schema.
     Case where the Agent definition is valid.
     """
@@ -58,7 +58,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
     assert data['agenArgument'][1]['default_value'] == 42
 
 
-def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError():
+def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError() -> None:
     """Unit test to checks the validity of the Agent json-schema.
     Case where the Agent definition is invalid.
     The version does not respect the semantic versionning : major.minor.release.
@@ -105,7 +105,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         loader.load_agent_yaml(yaml_data_file)
 
 
-def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
+def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
     """Unit test to checks the validity of the AgentGroup json-schema.
     Case where the AgentGroup definition is valid.
     """
@@ -155,7 +155,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
     assert data['description'] == 'AgentGroup1 Should be here'
 
 
-def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError():
+def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError() -> None:
     """Unit test to checks the validity of the AgentGroup json-schema.
     Case where the AgentGroup definition is invalid : Required parameter description is missing.
     """

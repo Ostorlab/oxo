@@ -33,7 +33,7 @@ def redis_service():
 
 
 @pytest.fixture
-def json_schema_file():
+def json_schema_file() -> io.StringIO:
     """Json schema is made a fixture since it will be used by multiple unit tests.
 
     Returns:
@@ -132,7 +132,7 @@ def json_schema_file():
 
 
 @pytest.fixture
-def agent_group_json_schema_file():
+def agent_group_json_schema_file() -> io.StringIO:
     """Agent group json schema is made a fixture since it will be used by multiple unit tests.
 
     Returns:

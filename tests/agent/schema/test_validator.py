@@ -7,7 +7,7 @@ import pytest
 from ostorlab.agent.schema import validator
 
 
-def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file):
+def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file: io.StringIO) -> None:
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the yaml configuration file is valid.
     """
@@ -46,7 +46,7 @@ def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file):
             pytest.fail("SchemaError shouldn't be expected.")
 
 
-def testYamlValidation_whenArgsAreMissingAnyRequiredFiled_raisesValidationError(json_schema_file):
+def testYamlValidation_whenArgsAreMissingAnyRequiredFiled_raisesValidationError(json_schema_file: io.StringIO) -> None:
     """Unit test for the method that validates an agent group yaml configuration file against a json schema.
     Case where the yaml configuration file is valid.
     """
@@ -84,7 +84,7 @@ def testYamlValidation_whenArgsAreMissingAnyRequiredFiled_raisesValidationError(
     assert exc_info.type is validator.ValidationError
 
 
-def testAgentGroupYamlValidation_whenItIsCorrect_noRaise(agent_group_json_schema_file):
+def testAgentGroupYamlValidation_whenItIsCorrect_noRaise(agent_group_json_schema_file: io.StringIO) -> None:
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid (args are missing required fields).
     """
@@ -109,7 +109,8 @@ def testAgentGroupYamlValidation_whenItIsCorrect_noRaise(agent_group_json_schema
             pytest.fail("SchemaError shouldn't be expected.")
 
 
-def testAgentGroupYamlValidation_whenAgentArgsAreWrongAndAgentKeyIsMissing_raisesValidationError(agent_group_json_schema_file):
+def testAgentGroupYamlValidation_whenAgentArgsAreWrongAndAgentKeyIsMissing_raisesValidationError(
+        agent_group_json_schema_file: io.StringIO) -> None:
     """Unit test for the method that validates an agent group yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid (agent args are wrong and key is missing).
     """
@@ -132,7 +133,8 @@ def testAgentGroupYamlValidation_whenAgentArgsAreWrongAndAgentKeyIsMissing_raise
     assert exc_info.type is validator.ValidationError
 
 
-def testYamlValidation_whenSourceParamDoesNotRespectURLPattern_raisesValidationError(json_schema_file):
+def testYamlValidation_whenSourceParamDoesNotRespectURLPattern_raisesValidationError(
+        json_schema_file: io.StringIO) -> None:
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid : The parameter 'source' should be a URL instead of a number.
     """
@@ -163,7 +165,7 @@ def testYamlValidation_whenSourceParamDoesNotRespectURLPattern_raisesValidationE
     assert exc_info.type is validator.ValidationError
 
 
-def testValidatorInit_whenSchemaIsInvalidTypeParamIsMisspelled_raisesSchemaError():
+def testValidatorInit_whenSchemaIsInvalidTypeParamIsMisspelled_raisesSchemaError() -> None:
     """Unit test for the init of the validator class with a invalid schema.
     The type is misspelled : 'strg' instead of 'string'.
     """
@@ -182,5 +184,4 @@ def testValidatorInit_whenSchemaIsInvalidTypeParamIsMisspelled_raisesSchemaError
 
     with pytest.raises(validator.SchemaError) as exc_info:
         _ = validator.Validator(json_schema_file_object)
-
-    assert exc_info.type is validator.SchemaError
+        assert exc_info.type is validator.SchemaError
