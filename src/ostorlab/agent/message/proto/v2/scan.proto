@@ -1,3 +1,0 @@
-message scan {
-  required int32 scan_id = 1;
-}

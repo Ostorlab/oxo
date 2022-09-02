@@ -1,6 +1,0 @@
-syntax = "proto2";
-
-message nvd {
-  required int32 scan_id = 1;
-  required bytes content = 2;
-}

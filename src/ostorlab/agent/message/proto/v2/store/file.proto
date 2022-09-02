@@ -1,4 +1,0 @@
-message file {
-  required int32 scan_id = 1;
-  required bytes file = 2;
-}

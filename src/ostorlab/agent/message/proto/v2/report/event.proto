@@ -1,7 +1,0 @@
-message event {
-  required int32 scan_id = 1;
-  required string source = 2;
-  required string message = 3;
-  optional string description = 4;
-  required string correlation_id = 5;
-}

@@ -1,8 +1,0 @@
-message web{
-  message url {
-    required string domain = 1;
-  }
-
-  required int32 scan_id = 1;
-  repeated url urls = 2;
-}

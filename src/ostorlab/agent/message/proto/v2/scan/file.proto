@@ -1,6 +1,0 @@
-message file {
-  required int32 scan_id = 1;
-  required string hash = 2;
-  required bytes file = 3;
-  required string platform = 4;
-}

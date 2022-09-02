@@ -1,6 +1,0 @@
-message github_path {
-  required int32 scan_id = 1;
-  required string org = 2;
-  required string repo = 3;
-  required string path = 4;
-}
