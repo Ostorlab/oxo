@@ -4,7 +4,7 @@ import pytest
 from ostorlab.agent.kb import kb
 
 
-def testkbGetAttribute_whenMappingExists_returnsEntry():
+def testkbGetAttribute_whenMappingExists_returnsEntry() -> None:
     """Test KB resolves correctly and returns a valid entry."""
     entry = kb.KB.WEB_XSS
 
@@ -15,7 +15,7 @@ def testkbGetAttribute_whenMappingExists_returnsEntry():
     assert entry.recommendation is not None
 
 
-def testkbGetAttribute_whenMappingDoNotExists_raisesValueError():
+def testkbGetAttribute_whenMappingDoNotExists_raisesValueError() -> None:
     """Test KB resolution fails with a `ValueError`."""
     with pytest.raises(ValueError):
         _ = kb.KB.RANDOM_FAKE_KEY

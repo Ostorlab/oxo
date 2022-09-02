@@ -37,7 +37,7 @@ def load_agent_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
     return _load_spec_yaml(file, spec)
 
 
-def load_agent_group_yaml(file: io.TextIOWrapper) -> object:
+def load_agent_group_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
     """Loads and validates agent gorup yaml definition file.
 
     Args:

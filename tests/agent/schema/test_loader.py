@@ -8,7 +8,7 @@ from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
 
 
-def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
+def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
     """Unit test to check the validity of the Agent json-schema.
     Case where the Agent definition is valid.
     """
@@ -21,10 +21,10 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
         image: "some/path/to/the/image"
         source: "https://github.com/"
         durability: "development"
-        restrictions: 
+        restrictions:
         - "restriction1"
         - "restriction2"
-        in_selectors: 
+        in_selectors:
         - "in_selector1"
         - "in_selector2"
         out_selectors:
@@ -58,7 +58,7 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
     assert data['agenArgument'][1]['default_value'] == 42
 
 
-def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError():
+def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError() -> None:
     """Unit test to checks the validity of the Agent json-schema.
     Case where the Agent definition is invalid.
     The version does not respect the semantic versionning : major.minor.release.
@@ -71,10 +71,10 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         image: "some/path/to/the/image"
         source: "https://github.com/"
         durability: "development"
-        restrictions: 
+        restrictions:
         - "restriction1"
         - "restriction2"
-        in_selectors: 
+        in_selectors:
         - "in_selector1"
         - "in_selector2"
         out_selectors:
@@ -105,7 +105,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         loader.load_agent_yaml(yaml_data_file)
 
 
-def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
+def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
     """Unit test to checks the validity of the AgentGroup json-schema.
     Case where the AgentGroup definition is valid.
     """
@@ -121,17 +121,23 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
         constraints:
         - "constraint1"
         - "constraint2"
-        
+
         agents:
             - name: "AgentBigFuzzer"
+              key: agent/testorg/bigfuzzer
               args:
                - color: "red"
-                 speed: "slow" 
+                 speed: "slow"
+                 name: "arg1"
+                 type: "string"
             - name: "AgentSmallFuzzer"
+              key: agent/testorg/smallfuzzer
               args:
                - color: "blue"
                  speed: "fast"
-        
+                 name: "arg2"
+                 type: "string"
+
         agentGroupArgument:
             - name: "agentGroupArgumentExample1"
               type: ["string", "number", "boolean"]
@@ -140,7 +146,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
             - name: "agentGroupArgumentExample2"
               type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription2"
-              value: 42   
+              value: 42
     """
     yaml_data_file = io.StringIO(valid_yaml_agent_group_data)
 
@@ -149,7 +155,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
     assert data['description'] == 'AgentGroup1 Should be here'
 
 
-def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError():
+def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError() -> None:
     """Unit test to checks the validity of the AgentGroup json-schema.
     Case where the AgentGroup definition is invalid : Required parameter description is missing.
     """
@@ -164,24 +170,30 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
         constraints:
         - "constraint1"
         - "constraint2"
-        
+
         agents:
             - name: "AgentBigFuzzer"
+              key: agent/testorg/bigfuzzer
               args:
                - color: "red"
-                 speed: "slow" 
+                 speed: "slow"
+                 name: "arg1"
+                 type: "string"
             - name: "AgentSmallFuzzer"
+              key: agent/testorg/smallfuzzer
               args:
                - color: "blue"
                  speed: "fast"
+                 name: "arg2"
+                 type: "string"
 
         agentGroupArgument:
             - name: "agentGroupArgumentExample1"
-              type: "string"
+              type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription1"
               value: "agentGroupArgumentValue1"
             - name: "agentGroupArgumentExample2"
-              type: ["string", "number", "boolean"]
+              type: "string"
               description: "agentGroupArgumentDescription2"
               value: 42
 
