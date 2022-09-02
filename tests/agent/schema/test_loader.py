@@ -21,10 +21,10 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise():
         image: "some/path/to/the/image"
         source: "https://github.com/"
         durability: "development"
-        restrictions: 
+        restrictions:
         - "restriction1"
         - "restriction2"
-        in_selectors: 
+        in_selectors:
         - "in_selector1"
         - "in_selector2"
         out_selectors:
@@ -71,10 +71,10 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
         image: "some/path/to/the/image"
         source: "https://github.com/"
         durability: "development"
-        restrictions: 
+        restrictions:
         - "restriction1"
         - "restriction2"
-        in_selectors: 
+        in_selectors:
         - "in_selector1"
         - "in_selector2"
         out_selectors:
@@ -121,17 +121,23 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
         constraints:
         - "constraint1"
         - "constraint2"
-        
+
         agents:
             - name: "AgentBigFuzzer"
+              key: agent/testorg/bigfuzzer
               args:
                - color: "red"
-                 speed: "slow" 
+                 speed: "slow"
+                 name: "arg1"
+                 type: "string"
             - name: "AgentSmallFuzzer"
+              key: agent/testorg/smallfuzzer
               args:
                - color: "blue"
                  speed: "fast"
-        
+                 name: "arg2"
+                 type: "string"
+
         agentGroupArgument:
             - name: "agentGroupArgumentExample1"
               type: ["string", "number", "boolean"]
@@ -140,7 +146,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise():
             - name: "agentGroupArgumentExample2"
               type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription2"
-              value: 42   
+              value: 42
     """
     yaml_data_file = io.StringIO(valid_yaml_agent_group_data)
 
@@ -155,7 +161,7 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
     """
 
     invalid_yaml_agent_group_data = """
-        kind: "AgentGroup1"
+        kind: "AgentGroup"
         image: "some/path/to/the/image"
         restart_policy: "any"
         restrictions:
@@ -164,20 +170,26 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
         constraints:
         - "constraint1"
         - "constraint2"
-        
+
         agents:
             - name: "AgentBigFuzzer"
+              key: agent/testorg/bigfuzzer
               args:
                - color: "red"
-                 speed: "slow" 
+                 speed: "slow"
+                 name: "arg1"
+                 type: "string"
             - name: "AgentSmallFuzzer"
+              key: agent/testorg/smallfuzzer
               args:
                - color: "blue"
                  speed: "fast"
+                 name: "arg2"
+                 type: "string"
 
         agentGroupArgument:
             - name: "agentGroupArgumentExample1"
-              type: "string"
+              type: ["string", "number", "boolean"]
               description: "agentGroupArgumentDescription1"
               value: "agentGroupArgumentValue1"
             - name: "agentGroupArgumentExample2"
