@@ -39,4 +39,6 @@ jobs:
         python -m pip install -e .
     - name: Runnning tests with pytest.
       run: |
-        pytest -m "not docker"
+        pytest -m "not docker" --cov=. | tee pytest-coverage.txt
+    - name: Comment coverage
+      uses: coroo/pytest-coverage-commentator@v1.0.2
