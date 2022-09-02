@@ -1,3 +1,0 @@
-message fs {
-  required int32 scan_id = 1;
-}

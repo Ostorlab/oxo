@@ -1,8 +1,0 @@
-syntax = "proto2";
-
-message lib {
-  required int32 scan_id = 1;
-  required string name = 2;
-  optional string version = 3;
-  required string type = 4;
-}

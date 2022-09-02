@@ -1,3 +1,0 @@
-message scan_stop {
-  required int32 scan_id = 1;
-}
