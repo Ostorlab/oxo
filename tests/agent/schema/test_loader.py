@@ -161,7 +161,7 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
     """
 
     invalid_yaml_agent_group_data = """
-        kind: "AgentGroup"
+        kind: "AgentGroup1"
         image: "some/path/to/the/image"
         restart_policy: "any"
         restrictions:
@@ -193,7 +193,7 @@ def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseVali
               description: "agentGroupArgumentDescription1"
               value: "agentGroupArgumentValue1"
             - name: "agentGroupArgumentExample2"
-              type: ["string", "number", "boolean"]
+              type: "string"
               description: "agentGroupArgumentDescription2"
               value: 42
 
