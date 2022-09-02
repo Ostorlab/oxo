@@ -42,3 +42,4 @@ jobs:
         mypy src/ostorlab/agent/kb
         mypy src/ostorlab/agent/message
         mypy src/ostorlab/utils
+        mypy src/ostorlab/agent/schema
