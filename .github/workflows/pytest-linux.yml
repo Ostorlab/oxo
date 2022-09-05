@@ -1,0 +1,45 @@
+# This workflow use pytest:
+#  - Install Python dependencies.
+#  - Run pytest for each of the supported Python versions ["3.8", "3.9", "3.10"]. 
+# Running pytest with -m "no docker" to disable test that require a docker installation.
+
+name: Pytest.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on:  ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10"]
+        os: [ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Init and update data submodule.
+      run: |
+        git submodule init
+        git submodule update
+    - name: Install dependencies.
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[testing]
+        pip install .[agent]
+        python -m pip install -e .
+    - name: Runnning tests with pytest.
+      run: |
+        set -o pipefail
+        pytest -m "not docker" --cov=. | tee pytest-coverage.txt
+    - name: Comment coverage
+      uses: coroo/pytest-coverage-commentator@v1.0.2
