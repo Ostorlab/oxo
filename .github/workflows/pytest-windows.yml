@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.10"]
-        os: [ubuntu-latest, windows-latest]
+        os: [windows-latest]
 
     steps:
     - uses: actions/checkout@v2
@@ -39,7 +39,4 @@ jobs:
         python -m pip install -e .
     - name: Runnning tests with pytest.
       run: |
-        set -o pipefail
-        pytest -m "not docker" --cov=. | tee pytest-coverage.txt
-    - name: Comment coverage
-      uses: coroo/pytest-coverage-commentator@v1.0.2
+        pytest -m "not docker"
