@@ -118,7 +118,7 @@ def _parse_list(values: Any, message: Any) -> None:
         for v in values:
             cmd = message.add()
             _parse_dict(v, cmd)
-    else:  # value can be set
+    elif isinstance(message, list):  # value can be set
         message.extend(values)
 
 
@@ -128,7 +128,12 @@ def _parse_dict(values: Any, message: Any) -> None:
         if isinstance(v, dict):  # value needs to be further parsed
             _parse_dict(v, getattr(message, k))
         elif isinstance(v, list):
-            _parse_list(v, getattr(message, k))
+            if len(v) > 0 and not isinstance(getattr(message, k), list):  # if not supposed to be a list on proto
+                setattr(message, k, v[0])  # take the first value
+            elif len(v) == 0:
+                pass
+            else:
+                _parse_list(v, getattr(message, k))
         else:
             try:
                 # if is of type ENUM.
