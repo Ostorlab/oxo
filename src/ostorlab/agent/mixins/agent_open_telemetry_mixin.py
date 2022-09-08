@@ -13,6 +13,7 @@ import tempfile
 import uuid
 from typing import Any, Dict, Optional
 from urllib import parse
+import copy
 
 from opentelemetry import trace
 from opentelemetry.exporter import cloud_trace
@@ -229,7 +230,8 @@ class OpenTelemetryMixin:
 
                 emit_span.set_attribute('agent.name', self.name)
                 emit_span.set_attribute('message.selector', selector)
-                minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
+                cloned_data = copy.deepcopy(data)
+                minified_msg_data = dictionary_minifier.minify_dict(cloned_data, dictionary_minifier.truncate_str)
                 emit_span.set_attribute('message.data', json.dumps(minified_msg_data))
 
                 super().emit(selector, data, f'{message_id or uuid.uuid4()}-{trace_id}-{span_id}')
