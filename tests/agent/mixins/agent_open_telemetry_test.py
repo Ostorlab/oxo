@@ -59,8 +59,8 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldTraceMessage(agent_run_mock: ag
 
 @pytest.mark.skipif(sys.platform == 'win32', reason='does not run on windows')
 def testOpenTelemetryMixin_whenEmitMessage_shouldNotTruncateOriginalMessage(
-            agent_run_mock: agent_testing.AgentRunInstance
-    ) -> None:
+        agent_run_mock: agent_testing.AgentRunInstance
+) -> None:
     """Unit test for the OpenTelemetry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     with tempfile.NamedTemporaryFile(suffix='.json') as tmp_file_obj:
         agent_definition = agent_definitions.AgentDefinition(
@@ -73,7 +73,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldNotTruncateOriginalMessage(
             agent_definition=agent_definition,
             agent_settings=agent_settings)
 
-        technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum 
+        technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
         has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
         scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
         make a type specimen book. """
@@ -167,4 +167,3 @@ def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInC
             assert trace_object['attributes']['message.selector'] == 'v3.report.vulnerability'
             processed_msg = '{"title": "some_title", "risk_rating": "MEDIUM", "technical_detail": "some_details"}'
             assert trace_object['attributes']['message.data'] == processed_msg
-
