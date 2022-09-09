@@ -227,13 +227,11 @@ class OpenTelemetryMixin:
 
                 trace_id = emit_span.get_span_context().trace_id
                 span_id = emit_span.get_span_context().span_id
+                super().emit(selector, data, f'{message_id or uuid.uuid4()}-{trace_id}-{span_id}')
 
                 emit_span.set_attribute('agent.name', self.name)
                 emit_span.set_attribute('message.selector', selector)
-                cloned_data = copy.deepcopy(data)
-                minified_msg_data = dictionary_minifier.minify_dict(cloned_data, dictionary_minifier.truncate_str)
+                minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
                 emit_span.set_attribute('message.data', json.dumps(minified_msg_data))
-
-                super().emit(selector, data, f'{message_id or uuid.uuid4()}-{trace_id}-{span_id}')
         else:
             super().emit(selector, data)
