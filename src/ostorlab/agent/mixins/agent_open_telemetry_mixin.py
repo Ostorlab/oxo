@@ -13,7 +13,6 @@ import tempfile
 import uuid
 from typing import Any, Dict, Optional
 from urllib import parse
-import copy
 
 from opentelemetry import trace
 from opentelemetry.exporter import cloud_trace
