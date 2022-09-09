@@ -90,6 +90,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldNotTruncateOriginalMessage(
             assert trace_object['name'] == 'emit_message'
             assert trace_object['attributes']['agent.name'] == 'some_name'
             assert trace_object['attributes']['message.selector'] == 'v3.report.vulnerability'
+            assert len(trace_object['attributes']['message.data']) < len(technical_detail)
             assert len(agent_run_mock.raw_messages[-1].key.split('-')) == 7
         assert len(agent_run_mock.emitted_messages[0].data['technical_detail']) == len(technical_detail)
 
