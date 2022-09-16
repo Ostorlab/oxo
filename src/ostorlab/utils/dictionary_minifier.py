@@ -17,7 +17,8 @@ def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
         the truncated string or bytes value.
     """
     if isinstance(value, (str, bytes)):
-        value = value[:TRUNCATE_SIZE]
+        # The casting to string is specific to the bytes case, to prevent the json encoding from failling later.
+        value = str(value)[:TRUNCATE_SIZE]
     return value
 
 
