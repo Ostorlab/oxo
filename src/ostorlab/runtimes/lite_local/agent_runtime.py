@@ -33,7 +33,7 @@ SECOND = 1000000000
 HEALTHCHECK_RETRIES = 5
 HEALTHCHECK_TIMEOUT = 10 * SECOND
 HEALTHCHECK_START_PERIOD = 2 * SECOND
-HEALTHCHECK_INTERVAL = 2 * SECOND
+HEALTHCHECK_INTERVAL = 30 * SECOND
 
 
 class Error(exceptions.OstorlabError):
@@ -255,7 +255,7 @@ class AgentRuntime:
                                                retries=HEALTHCHECK_RETRIES,
                                                timeout=HEALTHCHECK_TIMEOUT,
                                                start_period=HEALTHCHECK_START_PERIOD,
-                                               interval=HEALTHCHECK_INTERVAL, )
+                                               interval=HEALTHCHECK_INTERVAL)
         return healthcheck
 
     def replace_variable_mounts(self, mounts: List[str]):
