@@ -46,7 +46,7 @@ def testMinifyDict_whenNestedDict_shouldMinifyStringValues():
             },
             'key5': 5
         },
-        'key6': b'a ',
+        'key6': "b'",
     }
 
 
@@ -75,13 +75,13 @@ def testMinifyDict_whenNestedDictsAndList_shouldMinifyStringValues():
             'key3': {
                 'listValues': [
                     {'key4': 'key'},
-                    {'key5': b'key'},
+                    {'key5': "b'k"},
                     {'key6': 42},
                 ]
             },
             'key5': 42
         },
-        'key6': b'a t',
+        'key6': "b'a",
     }
 
 
