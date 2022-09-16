@@ -1,4 +1,6 @@
 """Unit test for the dictionary minifier module."""
+import json
+
 from ostorlab.utils import dictionary_minifier
 
 
@@ -81,3 +83,14 @@ def testMinifyDict_whenNestedDictsAndList_shouldMinifyStringValues():
         },
         'key6': b'a t',
     }
+
+
+def testMinifyDict_whenBytesValues_shouldConvertToStringAndPassJsonEncoding():
+    """Ensure the minify dict method returns a json encodable dictionary."""
+    input_dict = {'key1': b'very long string value.....'}
+    dictionary_minifier.TRUNCATE_SIZE = 3
+
+    minified_dict = dictionary_minifier.minify_dict(input_dict, dictionary_minifier.truncate_str)
+    json_dumped_minified_dict = json.dumps(minified_dict)
+
+    assert json_dumped_minified_dict == '{"key1": "b\'v"}'
