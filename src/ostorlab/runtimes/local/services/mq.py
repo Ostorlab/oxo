@@ -16,7 +16,7 @@ from docker.models import services
 logger = logging.getLogger(__name__)
 
 MQ_IMAGE = 'rabbitmq:3.9-management'
-
+MQ_ADVANCED_CONF_PATH='/etc/rabbitmq/advanced.config'
 
 class LocalRabbitMQ:
     """RabbitMQ service spawned a docker swarm service."""
@@ -57,6 +57,7 @@ class LocalRabbitMQ:
 
     @property
     def service(self):
+        """The RabbitMQ corresponding docker service."""
         return self._mq_service
 
     @property
@@ -65,7 +66,7 @@ class LocalRabbitMQ:
         return f'http://guest:guest@{self._mq_host}:15672/'
 
     def start(self) -> None:
-        """Start local rabbit mq instance."""
+        """Start local Rabbit MQ instance."""
         self._create_network()
         self._mq_service = self._start_mq()
 
@@ -74,6 +75,7 @@ class LocalRabbitMQ:
             return
 
     def stop(self):
+        """Stop local Rabiit MQ instance."""
         for service in self._docker_client.services.list():
             universe = service.attrs['Spec']['Labels'].get('ostorlab.universe')
             if universe is not None and service.name.startswith('mq_') and self._name in universe:
@@ -94,10 +96,10 @@ class LocalRabbitMQ:
 
     def _create_mq_advanced_config(self) -> types.services.ConfigReference:
         conf_path = pathlib.Path(__file__).parent / 'configurations/mq_advanced_conf.config'
-        with open(conf_path, 'rb') as f:
-            mq_advanced_configuration = f.read()
+        with open(conf_path, 'rb') as conf_file:
+            mq_advanced_configuration = conf_file.read()
         config_name = hashlib.md5(
-            f'config_definition_{self._name}_{self._uuid}'.encode()).hexdigest()
+            f'mq_advanced_config_{self._name}_{self._uuid}'.encode()).hexdigest()
 
         try:
             mq_advanced_config = self._docker_client.configs.get(config_name)
@@ -108,12 +110,12 @@ class LocalRabbitMQ:
 
         docker_config = self._docker_client.configs.create(
             name=config_name,
-            labels={'ostorlab.universe': self._name},
+            labels={'ostorlab.universe': self._name, 'ostorlab.mq.advanced.config': 'true'},
             data=mq_advanced_configuration
         )
         return types.services.ConfigReference(config_id=docker_config.id,
                                        config_name=config_name,
-                                       filename='/etc/rabbitmq/advanced.config')
+                                       filename=MQ_ADVANCED_CONF_PATH)
 
     def _start_mq(self) -> services.Service:
         try:
@@ -152,6 +154,11 @@ class LocalRabbitMQ:
 
     @property
     def is_healthy(self) -> bool:
+        """Check if the local Rabbit MQ instance is healthy.
+
+        Returns:
+            True if the instance is healthy, False otherwise.
+        """
         try:
             return self._mq_service is not None and \
                    len([task for task in self._mq_service.tasks() if task['Status']['State'] == 'running']) == 1
