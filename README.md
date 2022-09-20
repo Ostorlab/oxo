@@ -256,3 +256,11 @@ Implementation of popular tools like:
 * [XSStrike](https://github.com/s0md3v/XSStrike): XSS web vulnerability scanner with generative payload.
 * ~~[Subjack](https://github.com/haccer/subjack): Subdomain takeover scanning tool.~~
 * [DnsReaper](https://github.com/punk-security/dnsReaper): Subdomain takeover scanning tool.
+
+## Roadmap
+
+* Add support for ARM64 agents
+* Add Kubernetes-based runtime
+* Support for Mypyc to improve performance
+* Reduce start-time (switch from slow starting services to faster alternatives like NATS or Redis Queues)
+* Support for running agent as standalone tools
