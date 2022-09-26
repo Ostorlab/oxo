@@ -33,12 +33,14 @@ class MetaKB(type):
     """Handles KB mapping to appropriate folder."""
 
     def __getattr__(cls, item: str) -> Entry:
-        kb_path = pathlib.Path(__file__).parent / KB_FOLDER / item
+        kb_path = pathlib.Path(__file__).parent / KB_FOLDER
+        entry_path = [f for f in kb_path.glob(f'**/{item}') if f.is_dir()]
 
-        if not (kb_path / META_JSON).exists():
-            raise ValueError(f'{kb_path} does not have a mapping.')
-        with (kb_path / META_JSON).open(encoding='utf-8') as f, (kb_path / DESCRIPTION).open(encoding='utf-8') as d, (
-                kb_path / RECOMMENDATION).open(encoding='utf-8') as r:
+        if not (entry_path / META_JSON).exists():
+            raise ValueError(f'{entry_path} does not have a mapping.')
+        with (entry_path / META_JSON).open(encoding='utf-8') as f, (
+              entry_path / DESCRIPTION).open(encoding='utf-8') as d, (
+              entry_path / RECOMMENDATION).open(encoding='utf-8') as r:
             meta = json.loads(f.read())
             return Entry(
                 title=meta.get('title'),
