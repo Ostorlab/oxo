@@ -34,8 +34,10 @@ class MetaKB(type):
 
     def __getattr__(cls, item: str) -> Entry:
         kb_path = pathlib.Path(__file__).parent / KB_FOLDER
-        entry_path = [f for f in kb_path.glob(f'**/{item}') if f.is_dir()]
-
+        paths = [f for f in kb_path.glob(f'**/{item}') if f.is_dir()]
+        if not paths:
+            raise ValueError(f'{item} does not exists.')
+        entry_path = paths[0]
         if not (entry_path / META_JSON).exists():
             raise ValueError(f'{entry_path} does not have a mapping.')
         with (entry_path / META_JSON).open(encoding='utf-8') as f, (
