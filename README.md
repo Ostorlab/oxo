@@ -34,9 +34,18 @@ malware file scanning like Virustotal and much more.
 
 To run any of these tools combined, simply run the following command:
 
+> Ostorlab CLI is accessible also using the `oxo` alias for convenience.
+
 ```shell
 ostorlab scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
 ```
+
+or 
+
+```shell
+oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
+```
+
 
 This command will download and install the following scanning agents:
 
