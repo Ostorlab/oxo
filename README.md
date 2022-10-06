@@ -3,7 +3,7 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-# Ostorlab Security Scanner
+# OXO Ostorlab Security Scanner Orchestration Engine
 
 Ostorlab is a security scanning framework built for modualrity, scalability and simplicity.
 
