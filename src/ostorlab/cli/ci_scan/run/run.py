@@ -6,6 +6,7 @@ Example of usage:
 import multiprocessing
 import click
 import time
+from typing import List
 
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
 from ostorlab.apis import scan_create as scan_create_api
@@ -16,7 +17,7 @@ from ostorlab.utils import risk_rating
 
 MINUTE = 60
 WAIT_MINUTES = 30
-SLEEP_CHECKS = 10 # seconds
+SLEEP_CHECKS = 10  # seconds
 SCAN_PROGRESS_NOT_STARTED = 'not_started'
 SCAN_PROGRESS_DONE = 'done'
 
@@ -25,16 +26,49 @@ CI_LOGGER = {
     'github': github_logger.Logger
 }
 
+
 @ci_scan.group()
 @click.option('--scan-profile', help='Scan profile to execute.', required=True)
 @click.option('--title', help='Scan title.')
 @click.option('--break-on-risk-rating', help='Fail if the scan risk rating is higher than the defined value.')
 @click.option('--max-wait-minutes', help='Time to wait for the scan results.', required=False, default=WAIT_MINUTES)
 @click.option('--log-flavor', help='Type of expected output based on the CI.', required=False, default='console')
+@click.option('--test-credentials-login',
+              help='Test credentials login, composed of login, password, url (optional) and role (optional).',
+              required=False,
+              multiple=True)
+@click.option('--test-credentials-password',
+              help='Test credentials login, composed of login, password, url (optional) and role (optional).',
+              required=False,
+              multiple=True)
+@click.option('--test-credentials-url',
+              help='Test credentials login, composed of login, password, url (optional) and role (optional).',
+              required=False,
+              multiple=True)
+@click.option('--test-credentials-role',
+              help='Test credentials login, composed of login, password, url (optional) and role (optional).',
+              required=False,
+              multiple=True)
+@click.option('--test-credentials-name', help='Test custom credentials, composed of name and value.',
+              required=False,
+              multiple=True)
+@click.option('--test-credentials-value', help='Test custom credentials, composed of name and value.',
+              required=False,
+              multiple=True)
 @click.pass_context
 def run(ctx: click.core.Context, scan_profile: str, title: str,
-        break_on_risk_rating: str, max_wait_minutes: int, log_flavor: str) -> None:
+        break_on_risk_rating: str, max_wait_minutes: int, log_flavor: str,
+        test_credentials_login: List[str],
+        test_credentials_password: List[str],
+        test_credentials_url: List[str],
+        test_credentials_role: List[str],
+        test_credentials_name: List[str],
+        test_credentials_value: List[str]) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
+
+    print(test_credentials_login, test_credentials_password)
+
+
     if log_flavor not in CI_LOGGER:
         CI_LOGGER['console']().error(f'log_flavor value {log_flavor} not supported.'
                                      f' Possible options: {CI_LOGGER.keys()}')
@@ -67,7 +101,7 @@ def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wa
             args=(runner, scan_id)
         )
         check_scan_process.start()
-        check_scan_process.join(int(max_wait_minutes)*MINUTE)
+        check_scan_process.join(int(max_wait_minutes) * MINUTE)
 
         if check_scan_process.is_alive():
             check_scan_process.kill()
@@ -80,7 +114,7 @@ def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wa
             _check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger)
     else:
         ci_logger.error(f'Incorrect risk rating value {break_on_risk_rating}. '
-                      f'It should be one of {", ".join(risk_rating.RiskRating.values())}')
+                        f'It should be one of {", ".join(risk_rating.RiskRating.values())}')
         raise click.exceptions.Exit(2)
 
 
