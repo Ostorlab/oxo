@@ -34,7 +34,7 @@ class Console:
         Args:
             text: The success text to show.
         """
-        self._console.print(f':green_apple: {text}', style='success')
+        self._console.print(f':heavy_check_mark: {text}', style='success')
 
     def error(self, text: str) -> None:
         """Shows error message.
@@ -42,7 +42,7 @@ class Console:
         Args:
             text: The error text to show.
         """
-        self._console.print(f':apple: [bold]ERROR:[/] {text}', style='error')
+        self._console.print(f':small_red_triangle: [bold]ERROR:[/] {text}', style='error')
 
     def warning(self, text: str) -> None:
         """Shows warning message.
@@ -50,7 +50,7 @@ class Console:
         Args:
             text: The warning text to show.
         """
-        self._console.print(f':tangerine: [bold]WARNING:[/] {text}', style='warning')
+        self._console.print(f':small_orange_diamond: [bold]WARNING:[/] {text}', style='warning')
 
     def info(self, text: str) -> None:
         """Shows general information message.
@@ -58,7 +58,7 @@ class Console:
         Args:
             text: The general text to show.
         """
-        self._console.print(f':fish_cake: {text}')
+        self._console.print(f':small_blue_diamond: {text}')
 
     def status(self, text: str) -> status.Status:
         """Shows loading text.

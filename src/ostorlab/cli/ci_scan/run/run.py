@@ -66,14 +66,20 @@ def run(ctx: click.core.Context, scan_profile: str, title: str,
         test_credentials_value: List[str]) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
-    print(test_credentials_login, test_credentials_password)
-
-
     if log_flavor not in CI_LOGGER:
         CI_LOGGER['console']().error(f'log_flavor value {log_flavor} not supported.'
                                      f' Possible options: {CI_LOGGER.keys()}')
-    else:
-        ci_logger = CI_LOGGER.get(log_flavor)()
+        raise click.exceptions.Exit(2)
+
+    ci_logger = CI_LOGGER.get(log_flavor)()
+
+    if len(test_credentials_login) != len(test_credentials_password):
+        ci_logger.error('Loging and password credentials are not matching count.')
+        raise click.exceptions.Exit(2)
+
+    if len(test_credentials_name) != len(test_credentials_value):
+        ci_logger.error('Name and value credentials are not matching count.')
+        raise click.exceptions.Exit(2)
 
     if not ctx.obj.get('api_key'):
         ci_logger.error('API key not not provided.')
@@ -84,11 +90,20 @@ def run(ctx: click.core.Context, scan_profile: str, title: str,
     else:
         ci_logger.error(
             f'Scan profile {scan_profile} not supported. Possible options: {scan_create_api.SCAN_PROFILES.keys()}')
+        raise click.exceptions.Exit(2)
 
     ctx.obj['title'] = title
     ctx.obj['break_on_risk_rating'] = break_on_risk_rating
     ctx.obj['max_wait_minutes'] = max_wait_minutes
     ctx.obj['ci_logger'] = ci_logger
+    ctx.obj['test_credentials'] = {
+        'test_credentials_login': test_credentials_login,
+        'test_credentials_password': test_credentials_password,
+        'test_credentials_url': test_credentials_url,
+        'test_credentials_role': test_credentials_role,
+        'test_credentials_name': test_credentials_name,
+        'test_credentials_value': test_credentials_value
+    }
 
 
 def apply_break_scan_risk_rating(break_on_risk_rating: str, scan_id: int, max_wait_minutes: int,
@@ -148,7 +163,7 @@ def _is_scan_risk_rating_higher(scan_risk_rating: str, break_on_risk_rating: str
 def _handle_scan_timeout(runner: authenticated_runner.AuthenticatedAPIRunner,
                          scan_id: int, break_on_risk_rating: str, ci_logger: logger.Logger) -> None:
     """when the scan triggers a timeout, we check if the scan has started and if the risk rating is higher
-     than the defined break value. In this case we reprot the risk rating and we exit code 2
+     than the defined break value. In this case we report the risk rating, and we exit code 2
      otherwise we raise the timeout exception
      """
     scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
