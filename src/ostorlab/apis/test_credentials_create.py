@@ -27,13 +27,12 @@ class TestCredentialLogin(TestCredential):
     def to_variables(self) -> Dict[str, Any]:
         """Generate query variables."""
         return {
-            "testCredentials": {
-
-                "loginPassword": {
-                    "login": self.login,
-                    "password": self.password,
-                    "role": self.role,
-                    "url": self.url
+            'testCredentials': {
+                'loginPassword': {
+                    'login': self.login,
+                    'password': self.password,
+                    'role': self.role,
+                    'url': self.url
                 }
             }
         }
@@ -47,11 +46,11 @@ class TestCredentialCustom(TestCredential):
     def to_variables(self) -> Dict[str, Any]:
         """Generate query variables."""
         return {
-            "testCredentials": {
-                "custom": {
-                    "credentials": [
+            'testCredentials': {
+                'custom': {
+                    'credentials': [
                         {
-                            "name": n, "value": v
+                            'name': n, 'value': v
                         } for (n, v) in self.values.items()
                     ]
                 }

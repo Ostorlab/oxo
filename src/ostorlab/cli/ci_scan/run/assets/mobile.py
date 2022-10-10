@@ -37,8 +37,7 @@ def _prepare_test_credentials(ctx: click.core.Context) -> List[test_credentials_
 
     if test_credentials_name:
         credentials.append(test_credentials_create_api.TestCredentialCustom(
-            values={n: v for (n, v) in itertools.zip_longest(test_credentials_name, test_credentials_value)}
-        ))
+            values=dict(itertools.zip_longest(test_credentials_name, test_credentials_value))))
 
     return credentials
 
@@ -98,5 +97,6 @@ def _create_test_credentials(test_credentials, runner):
     for test_credential in test_credentials:
         test_credential_result = runner.execute(
             test_credentials_create_api.CreateTestCredentialAPIRequest(test_credential=test_credential))
-        credential_ids.append(test_credential_result.get('data').get('createTestCredentials').get('testCredentials').get('id'))
+        credential_ids.append(
+            test_credential_result.get('data').get('createTestCredentials').get('testCredentials').get('id'))
     return credential_ids
