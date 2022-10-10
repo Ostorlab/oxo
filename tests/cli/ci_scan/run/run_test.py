@@ -189,7 +189,8 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
         }
     }
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
-                 side_effect=[test_credentials_create_dict, test_credentials_create_dict, scan_create_dict, scan_info_dict, scan_info_dict])
+                 side_effect=[test_credentials_create_dict, test_credentials_create_dict, scan_create_dict,
+                              scan_info_dict, scan_info_dict])
     mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
 
     runner = CliRunner()
