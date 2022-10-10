@@ -7,6 +7,7 @@ from ostorlab.cli import rootcli
 
 TEST_FILE_PATH = str(pathlib.Path(__file__).parent / 'test_file')
 
+
 def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
     """Test ostorlab ci_scan with no api key. it should exit with error exit_code = 2."""
     mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute', return_value=True)
@@ -156,3 +157,53 @@ def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
     assert '::set-output name=scan_id::1' in result.output
     assert 'The scan risk rating is high.' in result.output
     assert isinstance(result.exception, BaseException)
+
+
+def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
+    """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
+
+    test_credentials_create_dict = {
+        'data': {
+            'createTestCredentials': {
+                'testCredentials': {
+                    'id': '456'
+                }
+            }
+        }
+    }
+
+    scan_create_dict = {
+        'data': {
+            'createMobileScan': {
+                'scan': {
+                    'id': '1'}
+            }
+        }
+    }
+    scan_info_dict = {
+        'data': {
+            'scan': {
+                'progress': 'done',
+                'riskRating': 'high',
+            }
+        }
+    }
+    mocker.patch('ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute',
+                 side_effect=[test_credentials_create_dict, test_credentials_create_dict, scan_create_dict, scan_info_dict, scan_info_dict])
+    mocker.patch.object(run.run, 'SLEEP_CHECKS', 1)
+
+    runner = CliRunner()
+    result = runner.invoke(rootcli.rootcli,
+                           ['--api-key=12', 'ci-scan',
+                            'run',
+                            '--test-credentials-login=test',
+                            '--test-credentials-password=pass',
+                            '--test-credentials-name=op',
+                            '--test-credentials-value=val1',
+                            '--scan-profile=full_scan',
+                            '--title=scan1',
+                            '--log-flavor=github',
+                            'ios-ipa', TEST_FILE_PATH])
+
+    assert 'Created test credentials' in result.output
+    assert 'Scan created with id 1.' in result.output

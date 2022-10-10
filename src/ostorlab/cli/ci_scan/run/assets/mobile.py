@@ -35,9 +35,10 @@ def _prepare_test_credentials(ctx: click.core.Context) -> List[test_credentials_
             url=url
         ))
 
-    credentials.append(test_credentials_create_api.TestCredentialCustom(
-        values={n: v for (n, v) in itertools.zip_longest(test_credentials_name, test_credentials_value)}
-    ))
+    if test_credentials_name:
+        credentials.append(test_credentials_create_api.TestCredentialCustom(
+            values={n: v for (n, v) in itertools.zip_longest(test_credentials_name, test_credentials_value)}
+        ))
 
     return credentials
 
@@ -53,7 +54,14 @@ def run_mobile_scan(ctx: click.core.Context, file: io.FileIO, asset_type: scan_c
         runner = authenticated_runner.AuthenticatedAPIRunner(api_key=ctx.obj.get('api_key'))
         try:
 
-            credential_ids = _create_test_credentials(ctx, runner)
+            test_credentials = _prepare_test_credentials(ctx)
+            if test_credentials:
+                credential_ids = _create_test_credentials(test_credentials, runner)
+                ci_logger.info(f'Created test credentials {", ".join(str(t) for t in test_credentials)} successfully')
+            else:
+                credential_ids = []
+
+            ci_logger.info(f'creating scan `{title}` with profile `{scan_profile}` for `{asset_type}`')
             scan_id = _create_scan(title, scan_profile, asset_type, file, credential_ids, runner)
 
             ci_logger.output(name='scan_id', value=scan_id)
@@ -85,11 +93,10 @@ def _create_scan(title, scan_profile, asset_type, file, credential_ids, runner):
     return scan_id
 
 
-def _create_test_credentials(ctx, runner):
-    test_credentials = _prepare_test_credentials(ctx)
+def _create_test_credentials(test_credentials, runner):
     credential_ids = []
     for test_credential in test_credentials:
         test_credential_result = runner.execute(
             test_credentials_create_api.CreateTestCredentialAPIRequest(test_credential=test_credential))
-        credential_ids.append(test_credential_result.get('data').get('createTestCredentials').get('id'))
+        credential_ids.append(test_credential_result.get('data').get('createTestCredentials').get('testCredentials').get('id'))
     return credential_ids

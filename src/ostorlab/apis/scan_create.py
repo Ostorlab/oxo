@@ -60,7 +60,8 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                                       'variables': {'title': self._title,
                                                     'assetType': self._asset_type.name.lower(),
                                                     'application': None,
-                                                    'scanProfile': self._scan_profile
+                                                    'scanProfile': self._scan_profile,
+                                                    'credentialIds': self._test_credential_ids
                                                     }
                                       }
                                      ),

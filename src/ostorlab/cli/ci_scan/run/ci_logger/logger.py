@@ -1,5 +1,6 @@
-"""Logger is in charge of definning the output format based on CI expected output."""
+"""Logger is in charge of defining the output format based on CI expected output."""
 import abc
+
 
 class Logger(abc.ABC):
     """Logger is in charge of printing the results based on the CI expected output."""
@@ -13,7 +14,6 @@ class Logger(abc.ABC):
         """
         raise NotImplementedError()
 
-
     @abc.abstractmethod
     def error(self, message: str) -> None:
         """Print Error messages.
@@ -22,7 +22,6 @@ class Logger(abc.ABC):
             message: message to print.
         """
         raise NotImplementedError()
-
 
     @abc.abstractmethod
     def output(self, name: str, value: str) -> None:

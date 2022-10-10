@@ -11,7 +11,7 @@ import requests
 from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import request as api_request
 
-REQUEST_TIMEOUT = 10
+REQUEST_TIMEOUT = 80
 
 
 class Error(Exception):
@@ -32,7 +32,7 @@ class APIRunner(abc.ABC):
 
         Args:
             proxy: The proxy through which a request is made. Defaults to None.
-            verify: Whether or not to verify the TLS certificate. Defaults to True.
+            verify: Whether to verify the TLS certificate. Defaults to True.
         """
         self._proxy = proxy
         self._verify = verify
