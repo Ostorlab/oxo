@@ -5,9 +5,9 @@
     authenticated_runner = AuthenticatedAPIRunner(username, password, token_duration)
     authenticated_runner.authenticate()
 """
-
+import datetime
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 import click
 import requests
@@ -34,22 +34,22 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     """
 
     def __init__(self,
-                 username: str = None,
-                 password: str = None,
-                 token_duration: str = None,
-                 proxy: str = None,
+                 username: Optional[str] = None,
+                 password: Optional[str] = None,
+                 token_duration: Optional[datetime.datetime] = None,
+                 proxy: Optional[str] = None,
                  verify: bool = True,
-                 api_key: str = None
+                 api_key: Optional[str] = None
                  ):
         """Constructs all the necessary attributes for the object.
 
         Args:
-            username: the username (email) used to login to use the token based authentication.
-            password: the password used to login to use the token based authentication.
+            username: the username (email) used to log in to use the token based authentication.
+            password: the password used to log in to use the token based authentication.
             token_duration: The duration for which the token is valid
             (Can be in minutes, hours, days, or a combination of any two or all three).
             proxy: The proxy through which a request is made. Defaults to None.
-            verify: Whether or not to verify the TLS certificate. Defaults to True.
+            verify: Whether to verify the TLS certificate. Defaults to True.
             api_key: Use API KEY based authentication. Used if token is not defined.
         """
         super().__init__(proxy, verify)
@@ -111,7 +111,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     def unauthenticate(self) -> None:
         self._api_key = None
 
-    def execute(self, request: api_request.APIRequest) -> Dict:
+    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.
 
         Args:
@@ -135,15 +135,17 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         if response.status_code != 200:
             logger.debug('Response status code is %s: %s', response.status_code, response.content)
             raise runner.ResponseError(
-                f'Response status code is {response.status_code}: {response.content}')
-        data = response.json()
-        if data.get('errors') is not None:
-            error = data.get('errors')[0]['message']
+                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}')
+        data: Dict[str, Any] = response.json()
+        errors = data.get('errors')
+        if errors is not None and isinstance(errors, list):
+            error = errors[0].get('message')
             raise runner.ResponseError(f'Response errors: {error}')
         else:
             return data
 
-    def _sent_request(self, request: api_request.APIRequest, headers=None) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest,
+                      headers: Optional[Dict[str, str]] = None) -> requests.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {

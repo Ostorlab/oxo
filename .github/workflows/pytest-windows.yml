@@ -37,6 +37,6 @@ jobs:
         pip install .[testing]
         pip install .[agent]
         python -m pip install -e .
-    - name: Runnning tests with pytest.
+    - name: Running tests with pytest.
       run: |
         pytest -m "not docker"

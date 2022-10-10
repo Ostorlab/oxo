@@ -4,7 +4,7 @@ to access the different features.
 This module also has classes for authentication errors, API response errors, etc"""
 
 import abc
-from typing import Dict
+from typing import Dict, Optional, Any
 
 import requests
 
@@ -26,7 +26,7 @@ class APIRunner(abc.ABC):
     """Handles API calls and behind the scenes operations."""
 
     def __init__(self,
-                 proxy: str = None,
+                 proxy: Optional[str] = None,
                  verify: bool = True):
         """Constructs the necessary attributes for the object.
 
@@ -44,7 +44,7 @@ class APIRunner(abc.ABC):
         raise NotImplementedError('Missing implementation')
 
     @abc.abstractmethod
-    def execute(self, request: api_request.APIRequest) -> Dict:
+    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
         """Executes a request using the GraphQL API.
 
         Args:
@@ -58,7 +58,8 @@ class APIRunner(abc.ABC):
         """
         raise NotImplementedError('Missing implementation')
 
-    def _sent_request(self, request: api_request.APIRequest, headers=None) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest,
+                      headers: Optional[Dict[str, str]] = None) -> requests.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {

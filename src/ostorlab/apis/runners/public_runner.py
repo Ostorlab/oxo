@@ -5,7 +5,7 @@
     public_runner.execute()
 """
 
-from typing import Dict
+from typing import Dict, Any, Optional
 
 import requests
 
@@ -23,7 +23,7 @@ class PublicAPIRunner(runner.APIRunner):
         """API endpoint."""
         return PUBLIC_GRAPHQL_ENDPOINT
 
-    def execute(self, request: api_request.APIRequest) -> Dict:
+    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
         """Executes a request using the Public GraphQL API.
 
         Args:
@@ -38,15 +38,17 @@ class PublicAPIRunner(runner.APIRunner):
         response = self._sent_request(request)
         if response.status_code != 200:
             raise runner.ResponseError(
-                f'Response status code is {response.status_code}: {response.content}')
-        data = response.json()
-        if data.get('errors') is not None:
-            error = data.get('errors')[0]['message']
+                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}')
+        data: Dict[str, Any] = response.json()
+        errors = data.get('errors')
+        if errors is not None and isinstance(errors, list):
+            error = errors[0].get('message')
             raise runner.ResponseError(f'Response errors: {error}')
         else:
             return data
 
-    def _sent_request(self, request: api_request.APIRequest) -> requests.Response:
+    def _sent_request(self, request: api_request.APIRequest,
+                      headers: Optional[Dict[str, str]] = None) -> requests.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {
