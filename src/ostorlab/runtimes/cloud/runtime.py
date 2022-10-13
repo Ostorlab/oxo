@@ -308,7 +308,7 @@ class CloudRuntime(runtime.Runtime):
         for agent in agent_group_definition.agents:
             response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent.key))
             if response.get('errors') is not None:
-                console.errors('The agent {agent.key} does not exists')
+                console.error('The agent {agent.key} does not exists')
                 return False
         return True
 
