@@ -22,7 +22,7 @@ def link(ctx: click.core.Context, url: List[str], method: List[str]) -> None:
     """Run scan for links."""
     runtime = ctx.obj['runtime']
     if len(url) != len(method):
-        console.errors('Make sure every URL has its corresponding method.')
+        console.error('Make sure every URL has its corresponding method.')
         raise click.exceptions.Exit(2)
     assets = []
     for (u, m) in zip(url, method):
