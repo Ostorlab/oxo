@@ -1,9 +1,11 @@
 """Agent asset."""
+import dataclasses
 from typing import Optional
 
 from ostorlab.assets import asset
 
 
+@dataclasses.dataclass
 @asset.selector('v3.asset.agent')
 class Agent(asset.Asset):
     """Agent asset."""

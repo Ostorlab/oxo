@@ -1,10 +1,12 @@
 """IP address asset."""
+import dataclasses
 import ipaddress
 from typing import Optional
 
 from ostorlab.assets import asset
 
 
+@dataclasses.dataclass
 @asset.selector('v3.asset.ip')
 class IP(asset.Asset):
     """IP Address target asset."""
