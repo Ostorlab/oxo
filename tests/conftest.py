@@ -277,7 +277,7 @@ def asset_location_android_aab(metadata_file_path, metadata_code_location, metad
 def asset_location_android_apk(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
     return agent_report_vulnerability_mixin.AssetLocation(
         metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=android_apk_asset.AndroidApk(content=b"apk"))
+        asset=android_apk_asset.AndroidApk(content=b'apk'))
 
 
 @pytest.fixture()
