@@ -6,11 +6,11 @@ from ostorlab.assets import asset
 
 
 def testAssetToProto_whenSelectorIsSetAndCorrect_generatesProto():
-
     @dataclasses.dataclass
     @asset.selector('v3.asset.file.android.apk')
     class SimpleAndroidApk(asset.Asset):
-        content: bytes
+        def __init__(self, content):
+            self.content: bytes = content
 
     raw = SimpleAndroidApk(b'test').to_proto()
 
