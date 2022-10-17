@@ -238,29 +238,29 @@ def clean_redis_data(request) -> None:
         redis_client.delete(key)
 
 
-@pytest.fixture()
-def metadata_file_path():
+@pytest.fixture(name='metadata_file_path')
+def fixture_metadata_file_path():
     return agent_report_vulnerability_mixin.AssetLocationMetaData(
         type=agent_report_vulnerability_mixin.MetaDataType.FILE_PATH,
         value='/home/etc')
 
 
-@pytest.fixture()
-def metadata_code_location():
+@pytest.fixture(name='metadata_code_location')
+def fixture_metadata_code_location():
     return agent_report_vulnerability_mixin.AssetLocationMetaData(
         type=agent_report_vulnerability_mixin.MetaDataType.CODE_LOCATION,
         value='config.xml:15')
 
 
-@pytest.fixture()
-def metadata_url():
+@pytest.fixture(name='metadata_url')
+def fixture_metadata_url():
     return agent_report_vulnerability_mixin.AssetLocationMetaData(
         type=agent_report_vulnerability_mixin.MetaDataType.URL,
         value='https://example.com/product=15')
 
 
-@pytest.fixture()
-def metadata_port():
+@pytest.fixture(name='metadata_port')
+def fixture_metadata_port():
     return agent_report_vulnerability_mixin.AssetLocationMetaData(
         type=agent_report_vulnerability_mixin.MetaDataType.PORT,
         value='23')
