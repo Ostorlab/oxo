@@ -1,6 +1,5 @@
 """Abstract Asset class to define the scan target and its properties."""
 import abc
-import dataclasses
 
 from ostorlab import exceptions
 from ostorlab.agent.message import serializer
@@ -10,7 +9,6 @@ class MissingTargetSelector(exceptions.OstorlabError):
     """Missing asset selector definition."""
 
 
-@dataclasses.dataclass
 class Asset(abc.ABC):
     """Abstract Asset class to define the scan target and its properties."""
 
