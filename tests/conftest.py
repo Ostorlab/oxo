@@ -319,7 +319,7 @@ def vulnerability_location_ipv4(metadata_file_path, metadata_code_location, meta
 def vulnerability_location_ipv6(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=ipv6_asset.IPv6(host='8.8.8.8'))
+        asset=ipv6_asset.IPv6(host='2001:4860:4860::8888'))
 
 
 @pytest.fixture()
