@@ -14,8 +14,9 @@ class File(asset.Asset):
         self.content = content
         self.path = path
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'File({self.path})'
+
     @property
     def proto_field(self) -> str:
         return 'file'

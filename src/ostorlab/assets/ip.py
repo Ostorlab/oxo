@@ -16,5 +16,5 @@ class IP(asset.Asset):
         self.version = version or ipaddress.ip_address(self.host).version
         self.mask = mask
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.host}/{self.mask}'

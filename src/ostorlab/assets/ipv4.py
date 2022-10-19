@@ -15,7 +15,7 @@ class IPv4(asset.Asset):
         self.version = version
         self.mask = mask
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.host}/{self.mask}'
 
     @property

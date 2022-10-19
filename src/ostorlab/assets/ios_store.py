@@ -12,7 +12,7 @@ class IOSStore(asset.Asset):
     def __init__(self, bundle_id: str):
         self.bundle_id = bundle_id
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'iOS Store ({self.bundle_id})'
 
     @property

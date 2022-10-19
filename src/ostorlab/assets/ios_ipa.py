@@ -14,7 +14,7 @@ class IOSIpa(asset.Asset):
         self.content = content
         self.path = path
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'iOS({self.path})'
 
     @property

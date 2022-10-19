@@ -19,7 +19,7 @@ class Agent(asset.Asset):
         self.docker_location = docker_location
         self.yaml_file_location = yaml_file_location
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.version is not None:
             return f'Agent {self.key}:{self.version}'
         else:
