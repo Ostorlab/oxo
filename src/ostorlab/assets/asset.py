@@ -1,6 +1,6 @@
 """Abstract Asset class to define the scan target and its properties."""
 import abc
-from typing import Callable, Union, Any, Type
+from typing import Callable, Any, Type
 
 from ostorlab import exceptions
 from ostorlab.agent.message import serializer
