@@ -13,4 +13,4 @@ class IOSStore(asset.Asset):
         self.bundle_id = bundle_id
 
     def __str__(self):
-        return f'IOS store bundle_id ({self.bundle_id})'
+        return f'iOS Store ({self.bundle_id})'
