@@ -16,3 +16,8 @@ class AndroidApk(asset.Asset):
 
     def __str__(self):
         return f'Android APK ({self.path})'
+
+
+    @property
+    def proto_field(self) -> str:
+        return 'android_apk'

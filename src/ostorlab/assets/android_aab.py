@@ -16,3 +16,7 @@ class AndroidAab(asset.Asset):
 
     def __str__(self):
         return f'Android AAB({self.path})'
+
+    @property
+    def proto_field(self) -> str:
+        return 'android_aab'

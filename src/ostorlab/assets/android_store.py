@@ -14,3 +14,7 @@ class AndroidStore(asset.Asset):
 
     def __str__(self):
         return f'Android Store: ({self.package_name})'
+
+    @property
+    def proto_field(self) -> str:
+        return 'android_store'

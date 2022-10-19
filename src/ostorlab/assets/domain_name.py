@@ -14,3 +14,7 @@ class DomainName(asset.Asset):
 
     def __str__(self):
         return self.name
+
+    @property
+    def proto_field(self) -> str:
+        return 'domain_name'

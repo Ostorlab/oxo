@@ -16,3 +16,6 @@ class File(asset.Asset):
 
     def __str__(self):
         return f'File({self.path})'
+    @property
+    def proto_field(self) -> str:
+        return 'file'

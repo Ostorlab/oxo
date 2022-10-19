@@ -16,3 +16,7 @@ class IOSIpa(asset.Asset):
 
     def __str__(self):
         return f'iOS({self.path})'
+
+    @property
+    def proto_field(self) -> str:
+        return 'ios_ipa'

@@ -19,6 +19,10 @@ class Asset(abc.ABC):
             raise MissingTargetSelector()
         return serializer.serialize(self.selector, self.__dict__).SerializeToString()
 
+    @property
+    def proto_field(self) -> str:
+        return 'asset'
+
 
 def selector(target: str):
     """Decorator to define an asset selector for serialization.

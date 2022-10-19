@@ -15,3 +15,7 @@ class Link(asset.Asset):
 
     def __str__(self):
         return f'Link {self.url} with method {self.method}'
+
+    @property
+    def proto_field(self) -> str:
+        return 'link'

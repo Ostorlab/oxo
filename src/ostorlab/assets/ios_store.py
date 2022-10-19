@@ -14,3 +14,7 @@ class IOSStore(asset.Asset):
 
     def __str__(self):
         return f'iOS Store ({self.bundle_id})'
+
+    @property
+    def proto_field(self) -> str:
+        return 'ios_store'

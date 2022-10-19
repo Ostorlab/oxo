@@ -17,3 +17,7 @@ class IPv4(asset.Asset):
 
     def __str__(self):
         return f'{self.host}/{self.mask}'
+
+    @property
+    def proto_field(self) -> str:
+        return 'ipv4'

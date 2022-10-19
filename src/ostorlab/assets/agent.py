@@ -24,3 +24,7 @@ class Agent(asset.Asset):
             return f'Agent {self.key}:{self.version}'
         else:
             return f'Agent {self.key}'
+
+    @property
+    def proto_field(self) -> str:
+        return 'agent'
