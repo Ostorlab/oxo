@@ -1,9 +1,11 @@
 """Agent asset."""
+import dataclasses
 from typing import Optional
 
 from ostorlab.assets import asset
 
 
+@dataclasses.dataclass
 @asset.selector('v3.asset.agent')
 class Agent(asset.Asset):
     """Agent asset."""
@@ -17,8 +19,12 @@ class Agent(asset.Asset):
         self.docker_location = docker_location
         self.yaml_file_location = yaml_file_location
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.version is not None:
             return f'Agent {self.key}:{self.version}'
         else:
             return f'Agent {self.key}'
+
+    @property
+    def proto_field(self) -> str:
+        return 'agent'
