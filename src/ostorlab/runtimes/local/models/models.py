@@ -120,7 +120,7 @@ class Vulnerability(Base):
             package_name = location['android_store'].get('package_name')
             location_markdwon_value = f'Android package: {package_name}  \n'
         elif location.get('ios_store') is not None:
-            bundle_id = location['ios_store'].get('package_name')
+            bundle_id = location['ios_store'].get('bundle_id')
             location_markdwon_value = f'iOS bundle ID: {bundle_id}  \n'
         else:
             raise ValueError('Unknown asset : ', location)
