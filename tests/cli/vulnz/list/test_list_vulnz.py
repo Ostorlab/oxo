@@ -18,12 +18,17 @@ def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLo
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                           recommendation='Sanitize data', technical_detail='a=$input',
                                           risk_rating='HIGH',
-                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                          cvss_v3_vector='5:6:7', dna='121312',
+                                          location={
+                                            'domain_name': {'name': 'dummy.co'},
+                                            'metadata':[{'type': 'URL', 'value': 'https://dummy.co/dummy'}]},
+                                          scan_id=create_scan_db.id)
     result = runner.invoke(rootcli.rootcli, ['vulnz', 'list', '-s', str(vuln_db.scan_id)])
     assert vuln_db.scan_id is not None
     assert result.exception is None
     assert 'MyVuln' in result.output
     assert 'High' in result.output
+    assert 'URL: https://dummy.co/dummy' in result.output
 
 
 def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(requests_mock):
