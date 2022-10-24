@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.device;
+
+message monitor_filesystem {
+    optional int32 scan_id = 1;
+    optional string filename = 2;
+    optional int32 pid = 3;
+    optional int32 uid = 4;
+    optional int32 gid = 5;
+    optional int32 mode = 6;
+    optional int32 ppid = 7;
+    optional string proc = 8;
+    optional string type = 9;
+    optional string user_right = 10;
+    optional string group_right = 11;
+    optional string other_right = 12;
+}

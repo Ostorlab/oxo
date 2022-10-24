@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.scan;
+
+message web{
+    message url {
+        optional string domain = 1;
+    }
+
+    optional int32 scan_id = 1;
+    repeated url urls = 2;
+}

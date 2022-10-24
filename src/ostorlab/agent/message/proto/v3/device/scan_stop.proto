@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.device;
+
+message scan_stop {
+    optional int32 scan_id = 1;
+}

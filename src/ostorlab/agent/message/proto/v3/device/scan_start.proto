@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.device;
+
+message device {
+    optional string device_id = 1;
+}
+
+message scan_start {
+    optional int32 scan_id = 1;
+    optional string platform = 2;
+    optional string package_name = 3;
+    optional bytes file = 4;
+    repeated device devices = 5;
+    optional string country = 6;
+}
