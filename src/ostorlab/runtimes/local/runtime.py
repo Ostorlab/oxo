@@ -534,11 +534,13 @@ class LocalRuntime(runtime.Runtime):
                     'cvss_v3_vector': vulnerability.cvss_v3_vector,
                     'title': vulnerability.title,
                     'short_description': markdown.Markdown(vulnerability.short_description),
+                    'location': markdown.Markdown(vulnerability.location),
                 })
 
             columns = {
                 'Id': 'id',
                 'Title': 'title',
+                'Vulnerable target': 'location',
                 'Risk rating': 'risk_rating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
@@ -559,11 +561,13 @@ class LocalRuntime(runtime.Runtime):
              'cvss_v3_vector': vulnerability.cvss_v3_vector,
              'title': vulnerability.title,
              'short_description': markdown.Markdown(vulnerability.short_description),
+             'location': markdown.Markdown(vulnerability.location),
              }
         ]
         columns = {
             'Id': 'id',
             'Title': 'title',
+            'Vulnerable target': 'location',
             'Risk rating': 'risk_rating',
             'CVSS V3 Vector': 'cvss_v3_vector',
             'Short Description': 'short_description',
@@ -611,6 +615,7 @@ class LocalRuntime(runtime.Runtime):
                 'description': vulnerability.description,
                 'recommendation': vulnerability.recommendation,
                 'technical_detail': vulnerability.technical_detail,
+                'location': vulnerability.location
             }
             vulnz_list.append(vuln)
         dumper.dump(vulnz_list)
