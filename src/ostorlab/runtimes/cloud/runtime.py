@@ -5,7 +5,7 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
-from typing import List, Optional, Dict, Union
+from typing import Any, List, Optional, Dict, Union
 
 import click
 import markdownify
@@ -158,6 +158,39 @@ class CloudRuntime(runtime.Runtime):
         """
         pass
 
+
+    def _prepare_vuln_location_markdown(self, location: Dict[str, Any]) -> str:
+        """Returns a markdown display of the exact target where the vulnerability was found."""
+        location = location or {} 
+        asset_data = location.get('asset')
+        if location is None or asset_data is None:
+            return ''
+        location_markdwon_value = ''
+        if asset_data.get('domain') is not None:
+            domain_name = asset_data.get('domain').get('name')
+            location_markdwon_value = f'Domain: {domain_name}  \n'
+        elif asset_data.get('ipv4') is not None:
+            host = asset_data.get('ipv4').get('host')
+            location_markdwon_value = f'IPv4: {host}  \n'
+        elif asset_data.get('ipv6') is not None:
+            host = asset_data.get('ipv6').get('host')
+            location_markdwon_value = f'IPv6: {host}  \n'
+        elif asset_data.get('androidApp') is not None:
+            package_name = asset_data.get('androidApp').get('packageName')
+            location_markdwon_value = f'Android package: {package_name}  \n'
+        elif asset_data.get('iosApp') is not None:
+            bundle_id = asset_data.get('iosApp').get('bundleId')
+            location_markdwon_value = f'iOS bundle ID: {bundle_id}  \n'
+        else:
+            raise ValueError('Unknown asset : ', asset_data)
+
+        for metadata in location.get('metadata', []):
+            metad_type = metadata.get('metadataType')
+            metad_value = metadata.get('metadataValue')
+            location_markdwon_value += f'{metad_type}: {metad_value}  \n'
+        return location_markdwon_value
+
+
     def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
         """List vulnz from the cloud using and render them in a table.
 
@@ -173,16 +206,19 @@ class CloudRuntime(runtime.Runtime):
             vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
             vulnz_list_table = []
             for vulnerability in vulnerabilities:
+                vulnerability_location_markdown = self._prepare_vuln_location_markdown(vulnerability.get('vulnerabilityLocation'))
                 vulnz_list_table.append({
                     'id': str(vulnerability['id']),
                     'risk_rating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
                     'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
                     'title': vulnerability['detail']['title'],
                     'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
+                    'location': markdown.Markdown(vulnerability_location_markdown),
                 })
             columns = {
                 'Id': 'id',
                 'Title': 'title',
+                'Vulnerable target': 'location',
                 'Risk Rating': 'risk_rating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
@@ -199,22 +235,25 @@ class CloudRuntime(runtime.Runtime):
         except runner.Error:
             console.error(f'scan with id {scan_id} does not exist.')
 
+
     def _print_vulnerability(self, vulnerability):
         """Print vulnerability details"""
         if vulnerability is None:
             return
-
+        vulnerability_location_markdown = self._prepare_vuln_location_markdown(vulnerability.get('vulnerabilityLocation'))
         vulnz_list_data = [
             {'id': str(vulnerability['id']),
              'risk_rating': styles.style_risk(vulnerability['customRiskRating'].upper()),
              'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
              'title': vulnerability['detail']['title'],
              'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
+             'location': vulnerability_location_markdown
              }
         ]
         columns = {
             'Id': 'id',
             'Title': 'title',
+            'Vulnerable target': 'location',
             'Risk Rating': 'risk_rating',
             'CVSSv3 Vector': 'cvss_v3_vector',
             'Short Description': 'short_description',
@@ -287,6 +326,7 @@ class CloudRuntime(runtime.Runtime):
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 vulnz_list_table = []
                 for vulnerability in vulnerabilities:
+                    vulnerability_location_markdown = self._prepare_vuln_location_markdown(vulnerability.get('vulnerabilityLocation'))
                     vuln = {
                         'id': str(vulnerability['id']),
                         'risk_rating': vulnerability['detail']['riskRating'],
@@ -296,6 +336,7 @@ class CloudRuntime(runtime.Runtime):
                         'description': vulnerability['detail']['description'],
                         'recommendation': vulnerability['detail']['recommendation'],
                         'technical_detail': vulnerability['technicalDetail'],
+                        'location': vulnerability_location_markdown
                     }
                     vulnz_list_table.append(vuln)
                 dumper.dump(vulnz_list_table)
