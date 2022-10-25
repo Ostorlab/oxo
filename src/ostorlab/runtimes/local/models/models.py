@@ -1,10 +1,10 @@
-"""models contain the database engine logic and all the db models and the related operations"""
+"""models contain the database engine logic and all the db models and the related operations."""
 
 import datetime
 import enum
 import logging
 import pathlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -120,8 +120,24 @@ class Vulnerability(Base):
     short_description = sqlalchemy.Column(sqlalchemy.Text)
     description = sqlalchemy.Column(sqlalchemy.Text)
     recommendation = sqlalchemy.Column(sqlalchemy.Text)
+    references = sqlalchemy.Column(sqlalchemy.Text)
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('scan.id'))
     location = sqlalchemy.Column(sqlalchemy.String(1024), nullable=True)
+
+    @staticmethod
+    def _prepare_references_markdown(references: List[Dict[str, str]]) -> str:
+        """Returns a markdown display of the references of a vulnerability."""
+        if len(references) is None:
+            return ''
+        references_markdwon_value = ''
+
+        for reference in references:
+            title = reference.get('title', '')
+            url = reference.get('url', '')
+            reference_markdwon = f'{title}: {url}  \n' 
+            references_markdwon_value += reference_markdwon
+
+        return references_markdwon_value
 
     @staticmethod
     def _prepare_vuln_location_markdown(location: Dict[str, Any]) -> str:
@@ -157,7 +173,8 @@ class Vulnerability(Base):
     @staticmethod
     def create(scan_id: int, title: str, short_description: str, description: str,
                recommendation: str, technical_detail: str, risk_rating: str,
-               cvss_v3_vector: str, dna: str, location: Optional[Dict[str, Any]] = None):
+               cvss_v3_vector: str, dna: str, references: Optional[List[Dict[str, str]]],
+               location: Optional[Dict[str, Any]] = None):
         """Persist the vulnerability in the database.
 
         Args:
@@ -171,10 +188,12 @@ class Vulnerability(Base):
             description: A generic description of the vulnerability.
             short_description: A short description of the vulnerability.
             recommendation: How to address or avoid the vulnerability
+            references: List of references for extra information about the vulnerability.
             location: In which exact target the vulnerability was found.
         Returns:
             Vulnerability object.
         """
+        references = Vulnerability._prepare_references_markdown(references)
         vuln_location = Vulnerability._prepare_vuln_location_markdown(location)
         vuln = Vulnerability(
             scan_id=scan_id,
@@ -182,6 +201,7 @@ class Vulnerability(Base):
             short_description=short_description,
             description=description,
             recommendation=recommendation,
+            references=references,
             technical_detail=technical_detail,
             risk_rating=risk_rating,
             cvss_v3_vector=cvss_v3_vector,
