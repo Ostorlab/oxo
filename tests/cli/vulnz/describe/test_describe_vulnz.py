@@ -78,6 +78,19 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                                         'url': 'https://hackerone.com/reports/440749'
                                     }
                                 ]
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {
+                                    'iosApp': {
+                                        'bundleId': 'a.b.c'
+                                    }
+                                },
+                                "metadata": [
+                                    {
+                                        "metadataType": "FILE_PATH",
+                                        "metadataValue": "line:24,5"
+                                    }
+                                ]
                             }
                         }
                     ]
@@ -93,6 +106,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
     assert 'Applications can expose their functionality to other apps' in result.output
     assert 'Vulnerabilities listed successfully' in result.output
+    assert 'iOS bundle ID: a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(requests_mock):
