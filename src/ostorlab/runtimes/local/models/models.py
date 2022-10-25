@@ -3,10 +3,17 @@
 import datetime
 import enum
 import logging
+import pathlib
+from typing import Any, Dict, Optional
 
 import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy.ext import declarative
+from alembic import config
+from alembic import script
+from alembic.runtime import migration
+from alembic import command
+from alembic.util import exc as alembic_exceptions
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
@@ -36,6 +43,22 @@ class Database:
         """Constructs the database engine."""
         self._db_engine = sqlalchemy.create_engine(ENGINE_URL)
         self._db_session = None
+        self._alembic_ini_path = pathlib.Path(__file__).parent.absolute() / 'alembic.ini'
+        self._alembic_cfg = config.Config(str(self._alembic_ini_path))
+        self._migrate_local_db()
+
+
+    def _migrate_local_db(self) -> None:
+        """Ensure the local database schema is up to date & run the migration in case otherwise."""
+        try:
+            self._alembic_script = script.ScriptDirectory.from_config(self._alembic_cfg)
+            with self._db_engine.begin() as conn:
+                context = migration.MigrationContext.configure(conn)
+                if context.get_current_revision() != self._alembic_script.get_current_head():
+                    command.upgrade(self._alembic_cfg, 'head')
+        except (alembic_exceptions.CommandError , Exception) as e:
+            console.error(f'Error while migrating the local database: {str(e)}')
+
 
     @property
     def session(self):
@@ -98,11 +121,43 @@ class Vulnerability(Base):
     description = sqlalchemy.Column(sqlalchemy.Text)
     recommendation = sqlalchemy.Column(sqlalchemy.Text)
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('scan.id'))
+    location = sqlalchemy.Column(sqlalchemy.String(1024), nullable=True)
+
+    @staticmethod
+    def _prepare_vuln_location_markdown(location: Dict[str, Any]) -> str:
+        """Returns a markdown display of the exact target where the vulnerability was found."""
+        if location is None:
+            return ''
+        location_markdwon_value = ''
+        if location.get('domain_name') is not None:
+            domain_name = location['domain_name'].get('name')
+            location_markdwon_value = f'Domain: {domain_name}  \n'
+        elif location.get('ipv4') is not None:
+            host = location['ipv4'].get('host')
+            location_markdwon_value = f'IPv4: {host}  \n'
+        elif location.get('ipv6') is not None:
+            host = location['ipv6'].get('host')
+            location_markdwon_value = f'IPv6: {host}  \n'
+        elif location.get('android_store') is not None:
+            package_name = location['android_store'].get('package_name')
+            location_markdwon_value = f'Android package: {package_name}  \n'
+        elif location.get('ios_store') is not None:
+            bundle_id = location['ios_store'].get('bundle_id')
+            location_markdwon_value = f'iOS bundle ID: {bundle_id}  \n'
+        else:
+            raise ValueError('Unknown asset : ', location)
+
+        for metad in location.get('metadata', []):
+            metad_type = metad.get('type')
+            metad_value = metad.get('value')
+            location_markdwon_value += f'{metad_type}: {metad_value}  \n'
+        return location_markdwon_value
+
 
     @staticmethod
     def create(scan_id: int, title: str, short_description: str, description: str,
                recommendation: str, technical_detail: str, risk_rating: str,
-               cvss_v3_vector: str, dna: str):
+               cvss_v3_vector: str, dna: str, location: Optional[Dict[str, Any]] = None):
         """Persist the vulnerability in the database.
 
         Args:
@@ -116,9 +171,11 @@ class Vulnerability(Base):
             description: A generic description of the vulnerability.
             short_description: A short description of the vulnerability.
             recommendation: How to address or avoid the vulnerability
+            location: In which exact target the vulnerability was found.
         Returns:
             Vulnerability object.
         """
+        vuln_location = Vulnerability._prepare_vuln_location_markdown(location)
         vuln = Vulnerability(
             scan_id=scan_id,
             title=title,
@@ -128,7 +185,8 @@ class Vulnerability(Base):
             technical_detail=technical_detail,
             risk_rating=risk_rating,
             cvss_v3_vector=cvss_v3_vector,
-            dna=dna)
+            dna=dna,
+            location=vuln_location)
         database = Database()
         database.session.add(vuln)
         database.session.commit()
