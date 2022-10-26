@@ -1,0 +1,42 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.use.device;
+
+
+message LoginPassword {
+  optional string username = 1;
+  optional string password = 2;
+}
+
+message SSHKey {
+  optional string private_key = 1;
+  optional string public_key = 2;
+}
+
+message Credentials {
+  oneof credentials {
+    LoginPassword login_password = 1;
+    SSHKey ssh_key = 2;
+  }
+}
+
+message DeviceRelay {
+  optional string name = 1;
+  optional string address = 2;
+  optional sint32 port = 3;
+}
+
+message Duration {
+  optional int32 nanos = 1;
+  optional int64 seconds = 2;
+}
+
+message Message {
+  optional string device_id = 1;
+  optional string device_type = 2;
+  optional string device_name = 3;
+  optional Credentials device_credentials = 4;
+  optional DeviceRelay device_relay = 5;
+  optional Credentials device_relay_credentials = 6;
+  optional Duration duration = 7;
+}
