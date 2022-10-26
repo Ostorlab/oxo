@@ -268,28 +268,39 @@ class LocalRuntime(runtime.Runtime):
         if stopped_services or stopped_network or stopped_configs:
             console.success('All scan components stopped.')
 
-        database = models.Database()
-        session = database.session
-        scan = session.query(models.Scan).get(int_scan_id)
-        if scan:
-            scan.progress = 'STOPPED'
-            session.commit()
-            console.success('Scan stopped successfully.')
-        else:
-            console.info(f'Scan {scan_id} was not found.')
+        with models.Database() as session:
+            scan = session.query(models.Scan).get(int_scan_id)
+            if scan:
+                scan.progress = 'STOPPED'
+                session.commit()
+                console.success('Scan stopped successfully.')
+            else:
+                console.info(f'Scan {scan_id} was not found.')
+        # database = models.Database()
+        # session = database.session
+        # scan = session.query(models.Scan).get(int_scan_id)
+        # if scan:
+            # scan.progress = 'STOPPED'
+            # session.commit()
+            # console.success('Scan stopped successfully.')
+        # else:
+            # console.info(f'Scan {scan_id} was not found.')
 
     def _create_scan_db(self, title: str, asset: str):
         """Persist the scan in the database"""
-        models.Database().create_db_tables()
         return models.Scan.create(title=title, asset=asset)
 
     def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
-        database = models.Database()
-        session = database.session
-        scan = session.query(models.Scan).get(self._scan_db.id)
-        scan.progress = progress
-        session.commit()
+        with models.Database() as session:
+            scan = session.query(models.Scan).get(self._scan_db.id)
+            scan.progress = progress
+            session.commit()
+        # database = models.Database()
+        # session = database.session
+        # scan = session.query(models.Scan).get(self._scan_db.id)
+        # scan.progress = progress
+        # session.commit()
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicate."""
@@ -461,16 +472,24 @@ class LocalRuntime(runtime.Runtime):
             console.warning('Local runtime ignores scan list pagination')
 
         scans = {}
-        database = models.Database()
-        database.create_db_tables()
-        session = database.session
-        for s in session.query(models.Scan):
-            scans[s.id] = runtime.Scan(
-                id=s.id,
-                asset=s.asset,
-                created_time=s.created_time,
-                progress=s.progress.value,
-            )
+        with models.Database() as session:
+            for scan in session.query(models.Scan):
+                scans[scan.id] = runtime.Scan(
+                    id=scan.id,
+                    asset=scan.asset,
+                    created_time=scan.created_time,
+                    progress=scan.progress.value,
+                )
+
+        # database = models.Database()
+        # session = database.session
+        # for s in session.query(models.Scan):
+        #     scans[s.id] = runtime.Scan(
+        #         id=s.id,
+        #         asset=s.asset,
+        #         created_time=s.created_time,
+        #         progress=s.progress.value,
+        #     )
 
         universe_ids = set()
         client = docker.from_env()
@@ -521,10 +540,13 @@ class LocalRuntime(runtime.Runtime):
 
     def list_vulnz(self, scan_id: int):
         try:
-            database = models.Database()
-            session = database.session
-            vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
-                order_by(models.Vulnerability.title).all()
+            with models.Database() as session:
+                vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+                    order_by(models.Vulnerability.title).all()
+            # database = models.Database()
+            # session = database.session
+            # vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+            #     order_by(models.Vulnerability.title).all()
             console.success('Vulnerabilities listed successfully.')
             vulnz_list = []
             for vulnerability in vulnerabilities:
@@ -576,29 +598,46 @@ class LocalRuntime(runtime.Runtime):
 
     def describe_vuln(self, scan_id: int, vuln_id: int):
         try:
-            database = models.Database()
-            session = database.session
-            vulnerabilities = []
-            if vuln_id is not None:
-                vulnerability = session.query(models.Vulnerability).get(vuln_id)
-                vulnerabilities.append(vulnerability)
-            elif scan_id is not None:
-                vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
-                    order_by(models.Vulnerability.title).all()
-            for v in vulnerabilities:
-                self._print_vulnerability(v)
-            console.success('Vulnerabilities listed successfully.')
+            with models.Database() as session:
+                vulnerabilities = []
+                if vuln_id is not None:
+                    vulnerability = session.query(models.Vulnerability).get(vuln_id)
+                    vulnerabilities.append(vulnerability)
+                elif scan_id is not None:
+                    vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+                        order_by(models.Vulnerability.title).all()
+                for v in vulnerabilities:
+                    self._print_vulnerability(v)
+                console.success('Vulnerabilities listed successfully.')
+            # database = models.Database()
+            # session = database.session
+            # vulnerabilities = []
+            # if vuln_id is not None:
+                # vulnerability = session.query(models.Vulnerability).get(vuln_id)
+                # vulnerabilities.append(vulnerability)
+            # elif scan_id is not None:
+                # vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+                    # order_by(models.Vulnerability.title).all()
+            # for v in vulnerabilities:
+                # self._print_vulnerability(v)
+            # console.success('Vulnerabilities listed successfully.')
         except sqlalchemy.exc.OperationalError:
             console.error('Vulnerability / scan not Found.')
 
     def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
         """Dump found vulnerabilities of a scan in a specific format."""
-        database = models.Database()
-        session = database.session
-        severity_sort_logic = case(value=models.Vulnerability.risk_rating,
-                                   whens=risk_rating.RATINGS_ORDER).label('severity')
-        vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
-            order_by(severity_sort_logic).all()
+        vulnerabilities = []
+        with models.Database() as session:
+            severity_sort_logic = case(value=models.Vulnerability.risk_rating,
+                                       whens=risk_rating.RATINGS_ORDER).label('severity')
+            vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+                order_by(severity_sort_logic).all()
+        # database = models.Database()
+        # session = database.session
+        # severity_sort_logic = case(value=models.Vulnerability.risk_rating,
+                                    # whens=risk_rating.RATINGS_ORDER).label('severity')
+        # vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
+            # order_by(severity_sort_logic).all()
 
         vulnz_list = []
         for vulnerability in vulnerabilities:

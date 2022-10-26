@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy.ext import declarative
+from sqlalchemy.engine.reflection import Inspector
 from alembic import config
 from alembic import script
 from alembic.runtime import migration
@@ -42,11 +43,15 @@ class Database:
     def __init__(self):
         """Constructs the database engine."""
         self._db_engine = sqlalchemy.create_engine(ENGINE_URL)
+        print('CHemin : ', ENGINE_URL)
         self._db_session = None
         self._alembic_ini_path = pathlib.Path(__file__).parent.absolute() / 'alembic.ini'
         self._alembic_cfg = config.Config(str(self._alembic_ini_path))
-        self._migrate_local_db()
 
+    def _is_db_populated(self, conn):
+        inspector = Inspector.from_engine(conn)
+        tables = inspector.get_table_names()
+        return len(tables) != 0
 
     def _migrate_local_db(self) -> None:
         """Ensure the local database schema is up to date & run the migration in case otherwise."""
@@ -54,18 +59,18 @@ class Database:
             self._alembic_script = script.ScriptDirectory.from_config(self._alembic_cfg)
             with self._db_engine.begin() as conn:
                 context = migration.MigrationContext.configure(conn)
+                # To ensure backward  compatibility with existing databases,
+                # before alembic introduction in the codebase.
+                if  self._is_db_populated(conn) and context.get_current_revision() is None:
+                    command.stamp(self._alembic_cfg, '35cd577ef0e5')
+
                 if context.get_current_revision() != self._alembic_script.get_current_head():
                     command.upgrade(self._alembic_cfg, 'head')
-                else:
-                    command.stamp(self._alembic_cfg, 'head')
-
         except (alembic_exceptions.CommandError , Exception) as e:
             console.error(f'Error while migrating the local database: {str(e)}')
 
-
-    @property
-    def session(self):
-        """Session singleton to run queries on the db engine"""
+    def __enter__(self):
+        self._migrate_local_db()
         if self._db_session is None:
             session_maker = orm.sessionmaker(expire_on_commit=False)
             session_maker.configure(bind=self._db_engine)
@@ -73,6 +78,21 @@ class Database:
             return self._db_session
         else:
             return self._db_session
+
+    def __exit__(self, type_, value, traceback):
+        pass
+
+
+    # @property
+    # def session(self):
+    #     """Session singleton to run queries on the db engine"""
+    #     if self._db_session is None:
+    #         session_maker = orm.sessionmaker(expire_on_commit=False)
+    #         session_maker.configure(bind=self._db_engine)
+    #         self._db_session = session_maker()
+    #         return self._db_session
+    #     else:
+    #         return self._db_session
 
     def create_db_tables(self):
         """Create the database tables."""
@@ -104,11 +124,16 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), progress='NOT_STARTED')
-        database = Database()
-        database.session.add(scan)
-        database.session.commit()
-        return scan
+        with Database() as session:
+            scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), progress='NOT_STARTED')
+            session.add(scan)
+            session.commit()
+            return scan
+        # database = Database()
+        # scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), progress='NOT_STARTED')
+        # database.session.add(scan)
+        # database.session.commit()
+        # return scan
 
 
 class Vulnerability(Base):
@@ -190,10 +215,15 @@ class Vulnerability(Base):
             cvss_v3_vector=cvss_v3_vector,
             dna=dna,
             location=vuln_location)
-        database = Database()
-        database.session.add(vuln)
-        database.session.commit()
-        return vuln
+        
+        with Database() as session:
+            session.add(vuln)
+            session.commit()
+            return vuln
+        # database = Database()
+        # database.session.add(vuln)
+        # database.session.commit()
+        # return vuln
 
 
 class ScanStatus(Base):
@@ -216,7 +246,11 @@ class ScanStatus(Base):
             Scan status object.
         """
         scan_status = ScanStatus(key=key, created_time=datetime.datetime.now(), value=value, scan_id=scan_id)
-        database = Database()
-        database.session.add(scan_status)
-        database.session.commit()
-        return scan_status
+        with Database() as session:
+            session.add(scan_status)
+            session.commit()
+            return scan_status
+        # database = Database()
+        # database.session.add(scan_status)
+        # database.session.commit()
+        # return scan_status
