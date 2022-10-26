@@ -391,7 +391,7 @@ class LocalRuntime(runtime.Runtime):
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=12),
                     # return last value and don't raise RetryError exception.
-                    retry_error_callback=lambda lv: lv.result(),
+                    retry_error_callback=lambda lv: lv.outcome,
                     retry=tenacity.retry_if_result(lambda v: v is False))
     def _is_service_healthy(self, service: docker_models_services.Service, replicas=None) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
