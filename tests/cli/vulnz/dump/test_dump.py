@@ -2,6 +2,7 @@
 import csv
 import json
 import pathlib
+from this import d
 
 from click.testing import CliRunner
 
@@ -65,7 +66,11 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
                                                                  'description': 'someDescription',
                                                                  'recommendation': 'someRecommendation',
                                                                  'cvssV3Vector': None,
-                                                                 'riskRating': 'LOW'
+                                                                 'riskRating': 'LOW',
+                                                                 'references': [{
+                                                                    'title': 'dummy title',
+                                                                    'url': 'https://dummy.co/dummy2'
+                                                                 }]
                                                              }},
                                                             {'id': '37199942',
                                                              'technicalDetail': 'someData',
@@ -88,6 +93,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
     output_file = pathlib.Path(tmpdir) / 'output.jsonl'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', '--runtime', 'cloud', 'dump', '-s', '5858', '-o', str(output_file), '-f', 'jsonl'])
+
     assert result.exception is None
     assert 'Vulnerabilities saved to' in result.output
     with open(output_file, 'r', encoding='utf-8') as f:
@@ -96,6 +102,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
             data.append(json.loads(obj))
     assert data[0]['id'] == '37200006'
     assert 'Use of Outdated Vulnerable Component' in data[0]['title']
+    assert 'dummy title: https://dummy.co/dummy2' in data[0]['references']
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(requests_mock, tmpdir):
@@ -123,7 +130,11 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(request
                                 'description': 'someDescription',
                                 'recommendation': 'someRecommendation',
                                 'cvssV3Vector': 'None',
-                                'riskRating': 'LOW'
+                                'riskRating': 'LOW',
+                                'references': [{
+                                    'title': 'title1',
+                                    'url': 'https://url1.co/page2'
+                                }]
                             }
                         },
                         {
@@ -164,8 +175,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(request
     assert result.exception is None
     assert 'Vulnerabilities saved to' in result.output
     assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
-                      'recommendation', 'technical_detail']
+                      'recommendation', 'references', 'technical_detail']
     assert data[0][2] == 'LOW'
+    assert 'title1: https://url1.co/page2' in data[0][-2]
 
 
 def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(requests_mock, tmpdir):
@@ -219,7 +231,8 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                           recommendation='Sanitize data', technical_detail='a=$input',
                                           risk_rating='HIGH',
-                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id,
+                                          references=[{'title': 'dummy title', 'url': 'https://dummy.co/path'}])
 
     output_file = pathlib.Path(tmpdir) / 'output.csv'
 
@@ -236,8 +249,9 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
     assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
-                      'recommendation', 'technical_detail']
+                      'recommendation', 'references', 'technical_detail']
     assert data[0][2] == 'High'
+    assert 'dummy title: https://dummy.co/path' in data[0][-2]
 
 
 def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db_engine_path):
