@@ -34,7 +34,4 @@ message Message {
   optional int32 mode = 6;
   optional int32 ppid = 7;
   optional string proc = 8;
-  optional string user_right = 9;
-  optional string group_right = 10;
-  optional string other_right = 11;
 }
