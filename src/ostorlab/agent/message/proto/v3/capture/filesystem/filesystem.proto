@@ -1,0 +1,37 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.capture.filesystem;
+
+enum Event {
+  ACCESS = 1;
+  OPEN = 2;
+  OPEN_EXEC = 3;
+  ATTRIB = 4;
+  CREATE = 5;
+  DELETE = 6;
+  DELETE_SELF = 7;
+  MOVED_FROM = 8;
+  MOVED_TO = 9;
+  MOVE_SELF = 10;
+  CLOSE_WRITE = 11;
+  CLOSE_NOWRITE = 12;
+  Q_OVERFLOW = 13;
+  ACCESS_PERM = 14;
+  OPEN_PERM = 15;
+  OPEN_EXEC_PERM = 16;
+  CLOSE = 17;
+  MOVE = 18;
+  ONDIR = 19;
+}
+
+
+message Message {
+  optional Event event = 1;
+  optional string filename = 2;
+  optional int32 pid = 3;
+  optional int32 uid = 4;
+  optional int32 gid = 5;
+  optional int32 mode = 6;
+  optional int32 ppid = 7;
+  optional string proc = 8;
+}
