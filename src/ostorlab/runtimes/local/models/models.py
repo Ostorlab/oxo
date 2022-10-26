@@ -55,8 +55,10 @@ class Database:
             with self._db_engine.begin() as conn:
                 context = migration.MigrationContext.configure(conn)
                 if context.get_current_revision() != self._alembic_script.get_current_head():
-                    command.stamp(self._alembic_cfg, 'head')
                     command.upgrade(self._alembic_cfg, 'head')
+                else:
+                    command.stamp(self._alembic_cfg, 'head')
+
         except (alembic_exceptions.CommandError , Exception) as e:
             console.error(f'Error while migrating the local database: {str(e)}')
 
