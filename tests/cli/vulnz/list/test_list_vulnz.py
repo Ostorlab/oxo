@@ -28,7 +28,7 @@ def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLo
     assert result.exception is None
     assert 'MyVuln' in result.output
     assert 'High' in result.output
-    assert 'URL: https://dummy.co/dummy' in result.output
+    assert 'https://dummy' in result.output
 
 
 def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(requests_mock):

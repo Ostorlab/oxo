@@ -38,7 +38,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
     assert result.exception is None
     assert 'The application performs' in result.output
     assert 'TLS certificate validation' in result.output
-    assert 'Android package: a.b.c' in result.output
+    assert 'a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):
