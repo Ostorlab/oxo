@@ -37,7 +37,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
     assert result.exception is None
     assert 'The application performs' in result.output
     assert 'TLS certificate validation' in result.output
-    assert 'Android package: a.b.c' in result.output
+    assert 'a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):
@@ -106,7 +106,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
     assert 'Applications can expose their functionality to other apps' in result.output
     assert 'Vulnerabilities listed successfully' in result.output
     assert 'Typo in permission name allows to write contacts without user' in result.output
-    assert 'iOS bundle ID: a.b.c' in result.output
+    assert 'a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(requests_mock):
