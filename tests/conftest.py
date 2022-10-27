@@ -241,28 +241,28 @@ def clean_redis_data(request) -> None:
 @pytest.fixture(name='metadata_file_path')
 def fixture_metadata_file_path():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
-        type=agent_report_vulnerability_mixin.MetadataType.FILE_PATH,
+        metadata_type=agent_report_vulnerability_mixin.MetadataType.FILE_PATH,
         value='/home/etc')
 
 
 @pytest.fixture(name='metadata_code_location')
 def fixture_metadata_code_location():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
-        type=agent_report_vulnerability_mixin.MetadataType.CODE_LOCATION,
+        metadata_type=agent_report_vulnerability_mixin.MetadataType.CODE_LOCATION,
         value='config.xml:15')
 
 
 @pytest.fixture(name='metadata_url')
 def fixture_metadata_url():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
-        type=agent_report_vulnerability_mixin.MetadataType.URL,
+        metadata_type=agent_report_vulnerability_mixin.MetadataType.URL,
         value='https://example.com/product=15')
 
 
 @pytest.fixture(name='metadata_port')
 def fixture_metadata_port():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
-        type=agent_report_vulnerability_mixin.MetadataType.PORT,
+        metadata_type=agent_report_vulnerability_mixin.MetadataType.PORT,
         value='23')
 
 
