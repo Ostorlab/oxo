@@ -13,19 +13,21 @@ from sqlalchemy.ext import declarative
 from sqlalchemy.engine.reflection import Inspector
 from alembic import config
 from alembic import script
+from alembic import command as alembic_command
 from alembic.runtime import migration
-from alembic import command
 from alembic.util import exc as alembic_exceptions
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import risk_rating as utils_rik_rating
 
-logger = logging.getLogger(__name__)
-console = cli_console.Console()
 
 ENGINE_URL = f'sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite'
 OSTORLAB_BASE_MIGRATION_ID = '35cd577ef0e5'
+
+
+logger = logging.getLogger(__name__)
+console = cli_console.Console()
 
 metadata = sqlalchemy.MetaData()
 Base = declarative.declarative_base(metadata=metadata)
@@ -50,27 +52,37 @@ class Database:
         self._alembic_cfg = config.Config(str(self._alembic_ini_path))
 
     def _is_db_populated(self, conn) -> bool:
-        """Checks if the local database has already the tables."""
+        """Checks if the local database has tables."""
         inspector = Inspector.from_engine(conn)
         tables = inspector.get_table_names()
         return len(tables) != 0
 
     def _migrate_local_db(self) -> None:
-        """Ensure the local database schema is up to date & run the migration in case otherwise."""
+        """Ensure the local database schema is up to date & run the migration otherwise."""
         try:
-            self._alembic_script = script.ScriptDirectory.from_config(self._alembic_cfg)
+            alembic_script = script.ScriptDirectory.from_config(self._alembic_cfg)
             with self._db_engine.begin() as conn:
                 context = migration.MigrationContext.configure(conn)
                 # To ensure backward  compatibility with existing databases,
                 # The next two lines mark the state of the existing database,
                 # before applying the migrations from that point.
                 if  self._is_db_populated(conn) and context.get_current_revision() is None:
-                    command.stamp(self._alembic_cfg, OSTORLAB_BASE_MIGRATION_ID)
+                    alembic_command.stamp(self._alembic_cfg, OSTORLAB_BASE_MIGRATION_ID)
 
-                if context.get_current_revision() != self._alembic_script.get_current_head():
-                    command.upgrade(self._alembic_cfg, 'head')
+                if context.get_current_revision() != alembic_script.get_current_head():
+                    alembic_command.upgrade(self._alembic_cfg, 'head')
         except (alembic_exceptions.CommandError , ValueError) as e:
             console.error(f'Error while migrating the local database: {str(e)}')
+
+    def _prepare_db_session(self) -> orm.Session:
+        """Returns a Session singleton to run queries on the db engine."""
+        if self._db_session is None:
+            session_maker = orm.sessionmaker(expire_on_commit=False)
+            session_maker.configure(bind=self._db_engine)
+            self._db_session = session_maker()
+            return self._db_session
+        else:
+            return self._db_session
 
     def __enter__(self) -> orm.Session:
         """Context manager enter method, resposible for migrating the local database and returning a session object."""
@@ -84,16 +96,6 @@ class Database:
         """Context manager exit method, responsible for closing the local database session"""
         if self._db_session is not None:
             self._db_session.close()
-
-    def _prepare_db_session(self) -> orm.Session:
-        """Returns a Session singleton to run queries on the db engine."""
-        if self._db_session is None:
-            session_maker = orm.sessionmaker(expire_on_commit=False)
-            session_maker.configure(bind=self._db_engine)
-            self._db_session = session_maker()
-            return self._db_session
-        else:
-            return self._db_session
 
     def create_db_tables(self):
         """Create the database tables."""
