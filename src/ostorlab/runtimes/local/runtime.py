@@ -519,7 +519,6 @@ class LocalRuntime(runtime.Runtime):
             with models.Database() as session:
                 vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
                     order_by(models.Vulnerability.title).all()
-            console.success('Vulnerabilities listed successfully.')
             vulnz_list = []
             for vulnerability in vulnerabilities:
                 vulnz_list.append({
