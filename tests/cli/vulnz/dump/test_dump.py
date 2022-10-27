@@ -78,16 +78,16 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
                                                                     'url': 'https://dummy.co/dummy2'
                                                                  }]
                                                              },
-                                                             "vulnerabilityLocation": {
-                                                                "asset": {
+                                                             'vulnerabilityLocation': {
+                                                                'asset': {
                                                                     'androidApp': {
                                                                         'packageName': 'a.b.c'
                                                                     }
                                                                 },
-                                                                "metadata": [
+                                                                'metadata': [
                                                                     {
-                                                                        "metadataType": "CODE_LOCATION",
-                                                                        "metadataValue": "some/file.java:42"
+                                                                        'metadataType': 'CODE_LOCATION',
+                                                                        'metadataValue': 'some/file.java:42'
                                                                     }
                                                                 ]
                                                             }},

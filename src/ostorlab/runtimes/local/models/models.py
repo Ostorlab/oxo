@@ -160,7 +160,7 @@ class Vulnerability(Base):
         for reference in references:
             title = reference.get('title', '')
             url = reference.get('url', '')
-            reference_markdwon = f'{title}: {url}  \n' 
+            reference_markdwon = f'{title}: {url}  \n'
             references_markdwon_value += reference_markdwon
 
         return references_markdwon_value
@@ -199,7 +199,7 @@ class Vulnerability(Base):
     @staticmethod
     def create(scan_id: int, title: str, short_description: str, description: str,
                recommendation: str, technical_detail: str, risk_rating: str,
-               cvss_v3_vector: str, dna: str, references: Optional[List[Dict[str, str]]],
+               cvss_v3_vector: str, dna: str, references: Optional[List[Dict[str, str]]] = None,
                location: Optional[Dict[str, Any]] = None):
         """Persist the vulnerability in the database.
 
