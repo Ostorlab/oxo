@@ -173,9 +173,9 @@ class Vulnerability(Base):
         else:
             raise ValueError('Unknown asset : ', location)
 
-        for metadata in location.get('metadata', []):
-            metad_type = metadata.get('type')
-            metad_value = metadata.get('value')
+        for metadata_dict in location.get('metadata', []):
+            metad_type = metadata_dict.get('type')
+            metad_value = metadata_dict.get('value')
             location_markdwon_value += f'{metad_type}: {metad_value}  \n'
         return location_markdwon_value
 
@@ -217,7 +217,7 @@ class Vulnerability(Base):
         with Database() as session:
             session.add(vuln)
             session.commit()
-        
+
         return vuln
 
 
