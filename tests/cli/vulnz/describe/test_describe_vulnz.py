@@ -24,13 +24,20 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
                                                            'negotiation when the certificate is not signed by '
                                                            'valid authority.',
                                           risk_rating='HIGH',
-                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                          cvss_v3_vector='5:6:7',
+                                          dna='121312',
+                                          location={
+                                            'android_store': {'package_name': 'a.b.c'},
+                                            'metadata':[{'type': 'CODE_LOCATION', 'value': 'dir/file.js:41'}]},
+                                          scan_id=create_scan_db.id)
+
     result = runner.invoke(rootcli.rootcli, ['vulnz', 'describe', '-v', str(vuln_db.id)])
 
     assert vuln_db.scan_id is not None
     assert result.exception is None
     assert 'The application performs' in result.output
     assert 'TLS certificate validation' in result.output
+    assert 'Android package: a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):
@@ -70,6 +77,19 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                                         'url': 'https://hackerone.com/reports/440749'
                                     }
                                 ]
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {
+                                    'iosApp': {
+                                        'bundleId': 'a.b.c'
+                                    }
+                                },
+                                "metadata": [
+                                    {
+                                        "metadataType": "FILE_PATH",
+                                        "metadataValue": "line:24,5"
+                                    }
+                                ]
                             }
                         }
                     ]
@@ -85,6 +105,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
     assert 'Applications can expose their functionality to other apps' in result.output
     assert 'Vulnerabilities listed successfully' in result.output
+    assert 'iOS bundle ID: a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(requests_mock):

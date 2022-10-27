@@ -50,6 +50,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
                       customRiskRating
                       customCvssV3BaseScore
                       falsePositive
+                      vulnerabilityLocation
                       detail {
                         title
                         shortDescription
