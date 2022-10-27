@@ -1,7 +1,6 @@
 """Unittest for local runtime."""
 import docker
 import pytest
-import sys
 import ostorlab
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
@@ -45,24 +44,18 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
 
 
 @pytest.mark.docker
-def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, tmpdir):
+def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_path):
     """Unittest for the scan stop method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
     Removes the scan service matching the provided id.
     """
-
-    if sys.platform == 'win32':
-        path = f'sqlite:///{tmpdir}\\ostorlab_db1.sqlite'.replace('\\', '\\\\')
-    else:
-        path = f'sqlite:////{tmpdir}/ostorlab_db1.sqlite'
-
-    mocker.patch.object(models, 'ENGINE_URL', f'{path}')
-    models.Database().create_db_tables()
+    mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
     create_scan_db = models.Scan.create('test')
     def docker_services():
         """Method for mocking the services list response."""
-        scan = models.Database().session.query(models.Scan).first()
+        with models.Database() as session:
+            scan = session.query(models.Scan).first()
         services = [
             {'ID': '0099i5n1y3gycuekvksyqyxav',
              'CreatedAt': '2021-12-27T13:37:02.795789947Z',
@@ -114,11 +107,8 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(mocker, db_e
     mocker.patch('docker.DockerClient.services.list', side_effect=docker_services)
     mocker.patch('docker.models.networks.NetworkCollection.list', return_value=[])
     mocker.patch('docker.models.configs.ConfigCollection.list', return_value=[])
-
     docker_service_remove = mocker.patch('docker.models.services.Service.remove', return_value=None)
-
     mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
-    models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
     local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
 

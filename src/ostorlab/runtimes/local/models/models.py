@@ -5,24 +5,29 @@ import enum
 import logging
 import pathlib
 from typing import Any, Dict, List, Optional
+from types import TracebackType
 
 import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy.ext import declarative
+from sqlalchemy.engine.reflection import Inspector
 from alembic import config
 from alembic import script
+from alembic import command as alembic_command
 from alembic.runtime import migration
-from alembic import command
 from alembic.util import exc as alembic_exceptions
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import risk_rating as utils_rik_rating
 
-logger = logging.getLogger(__name__)
-console = cli_console.Console()
 
 ENGINE_URL = f'sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite'
+OSTORLAB_BASE_MIGRATION_ID = '35cd577ef0e5'
+
+
+logger = logging.getLogger(__name__)
+console = cli_console.Console()
 
 metadata = sqlalchemy.MetaData()
 Base = declarative.declarative_base(metadata=metadata)
@@ -45,25 +50,32 @@ class Database:
         self._db_session = None
         self._alembic_ini_path = pathlib.Path(__file__).parent.absolute() / 'alembic.ini'
         self._alembic_cfg = config.Config(str(self._alembic_ini_path))
-        self._migrate_local_db()
 
+    def _is_db_populated(self, conn) -> bool:
+        """Checks if the local database has tables."""
+        inspector = Inspector.from_engine(conn)
+        tables = inspector.get_table_names()
+        return len(tables) != 0
 
     def _migrate_local_db(self) -> None:
-        """Ensure the local database schema is up to date & run the migration in case otherwise."""
+        """Ensure the local database schema is up to date & run the migration otherwise."""
         try:
-            self._alembic_script = script.ScriptDirectory.from_config(self._alembic_cfg)
+            alembic_script = script.ScriptDirectory.from_config(self._alembic_cfg)
             with self._db_engine.begin() as conn:
                 context = migration.MigrationContext.configure(conn)
-                if context.get_current_revision() != self._alembic_script.get_current_head():
-                    command.stamp(self._alembic_cfg, 'head')
-                    command.upgrade(self._alembic_cfg, 'head')
-        except (alembic_exceptions.CommandError , Exception) as e:
+                # To ensure backward  compatibility with existing databases,
+                # The next two lines mark the state of the existing database,
+                # before applying the migrations from that point.
+                if  self._is_db_populated(conn) and context.get_current_revision() is None:
+                    alembic_command.stamp(self._alembic_cfg, OSTORLAB_BASE_MIGRATION_ID)
+
+                if context.get_current_revision() != alembic_script.get_current_head():
+                    alembic_command.upgrade(self._alembic_cfg, 'head')
+        except (alembic_exceptions.CommandError , ValueError) as e:
             console.error(f'Error while migrating the local database: {str(e)}')
 
-
-    @property
-    def session(self):
-        """Session singleton to run queries on the db engine"""
+    def _prepare_db_session(self) -> orm.Session:
+        """Returns a Session singleton to run queries on the db engine."""
         if self._db_session is None:
             session_maker = orm.sessionmaker(expire_on_commit=False)
             session_maker.configure(bind=self._db_engine)
@@ -71,6 +83,19 @@ class Database:
             return self._db_session
         else:
             return self._db_session
+
+    def __enter__(self) -> orm.Session:
+        """Context manager enter method, resposible for migrating the local database and returning a session object."""
+        self._migrate_local_db()
+        return self._prepare_db_session()
+
+    def __exit__(self,
+                 exc_type: Optional[type[BaseException]],
+                 exc_val: Optional[BaseException],
+                 exc_traceback: Optional[TracebackType]) -> None:
+        """Context manager exit method, responsible for closing the local database session"""
+        if self._db_session is not None:
+            self._db_session.close()
 
     def create_db_tables(self):
         """Create the database tables."""
@@ -102,11 +127,11 @@ class Scan(Base):
         Returns:
             Scan object.
         """
-        scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), progress='NOT_STARTED')
-        database = Database()
-        database.session.add(scan)
-        database.session.commit()
-        return scan
+        with Database() as session:
+            scan = Scan(title=title, asset=asset, created_time=datetime.datetime.now(), progress='NOT_STARTED')
+            session.add(scan)
+            session.commit()
+            return scan
 
 
 class Vulnerability(Base):
@@ -123,7 +148,7 @@ class Vulnerability(Base):
     recommendation = sqlalchemy.Column(sqlalchemy.Text)
     references = sqlalchemy.Column(sqlalchemy.Text)
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('scan.id'))
-    location = sqlalchemy.Column(sqlalchemy.String(1024), nullable=True)
+    location = sqlalchemy.Column(sqlalchemy.Text)
 
     @staticmethod
     def _prepare_references_markdown(references: List[Dict[str, str]]) -> str:
@@ -164,9 +189,9 @@ class Vulnerability(Base):
         else:
             raise ValueError('Unknown asset : ', location)
 
-        for metad in location.get('metadata', []):
-            metad_type = metad.get('type')
-            metad_value = metad.get('value')
+        for metadata_dict in location.get('metadata', []):
+            metad_type = metadata_dict.get('type')
+            metad_value = metadata_dict.get('value')
             location_markdwon_value += f'{metad_type}: {metad_value}  \n'
         return location_markdwon_value
 
@@ -208,9 +233,11 @@ class Vulnerability(Base):
             cvss_v3_vector=cvss_v3_vector,
             dna=dna,
             location=vuln_location)
-        database = Database()
-        database.session.add(vuln)
-        database.session.commit()
+
+        with Database() as session:
+            session.add(vuln)
+            session.commit()
+
         return vuln
 
 
@@ -234,7 +261,7 @@ class ScanStatus(Base):
             Scan status object.
         """
         scan_status = ScanStatus(key=key, created_time=datetime.datetime.now(), value=value, scan_id=scan_id)
-        database = Database()
-        database.session.add(scan_status)
-        database.session.commit()
-        return scan_status
+        with Database() as session:
+            session.add(scan_status)
+            session.commit()
+            return scan_status
