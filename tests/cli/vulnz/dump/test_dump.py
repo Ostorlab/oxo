@@ -19,7 +19,6 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
 
     runner = CliRunner()
     mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
-    models.Database().create_db_tables()
     create_scan_db = models.Scan.create(title='test', asset='android')
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                           recommendation='Sanitize data', technical_detail='a=$input',
@@ -30,8 +29,10 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
                                 risk_rating='HIGH',
                                 cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
     output_file = pathlib.Path(tmpdir) / 'output.jsonl'
+
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', str(output_file), '-f', 'jsonl'])
+
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
     with open(output_file, 'r', encoding='utf-8') as f:
@@ -214,7 +215,6 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
 
     runner = CliRunner()
     mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
-    models.Database().create_db_tables()
     create_scan_db = models.Scan.create(title='test', asset='Android')
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                           recommendation='Sanitize data', technical_detail='a=$input',
@@ -248,7 +248,6 @@ def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(m
     """
     runner = CliRunner()
     mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
-    models.Database().create_db_tables()
     create_scan_db = models.Scan.create(title='test', asset='Android')
 
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
