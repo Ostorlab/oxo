@@ -161,7 +161,7 @@ class CloudRuntime(runtime.Runtime):
 
     def _prepare_vuln_location_markdown(self, location: Dict[str, Any]) -> str:
         """Returns a markdown display of the exact target where the vulnerability was found."""
-        location = location or {} 
+        location = location or {}
         asset_data = location.get('asset')
         if location is None or asset_data is None:
             return ''
@@ -206,7 +206,8 @@ class CloudRuntime(runtime.Runtime):
             vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
             vulnz_list_table = []
             for vulnerability in vulnerabilities:
-                vulnerability_location_markdown = self._prepare_vuln_location_markdown(vulnerability.get('vulnerabilityLocation'))
+                vulnerability_location_markdown = self._prepare_vuln_location_markdown(
+                    vulnerability.get('vulnerabilityLocation'))
                 vulnz_list_table.append({
                     'id': str(vulnerability['id']),
                     'risk_rating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
@@ -240,7 +241,8 @@ class CloudRuntime(runtime.Runtime):
         """Print vulnerability details"""
         if vulnerability is None:
             return
-        vulnerability_location_markdown = self._prepare_vuln_location_markdown(vulnerability.get('vulnerabilityLocation'))
+        vulnerability_location_markdown = self._prepare_vuln_location_markdown(
+            vulnerability.get('vulnerabilityLocation'))
         vulnz_list_data = [
             {'id': str(vulnerability['id']),
              'risk_rating': styles.style_risk(vulnerability['customRiskRating'].upper()),
@@ -326,7 +328,8 @@ class CloudRuntime(runtime.Runtime):
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 vulnz_list_table = []
                 for vulnerability in vulnerabilities:
-                    vulnerability_location_markdown = self._prepare_vuln_location_markdown(vulnerability.get('vulnerabilityLocation'))
+                    vulnerability_location_markdown = self._prepare_vuln_location_markdown(
+                        vulnerability.get('vulnerabilityLocation'))
                     vuln = {
                         'id': str(vulnerability['id']),
                         'risk_rating': vulnerability['detail']['riskRating'],
