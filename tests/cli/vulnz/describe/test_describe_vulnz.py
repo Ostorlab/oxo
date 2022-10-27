@@ -106,7 +106,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
     assert 'Applications can expose their functionality to other apps' in result.output
     assert 'Vulnerabilities listed successfully' in result.output
-    assert 'iOS bundle ID: a.b.c' in result.output
+    assert 'a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(requests_mock):
