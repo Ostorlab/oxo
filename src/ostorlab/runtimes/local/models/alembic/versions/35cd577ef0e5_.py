@@ -1,7 +1,8 @@
+# pylint: disable=C0103
 """empty message
 
 Revision ID: 35cd577ef0e5
-Revises: 
+Revises:
 Create Date: 2022-10-26 16:00:52.792734
 
 """
@@ -23,7 +24,9 @@ def upgrade() -> None:
     sa.Column('title', sa.String(length=255), nullable=True),
     sa.Column('asset', sa.String(length=255), nullable=True),
     sa.Column('created_time', sa.DateTime(), nullable=True),
-    sa.Column('progress', sa.Enum('NOT_STARTED', 'IN_PROGRESS', 'STOPPED', 'DONE', 'ERROR', name='scanprogress'), nullable=True),
+    sa.Column('progress',
+              sa.Enum('NOT_STARTED', 'IN_PROGRESS', 'STOPPED', 'DONE', 'ERROR', name='scanprogress'),
+              nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('scan_status',
@@ -38,7 +41,9 @@ def upgrade() -> None:
     op.create_table('vulnerability',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('technical_detail', sa.Text(), nullable=True),
-    sa.Column('risk_rating', sa.Enum('HIGH', 'MEDIUM', 'LOW', 'POTENTIALLY', 'HARDENING', 'SECURE', 'IMPORTANT', 'INFO', name='riskrating'), nullable=True),
+    sa.Column('risk_rating',
+        sa.Enum('HIGH', 'MEDIUM', 'LOW', 'POTENTIALLY', 'HARDENING', 'SECURE', 'IMPORTANT', 'INFO', name='riskrating'),
+        nullable=True),
     sa.Column('cvss_v3_vector', sa.String(length=1024), nullable=True),
     sa.Column('dna', sa.String(length=256), nullable=True),
     sa.Column('title', sa.String(length=256), nullable=True),
