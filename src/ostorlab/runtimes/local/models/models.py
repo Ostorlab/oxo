@@ -182,12 +182,12 @@ class Vulnerability(Base):
             location_markdwon_value = f'IPv6: {host}  \n'
         elif location.get('android_store') is not None:
             package_name = location['android_store'].get('package_name')
-            location_markdwon_value = f'Android package: {package_name}  \n'
+            location_markdwon_value = f'Android package name: {package_name}  \n'
         elif location.get('ios_store') is not None:
             bundle_id = location['ios_store'].get('bundle_id')
-            location_markdwon_value = f'iOS bundle ID: {bundle_id}  \n'
+            location_markdwon_value = f'iOS bundle id: {bundle_id}  \n'
         else:
-            raise ValueError('Unknown asset : ', location)
+            raise ValueError(f'Unknown asset : {location}')
 
         for metadata_dict in location.get('metadata', []):
             metad_type = metadata_dict.get('type')
