@@ -99,7 +99,7 @@ class Vulnerability(Base):
     description = sqlalchemy.Column(sqlalchemy.Text)
     recommendation = sqlalchemy.Column(sqlalchemy.Text)
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey('scan.id'))
-    location = sqlalchemy.Column(sqlalchemy.String(1024), nullable=True)
+    location = sqlalchemy.Column(sqlalchemy.Text)
 
     @staticmethod
     def _prepare_vuln_location_markdown(location: Dict[str, Any]) -> str:
@@ -125,9 +125,9 @@ class Vulnerability(Base):
         else:
             raise ValueError('Unknown asset : ', location)
 
-        for metad in location.get('metadata', []):
-            metad_type = metad.get('type')
-            metad_value = metad.get('value')
+        for metadata in location.get('metadata', []):
+            metad_type = metadata.get('type')
+            metad_value = metadata.get('value')
             location_markdwon_value += f'{metad_type}: {metad_value}  \n'
         return location_markdwon_value
 
