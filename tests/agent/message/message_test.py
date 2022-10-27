@@ -36,3 +36,21 @@ def testMessageSerializeDeserializeForBytes_whenSelectorIsValid_generatesProperP
 
     assert isinstance(serialized.raw, bytes)
     assert deserialized.data.get('content') == b'test'
+
+
+def testMessageSerializeDeserialize_Forv3CaptureFilesystem_generatesProperProto():
+    """Test message proper serialization from a dict object to a protobuf based on the selector."""
+    serialized = message.Message.from_data('v3.capture.filesystem', {
+        'event': 'ACCESS',
+        'filename': '/etc/hosts',
+        'pid': 1,
+        'gid': 1,
+        'mode': 600,
+        'ppid': 1,
+        'proc': 'init',
+    })
+    deserialized = message.Message.from_raw('v3.capture.filesystem', serialized.raw)
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get('event') == 'ACCESS'
+    assert deserialized.data.get('filename') == '/etc/hosts'
