@@ -79,16 +79,16 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                                     }
                                 ]
                             },
-                            "vulnerabilityLocation": {
-                                "asset": {
+                            'vulnerabilityLocation': {
+                                'asset': {
                                     'iosApp': {
                                         'bundleId': 'a.b.c'
                                     }
                                 },
-                                "metadata": [
+                                'metadata': [
                                     {
-                                        "metadataType": "FILE_PATH",
-                                        "metadataValue": "line:24,5"
+                                        'metadataType': 'FILE_PATH',
+                                        'metadataValue': 'line:24,5'
                                     }
                                 ]
                             }
