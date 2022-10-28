@@ -25,13 +25,20 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
                                                            'negotiation when the certificate is not signed by '
                                                            'valid authority.',
                                           risk_rating='HIGH',
-                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                          cvss_v3_vector='5:6:7',
+                                          dna='121312',
+                                          location={
+                                            'android_store': {'package_name': 'a.b.c'},
+                                            'metadata':[{'type': 'CODE_LOCATION', 'value': 'dir/file.js:41'}]},
+                                          scan_id=create_scan_db.id)
+
     result = runner.invoke(rootcli.rootcli, ['vulnz', 'describe', '-v', str(vuln_db.id)])
 
     assert vuln_db.scan_id is not None
     assert result.exception is None
     assert 'The application performs' in result.output
     assert 'TLS certificate validation' in result.output
+    assert 'a.b.c' in result.output
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(requests_mock):

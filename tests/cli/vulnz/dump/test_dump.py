@@ -24,11 +24,16 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                           recommendation='Sanitize data', technical_detail='a=$input',
                                           risk_rating='HIGH',
-                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                          cvss_v3_vector='5:6:7', dna='121312',
+                                          location={
+                                            'android_store': {'package_name': 'a.b.c'},
+                                            'metadata':[{'type': 'CODE_LOCATION', 'value': 'dir/file.js:41'}]},
+                                          scan_id=create_scan_db.id)
     models.Vulnerability.create(title='OtherVuln', short_description='Xss', description='Javascript Vuln',
                                 recommendation='Sanitize data', technical_detail='a=$input',
                                 risk_rating='HIGH',
-                                cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                cvss_v3_vector='5:6:7', dna='121312',
+                                scan_id=create_scan_db.id)
     output_file = pathlib.Path(tmpdir) / 'output.jsonl'
     result = runner.invoke(rootcli.rootcli,
                            ['vulnz', 'dump', '-s', str(vuln_db.scan_id), '-o', str(output_file), '-f', 'jsonl'])
@@ -42,6 +47,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
     assert data[0]['risk_rating'] == 'High'
     assert data[0]['cvss_v3_vector'] == '5:6:7'
     assert data[0]['title'] == 'MyVuln'
+    assert 'Android package name: a.b.c' in data[0]['location']
     assert data[1]['id'] == 2
     assert data[1]['risk_rating'] == 'High'
     assert data[1]['title'] == 'OtherVuln'
@@ -163,9 +169,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(request
 
     assert result.exception is None
     assert 'Vulnerabilities saved to' in result.output
-    assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
+    assert header == ['id', 'title', 'location', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
                       'recommendation', 'technical_detail']
-    assert data[0][2] == 'LOW'
+    assert data[0][3] == 'LOW'
 
 
 def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(requests_mock, tmpdir):
@@ -219,7 +225,11 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
     vuln_db = models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                           recommendation='Sanitize data', technical_detail='a=$input',
                                           risk_rating='HIGH',
-                                          cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                          cvss_v3_vector='5:6:7', dna='121312',
+                                          location={
+                                            'android_store': {'package_name': 'a.b.c'},
+                                            'metadata':[{'type': 'CODE_LOCATION', 'value': 'dir/file.js:41'}]},
+                                          scan_id=create_scan_db.id)
 
     output_file = pathlib.Path(tmpdir) / 'output.csv'
 
@@ -235,9 +245,10 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
 
     assert result.exception is None
     assert 'Vulnerabilities saved' in result.output
-    assert header == ['id', 'title', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
+    assert header == ['id', 'title', 'location', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
                       'recommendation', 'technical_detail']
-    assert data[0][2] == 'High'
+    assert data[0][3] == 'High'
+    assert 'Android package name: a.b.c' in data[0][2]
 
 
 def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db_engine_path):

@@ -525,7 +525,6 @@ class LocalRuntime(runtime.Runtime):
             session = database.session
             vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
                 order_by(models.Vulnerability.title).all()
-            console.success('Vulnerabilities listed successfully.')
             vulnz_list = []
             for vulnerability in vulnerabilities:
                 vulnz_list.append({
@@ -534,17 +533,24 @@ class LocalRuntime(runtime.Runtime):
                     'cvss_v3_vector': vulnerability.cvss_v3_vector,
                     'title': vulnerability.title,
                     'short_description': markdown.Markdown(vulnerability.short_description),
+                    'location': markdown.Markdown(vulnerability.location),
                 })
 
             columns = {
                 'Id': 'id',
                 'Title': 'title',
+                'Vulnerable target': 'location',
                 'Risk rating': 'risk_rating',
                 'CVSS V3 Vector': 'cvss_v3_vector',
                 'Short Description': 'short_description',
             }
             title = f'Scan {scan_id}: Found {len(vulnz_list)} vulnerabilities.'
             console.table(columns=columns, data=vulnz_list, title=title)
+            if len(vulnz_list) == 0:
+                console.info('0 vulnerabilities were found.')
+            else:
+                console.success('Vulnerabilities listed successfully.')
+
         except sqlalchemy.exc.OperationalError:
             console.error(f'scan with id {scan_id} does not exist.')
 
@@ -559,11 +565,13 @@ class LocalRuntime(runtime.Runtime):
              'cvss_v3_vector': vulnerability.cvss_v3_vector,
              'title': vulnerability.title,
              'short_description': markdown.Markdown(vulnerability.short_description),
+             'location': markdown.Markdown(vulnerability.location),
              }
         ]
         columns = {
             'Id': 'id',
             'Title': 'title',
+            'Vulnerable target': 'location',
             'Risk rating': 'risk_rating',
             'CVSS V3 Vector': 'cvss_v3_vector',
             'Short Description': 'short_description',
@@ -597,6 +605,7 @@ class LocalRuntime(runtime.Runtime):
         session = database.session
         severity_sort_logic = case(value=models.Vulnerability.risk_rating,
                                    whens=risk_rating.RATINGS_ORDER).label('severity')
+        console.info(f'Fetching vulnerabilities for scan {scan_id}')
         vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id). \
             order_by(severity_sort_logic).all()
 
@@ -611,6 +620,7 @@ class LocalRuntime(runtime.Runtime):
                 'description': vulnerability.description,
                 'recommendation': vulnerability.recommendation,
                 'technical_detail': vulnerability.technical_detail,
+                'location': vulnerability.location
             }
             vulnz_list.append(vuln)
         dumper.dump(vulnz_list)

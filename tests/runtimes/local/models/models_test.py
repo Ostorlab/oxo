@@ -38,11 +38,19 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mock
     init_count = models.Database().session.query(models.Vulnerability).count()
     models.Vulnerability.create(title='MyVuln', short_description='Xss', description='Javascript Vuln',
                                 recommendation='Sanitize data', technical_detail='a=$input', risk_rating='HIGH',
-                                cvss_v3_vector='5:6:7', dna='121312', scan_id=create_scan_db.id)
+                                cvss_v3_vector='5:6:7', dna='121312',
+                                location={
+                                    'ios_store': {'bundle_id': 'some.dummy.bundle'},
+                                    'metadata': [
+                                        {'type': 'CODE_LOCATION', 'value': 'some/file.swift:42'}
+                                    ]
+                                },
+                                scan_id=create_scan_db.id)
 
     assert models.Database().session.query(models.Vulnerability).count() == init_count + 1
     assert models.Database().session.query(models.Vulnerability).all()[0].title == 'MyVuln'
     assert models.Database().session.query(models.Vulnerability).all()[0].scan_id == create_scan_db.id
+    assert 'iOS bundle id: some.dummy.bundle' in models.Database().session.query(models.Vulnerability).all()[0].location
 
 
 def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, tmpdir, db_engine_path):

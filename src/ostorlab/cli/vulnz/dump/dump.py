@@ -24,7 +24,6 @@ def dump(ctx, scan_id: int, output: str, output_format: str) -> None:
     """Dump found vulnerabilities of a scan in a specific format."""
     try:
         runtime_instance = ctx.obj['runtime']
-        console.info(f'Fetching vulnerabilities for scan {scan_id}')
         if output_format == 'csv':
             dumper = dumpers.VulnzCsvDumper(output)
         else:
