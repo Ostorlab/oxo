@@ -47,7 +47,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db
     assert data[0]['risk_rating'] == 'High'
     assert data[0]['cvss_v3_vector'] == '5:6:7'
     assert data[0]['title'] == 'MyVuln'
-    assert 'Android package: a.b.c' in data[0]['location']
+    assert 'Android package name: a.b.c' in data[0]['location']
     assert data[1]['id'] == 2
     assert data[1]['risk_rating'] == 'High'
     assert data[1]['title'] == 'OtherVuln'
@@ -262,7 +262,7 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(mocker, tmpdir, db_
     assert header == ['id', 'title', 'location', 'risk_rating', 'cvss_v3_vector', 'short_description', 'description',
                       'recommendation', 'technical_detail']
     assert data[0][3] == 'High'
-    assert 'Android package: a.b.c' in data[0][2]
+    assert 'Android package name: a.b.c' in data[0][2]
 
 
 def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(mocker, tmpdir, db_engine_path):
