@@ -122,7 +122,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(reques
     assert data[0]['id'] == '37200006'
     assert 'Use of Outdated Vulnerable Component' in data[0]['title']
     assert 'dummy title: https://dummy.co/dummy2' in data[0]['references']
-    assert 'Android package: a.b.c' in data[0]['location']
+    assert 'Android package name: a.b.c' in data[0]['location']
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(requests_mock, tmpdir):

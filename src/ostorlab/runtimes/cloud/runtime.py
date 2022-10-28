@@ -177,12 +177,12 @@ class CloudRuntime(runtime.Runtime):
             location_markdwon_value = f'IPv6: {host}  \n'
         elif asset_data.get('androidApp') is not None:
             package_name = asset_data.get('androidApp').get('packageName')
-            location_markdwon_value = f'Android package: {package_name}  \n'
+            location_markdwon_value = f'Android package name: {package_name}  \n'
         elif asset_data.get('iosApp') is not None:
             bundle_id = asset_data.get('iosApp').get('bundleId')
-            location_markdwon_value = f'iOS bundle ID: {bundle_id}  \n'
+            location_markdwon_value = f'iOS bundle id: {bundle_id}  \n'
         else:
-            raise ValueError('Unknown asset : ', asset_data)
+            raise ValueError(f'Unknown asset : {asset_data}')
 
         for metadata in location.get('metadata', []):
             metad_type = metadata.get('metadataType')

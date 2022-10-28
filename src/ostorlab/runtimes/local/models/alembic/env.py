@@ -1,5 +1,7 @@
-"""Alembic script that runs whenever the alembic migration tool is invoked.
-Its main responsibility is to invoke the migration engine."""
+"""Auto-generated Alembic script that runs whenever the alembic migration tool is invoked.
+It invokes responsibility is to invoke the migration engine.
+The lines 11-15, 31 & 86 were manually added.
+"""
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
