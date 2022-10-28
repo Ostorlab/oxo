@@ -4,13 +4,14 @@ import datetime
 import enum
 import logging
 import pathlib
-from types import TracebackType
+import types
 from typing import Any, Dict, Optional
 
 import sqlalchemy
 from sqlalchemy import orm
 from sqlalchemy.ext import declarative
 from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.engine import base
 from alembic import config
 from alembic import script
 from alembic import command as alembic_command
@@ -51,7 +52,20 @@ class Database:
         self._alembic_ini_path = pathlib.Path(__file__).parent.absolute() / 'alembic.ini'
         self._alembic_cfg = config.Config(str(self._alembic_ini_path))
 
-    def _is_db_populated(self, conn) -> bool:
+    def __enter__(self) -> orm.Session:
+        """Context manager enter method, resposible for migrating the local database and returning a session object."""
+        self._migrate_local_db()
+        return self._prepare_db_session()
+
+    def __exit__(self,
+                 exc_type: Optional[type[BaseException]],
+                 exc_val: Optional[BaseException],
+                 exc_traceback: Optional[types.TracebackType]) -> None:
+        """Context manager exit method, responsible for closing the local database session"""
+        if self._db_session is not None:
+            self._db_session.close()
+
+    def _is_db_populated(self, conn: base.Connection) -> bool:
         """Checks if the local database has tables."""
         inspector = Inspector.from_engine(conn)
         tables = inspector.get_table_names()
@@ -64,7 +78,7 @@ class Database:
             with self._db_engine.begin() as conn:
                 context = migration.MigrationContext.configure(conn)
                 # To ensure backward  compatibility with existing databases,
-                # The next two lines mark the state of the existing database,
+                # the next two lines do a fake migration of the base schema,
                 # before applying the migrations from that point.
                 if  self._is_db_populated(conn) and context.get_current_revision() is None:
                     alembic_command.stamp(self._alembic_cfg, OSTORLAB_BASE_MIGRATION_ID)
@@ -83,19 +97,6 @@ class Database:
             return self._db_session
         else:
             return self._db_session
-
-    def __enter__(self) -> orm.Session:
-        """Context manager enter method, resposible for migrating the local database and returning a session object."""
-        self._migrate_local_db()
-        return self._prepare_db_session()
-
-    def __exit__(self,
-                 exc_type: Optional[type[BaseException]],
-                 exc_val: Optional[BaseException],
-                 exc_traceback: Optional[TracebackType]) -> None:
-        """Context manager exit method, responsible for closing the local database session"""
-        if self._db_session is not None:
-            self._db_session.close()
 
     def create_db_tables(self):
         """Create the database tables."""
