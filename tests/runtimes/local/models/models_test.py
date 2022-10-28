@@ -49,7 +49,7 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mock
         assert session.query(models.Vulnerability).count() == init_count + 1
         assert session.query(models.Vulnerability).all()[0].title == 'MyVuln'
         assert session.query(models.Vulnerability).all()[0].scan_id == create_scan_db.id
-        assert 'iOS bundle ID: some.dummy.bundle' in session.query(models.Vulnerability).all()[0].location
+        assert 'iOS bundle id: some.dummy.bundle' in session.query(models.Vulnerability).all()[0].location
 
 
 def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
