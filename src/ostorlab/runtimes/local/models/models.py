@@ -154,7 +154,7 @@ class Vulnerability(Base):
     @staticmethod
     def _prepare_references_markdown(references: List[Dict[str, str]]) -> str:
         """Returns a markdown display of the references of a vulnerability."""
-        if len(references) is None:
+        if references is None or len(references) == 0:
             return ''
         references_markdwon_value = ''
 
