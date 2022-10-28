@@ -32,6 +32,7 @@ class VulnzListAPIRequest(request.APIRequest):
                     vulnerabilities{
                         id
                         technicalDetail
+                        vulnerabilityLocation
                         detail{
                           title
                           shortDescription
