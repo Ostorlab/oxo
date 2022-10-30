@@ -105,6 +105,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
     assert 'Applications can expose their functionality to other apps' in result.output
     assert 'Vulnerabilities listed successfully' in result.output
+    assert 'Typo in permission name allows to write contacts without user' in result.output
     assert 'a.b.c' in result.output
 
 

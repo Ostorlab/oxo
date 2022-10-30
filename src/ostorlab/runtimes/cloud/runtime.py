@@ -236,6 +236,19 @@ class CloudRuntime(runtime.Runtime):
         except runner.Error:
             console.error(f'scan with id {scan_id} does not exist.')
 
+    def _prepare_references_markdown(self, references: List[Dict[str, str]]) -> Optional[str]:
+        """Returns a markdown display of the references of a vulnerability."""
+        if references is None or len(references) == 0:
+            return None
+
+        references_markdwon_value = ''
+        for reference in references:
+            title = reference.get('title', '')
+            url = reference.get('url', '')
+            reference_markdwon = f'{title}: {url}\n'
+            references_markdwon_value += reference_markdwon
+
+        return references_markdwon_value
 
     def _print_vulnerability(self, vulnerability):
         """Print vulnerability details"""
@@ -264,6 +277,9 @@ class CloudRuntime(runtime.Runtime):
         console.table(columns=columns, data=vulnz_list_data, title=title)
         rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['description']), title='Description'))
         rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['recommendation']), title='Recommendation'))
+        references_markdown_value = self._prepare_references_markdown(vulnerability['detail'].get('references', []))
+        if references_markdown_value is not None:
+            rich.print(panel.Panel(markdown.Markdown(references_markdown_value), title='references'))
         if vulnerability['technicalDetailFormat'] == 'HTML':
             rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
                                    title='Technical details'))
@@ -328,6 +344,8 @@ class CloudRuntime(runtime.Runtime):
                 vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
                 vulnz_list_table = []
                 for vulnerability in vulnerabilities:
+                    references_markdown = self._prepare_references_markdown(
+                        vulnerability['detail'].get('references', []))
                     vulnerability_location_markdown = self._prepare_vuln_location_markdown(
                         vulnerability.get('vulnerabilityLocation'))
                     vuln = {
@@ -338,6 +356,7 @@ class CloudRuntime(runtime.Runtime):
                         'short_description': vulnerability['detail']['shortDescription'],
                         'description': vulnerability['detail']['description'],
                         'recommendation': vulnerability['detail']['recommendation'],
+                        'references': references_markdown,
                         'technical_detail': vulnerability['technicalDetail'],
                         'location': vulnerability_location_markdown
                     }
