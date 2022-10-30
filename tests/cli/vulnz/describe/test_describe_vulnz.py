@@ -12,7 +12,6 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
     """
     runner = CliRunner()
     mocker.patch.object(models, 'ENGINE_URL', db_engine_path)
-    models.Database().create_db_tables()
     create_scan_db = models.Scan.create('test')
     vuln_db = models.Vulnerability.create(title='Secure TLS certificate validation',
                                           short_description='Application performs proper server certificate '
