@@ -1,5 +1,5 @@
 """Auto-generated Alembic script that runs whenever the alembic migration tool is invoked.
-It invokes responsibility is to invoke the migration engine.
+It invokes the migration engine.
 The lines 11-15, 31 & 86 were manually added.
 """
 from logging.config import fileConfig
