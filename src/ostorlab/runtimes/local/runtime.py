@@ -521,13 +521,14 @@ class LocalRuntime(runtime.Runtime):
                     order_by(models.Vulnerability.title).all()
             vulnz_list = []
             for vulnerability in vulnerabilities:
+                vulnerability_location = vulnerability.location or ''
                 vulnz_list.append({
                     'id': str(vulnerability.id),
                     'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
                     'cvss_v3_vector': vulnerability.cvss_v3_vector,
                     'title': vulnerability.title,
                     'short_description': markdown.Markdown(vulnerability.short_description),
-                    'location': markdown.Markdown(vulnerability.location),
+                    'location': markdown.Markdown(vulnerability_location),
                 })
 
             columns = {
