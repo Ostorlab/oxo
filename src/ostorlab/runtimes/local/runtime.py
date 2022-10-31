@@ -521,13 +521,14 @@ class LocalRuntime(runtime.Runtime):
                     order_by(models.Vulnerability.title).all()
             vulnz_list = []
             for vulnerability in vulnerabilities:
+                vulnerability_location = vulnerability.location or ''
                 vulnz_list.append({
                     'id': str(vulnerability.id),
                     'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
                     'cvss_v3_vector': vulnerability.cvss_v3_vector,
                     'title': vulnerability.title,
                     'short_description': markdown.Markdown(vulnerability.short_description),
-                    'location': markdown.Markdown(vulnerability.location),
+                    'location': markdown.Markdown(vulnerability_location),
                 })
 
             columns = {
@@ -553,13 +554,14 @@ class LocalRuntime(runtime.Runtime):
         if vulnerability is None:
             return
 
+        vulnerability_location = vulnerability.location or ''
         vulnz_list = [
             {'id': str(vulnerability.id),
              'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
              'cvss_v3_vector': vulnerability.cvss_v3_vector,
              'title': vulnerability.title,
              'short_description': markdown.Markdown(vulnerability.short_description),
-             'location': markdown.Markdown(vulnerability.location),
+             'location': markdown.Markdown(vulnerability_location),
              }
         ]
         columns = {
@@ -574,7 +576,8 @@ class LocalRuntime(runtime.Runtime):
         console.table(columns=columns, data=vulnz_list, title=title)
         rich.print(panel.Panel(markdown.Markdown(vulnerability.description), title='Description'))
         rich.print(panel.Panel(markdown.Markdown(vulnerability.recommendation), title='Recommendation'))
-        rich.print(panel.Panel(markdown.Markdown(vulnerability.references), title='References'))
+        if vulnerability.references is not None:
+            rich.print(panel.Panel(markdown.Markdown(vulnerability.references), title='References'))
         rich.print(panel.Panel(markdown.Markdown(vulnerability.technical_detail), title='Technical details'))
 
     def describe_vuln(self, scan_id: int, vuln_id: int):
