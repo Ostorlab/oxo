@@ -245,7 +245,7 @@ class CloudRuntime(runtime.Runtime):
         for reference in references:
             title = reference.get('title', '')
             url = reference.get('url', '')
-            reference_markdwon = f'{title}: {url}\n'
+            reference_markdwon = f'{title}: {url}  \n'
             references_markdwon_value += reference_markdwon
 
         return references_markdwon_value
