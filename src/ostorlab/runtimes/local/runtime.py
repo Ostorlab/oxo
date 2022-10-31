@@ -576,7 +576,8 @@ class LocalRuntime(runtime.Runtime):
         console.table(columns=columns, data=vulnz_list, title=title)
         rich.print(panel.Panel(markdown.Markdown(vulnerability.description), title='Description'))
         rich.print(panel.Panel(markdown.Markdown(vulnerability.recommendation), title='Recommendation'))
-        rich.print(panel.Panel(markdown.Markdown(vulnerability.references), title='References'))
+        if vulnerability.references is not None:
+            rich.print(panel.Panel(markdown.Markdown(vulnerability.references), title='References'))
         rich.print(panel.Panel(markdown.Markdown(vulnerability.technical_detail), title='Technical details'))
 
     def describe_vuln(self, scan_id: int, vuln_id: int):
