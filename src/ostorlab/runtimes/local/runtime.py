@@ -554,13 +554,14 @@ class LocalRuntime(runtime.Runtime):
         if vulnerability is None:
             return
 
+        vulnerability_location = vulnerability.location or ''
         vulnz_list = [
             {'id': str(vulnerability.id),
              'risk_rating': styles.style_risk(vulnerability.risk_rating.value.upper()),
              'cvss_v3_vector': vulnerability.cvss_v3_vector,
              'title': vulnerability.title,
              'short_description': markdown.Markdown(vulnerability.short_description),
-             'location': markdown.Markdown(vulnerability.location),
+             'location': markdown.Markdown(vulnerability_location),
              }
         ]
         columns = {
