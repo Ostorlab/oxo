@@ -492,7 +492,7 @@ class LocalRuntime(runtime.Runtime):
     @tenacity.retry(stop=tenacity.stop_after_attempt(20),
                     wait=tenacity.wait_exponential(multiplier=1, max=20),
                     # return last value and don't raise RetryError exception.
-                    retry_error_callback=lambda lv: lv.result(),
+                    retry_error_callback=lambda lv: lv.outcome,
                     retry=tenacity.retry_if_result(lambda v: v is False))
     def _are_agents_ready(self, fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
