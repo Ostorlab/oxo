@@ -5,4 +5,5 @@ package ostorlab.agent.message.proto.v3.asset.file.ios.ipa;
 message Message {
   optional bytes content = 1;
   optional string path = 2;
+  optional string content_url = 3;
 }
