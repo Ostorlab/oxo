@@ -16,17 +16,17 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command(name='file')
-@click.option('files', type=click.File(mode='rb'), multiple=True, required=False)
-@click.option('url', multiple=True, required=False)
+@click.option('--file', type=click.File(mode='rb'), multiple=True, required=False)
+@click.option('--url', multiple=True, required=False)
 @click.pass_context
 def file_cli(ctx: click.core.Context,
-             files: Optional[List[io.FileIO]] = None,
+             file: Optional[List[io.FileIO]] = None,
              url: Optional[List[str]] = None) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj['runtime']
     assets = []
-    if files != []:
-        for f in files:
+    if file != []:
+        for f in file:
             assets.append(file_asset.File(content=f.read(), path=str(f.name)))
     elif url != []:
         for u in url:

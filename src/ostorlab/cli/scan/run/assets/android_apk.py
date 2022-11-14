@@ -17,17 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command()
-@click.option('files', type=click.File(mode='rb'), multiple=True, required=False)
-@click.option('url', required=False, multiple=True)
+@click.option('--file', type=click.File(mode='rb'), multiple=True, required=False)
+@click.option('--url', required=False, multiple=True)
 @click.pass_context
 def android_apk(ctx: click.core.Context,
-                files: Optional[List[io.FileIO]] = None,
+                file: Optional[List[io.FileIO]] = None,
                 url: Optional[List[str]] = None) -> None:
     """Run scan for android .APK package file."""
     runtime = ctx.obj['runtime']
     assets = []
-    if files != []:
-        for f in files:
+    if file != []:
+        for f in file:
             assets.append(android_apk_asset.AndroidApk(content=f.read(), path=str(f.name)))
     elif url != []:
         for u in url:
