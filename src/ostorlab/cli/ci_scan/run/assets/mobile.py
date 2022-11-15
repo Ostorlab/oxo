@@ -66,7 +66,7 @@ def run_mobile_scan(ctx: click.core.Context, file: io.FileIO, asset_type: scan_c
             ci_logger.output(name='scan_id', value=scan_id)
             ci_logger.info(f'Scan created with id {scan_id}.')
 
-            if break_on_risk_rating is not None:
+            if break_on_risk_rating is not None and break_on_risk_rating != '':
                 run.apply_break_scan_risk_rating(break_on_risk_rating, scan_id, max_wait_minutes, runner, ci_logger)
 
         except base_runner.ResponseError as e:
