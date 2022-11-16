@@ -1,9 +1,10 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.asset.file;
+package ostorlab.agent.message.proto.v3.asset.file.source;
 
 message Message {
   optional bytes content = 1;
   optional string path = 2;
-  optional string language = 3;
+  optional string content_url = 3;
+  optional string language = 4;
 }
