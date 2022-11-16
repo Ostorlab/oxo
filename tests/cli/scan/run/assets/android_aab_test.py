@@ -24,7 +24,7 @@ def testScanRunAndroidAab_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShow
     runner = CliRunner()
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
     mocker.patch('ostorlab.runtimes.local.LocalRuntime.can_run', return_value=True)
-    command=['scan', 'run', '--agent=agent1', 'android-aab', '--file', 'android_aab_test.py', '--url', 'url1']
+    command=['scan', 'run', '--agent=agent1', 'android-aab', '--file', 'tests/__init__.py', '--url', 'url1']
     result = runner.invoke(rootcli.rootcli, command)
 
     assert 'Command accepts either path or source url of the aab file.' in result.output
