@@ -43,14 +43,16 @@ message Message {
   optional string device_type = 2;
   // Device name.
   optional string device_name = 3;
+  // Device version.
+  optional string device_version = 4;
   // Device credentials.
-  optional Credentials device_credentials = 4;
+  optional Credentials device_credentials = 5;
   // Relay through which we can access the device.
-  optional DeviceRelay device_relay = 5;
+  optional DeviceRelay device_relay = 6;
   // Credentials to access the relay.
-  optional Credentials device_relay_credentials = 6;
+  optional Credentials device_relay_credentials = 7;
   // Duration the device is expected to be used.
-  optional Duration duration = 7;
+  optional Duration duration = 8;
   // Set of args to be passed to the device. Example are passing target to run for instance.
-  repeated Argument args = 8;
+  repeated Argument args = 9;
 }
