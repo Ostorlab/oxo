@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n?ostorlab/agent/message/proto/v3/capture/artifact/artifact.proto\x12\x30ostorlab.agent.message.proto.v3.capture.artifact\"=\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n?ostorlab/agent/message/proto/v3/capture/artifact/artifact.proto\x12\x30ostorlab.agent.message.proto.v3.capture.artifact\"]\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x1e\n\x0fupdate_if_exist\x18\x04 \x01(\x08:\x05\x66\x61lse')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.capture.artifact.artifact_pb2', globals())
@@ -21,5 +21,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _MESSAGE._serialized_start=117
-  _MESSAGE._serialized_end=178
+  _MESSAGE._serialized_end=210
 # @@protoc_insertion_point(module_scope)

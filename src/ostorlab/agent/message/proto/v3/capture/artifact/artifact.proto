@@ -6,4 +6,5 @@ message Message {
     optional bytes content = 1;
     optional string description = 2;
     optional string type = 3;
+    optional bool update_if_exist = 4 [default = false];
 }
