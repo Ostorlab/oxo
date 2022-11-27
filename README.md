@@ -3,9 +3,9 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-# Ostorlab Scan Orechestration Engine aka OXO
+# Ostorlab Scan Orchestration Engine aka OXO
 
-Ostorlab is a security scanning framework built for modualrity, scalability and simplicity.
+Ostorlab is a security scanning framework built for modularity, scalability and simplicity.
 
 Ostorlab Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
 
