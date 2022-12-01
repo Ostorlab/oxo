@@ -1,4 +1,4 @@
-"""This module takes care of download an apk using the package name before injecting it to the runtime instance."""
+"""This module triggers a scan using the android_store asset."""
 import logging
 from typing import Tuple, Optional
 

@@ -1,4 +1,4 @@
-"""This module takes care of download ipa using a bundle_id before injecting it to the runtime instance."""
+"""This module triggers a scan using the ios_store asset."""
 import logging
 from typing import Tuple, Optional
 
