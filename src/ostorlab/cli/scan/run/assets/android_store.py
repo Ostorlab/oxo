@@ -12,7 +12,7 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
-@run.run.command(name='android_store')
+@run.run.command(name='android-store')
 @click.option('--package-name', multiple=True, required=False)
 @click.pass_context
 def android_store(ctx: click.core.Context, package_name: Optional[Tuple[str]] = ()) -> None:

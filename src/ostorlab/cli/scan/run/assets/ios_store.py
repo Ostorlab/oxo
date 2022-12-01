@@ -12,7 +12,7 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
-@run.run.command(name='ios_store')
+@run.run.command(name='ios-store')
 @click.option('--bundle-id', multiple=True, required=False)
 @click.pass_context
 def ios_store(ctx: click.core.Context, bundle_id: Optional[Tuple[str]] = ()) -> None:
