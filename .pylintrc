@@ -427,9 +427,3 @@ valid-metaclass-classmethod-first-arg=mcs
 overgeneral-exceptions=StandardError,
                        Exception,
                        BaseException
-
-[STRINGS]
-
-string-quote=single
-triple-quote=double
-docstring-quote=double
