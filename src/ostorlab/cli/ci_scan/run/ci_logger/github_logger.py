@@ -31,4 +31,4 @@ class Logger(logger.Logger):
             name: name of the output to pass to the next step.
             value: value of the output.
         """
-        print(f'::set-output name={name}::{value}')
+        print(f"::set-output name={name}::{value}")

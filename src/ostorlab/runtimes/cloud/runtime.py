@@ -57,7 +57,9 @@ class CloudRuntime(runtime.Runtime):
             config_manager = configuration_manager.ConfigurationManager()
 
             if not config_manager.is_authenticated:
-                console.error('You need to be authenticated before using the cloud runtime.')
+                console.error(
+                    "You need to be authenticated before using the cloud runtime."
+                )
                 return False
 
             do_agents_exist = self._check_agents_exist(agent_group_definition)
@@ -67,10 +69,10 @@ class CloudRuntime(runtime.Runtime):
             return False
 
     def scan(
-            self,
-            title: Optional[str],
-            agent_group_definition: definitions.AgentGroupDefinition,
-            assets: Optional[List[base_asset.Asset]]
+        self,
+        title: Optional[str],
+        agent_group_definition: definitions.AgentGroupDefinition,
+        assets: Optional[List[base_asset.Asset]],
     ) -> None:
         """Triggers a scan using the provided agent group definition and asset target.
 
@@ -90,20 +92,24 @@ class CloudRuntime(runtime.Runtime):
             # we support multiple assets for local runtime for the cloud runtime. we take just the first asset.
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
-            agents = self._agents_from_agent_group_def(api_runner, agent_group_definition)
+            agents = self._agents_from_agent_group_def(
+                api_runner, agent_group_definition
+            )
             name = agent_group_definition.name
             description = agent_group_definition.description
 
-            console.info('Creating agent group')
-            agent_group_id = self._create_agent_group(api_runner, name, description, agents)
+            console.info("Creating agent group")
+            agent_group_id = self._create_agent_group(
+                api_runner, name, description, agents
+            )
 
-            console.info('Creating asset')
+            console.info("Creating asset")
             asset_id = self._create_asset(api_runner, asset)
 
-            console.info('Creating scan')
+            console.info("Creating scan")
             self._create_scan(api_runner, asset_id, agent_group_id, title)
 
-            console.success('Scan created successfully.')
+            console.success("Scan created successfully.")
         except runner.ResponseError as error_msg:
             console.error(error_msg)
 
@@ -116,12 +122,12 @@ class CloudRuntime(runtime.Runtime):
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
-            if response.get('errors') is not None:
-                console.error(f'Scan with id {scan_id} not found')
+            if response.get("errors") is not None:
+                console.error(f"Scan with id {scan_id} not found")
             else:
-                console.success('Scan stopped successfully')
+                console.success("Scan stopped successfully")
         except runner.Error:
-            console.error('Could not stop scan.')
+            console.error("Could not stop scan.")
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
@@ -135,20 +141,23 @@ class CloudRuntime(runtime.Runtime):
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
-            response = api_runner.execute(scan_list.ScansListAPIRequest(page, number_elements))
-            scans = response['data']['scans']['scans']
+            response = api_runner.execute(
+                scan_list.ScansListAPIRequest(page, number_elements)
+            )
+            scans = response["data"]["scans"]["scans"]
 
             return [
                 runtime.Scan(
-                    id=scan['id'],
-                    asset=scan['assetType'],
-                    created_time=scan['createdTime'],
-                    progress=scan['progress'],
-                ) for scan in scans
+                    id=scan["id"],
+                    asset=scan["assetType"],
+                    created_time=scan["createdTime"],
+                    progress=scan["progress"],
+                )
+                for scan in scans
             ]
 
         except runner.Error:
-            console.error('Could not fetch scans.')
+            console.error("Could not fetch scans.")
 
     def install(self) -> None:
         """No installation action.
@@ -158,38 +167,36 @@ class CloudRuntime(runtime.Runtime):
         """
         pass
 
-
     def _prepare_vuln_location_markdown(self, location: Dict[str, Any]) -> str:
         """Returns a markdown display of the exact target where the vulnerability was found."""
         location = location or {}
-        asset_data = location.get('asset')
+        asset_data = location.get("asset")
         if location is None or asset_data is None:
-            return ''
-        location_markdwon_value = ''
-        if asset_data.get('domain') is not None:
-            domain_name = asset_data.get('domain').get('name')
-            location_markdwon_value = f'Domain: {domain_name}  \n'
-        elif asset_data.get('ipv4') is not None:
-            host = asset_data.get('ipv4').get('host')
-            location_markdwon_value = f'IPv4: {host}  \n'
-        elif asset_data.get('ipv6') is not None:
-            host = asset_data.get('ipv6').get('host')
-            location_markdwon_value = f'IPv6: {host}  \n'
-        elif asset_data.get('androidApp') is not None:
-            package_name = asset_data.get('androidApp').get('packageName')
-            location_markdwon_value = f'Android package name: {package_name}  \n'
-        elif asset_data.get('iosApp') is not None:
-            bundle_id = asset_data.get('iosApp').get('bundleId')
-            location_markdwon_value = f'iOS bundle id: {bundle_id}  \n'
+            return ""
+        location_markdwon_value = ""
+        if asset_data.get("domain") is not None:
+            domain_name = asset_data.get("domain").get("name")
+            location_markdwon_value = f"Domain: {domain_name}  \n"
+        elif asset_data.get("ipv4") is not None:
+            host = asset_data.get("ipv4").get("host")
+            location_markdwon_value = f"IPv4: {host}  \n"
+        elif asset_data.get("ipv6") is not None:
+            host = asset_data.get("ipv6").get("host")
+            location_markdwon_value = f"IPv6: {host}  \n"
+        elif asset_data.get("androidApp") is not None:
+            package_name = asset_data.get("androidApp").get("packageName")
+            location_markdwon_value = f"Android package name: {package_name}  \n"
+        elif asset_data.get("iosApp") is not None:
+            bundle_id = asset_data.get("iosApp").get("bundleId")
+            location_markdwon_value = f"iOS bundle id: {bundle_id}  \n"
         else:
-            raise ValueError(f'Unknown asset : {asset_data}')
+            raise ValueError(f"Unknown asset : {asset_data}")
 
-        for metadata in location.get('metadata', []):
-            metad_type = metadata.get('metadataType')
-            metad_value = metadata.get('metadataValue')
-            location_markdwon_value += f'{metad_type}: {metad_value}  \n'
+        for metadata in location.get("metadata", []):
+            metad_type = metadata.get("metadataType")
+            metad_value = metadata.get("metadataValue")
+            location_markdwon_value += f"{metad_type}: {metad_value}  \n"
         return location_markdwon_value
-
 
     def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
         """List vulnz from the cloud using and render them in a table.
@@ -202,50 +209,70 @@ class CloudRuntime(runtime.Runtime):
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(
-                vulnz_list.VulnzListAPIRequest(scan_id=scan_id, number_elements=number_elements, page=page))
-            vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+                vulnz_list.VulnzListAPIRequest(
+                    scan_id=scan_id, number_elements=number_elements, page=page
+                )
+            )
+            vulnerabilities = response["data"]["scan"]["vulnerabilities"][
+                "vulnerabilities"
+            ]
             vulnz_list_table = []
             for vulnerability in vulnerabilities:
                 vulnerability_location_markdown = self._prepare_vuln_location_markdown(
-                    vulnerability.get('vulnerabilityLocation'))
-                vulnz_list_table.append({
-                    'id': str(vulnerability['id']),
-                    'risk_rating': styles.style_risk(vulnerability['detail']['riskRating'].upper()),
-                    'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
-                    'title': vulnerability['detail']['title'],
-                    'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
-                    'location': markdown.Markdown(vulnerability_location_markdown),
-                })
+                    vulnerability.get("vulnerabilityLocation")
+                )
+                vulnz_list_table.append(
+                    {
+                        "id": str(vulnerability["id"]),
+                        "risk_rating": styles.style_risk(
+                            vulnerability["detail"]["riskRating"].upper()
+                        ),
+                        "cvss_v3_vector": vulnerability["detail"]["cvssV3Vector"],
+                        "title": vulnerability["detail"]["title"],
+                        "short_description": markdown.Markdown(
+                            vulnerability["detail"]["shortDescription"]
+                        ),
+                        "location": markdown.Markdown(vulnerability_location_markdown),
+                    }
+                )
             columns = {
-                'Id': 'id',
-                'Title': 'title',
-                'Vulnerable target': 'location',
-                'Risk Rating': 'risk_rating',
-                'CVSS V3 Vector': 'cvss_v3_vector',
-                'Short Description': 'short_description',
+                "Id": "id",
+                "Title": "title",
+                "Vulnerable target": "location",
+                "Risk Rating": "risk_rating",
+                "CVSS V3 Vector": "cvss_v3_vector",
+                "Short Description": "short_description",
             }
-            title = f'Scan {scan_id}: Found {len(vulnz_list_table)} vulnerabilities.'
+            title = f"Scan {scan_id}: Found {len(vulnz_list_table)} vulnerabilities."
             console.table(columns=columns, data=vulnz_list_table, title=title)
-            has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
-            num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
+            has_next_page: bool = response["data"]["scan"]["vulnerabilities"][
+                "pageInfo"
+            ]["hasNext"]
+            num_pages = response["data"]["scan"]["vulnerabilities"]["pageInfo"][
+                "numPages"
+            ]
             if has_next_page is True:
-                console.info('Fetch next page?')
+                console.info("Fetch next page?")
                 page = page + 1
-                if click.confirm(f'page {page + 1} of {num_pages}'):
-                    self.list_vulnz(scan_id=scan_id, page=page, number_elements=number_elements)
+                if click.confirm(f"page {page + 1} of {num_pages}"):
+                    self.list_vulnz(
+                        scan_id=scan_id, page=page, number_elements=number_elements
+                    )
         except runner.Error:
-            console.error(f'scan with id {scan_id} does not exist.')
+            console.error(f"scan with id {scan_id} does not exist.")
 
-    def _prepare_references_markdown(self, references: List[Dict[str, str]]) -> Optional[str]:
+    def _prepare_references_markdown(
+        self, references: List[Dict[str, str]]
+    ) -> Optional[str]:
         """Returns a markdown display of the references of a vulnerability."""
         if references is None or len(references) == 0:
             return None
 
-        references_markdwon_value = ''
+        references_markdwon_value = ""
         for reference in references:
-            title = reference.get('title', '')
-            url = reference.get('url', '')
-            reference_markdwon = f'{title}: {url}  \n'
+            title = reference.get("title", "")
+            url = reference.get("url", "")
+            reference_markdwon = f"{title}: {url}  \n"
             references_markdwon_value += reference_markdwon
 
         return references_markdwon_value
@@ -255,38 +282,73 @@ class CloudRuntime(runtime.Runtime):
         if vulnerability is None:
             return
         vulnerability_location_markdown = self._prepare_vuln_location_markdown(
-            vulnerability.get('vulnerabilityLocation'))
+            vulnerability.get("vulnerabilityLocation")
+        )
         vulnz_list_data = [
-            {'id': str(vulnerability['id']),
-             'risk_rating': styles.style_risk(vulnerability['customRiskRating'].upper()),
-             'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
-             'title': vulnerability['detail']['title'],
-             'short_description': markdown.Markdown(vulnerability['detail']['shortDescription']),
-             'location': vulnerability_location_markdown
-             }
+            {
+                "id": str(vulnerability["id"]),
+                "risk_rating": styles.style_risk(
+                    vulnerability["customRiskRating"].upper()
+                ),
+                "cvss_v3_vector": vulnerability["detail"]["cvssV3Vector"],
+                "title": vulnerability["detail"]["title"],
+                "short_description": markdown.Markdown(
+                    vulnerability["detail"]["shortDescription"]
+                ),
+                "location": vulnerability_location_markdown,
+            }
         ]
         columns = {
-            'Id': 'id',
-            'Title': 'title',
-            'Vulnerable target': 'location',
-            'Risk Rating': 'risk_rating',
-            'CVSSv3 Vector': 'cvss_v3_vector',
-            'Short Description': 'short_description',
+            "Id": "id",
+            "Title": "title",
+            "Vulnerable target": "location",
+            "Risk Rating": "risk_rating",
+            "CVSSv3 Vector": "cvss_v3_vector",
+            "Short Description": "short_description",
         }
         title = f'Describing vulnerability {vulnerability["id"]}'
         console.table(columns=columns, data=vulnz_list_data, title=title)
-        rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['description']), title='Description'))
-        rich.print(panel.Panel(markdown.Markdown(vulnerability['detail']['recommendation']), title='Recommendation'))
-        references_markdown_value = self._prepare_references_markdown(vulnerability['detail'].get('references', []))
+        rich.print(
+            panel.Panel(
+                markdown.Markdown(vulnerability["detail"]["description"]),
+                title="Description",
+            )
+        )
+        rich.print(
+            panel.Panel(
+                markdown.Markdown(vulnerability["detail"]["recommendation"]),
+                title="Recommendation",
+            )
+        )
+        references_markdown_value = self._prepare_references_markdown(
+            vulnerability["detail"].get("references", [])
+        )
         if references_markdown_value is not None:
-            rich.print(panel.Panel(markdown.Markdown(references_markdown_value), title='references'))
-        if vulnerability['technicalDetailFormat'] == 'HTML':
-            rich.print(panel.Panel(markdown.Markdown(markdownify.markdownify(vulnerability['technicalDetail'])),
-                                   title='Technical details'))
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(references_markdown_value), title="references"
+                )
+            )
+        if vulnerability["technicalDetailFormat"] == "HTML":
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(
+                        markdownify.markdownify(vulnerability["technicalDetail"])
+                    ),
+                    title="Technical details",
+                )
+            )
         else:
-            rich.print(panel.Panel(markdown.Markdown(vulnerability['technicalDetail']), title='Technical details'))
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(vulnerability["technicalDetail"]),
+                    title="Technical details",
+                )
+            )
 
-    def describe_vuln(self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10):
+    def describe_vuln(
+        self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10
+    ):
         """Fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
 
         Args:
@@ -297,35 +359,62 @@ class CloudRuntime(runtime.Runtime):
         """
         try:
             if vuln_id is None:
-                click.BadParameter('You should at least provide --vuln_id or --scan_id.')
+                click.BadParameter(
+                    "You should at least provide --vuln_id or --scan_id."
+                )
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
                 response = api_runner.execute(
-                    vulnz_describe.ScanVulnzDescribeAPIRequest(scan_id=scan_id,
-                                                               vuln_id=vuln_id,
-                                                               page=page,
-                                                               number_elements=number_elements))
-                vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+                    vulnz_describe.ScanVulnzDescribeAPIRequest(
+                        scan_id=scan_id,
+                        vuln_id=vuln_id,
+                        page=page,
+                        number_elements=number_elements,
+                    )
+                )
+                vulnerabilities = response["data"]["scan"]["vulnerabilities"][
+                    "vulnerabilities"
+                ]
                 for v in vulnerabilities:
                     self._print_vulnerability(v)
-                num_pages = response['data']['scan']['vulnerabilities']['pageInfo']['numPages']
-                console.success(f'Vulnerabilities listed successfully. page {page} of {num_pages} pages')
-                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext']
+                num_pages = response["data"]["scan"]["vulnerabilities"]["pageInfo"][
+                    "numPages"
+                ]
+                console.success(
+                    f"Vulnerabilities listed successfully. page {page} of {num_pages} pages"
+                )
+                has_next_page: bool = response["data"]["scan"]["vulnerabilities"][
+                    "pageInfo"
+                ]["hasNext"]
                 if has_next_page is True:
-                    console.info('Fetch next page?')
+                    console.info("Fetch next page?")
                     page = page + 1
-                    if click.confirm(f'page {page + 1} of {num_pages}'):
-                        self.describe_vuln(scan_id=scan_id, vuln_id=vuln_id, page=page, number_elements=number_elements)
+                    if click.confirm(f"page {page + 1} of {num_pages}"):
+                        self.describe_vuln(
+                            scan_id=scan_id,
+                            vuln_id=vuln_id,
+                            page=page,
+                            number_elements=number_elements,
+                        )
 
         except runner.ResponseError:
-            console.error('Vulnerability / scan not Found.')
+            console.error("Vulnerability / scan not Found.")
 
     def _fetch_scan_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
         return api_runner.execute(
-            vulnz_list.VulnzListAPIRequest(scan_id=scan_id, number_elements=number_elements, page=page))
+            vulnz_list.VulnzListAPIRequest(
+                scan_id=scan_id, number_elements=number_elements, page=page
+            )
+        )
 
-    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper, page: int = 1, number_elements: int = 10):
+    def dump_vulnz(
+        self,
+        scan_id: int,
+        dumper: dumpers.VulnzDumper,
+        page: int = 1,
+        number_elements: int = 10,
+    ):
         """fetch vulnz from the cloud runtime.
         fetching all vulnz for a specific scan and saving in a specific format, in order to fetch all vulnerabilities
         {number_elements|10} for each request, this function run in an infinity loop (recursive)
@@ -336,69 +425,98 @@ class CloudRuntime(runtime.Runtime):
             number_elements: number of elements per reach page
         """
         has_next_page = True
-        with console.status(f'fetching vulnerabilities for scan scan-id={scan_id}'):
+        with console.status(f"fetching vulnerabilities for scan scan-id={scan_id}"):
             while has_next_page:
-                response = self._fetch_scan_vulnz(scan_id, page=page, number_elements=number_elements)
-                has_next_page: bool = response['data']['scan']['vulnerabilities']['pageInfo']['hasNext'] | False
+                response = self._fetch_scan_vulnz(
+                    scan_id, page=page, number_elements=number_elements
+                )
+                has_next_page: bool = (
+                    response["data"]["scan"]["vulnerabilities"]["pageInfo"]["hasNext"]
+                    | False
+                )
                 page = page + 1
-                vulnerabilities = response['data']['scan']['vulnerabilities']['vulnerabilities']
+                vulnerabilities = response["data"]["scan"]["vulnerabilities"][
+                    "vulnerabilities"
+                ]
                 vulnz_list_table = []
                 for vulnerability in vulnerabilities:
                     references_markdown = self._prepare_references_markdown(
-                        vulnerability['detail'].get('references', []))
-                    vulnerability_location_markdown = self._prepare_vuln_location_markdown(
-                        vulnerability.get('vulnerabilityLocation'))
+                        vulnerability["detail"].get("references", [])
+                    )
+                    vulnerability_location_markdown = (
+                        self._prepare_vuln_location_markdown(
+                            vulnerability.get("vulnerabilityLocation")
+                        )
+                    )
                     vuln = {
-                        'id': str(vulnerability['id']),
-                        'risk_rating': vulnerability['detail']['riskRating'],
-                        'cvss_v3_vector': vulnerability['detail']['cvssV3Vector'],
-                        'title': vulnerability['detail']['title'],
-                        'short_description': vulnerability['detail']['shortDescription'],
-                        'description': vulnerability['detail']['description'],
-                        'recommendation': vulnerability['detail']['recommendation'],
-                        'references': references_markdown,
-                        'technical_detail': vulnerability['technicalDetail'],
-                        'location': vulnerability_location_markdown
+                        "id": str(vulnerability["id"]),
+                        "risk_rating": vulnerability["detail"]["riskRating"],
+                        "cvss_v3_vector": vulnerability["detail"]["cvssV3Vector"],
+                        "title": vulnerability["detail"]["title"],
+                        "short_description": vulnerability["detail"][
+                            "shortDescription"
+                        ],
+                        "description": vulnerability["detail"]["description"],
+                        "recommendation": vulnerability["detail"]["recommendation"],
+                        "references": references_markdown,
+                        "technical_detail": vulnerability["technicalDetail"],
+                        "location": vulnerability_location_markdown,
                     }
                     vulnz_list_table.append(vuln)
                 dumper.dump(vulnz_list_table)
-                console.success(f'{len(vulnerabilities)} Vulnerabilities saved to {dumper.output_path}')
+                console.success(
+                    f"{len(vulnerabilities)} Vulnerabilities saved to {dumper.output_path}"
+                )
 
-    def _check_agents_exist(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
+    def _check_agents_exist(
+        self, agent_group_definition: definitions.AgentGroupDefinition
+    ) -> bool:
         """Send API requests to check if agents exist."""
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
         for agent in agent_group_definition.agents:
-            response = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent.key))
-            if response.get('errors') is not None:
-                console.error('The agent {agent.key} does not exists')
+            response = api_runner.execute(
+                agent_details.AgentDetailsAPIRequest(agent.key)
+            )
+            if response.get("errors") is not None:
+                console.error("The agent {agent.key} does not exists")
                 return False
         return True
 
-    def _agents_from_agent_group_def(self,
-                                     api_runner: runner.APIRunner,
-                                     agent_group_definition: definitions.AgentGroupDefinition) -> List[AgentType]:
+    def _agents_from_agent_group_def(
+        self,
+        api_runner: runner.APIRunner,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> List[AgentType]:
         """Creates list of agents dicts from an agent group definition."""
         agents = []
         for agent_def in agent_group_definition.agents:
-            agent_detail = api_runner.execute(agent_details.AgentDetailsAPIRequest(agent_def.key))
-            agent_version = agent_detail['data']['agent']['versions']['versions'][0]['version']
+            agent_detail = api_runner.execute(
+                agent_details.AgentDetailsAPIRequest(agent_def.key)
+            )
+            agent_version = agent_detail["data"]["agent"]["versions"]["versions"][0][
+                "version"
+            ]
             agent = {}
-            agent['agentKey'] = agent_def.key
-            agent['version'] = agent_version
+            agent["agentKey"] = agent_def.key
+            agent["version"] = agent_version
 
             agent_args = []
             for arg in agent_def.args:
-                agent_args.append({
-                    'name': arg.name,
-                    'type': arg.type,
-                    'value': arg.value
-                })
-            agent['args'] = agent_args
+                agent_args.append(
+                    {"name": arg.name, "type": arg.type, "value": arg.value}
+                )
+            agent["args"] = agent_args
             agents.append(agent)
         return agents
 
-    def _create_agent_group(self, api_runner: runner.APIRunner, name: str, description: str, agents: List[AgentType]):
+    def _create_agent_group(
+        self,
+        api_runner: runner.APIRunner,
+        name: str,
+        description: str,
+        agents: List[AgentType],
+    ):
         """Sends an API request to create an agent group.
 
         Returns:
@@ -406,7 +524,7 @@ class CloudRuntime(runtime.Runtime):
         """
         request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
         response = api_runner.execute(request)
-        agent_group_id = response['data']['publishAgentGroup']['agentGroup']['id']
+        agent_group_id = response["data"]["publishAgentGroup"]["agentGroup"]["id"]
         return agent_group_id
 
     def _create_asset(self, api_runner: runner.APIRunner, asset: base_asset.Asset):
@@ -417,10 +535,18 @@ class CloudRuntime(runtime.Runtime):
         """
         request = api_assets.CreateAssetAPIRequest(asset)
         response = api_runner.execute(request)
-        asset_id = response['data']['createAsset']['asset']['id']
+        asset_id = response["data"]["createAsset"]["asset"]["id"]
         return asset_id
 
-    def _create_scan(self, api_runner: runner.APIRunner, asset_id: int, agent_group_id: int, title: str):
+    def _create_scan(
+        self,
+        api_runner: runner.APIRunner,
+        asset_id: int,
+        agent_group_id: int,
+        title: str,
+    ):
         """Sends an API request to create a scan."""
-        request = create_agent_scan.CreateAgentScanAPIRequest(title, asset_id, agent_group_id)
+        request = create_agent_scan.CreateAgentScanAPIRequest(
+            title, asset_id, agent_group_id
+        )
         _ = api_runner.execute(request)

@@ -9,26 +9,28 @@ from ostorlab.cli import console as cli_console
 console = cli_console.Console()
 
 COLOR_POOL = [
-    'dodger_blue2',
-    'deep_sky_blue3',
-    'deep_sky_blue2',
-    'cyan3',
-    'spring_green2',
-    'spring_green2',
-    'grey37',
-    'chartreuse4',
-    'cornflower_blue',
-    'chartreuse3',
-    'steel_blue1',
-    'dark_red',
-    'plum4',
+    "dodger_blue2",
+    "deep_sky_blue3",
+    "deep_sky_blue2",
+    "cyan3",
+    "spring_green2",
+    "spring_green2",
+    "grey37",
+    "chartreuse4",
+    "cornflower_blue",
+    "chartreuse3",
+    "steel_blue1",
+    "dark_red",
+    "plum4",
 ]
 
 
-def _stream_log(log_generator: Generator[bytes, None, None], name: str, color: str) -> None:
+def _stream_log(
+    log_generator: Generator[bytes, None, None], name: str, color: str
+) -> None:
     """Collect log from log generator and format them using the console API."""
     for line in log_generator:
-        console.info(f'[{color} bold]{name}:[/] {line[:-1].decode()}')
+        console.info(f"[{color} bold]{name}:[/] {line[:-1].decode()}")
 
 
 class LogStream:
@@ -48,7 +50,9 @@ class LogStream:
         """
         color = self._select_color(service)
         logs = service.logs(details=False, follow=True, stdout=True, stderr=True)
-        t = threading.Thread(target=_stream_log, args=(logs, service.name, color), daemon=False)
+        t = threading.Thread(
+            target=_stream_log, args=(logs, service.name, color), daemon=False
+        )
         self._threads.append(t)
         t.start()
 

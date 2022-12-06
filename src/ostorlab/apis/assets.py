@@ -83,39 +83,47 @@ class CreateAssetAPIRequest(request.APIRequest):
         Returns:
             The body of the create asset request.
         """
-        variables = {
-            'asset': {
-                'tags': []
-            }
-        }
+        variables = {"asset": {"tags": []}}
         asset_type_variables = self.__get_asset_variables()
-        variables['asset'].update(asset_type_variables)
+        variables["asset"].update(asset_type_variables)
 
-        if any(isinstance(self._asset, t)
-               for t in (android_aab.AndroidAab, android_apk.AndroidApk, file.File, ios_ipa.IOSIpa)):
+        if any(
+            isinstance(self._asset, t)
+            for t in (
+                android_aab.AndroidAab,
+                android_apk.AndroidApk,
+                file.File,
+                ios_ipa.IOSIpa,
+            )
+        ):
             map_variables = self._get_map_variables()
             data = {
-                'operations': json.dumps({'query': self.query,
-                                          'variables': json.dumps(variables)}),
-                'map': json.dumps(map_variables)
+                "operations": json.dumps(
+                    {"query": self.query, "variables": json.dumps(variables)}
+                ),
+                "map": json.dumps(map_variables),
             }
         else:
-            data = {
-                'query': self.query,
-                'variables': json.dumps(variables)
-            }
+            data = {"query": self.query, "variables": json.dumps(variables)}
         return data
 
     @property
-    def files(self) -> Optional[Dict] :
+    def files(self) -> Optional[Dict]:
         """Sets the file for multipart upload of the API request.
 
         Returns:
             The file mapping of the create asset request.
         """
-        if any(isinstance(self._asset, t)
-               for t in (android_aab.AndroidAab, android_apk.AndroidApk, file.File, ios_ipa.IOSIpa)):
-            return {'0': self._asset.content}
+        if any(
+            isinstance(self._asset, t)
+            for t in (
+                android_aab.AndroidAab,
+                android_apk.AndroidApk,
+                file.File,
+                ios_ipa.IOSIpa,
+            )
+        ):
+            return {"0": self._asset.content}
         else:
             return None
 
@@ -123,74 +131,50 @@ class CreateAssetAPIRequest(request.APIRequest):
         """Creates asset variables for the API request, depending on the type of the asset."""
         asset_type_variables = {}
         if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
-            asset_type_variables = {
-                'androidFile': {
-                    'file': None
-                }
-            }
+            asset_type_variables = {"androidFile": {"file": None}}
         elif isinstance(self._asset, ios_ipa.IOSIpa):
-            asset_type_variables = {
-                'iosFile':{
-                    'file': None
-                }
-            }
+            asset_type_variables = {"iosFile": {"file": None}}
         elif isinstance(self._asset, file.File):
-            asset_type_variables = {
-                'file':{
-                    'content': None,
-                    'path': self._asset.path
-                }
-            }
+            asset_type_variables = {"file": {"content": None, "path": self._asset.path}}
         elif isinstance(self._asset, domain_name.DomainName):
-            asset_type_variables = {
-                'domain':{
-                    'domain': self._asset.name
-                }
-            }
+            asset_type_variables = {"domain": {"domain": self._asset.name}}
         elif isinstance(self._asset, ip.IP):
             asset_type_variables = {
-                'ip':{
-                    'host': self._asset.host,
-                    'mask': self._asset.mask,
-                    'version': self._asset.version
+                "ip": {
+                    "host": self._asset.host,
+                    "mask": self._asset.mask,
+                    "version": self._asset.version,
                 }
             }
         elif isinstance(self._asset, ipv4.IPv4):
             asset_type_variables = {
-                'ipV4':{
-                    'host': self._asset.host,
-                    'mask': self._asset.mask,
-                    'version': self._asset.version
+                "ipV4": {
+                    "host": self._asset.host,
+                    "mask": self._asset.mask,
+                    "version": self._asset.version,
                 }
             }
         elif isinstance(self._asset, ipv6.IPv6):
             asset_type_variables = {
-                'ipV6':{
-                    'host': self._asset.host,
-                    'mask': self._asset.mask,
-                    'version': self._asset.version
+                "ipV6": {
+                    "host": self._asset.host,
+                    "mask": self._asset.mask,
+                    "version": self._asset.version,
                 }
             }
         else:
-            raise NotImplementedError(f'Unknown asset type : {type(self._asset)}')
+            raise NotImplementedError(f"Unknown asset type : {type(self._asset)}")
 
         return asset_type_variables
-
 
     def _get_map_variables(self):
         """Creates map variables for the API request, depending on the type of the asset."""
         map_variables = {}
         if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
-            map_variables = {
-                '0': ['variables.asset.androidFile.file']
-            }
+            map_variables = {"0": ["variables.asset.androidFile.file"]}
         elif isinstance(self._asset, ios_ipa.IOSIpa):
-            map_variables = {
-                '0': ['variables.asset.iosFile.file']
-            }
+            map_variables = {"0": ["variables.asset.iosFile.file"]}
         elif isinstance(self._asset, file.File):
-            map_variables = {
-                '0': ['variables.asset.file.content']
-            }
+            map_variables = {"0": ["variables.asset.file.content"]}
 
         return map_variables

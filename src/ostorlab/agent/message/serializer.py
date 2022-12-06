@@ -11,14 +11,15 @@ from google.protobuf import json_format
 
 from ostorlab import exceptions
 
-PROTO_CLASS_NAME = 'Message'
+PROTO_CLASS_NAME = "Message"
 
 # When the package is built, the proto files are not shipped, only the compiled version, which have the
 # form: logs_pb2.cpython-38.pyc
-MESSAGE_PROTO = '_pb2'
-MESSAGE_CODE_PATH = pathlib.Path(__file__).parent / 'proto'
+MESSAGE_PROTO = "_pb2"
+MESSAGE_CODE_PATH = pathlib.Path(__file__).parent / "proto"
 
 logger = logging.getLogger(__name__)
+
 
 class SerializationError(exceptions.OstorlabError):
     """Base serialization Error."""
@@ -36,7 +37,7 @@ def _find_package_name(selector: str) -> str:
     """Finds matching package name to selector."""
     files = _list_message_proto_files()
     regex_pattern = _selector_to_package_regex(selector)
-    logger.debug('searching protos with pattern: %s', regex_pattern)
+    logger.debug("searching protos with pattern: %s", regex_pattern)
     pattern = re.compile(regex_pattern)
     matching = [pattern.match(f) for f in files]
     filtered_matching = [m.group(0) for m in matching if m is not None]
@@ -48,20 +49,20 @@ def _find_package_name(selector: str) -> str:
         return _replace_module_proto(filtered_matching[0])
 
 
-def _replace_module_proto(proto_path: str) -> str :
-    if sys.platform == 'win32':
+def _replace_module_proto(proto_path: str) -> str:
+    if sys.platform == "win32":
         # Remove the path to the current package.
-        matching_package = re.sub(r'^.*\\ostorlab', 'ostorlab', proto_path)
+        matching_package = re.sub(r"^.*\\ostorlab", "ostorlab", proto_path)
         # Replace \ with .
-        matching_package = matching_package.replace('\\', '.')
+        matching_package = matching_package.replace("\\", ".")
     else:
         # Remove the path to the current package.
-        matching_package = re.sub(r'^.*/ostorlab/', 'ostorlab/', proto_path)
+        matching_package = re.sub(r"^.*/ostorlab/", "ostorlab/", proto_path)
         # Replace / with .
-        matching_package = matching_package.replace('/', '.')
+        matching_package = matching_package.replace("/", ".")
 
     # Point to the compiled protobufs.
-    return re.sub(r'_pb2\..*$', '_pb2', re.sub(r'^\.code\.', '', matching_package))
+    return re.sub(r"_pb2\..*$", "_pb2", re.sub(r"^\.code\.", "", matching_package))
 
 
 def _list_message_proto_files() -> List[str]:
@@ -78,12 +79,19 @@ def _list_message_proto_files() -> List[str]:
 
 def _selector_to_package_regex(subject: str) -> str:
     """Maps selector to package matching regular expression."""
-    splitted = subject.split('.')
-    if sys.platform == 'win32':
-        return '.*\\\\message\\\\proto\\\\' +\
-               '\\\\'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'..[_a-zA-Z0-9]+\_pb2\.py'
+    splitted = subject.split(".")
+    if sys.platform == "win32":
+        return (
+            ".*\\\\message\\\\proto\\\\"
+            + "\\\\".join([f"(_[_a-zA-Z0-9]+|{s})" for s in splitted])
+            + r"..[_a-zA-Z0-9]+\_pb2\.py"
+        )
     else:
-        return '.*/message/proto/' + '/'.join([f'(_[_a-zA-Z0-9]+|{s})' for s in splitted]) + r'.[_a-zA-Z0-9]+\_pb2\.py'
+        return (
+            ".*/message/proto/"
+            + "/".join([f"(_[_a-zA-Z0-9]+|{s})" for s in splitted])
+            + r".[_a-zA-Z0-9]+\_pb2\.py"
+        )
 
 
 def serialize(selector: str, values: Dict[str, Any]) -> Any:
@@ -100,7 +108,7 @@ def serialize(selector: str, values: Dict[str, Any]) -> Any:
     try:
         return _serialize(selector, PROTO_CLASS_NAME, values)
     except json_format.Error as e:
-        raise SerializationError('Error serializing message') from e
+        raise SerializationError("Error serializing message") from e
 
 
 def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
@@ -114,7 +122,9 @@ def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
 
 def _parse_list(values: Any, message: Any) -> None:
     """Parse list to protobuf message."""
-    if len(values) > 0 and isinstance(values[0], dict):  # value needs to be further parsed
+    if len(values) > 0 and isinstance(
+        values[0], dict
+    ):  # value needs to be further parsed
         for v in values:
             cmd = message.add()
             _parse_dict(v, cmd)
@@ -134,7 +144,11 @@ def _parse_dict(values: Any, message: Any) -> None:
                 # if is of type ENUM.
                 if message.DESCRIPTOR.fields_by_name[k].type == 14:
                     # For type enum, we introspect the type to get enum type, and then get the string mapping to int.
-                    enum_v = message.DESCRIPTOR.fields_by_name[k].enum_type.values_by_name[v].number
+                    enum_v = (
+                        message.DESCRIPTOR.fields_by_name[k]
+                        .enum_type.values_by_name[v]
+                        .number
+                    )
                     setattr(message, k, enum_v)
                 elif v is None:
                     # Optional values don't need to be set.
@@ -142,9 +156,9 @@ def _parse_dict(values: Any, message: Any) -> None:
                 else:
                     setattr(message, k, v)
             except AttributeError as e:
-                raise SerializationError(f'invalid attribute {k}') from e
+                raise SerializationError(f"invalid attribute {k}") from e
             except KeyError as e:
-                raise SerializationError(f'invalid attribute {k}') from e
+                raise SerializationError(f"invalid attribute {k}") from e
 
 
 def deserialize(selector: str, serialized: bytes) -> Any:

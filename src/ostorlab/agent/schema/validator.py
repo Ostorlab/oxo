@@ -14,8 +14,7 @@ from ostorlab import exceptions
 
 
 class Error(exceptions.OstorlabError):
-    """Base Exception
-    """
+    """Base Exception"""
 
 
 class ValidationError(Error):
@@ -42,10 +41,10 @@ class Validator:
         try:
             jsonschema.Draft202012Validator.check_schema(self._json_schema)
         except jsonschema.exceptions.SchemaError as e:
-            raise SchemaError('Schema is invalid.') from e
+            raise SchemaError("Schema is invalid.") from e
 
     def validate(self, yaml_file_object: io.TextIOWrapper) -> None:
-        """ Validates a yaml file against a json schema .
+        """Validates a yaml file against a json schema .
 
         Args:
             yaml_file_object: A file object of the yaml configuration file we want to validate.
@@ -53,12 +52,14 @@ class Validator:
             ValidationError if the validation did not pass well.
             SchemaError if the Schema is not valid.
         """
-        yaml = ruamel.yaml.YAML(typ='safe')
+        yaml = ruamel.yaml.YAML(typ="safe")
         yaml_data = yaml.load(yaml_file_object)
 
         try:
             jsonschema.validate(instance=yaml_data, schema=self._json_schema)
         except jsonschema.exceptions.ValidationError as e:
-            raise ValidationError(f'Validation did not pass: {e.message} for field {".".join(e.schema_path)}.') from e
+            raise ValidationError(
+                f'Validation did not pass: {e.message} for field {".".join(e.schema_path)}.'
+            ) from e
         except jsonschema.exceptions.SchemaError as e:
-            raise SchemaError('Schema is invalid.') from e
+            raise SchemaError("Schema is invalid.") from e

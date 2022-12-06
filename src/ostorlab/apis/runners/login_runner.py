@@ -13,19 +13,20 @@ from ostorlab.apis import request as api_request
 from ostorlab.apis import login
 
 
-
-TOKEN_ENDPOINT = 'https://api.ostorlab.co/apis/token/'
+TOKEN_ENDPOINT = "https://api.ostorlab.co/apis/token/"
 
 
 class LoginAPIRunner(runner.APIRunner):
     """Responsible for the public API calls, and preparing the responses."""
-    def __init__(self,
-                 username: Optional[str] = None,
-                 password: Optional[str] = None,
-                 otp_token: Optional[str] = None,
-                 proxy: Optional[str] = None,
-                 verify: bool = True
-                 ):
+
+    def __init__(
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        otp_token: Optional[str] = None,
+        proxy: Optional[str] = None,
+        verify: bool = True,
+    ):
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -51,14 +52,13 @@ class LoginAPIRunner(runner.APIRunner):
             The API response.
         """
         if self._username is None or self._password is None:
-            raise ValueError('Missing credentials.')
+            raise ValueError("Missing credentials.")
 
-        login_request = login.UsernamePasswordLoginAPIRequest(self._username,
-                                                              self._password,
-                                                              self._otp_token)
+        login_request = login.UsernamePasswordLoginAPIRequest(
+            self._username, self._password, self._otp_token
+        )
 
         return self._sent_request(login_request)
-
 
     def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
         """Executes a request using the Token GraphQL API.
@@ -75,11 +75,12 @@ class LoginAPIRunner(runner.APIRunner):
         response = self._sent_request(request)
         if response.status_code != 200:
             raise runner.ResponseError(
-                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}')
+                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}'
+            )
         data: Dict[str, Any] = response.json()
-        errors = data.get('errors')
+        errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
-            error = errors[0].get('message')
-            raise runner.ResponseError(f'Response errors: {error}')
+            error = errors[0].get("message")
+            raise runner.ResponseError(f"Response errors: {error}")
         else:
             return data

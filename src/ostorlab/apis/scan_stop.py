@@ -36,8 +36,5 @@ class ScanStopAPIRequest(request.APIRequest):
         Returns:
               The mutation to stop a scan.
         """
-        data = {
-            'query': self.query,
-            'variables': json.dumps({'scanId': self._scan_id})
-            }
+        data = {"query": self.query, "variables": json.dumps({"scanId": self._scan_id})}
         return data

@@ -9,7 +9,13 @@ from ostorlab.apis import request
 class ScanVulnzDescribeAPIRequest(request.APIRequest):
     """Lists vulnerabilities of a scan."""
 
-    def __init__(self, scan_id: int, vuln_id: int = None, page: int = 1, number_elements: int = 10):
+    def __init__(
+        self,
+        scan_id: int,
+        vuln_id: int = None,
+        page: int = 1,
+        number_elements: int = 10,
+    ):
         self._scan_id = scan_id
         self._vuln_id = vuln_id
         self._page = page
@@ -75,10 +81,15 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
         Returns:
               The query to list the vulnz.
         """
-        data = dict(query=self.query, variables=json.dumps(
-            {'scanId': self._scan_id,
-             'vulnerabilityId': self._vuln_id,
-             'page': self._page,
-             'numberElements': self._number_elements
-             }))
+        data = dict(
+            query=self.query,
+            variables=json.dumps(
+                {
+                    "scanId": self._scan_id,
+                    "vulnerabilityId": self._vuln_id,
+                    "page": self._page,
+                    "numberElements": self._number_elements,
+                }
+            ),
+        )
         return data

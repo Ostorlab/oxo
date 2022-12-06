@@ -47,8 +47,5 @@ class AgentSearchAPIRequest(request.APIRequest):
         Returns:
             The body of the agent details request.
         """
-        data = {
-            'query': self.query,
-            'variables': json.dumps({'search': self._search})
-        }
+        data = {"query": self.query, "variables": json.dumps({"search": self._search})}
         return data

@@ -14,7 +14,6 @@ class CreateAgentScanAPIRequest(request.APIRequest):
         self.asset_id = asset_id
         self._agent_group_id = agent_group_id
 
-
     @property
     def query(self) -> Optional[str]:
         """Sets the query of the API request.
@@ -32,7 +31,6 @@ class CreateAgentScanAPIRequest(request.APIRequest):
             }
         """
 
-
     @property
     def data(self) -> Optional[Dict]:
         """Sets the body of the API request.
@@ -41,14 +39,11 @@ class CreateAgentScanAPIRequest(request.APIRequest):
             The body of the create scan request.
         """
         variables = {
-            'scan': {
-                'title': self._title,
-                'assetId': self.asset_id,
-                'agentGroupId': self._agent_group_id
+            "scan": {
+                "title": self._title,
+                "assetId": self.asset_id,
+                "agentGroupId": self._agent_group_id,
             }
         }
-        data = {
-            'query': self.query,
-            'variables': json.dumps(variables)
-        }
+        data = {"query": self.query, "variables": json.dumps(variables)}
         return data

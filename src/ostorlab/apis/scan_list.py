@@ -51,7 +51,9 @@ class ScansListAPIRequest(request.APIRequest):
               The query to list the scans.
         """
         data = {
-            'query': self.query,
-            'variables': json.dumps({'page': self._page, 'numberElements': self._elements})
-            }
+            "query": self.query,
+            "variables": json.dumps(
+                {"page": self._page, "numberElements": self._elements}
+            ),
+        }
         return data

@@ -38,7 +38,6 @@ def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():
 
     agent_definition = definitions.AgentDefinition.from_yaml(yaml_data_file)
 
-    assert agent_definition.name == 'agent1'
-    assert agent_definition.in_selectors == ['in_selector1', 'in_selector2']
-    assert agent_definition.out_selectors == ['out_selector1', 'out_selector2']
-
+    assert agent_definition.name == "agent1"
+    assert agent_definition.in_selectors == ["in_selector1", "in_selector2"]
+    assert agent_definition.out_selectors == ["out_selector1", "out_selector2"]

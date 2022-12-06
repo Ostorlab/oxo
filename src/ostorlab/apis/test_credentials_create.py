@@ -19,6 +19,7 @@ class TestCredential(abc.ABC):
 @dataclasses.dataclass
 class TestCredentialLogin(TestCredential):
     """Loging password test credentials with optional role and url fields."""
+
     login: str
     password: str
     role: Optional[str] = None
@@ -27,12 +28,12 @@ class TestCredentialLogin(TestCredential):
     def to_variables(self) -> Dict[str, Any]:
         """Generate query variables."""
         return {
-            'testCredentials': {
-                'loginPassword': {
-                    'login': self.login,
-                    'password': self.password,
-                    'role': self.role,
-                    'url': self.url
+            "testCredentials": {
+                "loginPassword": {
+                    "login": self.login,
+                    "password": self.password,
+                    "role": self.role,
+                    "url": self.url,
                 }
             }
         }
@@ -41,17 +42,16 @@ class TestCredentialLogin(TestCredential):
 @dataclasses.dataclass
 class TestCredentialCustom(TestCredential):
     """Custom test credentials with variable number of a pair of name and value."""
+
     values: Dict[str, str]
 
     def to_variables(self) -> Dict[str, Any]:
         """Generate query variables."""
         return {
-            'testCredentials': {
-                'custom': {
-                    'credentials': [
-                        {
-                            'name': n, 'value': v
-                        } for (n, v) in self.values.items()
+            "testCredentials": {
+                "custom": {
+                    "credentials": [
+                        {"name": n, "value": v} for (n, v) in self.values.items()
                     ]
                 }
             }
@@ -93,9 +93,9 @@ mutation TestCredentials($testCredentials: TestCredentialsInput!) {
 
         Returns:
             The query and variables to create test credentials.
-         """
+        """
         data = {
-            'query': self.query,
-            'variables': json.dumps(self._test_credential.to_variables())
+            "query": self.query,
+            "variables": json.dumps(self._test_credential.to_variables()),
         }
         return data

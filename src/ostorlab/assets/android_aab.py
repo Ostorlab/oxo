@@ -5,7 +5,7 @@ from typing import Optional
 from ostorlab.assets import asset
 
 
-@asset.selector('v3.asset.file.android.aab')
+@asset.selector("v3.asset.file.android.aab")
 @dataclasses.dataclass
 class AndroidAab(asset.Asset):
     """Android .AAB target asset."""
@@ -15,8 +15,8 @@ class AndroidAab(asset.Asset):
         self.path = path
 
     def __str__(self) -> str:
-        return f'Android AAB({self.path})'
+        return f"Android AAB({self.path})"
 
     @property
     def proto_field(self) -> str:
-        return 'android_aab'
+        return "android_aab"

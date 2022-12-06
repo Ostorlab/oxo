@@ -12,22 +12,22 @@ console = cli_console.Console()
 
 
 @agent_command.command()
-@click.argument('agent', required=True)
-@click.option('--version', '-v', help='Agent version.', required=False)
-def install(agent: str, version: str = '') -> None:
+@click.argument("agent", required=True)
+@click.option("--version", "-v", help="Agent version.", required=False)
+def install(agent: str, version: str = "") -> None:
     """Install an agent : pull the image from the ostorlab store."""
 
     if not docker_requirements_checker.is_docker_installed():
-        console.error('Docker is not installed.')
+        console.error("Docker is not installed.")
         raise click.exceptions.Exit(2)
     elif not docker_requirements_checker.is_sys_arch_supported():
-        console.error('System architecture is not supported.')
+        console.error("System architecture is not supported.")
         raise click.exceptions.Exit(2)
     elif not docker_requirements_checker.is_user_permitted():
-        console.error('User does not have permissions to run docker.')
+        console.error("User does not have permissions to run docker.")
         raise click.exceptions.Exit(2)
     elif not docker_requirements_checker.is_docker_working():
-        console.error('Error using docker.')
+        console.error("Error using docker.")
         raise click.exceptions.Exit(2)
     else:
         try:

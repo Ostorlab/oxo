@@ -5,7 +5,7 @@ from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-@asset.selector('v3.asset.link')
+@asset.selector("v3.asset.link")
 class Link(asset.Asset):
     """Agent asset."""
 
@@ -14,8 +14,8 @@ class Link(asset.Asset):
         self.method = method
 
     def __str__(self) -> str:
-        return f'Link {self.url} with method {self.method}'
+        return f"Link {self.url} with method {self.method}"
 
     @property
     def proto_field(self) -> str:
-        return 'link'
+        return "link"

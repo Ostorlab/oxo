@@ -10,11 +10,13 @@ def testAgentListCLI_always_listDockerImagesWithAgent(mocker):
 
     This is just a smoke test to avoid a complex mock
     """
-    image_list_mock = mocker.patch('docker.models.images.ImageCollection.list', return_value=[])
+    image_list_mock = mocker.patch(
+        "docker.models.images.ImageCollection.list", return_value=[]
+    )
 
     runner = testing.CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ['agent', 'list'])
+    result = runner.invoke(rootcli.rootcli, ["agent", "list"])
 
-    assert 'Agents listed successfully' in result.output
+    assert "Agents listed successfully" in result.output
     image_list_mock.assert_called_once()

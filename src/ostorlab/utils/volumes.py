@@ -11,8 +11,8 @@ from docker import errors as docker_errors
 
 from ostorlab.utils import strings
 
-TEMP_IMAGE = 'busybox:latest'
-TEMP_DESTINATION = '/dst'
+TEMP_IMAGE = "busybox:latest"
+TEMP_DESTINATION = "/dst"
 
 
 class VolumeWriter:
@@ -53,7 +53,7 @@ class VolumeWriter:
     def _prepare_tar(self, contents: Dict[str, bytes]) -> io.BytesIO:
         """Copy API expects a tar, this api prepares one with the file content."""
         pw_tarstream = io.BytesIO()
-        with tarfile.TarFile(fileobj=pw_tarstream, mode='w') as pw_tar:
+        with tarfile.TarFile(fileobj=pw_tarstream, mode="w") as pw_tar:
             for path, content in contents.items():
                 tarinfo = tarfile.TarInfo(name=path)
                 tarinfo.size = len(content)
@@ -68,10 +68,14 @@ class VolumeWriter:
         self._client.containers.run(
             TEMP_IMAGE,
             name=temp_container_name,
-            command='sleep infinity',
+            command="sleep infinity",
             detach=True,
             remove=True,
-            mounts=[docker_types.Mount(target=TEMP_DESTINATION, source=volume_name, type='volume')]
+            mounts=[
+                docker_types.Mount(
+                    target=TEMP_DESTINATION, source=volume_name, type="volume"
+                )
+            ],
         )
         pw_tarstream = self._prepare_tar(contents)
 

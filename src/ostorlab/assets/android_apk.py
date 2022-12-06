@@ -6,7 +6,7 @@ from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-@asset.selector('v3.asset.file.android.apk')
+@asset.selector("v3.asset.file.android.apk")
 class AndroidApk(asset.Asset):
     """Android .APK  target asset."""
 
@@ -15,8 +15,8 @@ class AndroidApk(asset.Asset):
         self.path = path
 
     def __str__(self) -> str:
-        return f'Android APK ({self.path})'
+        return f"Android APK ({self.path})"
 
     @property
     def proto_field(self) -> str:
-        return 'android_apk'
+        return "android_apk"

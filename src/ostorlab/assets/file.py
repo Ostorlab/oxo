@@ -6,7 +6,7 @@ from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-@asset.selector('v3.asset.file')
+@asset.selector("v3.asset.file")
 class File(asset.Asset):
     """File target asset."""
 
@@ -15,8 +15,8 @@ class File(asset.Asset):
         self.path = path
 
     def __str__(self) -> str:
-        return f'File({self.path})'
+        return f"File({self.path})"
 
     @property
     def proto_field(self) -> str:
-        return 'file'
+        return "file"
