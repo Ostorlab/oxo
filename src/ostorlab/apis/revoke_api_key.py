@@ -44,7 +44,7 @@ class RevokeAPIKeyAPIRequest(request.APIRequest):
               The query and variables to revoke the API key.
         """
         data = {
-            'query': self.query,
-            'variables': json.dumps({'apiKeyId': self._api_key_id})
+            "query": self.query,
+            "variables": json.dumps({"apiKeyId": self._api_key_id}),
         }
         return data

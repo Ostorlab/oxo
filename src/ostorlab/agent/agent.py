@@ -27,7 +27,7 @@ from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 
-AGENT_DEFINITION_PATH = '/tmp/ostorlab.yaml'
+AGENT_DEFINITION_PATH = "/tmp/ostorlab.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -36,18 +36,19 @@ class NonListedMessageSelectorError(exceptions.OstorlabError):
     """Emit selector is not listed in the out_selector list."""
 
 
-class AgentMixin(agent_mq_mixin.AgentMQMixin,
-                 agent_healthcheck_mixin.AgentHealthcheckMixin,
-                 abc.ABC):
+class AgentMixin(
+    agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealthcheckMixin, abc.ABC
+):
     """Agent mixin handles all the heavy lifting.
 
     The agent mixin start the healthcheck service, connects the MQ and start listening to the process message.
     """
 
-    def __init__(self,
-                 agent_definition: agent_definitions.AgentDefinition,
-                 agent_settings: runtime_definitions.AgentSettings
-                 ) -> None:
+    def __init__(
+        self,
+        agent_definition: agent_definitions.AgentDefinition,
+        agent_settings: runtime_definitions.AgentSettings,
+    ) -> None:
         """Inits the agent configuration from the Yaml agent definition.
 
         Args:
@@ -69,16 +70,21 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         self.bus_exchange_topic = agent_settings.bus_exchange_topic
         self.bus_managment_url = agent_settings.bus_management_url
         self.bus_vhost = agent_settings.bus_vhost
-        agent_mq_mixin.AgentMQMixin.__init__(self,
-                                             name=agent_definition.name,
-                                             # Selectors are mapped to queue binding that listen to all
-                                             # sub-routing keys.
-                                             keys=[f'{s}.#' for s in self.in_selectors],
-                                             url=self.bus_url,
-                                             topic=self.bus_exchange_topic)
-        agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(self, name=agent_definition.name,
-                                                               host=agent_settings.healthcheck_host,
-                                                               port=agent_settings.healthcheck_port)
+        agent_mq_mixin.AgentMQMixin.__init__(
+            self,
+            name=agent_definition.name,
+            # Selectors are mapped to queue binding that listen to all
+            # sub-routing keys.
+            keys=[f"{s}.#" for s in self.in_selectors],
+            url=self.bus_url,
+            topic=self.bus_exchange_topic,
+        )
+        agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(
+            self,
+            name=agent_definition.name,
+            host=agent_settings.healthcheck_host,
+            port=agent_settings.healthcheck_port,
+        )
 
     @property
     def definition(self) -> agent_definitions.AgentDefinition:
@@ -96,10 +102,10 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         arguments = {}
         # First read the agent default values.
         for a in self.definition.args:
-            arguments[a['name']] = a.get('value')
+            arguments[a["name"]] = a.get("value")
         # Override the default values from settings.
         for a in self.settings.args:
-            if a.type == 'binary':
+            if a.type == "binary":
                 arguments[a.name] = a.value
             else:
                 arguments[a.name] = json.loads(a.value.decode())
@@ -112,7 +118,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
 
         A universe is the group of agents and services in charge of running a scan. The universe is defined
         by the runtime."""
-        return os.environ.get('UNIVERSE')
+        return os.environ.get("UNIVERSE")
 
     def run(self) -> None:
         """Starts running the agent.
@@ -123,19 +129,19 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         self.start_healthcheck()
         atexit.register(functools.partial(Agent.at_exit, self))
         self._loop.run_until_complete(self.mq_init())
-        logger.debug('calling start method')
+        logger.debug("calling start method")
         # This is call in a thread to avoid blocking calls from affecting the MQ heartbeat running on the main thread.
         t = threading.Thread(target=self.start)
         t.start()
         t.join()
-        logger.debug('calling start method done')
+        logger.debug("calling start method done")
         try:
             if self.in_selectors is not None and len(self.in_selectors) > 0:
-                logger.debug('starting mq run')
+                logger.debug("starting mq run")
                 self._loop.run_until_complete(self.mq_run())
                 self._loop.run_forever()
         finally:
-            logger.debug('closing bus and loop')
+            logger.debug("closing bus and loop")
             self._loop.close()
 
     @abc.abstractmethod
@@ -159,16 +165,16 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         """
         try:
             # remove the UUID from the selector:
-            selector = '.'.join(selector.split('.')[: -1])
+            selector = ".".join(selector.split(".")[:-1])
             object_message = agent_message.Message.from_raw(selector, message)
-            logger.debug('call to process with message=%s', message)
+            logger.debug("call to process with message=%s", message)
             self.process(object_message)
         # pylint: disable=W0703
         except Exception as e:
-            logger.exception('exception raised: %s', e)
+            logger.exception("exception raised: %s", e)
         finally:
             self.process_cleanup()
-            logger.debug('done call to process message')
+            logger.debug("done call to process message")
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:
@@ -195,7 +201,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         Returns:
             None
         """
-        raise NotImplementedError('Missing process method implementation.')
+        raise NotImplementedError("Missing process method implementation.")
 
     @abc.abstractmethod
     def process(self, message: agent_message.Message) -> None:
@@ -207,9 +213,11 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         Returns:
             None
         """
-        raise NotImplementedError('Missing process method implementation.')
+        raise NotImplementedError("Missing process method implementation.")
 
-    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None) -> None:
+    def emit(
+        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+    ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
         Args:
@@ -225,7 +233,9 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
         message = agent_message.Message.from_data(selector, data)
         self.emit_raw(selector, message.raw, message_id=message_id)
 
-    def emit_raw(self, selector: str, raw: bytes, message_id: Optional[str] = None) -> None:
+    def emit_raw(
+        self, selector: str, raw: bytes, message_id: Optional[str] = None
+    ) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
         Args:
@@ -239,23 +249,25 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             None
         """
         if selector not in self.out_selectors:
-            logger.error('selector not present in list of out selectors')
+            logger.error("selector not present in list of out selectors")
             # CAUTION: this check is enforced on the client-side only in certain runtimes
-            raise NonListedMessageSelectorError(f'{selector} is not in {"".join(self.out_selectors)}')
+            raise NonListedMessageSelectorError(
+                f'{selector} is not in {"".join(self.out_selectors)}'
+            )
 
-        logger.debug('call to send message with %s', selector)
+        logger.debug("call to send message with %s", selector)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
         # the same selector and message body is sent only once to the bus.
         if message_id is None:
-            selector = f'{selector}.{uuid.uuid4()}'
+            selector = f"{selector}.{uuid.uuid4()}"
         else:
-            selector = f'{selector}.{message_id}'
+            selector = f"{selector}.{message_id}"
 
         self.mq_send_message(selector, raw)
-        logger.debug('done call to send_message')
+        logger.debug("done call to send_message")
 
     @classmethod
-    def main(cls: Type['AgentMixin'], args: Optional[List[str]] = None) -> None:
+    def main(cls: Type["AgentMixin"], args: Optional[List[str]] = None) -> None:
         """Prepares the agents class by reading the agent definition and runtime settings.
 
         By the default, the class main expects the definition file to be at `agent.yaml` and settings to be at
@@ -281,25 +293,37 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin,
             args = sys.argv[1:]
 
         parser = argparse.ArgumentParser()
-        parser.add_argument('-s', '--settings',
-                            default='/tmp/settings.binproto',
-                            help='Agent binary proto settings.')
+        parser.add_argument(
+            "-s",
+            "--settings",
+            default="/tmp/settings.binproto",
+            help="Agent binary proto settings.",
+        )
         parsed_args = parser.parse_args(args)
-        logger.info('running agent with definition %s and settings %s', AGENT_DEFINITION_PATH, parsed_args.settings)
+        logger.info(
+            "running agent with definition %s and settings %s",
+            AGENT_DEFINITION_PATH,
+            parsed_args.settings,
+        )
 
         if not pathlib.Path(AGENT_DEFINITION_PATH).exists():
-            logger.error('definition file does not exist')
+            logger.error("definition file does not exist")
             sys.exit(2)
         if not pathlib.Path(parsed_args.settings).exists():
-            logger.error('settings file does not exist')
+            logger.error("settings file does not exist")
             sys.exit(2)
 
-        with open(AGENT_DEFINITION_PATH, 'r', encoding='utf-8') as f_definition, \
-                open(parsed_args.settings, 'rb') as f_settings:
+        with open(AGENT_DEFINITION_PATH, "r", encoding="utf-8") as f_definition, open(
+            parsed_args.settings, "rb"
+        ) as f_settings:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
-            agent_settings = runtime_definitions.AgentSettings.from_proto(f_settings.read())
-            instance = cls(agent_definition=agent_definition, agent_settings=agent_settings)
-            logger.debug('running agent instance')
+            agent_settings = runtime_definitions.AgentSettings.from_proto(
+                f_settings.read()
+            )
+            instance = cls(
+                agent_definition=agent_definition, agent_settings=agent_settings
+            )
+            logger.debug("running agent instance")
             instance.run()
 
 
@@ -353,7 +377,7 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        raise NotImplementedError('Missing process method implementation.')
+        raise NotImplementedError("Missing process method implementation.")
 
     def process_cleanup(self) -> None:
         """Overridable message cleanup method to be called once process is completed or even in the case of a failure.

@@ -25,11 +25,9 @@ from ostorlab.runtimes.local.services import jaeger
 
 logger = logging.getLogger(__name__)
 
-MOUNT_VARIABLES = {
-    '$CONFIG_HOME': str(configuration_manager.OSTORLAB_PRIVATE_DIR)
-}
+MOUNT_VARIABLES = {"$CONFIG_HOME": str(configuration_manager.OSTORLAB_PRIVATE_DIR)}
 
-HEALTHCHECK_HOST = '0.0.0.0'
+HEALTHCHECK_HOST = "0.0.0.0"
 HEALTHCHECK_PORT = 5000
 SECOND = 1000000000
 HEALTHCHECK_RETRIES = 5
@@ -44,12 +42,12 @@ class Error(exceptions.OstorlabError):
 
 class MissingAgentDefinitionLabel(Error):
     """Agent definition label is missing from the agent image. This is likely due to the agent built directly with a
-     docker command and not agent build."""
+    docker command and not agent build."""
 
 
 def _parse_mount_string_windows(string):
     """Handles parsing mounts on Windows OS."""
-    parts = string.split(':')
+    parts = string.split(":")
     if len(parts) == 1:
         # This supposes only having a target like /root.
         return docker_types_services.Mount(target=parts[0], source=None)
@@ -57,62 +55,68 @@ def _parse_mount_string_windows(string):
         # This supposes having a source linux style and target. Like /var/run/docker.sock:/var/run/docker.sock.
         target = parts[1]
         source = parts[0]
-        mount_type = 'volume'
-        if source.startswith('/'):
+        mount_type = "volume"
+        if source.startswith("/"):
             # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
-            source = f'/{source}'
-            mount_type = 'bind'
-        return docker_types_services.Mount(target, source, read_only=False, type=mount_type)
+            source = f"/{source}"
+            mount_type = "bind"
+        return docker_types_services.Mount(
+            target, source, read_only=False, type=mount_type
+        )
     elif len(parts) == 3:
         # This supposes two cases. First case is windows style with linux, like C:/Users/bob:/root. The second
         # case is /root:/root:ro
-        if parts[2] in ('ro', 'rw', 'z', 'Z'):
+        if parts[2] in ("ro", "rw", "z", "Z"):
             target = parts[1]
             source = parts[0]
-            mount_type = 'volume'
-            if source.startswith('/'):
+            mount_type = "volume"
+            if source.startswith("/"):
                 # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
-                source = f'/{source}'
-                mount_type = 'bind'
-            read_only = not parts[2] == 'rw'
-            return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+                source = f"/{source}"
+                mount_type = "bind"
+            read_only = not parts[2] == "rw"
+            return docker_types_services.Mount(
+                target, source, read_only=read_only, type=mount_type
+            )
         else:
             target = parts[2]
-            source = ':'.join(parts[:2])
-            source = source.replace('\\', '/')
-            mount_type = 'bind'
-            return docker_types_services.Mount(target, source, read_only=False, type=mount_type)
+            source = ":".join(parts[:2])
+            source = source.replace("\\", "/")
+            mount_type = "bind"
+            return docker_types_services.Mount(
+                target, source, read_only=False, type=mount_type
+            )
     elif len(parts) == 4:
         # This covers the case C:/Users/bob:/root:ro
         target = parts[2]
-        source = ':'.join(parts[:2])
-        source = source.replace('\\', '/')
-        mount_type = 'bind'
-        read_only = not (len(parts) == 3 or parts[3] == 'rw')
-        return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
-    else:
-        raise errors.InvalidArgument(
-            f'Invalid mount format "{string}"'
+        source = ":".join(parts[:2])
+        source = source.replace("\\", "/")
+        mount_type = "bind"
+        read_only = not (len(parts) == 3 or parts[3] == "rw")
+        return docker_types_services.Mount(
+            target, source, read_only=read_only, type=mount_type
         )
+    else:
+        raise errors.InvalidArgument(f'Invalid mount format "{string}"')
 
 
 def _parse_mount_string_unix(string):
     """Handles parsing of mounts on Unix OS like Linux, Cygwin and MacOS."""
-    parts = string.split(':')
+    parts = string.split(":")
     if len(parts) > 3:
-        raise errors.InvalidArgument(
-            f'Invalid mount format "{string}"'
-        )
+        raise errors.InvalidArgument(f'Invalid mount format "{string}"')
     if len(parts) == 1:
         return docker_types_services.Mount(target=parts[0], source=None)
     else:
         target = parts[1]
         source = parts[0]
-        mount_type = 'volume'
-        if source.startswith('/'):
-            mount_type = 'bind'
-        read_only = not (len(parts) == 2 or parts[2] == 'rw')
-        return docker_types_services.Mount(target, source, read_only=read_only, type=mount_type)
+        mount_type = "volume"
+        if source.startswith("/"):
+            mount_type = "bind"
+        read_only = not (len(parts) == 2 or parts[2] == "rw")
+        return docker_types_services.Mount(
+            target, source, read_only=read_only, type=mount_type
+        )
 
 
 def _parse_mount_string(string):
@@ -133,14 +137,15 @@ docker_types_services.Mount.parse_mount_string = _parse_mount_string
 class AgentRuntime:
     """Class to consolidate the agent settings and agent default definition, and create the agent service."""
 
-    def __init__(self,
-                 agent_settings: definitions.AgentSettings,
-                 runtime_name: str,
-                 docker_client: docker.DockerClient,
-                 mq_service: mq.LocalRabbitMQ,
-                 redis_service: redis.LocalRedis,
-                 jaeger_service: jaeger.LocalJaeger
-                 ) -> None:
+    def __init__(
+        self,
+        agent_settings: definitions.AgentSettings,
+        runtime_name: str,
+        docker_client: docker.DockerClient,
+        mq_service: mq.LocalRabbitMQ,
+        redis_service: redis.LocalRedis,
+        jaeger_service: jaeger.LocalJaeger,
+    ) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -152,7 +157,7 @@ class AgentRuntime:
         self._uuid = uuid.uuid4()
         self._docker_client = docker_client
         self.agent = agent_settings
-        self.image_name = agent_settings.container_image.split(':', maxsplit=1)[0]
+        self.image_name = agent_settings.container_image.split(":", maxsplit=1)[0]
         self.runtime_name = runtime_name
         self.mq_service = mq_service
         self.redis_service = redis_service
@@ -168,21 +173,28 @@ class AgentRuntime:
         agent_instance_settings_proto = self.agent.to_raw_proto()
         # The name is hashed to work around size limitation of Docker Config.
         config_name = hashlib.md5(
-            f'config_settings_{self.image_name}_{self.runtime_name}_{self._uuid}'.encode()).hexdigest()
+            f"config_settings_{self.image_name}_{self.runtime_name}_{self._uuid}".encode()
+        ).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
-            logging.warning('found existing config %s, config will removed', config_name)
+            logging.warning(
+                "found existing config %s, config will removed", config_name
+            )
             settings_config.remove()
         except docker.errors.NotFound:
-            logging.debug('all good, config %s is new', config_name)
+            logging.debug("all good, config %s is new", config_name)
 
-        docker_config = self._docker_client.configs.create(name=config_name,
-                                                           labels={'ostorlab.universe': self.runtime_name},
-                                                           data=agent_instance_settings_proto)
-        return docker.types.ConfigReference(config_id=docker_config.id,
-                                            config_name=config_name,
-                                            filename='/tmp/settings.binproto')
+        docker_config = self._docker_client.configs.create(
+            name=config_name,
+            labels={"ostorlab.universe": self.runtime_name},
+            data=agent_instance_settings_proto,
+        )
+        return docker.types.ConfigReference(
+            config_id=docker_config.id,
+            config_name=config_name,
+            filename="/tmp/settings.binproto",
+        )
 
     def create_definition_config(self) -> docker.types.ConfigReference:
         """Create a docker configuration of the  agent definition.
@@ -190,24 +202,33 @@ class AgentRuntime:
         Returns:
             docker configuration reference of the agent defintion configuration.
         """
-        agent_definition = self._docker_client.images.get(self.agent.container_image).labels.get('agent_definition')
+        agent_definition = self._docker_client.images.get(
+            self.agent.container_image
+        ).labels.get("agent_definition")
         # The name is hashed to work around size limitation of Docker Config.
         config_name = hashlib.md5(
-            f'config_definition_{self.image_name}__{self.runtime_name}_{self._uuid}'.encode()).hexdigest()
+            f"config_definition_{self.image_name}__{self.runtime_name}_{self._uuid}".encode()
+        ).hexdigest()
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
-            logging.warning('found existing config %s, config will removed', config_name)
+            logging.warning(
+                "found existing config %s, config will removed", config_name
+            )
             settings_config.remove()
         except docker.errors.NotFound:
-            logging.debug('all good, config %s is new', config_name)
+            logging.debug("all good, config %s is new", config_name)
 
-        docker_config = self._docker_client.configs.create(name=config_name,
-                                                           labels={'ostorlab.universe': self.runtime_name},
-                                                           data=str.encode(agent_definition))
-        return docker.types.ConfigReference(config_id=docker_config.id,
-                                            config_name=config_name,
-                                            filename='/tmp/ostorlab.yaml')
+        docker_config = self._docker_client.configs.create(
+            name=config_name,
+            labels={"ostorlab.universe": self.runtime_name},
+            data=str.encode(agent_definition),
+        )
+        return docker.types.ConfigReference(
+            config_id=docker_config.id,
+            config_name=config_name,
+            filename="/tmp/ostorlab.yaml",
+        )
 
     def create_agent_definition_from_label(self) -> agent_definitions.AgentDefinition:
         """Read the agent yaml definition from the docker image labels.
@@ -216,9 +237,11 @@ class AgentRuntime:
             the agent definition.
         """
         docker_image = self._docker_client.images.get(self.agent.container_image)
-        yaml_definition_string = docker_image.labels.get('agent_definition')
+        yaml_definition_string = docker_image.labels.get("agent_definition")
         if yaml_definition_string is None:
-            raise MissingAgentDefinitionLabel(f'agent definition label is missing from image {docker_image.tags[0]}')
+            raise MissingAgentDefinitionLabel(
+                f"agent definition label is missing from image {docker_image.tags[0]}"
+            )
         with io.StringIO(yaml_definition_string) as file:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(file)
             return agent_definition
@@ -226,13 +249,15 @@ class AgentRuntime:
     def update_agent_settings(self) -> None:
         """Update agent settings with values from the local runtime."""
         self.agent.bus_url = self.mq_service.url
-        self.agent.bus_exchange_topic = f'ostorlab_topic_{self.runtime_name}'
+        self.agent.bus_exchange_topic = f"ostorlab_topic_{self.runtime_name}"
         self.agent.bus_management_url = self.mq_service.management_url
         self.agent.bus_vhost = self.mq_service.vhost
         self.agent.healthcheck_host = HEALTHCHECK_HOST
         self.agent.healthcheck_port = HEALTHCHECK_PORT
         self.agent.redis_url = self.redis_service.url
-        self.agent.tracing_collector_url = self.jaeger_service.url if self.jaeger_service is not None else None
+        self.agent.tracing_collector_url = (
+            self.jaeger_service.url if self.jaeger_service is not None else None
+        )
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.
@@ -241,11 +266,13 @@ class AgentRuntime:
             docker healthcheck configuration.
         """
         # wait 2s and check max 5 times with 0.5s between each check.
-        healthcheck = docker.types.Healthcheck(test=['CMD', 'ostorlab', 'agent', 'healthcheck'],
-                                               retries=HEALTHCHECK_RETRIES,
-                                               timeout=HEALTHCHECK_TIMEOUT,
-                                               start_period=HEALTHCHECK_START_PERIOD,
-                                               interval=HEALTHCHECK_INTERVAL)
+        healthcheck = docker.types.Healthcheck(
+            test=["CMD", "ostorlab", "agent", "healthcheck"],
+            retries=HEALTHCHECK_RETRIES,
+            timeout=HEALTHCHECK_TIMEOUT,
+            start_period=HEALTHCHECK_START_PERIOD,
+            interval=HEALTHCHECK_INTERVAL,
+        )
         return healthcheck
 
     def replace_variable_mounts(self, mounts: List[str]):
@@ -262,11 +289,12 @@ class AgentRuntime:
             replaced_mounts.append(mount)
         return replaced_mounts
 
-    def create_agent_service(self,
-                             network_name: str,
-                             extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-                             extra_mounts: Optional[List[docker.types.Mount]] = None
-                             ) -> docker.models.services.Service:
+    def create_agent_service(
+        self,
+        network_name: str,
+        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+        extra_mounts: Optional[List[docker.types.Mount]] = None,
+    ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
 
         Args:
@@ -280,9 +308,10 @@ class AgentRuntime:
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
             endpoint_spec = docker_types_services.EndpointSpec(
-                ports={p.destination_port: p.source_port for p in self.agent.open_ports})
+                ports={p.destination_port: p.source_port for p in self.agent.open_ports}
+            )
         else:
-            endpoint_spec = docker_types_services.EndpointSpec(mode='dnsrr')
+            endpoint_spec = docker_types_services.EndpointSpec(mode="dnsrr")
 
         configs = []
         configs.append(self.create_settings_config())
@@ -298,23 +327,30 @@ class AgentRuntime:
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
-        service_name = agent_definition.service_name or self.agent.container_image.replace(':', '_'). \
-            replace('.', '') + '_' + self.runtime_name
+        service_name = (
+            agent_definition.service_name
+            or self.agent.container_image.replace(":", "_").replace(".", "")
+            + "_"
+            + self.runtime_name
+        )
 
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
             env=[
-                f'UNIVERSE={self.runtime_name}',
+                f"UNIVERSE={self.runtime_name}",
             ],
             name=service_name,
-            restart_policy=docker_types_services.RestartPolicy(condition=restart_policy),
+            restart_policy=docker_types_services.RestartPolicy(
+                condition=restart_policy
+            ),
             mounts=mounts,
             healthcheck=self.create_docker_healthchek(),
-            labels={'ostorlab.universe': self.runtime_name},
+            labels={"ostorlab.universe": self.runtime_name},
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
-            resources=docker_types_services.Resources(mem_limit=mem_limit))
+            resources=docker_types_services.Resources(mem_limit=mem_limit),
+        )
 
         return agent_service

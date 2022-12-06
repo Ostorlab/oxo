@@ -5,7 +5,9 @@ from typing import Any, Dict, Protocol, Optional
 class EmitProtocol(Protocol):
     """Protocol exposing the emit method."""
 
-    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None) -> None:
+    def emit(
+        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+    ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
         Args:

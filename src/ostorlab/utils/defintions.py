@@ -8,6 +8,7 @@ class Arg:
     """Data class holding a definition.
 
     The value is always bytes to support all arg values. The type is defined by the type attribute."""
+
     name: str
     type: str
     value: Optional[Union[bytes, int, float, str, bool]] = None
@@ -17,5 +18,6 @@ class Arg:
 @dataclasses.dataclass
 class PortMapping:
     """Data class defining a port mapping source to destination"""
+
     source_port: int
     destination_port: int

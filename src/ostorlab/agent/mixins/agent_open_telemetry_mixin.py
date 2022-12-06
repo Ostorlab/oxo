@@ -53,31 +53,31 @@ class TraceExporter:
         """
         parsed_url = parse.urlparse(self._tracing_collector_url)
         scheme = parsed_url.scheme
-        if scheme == 'jaeger':
+        if scheme == "jaeger":
             return self._get_jaeger_exporter(parsed_url)
-        elif scheme == 'file':
+        elif scheme == "file":
             return self._get_file_exporter(parsed_url)
-        elif scheme == 'gcp':
+        elif scheme == "gcp":
             return self._get_gcp_exporter(parsed_url)
         else:
-            raise NotImplementedError(f'Invalid tracer type {scheme}')
+            raise NotImplementedError(f"Invalid tracer type {scheme}")
 
     def _get_file_exporter(self, parsed_url):
         file_path = parsed_url.path
-        self._file = open(file_path, 'w', encoding='utf-8')  # pylint: disable=R1732
+        self._file = open(file_path, "w", encoding="utf-8")  # pylint: disable=R1732
         file_exporter = sdk_export.ConsoleSpanExporter(out=self._file)
-        logger.info('Configuring file exporter..')
+        logger.info("Configuring file exporter..")
         return file_exporter
 
     def _get_jaeger_exporter(self, parsed_url):
         netloc = parsed_url.netloc
-        hostname, port = netloc.split(':')[0], int(netloc.split(':')[1])
+        hostname, port = netloc.split(":")[0], int(netloc.split(":")[1])
         jaeger_exporter = jaeger.JaegerExporter(
             agent_host_name=hostname,
             agent_port=port,
             udp_split_oversized_batches=True,
         )
-        logger.info('Configuring jaeger exporter..')
+        logger.info("Configuring jaeger exporter..")
         return jaeger_exporter
 
     def _get_gcp_exporter(self, parsed_url) -> cloud_trace.CloudTraceSpanExporter:
@@ -88,11 +88,17 @@ class TraceExporter:
         """
         project_id = parsed_url.netloc
         # write service account key to temp file
-        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as service_account_key_temp_file:
-            service_account_json_content = base64.b64decode(parsed_url.path[1:].encode())
+        with tempfile.NamedTemporaryFile(
+            mode="wb", delete=False
+        ) as service_account_key_temp_file:
+            service_account_json_content = base64.b64decode(
+                parsed_url.path[1:].encode()
+            )
             service_account_key_temp_file.write(service_account_json_content)
             # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_temp_file.name
+            os.environ[
+                "GOOGLE_APPLICATION_CREDENTIALS"
+            ] = service_account_key_temp_file.name
         return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 
@@ -104,16 +110,24 @@ class OpenTelemetryMixin:
 
     _tracer: Optional[trace.Tracer] = None
 
-    def __init__(self, agent_definition: agent_definitions.AgentDefinition,
-                 agent_settings: runtime_definitions.AgentSettings) -> None:
+    def __init__(
+        self,
+        agent_definition: agent_definitions.AgentDefinition,
+        agent_settings: runtime_definitions.AgentSettings,
+    ) -> None:
         """Initializes the mixin from the agent settings.
 
         Args:
             agent_settings: Agent runtime settings.
         """
-        super().__init__(agent_definition=agent_definition, agent_settings=agent_settings)
+        super().__init__(
+            agent_definition=agent_definition, agent_settings=agent_settings
+        )
         self._agent_settings = agent_settings
-        if self._agent_settings.tracing_collector_url is not None and self._agent_settings.tracing_collector_url != '':
+        if (
+            self._agent_settings.tracing_collector_url is not None
+            and self._agent_settings.tracing_collector_url != ""
+        ):
             self._tracing_collector_url = self._agent_settings.tracing_collector_url
         else:
             self._tracing_collector_url = None
@@ -121,7 +135,9 @@ class OpenTelemetryMixin:
         if self._tracing_collector_url is not None:
             self._exporter = TraceExporter(self._tracing_collector_url)
             provider = trace_provider.TracerProvider(
-                resource=resources.Resource.create({resources.SERVICE_NAME: agent_settings.key})
+                resource=resources.Resource.create(
+                    {resources.SERVICE_NAME: agent_settings.key}
+                )
             )
             trace.set_tracer_provider(provider)
 
@@ -129,9 +145,13 @@ class OpenTelemetryMixin:
             # threading in the Python runtime. This warrants more investigation, this is a temporary fix until the
             # root cause is clearly identified.
             if sys.version_info >= (3, 10):
-                self._span_processor = sdk_export.BatchSpanProcessor(self._exporter.get_trace_exporter())
+                self._span_processor = sdk_export.BatchSpanProcessor(
+                    self._exporter.get_trace_exporter()
+                )
             else:
-                self._span_processor = sdk_export.SimpleSpanProcessor(self._exporter.get_trace_exporter())
+                self._span_processor = sdk_export.SimpleSpanProcessor(
+                    self._exporter.get_trace_exporter()
+                )
             trace.get_tracer_provider().add_span_processor(self._span_processor)
             self._tracer = trace.get_tracer(__name__)
 
@@ -156,7 +176,7 @@ class OpenTelemetryMixin:
     def _stringify_bytes_values(self, value: bytes):
         """Method that will be used as a handler to json dump the message dictionary values."""
         if isinstance(value, bytes):
-            return value.decode(errors='replace')
+            return value.decode(errors="replace")
         else:
             return value
 
@@ -172,12 +192,12 @@ class OpenTelemetryMixin:
             None
         """
         if self._tracing_collector_url is not None:
-            logger.debug('recording process message trace.')
+            logger.debug("recording process message trace.")
 
-            selector_split = selector.split('.')
+            selector_split = selector.split(".")
             message_id = selector_split[-1]
 
-            message_id_split = message_id.split('-')
+            message_id_split = message_id.split("-")
             if len(message_id_split) > 5:
                 # message is passing the message id, trace id and span id.
                 trace_uuid = int(message_id_split[5])
@@ -186,27 +206,37 @@ class OpenTelemetryMixin:
                     trace_id=trace_uuid,
                     span_id=span_uuid,
                     is_remote=True,
-                    trace_flags=trace.TraceFlags(0x01)
+                    trace_flags=trace.TraceFlags(0x01),
                 )
-                context = trace.set_span_in_context(trace.NonRecordingSpan(parent_span_context))
+                context = trace.set_span_in_context(
+                    trace.NonRecordingSpan(parent_span_context)
+                )
             else:
                 context = {}
 
-            raw_selector = '.'.join(selector_split[: -1])
+            raw_selector = ".".join(selector_split[:-1])
             data = agent_message.Message.from_raw(raw_selector, message).data
-            minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
-            stringified_msg_data = json.dumps(minified_msg_data, default=self._stringify_bytes_values)
+            minified_msg_data = dictionary_minifier.minify_dict(
+                data, dictionary_minifier.truncate_str
+            )
+            stringified_msg_data = json.dumps(
+                minified_msg_data, default=self._stringify_bytes_values
+            )
 
-            with self.tracer.start_as_current_span('process_message', context=context) as process_msg_span:
-                process_msg_span.set_attribute('agent.name', self.name)
-                process_msg_span.set_attribute('message.selector', raw_selector)
-                process_msg_span.set_attribute('message.data', stringified_msg_data)
+            with self.tracer.start_as_current_span(
+                "process_message", context=context
+            ) as process_msg_span:
+                process_msg_span.set_attribute("agent.name", self.name)
+                process_msg_span.set_attribute("message.selector", raw_selector)
+                process_msg_span.set_attribute("message.data", stringified_msg_data)
 
                 super().process_message(selector, message)
         else:
             super().process_message(selector, message)
 
-    def emit(self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None) -> None:
+    def emit(
+        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+    ) -> None:
         """Overriden emit method of the agent to add OpenTelemetry traces.
         Sends a message to all listening agents on the specified selector.
 
@@ -221,16 +251,20 @@ class OpenTelemetryMixin:
             None
         """
         if self._tracing_collector_url is not None:
-            with self.tracer.start_as_current_span('emit_message') as emit_span:
-                logger.debug('recording emit message trace..')
+            with self.tracer.start_as_current_span("emit_message") as emit_span:
+                logger.debug("recording emit message trace..")
 
                 trace_id = emit_span.get_span_context().trace_id
                 span_id = emit_span.get_span_context().span_id
-                super().emit(selector, data, f'{message_id or uuid.uuid4()}-{trace_id}-{span_id}')
+                super().emit(
+                    selector, data, f"{message_id or uuid.uuid4()}-{trace_id}-{span_id}"
+                )
 
-                emit_span.set_attribute('agent.name', self.name)
-                emit_span.set_attribute('message.selector', selector)
-                minified_msg_data = dictionary_minifier.minify_dict(data, dictionary_minifier.truncate_str)
-                emit_span.set_attribute('message.data', json.dumps(minified_msg_data))
+                emit_span.set_attribute("agent.name", self.name)
+                emit_span.set_attribute("message.selector", selector)
+                minified_msg_data = dictionary_minifier.minify_dict(
+                    data, dictionary_minifier.truncate_str
+                )
+                emit_span.set_attribute("message.data", json.dumps(minified_msg_data))
         else:
             super().emit(selector, data)

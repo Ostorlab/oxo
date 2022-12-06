@@ -55,8 +55,13 @@ class VulnzListAPIRequest(request.APIRequest):
               The query to list the vulnz.
         """
         data = {
-            'query': self.query,
-            'variables': json.dumps(
-                {'scanId': self._scan_id, 'page': self._page, 'numberElements': self._number_elements})
+            "query": self.query,
+            "variables": json.dumps(
+                {
+                    "scanId": self._scan_id,
+                    "page": self._page,
+                    "numberElements": self._number_elements,
+                }
+            ),
         }
         return data

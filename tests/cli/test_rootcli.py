@@ -5,12 +5,12 @@ from ostorlab.cli import rootcli
 
 def testRootCli_whenNoOptionProvided_showAvailableOptions():
     """Test ostorlab main command 'Ostorlab' with no options and no sub command.
-    Should show list of available commands and options """
+    Should show list of available commands and options"""
     runner = CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, [''])
+    result = runner.invoke(rootcli.rootcli, [""])
 
-    assert 'Usage: rootcli [OPTIONS]' in result.output
+    assert "Usage: rootcli [OPTIONS]" in result.output
     assert result.exit_code == 2
 
 
@@ -19,7 +19,7 @@ def testRootCli_whenWrongCommandIsProvided_showsNoSuchCommandErrorAndExit():
     should show an error message and exit"""
     runner = CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ['wrong-command'])
+    result = runner.invoke(rootcli.rootcli, ["wrong-command"])
 
-    assert 'No such command \'wrong-command\'' in result.output
+    assert "No such command 'wrong-command'" in result.output
     assert result.exit_code == 2

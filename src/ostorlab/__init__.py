@@ -3,12 +3,15 @@ import logging
 from rich.logging import RichHandler
 from ostorlab.cli.rootcli import rootcli
 
-FORMAT = '%(message)s'
+FORMAT = "%(message)s"
 logging.basicConfig(
-    level='ERROR', format=FORMAT, datefmt='[%X]', handlers=[RichHandler(rich_tracebacks=True)]
+    level="ERROR",
+    format=FORMAT,
+    datefmt="[%X]",
+    handlers=[RichHandler(rich_tracebacks=True)],
 )
 
-logger = logging.getLogger('CLI')
+logger = logging.getLogger("CLI")
 
 
 def main():

@@ -9,8 +9,9 @@ from ostorlab.cli import console as cli_console
 
 console = cli_console.Console()
 
+
 @scan.command()
-@click.argument('scan_id', required=True)
+@click.argument("scan_id", required=True)
 @click.pass_context
 def stop(ctx: click.core.Context, scan_id: int) -> None:
     """Stop a scan.\n
@@ -18,6 +19,6 @@ def stop(ctx: click.core.Context, scan_id: int) -> None:
         - ostorlab scan --runtime=local stop --id=id
     """
 
-    runtime_instance = ctx.obj['runtime']
-    with console.status('Stopping scan'):
+    runtime_instance = ctx.obj["runtime"]
+    with console.status("Stopping scan"):
         runtime_instance.stop(scan_id=scan_id)

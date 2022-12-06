@@ -14,7 +14,7 @@ def random_string(length: int, alphabet: str = string.ascii_lowercase) -> str:
         Randomly generated string.
     """
     if length <= 0:
-        raise ValueError(f'Invalid string length: {length}')
+        raise ValueError(f"Invalid string length: {length}")
 
-    result = ''.join((random.choice(alphabet) for _ in range(length)))
+    result = "".join((random.choice(alphabet) for _ in range(length)))
     return result

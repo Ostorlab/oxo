@@ -14,23 +14,25 @@ from ostorlab.utils import defintions, version
 
 logger = logging.getLogger(__name__)
 
+
 @dataclasses.dataclass
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
+
     key: str
     version: Optional[str] = None
-    bus_url: Optional[str] = ''
-    bus_exchange_topic: Optional[str] = ''
-    bus_management_url: Optional[str] = ''
-    bus_vhost: Optional[str] = ''
+    bus_url: Optional[str] = ""
+    bus_exchange_topic: Optional[str] = ""
+    bus_management_url: Optional[str] = ""
+    bus_vhost: Optional[str] = ""
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
-    restart_policy: str = 'any'
+    restart_policy: str = "any"
     mem_limit: Optional[int] = None
     open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
-    healthcheck_host: str = '0.0.0.0'
+    healthcheck_host: str = "0.0.0.0"
     healthcheck_port: int = 5000
     redis_url: Optional[str] = None
     tracing_collector_url: Optional[str] = None
@@ -38,38 +40,38 @@ class AgentSettings:
     @property
     def container_image(self):
         """Agent image name."""
-        image = self.key.replace('/', '_')
-        logger.debug('Searching container name %s with version %s', image, self.version)
+        image = self.key.replace("/", "_")
+        logger.debug("Searching container name %s with version %s", image, self.version)
         client = docker.from_env()
         matching_tag_versions = []
         for img in client.images.list():
             for t in img.tags:
-                splitted_tag = t.split(':')
+                splitted_tag = t.split(":")
                 if len(splitted_tag) == 2:
                     t_name, t_tag = splitted_tag
                 else:
-                    t_name = ':'.join(splitted_tag[:-1])
+                    t_name = ":".join(splitted_tag[:-1])
                     t_tag = splitted_tag[-1]
                 if t_name == image and self.version is None:
                     try:
                         matching_tag_versions.append(version.Version(t_tag[1:]))
                     except ValueError:
-                        logger.warning('Invalid version %s', t_tag[1:])
+                        logger.warning("Invalid version %s", t_tag[1:])
                 elif t_name == image and self.version is not None:
                     if re.match(self.version, t_tag[1:]) is not None:
                         try:
                             matching_tag_versions.append(version.Version(t_tag[1:]))
                         except ValueError:
-                            logger.warning('Invalid version %s', t_tag[1:])
+                            logger.warning("Invalid version %s", t_tag[1:])
 
         if not matching_tag_versions:
             return None
 
         matching_version = max(matching_tag_versions)
-        return f'{image}:v{matching_version}'
+        return f"{image}:v{matching_version}"
 
     @classmethod
-    def from_proto(cls, proto: bytes) -> 'AgentSettings':
+    def from_proto(cls, proto: bytes) -> "AgentSettings":
         """Constructs an agent definition from a binary proto settings.
 
         Args:
@@ -86,24 +88,25 @@ class AgentSettings:
             bus_exchange_topic=instance.bus_exchange_topic,
             bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
-            args=[defintions.Arg(
-                name=a.name,
-                type=a.type,
-                value=a.value
-            ) for a in instance.args],
+            args=[
+                defintions.Arg(name=a.name, type=a.type, value=a.value)
+                for a in instance.args
+            ],
             constraints=instance.constraints,
             mounts=instance.mounts,
             restart_policy=instance.restart_policy,
             mem_limit=instance.mem_limit,
-            open_ports=[defintions.PortMapping(
-                source_port=p.source_port,
-                destination_port=p.destination_port
-            ) for p in instance.open_ports],
+            open_ports=[
+                defintions.PortMapping(
+                    source_port=p.source_port, destination_port=p.destination_port
+                )
+                for p in instance.open_ports
+            ],
             replicas=instance.replicas,
             healthcheck_host=instance.healthcheck_host,
             healthcheck_port=instance.healthcheck_port,
             redis_url=instance.redis_url,
-            tracing_collector_url=instance.tracing_collector_url
+            tracing_collector_url=instance.tracing_collector_url,
         )
 
     def to_raw_proto(self) -> bytes:
@@ -123,17 +126,20 @@ class AgentSettings:
             arg_instance = instance.args.add()
             arg_instance.name = arg.name
             arg_instance.type = arg.type
-            if isinstance(arg.value, bytes) and arg_instance.type != 'binary':
-                raise ValueError(f'type {arg_instance.type} for not match value of type binary')
+            if isinstance(arg.value, bytes) and arg_instance.type != "binary":
+                raise ValueError(
+                    f"type {arg_instance.type} for not match value of type binary"
+                )
 
-            if isinstance(arg.value, bytes) and arg_instance.type == 'binary':
+            if isinstance(arg.value, bytes) and arg_instance.type == "binary":
                 arg_instance.value = arg.value
             else:
                 try:
                     arg_instance.value = json.dumps(arg.value).encode()
                 except TypeError as e:
-                    raise ValueError(f'type {arg_instance.value} is not JSON serializable') from e
-
+                    raise ValueError(
+                        f"type {arg_instance.value} is not JSON serializable"
+                    ) from e
 
         instance.constraints.extend(self.constraints)
         instance.mounts.extend(self.mounts)
@@ -162,6 +168,7 @@ class AgentSettings:
 @dataclasses.dataclass
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
+
     agents: List[AgentSettings]
     name: Optional[str] = None
     description: Optional[str] = None
@@ -176,26 +183,38 @@ class AgentGroupDefinition:
         agent_group_def = loader.load_agent_group_yaml(group)
         agent_settings = []
         agents_names = []
-        for agent in agent_group_def['agents']:
-            agents_names.append(agent.get('key'))
+        for agent in agent_group_def["agents"]:
+            agents_names.append(agent.get("key"))
             agent_def = AgentSettings(
-                key=agent.get('key'),
-                version=agent.get('version'),
-                args=[defintions.Arg(name=a.get('name'), description=a.get('description'), type=a.get('type'),
-                                     value=a.get('value')) for a in
-                      agent.get('args', [])],
-                constraints=agent.get('constraints', []),
-                mounts=agent.get('mounts', []),
-                restart_policy=agent.get('restart_policy', 'any'),
-                mem_limit=agent.get('mem_limit'),
-                open_ports=[defintions.PortMapping(source_port=p.get('src_port'), destination_port=p.get('dest_port'))
-                            for p
-                            in agent.get('open_ports', [])],
-                replicas=agent.get('replicas', 1)
+                key=agent.get("key"),
+                version=agent.get("version"),
+                args=[
+                    defintions.Arg(
+                        name=a.get("name"),
+                        description=a.get("description"),
+                        type=a.get("type"),
+                        value=a.get("value"),
+                    )
+                    for a in agent.get("args", [])
+                ],
+                constraints=agent.get("constraints", []),
+                mounts=agent.get("mounts", []),
+                restart_policy=agent.get("restart_policy", "any"),
+                mem_limit=agent.get("mem_limit"),
+                open_ports=[
+                    defintions.PortMapping(
+                        source_port=p.get("src_port"),
+                        destination_port=p.get("dest_port"),
+                    )
+                    for p in agent.get("open_ports", [])
+                ],
+                replicas=agent.get("replicas", 1),
             )
 
             agent_settings.append(agent_def)
 
-        name = agent_group_def.get('name')
-        description = agent_group_def.get('description', f"""Agent group : {','.join(agents_names)}""")
+        name = agent_group_def.get("name")
+        description = agent_group_def.get(
+            "description", f"""Agent group : {','.join(agents_names)}"""
+        )
         return cls(agent_settings, name, description)

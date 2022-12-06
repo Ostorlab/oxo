@@ -17,21 +17,23 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command()
-@click.option('--file', type=click.File(mode='rb'), multiple=True, required=False)
-@click.option('--url', multiple=True, required=False)
+@click.option("--file", type=click.File(mode="rb"), multiple=True, required=False)
+@click.option("--url", multiple=True, required=False)
 @click.pass_context
-def ios_ipa(ctx: click.core.Context,
-            file: Optional[Tuple[io.FileIO]] = (),
-            url: Optional[Tuple[str]] = ()) -> None:
+def ios_ipa(
+    ctx: click.core.Context,
+    file: Optional[Tuple[io.FileIO]] = (),
+    url: Optional[Tuple[str]] = (),
+) -> None:
     """Run scan for .IPA package file."""
-    runtime = ctx.obj['runtime']
+    runtime = ctx.obj["runtime"]
     assets = []
 
     if url != () and file != ():
-        console.error('Command accepts either path or source url of the ipa file.')
+        console.error("Command accepts either path or source url of the ipa file.")
         raise click.exceptions.Exit(2)
     if url == () and file == ():
-        console.error('Command missing either file path or source url of the ipa file.')
+        console.error("Command missing either file path or source url of the ipa file.")
         raise click.exceptions.Exit(2)
 
     if file != ():
@@ -41,6 +43,9 @@ def ios_ipa(ctx: click.core.Context,
         for u in url:
             assets.append(ios_ipa_asset.IOSIpa(content_url=u))
 
-
-    logger.debug('scanning assets %s', [str(asset) for asset in assets])
-    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)
+    logger.debug("scanning assets %s", [str(asset) for asset in assets])
+    runtime.scan(
+        title=ctx.obj["title"],
+        agent_group_definition=ctx.obj["agent_group_definition"],
+        assets=assets,
+    )

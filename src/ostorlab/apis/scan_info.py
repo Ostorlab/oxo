@@ -35,8 +35,5 @@ class ScanInfoAPIRequest(request.APIRequest):
         Returns:
               The query to scan info.
         """
-        data = {
-            'query': self.query,
-            'variables': json.dumps({'scanId': self._scan_id})
-            }
+        data = {"query": self.query, "variables": json.dumps({"scanId": self._scan_id})}
         return data

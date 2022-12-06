@@ -17,7 +17,9 @@ from ostorlab.apis import request
 class UsernamePasswordLoginAPIRequest(request.APIRequest):
     """Makes a request to log in the user."""
 
-    def __init__(self, username: str, password: str, otp_token: Optional[str] = None) -> None:
+    def __init__(
+        self, username: str, password: str, otp_token: Optional[str] = None
+    ) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:
@@ -42,14 +44,14 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
         """
         if self._otp_token is not None:
             data = {
-                'username': self._username,
-                'password': self._password,
-                'otp_token': self._otp_token,
+                "username": self._username,
+                "password": self._password,
+                "otp_token": self._otp_token,
             }
             return data
         else:
             data = {
-                'username': self._username,
-                'password': self._password,
+                "username": self._username,
+                "password": self._password,
             }
             return data

@@ -12,7 +12,7 @@ class Version:
 
     def __repr__(self) -> str:
         """Version string representation."""
-        return f'<Version {self._version}>'
+        return f"<Version {self._version}>"
 
     def __str__(self) -> str:
         """Version string"""
