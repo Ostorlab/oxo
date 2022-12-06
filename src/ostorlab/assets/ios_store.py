@@ -5,7 +5,7 @@ from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-@asset.selector('v3.asset.store.ios_store')
+@asset.selector("v3.asset.store.ios_store")
 class IOSStore(asset.Asset):
     """Ios bundle target asset."""
 
@@ -13,8 +13,8 @@ class IOSStore(asset.Asset):
         self.bundle_id = bundle_id
 
     def __str__(self) -> str:
-        return f'iOS Store ({self.bundle_id})'
+        return f"iOS Store ({self.bundle_id})"
 
     @property
     def proto_field(self) -> str:
-        return 'ios_store'
+        return "ios_store"

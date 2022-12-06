@@ -18,7 +18,7 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         Args:
            expiry_date: The date when the API key should expire. Defaults to None.
         """
-        self._name = 'Ostorlab CLI'
+        self._name = "Ostorlab CLI"
         self._expiry_date = expiry_date
 
     @property
@@ -50,9 +50,9 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
               The API key, name, and expiry date.
         """
         data = {
-            'query': self.query,
-            'variables': json.dumps({'name': self._name,
-                                     'expiryDate': self._expiry_date
-                                     })
+            "query": self.query,
+            "variables": json.dumps(
+                {"name": self._name, "expiryDate": self._expiry_date}
+            ),
         }
         return data

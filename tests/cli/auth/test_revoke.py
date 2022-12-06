@@ -14,31 +14,45 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
     Should delete api data from storage.
     """
 
-    api_data_dict = {'data': {'revokeApiKey': {'result': True}}}
+    api_data_dict = {"data": {"revokeApiKey": {"result": True}}}
     runner = CliRunner()
-    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-                       json=api_data_dict, status_code=200)
-    result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
+    requests_mock.post(
+        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=api_data_dict,
+        status_code=200,
+    )
+    result = runner.invoke(rootcli.rootcli, ["auth", "revoke"])
 
     assert result.exception is None
-    assert configuration_manager.ConfigurationManager(
-    ).api_key is None
+    assert configuration_manager.ConfigurationManager().api_key is None
 
 
-@mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, 'unauthenticate')
+@mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, "unauthenticate")
 def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
-    mock_console, requests_mock):
+    mock_console, requests_mock
+):
     """Test ostorlab auth revoke command with wrong api key id.
     Should unauthenticate user.
     """
 
-    errors_dict = {'errors': [{'message': 'OrganizationAPIKey matching query does not exist.', 'locations': [
-        {'line': 3, 'column': 16}], 'path': ['revokeApiKey']}], 'data': {'revokeApiKey': None}}
+    errors_dict = {
+        "errors": [
+            {
+                "message": "OrganizationAPIKey matching query does not exist.",
+                "locations": [{"line": 3, "column": 16}],
+                "path": ["revokeApiKey"],
+            }
+        ],
+        "data": {"revokeApiKey": None},
+    }
 
     mock_console.return_value = None
     runner = CliRunner()
-    requests_mock.post(authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-                       json=errors_dict, status_code=200)
-    result = runner.invoke(rootcli.rootcli, ['auth', 'revoke'])
+    requests_mock.post(
+        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=errors_dict,
+        status_code=200,
+    )
+    result = runner.invoke(rootcli.rootcli, ["auth", "revoke"])
     assert result.exception is None
-    assert 'ERROR: Could not revoke your API key' in result.output
+    assert "ERROR: Could not revoke your API key" in result.output

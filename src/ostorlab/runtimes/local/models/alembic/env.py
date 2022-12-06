@@ -10,9 +10,9 @@ from alembic import context
 
 from ostorlab.runtimes.local.models.models import Base
 from ostorlab.runtimes.local.models import models as local_models
-from ostorlab.runtimes.local.models.models import Vulnerability # pylint: disable=W0611
-from ostorlab.runtimes.local.models.models import Scan # pylint: disable=W0611
-from ostorlab.runtimes.local.models.models import ScanStatus # pylint: disable=W0611
+from ostorlab.runtimes.local.models.models import Vulnerability  # pylint: disable=W0611
+from ostorlab.runtimes.local.models.models import Scan  # pylint: disable=W0611
+from ostorlab.runtimes.local.models.models import ScanStatus  # pylint: disable=W0611
 
 
 # this is the Alembic Config object, which provides
@@ -48,13 +48,13 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option('sqlalchemy.url')
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={'paramstyle': 'named'},
-        compare_type=True
+        dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
 
     with context.begin_transaction():
@@ -70,20 +70,18 @@ def run_migrations_online() -> None:
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
-        prefix='sqlalchemy.',
+        prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
 
 
-config.set_main_option('sqlalchemy.url', local_models.ENGINE_URL)
+config.set_main_option("sqlalchemy.url", local_models.ENGINE_URL)
 
 if context.is_offline_mode():
     run_migrations_offline()

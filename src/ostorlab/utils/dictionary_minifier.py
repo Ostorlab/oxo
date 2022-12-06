@@ -6,7 +6,9 @@ from typing import Any, Callable, Dict, List, Union
 TRUNCATE_SIZE = 256
 
 
-def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
+def truncate_str(
+    value: Union[str, bytes],
+) -> Union[str, bytes]:
     """Truncate a string or bytes value.
 
     Args:
@@ -22,7 +24,9 @@ def truncate_str(value: Union[str, bytes], ) -> Union[str, bytes]:
     return value
 
 
-def minify_dict(value: Any, handler: Callable[[object], object]) -> Union[Dict[object, object], List[object], object]:
+def minify_dict(
+    value: Any, handler: Callable[[object], object]
+) -> Union[Dict[object, object], List[object], object]:
     """Recursive approach to minify dictionary values.
 
     Args:

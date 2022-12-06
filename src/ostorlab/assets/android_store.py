@@ -5,7 +5,7 @@ from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-@asset.selector('v3.asset.store.android_store')
+@asset.selector("v3.asset.store.android_store")
 class AndroidStore(asset.Asset):
     """Android store package target asset."""
 
@@ -13,8 +13,8 @@ class AndroidStore(asset.Asset):
         self.package_name = package_name
 
     def __str__(self) -> str:
-        return f'Android Store: ({self.package_name})'
+        return f"Android Store: ({self.package_name})"
 
     @property
     def proto_field(self) -> str:
-        return 'android_store'
+        return "android_store"

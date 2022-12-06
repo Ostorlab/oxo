@@ -53,9 +53,9 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
 
     data = loader.load_agent_yaml(yaml_data_file)
 
-    assert data['name'] == 'agent'
-    assert data['version'] == '1.1.0'
-    assert data['agenArgument'][1]['default_value'] == 42
+    assert data["name"] == "agent"
+    assert data["version"] == "1.1.0"
+    assert data["agenArgument"][1]["default_value"] == 42
 
 
 def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError() -> None:
@@ -152,7 +152,7 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
 
     data = loader.load_agent_group_yaml(yaml_data_file)
 
-    assert data['description'] == 'AgentGroup1 Should be here'
+    assert data["description"] == "AgentGroup1 Should be here"
 
 
 def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError() -> None:

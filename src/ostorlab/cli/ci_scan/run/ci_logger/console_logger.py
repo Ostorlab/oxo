@@ -24,7 +24,6 @@ class Logger(logger.Logger):
         """
         console.error(message)
 
-
     def output(self, name: str, value: str) -> None:
         """Pass an output to the next step of the CI.
 
@@ -32,4 +31,4 @@ class Logger(logger.Logger):
             name: name of the output to pass to the next step.
             value: value of the output.
         """
-        console.success(f'Output: {name}:{value}')
+        console.success(f"Output: {name}:{value}")

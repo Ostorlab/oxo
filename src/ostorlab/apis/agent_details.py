@@ -5,6 +5,7 @@ from typing import Dict, Optional
 
 from ostorlab.apis import request
 
+
 class AgentDetailsAPIRequest(request.APIRequest):
     """Get agent details for a specified agent_key."""
 
@@ -46,7 +47,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
             The body of the agent details request.
         """
         data = {
-            'query': self.query,
-            'variables': json.dumps({'agentKey': self._agent_key})
+            "query": self.query,
+            "variables": json.dumps({"agentKey": self._agent_key}),
         }
         return data

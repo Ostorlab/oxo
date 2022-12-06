@@ -15,89 +15,86 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
     """
     runner = testing.CliRunner()
 
-    result = runner.invoke(rootcli.rootcli, ['agent', 'install'])
+    result = runner.invoke(rootcli.rootcli, ["agent", "install"])
 
-    assert 'Usage: rootcli agent install [OPTIONS]' in result.output
-    assert 'Try \'rootcli agent install --help\' for help.' in result.output
-    assert 'Error: Missing argument' in result.output
+    assert "Usage: rootcli agent install [OPTIONS]" in result.output
+    assert "Try 'rootcli agent install --help' for help." in result.output
+    assert "Error: Missing argument" in result.output
 
 
-def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(requests_mock, mocker):
+def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
+    requests_mock, mocker
+):
     """Test ostorlab agent install CLI command with a wrong agent_key value.
     Should show message.
     """
-    matcher = re.compile(r'http\+docker://(.*)/version')
-    requests_mock.get(matcher, json={'ApiVersion': '1.42'}, status_code=200)
+    matcher = re.compile(r"http\+docker://(.*)/version")
+    requests_mock.get(matcher, json={"ApiVersion": "1.42"}, status_code=200)
 
     api_call_response = {
-        'errors': [
+        "errors": [
             {
-                'message': 'Agent with key : agent/os/not_found does not exist.',
-                'locations': [
-                    {
-                        'line': 2,
-                        'column': 3
-                    }
-                ],
-                'path': [
-                    'agent'
-                ]
+                "message": "Agent with key : agent/os/not_found does not exist.",
+                "locations": [{"line": 2, "column": 3}],
+                "path": ["agent"],
             }
         ]
     }
-    requests_mock.post(public_runner.PUBLIC_GRAPHQL_ENDPOINT,
-                       json=api_call_response, status_code=200)
+    requests_mock.post(
+        public_runner.PUBLIC_GRAPHQL_ENDPOINT, json=api_call_response, status_code=200
+    )
 
-    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
-    mocker.patch('ostorlab.cli.docker_requirements_checker.is_docker_working', return_value=True)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
     runner = testing.CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/wrong/key'])
+    result = runner.invoke(rootcli.rootcli, ["agent", "install", "agent/wrong/key"])
 
-    assert 'ERROR:' in result.output, result.output
+    assert "ERROR:" in result.output, result.output
     assert result.exit_code == 2
 
 
 def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, requests_mock):
     """Test ostorlab agent install CLI command with a valid agent_key value should install the agent."""
 
-    image_pull_mock = mocker.patch('docker.api.client.APIClient.pull', autospec=True)
-    image_get_mock = mocker.patch('docker.models.images.ImageCollection.get', return_value=images_model.Image())
-    tag_image_mock = mocker.patch('docker.models.images.Image.tag', return_value=True)
-    mocker.patch('ostorlab.cli.install_agent._is_image_present', return_value=False)
+    image_pull_mock = mocker.patch("docker.api.client.APIClient.pull", autospec=True)
+    image_get_mock = mocker.patch(
+        "docker.models.images.ImageCollection.get", return_value=images_model.Image()
+    )
+    tag_image_mock = mocker.patch("docker.models.images.Image.tag", return_value=True)
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
 
     api_call_response = {
-        'data': {
-            'agent': {
-                'name': 'bigFuzzer',
-                'gitLocation': '',
-                'yamlFileLocation': '',
-                'dockerLocation': 'ostorlab.store/library/busybox',
-                'key': 'agent/OS/some_agentd',
-                'versions': {
-                    'versions': [
-                        {
-                            'version': '1.0.0'
-                        }
-                    ]
-                }
+        "data": {
+            "agent": {
+                "name": "bigFuzzer",
+                "gitLocation": "",
+                "yamlFileLocation": "",
+                "dockerLocation": "ostorlab.store/library/busybox",
+                "key": "agent/OS/some_agentd",
+                "versions": {"versions": [{"version": "1.0.0"}]},
             }
         }
     }
-    requests_mock.post(public_runner.PUBLIC_GRAPHQL_ENDPOINT,
-                       json=api_call_response, status_code=200)
+    requests_mock.post(
+        public_runner.PUBLIC_GRAPHQL_ENDPOINT, json=api_call_response, status_code=200
+    )
 
     # The use of the following request mock is due to the fact that requests_mock fixture
     # requires mocking all requests. The docker api also sends some requests,
     # thus the following lines.
-    matcher = re.compile(r'http\+docker://(.*)/version')
-    requests_mock.get(matcher, json={'ApiVersion': '1.42'}, status_code=200)
-    matcher = re.compile(r'http\+docker://(.*)/json')
+    matcher = re.compile(r"http\+docker://(.*)/version")
+    requests_mock.get(matcher, json={"ApiVersion": "1.42"}, status_code=200)
+    matcher = re.compile(r"http\+docker://(.*)/json")
     requests_mock.get(matcher, json={}, status_code=200)
-    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
-    mocker.patch('ostorlab.cli.docker_requirements_checker.is_docker_working', return_value=True)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
     runner = testing.CliRunner()
-    result = runner.invoke(rootcli.rootcli, ['agent', 'install', 'agent/OT1/bigFuzzer'])
+    result = runner.invoke(rootcli.rootcli, ["agent", "install", "agent/OT1/bigFuzzer"])
     image_pull_mock.assert_called()
     image_get_mock.assert_called()
     tag_image_mock.assert_called()
-    assert 'Installation successful' in result.output
+    assert "Installation successful" in result.output

@@ -23,15 +23,15 @@ def revoke():
         api_key_id = config_manager.api_key_id
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
-        with console.status('Revoking API key'):
+        with console.status("Revoking API key"):
             try:
                 api_runner.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
                 api_runner.unauthenticate()
                 config_manager.delete_api_data()
-                console.success('API key revoked')
+                console.success("API key revoked")
             except runner.ResponseError:
-                console.error('Could not revoke your API key.')
+                console.error("Could not revoke your API key.")
 
     except authenticated_runner.AuthenticationError:
         api_runner.unauthenticate()
-        console.success('Your API key has already been revoked.')
+        console.success("Your API key has already been revoked.")

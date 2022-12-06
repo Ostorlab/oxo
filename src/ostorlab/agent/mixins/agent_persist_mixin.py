@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class AgentPersistMixin:
     """Agent mixin to persist data. The mixin enables distributed storage of a group of agent replicas or for a single
-     agent that needs reliable storage."""
+    agent that needs reliable storage."""
 
     def __init__(self, agent_settings: runtime_definitions.AgentSettings) -> None:
         """Initializes the mixin from the agent settings.
@@ -33,7 +33,7 @@ class AgentPersistMixin:
             agent_settings: Agent runtime settings.
         """
         if agent_settings.redis_url is None:
-            raise ValueError('agent settings is missing redis url')
+            raise ValueError("agent settings is missing redis url")
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
 
     def set_add(self, key: Union[bytes, str], *value: Union[bytes, str]) -> bool:
@@ -112,7 +112,11 @@ class AgentPersistMixin:
         """
         return self._redis_client.get(key)
 
-    def hash_add(self, hash_name: Union[bytes, str], mapping: Dict[Union[bytes, str], Union[bytes, str]]) -> bool:
+    def hash_add(
+        self,
+        hash_name: Union[bytes, str],
+        mapping: Dict[Union[bytes, str], Union[bytes, str]],
+    ) -> bool:
         """Set mapping within hash hash_name. If hash_name does not exist a new hash is created.
         If key exists, value is overriden.
 
@@ -137,7 +141,9 @@ class AgentPersistMixin:
         """
         return self._redis_client.hexists(hash_name, key)
 
-    def hash_get(self, hash_name: Union[bytes, str], key: Union[bytes, str]) -> Optional[bytes]:
+    def hash_get(
+        self, hash_name: Union[bytes, str], key: Union[bytes, str]
+    ) -> Optional[bytes]:
         """Return the value of key within the hash hash_name.
 
         Args:
@@ -182,11 +188,16 @@ class AgentPersistMixin:
         """
         return self._redis_client.type(key).decode()
 
-    def add_ip_network(self, key: Union[bytes, str],
-                       ip_range: Union[ipaddress.IPv6Network, ipaddress.IPv4Network],
-                       value: Optional[
-                           Callable[[Union[ipaddress.IPv6Network, ipaddress.IPv4Network]], Union[bytes, str]]] = None
-                       ) -> bool:
+    def add_ip_network(
+        self,
+        key: Union[bytes, str],
+        ip_range: Union[ipaddress.IPv6Network, ipaddress.IPv4Network],
+        value: Optional[
+            Callable[
+                [Union[ipaddress.IPv6Network, ipaddress.IPv4Network]], Union[bytes, str]
+            ]
+        ] = None,
+    ) -> bool:
         """
         Returns True if a network have never been persisted before, else it's returns False
         this method takes

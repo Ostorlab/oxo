@@ -14,13 +14,13 @@ class APIRequest(abc.ABC):
     @abc.abstractmethod
     def query(self) -> Optional[str]:
         """Query to the GraphQL API."""
-        raise NotImplementedError('Missing implementation')
+        raise NotImplementedError("Missing implementation")
 
     @property
     @abc.abstractmethod
     def data(self) -> Optional[Dict]:
         """Body of the API request, containing the query & any additional data."""
-        raise NotImplementedError('Missing implementation')
+        raise NotImplementedError("Missing implementation")
 
     @property
     def files(self) -> Optional[Dict]:

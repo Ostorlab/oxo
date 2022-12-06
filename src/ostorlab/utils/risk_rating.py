@@ -2,16 +2,18 @@
 import enum
 from typing import List
 
+
 class RiskRating(enum.Enum):
     """Enumeration of the risk rating of a scan."""
-    HIGH = 'High'
-    MEDIUM = 'Medium'
-    LOW = 'Low'
-    POTENTIALLY = 'Potentially'
-    HARDENING = 'Hardening'
-    SECURE = 'Secure'
-    IMPORTANT = 'Important'
-    INFO = 'Info'
+
+    HIGH = "High"
+    MEDIUM = "Medium"
+    LOW = "Low"
+    POTENTIALLY = "Potentially"
+    HARDENING = "Hardening"
+    SECURE = "Secure"
+    IMPORTANT = "Important"
+    INFO = "Info"
 
     @classmethod
     def has_value(cls, value: str) -> bool:
@@ -30,5 +32,5 @@ RATINGS_ORDER = {
     RiskRating.HARDENING.name: 4,
     RiskRating.SECURE.name: 5,
     RiskRating.IMPORTANT.name: 6,
-    RiskRating.INFO.name: 7
+    RiskRating.INFO.name: 7,
 }

@@ -23,20 +23,24 @@ from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def mq_service():
     """Start MQ Docker service"""
-    lrm = mq.LocalRabbitMQ(name='core_mq', network='test_network', exposed_ports={5672: 5672, 15672: 15672})
+    lrm = mq.LocalRabbitMQ(
+        name="core_mq", network="test_network", exposed_ports={5672: 5672, 15672: 15672}
+    )
     lrm.start()
     time.sleep(3)
     yield lrm
     lrm.stop()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def redis_service():
     """Start Redis Docker service"""
-    lr = local_redis_service.LocalRedis(name='core_redis', network='test_network', exposed_ports={6379: 6379})
+    lr = local_redis_service.LocalRedis(
+        name="core_redis", network="test_network", exposed_ports={6379: 6379}
+    )
     lr.start()
     time.sleep(3)
     yield lr
@@ -220,10 +224,10 @@ def image_cleanup(request):
 
 @pytest.fixture()
 def db_engine_path(tmpdir):
-    if sys.platform == 'win32':
-        path = f'sqlite:///{tmpdir}\\ostorlab_db1.sqlite'.replace('\\', '\\\\')
+    if sys.platform == "win32":
+        path = f"sqlite:///{tmpdir}\\ostorlab_db1.sqlite".replace("\\", "\\\\")
     else:
-        path = f'sqlite:////{tmpdir}/ostorlab_db1.sqlite'
+        path = f"sqlite:////{tmpdir}/ostorlab_db1.sqlite"
     return path
 
 
@@ -238,99 +242,182 @@ def clean_redis_data(request) -> None:
         redis_client.delete(key)
 
 
-@pytest.fixture(name='metadata_file_path')
+@pytest.fixture(name="metadata_file_path")
 def fixture_metadata_file_path():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.FILE_PATH,
-        value='/home/etc')
+        value="/home/etc",
+    )
 
 
-@pytest.fixture(name='metadata_code_location')
+@pytest.fixture(name="metadata_code_location")
 def fixture_metadata_code_location():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.CODE_LOCATION,
-        value='config.xml:15')
+        value="config.xml:15",
+    )
 
 
-@pytest.fixture(name='metadata_url')
+@pytest.fixture(name="metadata_url")
 def fixture_metadata_url():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.URL,
-        value='https://example.com/product=15')
+        value="https://example.com/product=15",
+    )
 
 
-@pytest.fixture(name='metadata_port')
+@pytest.fixture(name="metadata_port")
 def fixture_metadata_port():
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
-        metadata_type=agent_report_vulnerability_mixin.MetadataType.PORT,
-        value='23')
+        metadata_type=agent_report_vulnerability_mixin.MetadataType.PORT, value="23"
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_android_aab(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_android_aab(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=android_aab_asset.AndroidAab(content=b'aab'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=android_aab_asset.AndroidAab(content=b"aab"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_android_apk(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_android_apk(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=android_apk_asset.AndroidApk(content=b'apk'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=android_apk_asset.AndroidApk(content=b"apk"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_android_store(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
-    return agent_report_vulnerability_mixin.VulnerabilityLocation(metadata=[
-        metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=android_store_asset.AndroidStore(package_name='a.b.c'))
-
-
-@pytest.fixture()
-def vulnerability_location_ios_store(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_android_store(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=ios_store_asset.IOSStore(bundle_id='a.b.c'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=android_store_asset.AndroidStore(package_name="a.b.c"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_ios_ipa(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_ios_store(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=ios_ipa_asset.IOSIpa(content=b'a.b.c'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=ios_store_asset.IOSStore(bundle_id="a.b.c"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_link_asset(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_ios_ipa(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=link_asset.Link(url='https://example.com', method='GET'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=ios_ipa_asset.IOSIpa(content=b"a.b.c"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_ipv4(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_link_asset(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=ipv4_asset.IPv4(host='8.8.8.8'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=link_asset.Link(url="https://example.com", method="GET"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_ipv6(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_ipv4(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=ipv6_asset.IPv6(host='2001:4860:4860::8888'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=ipv4_asset.IPv4(host="8.8.8.8"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_domain_name(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_ipv6(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=domain_name_asset.DomainName(name='ostorlab.co'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=ipv6_asset.IPv6(host="2001:4860:4860::8888"),
+    )
 
 
 @pytest.fixture()
-def vulnerability_location_file(metadata_file_path, metadata_code_location, metadata_port, metadata_url):
+def vulnerability_location_domain_name(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
-        metadata=[metadata_file_path, metadata_code_location, metadata_port, metadata_url],
-        asset=file_asset.File(content=b'file'))
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=domain_name_asset.DomainName(name="ostorlab.co"),
+    )
+
+
+@pytest.fixture()
+def vulnerability_location_file(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=file_asset.File(content=b"file"),
+    )

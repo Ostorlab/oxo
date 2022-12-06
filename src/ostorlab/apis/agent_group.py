@@ -42,15 +42,12 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
         """
 
         variables = {
-            'agentGroup': {
-                'name': self._name,
-                'description': self._description,
-                'access': 'PRIVATE',
-                'agents': self._agents
+            "agentGroup": {
+                "name": self._name,
+                "description": self._description,
+                "access": "PRIVATE",
+                "agents": self._agents,
             }
         }
-        data = {
-            'query': self.query,
-            'variables': json.dumps(variables)
-        }
+        data = {"query": self.query, "variables": json.dumps(variables)}
         return data

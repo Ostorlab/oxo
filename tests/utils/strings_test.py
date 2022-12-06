@@ -17,4 +17,3 @@ def testRandomString_whenLengthIsInvalid_raisesAnException():
     """Tests if an exception is raised when a incorrect length value is provided."""
     with pytest.raises(ValueError):
         strings.random_string(0)
-

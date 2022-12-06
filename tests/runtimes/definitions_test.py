@@ -28,20 +28,22 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
                 value: "blue"
     """
     dummy_agent_def1 = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        args=[utils_definitions.Arg(name='color', type='string', value='red')],
+        key="agent/ostorlab/BigFuzzer",
+        args=[utils_definitions.Arg(name="color", type="string", value="red")],
         constraints=[],
         mounts=[],
-        restart_policy='any',
+        restart_policy="any",
         open_ports=[],
     )
     dummy_agent_def2 = definitions.AgentSettings(
-        key='agent/ostorlab/SmallFuzzer',
-        args=[utils_definitions.Arg(name='color', type='string', value='blue')],
+        key="agent/ostorlab/SmallFuzzer",
+        args=[utils_definitions.Arg(name="color", type="string", value="blue")],
         constraints=[],
         mounts=[],
-        restart_policy='any',
-        open_ports=[utils_definitions.PortMapping(source_port=50800, destination_port=55000)],
+        restart_policy="any",
+        open_ports=[
+            utils_definitions.PortMapping(source_port=50800, destination_port=55000)
+        ],
     )
     dummy_agents = [dummy_agent_def1, dummy_agent_def2]
     valid_yaml_def = io.StringIO(valid_yaml)
@@ -55,12 +57,12 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
 def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
     """Tests that the generated proto is of type bytes."""
     instance_settings = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        bus_url='mq',
-        bus_exchange_topic='topic',
-        bus_management_url='mq_managment',
-        bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='string', value='fast')]
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
     )
 
     proto = instance_settings.to_raw_proto()
@@ -71,12 +73,12 @@ def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
 def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
     """Test supported serializing int number."""
     instance_settings = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        bus_url='mq',
-        bus_exchange_topic='topic',
-        bus_management_url='mq_managment',
-        bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='number', value=1)]
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="number", value=1)],
     )
 
     proto = instance_settings.to_raw_proto()
@@ -87,12 +89,12 @@ def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
 def testAgentInstanceSettingsTo_whenProtoHasFloatField_returnsBytes():
     """Test supported serializing float number."""
     instance_settings = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        bus_url='mq',
-        bus_exchange_topic='topic',
-        bus_management_url='mq_managment',
-        bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='number', value=1.1)]
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="number", value=1.1)],
     )
 
     proto = instance_settings.to_raw_proto()
@@ -103,12 +105,12 @@ def testAgentInstanceSettingsTo_whenProtoHasFloatField_returnsBytes():
 def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes():
     """Test supported serializing bytes."""
     instance_settings = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        bus_url='mq',
-        bus_exchange_topic='topic',
-        bus_management_url='mq_managment',
-        bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='string', value='test')]
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="test")],
     )
 
     proto = instance_settings.to_raw_proto()
@@ -119,31 +121,31 @@ def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes():
 def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanceSettings():
     """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
     instance_settings = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        bus_url='mq',
-        bus_exchange_topic='topic',
-        bus_management_url='mq_managment',
-        bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='string', value='fast')]
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
     )
 
     proto = instance_settings.to_raw_proto()
     new_instance = definitions.AgentSettings.from_proto(proto)
 
-    assert new_instance.bus_url == 'mq'
-    assert new_instance.bus_exchange_topic == 'topic'
+    assert new_instance.bus_url == "mq"
+    assert new_instance.bus_exchange_topic == "topic"
     assert len(new_instance.args) == 1
 
 
 def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
     """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
     instance_settings = definitions.AgentSettings(
-        key='agent/ostorlab/BigFuzzer',
-        bus_url='mq',
-        bus_exchange_topic='topic',
-        bus_management_url='mq_managment',
-        bus_vhost='vhost',
-        args=[utils_definitions.Arg(name='speed', type='string', value='fast')]
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
     )
 
     assert instance_settings.container_image is None

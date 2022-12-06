@@ -5,7 +5,7 @@ import pathlib
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
-OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / '.ostorlab'
+OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / ".ostorlab"
 
 
 class SingletonMeta(type):
@@ -13,7 +13,9 @@ class SingletonMeta(type):
 
     _instances: Dict[object, object] = {}
 
-    def __call__(cls: 'SingletonMeta', *args: Tuple[object], **kwargs: Dict[object, object]) -> object:
+    def __call__(
+        cls: "SingletonMeta", *args: Tuple[object], **kwargs: Dict[object, object]
+    ) -> object:
         """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
         if cls not in cls._instances:
             instance = super().__call__(*args, **kwargs)
@@ -23,7 +25,7 @@ class SingletonMeta(type):
 
 class ConfigurationManager(metaclass=SingletonMeta):
     """Handles any configurations related to Ostorlab, such as storing and retrieving
-       API keys.
+    API keys.
     """
 
     def __init__(self, private_dir: pathlib.Path = OSTORLAB_PRIVATE_DIR):
@@ -34,7 +36,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         """
         self._private_dir = private_dir
         self._private_dir.mkdir(parents=True, exist_ok=True)
-        self._complete_api_key_path = self._private_dir / 'key'
+        self._complete_api_key_path = self._private_dir / "key"
         self._api_key: Optional[str] = None
 
     @property
@@ -50,7 +52,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         else:
             api_data = self._get_api_data()
             if api_data is not None:
-                secret_key: Optional[str] = api_data.get('secret_key')
+                secret_key: Optional[str] = api_data.get("secret_key")
                 return secret_key
             else:
                 return None
@@ -68,11 +70,13 @@ class ConfigurationManager(metaclass=SingletonMeta):
         else:
             api_data = self._get_api_data()
             if api_data is not None:
-                return api_data.get('api_key_id')
+                return api_data.get("api_key_id")
             else:
                 return None
 
-    def set_api_data(self, secret_key: str, api_key_id: str, expiry_date: Optional[datetime]) -> None:
+    def set_api_data(
+        self, secret_key: str, api_key_id: str, expiry_date: Optional[datetime]
+    ) -> None:
         """Persists the API data (key, id, expiry date) to a file in the given path.
 
         Args:
@@ -85,12 +89,12 @@ class ConfigurationManager(metaclass=SingletonMeta):
         """
 
         api_data = {
-            'secret_key': secret_key,
-            'api_key_id': api_key_id,
-            'expiry_date': expiry_date
+            "secret_key": secret_key,
+            "api_key_id": api_key_id,
+            "expiry_date": expiry_date,
         }
 
-        with open(self._complete_api_key_path, 'w', encoding='utf-8') as file:
+        with open(self._complete_api_key_path, "w", encoding="utf-8") as file:
             data = json.dumps(api_data, indent=4)
             file.write(data)
 
@@ -101,7 +105,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
             The user's API data if it exists, otherwise returns None.
         """
         try:
-            with open(self._complete_api_key_path, 'r', encoding='utf-8') as file:
+            with open(self._complete_api_key_path, "r", encoding="utf-8") as file:
                 api_data: Dict[str, str] = json.loads(file.read())
                 return api_data
         except FileNotFoundError:

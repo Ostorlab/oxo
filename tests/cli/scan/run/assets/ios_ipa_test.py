@@ -9,23 +9,39 @@ def testScanRunIosIpa_whenNoOptionsProvided_shouldExitAndShowError(mocker):
     Should show error message and exit with exit_code = 2."""
 
     runner = CliRunner()
-    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
-    mocker.patch('ostorlab.runtimes.local.LocalRuntime.can_run', return_value=True)
-    result = runner.invoke(rootcli.rootcli, ['scan', 'run', '--agent=agent1 --agent=agent2', 'ios-ipa'])
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "run", "--agent=agent1 --agent=agent2", "ios-ipa"]
+    )
 
-    assert 'Command missing either file path or source url of the ipa file.' in result.output
+    assert (
+        "Command missing either file path or source url of the ipa file."
+        in result.output
+    )
     assert result.exit_code == 2
 
 
-def testScanRunIosIpa_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowError(mocker):
+def testScanRunIosIpa_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowError(
+    mocker,
+):
     """Test ostorlab scan run ios-ipa command when both file & url options are provided.
     Should show error message and exit with exit_code = 2."""
 
     runner = CliRunner()
-    mocker.patch('ostorlab.runtimes.local.LocalRuntime.__init__', return_value=None)
-    mocker.patch('ostorlab.runtimes.local.LocalRuntime.can_run', return_value=True)
-    command=['scan', 'run', '--agent=agent1', 'ios-ipa', '--file', 'tests/__init__.py', '--url', 'url1']
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+    command = [
+        "scan",
+        "run",
+        "--agent=agent1",
+        "ios-ipa",
+        "--file",
+        "tests/__init__.py",
+        "--url",
+        "url1",
+    ]
     result = runner.invoke(rootcli.rootcli, command)
 
-    assert 'Command accepts either path or source url of the ipa file.' in result.output
+    assert "Command accepts either path or source url of the ipa file." in result.output
     assert result.exit_code == 2

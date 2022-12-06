@@ -46,7 +46,9 @@ def testYamlValidation_whenItIsCorrect_noRaise(json_schema_file: io.StringIO) ->
             pytest.fail("SchemaError shouldn't be expected.")
 
 
-def testYamlValidation_whenArgsAreMissingAnyRequiredFiled_raisesValidationError(json_schema_file: io.StringIO) -> None:
+def testYamlValidation_whenArgsAreMissingAnyRequiredFiled_raisesValidationError(
+    json_schema_file: io.StringIO,
+) -> None:
     """Unit test for the method that validates an agent group yaml configuration file against a json schema.
     Case where the yaml configuration file is valid.
     """
@@ -84,7 +86,9 @@ def testYamlValidation_whenArgsAreMissingAnyRequiredFiled_raisesValidationError(
     assert exc_info.type is validator.ValidationError
 
 
-def testAgentGroupYamlValidation_whenItIsCorrect_noRaise(agent_group_json_schema_file: io.StringIO) -> None:
+def testAgentGroupYamlValidation_whenItIsCorrect_noRaise(
+    agent_group_json_schema_file: io.StringIO,
+) -> None:
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid (args are missing required fields).
     """
@@ -110,7 +114,8 @@ def testAgentGroupYamlValidation_whenItIsCorrect_noRaise(agent_group_json_schema
 
 
 def testAgentGroupYamlValidation_whenAgentArgsAreWrongAndAgentKeyIsMissing_raisesValidationError(
-        agent_group_json_schema_file: io.StringIO) -> None:
+    agent_group_json_schema_file: io.StringIO,
+) -> None:
     """Unit test for the method that validates an agent group yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid (agent args are wrong and key is missing).
     """
@@ -134,7 +139,8 @@ def testAgentGroupYamlValidation_whenAgentArgsAreWrongAndAgentKeyIsMissing_raise
 
 
 def testYamlValidation_whenSourceParamDoesNotRespectURLPattern_raisesValidationError(
-        json_schema_file: io.StringIO) -> None:
+    json_schema_file: io.StringIO,
+) -> None:
     """Unit test for the method that validates a yaml configuration file against a json schema.
     Case where the yaml configuration file is invalid : The parameter 'source' should be a URL instead of a number.
     """

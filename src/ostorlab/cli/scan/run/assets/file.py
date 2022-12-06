@@ -15,15 +15,17 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
-@run.run.command(name='file')
-@click.option('--file', type=click.File(mode='rb'), multiple=True, required=False)
-@click.option('--url', multiple=True, required=False)
+@run.run.command(name="file")
+@click.option("--file", type=click.File(mode="rb"), multiple=True, required=False)
+@click.option("--url", multiple=True, required=False)
 @click.pass_context
-def file_cli(ctx: click.core.Context,
-             file: Optional[List[io.FileIO]] = None,
-             url: Optional[List[str]] = None) -> None:
+def file_cli(
+    ctx: click.core.Context,
+    file: Optional[List[io.FileIO]] = None,
+    url: Optional[List[str]] = None,
+) -> None:
     """Run scan for file asset."""
-    runtime = ctx.obj['runtime']
+    runtime = ctx.obj["runtime"]
     assets = []
     if file != []:
         for f in file:
@@ -32,8 +34,12 @@ def file_cli(ctx: click.core.Context,
         for u in url:
             assets.append(file_asset.File(content_url=u))
     else:
-        console.error('Command accepts either path or source url of the file.')
+        console.error("Command accepts either path or source url of the file.")
         raise click.exceptions.Exit(2)
 
-    logger.debug('scanning assets %s', [str(asset) for asset in assets])
-    runtime.scan(title=ctx.obj['title'], agent_group_definition=ctx.obj['agent_group_definition'], assets=assets)
+    logger.debug("scanning assets %s", [str(asset) for asset in assets])
+    runtime.scan(
+        title=ctx.obj["title"],
+        agent_group_definition=ctx.obj["agent_group_definition"],
+        assets=assets,
+    )

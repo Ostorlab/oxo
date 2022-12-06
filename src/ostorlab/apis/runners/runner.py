@@ -25,9 +25,7 @@ class ResponseError(Error):
 class APIRunner(abc.ABC):
     """Handles API calls and behind the scenes operations."""
 
-    def __init__(self,
-                 proxy: Optional[str] = None,
-                 verify: bool = True):
+    def __init__(self, proxy: Optional[str] = None, verify: bool = True):
         """Constructs the necessary attributes for the object.
 
         Args:
@@ -36,12 +34,14 @@ class APIRunner(abc.ABC):
         """
         self._proxy = proxy
         self._verify = verify
-        self._configuration_manager: config_manager.ConfigurationManager = config_manager.ConfigurationManager()
+        self._configuration_manager: config_manager.ConfigurationManager = (
+            config_manager.ConfigurationManager()
+        )
 
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        raise NotImplementedError('Missing implementation')
+        raise NotImplementedError("Missing implementation")
 
     @abc.abstractmethod
     def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
@@ -56,17 +56,23 @@ class APIRunner(abc.ABC):
         Returns:
             The API response
         """
-        raise NotImplementedError('Missing implementation')
+        raise NotImplementedError("Missing implementation")
 
-    def _sent_request(self, request: api_request.APIRequest,
-                      headers: Optional[Dict[str, str]] = None) -> requests.Response:
+    def _sent_request(
+        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+    ) -> requests.Response:
         """Sends an API request."""
         if self._proxy is not None:
-            proxy = {
-                'https': self._proxy
-            }
+            proxy = {"https": self._proxy}
         else:
             proxy = None
 
-        return requests.post(self.endpoint, data=request.data, files=request.files, headers=headers,
-                             proxies=proxy, verify=self._verify, timeout=REQUEST_TIMEOUT)
+        return requests.post(
+            self.endpoint,
+            data=request.data,
+            files=request.files,
+            headers=headers,
+            proxies=proxy,
+            verify=self._verify,
+            timeout=REQUEST_TIMEOUT,
+        )

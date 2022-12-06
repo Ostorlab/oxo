@@ -21,11 +21,11 @@ def select_runtime(runtime_type: str, *args, **kwargs) -> runtime.Runtime:
     Returns:
         Runtime instance.
     """
-    if runtime_type == 'local':
+    if runtime_type == "local":
         return local_runtime.LocalRuntime(*args, **kwargs)
-    elif runtime_type == 'litelocal':
+    elif runtime_type == "litelocal":
         return lite_local_runtime.LiteLocalRuntime(*args, **kwargs)
-    elif runtime_type == 'cloud':
+    elif runtime_type == "cloud":
         return cloud_runtime.CloudRuntime(*args, **kwargs)
     else:
-        raise RuntimeNotFoundError(f'runtime type {runtime_type} not found')
+        raise RuntimeNotFoundError(f"runtime type {runtime_type} not found")

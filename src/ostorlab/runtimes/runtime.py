@@ -11,6 +11,7 @@ from ostorlab.runtimes import definitions
 @dataclasses.dataclass
 class Scan:
     """Scan object."""
+
     id: str
     asset: Optional[str]
     created_time: str
@@ -35,8 +36,12 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def scan(self, title: str, agent_group_definition: definitions.AgentGroupDefinition,
-             assets: Optional[List[base_asset.Asset]]) -> None:
+    def scan(
+        self,
+        title: str,
+        agent_group_definition: definitions.AgentGroupDefinition,
+        assets: Optional[List[base_asset.Asset]],
+    ) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
@@ -86,7 +91,7 @@ class Runtime(abc.ABC):
     @abc.abstractmethod
     def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
         """Dump vulnerabilities to a file in a specific format.
-            Returns:
-            None
+        Returns:
+        None
         """
         raise NotImplementedError()

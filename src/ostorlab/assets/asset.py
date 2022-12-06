@@ -22,7 +22,7 @@ class Asset(abc.ABC):
 
     @property
     def proto_field(self) -> str:
-        return 'asset'
+        return "asset"
 
 
 def selector(target: str) -> Callable[[Type[Asset]], Type[Asset]]:

@@ -33,7 +33,7 @@ TYPE_CALLABLE_MAP = {
     FieldDescriptor.TYPE_ENUM: int,
 }
 
-EXTENSION_CONTAINER = '___X'
+EXTENSION_CONTAINER = "___X"
 
 
 def _repeated(type_callable: Callable[[Any], Any]) -> Callable[[Any], Any]:
@@ -47,7 +47,9 @@ def _enum_label_name(field: Any, value: Any) -> str:
     return name
 
 
-def _get_field_value_adaptor(pb: Any, field: Any, use_enum_labels: bool=False) -> Callable[[Any], Any]:
+def _get_field_value_adaptor(
+    pb: Any, field: Any, use_enum_labels: bool = False
+) -> Callable[[Any], Any]:
     """Matches proto message or field to the proper handler."""
     if field.type == FieldDescriptor.TYPE_MESSAGE:
         # recursively encode protobuf sub-message
@@ -59,7 +61,9 @@ def _get_field_value_adaptor(pb: Any, field: Any, use_enum_labels: bool=False) -
     if field.type in TYPE_CALLABLE_MAP:
         return TYPE_CALLABLE_MAP[field.type]
 
-    raise UnrecognisedTypeError(f'Field {pb.__class__.__name__}.{field.name} has unrecognised type id {field.type}')
+    raise UnrecognisedTypeError(
+        f"Field {pb.__class__.__name__}.{field.name} has unrecognised type id {field.type}"
+    )
 
 
 def protobuf_to_dict(pb: Any, use_enum_labels: bool = False) -> Dict[Any, Any]:
