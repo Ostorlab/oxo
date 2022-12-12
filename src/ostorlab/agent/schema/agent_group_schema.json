@@ -123,7 +123,7 @@
             }
           },
           "caps": {
-            "description": "[Optional] - Array of strings of kernel capabilities to add to the default set for the container.",
+            "description": "[Optional] - Array of strings of kernel capabilities to add to the agent container instance (e.g CAP_NET_ADMIN)",
             "type": "array",
             "items": {
               "type": "string",
