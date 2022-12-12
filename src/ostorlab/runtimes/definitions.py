@@ -157,7 +157,7 @@ class AgentSettings:
         instance.replicas = self.replicas
         instance.healthcheck_host = self.healthcheck_host
         instance.healthcheck_port = self.healthcheck_port
-        instance.caps = self.caps
+        instance.caps.extend(self.caps)
 
         if self.redis_url is not None:
             instance.redis_url = self.redis_url
