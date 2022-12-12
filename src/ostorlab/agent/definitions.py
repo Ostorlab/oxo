@@ -30,6 +30,7 @@ class AgentDefinition:
     docker_build_root: str = "."
     image: str = None
     service_name: str = None
+    caps: Optional[List[str]] = None
 
     @classmethod
     def from_yaml(cls, file: io.TextIOWrapper) -> "AgentDefinition":
@@ -62,4 +63,5 @@ class AgentDefinition:
             docker_build_root=definition.get("docker_build_root", "."),
             image=definition.get("image"),
             service_name=definition.get("service_name"),
+            caps=definition.get("caps"),
         )

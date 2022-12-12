@@ -36,6 +36,7 @@ class AgentSettings:
     healthcheck_port: int = 5000
     redis_url: Optional[str] = None
     tracing_collector_url: Optional[str] = None
+    caps: Optional[List[str]] = None
 
     @property
     def container_image(self):
@@ -107,6 +108,7 @@ class AgentSettings:
             healthcheck_port=instance.healthcheck_port,
             redis_url=instance.redis_url,
             tracing_collector_url=instance.tracing_collector_url,
+            caps=instance.caps,
         )
 
     def to_raw_proto(self) -> bytes:
@@ -155,6 +157,7 @@ class AgentSettings:
         instance.replicas = self.replicas
         instance.healthcheck_host = self.healthcheck_host
         instance.healthcheck_port = self.healthcheck_port
+        instance.caps = self.caps
 
         if self.redis_url is not None:
             instance.redis_url = self.redis_url
@@ -209,6 +212,7 @@ class AgentGroupDefinition:
                     for p in agent.get("open_ports", [])
                 ],
                 replicas=agent.get("replicas", 1),
+                caps=agent.get("caps"),
             )
 
             agent_settings.append(agent_def)

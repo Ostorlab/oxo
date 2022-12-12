@@ -186,3 +186,74 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
     assert kwargs["name"] == "my_service"
+
+
+def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
+    mocker,
+):
+    """Test creation of the agent service : Case where agent definitions & agent settings have different values for
+    some attributes, the agent settings values should override.
+    """
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=["def_mount1", "def_mount2"],
+        mem_limit=420000,
+        service_name="my_service",
+        restart_policy="any",
+        caps=["NET_ADMIN"]
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+
+    agent_settings = definitions.AgentSettings(
+        key="agent/org/name",
+        mounts=["settings_mount1"],
+        mem_limit=700000,
+        restart_policy="on-failure",
+        constraints=["constraint1"],
+    )
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    # assert arguments were overridden by the agent settings.
+    assert kwargs["resources"]["Limits"]["MemoryBytes"] == 700000
+    assert kwargs["mounts"] == ["settings_mount1"]
+    assert kwargs["restart_policy"]["Condition"] == "on-failure"
+    assert kwargs["name"] == "my_service"
+    assert kwargs["cap_add"] == ["NET_ADMIN"]

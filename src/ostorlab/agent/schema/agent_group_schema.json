@@ -121,6 +121,14 @@
               "type": "string",
               "maxLength": 4096
             }
+          },
+          "caps": {
+            "description": "[Optional] - Array of strings of kernel capabilities to add to the default set for the container.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 4096
+            }
           }
         },
         "required": ["key"]
