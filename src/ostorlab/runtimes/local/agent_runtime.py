@@ -327,7 +327,7 @@ class AgentRuntime:
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
-        cap = self.agent.cap or agent_definition.cap
+        caps = self.agent.caps or agent_definition.caps
 
         service_name = (
             agent_definition.service_name
@@ -353,7 +353,7 @@ class AgentRuntime:
             constraints=constraints,
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit),
-            cap_add=cap,
+            cap_add=caps,
         )
 
         return agent_service
