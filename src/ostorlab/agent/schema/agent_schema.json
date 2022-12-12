@@ -114,6 +114,10 @@
       "description": "[Optional] - Array of strings of the mounts of the agent.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
+    "caps": {
+      "description": "[Optional] - Array of strings of kernel capabilities to add to the default set for the container.",
+      "$ref": "#/CustomTypes/ArrayOfStrings"
+    },
     "mem_limit": {
       "description": "[Optional] - Maximum memory that can be used by the agent in bytes.",
       "type": "number"

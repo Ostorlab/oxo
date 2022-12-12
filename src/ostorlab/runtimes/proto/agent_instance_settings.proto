@@ -51,4 +51,6 @@ message AgentInstanceSettings {
   // Tracing collector URL supporting Open Telemetry. The URL are custom that pass the export type in the schema and
   // the values in the body of the url.
   optional string tracing_collector_url = 16;
+  // A list of kernel capabilities to add to the default set for the container.
+  repeated string caps = 17;
 }
