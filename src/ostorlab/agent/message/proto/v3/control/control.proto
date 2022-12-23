@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.control;
+
+message Control {
+  // Defines the path through which the message has passed. This is used for instance to detect infinite loops.
+  repeated string agents = 1;
+}
+
+message Message {
+  // Control message.
+  optional Control control = 1;
+  // Proto message compiled in raw format.
+  optional bytes message = 2;
+}

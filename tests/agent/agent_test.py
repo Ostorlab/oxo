@@ -13,6 +13,7 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.utils import defintions as utils_definitions
+from ostorlab.testing import agent as agent_testing
 
 logger = logging.getLogger(__name__)
 
@@ -150,3 +151,41 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs(agent_mock):
     )
 
     assert test_agent.args == {"color": "red", "speed": b"slow"}
+
+
+def testEmit_whenEmitFromNoProcess_willSendTheAgentNameInControlAgents(
+    agent_run_mock: agent_testing.AgentRunInstance,
+) -> None:
+    """Test emit is adding the agent in the control message."""
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            pass
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="some_name", out_selectors=["v3.report.vulnerability"]
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="some_key",
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+
+    technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
+    has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
+    scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
+    make a type specimen book. """
+    test_agent.emit(
+        "v3.report.vulnerability",
+        {
+            "title": "some_title",
+            "technical_detail": technical_detail,
+            "risk_rating": "MEDIUM",
+        },
+    )
+
+    assert len(agent_run_mock.control_messages) > 0
+    assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
