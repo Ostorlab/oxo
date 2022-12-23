@@ -67,7 +67,7 @@ class AgentMixin(
         self.name = agent_definition.name
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
-        self.cyclic_processing_limit = agent_definition.cyclic_processing_limit
+        self.cyclic_processing_limit = agent_settings.cyclic_processing_limit
         # Arguments are defined in the agent definition, and can have a default value. The value can also be set from
         # the scan definition in the agent group. Therefore, we read both and override the value from the passed args.
         self.defined_args = agent_definition.args

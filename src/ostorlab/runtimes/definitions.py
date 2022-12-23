@@ -37,6 +37,7 @@ class AgentSettings:
     redis_url: Optional[str] = None
     tracing_collector_url: Optional[str] = None
     caps: Optional[List[str]] = None
+    cyclic_processing_limit: Optional[int] = None
 
     @property
     def container_image(self):
@@ -109,6 +110,7 @@ class AgentSettings:
             redis_url=instance.redis_url,
             tracing_collector_url=instance.tracing_collector_url,
             caps=instance.caps,
+            cyclic_processing_limit=instance.cyclic_processing_limit
         )
 
     def to_raw_proto(self) -> bytes:
@@ -213,6 +215,7 @@ class AgentGroupDefinition:
                 ],
                 replicas=agent.get("replicas", 1),
                 caps=agent.get("caps"),
+                cyclic_processing_limit=agent.get("cyclic_processing_limit"),
             )
 
             agent_settings.append(agent_def)

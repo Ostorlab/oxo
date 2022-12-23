@@ -205,10 +205,10 @@ def testProcess_message_whenCyclicMaxIsSet_raisesException(
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
         out_selectors=["v3.report.vulnerability"],
-        cyclic_processing_limit=2,
     )
     agent_settings = runtime_definitions.AgentSettings(
         key="some_key",
+        cyclic_processing_limit=2,
     )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings

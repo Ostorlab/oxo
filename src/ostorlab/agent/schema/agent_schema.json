@@ -188,10 +188,6 @@
           "type"
         ]
       }
-    },
-    "cyclic_processing_limit": {
-      "description": "[Optional] - Count of how often the processing of a message can go through the same agent, if no value is specified, means no limit.",
-      "type": "number"
     }
   },
   "required": [

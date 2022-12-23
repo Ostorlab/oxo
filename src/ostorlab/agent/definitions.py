@@ -31,7 +31,6 @@ class AgentDefinition:
     image: str = None
     service_name: str = None
     caps: Optional[List[str]] = None
-    cyclic_processing_limit: Optional[int] = None
 
     @classmethod
     def from_yaml(cls, file: io.TextIOWrapper) -> "AgentDefinition":
@@ -65,5 +64,4 @@ class AgentDefinition:
             image=definition.get("image"),
             service_name=definition.get("service_name"),
             caps=definition.get("caps"),
-            cyclic_processing_limit=definition.get("cyclic_processing_limit"),
         )
