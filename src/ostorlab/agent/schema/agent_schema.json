@@ -41,7 +41,9 @@
     "kind": {
       "description": "[Required] - Only expected value : Agent.",
       "type": "string",
-      "enum": ["Agent"]
+      "enum": [
+        "Agent"
+      ]
     },
     "name": {
       "description": "[Required] - Agent full Name, accept lower case ascii, number and _, - characters.",
@@ -172,11 +174,24 @@
           },
           "value": {
             "description": "[Optional] - Default value of the agent argument.",
-            "type": ["string", "number", "boolean", "array", "object"]
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "array",
+              "object"
+            ]
           }
         },
-        "required": ["name", "type"]
+        "required": [
+          "name",
+          "type"
+        ]
       }
+    },
+    "cyclic_processing_limit": {
+      "description": "[Optional] - Count of how often the processing of a message can go through the same agent, if no value is specified, means no limit.",
+      "type": "number"
     }
   },
   "required": [

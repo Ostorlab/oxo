@@ -36,6 +36,10 @@ class NonListedMessageSelectorError(exceptions.OstorlabError):
     """Emit selector is not listed in the out_selector list."""
 
 
+class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
+    """The cyclic process limit is enforced and reach set value."""
+
+
 class AgentMixin(
     agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealthcheckMixin, abc.ABC
 ):
@@ -63,6 +67,7 @@ class AgentMixin(
         self.name = agent_definition.name
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
+        self.cyclic_processing_limit = agent_definition.cyclic_processing_limit
         # Arguments are defined in the agent definition, and can have a default value. The value can also be set from
         # the scan definition in the agent group. Therefore, we read both and override the value from the passed args.
         self.defined_args = agent_definition.args
@@ -169,7 +174,7 @@ class AgentMixin(
             self._control_message = agent_message.Message.from_raw(
                 "v3.control", message
             )
-            # TODO(alaeddine): add validation for infinite loops with threshold configured by the agent.
+            self._validate_message()
 
             raw_message = self._control_message.data["message"]
 
@@ -178,12 +183,23 @@ class AgentMixin(
             object_message = agent_message.Message.from_raw(selector, raw_message)
             logger.debug("call to process with message=%s", raw_message)
             self.process(object_message)
-        # pylint: disable=W0703
-        except Exception as e:
+        except MaximumCyclicProcessReachedError:
+            # This exception is not filtered.
+            raise
+        except Exception as e: # pylint: disable="broad-except"
             logger.exception("exception raised: %s", e)
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
+
+    def _validate_message(self) -> None:
+        """Check the message received is valid, currently only check for cyclic processing limit."""
+        if self.cyclic_processing_limit is not None:
+            if (
+                self._control_message.data["control"]["agents"].count(self.name)
+                > self.cyclic_processing_limit
+            ):
+                raise MaximumCyclicProcessReachedError()
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:
