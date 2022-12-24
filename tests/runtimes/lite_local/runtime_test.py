@@ -200,7 +200,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         mem_limit=420000,
         service_name="my_service",
         restart_policy="any",
-        caps=["NET_ADMIN"]
+        caps=["NET_ADMIN"],
     )
     mocker.patch(
         "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",

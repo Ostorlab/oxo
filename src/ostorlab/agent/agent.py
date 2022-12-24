@@ -59,6 +59,7 @@ class AgentMixin(
         self._loop = asyncio.get_event_loop()
         self._agent_definition = agent_definition
         self._agent_settings = agent_settings
+        self._control_message: agent_message.Message | None = None
         self.name = agent_definition.name
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
@@ -164,10 +165,18 @@ class AgentMixin(
             None
         """
         try:
+            # Keep track of the current message used later in the emit method.
+            self._control_message = agent_message.Message.from_raw(
+                "v3.control", message
+            )
+            # TODO(alaeddine): add validation for infinite loops with threshold configured by the agent.
+
+            raw_message = self._control_message.data["message"]
+
             # remove the UUID from the selector:
             selector = ".".join(selector.split(".")[:-1])
-            object_message = agent_message.Message.from_raw(selector, message)
-            logger.debug("call to process with message=%s", message)
+            object_message = agent_message.Message.from_raw(selector, raw_message)
+            logger.debug("call to process with message=%s", raw_message)
             self.process(object_message)
         # pylint: disable=W0703
         except Exception as e:
@@ -263,8 +272,19 @@ class AgentMixin(
         else:
             selector = f"{selector}.{message_id}"
 
-        self.mq_send_message(selector, raw)
+        control_message = self._prepare_message(raw)
+        self.mq_send_message(selector, control_message)
         logger.debug("done call to send_message")
+
+    def _prepare_message(self, raw: bytes) -> bytes:
+        if self._control_message is not None:
+            agents = [*self._control_message.data["control"]["agents"], self.name]
+        else:
+            agents = [self.name]
+        control_message = agent_message.Message.from_data(
+            "v3.control", {"control": {"agents": agents}, "message": raw}
+        )
+        return control_message.raw
 
     @classmethod
     def main(cls: Type["AgentMixin"], args: Optional[List[str]] = None) -> None:

@@ -20,8 +20,9 @@ class RawMessage:
 class AgentRunInstance:
     """An instance run to collect all aspects of an agent instance."""
 
-    emitted_messages: List[msg.Message]
-    raw_messages: List[RawMessage]
+    emitted_messages: List[msg.Message] = dataclasses.field(default_factory=lambda: [])
+    control_messages: List[msg.Message] = dataclasses.field(default_factory=lambda: [])
+    raw_messages: List[RawMessage] = dataclasses.field(default_factory=lambda: [])
 
 
 @pytest.fixture(scope="function")
@@ -49,7 +50,10 @@ def agent_mock(mocker) -> List[object]:
 
     def mq_send_message(key, message):
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
-        agent_message = msg.Message.from_raw(".".join(key.split(".")[:-1]), message)
+        control_message = msg.Message.from_raw("v3.control", message)
+        agent_message = msg.Message.from_raw(
+            ".".join(key.split(".")[:-1]), control_message.data["message"]
+        )
         emitted_messages.append(agent_message)
 
     mocker.patch(
@@ -62,7 +66,7 @@ def agent_mock(mocker) -> List[object]:
 
 @pytest.fixture(scope="function")
 def agent_persist_mock(mocker):
-    """This fixtures patches the Agent persist component and returns the list storage state"""
+    """This fixture patches the Agent persist component and returns the list storage state"""
     storage = {}
 
     def _set_is_member(key, value):
@@ -205,8 +209,17 @@ def agent_run_mock(mocker) -> AgentRunInstance:
 
     def mq_send_message(key, message):
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
-        agent_run_instance.raw_messages.append(RawMessage(key=key, message=message))
-        agent_message = msg.Message.from_raw(".".join(key.split(".")[:-1]), message)
+        # Control Message.
+        control_message = msg.Message.from_raw("v3.control", message)
+        agent_run_instance.control_messages.append(control_message)
+        # Raw Message.
+        agent_run_instance.raw_messages.append(
+            RawMessage(key=key, message=control_message.data["message"])
+        )
+        # Data Message.
+        agent_message = msg.Message.from_raw(
+            ".".join(key.split(".")[:-1]), control_message.data["message"]
+        )
         agent_run_instance.emitted_messages.append(agent_message)
 
     mocker.patch(
