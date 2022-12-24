@@ -189,3 +189,34 @@ def testEmit_whenEmitFromNoProcess_willSendTheAgentNameInControlAgents(
 
     assert len(agent_run_mock.control_messages) > 0
     assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
+
+
+def testProcess_message_whenCyclicMaxIsSet_raisesException(
+    agent_run_mock: agent_testing.AgentRunInstance,
+) -> None:
+    """When cyclic limit is set, the process should raise an exception if the agent is more than the limit."""
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            pass
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="some_key",
+        cyclic_processing_limit=2,
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+
+    message = agent_message.Message.from_data(
+        "v3.control", {"control": {"agents": ["agentY", "agentX", "agentX", "agentX"]}}
+    )
+
+    with pytest.raises(agent.MaximumCyclicProcessReachedError):
+        test_agent.process_message(message.selector, message.raw)
