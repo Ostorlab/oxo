@@ -54,5 +54,5 @@ message AgentInstanceSettings {
   // A list of kernel capabilities to add to the default set for the container.
   repeated string caps = 17;
   // Cyclic processing limit, to use to define depth of processing and avoid cyclic loops.
-  repeated string cyclic_processing_limit = 18;
+  optional string cyclic_processing_limit = 18;
 }
