@@ -224,7 +224,7 @@ def testProcessMessage_whenCyclicMaxIsSet_raisesException(
 
 
 
-def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_doNoRaiseException(
+def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_doNotRaiseException(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:
     """When cyclic limit is not set, the proto default value is 0, the agent behavior must not raise an exception."""
