@@ -194,10 +194,10 @@ class AgentMixin(
 
     def _validate_message(self) -> None:
         """Check the message received is valid, currently only check for cyclic processing limit."""
-        if self.cyclic_processing_limit is not None:
+        if self.cyclic_processing_limit is not None and self.cyclic_processing_limit != 0:
             if (
                 self._control_message.data["control"]["agents"].count(self.name)
-                > self.cyclic_processing_limit
+                >= self.cyclic_processing_limit
             ):
                 raise MaximumCyclicProcessReachedError()
 
