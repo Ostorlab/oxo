@@ -185,7 +185,7 @@ class AgentMixin(
             self.process(object_message)
         except MaximumCyclicProcessReachedError:
             # This exception is not filtered.
-            raise
+            self.on_max_cyclic_process_reached(message)
         except Exception as e:  # pylint: disable="broad-except"
             logger.exception("exception raised: %s", e)
         finally:
@@ -260,6 +260,15 @@ class AgentMixin(
         """
         message = agent_message.Message.from_data(selector, data)
         self.emit_raw(selector, message.raw, message_id=message_id)
+
+    @abc.abstractmethod
+    def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on max cyclic process reached.
+
+        Returns:
+            None
+        """
+        raise NotImplementedError()
 
     def emit_raw(
         self, selector: str, raw: bytes, message_id: Optional[str] = None
@@ -428,6 +437,14 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
 
     def at_exit(self) -> None:
         """Overridable at exit method to perform cleanup in the case of expected and unexpected agent termination.
+
+        Returns:
+            None
+        """
+        pass
+
+    def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on max cyclic process reached.
 
         Returns:
             None
