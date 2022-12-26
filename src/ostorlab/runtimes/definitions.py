@@ -110,7 +110,7 @@ class AgentSettings:
             redis_url=instance.redis_url,
             tracing_collector_url=instance.tracing_collector_url,
             caps=instance.caps,
-            cyclic_processing_limit=instance.cyclic_processing_limit
+            cyclic_processing_limit=instance.cyclic_processing_limit,
         )
 
     def to_raw_proto(self) -> bytes:

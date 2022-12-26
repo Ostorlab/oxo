@@ -186,7 +186,7 @@ class AgentMixin(
         except MaximumCyclicProcessReachedError:
             # This exception is not filtered.
             raise
-        except Exception as e: # pylint: disable="broad-except"
+        except Exception as e:  # pylint: disable="broad-except"
             logger.exception("exception raised: %s", e)
         finally:
             self.process_cleanup()
@@ -194,7 +194,10 @@ class AgentMixin(
 
     def _validate_message(self) -> None:
         """Check the message received is valid, currently only check for cyclic processing limit."""
-        if self.cyclic_processing_limit is not None and self.cyclic_processing_limit != 0:
+        if (
+            self.cyclic_processing_limit is not None
+            and self.cyclic_processing_limit != 0
+        ):
             if (
                 self._control_message.data["control"]["agents"].count(self.name)
                 >= self.cyclic_processing_limit

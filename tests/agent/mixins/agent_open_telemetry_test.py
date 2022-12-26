@@ -135,8 +135,17 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
             "risk_rating": "MEDIUM",
         }
         raw = serializer.serialize("v3.report.vulnerability", data).SerializeToString()
+
+        message = agent_message.Message.from_data(
+            "v3.control",
+            {
+                "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+                "message": raw,
+            },
+        )
+
         test_agent.process_message(
-            selector=f"v3.report.vulnerability.{uuid.uuid4()}", message=raw
+            selector=f"v3.report.vulnerability.{uuid.uuid4()}", message=message.raw
         )
         test_agent.force_flush_file_exporter()
 
@@ -177,12 +186,20 @@ def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInC
         }
         raw = serializer.serialize("v3.report.vulnerability", data).SerializeToString()
 
+        message = agent_message.Message.from_data(
+            "v3.control",
+            {
+                "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+                "message": raw,
+            },
+        )
+
         trace_id = 12345
         span_id = 99998
 
         test_agent.process_message(
             selector=f"v3.report.vulnerability.{uuid.uuid4()}-{trace_id}-{span_id}",
-            message=raw,
+            message=message.raw,
         )
         test_agent.force_flush_file_exporter()
 

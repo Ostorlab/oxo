@@ -223,7 +223,6 @@ def testProcessMessage_whenCyclicMaxIsSet_raisesException(
         test_agent.process_message(message.selector, message.raw)
 
 
-
 def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_doNotRaiseException(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:
@@ -239,9 +238,11 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_doNotRaiseExcepti
         name="agentX",
         out_selectors=["v3.report.vulnerability"],
     )
-    agent_settings = runtime_definitions.AgentSettings.from_proto(runtime_definitions.AgentSettings(
-        key="some_key",
-    ).to_raw_proto())
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
     )
@@ -259,12 +260,17 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_doNotRaiseExcepti
         },
     )
 
-
     message = agent_message.Message.from_data(
-        "v3.control", {"control": {"agents": ["agentY", "agentX", "agentX", "agentX"]}, "message": vuln_message.raw}
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": vuln_message.raw,
+        },
     )
 
     try:
-        test_agent.process_message(f"v3.report.vulnerability.{uuid.uuid4()}", message.raw)
+        test_agent.process_message(
+            f"v3.report.vulnerability.{uuid.uuid4()}", message.raw
+        )
     except agent.MaximumCyclicProcessReachedError:
         assert False, "Cyclic exception is raised."
