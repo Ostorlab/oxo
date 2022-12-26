@@ -5,6 +5,7 @@ import logging
 import multiprocessing as mp
 import pathlib
 import time
+import uuid
 
 import pytest
 
@@ -191,16 +192,21 @@ def testEmit_whenEmitFromNoProcess_willSendTheAgentNameInControlAgents(
     assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
 
 
-def testProcess_message_whenCyclicMaxIsSet_raisesException(
-    agent_run_mock: agent_testing.AgentRunInstance,
+def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker
 ) -> None:
-    """When cyclic limit is set, the process should raise an exception if the agent is more than the limit."""
+    """When cyclic limit is set, the process should trigger a callback."""
+
+    process_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
         """Helper class to test OpenTelemetry mixin implementation."""
 
         def process(self, message: agent_message.Message) -> None:
             pass
+
+        def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
+            process_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
@@ -218,5 +224,61 @@ def testProcess_message_whenCyclicMaxIsSet_raisesException(
         "v3.control", {"control": {"agents": ["agentY", "agentX", "agentX", "agentX"]}}
     )
 
-    with pytest.raises(agent.MaximumCyclicProcessReachedError):
-        test_agent.process_message(message.selector, message.raw)
+    test_agent.process_message(message.selector, message.raw)
+
+    assert process_mock.called is True
+
+
+def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker
+) -> None:
+    """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            pass
+
+        def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+
+    technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
+        has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
+        scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
+        make a type specimen book. """
+    vuln_message = agent_message.Message.from_data(
+        "v3.report.vulnerability",
+        {
+            "title": "some_title",
+            "technical_detail": technical_detail,
+            "risk_rating": "MEDIUM",
+        },
+    )
+
+    message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": vuln_message.raw,
+        },
+    )
+
+    test_agent.process_message(f"v3.report.vulnerability.{uuid.uuid4()}", message.raw)
+
+    assert process_mock.called is False
