@@ -215,7 +215,11 @@ class OpenTelemetryMixin:
                 context = {}
 
             raw_selector = ".".join(selector_split[:-1])
-            data = agent_message.Message.from_raw(raw_selector, message).data
+            control_message = agent_message.Message.from_raw("v3.control", message)
+
+            data = agent_message.Message.from_raw(
+                raw_selector, control_message.data.get("message")
+            ).data
             minified_msg_data = dictionary_minifier.minify_dict(
                 data, dictionary_minifier.truncate_str
             )
