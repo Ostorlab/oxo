@@ -2,8 +2,12 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.fingerprint.file.android.permission;
 
-message Message {
+message Permission {
   optional string name = 1;
   repeated string protection_levels = 2;
   optional string permission_group = 3;
+}
+
+message Message {
+  repeated Permission permissions = 1;
 }
