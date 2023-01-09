@@ -8,7 +8,7 @@ message IntentFilter {
     optional string data = 3;
   }
     
-message Message {
+message Service {
   optional string name = 1;
   optional string permission = 2;
   optional string description = 3; 
@@ -18,4 +18,7 @@ message Message {
   optional string foreground_service_type = 7;
   repeated IntentFilter intent_filters= 8;
 }
-  
+
+message Message {
+  repeated Service services = 1;
+}

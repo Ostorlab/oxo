@@ -8,7 +8,7 @@ message IntentFilter {
   optional string data = 3;
 }
 
-message Message {
+message Activity {
   optional string name = 1;
   optional string permission = 2;
   optional string process = 3;
@@ -16,4 +16,8 @@ message Message {
   optional bool exported = 5;
   optional bool direct_boot_aware = 6;
   repeated IntentFilter intent_filters= 7;
+}
+
+message Message {
+  repeated Activity activities = 1;
 }
