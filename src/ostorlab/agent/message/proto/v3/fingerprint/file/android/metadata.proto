@@ -65,5 +65,3 @@ message Message {
     repeated Provider providers = 5;
     repeated Receiver receivers = 6;
 }
-
- 
