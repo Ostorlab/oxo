@@ -21,7 +21,8 @@ message Activity {
     optional bool enabled = 4;
     optional bool exported = 5;
     optional bool direct_boot_aware = 6;
-    repeated IntentFilter intent_filters= 7;
+    optional bool allow_task_reparenting = 7;
+    repeated IntentFilter intent_filters = 8;
 }
 
 message Service {
