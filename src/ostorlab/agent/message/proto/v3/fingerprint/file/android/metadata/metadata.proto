@@ -59,10 +59,11 @@ message Receiver {
 
 
 message Message {
-    optional string package_name = 1;
-    repeated Permission permissions = 2;
-    repeated Activity activities = 3;
-    repeated Service services = 4;
-    repeated Provider providers = 5;
-    repeated Receiver receivers = 6;
+    optional string path = 1;
+    optional string package_name = 2;
+    repeated Permission permissions = 3;
+    repeated Activity activities = 4;
+    repeated Service services = 5;
+    repeated Provider providers = 6;
+    repeated Receiver receivers = 7;
 }
