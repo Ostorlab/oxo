@@ -1,0 +1,69 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.android.metadata;
+
+message IntentFilter {
+    optional string action = 1;
+    optional string category = 2;
+    optional string data = 3;
+}
+
+message Permission {
+    optional string name = 1;
+    repeated string protection_levels = 2;
+    optional string permission_group = 3;
+}
+
+message Activity {
+    optional string name = 1;
+    optional string permission = 2;
+    optional string process = 3;
+    optional bool enabled = 4;
+    optional bool exported = 5;
+    optional bool direct_boot_aware = 6;
+    optional bool allow_task_reparenting = 7;
+    repeated IntentFilter intent_filters = 8;
+}
+
+message Service {
+    optional string name = 1;
+    optional string permission = 2;
+    optional string description = 3; 
+    optional string process = 4;
+    optional bool enabled = 5;
+    optional bool exported = 6;
+    optional string foreground_service_type = 7;
+    repeated IntentFilter intent_filters= 8;
+}
+
+message Provider {
+    optional string name = 1;
+    optional string permission = 2;
+    optional string process = 3;
+    optional bool enabled = 4;
+    optional bool exported = 5;
+    optional bool syncable = 6;
+    repeated string authorities = 7;  
+    repeated IntentFilter intent_filters= 8;
+}
+        
+message Receiver {
+    optional string name = 1;
+    optional string permission = 2;
+    optional string process = 3;
+    optional bool enabled = 4;
+    optional bool exported = 5;
+    optional bool direct_boot_aware = 6;
+    repeated IntentFilter intent_filters= 7;
+}
+
+
+message Message {
+    optional string path = 1;
+    optional string package_name = 2;
+    repeated Permission permissions = 3;
+    repeated Activity activities = 4;
+    repeated Service services = 5;
+    repeated Provider providers = 6;
+    repeated Receiver receivers = 7;
+}
