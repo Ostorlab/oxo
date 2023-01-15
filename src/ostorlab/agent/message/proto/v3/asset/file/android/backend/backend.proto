@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.asset.file.android.backend;
+
+message location {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 4];
+  optional string continent = 5;
+  optional string continent_code = 6;
+  optional string country = 7;
+  optional string country_code = 8;
+  optional string region = 9;
+  optional string region_name = 10;
+  optional string city = 11;
+  optional string zip = 12;
+  optional float latitude = 13;
+  optional float longitude = 14;
+  optional string timezone = 15;
+  optional string district = 16;
+}
+
+
+message Message {
+    required string host = 1;
+    optional string ip_address = 2;
+    optional int32 port = 3;
+    optional location location = 4;
+}
