@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.asset.file.ios.backend;
+package ostorlab.agent.message.proto.v3.fingerprint.file.ios.backend;
 
 message location {
   optional string host = 1;
