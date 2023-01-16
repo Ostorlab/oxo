@@ -63,7 +63,7 @@ class AgentMixin(
         self._loop = asyncio.get_event_loop()
         self._agent_definition = agent_definition
         self._agent_settings = agent_settings
-        self._control_message: agent_message.Message | None = None
+        self._control_message: Optional[agent_message.Message] = None
         self.name = agent_definition.name
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
