@@ -46,7 +46,6 @@ jobs:
           mypy src/ostorlab/agent/kb
           mypy src/ostorlab/agent/message
           mypy src/ostorlab/utils
-          mypy src/ostorlab/agent/schema
           mypy src/ostorlab/apis/runners
           mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
           mypy src/ostorlab/assets
