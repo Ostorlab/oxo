@@ -2,29 +2,32 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.fingerprint.file.ios.backend;
 
-message location {
-  optional string host = 1;
-  optional string mask = 2;
-  optional int32 version = 3 [default = 4];
-  optional string continent = 5;
-  optional string continent_code = 6;
-  optional string country = 7;
-  optional string country_code = 8;
-  optional string region = 9;
-  optional string region_name = 10;
-  optional string city = 11;
-  optional string zip = 12;
-  optional float latitude = 13;
-  optional float longitude = 14;
-  optional string timezone = 15;
-  optional string district = 16;
+message Location {
+  optional int32 version = 1 [default = 4];
+  optional string continent = 2;
+  optional string continent_code = 3;
+  optional string country = 4;
+  optional string country_code = 5;
+  optional string region = 6;
+  optional string region_name = 7;
+  optional string city = 8;
+  optional string zip = 9;
+  optional float latitude = 10;
+  optional float longitude = 11;
+  optional string timezone = 12;
+  optional string district = 13;
+}
+
+message Ip {
+  required string ip_address = 1;
+  optional Location location = 2;
 }
 
 
 message Message {
     optional string path = 1;
-    required string host = 2;
-    optional string ip_address = 3;
+    required string bundle_id = 2;
+    required string host = 3;
     optional int32 port = 4;
-    optional location location = 5;
+    repeated Ip ips = 5;
 }
