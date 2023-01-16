@@ -1,9 +1,9 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.fingerprint.file.library;
+package ostorlab.agent.message.proto.v3.fingerprint.file.ios.library;
 
 message Message {
-  optional string library_path = 1;
+  optional string path = 1;
   optional string library_name = 2;
   optional string library_version = 3;
   optional string library_type = 4;
