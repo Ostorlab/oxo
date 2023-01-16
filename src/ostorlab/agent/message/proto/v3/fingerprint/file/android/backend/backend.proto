@@ -3,24 +3,24 @@ syntax = "proto2";
 package ostorlab.agent.message.proto.v3.fingerprint.file.android.backend;
 
 message Location {
-  optional int32 version = 1 [default = 4];
-  optional string continent = 2;
-  optional string continent_code = 3;
-  optional string country = 4;
-  optional string country_code = 5;
-  optional string region = 6;
-  optional string region_name = 7;
-  optional string city = 8;
-  optional string zip = 9;
-  optional float latitude = 10;
-  optional float longitude = 11;
-  optional string timezone = 12;
-  optional string district = 13;
+  optional string continent = 1;
+  optional string continent_code = 2;
+  optional string country = 3;
+  optional string country_code = 4;
+  optional string region = 5;
+  optional string region_name = 6;
+  optional string city = 7;
+  optional string zip = 8;
+  optional float latitude = 9;
+  optional float longitude = 10;
+  optional string timezone = 11;
+  optional string district = 12;
 }
 
 message Ip {
   required string ip_address = 1;
-  optional Location location = 2;
+  optional int32 version = 2 [default = 4];
+  optional Location location = 3;
 }
 
 
