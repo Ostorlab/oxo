@@ -35,7 +35,7 @@ jobs:
       - name: Running Black.
         uses: psf/black@stable
         with:
-          options: "--check --exclude 'src[\\w\/].+_pb2.py'"
+          options: --check --exclude 'src[\\w\/].+_pb2.py'
       - name: Running linter.
         run: |
           pylint --rcfile=.pylintrc src/ 
