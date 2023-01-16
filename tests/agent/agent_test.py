@@ -249,9 +249,11 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled
         name="agentX",
         out_selectors=["v3.report.vulnerability"],
     )
-    agent_settings = runtime_definitions.AgentSettings.from_proto(runtime_definitions.AgentSettings(
-        key="some_key",
-    ).to_raw_proto())
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
     )
