@@ -22,8 +22,9 @@ message location {
 
 
 message Message {
-    required string host = 1;
-    optional string ip_address = 2;
-    optional int32 port = 3;
-    optional location location = 4;
+    optional string path = 1;
+    required string host = 2;
+    optional string ip_address = 3;
+    optional int32 port = 4;
+    optional location location = 5;
 }
