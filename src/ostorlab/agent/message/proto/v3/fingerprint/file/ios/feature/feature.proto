@@ -7,5 +7,5 @@ message Message {
   required string bundle_id = 2;
   optional string name = 3;
   optional string description = 4;
-  repeated string detail = 5;
+  optional string detail = 5;
 }
