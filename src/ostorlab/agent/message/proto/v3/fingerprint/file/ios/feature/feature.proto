@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.ios.feature;
+
+message Message {
+  optional string path = 1;
+  required string bundle_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  optional string detail = 5;
+}
