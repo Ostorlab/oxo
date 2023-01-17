@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.android.feature;
+
+message Message {
+  optional string path = 1;
+  required string package_name = 2;
+  optional string feature_name = 3;
+  optional string feature_description = 4;
+  repeated string detail = 5;
+}
