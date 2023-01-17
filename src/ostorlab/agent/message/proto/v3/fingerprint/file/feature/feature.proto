@@ -4,7 +4,7 @@ package ostorlab.agent.message.proto.v3.fingerprint.file.feature;
 
 message Message {
   optional string path = 1;
-  optional string feature_name = 2;
-  optional string feature_description = 3;
+  optional string name = 2;
+  optional string description = 3;
   repeated string detail = 4;
 }
