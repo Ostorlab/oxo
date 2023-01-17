@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\nJostorlab/agent/message/proto/v3/fingerprint/file/ios/feature/feature.proto\x12<ostorlab.agent.message.proto.v3.fingerprint.file.ios.feature\"]\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x11\n\tbundle_id\x18\x02 \x02(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x05 \x03(\t'
+  serialized_pb=b'\nJostorlab/agent/message/proto/v3/fingerprint/file/ios/feature/feature.proto\x12<ostorlab.agent.message.proto.v3.fingerprint.file.ios.feature\"]\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x11\n\tbundle_id\x18\x02 \x02(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x05 \x01(\t'
 )
 
 
@@ -63,8 +63,8 @@ _MESSAGE = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='detail', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.ios.feature.Message.detail', index=4,
-      number=5, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
