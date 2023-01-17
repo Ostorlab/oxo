@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\nRsrc/ostorlab/agent/message/proto/v3/fingerprint/file/android/library/library.proto\x12@ostorlab.agent.message.proto.v3.fingerprint.file.android.library\"l\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x14\n\x0clibrary_name\x18\x02 \x01(\t\x12\x17\n\x0flibrary_version\x18\x03 \x01(\t\x12\x14\n\x0clibrary_type\x18\x04 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x05 \x01(\t'
+  serialized_pb=b'\nRsrc/ostorlab/agent/message/proto/v3/fingerprint/file/android/library/library.proto\x12@ostorlab.agent.message.proto.v3.fingerprint.file.android.library\"\x82\x01\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x14\n\x0cpackage_name\x18\x03 \x02(\t\x12\x14\n\x0clibrary_name\x18\x04 \x01(\t\x12\x17\n\x0flibrary_version\x18\x05 \x01(\t\x12\x14\n\x0clibrary_type\x18\x06 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x07 \x01(\t'
 )
 
 
@@ -41,29 +41,36 @@ _MESSAGE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='library_name', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.library_name', index=1,
-      number=2, type=9, cpp_type=9, label=1,
+      name='package_name', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.package_name', index=1,
+      number=3, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='library_version', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.library_version', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='library_type', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.library_type', index=3,
+      name='library_name', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.library_name', index=2,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='detail', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.detail', index=4,
+      name='library_version', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.library_version', index=3,
       number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='library_type', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.library_type', index=4,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='detail', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.android.library.Message.detail', index=5,
+      number=7, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -80,8 +87,8 @@ _MESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=152,
-  serialized_end=260,
+  serialized_start=153,
+  serialized_end=283,
 )
 
 DESCRIPTOR.message_types_by_name['Message'] = _MESSAGE
