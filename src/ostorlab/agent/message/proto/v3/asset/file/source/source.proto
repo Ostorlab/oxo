@@ -2,9 +2,21 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.asset.file.source;
 
+message AndroidMetadata {
+  required string package_name = 1;
+}
+
+message IOSMetadata {
+  required string bundle_id = 1;
+}
+
 message Message {
   optional bytes content = 1;
   optional string path = 2;
   optional string content_url = 3;
-  optional string language = 4;
+  oneof metadata_oneof {
+    AndroidMetadata android_metadata = 4;
+    IOSMetadata ios_metadata = 5;
+  }
+  optional string language = 6;
 }
