@@ -483,6 +483,13 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
+    def allow_encode(self, value) -> Any:
+        has_agent_argument_type = isinstance(value, list) or isinstance(value, str)
+        if not has_agent_argument_type:
+            return str(value)
+        else:
+            return value
+
     def _agents_from_agent_group_def(
         self,
         api_runner: runner.APIRunner,
@@ -504,7 +511,11 @@ class CloudRuntime(runtime.Runtime):
             agent_args = []
             for arg in agent_def.args:
                 agent_args.append(
-                    {"name": arg.name, "type": arg.type, "value": arg.value}
+                    {
+                        "name": arg.name,
+                        "type": arg.type,
+                        "value": self.allow_encode(arg.value)
+                    }
                 )
             agent["args"] = agent_args
             agents.append(agent)
