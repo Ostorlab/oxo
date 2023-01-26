@@ -91,7 +91,6 @@ class CreateAssetAPIRequest(request.APIRequest):
             }
         else:
             data = {"query": self.query, "variables": json.dumps(variables)}
-        print(data)
         return data
 
     @property

@@ -543,7 +543,6 @@ class CloudRuntime(runtime.Runtime):
             id opf the created agent group.
         """
         request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
-        console.info(request.data)
         response = api_runner.execute_ubjson_request(request)
         agent_group_id = response["data"]["publishAgentGroup"]["agentGroup"]["id"]
         return agent_group_id
