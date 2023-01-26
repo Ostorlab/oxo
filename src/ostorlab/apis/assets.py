@@ -9,6 +9,7 @@ from ostorlab.assets import android_apk
 from ostorlab.assets import file
 from ostorlab.assets import ios_ipa
 from ostorlab.assets import domain_name
+from ostorlab.assets import link
 from ostorlab.assets import ip
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
@@ -105,6 +106,7 @@ class CreateAssetAPIRequest(request.APIRequest):
             }
         else:
             data = {"query": self.query, "variables": json.dumps(variables)}
+        print(data)
         return data
 
     @property
@@ -138,6 +140,8 @@ class CreateAssetAPIRequest(request.APIRequest):
             asset_type_variables = {"file": {"content": None, "path": self._asset.path}}
         elif isinstance(self._asset, domain_name.DomainName):
             asset_type_variables = {"domain": {"domain": self._asset.name}}
+        elif isinstance(self._asset, link.Link):
+            asset_type_variables = {"domain": {"domain": self._asset.url}}
         elif isinstance(self._asset, ip.IP):
             asset_type_variables = {
                 "ip": {

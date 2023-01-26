@@ -13,7 +13,7 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
     def __init__(self, name: str, description: str, agents: List[AgentType]) -> None:
         """Initializer"""
         if name is None:
-            self._name = "Agent_Grp_def"
+            self._name = "Default agent group definition name"
         else:
             self._name = name
         self._description = description
@@ -52,5 +52,5 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
                 "agents": self._agents,
             }
         }
-        data = {"query": self.query, "variables": json.dumps(variables)}
+        data = {"query": self.query, "variables": variables}
         return data

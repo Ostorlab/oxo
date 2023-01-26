@@ -7,6 +7,7 @@ detection and several other improvements.
 
 from typing import Any, List, Optional, Dict, Union
 
+import json
 import click
 import markdownify
 import rich
@@ -483,12 +484,20 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
-    def allow_encode(self, value) -> Any:
-        has_agent_argument_type = isinstance(value, list) or isinstance(value, str)
-        if not has_agent_argument_type:
-            return str(value)
-        else:
+    def _to_serialized(self, value) -> Any:
+        has_bytes_scalar_type = (
+            isinstance(value, bytes)
+            or isinstance(value, memoryview)
+            or isinstance(value, str)
+            or isinstance(value, list)
+        )
+        if has_bytes_scalar_type:
             return value
+        else:
+            try:
+                return json.dumps(value).encode()
+            except TypeError as e:
+                raise ValueError(f"type {value} is not JSON serializable") from e
 
     def _agents_from_agent_group_def(
         self,
@@ -514,7 +523,7 @@ class CloudRuntime(runtime.Runtime):
                     {
                         "name": arg.name,
                         "type": arg.type,
-                        "value": self.allow_encode(arg.value)
+                        "value": self._to_serialized(arg.value),
                     }
                 )
             agent["args"] = agent_args
@@ -534,7 +543,8 @@ class CloudRuntime(runtime.Runtime):
             id opf the created agent group.
         """
         request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
-        response = api_runner.execute(request)
+        console.info(request.data)
+        response = api_runner.execute_ubjson_request(request)
         agent_group_id = response["data"]["publishAgentGroup"]["agentGroup"]["id"]
         return agent_group_id
 
