@@ -58,21 +58,6 @@ class APIRunner(abc.ABC):
         """
         raise NotImplementedError("Missing implementation")
 
-    @abc.abstractmethod
-    def execute_ubjson_request(self, request: api_request.APIRequest) -> Dict[str, Any]:
-        """Executes a request using the GraphQL API.
-
-        Args:
-            request: The request to be executed
-
-        Raises:
-            ResponseError: When the API returns an error
-
-        Returns:
-            The API response
-        """
-        raise NotImplementedError("Missing implementation")
-
     def _sent_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
     ) -> requests.Response:
