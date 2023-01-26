@@ -78,7 +78,7 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
         "ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run", return_value=True
     )
     api_requests = mocker.patch(
-        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute"
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute_ubjson_request"
     )
     agent_details_reponse = {
         "data": {"agent": {"versions": {"versions": [{"version": "0.0.1"}]}}}

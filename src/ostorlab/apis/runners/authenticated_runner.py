@@ -197,7 +197,9 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             headers = None
             console.warning("No authentication credentials were provided.")
 
-        headers |= {"Content-type": "application/ubjson"}
+        if headers is not None:
+            headers |= {"Content-type": "application/ubjson"}
+
         response = self._sent_ubjson_request(request, headers)
         if response.status_code != 200:
             logger.debug(
