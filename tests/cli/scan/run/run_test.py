@@ -77,22 +77,43 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
     mocker.patch(
         "ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run", return_value=True
     )
-    api_requests = mocker.patch(
+
+    api_ubjson_requests = mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute_ubjson_request"
     )
+
+    api_requests = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute"
+    )
     agent_details_reponse = {
-        "data": {"agent": {"versions": {"versions": [{"version": "0.0.1"}]}}}
+        "data": {
+            "agent": {
+                "name": "whatweb",
+                "gitLocation": "https://github.com/Ostorlab/agent_whatweb",
+                "yamlFileLocation": "ostorlab.yaml",
+                "dockerLocation": "ostorlab.store/agents/agent_5448_whatweb",
+                "access": "PUBLIC",
+                "listable": True,
+                "key": "agent/ostorlab/whatweb",
+                "versions": {"versions": [{"version": "0.1.12"}]},
+            }
+        }
     }
-    agent_group_response = {"data": {"publishAgentGroup": {"agentGroup": {"id": 1}}}}
+
+    agent_group_response = {"data": {"publishAgentGroup": {"agentGroup": {"id": "1"}}}}
     asset_response = {"data": {"createAsset": {"asset": {"id": 1}}}}
     scan_response = {"data": {"createAgentScan": {"scan": {"id": 1}}}}
     api_responses = [
         agent_details_reponse,
-        agent_group_response,
         asset_response,
         scan_response,
     ]
+    api_ubjson_responses = [
+        agent_group_response,
+    ]
+
     api_requests.side_effect = api_responses
+    api_ubjson_requests.side_effect = api_ubjson_responses
 
     runner = CliRunner()
     result = runner.invoke(
