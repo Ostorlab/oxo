@@ -30,50 +30,35 @@ class CreateAssetAPIRequest(request.APIRequest):
             The query to create the asset.
         """
         return """
-            mutation CreateAsset($asset: AssetInputType!){
-                createAsset(asset: $asset) {
-                    asset{
-                        ... on AndroidAssetType{
-                            id
-                        }
-                        ... on IOSAssetType{
-                            id
-                        }
-                        ... on AndroidFileAssetType{
-                            id
-                        }
-                        ... on IOSFileAssetType{
-                            id
-                        }
-                        ... on AndroidStoreAssetType{
-                            id
-                        }
-                        ... on IOSStoreAssetType{
-                            id
-                        }
-                        ... on UrlAssetType{
-                            id
-                        }
-                        ... on DomainAssetType{
-                            id
-                        }
-                        ... on SourceCodeAssetType{
-                            id
-                        }
-                        ... on FileAssetType{
-                            id
-                        }
-                        ... on IPAssetType{
-                            id
-                        }
-                        ... on IPv4AssetType{
-                            id
-                        }
-                        ... on IPv6AssetType{
-                            id
-                        }
-                    }
+        mutation CreateAsset($asset: AssetInputType!) {
+              createAsset(asset: $asset) {
+                asset {
+                  ... on AndroidAssetType {
+                    id
+                  }
+                  ... on IOSAssetType {
+                    id
+                  }
+                  ... on AndroidFileAssetType {
+                    id
+                  }
+                  ... on IOSFileAssetType {
+                    id
+                  }
+                  ... on AndroidStoreAssetType {
+                    id
+                  }
+                  ... on IOSStoreAssetType {
+                    id
+                  }
+                  ... on UrlAssetType {
+                    id
+                  }
+                  ... on NetworkAssetType {
+                    id
+                  }
                 }
+              }
             }
         """
 
@@ -141,7 +126,7 @@ class CreateAssetAPIRequest(request.APIRequest):
         elif isinstance(self._asset, domain_name.DomainName):
             asset_type_variables = {"domain": {"domain": self._asset.name}}
         elif isinstance(self._asset, link.Link):
-            asset_type_variables = {"domain": {"domain": self._asset.url}}
+            asset_type_variables = {"url": {"urls": [self._asset.url]}}
         elif isinstance(self._asset, ip.IP):
             asset_type_variables = {
                 "ip": {
