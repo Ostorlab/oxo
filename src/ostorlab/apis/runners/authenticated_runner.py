@@ -208,7 +208,6 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}'
             )
-        console.info(response.content)
         data: Dict[str, Any] = json.loads(response.content.decode())
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
