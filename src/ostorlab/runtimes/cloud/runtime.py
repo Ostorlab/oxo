@@ -484,7 +484,7 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
-    def _to_serialized(self, value) -> Union[bytes | memoryview | List[Any] | str]:
+    def _to_serialized(self, value) -> Union[bytes, memoryview, List[Any], str]:
         has_bytes_scalar_type = isinstance(value, (bytes, list, memoryview, str))
         if has_bytes_scalar_type:
             return value
