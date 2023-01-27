@@ -130,9 +130,19 @@ class CreateAssetAPIRequest(request.APIRequest):
             asset_type_variables = {"url": {"urls": [self._asset.url]}}
         elif isinstance(self._asset, ios_store.IOSStore):
             # TODO rename package_name to bundle_id in the API
-            asset_type_variables = {"iosStore": {"applicationName": "", "packageName": self._asset.bundle_id}}
+            asset_type_variables = {
+                "iosStore": {
+                    "applicationName": "",
+                    "packageName": self._asset.bundle_id,
+                }
+            }
         elif isinstance(self._asset, android_store.AndroidStore):
-            asset_type_variables = {"androidStore": {"applicationName": "", "packageName": self._asset.package_name}}
+            asset_type_variables = {
+                "androidStore": {
+                    "applicationName": "",
+                    "packageName": self._asset.package_name,
+                }
+            }
         elif isinstance(self._asset, ip.IP):
             asset_type_variables = {
                 "ip": {
