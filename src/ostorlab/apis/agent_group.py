@@ -9,7 +9,9 @@ AgentType = Dict[str, Union[str, List]]
 class CreateAgentGroupAPIRequest(request.APIRequest):
     """Persist agent group API request."""
 
-    def __init__(self, name: str, description: str, agents: List[AgentType]) -> None:
+    def __init__(
+        self, name: Optional[str], description: str, agents: List[AgentType]
+    ) -> None:
         """Initializer"""
         if name is None:
             self._name = "Default agent group definition name"
