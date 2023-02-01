@@ -65,7 +65,6 @@ def run_mobile_scan(
             api_key=ctx.obj.get("api_key")
         )
         try:
-
             test_credentials = _prepare_test_credentials(ctx)
             if test_credentials:
                 credential_ids = _create_test_credentials(test_credentials, runner)
