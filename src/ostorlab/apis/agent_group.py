@@ -13,10 +13,7 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
         self, name: Optional[str], description: str, agents: List[AgentType]
     ) -> None:
         """Initializer"""
-        if name is None:
-            self._name = "Default agent group definition name"
-        else:
-            self._name = name
+        self._name = name
         self._description = description
         self._agents = agents
 

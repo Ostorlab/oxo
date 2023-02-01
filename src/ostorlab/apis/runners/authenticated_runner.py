@@ -200,7 +200,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         if headers is not None:
             headers |= {"Content-type": "application/ubjson"}
 
-        response = self._sent_ubjson_request(request, headers)
+        response = self._send_ubjson_request(request, headers)
         if response.status_code != 200:
             logger.debug(
                 "Response status code is %s: %s", response.status_code, response.content
@@ -216,7 +216,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         else:
             return data
 
-    def _sent_ubjson_request(
+    def _send_ubjson_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
     ) -> requests.Response:
         """Sends an API request."""
