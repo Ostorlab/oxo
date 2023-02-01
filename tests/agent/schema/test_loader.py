@@ -58,7 +58,9 @@ def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
     assert data["agenArgument"][1]["default_value"] == 42
 
 
-def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError() -> None:
+def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseValidationError() -> (
+    None
+):
     """Unit test to checks the validity of the Agent json-schema.
     Case where the Agent definition is invalid.
     The version does not respect the semantic versionning : major.minor.release.
@@ -155,7 +157,9 @@ def testAgentGroupSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
     assert data["description"] == "AgentGroup1 Should be here"
 
 
-def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError() -> None:
+def testAgentGroupSpecValidation_whenRequiredParamDescriptionIsMissing_raiseValidationError() -> (
+    None
+):
     """Unit test to checks the validity of the AgentGroup json-schema.
     Case where the AgentGroup definition is invalid : Required parameter description is missing.
     """
