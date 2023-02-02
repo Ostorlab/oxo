@@ -359,10 +359,6 @@ class CloudRuntime(runtime.Runtime):
             number_elements: number of items to show per page.
         """
         try:
-            if vuln_id is None:
-                raise click.BadParameter(
-                    "You should at least provide --vuln_id or --scan_id."
-                )
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
                 response = api_runner.execute(
