@@ -20,7 +20,8 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
 
 def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
     """Test ostorlab scan command with all options and no sub command.
-    Should show list of available commands (assets) and exit with error exit_code = 2."""
+    Should show list of available commands (assets) and exit with error exit_code = 2.
+    """
 
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=False
@@ -46,7 +47,8 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
     mocker,
 ):
     """Test ostorlab scan run command with all valid options and no sub command.
-    Should show list of available commands (assets) and exit with error exit_code = 2."""
+    Should show list of available commands (assets) and exit with error exit_code = 2.
+    """
 
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True

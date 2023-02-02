@@ -7,7 +7,8 @@ from typing import Optional, Union
 class Arg:
     """Data class holding a definition.
 
-    The value is always bytes to support all arg values. The type is defined by the type attribute."""
+    The value is always bytes to support all arg values. The type is defined by the type attribute.
+    """
 
     name: str
     type: str
