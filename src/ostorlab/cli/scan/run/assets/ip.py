@@ -51,4 +51,4 @@ def ip_cli(ctx: click.core.Context, ips: List[str]) -> None:
         )
     except ValueError as e:
         console.error(f"{e}")
-        click.Abort()
+        raise click.Abort()

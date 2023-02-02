@@ -9,9 +9,12 @@ from ostorlab.assets import android_apk
 from ostorlab.assets import file
 from ostorlab.assets import ios_ipa
 from ostorlab.assets import domain_name
+from ostorlab.assets import link
 from ostorlab.assets import ip
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
+from ostorlab.assets import ios_store
+from ostorlab.assets import android_store
 
 
 class CreateAssetAPIRequest(request.APIRequest):
@@ -29,50 +32,35 @@ class CreateAssetAPIRequest(request.APIRequest):
             The query to create the asset.
         """
         return """
-            mutation CreateAsset($asset: AssetInputType!){
-                createAsset(asset: $asset) {
-                    asset{
-                        ... on AndroidAssetType{
-                            id
-                        }
-                        ... on IOSAssetType{
-                            id
-                        }
-                        ... on AndroidFileAssetType{
-                            id
-                        }
-                        ... on IOSFileAssetType{
-                            id
-                        }
-                        ... on AndroidStoreAssetType{
-                            id
-                        }
-                        ... on IOSStoreAssetType{
-                            id
-                        }
-                        ... on UrlAssetType{
-                            id
-                        }
-                        ... on DomainAssetType{
-                            id
-                        }
-                        ... on SourceCodeAssetType{
-                            id
-                        }
-                        ... on FileAssetType{
-                            id
-                        }
-                        ... on IPAssetType{
-                            id
-                        }
-                        ... on IPv4AssetType{
-                            id
-                        }
-                        ... on IPv6AssetType{
-                            id
-                        }
-                    }
+        mutation CreateAsset($asset: AssetInputType!) {
+              createAsset(asset: $asset) {
+                asset {
+                  ... on AndroidAssetType {
+                    id
+                  }
+                  ... on IOSAssetType {
+                    id
+                  }
+                  ... on AndroidFileAssetType {
+                    id
+                  }
+                  ... on IOSFileAssetType {
+                    id
+                  }
+                  ... on AndroidStoreAssetType {
+                    id
+                  }
+                  ... on IOSStoreAssetType {
+                    id
+                  }
+                  ... on UrlAssetType {
+                    id
+                  }
+                  ... on NetworkAssetType {
+                    id
+                  }
                 }
+              }
             }
         """
 
@@ -138,6 +126,23 @@ class CreateAssetAPIRequest(request.APIRequest):
             asset_type_variables = {"file": {"content": None, "path": self._asset.path}}
         elif isinstance(self._asset, domain_name.DomainName):
             asset_type_variables = {"domain": {"domain": self._asset.name}}
+        elif isinstance(self._asset, link.Link):
+            asset_type_variables = {"url": {"urls": [self._asset.url]}}
+        elif isinstance(self._asset, ios_store.IOSStore):
+            # TODO(ticket: os-3014) rename package_name to bundle_id in the API
+            asset_type_variables = {
+                "iosStore": {
+                    "applicationName": "",
+                    "packageName": self._asset.bundle_id,
+                }
+            }
+        elif isinstance(self._asset, android_store.AndroidStore):
+            asset_type_variables = {
+                "androidStore": {
+                    "applicationName": "",
+                    "packageName": self._asset.package_name,
+                }
+            }
         elif isinstance(self._asset, ip.IP):
             asset_type_variables = {
                 "ip": {

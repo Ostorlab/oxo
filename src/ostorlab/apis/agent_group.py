@@ -1,5 +1,4 @@
 """Create Agent Group via an API Request."""
-import json
 from typing import Dict, List, Optional, Union
 
 from ostorlab.apis import request
@@ -10,7 +9,9 @@ AgentType = Dict[str, Union[str, List]]
 class CreateAgentGroupAPIRequest(request.APIRequest):
     """Persist agent group API request."""
 
-    def __init__(self, name: str, description: str, agents: List[AgentType]) -> None:
+    def __init__(
+        self, name: Optional[str], description: str, agents: List[AgentType]
+    ) -> None:
         """Initializer"""
         self._name = name
         self._description = description
@@ -49,5 +50,5 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
                 "agents": self._agents,
             }
         }
-        data = {"query": self.query, "variables": json.dumps(variables)}
+        data = {"query": self.query, "variables": variables}
         return data
