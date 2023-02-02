@@ -38,7 +38,7 @@ jobs:
           options: --check --exclude 'src[\\w\/].+_pb2.py'
       - name: Running linter.
         run: |
-          pylint --rcfile=.pylintrc -d src/ 
+          pylint --rcfile=.pylintrc src/ 
           pylint --rcfile=.pylintrc -d C0103,W0613 tests/
       - name: Running static types checker.
         run: |
