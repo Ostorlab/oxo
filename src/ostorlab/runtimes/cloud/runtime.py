@@ -348,7 +348,11 @@ class CloudRuntime(runtime.Runtime):
             )
 
     def describe_vuln(
-        self, scan_id: int, vuln_id: Optional[int], page: int = 1, number_elements: int = 10
+        self,
+        scan_id: int,
+        vuln_id: Optional[int],
+        page: int = 1,
+        number_elements: int = 10,
     ):
         """Fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
 
