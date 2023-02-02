@@ -1,6 +1,6 @@
 # This workflow use pylint:
 #  - Install Python dependencies.
-#  - Run pylint for each of the supported Python versions. 
+#  - Run pylint for each of the supported Python versions.
 # Pylint will only fail without fixing any of the errors or warnings.
 
 name: Pylint & Mypy

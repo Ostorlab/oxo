@@ -171,7 +171,9 @@ def testYamlValidation_whenSourceParamDoesNotRespectURLPattern_raisesValidationE
     assert exc_info.type is validator.ValidationError
 
 
-def testValidatorInit_whenSchemaIsInvalidTypeParamIsMisspelled_raisesSchemaError() -> None:
+def testValidatorInit_whenSchemaIsInvalidTypeParamIsMisspelled_raisesSchemaError() -> (
+    None
+):
     """Unit test for the init of the validator class with a invalid schema.
     The type is misspelled : 'strg' instead of 'string'.
     """

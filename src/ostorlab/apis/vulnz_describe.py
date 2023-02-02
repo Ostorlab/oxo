@@ -81,9 +81,9 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
         Returns:
               The query to list the vulnz.
         """
-        data = dict(
-            query=self.query,
-            variables=json.dumps(
+        data = {
+            "query": self.query,
+            "variables": json.dumps(
                 {
                     "scanId": self._scan_id,
                     "vulnerabilityId": self._vuln_id,
@@ -91,5 +91,5 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
                     "numberElements": self._number_elements,
                 }
             ),
-        )
+        }
         return data

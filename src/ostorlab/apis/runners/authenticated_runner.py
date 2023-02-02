@@ -11,6 +11,8 @@ from typing import Dict, Optional, Any
 
 import click
 import requests
+import ubjson
+import json
 
 from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
@@ -168,6 +170,64 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         return requests.post(
             self.endpoint,
             data=request.data,
+            files=request.files,
+            headers=headers,
+            proxies=proxy,
+            verify=self._verify,
+            timeout=runner.REQUEST_TIMEOUT,
+        )
+
+    def execute_ubjson_request(self, request: api_request.APIRequest) -> Dict[str, Any]:
+        """Executes a request using the Authenticated GraphQL API.
+
+        Args:
+            request: The request to be executed
+
+        Raises:
+            ResponseError: When the API returns an error
+
+        Returns:
+            The API response
+        """
+        if self._token is not None:
+            headers = {"Authorization": f"Token {self._token}"}
+        elif self._api_key is not None:
+            headers = {"X-Api-Key": f"{self._api_key}"}
+        else:
+            headers = None
+            console.warning("No authentication credentials were provided.")
+
+        if headers is not None:
+            headers |= {"Content-type": "application/ubjson"}
+
+        response = self._send_ubjson_request(request, headers)
+        if response.status_code != 200:
+            logger.debug(
+                "Response status code is %s: %s", response.status_code, response.content
+            )
+            raise runner.ResponseError(
+                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}'
+            )
+        data: Dict[str, Any] = json.loads(response.content.decode())
+        errors = data.get("errors")
+        if errors is not None and isinstance(errors, list):
+            error = errors[0].get("message")
+            raise runner.ResponseError(f"Response errors: {error}")
+        else:
+            return data
+
+    def _send_ubjson_request(
+        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+    ) -> requests.Response:
+        """Sends an API request."""
+        if self._proxy is not None:
+            proxy = {"https": self._proxy}
+        else:
+            proxy = None
+
+        return requests.post(
+            self.endpoint,
+            data=ubjson.dumpb(request.data),
             files=request.files,
             headers=headers,
             proxies=proxy,

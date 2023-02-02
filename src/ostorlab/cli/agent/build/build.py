@@ -50,7 +50,6 @@ def _build_image(
             labels={"agent_definition": agent_definition_file.read().decode("utf-8")},
             nocache=no_cache,
         ):
-
             if "stream" in log and log["stream"] != "\n":
                 console.info(log["stream"][:-1])
             elif "error" in log:

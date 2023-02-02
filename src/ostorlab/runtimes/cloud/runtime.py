@@ -7,6 +7,7 @@ detection and several other improvements.
 
 from typing import Any, List, Optional, Dict, Union
 
+import json
 import click
 import markdownify
 import rich
@@ -347,7 +348,11 @@ class CloudRuntime(runtime.Runtime):
             )
 
     def describe_vuln(
-        self, scan_id: int, vuln_id: int, page: int = 1, number_elements: int = 10
+        self,
+        scan_id: int,
+        vuln_id: Optional[int],
+        page: int = 1,
+        number_elements: int = 10,
     ):
         """Fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
 
@@ -358,10 +363,6 @@ class CloudRuntime(runtime.Runtime):
             number_elements: number of items to show per page.
         """
         try:
-            if vuln_id is None:
-                click.BadParameter(
-                    "You should at least provide --vuln_id or --scan_id."
-                )
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             if scan_id is not None:
                 response = api_runner.execute(
@@ -483,6 +484,16 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
+    def _to_serialized(self, value) -> Union[bytes, memoryview, List[Any], str]:
+        has_bytes_scalar_type = isinstance(value, (bytes, list, memoryview, str))
+        if has_bytes_scalar_type:
+            return value
+        else:
+            try:
+                return json.dumps(value).encode()
+            except TypeError as e:
+                raise ValueError(f"type {value} is not JSON serializable") from e
+
     def _agents_from_agent_group_def(
         self,
         api_runner: runner.APIRunner,
@@ -504,7 +515,11 @@ class CloudRuntime(runtime.Runtime):
             agent_args = []
             for arg in agent_def.args:
                 agent_args.append(
-                    {"name": arg.name, "type": arg.type, "value": arg.value}
+                    {
+                        "name": arg.name,
+                        "type": arg.type,
+                        "value": self._to_serialized(arg.value),
+                    }
                 )
             agent["args"] = agent_args
             agents.append(agent)
@@ -523,7 +538,7 @@ class CloudRuntime(runtime.Runtime):
             id opf the created agent group.
         """
         request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
-        response = api_runner.execute(request)
+        response = api_runner.execute_ubjson_request(request)
         agent_group_id = response["data"]["publishAgentGroup"]["agentGroup"]["id"]
         return agent_group_id
 
