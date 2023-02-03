@@ -6,4 +6,5 @@ message Message {
   optional string name = 1;
   optional uint32 port = 2;
   optional string schema = 3;
+  optional string state = 4;
 }
