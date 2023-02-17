@@ -129,7 +129,6 @@ class CreateAssetAPIRequest(request.APIRequest):
         elif isinstance(self._asset, link.Link):
             asset_type_variables = {"url": {"urls": [self._asset.url]}}
         elif isinstance(self._asset, ios_store.IOSStore):
-            # TODO(ticket: os-3014) rename package_name to bundle_id in the API
             asset_type_variables = {
                 "iosStore": {
                     "applicationName": "",
@@ -167,6 +166,11 @@ class CreateAssetAPIRequest(request.APIRequest):
                     "version": self._asset.version,
                 }
             }
+        elif isinstance(self._asset, list):
+            if isinstance(self._asset[0], link.Link):
+                asset_type_variables = {
+                    "url": {"urls": [url_asset.url for url_asset in self._asset]}
+                }
         else:
             raise NotImplementedError(f"Unknown asset type : {type(self._asset)}")
 
