@@ -547,7 +547,9 @@ class CloudRuntime(runtime.Runtime):
         return agent_group_id
 
     def _create_asset(
-        self, api_runner: runner.APIRunner, asset: base_asset.Asset | List[link.Link]
+        self,
+        api_runner: runner.APIRunner,
+        asset: Union[base_asset.Asset, List[link.Link]],
     ):
         """Sends an API request to create an asset.
 
