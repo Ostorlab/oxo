@@ -167,7 +167,7 @@ class CreateAssetAPIRequest(request.APIRequest):
                 }
             }
         elif isinstance(self._asset, list):
-            if isinstance(self._asset[0], link.Link):
+            if all(isinstance(a, link.Link) for a in self._asset) is True:
                 asset_type_variables = {
                     "url": {"urls": [url_asset.url for url_asset in self._asset]}
                 }
