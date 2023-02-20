@@ -87,7 +87,7 @@ class CloudRuntime(runtime.Runtime):
             None
         """
         try:
-            # support multiple link assets for local runtime for the cloud runtime.
+            # Support multiple link assets for local runtime for the cloud runtime.
             if len(assets) > 1:
                 if isinstance(assets[0], link.Link):
                     asset = assets
