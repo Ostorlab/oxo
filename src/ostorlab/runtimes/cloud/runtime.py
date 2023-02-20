@@ -6,6 +6,7 @@ detection and several other improvements.
 """
 
 from typing import Any, List, Optional, Dict, Union
+import logging
 
 import json
 import click
@@ -88,13 +89,15 @@ class CloudRuntime(runtime.Runtime):
         """
         try:
             # Support multiple link assets for local runtime for the cloud runtime.
-            if len(assets) > 1:
-                if isinstance(assets[0], link.Link):
-                    asset = assets
-            elif len(assets) == 1:
+            if all(isinstance(a, link.Link) for a in assets) is True:
+                asset = assets
+            elif len(assets) > 1:
+                logging.warning(
+                    "Assets has more than one, scan will only target first asset."
+                )
                 asset = assets[0]
             else:
-                raise NotImplementedError()
+                asset = assets[0]
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
             agents = self._agents_from_agent_group_def(
