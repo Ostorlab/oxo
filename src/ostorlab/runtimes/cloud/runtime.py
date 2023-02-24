@@ -6,6 +6,7 @@ detection and several other improvements.
 """
 
 from typing import Any, List, Optional, Dict, Union
+import logging
 
 import json
 import click
@@ -25,6 +26,7 @@ from ostorlab.apis import vulnz_list
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
+from ostorlab.assets import link
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
@@ -86,11 +88,16 @@ class CloudRuntime(runtime.Runtime):
             None
         """
         try:
-            if len(assets) > 1:
-                raise NotImplementedError()
+            # Support multiple link assets for local runtime for the cloud runtime.
+            if all(isinstance(a, link.Link) for a in assets) is True:
+                asset = assets
+            elif len(assets) > 1:
+                logging.warning(
+                    "Assets has more than one, scan will only target first asset."
+                )
+                asset = assets[0]
             else:
                 asset = assets[0]
-            # we support multiple assets for local runtime for the cloud runtime. we take just the first asset.
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
             agents = self._agents_from_agent_group_def(
@@ -542,7 +549,11 @@ class CloudRuntime(runtime.Runtime):
         agent_group_id = response["data"]["publishAgentGroup"]["agentGroup"]["id"]
         return agent_group_id
 
-    def _create_asset(self, api_runner: runner.APIRunner, asset: base_asset.Asset):
+    def _create_asset(
+        self,
+        api_runner: runner.APIRunner,
+        asset: Union[base_asset.Asset, List[link.Link]],
+    ):
         """Sends an API request to create an asset.
 
         Returns:

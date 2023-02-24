@@ -90,13 +90,13 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
     agent_details_reponse = {
         "data": {
             "agent": {
-                "name": "whatweb",
+                "name": "nmap",
                 "gitLocation": "https://github.com/Ostorlab/agent_whatweb",
                 "yamlFileLocation": "ostorlab.yaml",
-                "dockerLocation": "ostorlab.store/agents/agent_5448_whatweb",
+                "dockerLocation": "ostorlab.store/agents/agent_5448_nmap",
                 "access": "PUBLIC",
                 "listable": True,
-                "key": "agent/ostorlab/whatweb",
+                "key": "agent/ostorlab/nmap",
                 "versions": {"versions": [{"version": "0.1.12"}]},
             }
         }
@@ -128,6 +128,78 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
             "--title=scan1",
             "ip",
             "127.0.0.1",
+        ],
+    )
+
+    assert result.exception is None
+    api_requests.assert_called()
+    assert "Scan created successfully" in result.output
+
+
+def testScanRunCloudRuntime_whenValidMultipleLinksGiven_CreatesAgGrAssetAndScan(mocker):
+    """Unittest ostorlab scan run in cloud runtime with multiple links.
+    Should send api requests for creating Agent group, asset & scan.
+    And displays Scan created successfully.
+    """
+
+    mocker.patch(
+        "ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run", return_value=True
+    )
+
+    api_ubjson_requests = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute_ubjson_request"
+    )
+
+    api_requests = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute"
+    )
+    agent_details_reponse = {
+        "data": {
+            "agent": {
+                "name": "whatweb",
+                "gitLocation": "https://github.com/Ostorlab/agent_whatweb",
+                "yamlFileLocation": "ostorlab.yaml",
+                "dockerLocation": "ostorlab.store/agents/agent_5448_whatweb",
+                "access": "PUBLIC",
+                "listable": True,
+                "key": "agent/ostorlab/whatweb",
+                "versions": {"versions": [{"version": "0.1.12"}]},
+            }
+        }
+    }
+
+    agent_group_response = {"data": {"publishAgentGroup": {"agentGroup": {"id": "1"}}}}
+    asset_response = {"data": {"createAsset": {"asset": {"id": 1}}}}
+    scan_response = {"data": {"createAgentScan": {"scan": {"id": 1}}}}
+    api_responses = [
+        agent_details_reponse,
+        asset_response,
+        scan_response,
+    ]
+    api_ubjson_responses = [
+        agent_group_response,
+    ]
+
+    api_requests.side_effect = api_responses
+    api_ubjson_requests.side_effect = api_ubjson_responses
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=cloud",
+            "run",
+            "--agent=agent1 --agent=agent2",
+            "link",
+            "--url",
+            "https://ostorlab.co",
+            "--method",
+            "GET",
+            "--url",
+            "https://ostorlab.ma",
+            "--method",
+            "GET",
         ],
     )
 
