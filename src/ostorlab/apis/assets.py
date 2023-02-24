@@ -172,7 +172,7 @@ class CreateAssetAPIRequest(request.APIRequest):
                     "url": {"urls": [url_asset.url for url_asset in self._asset]}
                 }
             else:
-                raise NotImplementedError(f"Make sure every asset has type URL.")
+                raise NotImplementedError("Make sure every asset has type URL.")
         else:
             raise NotImplementedError(f"Unknown asset type : {type(self._asset)}")
 
