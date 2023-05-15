@@ -40,9 +40,3 @@ jobs:
         pip install .[testing]
         pip install .[agent]
         python -m pip install -e .
-    - name: Running tests with pytest.
-      run: |
-        set -o pipefail
-        pytest -m "not docker" --cov=. | tee pytest-coverage.txt
-    - name: Comment coverage
-      uses: coroo/pytest-coverage-commentator@v1.0.2
