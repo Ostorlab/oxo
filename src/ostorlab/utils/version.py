@@ -1,5 +1,5 @@
 """Version utility class to make easy to compare semantic version strings."""
-import semver
+from semver import version as semver_version
 
 
 class Version:
@@ -8,7 +8,7 @@ class Version:
     def __init__(self, version: str) -> None:
         """Init version."""
         self._version = version
-        self._semver = semver.VersionInfo.parse(version)
+        self._semver = semver_version.Version.parse(version)
 
     def __repr__(self) -> str:
         """Version string representation."""
