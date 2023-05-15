@@ -8,7 +8,7 @@ class Version:
     def __init__(self, version: str) -> None:
         """Init version."""
         self._version = version
-        self._semver = semver.VersionInfo.parse(version)  # type: ignore
+        self._semver = semver.version.Version.parse(version)
 
     def __repr__(self) -> str:
         """Version string representation."""
