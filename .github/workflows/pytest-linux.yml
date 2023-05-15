@@ -40,3 +40,7 @@ jobs:
         pip install .[testing]
         pip install .[agent]
         python -m pip install -e .
+    - name: Running tests with pytest.
+      run: |
+        set -o pipefail
+        pytest -m "not docker"
