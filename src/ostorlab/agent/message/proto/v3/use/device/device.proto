@@ -55,4 +55,6 @@ message Message {
   optional Duration duration = 8;
   // Set of args to be passed to the device. Example are passing target to run for instance.
   repeated Argument args = 9;
+  // Application content
+  optional bytes content = 10;
 }
