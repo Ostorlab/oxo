@@ -34,6 +34,7 @@ message Duration {
 message Argument {
   optional string arg_name = 1;
   repeated string arg_value = 2;
+  repeated bytes arg_value_bytes = 3;
 }
 
 message Message {
