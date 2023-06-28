@@ -252,14 +252,14 @@ will handle agent building and will automatically pick up new releases from your
 
 Implementation of popular tools like:
 
-* [semgrep](https://github.com/returntocorp/semgrep) for source code scanning.
+* ~~[semgrep](https://github.com/returntocorp/semgrep) for source code scanning.~~
 * [nbtscan](http://www.unixwiz.net/tools/nbtscan.html): Scans for open NETBIOS nameservers on your target’s network.
 * [onesixtyone](https://github.com/trailofbits/onesixtyone): Fast scanner to find publicly exposed SNMP services.
 * [Retire.js](http://retirejs.github.io/retire.js/): Scanner detecting the use of JavaScript libraries with known
   vulnerabilities.
-* [snallygaster](https://github.com/hannob/snallygaster): Finds file leaks and other security problems on HTTP servers.
+* ~~[snallygaster](https://github.com/hannob/snallygaster): Finds file leaks and other security problems on HTTP servers.~~
 * [testssl.sh](https://testssl.sh/): Identify various TLS/SSL weaknesses, including Heartbleed, CRIME and ROBOT.
-* [TruffleHog](https://github.com/trufflesecurity/truffleHog): Searches through git repositories for high entropy
+* ~~[TruffleHog](https://github.com/trufflesecurity/truffleHog): Searches through git repositories for high entropy~~
   strings and secrets, digging deep into commit history.
 * [cve-bin-tool](https://github.com/intel/cve-bin-tool): Scan binaries for vulnerable components.
 * [XSStrike](https://github.com/s0md3v/XSStrike): XSS web vulnerability scanner with generative payload.
