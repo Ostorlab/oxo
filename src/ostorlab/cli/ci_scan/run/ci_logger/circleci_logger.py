@@ -1,8 +1,10 @@
-"""Logger is in charge of defining the output format based on CI expected output."""
+"""Logger is in charge of defining the output format based on CircleCI expected output."""
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.ci_scan.run.ci_logger import logger
 
 console = cli_console.Console()
+
+OUTPUT_PATH = "/tmp/ostorlab.txt"
 
 
 class Logger(logger.Logger):
@@ -31,4 +33,5 @@ class Logger(logger.Logger):
             name: name of the output to pass to the next step.
             value: value of the output.
         """
-        console.success(f"Output: {name}:{value}")
+        with open(OUTPUT_PATH, "w") as o:
+            o.write(f"output name={name}::{value}")

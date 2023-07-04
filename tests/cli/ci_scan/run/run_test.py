@@ -2,8 +2,10 @@
 import pathlib
 
 from click.testing import CliRunner
-from ostorlab.cli.ci_scan import run
+from pytest_mock import plugin
+
 from ostorlab.cli import rootcli
+from ostorlab.cli.ci_scan import run
 
 TEST_FILE_PATH = str(pathlib.Path(__file__).parent / "test_file")
 
@@ -296,3 +298,44 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
 
     assert "Created test credentials" in result.output
     assert "Scan created with id 1." in result.output
+
+
+def testRunScanCLI_whithLogLfavorCircleCi_PrintExpctedOutput(mocker: plugin.MockerFixture,) -> None:
+    """Test ostorlab ci_scan with LogFlavor circleci."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+
+    scan_info_dict = {
+        "data": {
+            "scan": {
+                "progress": "done",
+                "riskRating": "high",
+            }
+        }
+    }
+    mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+
+    runner = CliRunner()
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=10",
+            "--title=scan1",
+            "--log-flavor=circleci",
+            "ios-ipa",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    with open("/tmp/ostorlab.txt", "r") as f:
+        output = f.read()
+
+    assert "output name=scan_id::1" in output
