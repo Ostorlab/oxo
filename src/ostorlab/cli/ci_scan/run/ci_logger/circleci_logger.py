@@ -27,7 +27,7 @@ class Logger(logger.Logger):
         console.error(message)
 
     def output(self, name: str, value: str) -> None:
-        """Pass an output to the next step of the CI.
+        """Pass output to the next step of the CI by setting them as an env variable.
 
         Args:
             name: name of the output to pass to the next step.

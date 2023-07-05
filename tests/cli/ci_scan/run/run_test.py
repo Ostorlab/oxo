@@ -301,7 +301,7 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
     assert "Scan created with id 1." in result.output
 
 
-def testRunScanCLI_whithLogLfavorCircleCi_PrintExpctedOutput(
+def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test ostorlab ci_scan with LogFlavor circleci."""
