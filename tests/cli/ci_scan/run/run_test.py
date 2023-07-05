@@ -338,5 +338,5 @@ def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
         ],
     )
 
-    assert "scan_id" in os.environ
+    assert "SCAN_ID" in os.environ
     assert os.environ.get("SCAN_ID") == "1"
