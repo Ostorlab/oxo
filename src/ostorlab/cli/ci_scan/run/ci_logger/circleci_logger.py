@@ -33,4 +33,4 @@ class Logger(logger.Logger):
             name: name of the output to pass to the next step.
             value: value of the output.
         """
-        os.environ[name] = value
+        os.environ[name.upper()] = value
