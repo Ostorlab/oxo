@@ -1,4 +1,5 @@
 """Tests for scan run command."""
+import os
 import pathlib
 
 from click.testing import CliRunner
@@ -300,7 +301,9 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
     assert "Scan created with id 1." in result.output
 
 
-def testRunScanCLI_whithLogLfavorCircleCi_PrintExpctedOutput(mocker: plugin.MockerFixture,) -> None:
+def testRunScanCLI_whithLogLfavorCircleCi_PrintExpctedOutput(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with LogFlavor circleci."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -335,7 +338,5 @@ def testRunScanCLI_whithLogLfavorCircleCi_PrintExpctedOutput(mocker: plugin.Mock
         ],
     )
 
-    with open("/tmp/ostorlab.txt", "r") as f:
-        output = f.read()
-
-    assert "output name=scan_id::1" in output
+    assert "scan_id" in os.environ
+    assert os.environ.get("scan_id") == "1"
