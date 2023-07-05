@@ -1,4 +1,4 @@
-"""Logger is in charge of definning the output format based on CI expected output."""
+"""Logger is in charge of defining the output format based on CI expected output."""
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.ci_scan.run.ci_logger import logger
 

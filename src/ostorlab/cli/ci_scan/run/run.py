@@ -12,7 +12,12 @@ from ostorlab.cli.ci_scan.ci_scan import ci_scan
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 from ostorlab.apis.runners import authenticated_runner
-from ostorlab.cli.ci_scan.run.ci_logger import console_logger, github_logger, logger
+from ostorlab.cli.ci_scan.run.ci_logger import (
+    console_logger,
+    github_logger,
+    circleci_logger,
+    logger,
+)
 from ostorlab.utils import risk_rating
 
 MINUTE = 60
@@ -21,7 +26,11 @@ SLEEP_CHECKS = 10  # seconds
 SCAN_PROGRESS_NOT_STARTED = "not_started"
 SCAN_PROGRESS_DONE = "done"
 
-CI_LOGGER = {"console": console_logger.Logger, "github": github_logger.Logger}
+CI_LOGGER = {
+    "console": console_logger.Logger,
+    "github": github_logger.Logger,
+    "circleci": circleci_logger.Logger,
+}
 
 
 @ci_scan.group()

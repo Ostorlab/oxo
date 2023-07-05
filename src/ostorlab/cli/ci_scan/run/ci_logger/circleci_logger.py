@@ -1,4 +1,6 @@
-"""Logger is in charge of defining the output format based on CI expected output."""
+"""Logger is in charge of defining the output format based on CircleCI expected output."""
+import os
+
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.ci_scan.run.ci_logger import logger
 
@@ -25,10 +27,10 @@ class Logger(logger.Logger):
         console.error(message)
 
     def output(self, name: str, value: str) -> None:
-        """Pass an output to the next step of the CI.
+        """Pass output to the next step of the CI by setting them as an env variable.
 
         Args:
             name: name of the output to pass to the next step.
             value: value of the output.
         """
-        console.success(f"Output: {name}:{value}")
+        os.environ[name.upper()] = value
