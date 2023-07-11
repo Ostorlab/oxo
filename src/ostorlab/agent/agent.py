@@ -47,6 +47,7 @@ def _setup_remote_logging():
         client = google.cloud.logging.Client()
         client.setup_logging()
 
+
 class AgentMixin(
     agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealthcheckMixin, abc.ABC
 ):

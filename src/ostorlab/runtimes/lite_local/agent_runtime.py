@@ -8,6 +8,7 @@ Usage
 import hashlib
 import io
 import logging
+import os
 import uuid
 from typing import List, Optional
 
@@ -344,12 +345,16 @@ class AgentRuntime:
             + self.runtime_name
         )
 
+        env = [
+            f"UNIVERSE={self.runtime_name}",
+        ]
+        if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+            env.append(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
+
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
-            env=[
-                f"UNIVERSE={self.runtime_name}",
-            ],
+            env=env,
             name=service_name,
             restart_policy=docker_types_services.RestartPolicy(
                 condition=restart_policy
