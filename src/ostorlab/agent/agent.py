@@ -40,6 +40,13 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
 
 
+def _setup_remote_logging():
+    if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+        import google.cloud.logging
+
+        client = google.cloud.logging.Client()
+        client.setup_logging()
+
 class AgentMixin(
     agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealthcheckMixin, abc.ABC
 ):
@@ -329,6 +336,10 @@ class AgentMixin(
         The settings file defines how the agent is running, what services are enabled and what addresses should it
         connect to. Some of these settings are consumed by the scan runtime, others are consumed by the agent itself.
 
+        Remote Logging:
+            If "GOOGLE_APPLICATION_CREDENTIALS" is present in the env variables, the Agent will use it to enable
+            remote logging to a GCP project.
+
         Args:
             args: Arguments passed to the argument parser. These are added for testability.
 
@@ -360,6 +371,8 @@ class AgentMixin(
         if not pathlib.Path(parsed_args.settings).exists():
             logger.error("settings file does not exist")
             sys.exit(2)
+
+        _setup_remote_logging()
 
         with open(AGENT_DEFINITION_PATH, "r", encoding="utf-8") as f_definition, open(
             parsed_args.settings, "rb"
