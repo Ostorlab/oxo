@@ -22,12 +22,6 @@ logger = logging.getLogger("CLI")
 )
 @click.option("-d", "--debug/--no-debug", help="Enable debug mode", default=False)
 @click.option("-v", "--verbose/--no-verbose", help="Enable verbose mode", default=False)
-@click.option(
-    "--gcp-logging-credential",
-    type=click.Path(exists=True),
-    help="Path to GCP logging JSON credential file.",
-    required=False,
-)
 def rootcli(
     ctx: click.core.Context,
     proxy: Optional[str] = None,
@@ -35,7 +29,6 @@ def rootcli(
     debug: bool = False,
     verbose: bool = False,
     api_key: str = None,
-    gcp_logging_credential: str = None,
 ) -> None:
     """Ostorlab is an open-source project to help automate security testing.\n
     Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way.
@@ -58,8 +51,8 @@ def rootcli(
         for l in loggers:
             l.setLevel(logging.DEBUG)
     if gcp_logging_credential is not None:
-        import google.cloud.logging
+        if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+            import google.cloud.logging
 
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gcp_logging_credential
-        client = google.cloud.logging.Client()
-        client.setup_logging()
+            client = google.cloud.logging.Client()
+            client.setup_logging()
