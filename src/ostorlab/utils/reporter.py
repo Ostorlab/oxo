@@ -1,4 +1,4 @@
-"""Reporter daemon logic that report scanner state periodically."""
+"""Reporter logic to read the scanner state periodically and send it to the backend."""
 import psutil
 import time
 
@@ -32,7 +32,7 @@ class Reporter:
             errors=errors,
         )
 
-    async def capture_state(self) -> None:
+    def _capture_state(self) -> None:
         """Capture current scanner state."""
 
         self.state.cpu_load = psutil.cpu_percent(interval=1, percpu=False)
@@ -40,14 +40,17 @@ class Reporter:
         self.state.total_cpu = psutil.cpu_count()
         self.state.total_memory = psutil.virtual_memory().total
 
-    async def _report_state(self) -> None:
+    def _report_state(self) -> None:
         runner = authenticated_runner.AuthenticatedAPIRunner()
         _ = runner.execute(
             add_scanner_state.AddScannerStateAPIRequest(state=self.state)
         )
 
+    async def report(self) -> None:
+        self._capture_state()
+        self._report_state()
+
     async def run(self) -> None:
         while True:
-            await self.capture_state()
-            await self._report_state()
+            await self.report()
             time.sleep(self.capture_interval)
