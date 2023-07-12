@@ -8,6 +8,7 @@ import io
 import logging
 import hashlib
 import uuid
+import base64
 from typing import List, Optional
 
 import docker
@@ -341,8 +342,10 @@ class AgentRuntime:
         env = [
             f"UNIVERSE={self.runtime_name}",
         ]
-        if self._gcp_logging_credential is None:
-            env.append(f"GCP_LOGGING_CREDENTIAL={self._gcp_logging_credential}")
+        if self._gcp_logging_credential is not None:
+            env.append(
+                f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
+            )
 
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,

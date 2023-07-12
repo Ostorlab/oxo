@@ -9,6 +9,7 @@ import abc
 import argparse
 import asyncio
 import atexit
+import base64
 import functools
 import logging
 import os
@@ -44,14 +45,14 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
 
 
-def _setup_remote_logging():
+def _setup_logging(agent_key: str, universe: str) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
-        info = json.loads(gcp_logging_credential)
+        info = json.loads(base64.b64decode(gcp_logging_credential.encode()).decode())
         credentials = service_account.Credentials.from_service_account_info(info)
         # Instantiates a client
         client = google.cloud.logging.Client(credentials=credentials)
-        client.setup_logging()
+        client.setup_logging(labels={"agent_key": agent_key, "universe": universe})
 
 
 class AgentMixin(
@@ -379,8 +380,6 @@ class AgentMixin(
             logger.error("settings file does not exist")
             sys.exit(2)
 
-        _setup_remote_logging()
-
         with open(AGENT_DEFINITION_PATH, "r", encoding="utf-8") as f_definition, open(
             parsed_args.settings, "rb"
         ) as f_settings:
@@ -388,6 +387,11 @@ class AgentMixin(
             agent_settings = runtime_definitions.AgentSettings.from_proto(
                 f_settings.read()
             )
+
+            _setup_logging(
+                agent_key=agent_settings.key, universe=os.environ.get("UNIVERSE")
+            )
+
             instance = cls(
                 agent_definition=agent_definition, agent_settings=agent_settings
             )

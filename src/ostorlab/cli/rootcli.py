@@ -62,11 +62,12 @@ def rootcli(
             l.setLevel(logging.DEBUG)
     if gcp_logging_credential is not None:
         with open(gcp_logging_credential, "r", encoding="utf-8") as source:
-            info = json.load(source)
+            content = source.read()
+            info = json.loads(content)
 
         credentials = service_account.Credentials.from_service_account_info(info)
 
         # Instantiates a client
         client = google.cloud.logging.Client(credentials=credentials)
         client.setup_logging()
-        ctx.obj["gcp_logging_credential"] = gcp_logging_credential
+        ctx.obj["gcp_logging_credential"] = content
