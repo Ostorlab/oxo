@@ -2,7 +2,7 @@
 import psutil
 import time
 
-from ostorlab.apis.runners import public_runner
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state
 from ostorlab.utils import defintions
 
@@ -32,7 +32,7 @@ class Reporter:
             errors=errors,
         )
 
-    async def capture_state(self):
+    async def capture_state(self) -> None:
         """Capture current scanner state."""
 
         self.state.cpu_load = psutil.cpu_percent(interval=1, percpu=False)
@@ -40,13 +40,13 @@ class Reporter:
         self.state.total_cpu = psutil.cpu_count()
         self.state.total_memory = psutil.virtual_memory().total
 
-    async def _report_state(self):
-        runner = public_runner.PublicAPIRunner()
+    async def _report_state(self) -> None:
+        runner = authenticated_runner.AuthenticatedAPIRunner()
         _ = runner.execute(
             add_scanner_state.AddScannerStateAPIRequest(state=self.state)
         )
 
-    async def run(self):
+    async def run(self) -> None:
         while True:
             await self.capture_state()
             await self._report_state()
