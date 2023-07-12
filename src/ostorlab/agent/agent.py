@@ -11,17 +11,17 @@ import asyncio
 import atexit
 import base64
 import functools
+import json
 import logging
 import os
 import pathlib
 import sys
 import threading
 import uuid
-import json
 from typing import Dict, Any, Optional, Type, List
+
 import google.cloud.logging
 from google.oauth2 import service_account
-
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
@@ -50,7 +50,6 @@ def _setup_logging(agent_key: str, universe: str) -> None:
     if gcp_logging_credential is not None:
         info = json.loads(base64.b64decode(gcp_logging_credential.encode()).decode())
         credentials = service_account.Credentials.from_service_account_info(info)
-        # Instantiates a client
         client = google.cloud.logging.Client(credentials=credentials)
         client.setup_logging(labels={"agent_key": agent_key, "universe": universe})
 

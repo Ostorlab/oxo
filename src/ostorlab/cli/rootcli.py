@@ -38,7 +38,7 @@ def rootcli(
     debug: bool = False,
     verbose: bool = False,
     api_key: str = None,
-    gcp_logging_credential: str = None,
+    gcp_logging_credential: Optional[str] = None,
 ) -> None:
     """Ostorlab is an open-source project to help automate security testing.\n
     Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way.
@@ -66,8 +66,6 @@ def rootcli(
             info = json.loads(content)
 
         credentials = service_account.Credentials.from_service_account_info(info)
-
-        # Instantiates a client
         client = google.cloud.logging.Client(credentials=credentials)
         client.setup_logging()
         ctx.obj["gcp_logging_credential"] = content
