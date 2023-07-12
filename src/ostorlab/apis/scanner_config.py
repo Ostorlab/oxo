@@ -30,6 +30,15 @@ class GetScannerConfigAPIRequest(request.APIRequest):
                 harborCredentials
                 busCredentials
                 dockerImage
+                busUrl
+                busClusterId
+                busClientName
+                subjectBusConfigs{
+                    subjectBusConfigs{
+                        subject
+                        queue
+                    }
+                }
               }
             }
           }
