@@ -18,6 +18,8 @@ import threading
 import uuid
 import json
 from typing import Dict, Any, Optional, Type, List
+import google.cloud.logging
+from google.oauth2 import service_account
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
@@ -45,9 +47,6 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
 def _setup_remote_logging():
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
-        import google.cloud.logging
-        from google.oauth2 import service_account
-
         info = json.loads(gcp_logging_credential)
         credentials = service_account.Credentials.from_service_account_info(info)
         # Instantiates a client

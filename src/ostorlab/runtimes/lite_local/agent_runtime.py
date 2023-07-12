@@ -8,7 +8,6 @@ Usage
 import hashlib
 import io
 import logging
-import os
 import uuid
 from typing import List, Optional
 

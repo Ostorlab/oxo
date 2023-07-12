@@ -3,6 +3,9 @@ import logging
 import json
 from typing import Optional
 
+import google.cloud.logging
+from google.oauth2 import service_account
+
 import click
 
 from ostorlab import configuration_manager
@@ -58,10 +61,7 @@ def rootcli(
         for l in loggers:
             l.setLevel(logging.DEBUG)
     if gcp_logging_credential is not None:
-        import google.cloud.logging
-        from google.oauth2 import service_account
-
-        with open(gcp_logging_credential, "r") as source:
+        with open(gcp_logging_credential, "r", encoding="utf-8") as source:
             info = json.load(source)
 
         credentials = service_account.Credentials.from_service_account_info(info)
