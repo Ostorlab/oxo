@@ -92,6 +92,7 @@ class LocalRuntime(runtime.Runtime):
         *args,
         tracing: Optional[bool] = False,
         mq_exposed_ports: Optional[Dict[int, int]] = None,
+        gcp_logging_credential: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -104,6 +105,7 @@ class LocalRuntime(runtime.Runtime):
         self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
         self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
+        self._gcp_logging_credential = gcp_logging_credential
 
     @property
     def name(self) -> str:
@@ -409,6 +411,7 @@ class LocalRuntime(runtime.Runtime):
             self._mq_service,
             self._redis_service,
             self._jaeger_service,
+            self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
             self.network, extra_configs, extra_mounts
