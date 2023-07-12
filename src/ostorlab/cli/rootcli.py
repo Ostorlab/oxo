@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 
 import click
+import daemon as dm
 
 from ostorlab import configuration_manager
 
@@ -21,6 +22,7 @@ logger = logging.getLogger("CLI")
 )
 @click.option("-d", "--debug/--no-debug", help="Enable debug mode", default=False)
 @click.option("-v", "--verbose/--no-verbose", help="Enable verbose mode", default=False)
+@click.option("--daemon/--no-daemon", help="Run in daemon mode", default=False)
 def rootcli(
     ctx: click.core.Context,
     proxy: Optional[str] = None,
@@ -28,6 +30,7 @@ def rootcli(
     debug: bool = False,
     verbose: bool = False,
     api_key: str = None,
+    daemon: bool = False,
 ) -> None:
     """Ostorlab is an open-source project to help automate security testing.\n
     Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way.
@@ -49,3 +52,6 @@ def rootcli(
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
         for l in loggers:
             l.setLevel(logging.DEBUG)
+    if daemon is True:
+        start_daemon = dm.DaemonContext()
+        start_daemon.open()

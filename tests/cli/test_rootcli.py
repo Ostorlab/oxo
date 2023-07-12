@@ -23,3 +23,12 @@ def testRootCli_whenWrongCommandIsProvided_showsNoSuchCommandErrorAndExit():
 
     assert "No such command 'wrong-command'" in result.output
     assert result.exit_code == 2
+
+
+def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker):
+    """Run CLI with daemon command."""
+    daemon_context_open = mocker.patch("daemon.DaemonContext.open", return_value=None)
+    runner = CliRunner()
+    result = runner.invoke(rootcli.rootcli, ["--daemon", "scan", "list"])
+    assert result.exit_code == 0
+    assert daemon_context_open.call_count == 1
