@@ -2,13 +2,13 @@
 from typing import Dict, Optional
 
 from ostorlab.apis import request
-from ostorlab.runtimes import reporter as rep
+from ostorlab.utils import defintions
 
 
 class AddScannerStateAPIRequest(request.APIRequest):
     """Report the scanner state."""
 
-    def __init__(self, state: rep.State):
+    def __init__(self, state: defintions.State):
         """Sets the state values.
 
         Args:
