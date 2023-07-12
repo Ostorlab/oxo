@@ -146,6 +146,7 @@ class AgentRuntime:
         mq_service: mq.LocalRabbitMQ,
         redis_service: redis.LocalRedis,
         jaeger_service: jaeger.LocalJaeger,
+        gcp_logging_credential: Optional[str] = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -163,6 +164,7 @@ class AgentRuntime:
         self.mq_service = mq_service
         self.redis_service = redis_service
         self.jaeger_service = jaeger_service
+        self._gcp_logging_credential = gcp_logging_credential
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -340,8 +342,8 @@ class AgentRuntime:
         env = [
             f"UNIVERSE={self.runtime_name}",
         ]
-        if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
-            env.append(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
+        if self._gcp_logging_credential is None:
+            env.append(f"GCP_LOGGING_CREDENTIAL={self._gcp_logging_credential}")
 
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,

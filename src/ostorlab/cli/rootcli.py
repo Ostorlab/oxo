@@ -61,7 +61,7 @@ def rootcli(
         import google.cloud.logging
         from google.oauth2 import service_account
 
-        with open(gcp_logging_credential, 'r') as source:
+        with open(gcp_logging_credential, "r") as source:
             info = json.load(source)
 
         credentials = service_account.Credentials.from_service_account_info(info)

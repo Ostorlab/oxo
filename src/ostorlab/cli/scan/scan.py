@@ -120,6 +120,7 @@ def scan(
             tracing=tracing,
             tracing_collector_url=tracing_collector_url,
             mq_exposed_ports=mq_exposed_ports,
+            gcp_logging_credential=ctx.obj.get("gcp_logging_credential"),
         )
         ctx.obj["runtime"] = runtime_instance
     except registry.RuntimeNotFoundError as e:

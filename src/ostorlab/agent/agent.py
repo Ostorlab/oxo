@@ -27,6 +27,8 @@ from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 
+GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
+
 AGENT_DEFINITION_PATH = "/tmp/ostorlab.yaml"
 
 logger = logging.getLogger(__name__)
@@ -41,10 +43,15 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
 
 
 def _setup_remote_logging():
-    if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
+    if gcp_logging_credential is not None:
         import google.cloud.logging
+        from google.oauth2 import service_account
 
-        client = google.cloud.logging.Client()
+        info = json.loads(gcp_logging_credential)
+        credentials = service_account.Credentials.from_service_account_info(info)
+        # Instantiates a client
+        client = google.cloud.logging.Client(credentials=credentials)
         client.setup_logging()
 
 
@@ -338,7 +345,7 @@ class AgentMixin(
         connect to. Some of these settings are consumed by the scan runtime, others are consumed by the agent itself.
 
         Remote Logging:
-            If "GOOGLE_APPLICATION_CREDENTIALS" is present in the env variables, the Agent will use it to enable
+            If "GCP_LOGGING_CREDENTIAL" is present in the env variables, the Agent will use it to enable
             remote logging to a GCP project.
 
         Args:

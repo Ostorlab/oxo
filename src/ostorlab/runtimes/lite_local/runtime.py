@@ -75,6 +75,7 @@ class LiteLocalRuntime(runtime.Runtime):
         network: str,
         redis_url: str,
         tracing_collector_url: str,
+        gcp_logging_credential: Optional[str] = None,
         **kwargs,
     ) -> None:
         """Set runtime attributes.
@@ -89,6 +90,7 @@ class LiteLocalRuntime(runtime.Runtime):
             redis_url: Redis URL.
             tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
              exporter and its arguments.
+            gcp_logging_credential: GCP Logging JSON credentials.
         """
         del args
         del kwargs
@@ -115,6 +117,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self._network = network
         self._redis_url = redis_url
         self._tracing_collector_url = tracing_collector_url
+        self._gcp_logging_credential = gcp_logging_credential
 
         if not docker_requirements_checker.is_docker_installed():
             console.error("Docker is not installed.")
@@ -284,6 +287,7 @@ class LiteLocalRuntime(runtime.Runtime):
             self._bus_exchange_topic,
             self._redis_url,
             self._tracing_collector_url,
+            self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
             self.network, extra_configs, extra_mounts
