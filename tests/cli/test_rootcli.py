@@ -36,6 +36,5 @@ def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker, requests_mock
     mocker.patch("ostorlab.cli.scan.list.list.list_scans", return_value=None)
     mocker.patch("ostorlab.cli.scan.scan", return_value=None)
     runner = CliRunner()
-    result = runner.invoke(rootcli.rootcli, ["--daemon", "scan", "list"])
-    print(result)
+    runner.invoke(rootcli.rootcli, ["--daemon", "scan", "list"])
     assert daemon_context_open.call_count == 1
