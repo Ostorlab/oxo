@@ -1,3 +1,4 @@
+"""Add scanner state via an API Request."""
 from typing import Dict, Optional
 
 from ostorlab.apis import request
@@ -17,10 +18,10 @@ class AddScannerStateAPIRequest(request.APIRequest):
 
     @property
     def query(self) -> Optional[str]:
-        """Defines the query to revoke the API key.
+        """Defines the query to report the scanner state.
 
         Returns:
-            The query to revoke the API key
+            The query to report the scanner state
         """
         return """
         mutation AddScannerState($scannerState: ScannerStateInputType!) {
@@ -30,8 +31,6 @@ class AddScannerStateAPIRequest(request.APIRequest):
               scanner {
                 id
               }
-              totalCpu
-              hostname
             }
           }
         }

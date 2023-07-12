@@ -1,4 +1,4 @@
-"""Reporter Doemon logic that report scanner state periodically."""
+"""Reporter daemon logic that report scanner state periodically."""
 import psutil
 import dataclasses
 import time
@@ -42,14 +42,14 @@ class Reporter:
             errors=errors,
         )
 
-    def _capture_state(self):
+    async def _capture_state(self):
         """Capture current scanner state."""
         self._state.cpu = psutil.cpu_percent(interval=1, percpu=False)
         self._state.memory = psutil.virtual_memory().percent
         self._state.total_cpu = psutil.cpu_count()
         self._state.total_memory = psutil.virtual_memory().total
 
-    def _report_state(self):
+    async def _report_state(self):
         runner = public_runner.PublicAPIRunner()
         _ = runner.execute(
             add_scanner_state.AddScannerStateAPIRequest(state=self._state)
