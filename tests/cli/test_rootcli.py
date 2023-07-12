@@ -1,6 +1,11 @@
 """Tests for ostorlab root cli"""
+from unittest import mock
+
 from click.testing import CliRunner
+
 from ostorlab.cli import rootcli
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.runtimes.local import runtime as local_runtime
 
 
 def testRootCli_whenNoOptionProvided_showAvailableOptions():
@@ -28,6 +33,7 @@ def testRootCli_whenWrongCommandIsProvided_showsNoSuchCommandErrorAndExit():
 def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker):
     """Run CLI with daemon command."""
     daemon_context_open = mocker.patch("daemon.DaemonContext.open", return_value=None)
+    mocker.patch("ostorlab.cli.scan.list.list.list_scans", return_value=None)
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ["--daemon", "scan", "list"])
     assert result.exit_code == 0
