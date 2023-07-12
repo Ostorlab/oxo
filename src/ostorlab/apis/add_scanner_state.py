@@ -1,4 +1,3 @@
-
 from typing import Dict, Optional
 
 from ostorlab.apis import request
@@ -8,7 +7,7 @@ from ostorlab.runtimes import reporter as rep
 class AddScannerStateAPIRequest(request.APIRequest):
     """Report the scanner state."""
 
-    def __init__(self, state : rep.State):
+    def __init__(self, state: rep.State):
         """Sets the state values.
 
         Args:
@@ -46,16 +45,16 @@ class AddScannerStateAPIRequest(request.APIRequest):
               The variables dict to add the scanner state.
         """
         data = {
-        "scannerState": {
-            "scannerId": self.state.scanner_id,
-            "scanId": self.state.scan_id,
-            "hostname": self.state.hostname,
-            "ipAddress": self.state.ip,
-            "memoryLoad": self.state.memory_load,
-            "totalMemory": self.state.total_memory,
-            "cpuLoad": self.state.cpu_load,
-            "totalCpu": self.state.total_cpu,
-            "errors": self.state.errors,
+            "scannerState": {
+                "scannerId": self.state.scanner_id,
+                "scanId": self.state.scan_id,
+                "hostname": self.state.hostname,
+                "ipAddress": self.state.ip,
+                "memoryLoad": self.state.memory_load,
+                "totalMemory": self.state.total_memory,
+                "cpuLoad": self.state.cpu_load,
+                "totalCpu": self.state.total_cpu,
+                "errors": self.state.errors,
+            }
         }
-    }
         return data

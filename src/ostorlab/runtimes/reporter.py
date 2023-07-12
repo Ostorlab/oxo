@@ -1,7 +1,7 @@
 """Reporter Doemon logic that report scanner state periodically."""
 import psutil
 import dataclasses
-import asyncio
+import time
 
 from ostorlab.apis.runners import public_runner
 from ostorlab.apis import add_scanner_state
@@ -23,10 +23,13 @@ class State:
     ip: str
     errors: str
 
+
 class Reporter:
     """Reporter collects information about the current scanner."""
 
-    def __init__(self, scanner_id: int, scan_id: int, hostname: str, ip: str, errors: str):
+    def __init__(
+        self, scanner_id: int, scan_id: int, hostname: str, ip: str, errors: str
+    ):
         self._state = State(
             scanner_id=scanner_id,
             scan_id=scan_id,
@@ -36,7 +39,7 @@ class Reporter:
             total_memory=0,
             hostname=hostname,
             ip=ip,
-            errors=errors
+            errors=errors,
         )
 
     def _capture_state(self):
@@ -48,10 +51,12 @@ class Reporter:
 
     def _report_state(self):
         runner = public_runner.PublicAPIRunner()
-        _ = runner.execute(add_scanner_state.AddScannerStateAPIRequest(state=self._state))
+        _ = runner.execute(
+            add_scanner_state.AddScannerStateAPIRequest(state=self._state)
+        )
 
     async def run(self):
         while True:
             await self._capture_state()
             await self._report_state()
-            asyncio.sleep(CAPTURE_INTERVAL)
+            time.sleep(CAPTURE_INTERVAL)
