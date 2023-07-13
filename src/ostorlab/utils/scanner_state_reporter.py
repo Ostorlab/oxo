@@ -26,7 +26,7 @@ class ScannerStateReporter:
         self._ip = ip
         self._errors = errors
 
-    def _capture_state(self) -> None:
+    def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""
         state = defintions.ScannerState(
             scanner_id=self._scanner_id,

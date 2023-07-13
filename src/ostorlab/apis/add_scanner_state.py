@@ -14,7 +14,7 @@ class AddScannerStateAPIRequest(request.APIRequest):
         Args:
            state: A dataclass instance holding state info of a runner.
         """
-        self.state = state
+        self._state = state
 
     @property
     def query(self) -> Optional[str]:
@@ -45,15 +45,15 @@ class AddScannerStateAPIRequest(request.APIRequest):
         """
         data = {
             "scannerState": {
-                "scannerId": self.state.scanner_id,
-                "scanId": self.state.scan_id,
-                "hostname": self.state.hostname,
-                "ipAddress": self.state.ip,
-                "memoryLoad": self.state.memory_load,
-                "totalMemory": self.state.total_memory,
-                "cpuLoad": self.state.cpu_load,
-                "totalCpu": self.state.total_cpu,
-                "errors": self.state.errors,
+                "scannerId": self._state.scanner_id,
+                "scanId": self._state.scan_id,
+                "hostname": self._state.hostname,
+                "ipAddress": self._state.ip,
+                "memoryLoad": self._state.memory_load,
+                "totalMemory": self._state.total_memory,
+                "cpuLoad": self._state.cpu_load,
+                "totalCpu": self._state.total_cpu,
+                "errors": self._state.errors,
             }
         }
         return data
