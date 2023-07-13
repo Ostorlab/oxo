@@ -1,6 +1,7 @@
 """Testing module for the scanner state reporter class."""
 
 import pytest
+import pytest_mock
 
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.utils.defintions import ScannerState
@@ -12,19 +13,15 @@ class Memory:
 
 
 @pytest.mark.asyncio
-async def testReportMethod_whenCalled_updateValuesCorrectly(mocker) -> None:
+async def testReportMethod_whenCalled_updateValuesCorrectly(mocker: pytest_mock.MockerFixture) -> None:
+    """Test the report method to insure that the values filled from the private capture_state method are correct."""
     mocker.patch(
-        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
-        eturn_value="dummy",
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute"
     )
     mocker.patch("psutil.cpu_percent", return_value=10)
     mocker.patch("psutil.cpu_count", return_value=10)
     mocker.patch("psutil.virtual_memory", return_value=Memory())
     mock = mocker.patch("ostorlab.apis.add_scanner_state.AddScannerStateAPIRequest")
-    report = scanner_state_reporter.ScannerStateReporter(
-        scanner_id=1, scan_id=1, hostname="", ip="", errors=""
-    )
-    await report.report()
     state = ScannerState(
         scanner_id=1,
         scan_id=1,
@@ -36,5 +33,10 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(mocker) -> None:
         ip="",
         errors="",
     )
+
+    report = scanner_state_reporter.ScannerStateReporter(
+        scanner_id=1, scan_id=1, hostname="", ip="", errors=""
+    )
+    await report.report()
 
     assert mock.call_args.kwargs["state"] == state
