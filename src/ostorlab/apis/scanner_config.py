@@ -9,8 +9,8 @@ from ostorlab.apis import request
 class GetScannerConfigAPIRequest(request.APIRequest):
     """Get scanner config."""
 
-    def __init__(self, scan_id: int):
-        self._scan_id = scan_id
+    def __init__(self, scanner_id: int):
+        self._scanner_id = scanner_id
 
     @property
     def query(self) -> Optional[str]:
@@ -20,7 +20,7 @@ class GetScannerConfigAPIRequest(request.APIRequest):
             The query to get the configs.
         """
         return """
-         query scanners($scannerId: Int){
+         query scanners($scannerId: Int!){
           scanners(scannerId: $scannerId){
             scanners{
               id
@@ -52,5 +52,5 @@ class GetScannerConfigAPIRequest(request.APIRequest):
         Returns:
               The query to get the configs.
         """
-        data = {"query": self.query, "variables": json.dumps({"scanId": self._scan_id})}
+        data = {"query": self.query, "variables": json.dumps({"scannerId": self._scanner_id})}
         return data
