@@ -6,10 +6,10 @@ import json
 from ostorlab.apis import request
 
 
-class GetScannerConfigAPIRequest(request.APIRequest):
+class ScannerConfigAPIRequest(request.APIRequest):
     """Get scanner config."""
 
-    def __init__(self, scanner_id: int):
+    def __init__(self, scanner_id: str):
         self._scanner_id = scanner_id
 
     @property
