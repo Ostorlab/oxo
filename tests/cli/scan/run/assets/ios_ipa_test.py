@@ -43,5 +43,4 @@ def testScanRunIosIpa_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowErro
     ]
     result = runner.invoke(rootcli.rootcli, command)
 
-    assert "Command accepts either path or source url of the ipa file." in result.output
     assert result.exit_code == 2

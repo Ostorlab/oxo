@@ -9,6 +9,7 @@ import hashlib
 import io
 import logging
 import uuid
+import base64
 from typing import List, Optional
 
 import docker
@@ -146,6 +147,7 @@ class AgentRuntime:
         bus_exchange_topic: str,
         redis_url: str,
         tracing_collector_url: str,
+        gcp_logging_credential: Optional[str] = None,
     ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
 
@@ -160,6 +162,7 @@ class AgentRuntime:
             redis_url: Redis URL.
             tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
              exporter and its arguments.
+            gcp_logging_credential: GCP Logging JSON credentials.
         """
         self._uuid = uuid.uuid4()
         self._docker_client = docker_client
@@ -172,6 +175,7 @@ class AgentRuntime:
         self.bus_exchange_topic = bus_exchange_topic
         self.redis_url = redis_url
         self.tracing_collector_url = tracing_collector_url
+        self._gcp_logging_credential = gcp_logging_credential
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -344,12 +348,18 @@ class AgentRuntime:
             + self.runtime_name
         )
 
+        env = [
+            f"UNIVERSE={self.runtime_name}",
+        ]
+        if self._gcp_logging_credential is not None:
+            env.append(
+                f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
+            )
+
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
-            env=[
-                f"UNIVERSE={self.runtime_name}",
-            ],
+            env=env,
             name=service_name,
             restart_policy=docker_types_services.RestartPolicy(
                 condition=restart_policy
