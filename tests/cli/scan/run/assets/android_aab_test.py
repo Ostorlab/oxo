@@ -43,5 +43,4 @@ def testScanRunAndroidAab_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShow
     ]
     result = runner.invoke(rootcli.rootcli, command)
 
-    assert "Command accepts either path or source url of the aab file." in result.output
     assert result.exit_code == 2

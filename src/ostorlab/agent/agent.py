@@ -9,16 +9,19 @@ import abc
 import argparse
 import asyncio
 import atexit
+import base64
 import functools
+import json
 import logging
 import os
 import pathlib
 import sys
 import threading
 import uuid
-import json
 from typing import Dict, Any, Optional, Type, List
 
+import google.cloud.logging
+from google.oauth2 import service_account
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
@@ -26,6 +29,8 @@ from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+
+GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
 AGENT_DEFINITION_PATH = "/tmp/ostorlab.yaml"
 
@@ -38,6 +43,15 @@ class NonListedMessageSelectorError(exceptions.OstorlabError):
 
 class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
+
+
+def _setup_logging(agent_key: str, universe: str) -> None:
+    gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
+    if gcp_logging_credential is not None:
+        info = json.loads(base64.b64decode(gcp_logging_credential.encode()).decode())
+        credentials = service_account.Credentials.from_service_account_info(info)
+        client = google.cloud.logging.Client(credentials=credentials)
+        client.setup_logging(labels={"agent_key": agent_key, "universe": universe})
 
 
 class AgentMixin(
@@ -329,6 +343,10 @@ class AgentMixin(
         The settings file defines how the agent is running, what services are enabled and what addresses should it
         connect to. Some of these settings are consumed by the scan runtime, others are consumed by the agent itself.
 
+        Remote Logging:
+            If "GCP_LOGGING_CREDENTIAL" is present in the env variables, the Agent will use it to enable
+            remote logging to a GCP project.
+
         Args:
             args: Arguments passed to the argument parser. These are added for testability.
 
@@ -368,6 +386,11 @@ class AgentMixin(
             agent_settings = runtime_definitions.AgentSettings.from_proto(
                 f_settings.read()
             )
+
+            _setup_logging(
+                agent_key=agent_settings.key, universe=os.environ.get("UNIVERSE")
+            )
+
             instance = cls(
                 agent_definition=agent_definition, agent_settings=agent_settings
             )

@@ -8,6 +8,7 @@ import io
 import logging
 import hashlib
 import uuid
+import base64
 from typing import List, Optional
 
 import docker
@@ -145,6 +146,7 @@ class AgentRuntime:
         mq_service: mq.LocalRabbitMQ,
         redis_service: redis.LocalRedis,
         jaeger_service: jaeger.LocalJaeger,
+        gcp_logging_credential: Optional[str] = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -162,6 +164,7 @@ class AgentRuntime:
         self.mq_service = mq_service
         self.redis_service = redis_service
         self.jaeger_service = jaeger_service
+        self._gcp_logging_credential = gcp_logging_credential
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -336,12 +339,18 @@ class AgentRuntime:
             + self.runtime_name
         )
 
+        env = [
+            f"UNIVERSE={self.runtime_name}",
+        ]
+        if self._gcp_logging_credential is not None:
+            env.append(
+                f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
+            )
+
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,
             networks=[network_name],
-            env=[
-                f"UNIVERSE={self.runtime_name}",
-            ],
+            env=env,
             name=service_name,
             restart_policy=docker_types_services.RestartPolicy(
                 condition=restart_policy
