@@ -52,5 +52,8 @@ class GetScannerConfigAPIRequest(request.APIRequest):
         Returns:
               The query to get the configs.
         """
-        data = {"query": self.query, "variables": json.dumps({"scannerId": self._scanner_id})}
+        data = {
+            "query": self.query,
+            "variables": json.dumps({"scannerId": self._scanner_id}),
+        }
         return data
