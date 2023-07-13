@@ -13,7 +13,6 @@ class Memory:
 
 @pytest.mark.asyncio
 async def testReport_whenCalled_updateValues(mocker) -> None:
-    # mock.patch("psutil.cpu_percent", return_value=10)
 
     mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",

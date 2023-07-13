@@ -25,7 +25,7 @@ class PortMapping:
 
 
 @dataclasses.dataclass
-class State:
+class ScannerState:
     """Current scanner state."""
 
     scanner_id: int

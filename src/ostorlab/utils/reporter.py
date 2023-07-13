@@ -20,7 +20,7 @@ class Reporter:
         capture_interval: int = 300,
     ):
         self.capture_interval = capture_interval
-        self.state = defintions.State(
+        self.state = defintions.ScannerState(
             scanner_id=scanner_id,
             scan_id=scan_id,
             cpu_load=0,
