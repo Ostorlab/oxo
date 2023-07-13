@@ -12,7 +12,7 @@ class Memory:
 
 
 @pytest.mark.asyncio
-async def testReport_whenCalled_updateValues(mocker) -> None:
+async def testReportMethod_whenCalled_updateValuesCorrectly(mocker) -> None:
     mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
         eturn_value="dummy",
