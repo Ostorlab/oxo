@@ -1,6 +1,10 @@
 """This module is the entry point for ostorlab CLI."""
 import logging
+import json
 from typing import Optional
+
+import google.cloud.logging
+from google.oauth2 import service_account
 
 import click
 
@@ -21,6 +25,12 @@ logger = logging.getLogger("CLI")
 )
 @click.option("-d", "--debug/--no-debug", help="Enable debug mode", default=False)
 @click.option("-v", "--verbose/--no-verbose", help="Enable verbose mode", default=False)
+@click.option(
+    "--gcp-logging-credential",
+    type=click.Path(exists=True),
+    help="Path to GCP logging JSON credential file.",
+    required=False,
+)
 def rootcli(
     ctx: click.core.Context,
     proxy: Optional[str] = None,
@@ -28,6 +38,7 @@ def rootcli(
     debug: bool = False,
     verbose: bool = False,
     api_key: str = None,
+    gcp_logging_credential: Optional[str] = None,
 ) -> None:
     """Ostorlab is an open-source project to help automate security testing.\n
     Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way.
@@ -49,3 +60,12 @@ def rootcli(
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
         for l in loggers:
             l.setLevel(logging.DEBUG)
+    if gcp_logging_credential is not None:
+        with open(gcp_logging_credential, "r", encoding="utf-8") as source:
+            content = source.read()
+            info = json.loads(content)
+
+        credentials = service_account.Credentials.from_service_account_info(info)
+        client = google.cloud.logging.Client(credentials=credentials)
+        client.setup_logging()
+        ctx.obj["gcp_logging_credential"] = content

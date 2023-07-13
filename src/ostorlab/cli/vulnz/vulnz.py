@@ -23,7 +23,10 @@ from ostorlab.runtimes import registry
 def vulnz(ctx, runtime: str = "local") -> None:
     """You can use vulnz to list and describe vulnerabilities.\n"""
     try:
-        runtime_instance = registry.select_runtime(runtime_type=runtime)
+        runtime_instance = registry.select_runtime(
+            runtime_type=runtime,
+            gcp_logging_credential=ctx.obj.get("gcp_logging_credential"),
+        )
         ctx.obj["runtime"] = runtime_instance
     except registry.RuntimeNotFoundError as e:
         raise click.ClickException(
