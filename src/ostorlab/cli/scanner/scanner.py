@@ -25,13 +25,18 @@ def scanner(
 ) -> None:
     """Invoke a scan in a daemon mode.\n
     Example:\n
-        - ostorlab scanner --api-key 11226DS --daemon --scanner-id
+        - ostorlab scanner --api-key [API_KEY] --daemon --scanner-id [SCANNER_ID]
     """
     if daemon is True and ctx.obj["api_key"] is not None:
         logger.info("Running scanner with daemon mode.")
         with dm.DaemonContext():
-            asyncio.get_event_loop().run_until_complete(start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id))
+            asyncio.get_event_loop().run_until_complete(
+                start.subscribe_to_nats(
+                    api_key=ctx.obj["api_key"], scanner_id=scanner_id
+                )
+            )
     elif daemon is False and ctx.obj["api_key"] is not None:
         logger.info("Running scanner without daemon mode.")
         asyncio.get_event_loop().run_until_complete(
-            start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id))
+            start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
+        )
