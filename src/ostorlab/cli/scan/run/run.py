@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--no-asset",
-    help="Start the environement without injeccting assets",
+    help="Start the environment without injecting assets",
     is_flag=True,
     required=False,
 )
