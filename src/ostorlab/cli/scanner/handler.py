@@ -1,3 +1,5 @@
+"""Module responsible for establishing a connection with nats."""
+
 import asyncio
 import datetime
 import logging
@@ -6,13 +8,11 @@ import sys
 from typing import Optional, Dict
 
 import nats
-from nats.js import client as js_client
 from nats.js import api as js_api
+from nats.js import client as js_client
 
-# from pyolib.bus.message import serializer
+from ostorlab.agent.message import serializer
 
-# The stan client will raise an ErrSlowConsumerError due to the pending size bigger than subscription limit.
-# If the logs show the error: `Error: nats: Slow Consumer, messages dropped`, then this value should updated.
 DEFAULT_PENDING_BYTES_LIMIT = 400 * 1024 * 1024
 
 DEFAULT_CONNECT_TIMEOUT = 20
