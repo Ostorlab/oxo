@@ -67,12 +67,11 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
                 tmp.name,
             ],
         )
-
-    assert scan.call_count == 1
-    assert len(scan.call_args_list) == 1
-    assert len(scan.call_args_list[0].kwargs.get("assets")) == 1
-    assert (
-        scan.call_args_list[0].kwargs.get("assets")[0].content
-        == b"May the Force be with you"
-    )
-    assert scan.call_args_list[0].kwargs.get("assets")[0].path == tmp.name
+        assert scan.call_count == 1, tmp.name
+        assert len(scan.call_args_list) == 1
+        assert len(scan.call_args_list[0].kwargs.get("assets")) == 1
+        assert (
+            scan.call_args_list[0].kwargs.get("assets")[0].content
+            == b"May the Force be with you"
+        )
+        assert scan.call_args_list[0].kwargs.get("assets")[0].path == tmp.name
