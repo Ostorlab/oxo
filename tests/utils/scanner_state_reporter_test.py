@@ -23,7 +23,7 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
     mocker.patch("psutil.cpu_percent", return_value=10)
     mocker.patch("psutil.cpu_count", return_value=10)
     mocker.patch("psutil.virtual_memory", return_value=Memory())
-    mock = mocker.patch("ostorlab.apis.add_scanner_state.AddScannerStateAPIRequest")
+    api_request_mock = mocker.patch("ostorlab.apis.add_scanner_state.AddScannerStateAPIRequest")
     state = ScannerState(
         scanner_id=1,
         scan_id=1,
@@ -41,4 +41,4 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
     )
     await report.report()
 
-    assert mock.call_args.kwargs["state"] == state
+    assert api_request_mock.call_args.kwargs["state"] == state
