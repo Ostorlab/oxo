@@ -13,7 +13,9 @@ class Memory:
 
 
 @pytest.mark.asyncio
-async def testReportMethod_whenCalled_updateValuesCorrectly(mocker: pytest_mock.MockerFixture) -> None:
+async def testReportMethod_whenCalled_updateValuesCorrectly(
+    mocker: pytest_mock.MockerFixture,
+) -> None:
     """Test the report method to insure that the values filled from the private capture_state method are correct."""
     mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute"
