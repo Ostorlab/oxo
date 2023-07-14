@@ -1,6 +1,7 @@
 """Tests for scan run file command."""
 import tempfile
 
+import pytest
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
@@ -41,6 +42,7 @@ def testScanRunFile_whenUrlIsProvided_callScanWithValidListOFAssets(
         scan.call_args_list[0].kwargs.get("assets")[1].content_url
         == "https://hello.ostorlab.co"
     )
+
 
 @pytest.mark.xfail(reason="Test is failing on windows. due to file path issue.")
 def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
