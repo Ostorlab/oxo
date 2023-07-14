@@ -64,7 +64,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
                 "--agent=agent1 --agent=agent2",
                 "file",
                 "--file",
-                tmp.name,
+                str(pathlib.Path(tmp.name).resolve()))),
             ],
         )
         assert scan.call_count == 1, tmp.name
