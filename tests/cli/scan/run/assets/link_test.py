@@ -19,10 +19,10 @@ def testScanRunLink_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocke
     assert result.exit_code == 2
 
 
-def testRunScanLink__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
+def testRunScanLink_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
     mocker,
 ):
-    """Test ostorlab scan run link with non supported runtime, should exit with return code 1."""
+    """Test ostorlab scan run link with non-supported runtime, should exit with return code 1."""
 
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=False

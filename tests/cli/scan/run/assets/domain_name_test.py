@@ -21,7 +21,7 @@ def testScanRunDomainName_whenNoOptionsProvided_showsAvailableOptionsAndCommands
     assert result.exit_code == 2
 
 
-def testRunScanDomainName__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
+def testRunScanDomainName_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
     mocker,
 ):
     """Test ostorlab scan run domain-name with non-supported runtime, should exit with return code 1."""
