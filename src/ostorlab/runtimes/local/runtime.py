@@ -92,7 +92,7 @@ class LocalRuntime(runtime.Runtime):
         *args,
         tracing: Optional[bool] = False,
         mq_exposed_ports: Optional[Dict[int, int]] = None,
-        gcp_logging_credential: Optional[str] = None,
+        run_default_agents: bool = True,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -105,7 +105,7 @@ class LocalRuntime(runtime.Runtime):
         self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
         self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
-        self._gcp_logging_credential = gcp_logging_credential
+        self._run_default_agents: bool = run_default_agents
 
     @property
     def name(self) -> str:
@@ -191,12 +191,13 @@ class LocalRuntime(runtime.Runtime):
             console.info("Checking services are healthy")
             self._check_services_healthy()
 
-            console.info("Starting pre-agents")
-            self._start_pre_agents()
-            console.info("Checking pre-agents are healthy")
-            is_healthy = self._check_agents_healthy()
-            if is_healthy is False:
-                raise AgentNotHealthy()
+            if self._run_default_agents is True:
+                console.info("Starting pre-agents")
+                self._start_pre_agents()
+                console.info("Checking pre-agents are healthy")
+                is_healthy = self._check_agents_healthy()
+                if is_healthy is False:
+                    raise AgentNotHealthy()
 
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
@@ -210,12 +211,13 @@ class LocalRuntime(runtime.Runtime):
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
 
-            console.info("Starting post-agents")
-            self._start_post_agents()
-            console.info("Checking post-agents are healthy")
-            is_healthy = self._check_agents_healthy()
-            if is_healthy is False:
-                raise AgentNotHealthy()
+            if self._run_default_agents is True:
+                console.info("Starting post-agents")
+                self._start_post_agents()
+                console.info("Checking post-agents are healthy")
+                is_healthy = self._check_agents_healthy()
+                if is_healthy is False:
+                    raise AgentNotHealthy()
 
             console.success("Scan created successfully")
         except AgentNotHealthy:
@@ -411,7 +413,6 @@ class LocalRuntime(runtime.Runtime):
             self._mq_service,
             self._redis_service,
             self._jaeger_service,
-            self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
             self.network, extra_configs, extra_mounts
