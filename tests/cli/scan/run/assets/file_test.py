@@ -53,7 +53,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan = mocker.patch("ostorlab.runtimes.local.LocalRuntime.scan", return_value=True)
 
-    with tempfile.NamedTemporaryFile() as tmp:
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
         tmp.write(b"May the Force be with you")
         tmp.seek(0)
         runner.invoke(
@@ -67,7 +67,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
                 tmp.name,
             ],
         )
-        assert scan.call_count == tmp.name
+        assert scan.call_count == 1, tmp.name
         assert len(scan.call_args_list) == 1
         assert len(scan.call_args_list[0].kwargs.get("assets")) == 1
         assert (
