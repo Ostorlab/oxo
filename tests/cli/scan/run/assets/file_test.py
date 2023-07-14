@@ -55,6 +55,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
         with open('hello.txt', 'w') as f:
             f.write("May the Force be with you")
             f.seek(0)
+
         runner.invoke(
             rootcli.rootcli,
             [
@@ -66,6 +67,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
                 'hello.txt',
             ],
         )
+
         assert scan.call_count == 1
         assert len(scan.call_args_list) == 1
         assert len(scan.call_args_list[0].kwargs.get("assets")) == 1
