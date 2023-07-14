@@ -7,7 +7,7 @@ from ostorlab.cli import rootcli
 
 
 def testScanRunFile_whenUrlIsProvided_callScanWithValidListOFAssets(
-    mocker: plugin.MockerFixture,
+        mocker: plugin.MockerFixture,
 ) -> None:
     """Test ostorlab scan run file command with --url option.Should call scan with valid list of assets."""
 
@@ -37,17 +37,17 @@ def testScanRunFile_whenUrlIsProvided_callScanWithValidListOFAssets(
     assert len(scan_mocked.call_args_list) == 1
     assert len(scan_mocked.call_args_list[0].kwargs.get("assets", [])) == 2
     assert (
-        scan_mocked.call_args_list[0].kwargs.get("assets")[0].content_url
-        == "https://ostorlab.co"
+            scan_mocked.call_args_list[0].kwargs.get("assets")[0].content_url
+            == "https://ostorlab.co"
     )
     assert (
-        scan_mocked.call_args_list[0].kwargs.get("assets")[1].content_url
-        == "https://hello.ostorlab.co"
+            scan_mocked.call_args_list[0].kwargs.get("assets")[1].content_url
+            == "https://hello.ostorlab.co"
     )
 
 
 def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
-    mocker: plugin.MockerFixture,
+        mocker: plugin.MockerFixture,
 ) -> None:
     """Test ostorlab scan run file command with --file option.Should call scan with valid list of assets."""
 
@@ -58,7 +58,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=True
     )
     with runner.isolated_filesystem():
-        with open("hello.txt", "w") as f:
+        with open("hello.txt", "w", encoding="utf-8") as f:
             f.write("May the Force be with you")
             f.seek(0)
 
@@ -78,7 +78,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
         assert len(scan_mocked.call_args_list) == 1
         assert len(scan_mocked.call_args_list[0].kwargs.get("assets", [])) == 1
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].content
-            == b"May the Force be with you"
+                scan_mocked.call_args_list[0].kwargs.get("assets")[0].content
+                == b"May the Force be with you"
         )
         assert scan_mocked.call_args_list[0].kwargs.get("assets")[0].path == "hello.txt"
