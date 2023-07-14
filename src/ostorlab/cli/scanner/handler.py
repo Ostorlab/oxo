@@ -209,7 +209,12 @@ class BusHandler(ClientBusHandler):
         try:
             logger.debug(f"process received message {message}")
             self._last_message_received_time = datetime.datetime.now()
-            request = serializer.deserialize(message.subject, message.data)
+            if message.subject == "scan_engine.scan_done":
+                # TODO deserialize the bytes
+                pass
+            else:
+                # TODO deserialize the bytes
+                pass
             cb = self._subjects_cb_map[message.subject]
             await cb(message.subject, request)
             logger.debug(f"acking message for {message.subject}")
