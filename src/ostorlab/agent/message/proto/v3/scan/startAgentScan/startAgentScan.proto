@@ -1,0 +1,64 @@
+syntax = "proto2";
+
+import "ostorlab/agent/message/proto/v3/asset/ip/ip.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/v4/v4.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/v6/v6.proto";
+import "ostorlab/agent/message/proto/v3/asset/domain_name/domain_name.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/file.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/android/aab/aab.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/android/apk/apk.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/ios/ipa/ipa.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/source/source.proto";
+import "ostorlab/agent/message/proto/v3/asset/agent/agent.proto";
+import "ostorlab/agent/message/proto/v3/asset/network/network.proto";
+import "ostorlab/agent/message/proto/v3/asset/link/link.proto";
+import "ostorlab/agent/message/proto/v3/asset/store/android_store/android_store.proto";
+import "ostorlab/agent/message/proto/v3/asset/store/ios_store/ios_store.proto";
+
+package  ostorlab.agent.message.proto.v3.scan.startAgentScan;
+
+
+message Arg{
+    required string name = 1;
+    required string type = 2;
+    optional bytes value = 3;
+}
+
+
+message Agent{
+    required string key = 1;
+    optional string version = 2;
+    optional int32 replicas = 3;
+    repeated Arg args = 4;
+    repeated string caps = 5;
+    optional uint32 cyclic_processing_limit=6;
+}
+
+message Links {
+    repeated ostorlab.agent.message.proto.v3.asset.link.Message links = 1;
+}
+
+message Message {
+    required int32 reference_scan_id = 1;
+    repeated Agent agents = 2;
+    // Agent Group Key.
+    optional string key = 17;
+    oneof asset {
+         
+        ostorlab.agent.message.proto.v3.asset.ip.Message ip = 3;
+        ostorlab.agent.message.proto.v3.asset.ip.v4.Message ipv4 = 4;
+        ostorlab.agent.message.proto.v3.asset.ip.v6.Message ipv6 = 5;
+        ostorlab.agent.message.proto.v3.asset.file.Message file = 6;
+        ostorlab.agent.message.proto.v3.asset.file.android.aab.Message aab = 7;
+        ostorlab.agent.message.proto.v3.asset.file.android.apk.Message apk = 8;
+        ostorlab.agent.message.proto.v3.asset.file.ios.ipa.Message ipa = 9;
+        ostorlab.agent.message.proto.v3.asset.file.source.Message source = 10;
+        ostorlab.agent.message.proto.v3.asset.domain_name.Message domain_name = 11;
+        ostorlab.agent.message.proto.v3.asset.agent.Message agent = 12;
+        ostorlab.agent.message.proto.v3.asset.network.Message network = 13;
+        Links links = 14;
+        ostorlab.agent.message.proto.v3.asset.store.android_store.Message android_store = 15;
+        ostorlab.agent.message.proto.v3.asset.store.ios_store.Message ios_store = 16;
+    }
+
+}
