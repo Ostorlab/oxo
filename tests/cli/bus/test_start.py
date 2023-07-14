@@ -1,16 +1,17 @@
 import pytest
 
-from ostorlab.cli.bus import start
+from ostorlab.cli.scanner import start
+from ostorlab.cli.scanner import nats_conf
 from ostorlab.apis.runners import authenticated_runner
 
 
 @pytest.mark.asyncio
 async def testConnectNats_whenScannerConfig_subscribeNats(requests_mock, mocker, event_loop):
 
-    nats_connect_mock = mocker.patch("ostorlab.cli.bus.handler.ClientBusHandler.connect")
-    mocker.patch("ostorlab.cli.bus.start.asyncio.events.AbstractEventLoop.run_forever", side_effect=Exception)
-    mocker.patch("ostorlab.cli.bus.handler.ClientBusHandler.add_stream")
-    mocker.patch("ostorlab.cli.bus.handler.BusHandler.subscribe")
+    nats_connect_mock = mocker.patch("ostorlab.cli.scanner.handler.ClientBusHandler.connect")
+    mocker.patch("ostorlab.cli.scanner.start.asyncio.events.AbstractEventLoop.run_forever", side_effect=Exception)
+    mocker.patch("ostorlab.cli.scanner.handler.ClientBusHandler.add_stream")
+    mocker.patch("ostorlab.cli.scanner.handler.BusHandler.subscribe")
     data_dict = {
                   "data": {
                     "scanners": {
@@ -48,6 +49,6 @@ async def testConnectNats_whenScannerConfig_subscribeNats(requests_mock, mocker,
         status_code=200,
     )
 
-    config = start.ScannerConfig.from_json(data_dict)
+    config = nats_conf.ScannerConfig.from_json(data_dict)
     await start.connect_nats(config=config, scanner_id="GGBD-DJJD-DKJK-DJDD")
     assert nats_connect_mock.call_count == 1
