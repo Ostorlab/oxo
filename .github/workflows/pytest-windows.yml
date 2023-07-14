@@ -42,4 +42,4 @@ jobs:
         python -m pip install -e .
     - name: Running tests with pytest.
       run: |
-        pytest -m "not docker" -k testScanRunFile_whenFileProvided_callScanWithValidListOFAssets
+        pytest -m "not docker"
