@@ -67,7 +67,7 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
                 tmp.name,
             ],
         )
-        assert scan.call_count == 1, tmp.name
+        assert scan.call_count == tmp.name
         assert len(scan.call_args_list) == 1
         assert len(scan.call_args_list[0].kwargs.get("assets")) == 1
         assert (
