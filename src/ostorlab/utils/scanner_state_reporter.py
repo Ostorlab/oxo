@@ -46,10 +46,12 @@ class ScannerStateReporter:
         _ = runner.execute(add_scanner_state.AddScannerStateAPIRequest(state=state))
 
     async def report(self) -> None:
+        """Capture the current state of the scanner and persist it."""
         state = self._capture_state()
         self._report_state(state)
 
     async def run(self) -> None:
+        """Run the report method once every _capture_interval seconds."""
         while True:
             await self.report()
             time.sleep(self._capture_interval)
