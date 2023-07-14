@@ -1,7 +1,5 @@
 """Tests for scan run file command."""
-import tempfile
 
-import pytest
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
@@ -44,7 +42,6 @@ def testScanRunFile_whenUrlIsProvided_callScanWithValidListOFAssets(
     )
 
 
-@pytest.mark.xfail(reason="Test is failing on windows. due to file path issue.")
 def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
     mocker,
 ):
@@ -54,10 +51,10 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan = mocker.patch("ostorlab.runtimes.local.LocalRuntime.scan", return_value=True)
-
-    with tempfile.NamedTemporaryFile(suffix=".json") as tmp:
-        tmp.write(b"May the Force be with you")
-        tmp.seek(0)
+    with runner.isolated_filesystem():
+        with open('hello.txt', 'w') as f:
+            f.write("May the Force be with you")
+            f.seek(0)
         runner.invoke(
             rootcli.rootcli,
             [
@@ -66,14 +63,14 @@ def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
                 "--agent=agent1 --agent=agent2",
                 "file",
                 "--file",
-                tmp.name,
+                'hello.txt',
             ],
         )
-        assert scan.call_count == 1, tmp.name
+        assert scan.call_count == 1
         assert len(scan.call_args_list) == 1
         assert len(scan.call_args_list[0].kwargs.get("assets")) == 1
         assert (
-            scan.call_args_list[0].kwargs.get("assets")[0].content
-            == b"May the Force be with you"
+                scan.call_args_list[0].kwargs.get("assets")[0].content
+                == b"May the Force be with you"
         )
-        assert scan.call_args_list[0].kwargs.get("assets")[0].path == tmp.name
+        assert scan.call_args_list[0].kwargs.get("assets")[0].path == 'hello.txt'
