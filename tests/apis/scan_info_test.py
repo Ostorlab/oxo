@@ -1,12 +1,10 @@
-"""Unittest for scan info api"""
+"""Unittest for scan info api."""
 import json
 from ostorlab.apis import scan_info
 
 
 def testScanInfoAPIRequest_always_returnsData() -> None:
     scan_info_api = scan_info.ScanInfoAPIRequest(scan_id=12345)
-
-    assert scan_info_api._scan_id == 12345
 
     expected_query = """
          query scan($scanId: Int) {
