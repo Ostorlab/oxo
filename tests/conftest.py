@@ -3,6 +3,7 @@
 import io
 import sys
 import time
+from typing import Any
 
 import docker
 import pytest
@@ -421,3 +422,61 @@ def vulnerability_location_file(
         ],
         asset=file_asset.File(content=b"file"),
     )
+
+
+@pytest.fixture()
+def data_scan_saved() -> dict[str:Any]:
+    return {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "id": "1",
+                        "name": "5485",
+                        "uuid": "a1ffcc25-3aa2-4468-ba8f-013d17acb443",
+                        "description": "dsqd",
+                        "config": {
+                            "busUrl": "nats://nats.nats",
+                            "busClusterId": "cluster_id",
+                            "busClientName": "bus_name",
+                            "subjectBusConfigs": {
+                                "subjectBusConfigs": [
+                                    {"subject": "scan_engine.scan_saved", "queue": "1"},
+                                    {"subject": "test1", "queue": "2"},
+                                ]
+                            },
+                        },
+                    }
+                ]
+            }
+        }
+    }
+
+
+@pytest.fixture()
+def data_start_agent_scan() -> dict[str:Any]:
+    return {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "id": "1",
+                        "name": "5485",
+                        "uuid": "a1ffcc25-3aa2-4468-ba8f-013d17acb443",
+                        "description": "dsqd",
+                        "config": {
+                            "busUrl": "nats://nats.nats",
+                            "busClusterId": "cluster_id",
+                            "busClientName": "bus_name",
+                            "subjectBusConfigs": {
+                                "subjectBusConfigs": [
+                                    {"subject": "scan.startAgentScan", "queue": "1"},
+                                    {"subject": "test1", "queue": "2"},
+                                ]
+                            },
+                        },
+                    }
+                ]
+            }
+        }
+    }

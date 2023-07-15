@@ -81,7 +81,6 @@ class ScanHandler:
         await bus_handler.close()
 
     async def _persist_agent_scan(self, subject, request):
-
         await self._message_handler(subject, request, None)
 
     async def _create_bus_handler(self, config):
