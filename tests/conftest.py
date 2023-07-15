@@ -7,7 +7,6 @@ import time
 import docker
 import pytest
 import redis
-
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
@@ -21,7 +20,6 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
-from ostorlab.apis import agent_group
 
 
 @pytest.fixture(scope="session")
@@ -425,5 +423,5 @@ def vulnerability_location_file(
 
 
 @pytest.fixture()
-def agent():
+def agent() -> dict[str:str]:
     return {"name": "test_agent"}

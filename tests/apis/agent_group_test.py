@@ -2,7 +2,7 @@
 from ostorlab.apis import agent_group
 
 
-def testAgentGroup_always_returnData(agent):
+def testAgentGroup_always_returnData(agent: dict[str:str]) -> None:
     agent_group_api = agent_group.CreateAgentGroupAPIRequest(
         name="AGG", description="Agent group", agents=[agent]
     )
