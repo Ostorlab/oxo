@@ -1,3 +1,4 @@
+"""Unittest for scan info api"""
 import json
 from ostorlab.apis import scan_info
 
