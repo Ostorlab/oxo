@@ -21,6 +21,7 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
+from ostorlab.apis import agent_group
 
 
 @pytest.fixture(scope="session")
@@ -421,3 +422,8 @@ def vulnerability_location_file(
         ],
         asset=file_asset.File(content=b"file"),
     )
+
+
+@pytest.fixture()
+def agent():
+    return {"name": "test_agent"}
