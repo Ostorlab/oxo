@@ -5,27 +5,27 @@ import logging
 
 from ostorlab.apis import scanner_config
 from ostorlab.apis.runners import authenticated_runner
-
-WAIT_SCHEDULE_SCAN = 60  # seconds
-
-
 from ostorlab.cli.scanner import handler
 from ostorlab.cli.scanner import nats_conf
+from nats.js import errors
 
+WAIT_SCHEDULE_SCAN = 60  # seconds
 logger = logging.getLogger(__name__)
 logger.setLevel("DEBUG")
 
 
-def _handle_exception(loop, context):
-    logger.error(f"Caught Loop Exception: {context}")
+def _handle_exception(context):
+    logger.error("Caught Loop Exception: %s", context)
 
 
 class ScanHandler:
+    """Class responsible for handling the subscription to bushandler"""
+
     def __init__(self):
         self._bus_handlers = []
 
     async def close(self):
-        for handler in self._bus_handlers:
+        for handler in self._bus_handlers:  # pylint: disable=W0621
             await handler.close()
 
     async def _subscribe(self, config, subject, queue, cb, stream, start_at="first"):
@@ -41,7 +41,7 @@ class ScanHandler:
     async def subscribe_all(self, config):
         for bus_conf in config.subject_bus_configs:
             if bus_conf.subject == "scan.startAgentScan":
-                logger.info(f"subscribing to scan.startAgentScan")
+                logger.info("subscribing to scan.startAgentScan")
                 await self._subscribe(
                     config=config,
                     subject=bus_conf.subject,
@@ -55,22 +55,22 @@ class ScanHandler:
                 "scan_engine.scan_done",
                 "scan_engine.scan_start_request",
             ]:
-                logger.info(f"subscribing to %s", bus_conf.subject)
+                logger.info("subscribing to %s", bus_conf.subject)
                 await self._subscribe(
                     config=config,
-                    subject=f"scan_engine.scan_done",
+                    subject="scan_engine.scan_done",
                     queue=bus_conf.queue,
                     cb=self._start_scan_scheduling,
                     start_at="last_received",
                     stream=bus_conf.queue,
                 )
 
-    async def _message_handler(self, subject, request, cb):
+    async def _message_handler(self, request, cb, config):
         loop = asyncio.get_event_loop()
         scan = await loop.run_in_executor(None, cb, request)
         logger.info("publishing scan_saved event")
 
-        bus_handler = await self._create_bus_handler()
+        bus_handler = await self._create_bus_handler(config)
         await bus_handler.connect()
         await bus_handler.publish(
             "scan_engine.scan_saved",
@@ -80,8 +80,8 @@ class ScanHandler:
         logger.info("done persisting scan")
         await bus_handler.close()
 
-    async def _persist_agent_scan(self, subject, request):
-        await self._message_handler(subject, request, None)
+    async def _persist_agent_scan(self, request, config):
+        await self._message_handler(request, None, config)
 
     async def _create_bus_handler(self, config):
         bus_handler = handler.BusHandler(
@@ -91,8 +91,8 @@ class ScanHandler:
         )
         return bus_handler
 
-    async def _start_scan_scheduling(self, subject, request):
-        logger.info(f"scheduling scan from request {request.scan_id}")
+    async def _start_scan_scheduling(self, request):
+        logger.info("scheduling scan from request %s", request.scan_id)
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, None)
         logger.info("done scheduling scan")
@@ -107,13 +107,13 @@ async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str):
         scanner_id: The scanner identifier.
     """
     try:
-        logger.info(f"starting bus runner for scanner {scanner_id}")
+        logger.info("starting bus runner for scanner %s", scanner_id)
         scan_handler = ScanHandler()
         logger.info("connected, subscribing to plans channels ...")
         await scan_handler.subscribe_all(config)
         logger.info("subscribed")
         return scan_handler
-    except Exception as e:
+    except errors.ServiceUnavailableError as e:
         logger.exception("run exception %s", e)
 
 

@@ -1,4 +1,4 @@
-"""Module responsible for establishing a connection with nats."""
+"""Module responsible for establishing a connection with NATS."""
 
 import asyncio
 import datetime
@@ -7,10 +7,10 @@ import ssl
 import sys
 from typing import Optional, Dict
 
+from nats.js import errors
 import nats
 from nats.js import api as js_api
 from nats.js import client as js_client
-
 from ostorlab.agent.message import serializer
 
 DEFAULT_PENDING_BYTES_LIMIT = 400 * 1024 * 1024
@@ -31,6 +31,8 @@ class Error(Exception):
 
 
 class ClientBusHandler:
+    """Handler for establishing a connection with NATS and performing client operations."""
+
     def __init__(
         self,
         bus_url: str,
@@ -58,6 +60,12 @@ class ClientBusHandler:
         await self.close()
 
     async def connect(self, connect_timeout=DEFAULT_CONNECT_TIMEOUT):
+        """
+        Connect to the NATS server.
+
+        Args:
+            connect_timeout: Timeout for establishing the connection. Defaults to DEFAULT_CONNECT_TIMEOUT.
+        """
         await self._nc.connect(
             self._bus_url,
             name=self._name,
@@ -70,25 +78,44 @@ class ClientBusHandler:
         self._js = self._nc.jetstream()
 
     async def add_stream(self, name, subjects):
+        """
+        Add a stream to the NATS server.
+
+        Args:
+            name: Name of the stream.
+            subjects: Subjects for the stream.
+        """
         await self._js.add_stream(name=name, subjects=subjects)
 
     async def delete_stream(self, name):
+        """
+        Delete a stream from the NATS server.
+
+        Args:
+            name: Name of the stream.
+        """
         try:
             await self._js.delete_stream(name=name)
-        except Exception as e:
+        except errors.ServiceUnavailableError as e:
             logger.warning("error deleting stream %s: %s", name, e)
 
     async def close(self):
+        """Close the connection to the NATS server."""
         await self._nc.close()
 
     async def publish(
         self,
         subject: str,
         request: Dict,
-        ack_wait: int = DEFAULT_PUBLISH_ACK_WAIT,
-        stream=None,
     ) -> None:
-        """Publish a message to NATS streaming."""
+        """
+        Publish a message to NATS streaming.
+
+        Args:
+            subject: Subject of the message.
+            request: Message data.
+
+        """
         await self._nc.publish(
             subject, serializer.serialize(subject, request).SerializeToString()
         )
@@ -104,6 +131,8 @@ class ClientBusHandler:
 
 
 class BusHandler(ClientBusHandler):
+    """Handler for performing bus operations."""
+
     def __init__(
         self,
         bus_url: str,
@@ -141,7 +170,7 @@ class BusHandler(ClientBusHandler):
                     await self.close()
                     logger.debug("exiting process")
                     sys.exit(5)
-            except Exception as e:
+            except errors.ServiceUnavailableError as e:
                 logger.error("Error in ensure running: %s", e)
 
     async def subscribe(
@@ -157,20 +186,20 @@ class BusHandler(ClientBusHandler):
     ):
         """Start bus subscription.
 
-        :param subject: Subject for the Bus Streaming subscription.
-        :param cb: Callback that receive the subject and deserialized Proto message.
-        :param queue: Queue group.
-        :param durable_name: Durable connection name.
-        :param start_at: One of the following options:
+        subject: Subject for the Bus Streaming subscription.
+        cb: Callback that receive the subject and deserialized Proto message.
+        queue: Queue group.
+        durable_name: Durable connection name.
+        start_at: One of the following options:
            - 'new_only' (default)
            - 'first'
            - 'sequence'
            - 'last_received'
            - 'time'
-        :param max_inflight: Max number of message in flight to client.
-        :param manual_acks: Toggles auto ack functionality in the subscription callback so that it is implemented by
+        max_inflight: Max number of message in flight to client.
+        manual_acks: Toggles auto ack functionality in the subscription callback so that it is implemented by
          the user instead.
-        :param ack_wait: How long to wait for an ack before being redelivered previous messages.
+        ack_wait: How long to wait for an ack before being redelivered previous messages.
         """
         self._subjects_cb_map[subject] = cb
 
@@ -199,20 +228,17 @@ class BusHandler(ClientBusHandler):
             cb=self._process_message,
             manual_ack=manual_acks,
         )
-
-        # Stan client does not expose pending_bytes_limit to the inbox. Default value is too small and causes large
-        # files to be dropped. This is a hackish way to override the value
-        inbox_sub = self._nc._subs[sub._id]
+        inbox_sub = self._nc._subs[sub._id]  # pylint: disable=W0212
         inbox_sub.pending_bytes_limit = DEFAULT_PENDING_BYTES_LIMIT
 
     async def _process_message(self, message):
         try:
-            logger.debug(f"process received message {message}")
+            logger.debug("process received message %s", message)
             self._last_message_received_time = datetime.datetime.now()
             request = serializer.deserialize(message.subject, message.data)
             cb = self._subjects_cb_map[message.subject]
             await cb(message.subject, request)
-            logger.debug(f"acking message for {message.subject}")
+            logger.debug("acking message for %s", message.subject)
             await message.ack()
-        except Exception as e:
+        except KeyError as e:
             logger.exception(e)
