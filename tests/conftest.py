@@ -22,6 +22,8 @@ from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 
+from ostorlab.utils import defintions
+
 
 @pytest.fixture(scope="session")
 def mq_service():
@@ -420,4 +422,19 @@ def vulnerability_location_file(
             metadata_url,
         ],
         asset=file_asset.File(content=b"file"),
+    )
+
+
+@pytest.fixture()
+def scanner_state():
+    return defintions.ScannerState(
+        scanner_id=122,
+        scan_id=1,
+        cpu_load=50.9,
+        memory_load=40.2,
+        total_cpu=3,
+        total_memory=100,
+        hostname="test",
+        ip="0.0.0.0",
+        errors="error",
     )
