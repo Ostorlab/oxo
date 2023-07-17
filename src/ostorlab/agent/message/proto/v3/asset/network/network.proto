@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+import "agent/message/proto/v3/asset/ip/ip.proto";
+
+package ostorlab.agent.message.proto.v3.asset.network;
+
+
+message Message {
+  repeated ostorlab.agent.message.proto.v3.asset.ip.Message ips = 1;
+}

@@ -30,7 +30,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pylint pylint-quotes
-          python -m pip install mypy types-click types-protobuf types-redis types-requests types-urllib3 typing_extensions
+          python -m pip install mypy types-psutil types-click types-protobuf types-redis types-requests types-urllib3 typing_extensions
           python -m pip install -e .
       - name: Running Black.
         uses: psf/black@stable
