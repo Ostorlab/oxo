@@ -26,12 +26,12 @@ logger = logging.getLogger(__name__)
 
 def _install_agents(runtime_instance: runtime.Runtime, agents) -> None:
     """Trigger installation of the agents that will run the scan."""
-    runtime_instance.install()
-    for agent in agents:
-        try:
+    try:
+        runtime_instance.install()
+        for agent in agents:
             install_agent.install(agent.key, agent.version)
-        except install_agent.AgentDetailsNotFound:
-            logger.warning("agent %s not found on the store", agent.key)
+    except install_agent.AgentDetailsNotFound:
+        logger.warning("agent %s not found on the store", agent.key)
 
 
 def _prepare_ip_asset(ip_request) -> asset.Asset:
@@ -135,12 +135,15 @@ def _asset_instances_from_request(request) -> List[asset.Asset]:
     return assets
 
 
-def start_scan(request, title, scan_id):
+def start_scan(subject, request):
+    agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
+    assets = _asset_instances_from_request(request)
+    title = request.title
+    scan_id = request.scan_id
+
     runtime_instance = registry.select_runtime(
         runtime_type="local", scan_id=scan_id, run_default_agents=False
     )
-    agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
-    assets = _asset_instances_from_request(request)
 
     if runtime_instance.can_run(agent_group_definition=agent_group_definition) is False:
         logger.error(
