@@ -1,7 +1,7 @@
 import pytest
 
-from ostorlab.cli.scanner import start
-from ostorlab.cli.scanner import nats_conf
+from ostorlab.scanner import start
+from ostorlab.scanner import nats_conf
 from ostorlab.apis.runners import authenticated_runner
 
 

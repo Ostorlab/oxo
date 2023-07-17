@@ -3,13 +3,13 @@ import datetime
 import logging
 import ssl
 import sys
-from typing import Optional, Dict
+from typing import Optional
 
 import nats
 from nats.js import client as js_client
 from nats.js import api as js_api
 
-# from pyolib.bus.message import serializer
+from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 # The stan client will raise an ErrSlowConsumerError due to the pending size bigger than subscription limit.
 # If the logs show the error: `Error: nats: Slow Consumer, messages dropped`, then this value should updated.
@@ -80,18 +80,6 @@ class ClientBusHandler:
 
     async def close(self):
         await self._nc.close()
-
-    async def publish(
-        self,
-        subject: str,
-        request: Dict,
-        ack_wait: int = DEFAULT_PUBLISH_ACK_WAIT,
-        stream=None,
-    ) -> None:
-        """Publish a message to NATS streaming."""
-        await self._nc.publish(
-            subject, serializer.serialize(subject, request).SerializeToString()
-        )
 
     async def _error_cb(self, e):
         logger.error("Error: %s", e)
@@ -207,12 +195,12 @@ class BusHandler(ClientBusHandler):
 
     async def _process_message(self, message):
         try:
-            logger.debug(f"process received message {message}")
+            logger.debug("process received message %s", message)
             self._last_message_received_time = datetime.datetime.now()
-            request = serializer.deserialize(message.subject, message.data)
+            request = startAgentScan_pb2.Message().ParseFromString(message.data)
             cb = self._subjects_cb_map[message.subject]
             await cb(message.subject, request)
-            logger.debug(f"acking message for {message.subject}")
+            logger.debug("Acking message for %s", message.subject) 
             await message.ack()
         except Exception as e:
             logger.exception(e)
