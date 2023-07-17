@@ -1,19 +1,19 @@
 syntax = "proto2";
 
-import "agent/message/proto/v3/asset/ip/ip.proto";
-import "agent/message/proto/v3/asset/ip/v4/v4.proto";
-import "agent/message/proto/v3/asset/ip/v6/v6.proto";
-import "agent/message/proto/v3/asset/domain_name/domain_name.proto";
-import "agent/message/proto/v3/asset/file/file.proto";
-import "agent/message/proto/v3/asset/file/android/aab/aab.proto";
-import "agent/message/proto/v3/asset/file/android/apk/apk.proto";
-import "agent/message/proto/v3/asset/file/ios/ipa/ipa.proto";
-import "agent/message/proto/v3/asset/file/source/source.proto";
-import "agent/message/proto/v3/asset/agent/agent.proto";
-import "agent/message/proto/v3/asset/network/network.proto";
-import "agent/message/proto/v3/asset/link/link.proto";
-import "agent/message/proto/v3/asset/store/android_store/android_store.proto";
-import "agent/message/proto/v3/asset/store/ios_store/ios_store.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/ip.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/v4/v4.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/v6/v6.proto";
+import "ostorlab/agent/message/proto/v3/asset/domain_name/domain_name.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/file.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/android/aab/aab.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/android/apk/apk.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/ios/ipa/ipa.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/source/source.proto";
+import "ostorlab/agent/message/proto/v3/asset/agent/agent.proto";
+import "ostorlab/agent/message/proto/v3/asset/network/network.proto";
+import "ostorlab/agent/message/proto/v3/asset/link/link.proto";
+import "ostorlab/agent/message/proto/v3/asset/store/android_store/android_store.proto";
+import "ostorlab/agent/message/proto/v3/asset/store/ios_store/ios_store.proto";
 
 package  ostorlab.scanner.proto.scan._location.startAgentScan;
 
