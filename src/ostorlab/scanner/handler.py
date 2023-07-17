@@ -221,7 +221,8 @@ class BusHandler(ClientBusHandler):
         try:
             logger.debug("process received message %s", message)
             self._last_message_received_time = datetime.datetime.now()
-            request = startAgentScan_pb2.Message().ParseFromString(message.data)
+            request = startAgentScan_pb2.Message()
+            request.ParseFromString(message.data)
             cb = self._subjects_cb_map[message.subject]
             await cb(message.subject, request)
             logger.debug("Acking message for %s", message.subject)

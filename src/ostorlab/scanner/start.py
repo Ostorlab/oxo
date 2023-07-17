@@ -108,12 +108,4 @@ async def subscribe_to_nats(api_key: str, scanner_id: str) -> None:
     config = nats_conf.ScannerConfig.from_json(data)
 
     logger.info("Connecting to nats.")
-    loop = asyncio.get_running_loop()
-    loop.set_exception_handler(_handle_exception)
-    loop.run_until_complete(connect_nats(config, scanner_id))
-    try:
-        logger.info("starting forever loop")
-        loop.run_forever()
-    finally:
-        logger.info("closing loop")
-        loop.close()
+    await connect_nats(config, scanner_id)

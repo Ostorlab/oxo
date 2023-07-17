@@ -33,6 +33,13 @@ def scanner(
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
     with dm.DaemonContext():
-        asyncio.get_event_loop().run_until_complete(
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
             start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
         )
+        try:
+            logger.info("starting forever loop")
+            loop.run_forever()
+        finally:
+            logger.info("closing loop")
+            loop.close()
