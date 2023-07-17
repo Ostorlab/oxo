@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-import "ostorlab/agent/message/proto/v3/asset/ip/ip.proto";
+import "agent/message/proto/v3/asset/ip/ip.proto";
 
 package ostorlab.agent.message.proto.v3.asset.network;
 
