@@ -1,5 +1,9 @@
+"""Module Responsible for subscribing to nats for different subjects."""
 import logging
 import asyncio
+
+from nats.js import errors
+
 
 from ostorlab.apis import scanner_config
 from ostorlab.apis.runners import authenticated_runner
@@ -14,19 +18,29 @@ logger = logging.getLogger(__name__)
 logger.setLevel("DEBUG")
 
 
-def _handle_exception(loop, context):
+def _handle_exception(context):
     logger.error("Caught Loop Exception: %s", context)
 
 
 class ScanHandler:
+    """Class responsible for handling the subscription to bus handler."""
+
     def __init__(self):
         self._bus_handlers = []
 
-    async def close(self):
+    async def close(self) -> None:
         for handler in self._bus_handlers:
             await handler.close()
 
-    async def _subscribe(self, config, subject, queue, cb, stream, start_at="first"):
+    async def _subscribe(
+        self,
+        config: nats_conf.ScannerConfig,
+        subject,
+        queue,
+        cb,
+        stream,
+        start_at="first",
+    ) -> None:
         bus_handler = await self._create_bus_handler(config)
         asyncio.create_task(bus_handler.ensure_running_handler())
         await bus_handler.connect()
@@ -36,7 +50,7 @@ class ScanHandler:
         )
         self._bus_handlers.append(bus_handler)
 
-    async def subscribe_all(self, config):
+    async def subscribe_all(self, config: nats_conf.ScannerConfig) -> None:
         for bus_conf in config.subject_bus_configs:
             await self._subscribe(
                 config=config,
@@ -50,7 +64,9 @@ class ScanHandler:
             logger.info("subscribing to %s", bus_conf.subject)
             return
 
-    async def _create_bus_handler(self, config):
+    async def _create_bus_handler(
+        self, config: nats_conf.ScannerConfig
+    ) -> scanner_handler.BusHandler:
         bus_handler = scanner_handler.BusHandler(
             bus_url=config.bus_url,
             cluster_id=config.bus_cluster_id,
@@ -59,7 +75,14 @@ class ScanHandler:
         return bus_handler
 
 
-async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str):
+async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str) -> ScanHandler:
+    """connecting to nats.
+
+    Args:
+        config: The key to connect to ostorlab.
+
+        scanner_id: The scanner identifier.
+    """
     try:
         logger.info("starting bus runner for scanner %s", scanner_id)
         scan_handler = ScanHandler()
@@ -67,14 +90,24 @@ async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str):
         await scan_handler.subscribe_all(config)
         logger.info("subscribed")
         return scan_handler
-    except Exception as e:
-        logger.exception("run exception %s", e)
+    except errors.ServiceUnavailableError as e:
+        logger.exception("Failed to establish connection to NATs: %s", e)
 
 
-async def subscribe_to_nats(api_key: str, scanner_id: str):
+async def subscribe_to_nats(api_key: str, scanner_id: str) -> None:
+    """Fetching the scanner configuration and subscribing to nats.
+
+    Args:
+        api_key: The key to connect to ostorlab.
+
+        scanner_id: The scanner identifier.
+    """
+    logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     data = runner.execute(scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id))
     config = nats_conf.ScannerConfig.from_json(data)
+
+    logger.info("Connecting to nats.")
     loop = asyncio.get_running_loop()
     loop.set_exception_handler(_handle_exception)
     loop.run_until_complete(connect_nats(config, scanner_id))

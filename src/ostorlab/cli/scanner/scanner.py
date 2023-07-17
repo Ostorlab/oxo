@@ -1,4 +1,4 @@
-""""""
+"""Scanner module that run scanner command in daemon mode."""
 import asyncio
 import logging
 
@@ -33,3 +33,10 @@ def scanner(
                     api_key=ctx.obj["api_key"], scanner_id=scanner_id
                 )
             )
+    elif daemon is False and ctx.obj["api_key"] is not None:
+        logger.info("Running scanner without daemon mode.")
+        asyncio.get_event_loop().run_until_complete(
+            start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
+        )
+    else:
+        logger.info("Cannot running scanner command.")
