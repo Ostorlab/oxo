@@ -22,3 +22,18 @@ class PortMapping:
 
     source_port: int
     destination_port: int
+
+
+@dataclasses.dataclass
+class ScannerState:
+    """Current scanner state."""
+
+    scanner_id: int
+    scan_id: int
+    cpu_load: float
+    memory_load: float
+    total_cpu: int
+    total_memory: int
+    hostname: str
+    ip: str
+    errors: str

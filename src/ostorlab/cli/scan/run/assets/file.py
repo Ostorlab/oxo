@@ -2,14 +2,13 @@
 This module takes care of preparing a generic file of type before injecting it to the runtime instance."""
 import io
 import logging
-from typing import List, Optional
+from typing import Optional, Tuple
 
 import click
 
 from ostorlab.assets import file as file_asset
-from ostorlab.cli.scan.run import run
 from ostorlab.cli import console as cli_console
-
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -21,16 +20,16 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def file_cli(
     ctx: click.core.Context,
-    file: Optional[List[io.FileIO]] = None,
-    url: Optional[List[str]] = None,
+    file: Optional[Tuple[io.FileIO]] = None,
+    url: Optional[Tuple[str]] = None,
 ) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj["runtime"]
     assets = []
-    if file != []:
+    if len(file) > 0:
         for f in file:
             assets.append(file_asset.File(content=f.read(), path=str(f.name)))
-    elif url != []:
+    elif len(url) > 0:
         for u in url:
             assets.append(file_asset.File(content_url=u))
     else:

@@ -1,3 +1,5 @@
+"""Representations of nats configuration definitions."""
+
 import dataclasses
 from typing import List
 
