@@ -188,6 +188,7 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
     assert len(scans) == 0
 
 
+@pytest.mark.docker
 def testScanInLocalRuntime_whenFlagToDisableDefaultAgentsIsPassed_shouldNotStartTrackerAndPersistVulnAgents(
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
