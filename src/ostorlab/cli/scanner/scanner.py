@@ -1,14 +1,13 @@
 """Scanner module that run scanner command in daemon mode."""
-import sys
 import asyncio
 import logging
+import sys
 
 import click
 
-
 from ostorlab.cli import console as cli_console
-from ostorlab.scanner import start
 from ostorlab.cli.rootcli import rootcli
+from ostorlab.scanner import start
 
 console = cli_console.Console()
 
