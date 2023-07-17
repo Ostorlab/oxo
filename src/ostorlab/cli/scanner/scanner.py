@@ -1,14 +1,13 @@
 """Scanner module that run scanner command in daemon mode."""
-import sys
 import asyncio
 import logging
+import sys
 
 import click
 
-
 from ostorlab.cli import console as cli_console
-from ostorlab.scanner import start
 from ostorlab.cli.rootcli import rootcli
+from ostorlab.scanner import start
 
 console = cli_console.Console()
 
@@ -33,6 +32,13 @@ def scanner(
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
     with dm.DaemonContext():
-        asyncio.get_event_loop().run_until_complete(
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
             start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
         )
+        try:
+            logger.info("starting forever loop")
+            loop.run_forever()
+        finally:
+            logger.info("closing loop")
+            loop.close()

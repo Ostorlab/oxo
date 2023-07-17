@@ -14,8 +14,6 @@ from nats.js import client as js_client
 
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
-# The stan client will raise an ErrSlowConsumerError due to the pending size bigger than subscription limit.
-# If the logs show the error: `Error: nats: Slow Consumer, messages dropped`, then this value should updated.
 DEFAULT_PENDING_BYTES_LIMIT = 400 * 1024 * 1024
 
 DEFAULT_CONNECT_TIMEOUT = 20
@@ -221,7 +219,8 @@ class BusHandler(ClientBusHandler):
         try:
             logger.debug("process received message %s", message)
             self._last_message_received_time = datetime.datetime.now()
-            request = startAgentScan_pb2.Message().ParseFromString(message.data)
+            request = startAgentScan_pb2.Message()
+            request.ParseFromString(message.data)
             cb = self._subjects_cb_map[message.subject]
             await cb(message.subject, request)
             logger.debug("Acking message for %s", message.subject)
