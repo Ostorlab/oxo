@@ -1,5 +1,4 @@
-import re
-
+"""Unit tests for the ostorlab scanner subcommand."""
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli

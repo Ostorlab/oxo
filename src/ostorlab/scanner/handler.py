@@ -11,7 +11,6 @@ from nats.js import errors
 import nats
 from nats.js import api as js_api
 from nats.js import client as js_client
-from ostorlab.agent.message import serializer
 
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
