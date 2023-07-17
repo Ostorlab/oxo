@@ -224,8 +224,8 @@ def image_cleanup(request):
                 client.images.remove(t)
 
 
-@pytest.fixture()
-def db_engine_path(tmpdir):
+@pytest.fixture(name="db_engine_path")
+def local_db_engine_path(tmpdir):
     if sys.platform == "win32":
         path = f"sqlite:///{tmpdir}\\ostorlab_db1.sqlite".replace("\\", "\\\\")
     else:
