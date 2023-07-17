@@ -1,13 +1,13 @@
 """Unittest for lite local runtime."""
+import docker
 import pytest
 from docker.models import services as services_model
-import docker
 
-from ostorlab.runtimes.lite_local import agent_runtime
-from ostorlab.runtimes import definitions
-from ostorlab.agent import definitions as agent_definitions
-from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
 import ostorlab
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.lite_local import agent_runtime
+from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
 
 
 def container_name_mock(name):

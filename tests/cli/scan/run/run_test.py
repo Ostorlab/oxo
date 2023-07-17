@@ -1,5 +1,6 @@
 """Tests for scan run command."""
 from click.testing import CliRunner
+
 from ostorlab.cli import rootcli
 
 
@@ -208,7 +209,7 @@ def testScanRunCloudRuntime_whenValidMultipleLinksGiven_CreatesAgGrAssetAndScan(
     assert "Scan created successfully" in result.output
 
 
-def testScanRun_whenNoassetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
+def testScanRun_whenNoAssetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
     """Unittest to ensure scan run command fails when both --no-asset flag and
     inject asset sub-commands are provided."""
     mocker.patch(
