@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.android_store;
+
+
+message Message {
+  optional string package_name = 1;
+}
