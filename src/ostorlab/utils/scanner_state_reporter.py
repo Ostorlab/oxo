@@ -1,5 +1,6 @@
 """Reporter logic to read the scanner state periodically and send it to the backend."""
 import psutil
+from typing import Optional
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state

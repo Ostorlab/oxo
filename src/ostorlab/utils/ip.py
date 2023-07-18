@@ -1,4 +1,6 @@
 """Utils to handle IP operations."""
+from typing import Optional
+
 import requests
 
 
