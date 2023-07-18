@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.domain_name;
+
+message Message {
+  optional string name = 1;
+}
