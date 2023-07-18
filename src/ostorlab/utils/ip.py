@@ -2,7 +2,7 @@
 import requests
 
 
-def get_public_ip() -> str | None:
+def get_public_ip() -> Optional[str]:
     """Returns the machine public IP address."""
     try:
         # Make a request to the ipify API

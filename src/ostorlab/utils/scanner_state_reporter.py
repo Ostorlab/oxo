@@ -12,10 +12,10 @@ class ScannerStateReporter:
     def __init__(
         self,
         scanner_id: int,
-        scan_id: int | None,
+        scan_id: Optional[int],
         hostname: str,
         ip: str,
-        errors: str | None,
+        errors: Optional[str],
     ):
         self._scanner_id = scanner_id
         self._scan_id = scan_id

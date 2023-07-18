@@ -20,7 +20,7 @@ WAIT_CAPTURE_INTERVAL = 300
 
 
 async def _start_periodic_persist_state(
-    scanner_id: int, scan_id: int | None, errors: str | None
+    scanner_id: int, scan_id: Optional[int], errors: Optional[str]
 ):
     while True:
         state_report = scanner_state_reporter.ScannerStateReporter(
