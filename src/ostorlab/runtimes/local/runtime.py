@@ -577,7 +577,10 @@ class LocalRuntime(runtime.Runtime):
             None
         """
         for agent_key in DEFAULT_AGENTS:
-            install_agent.install(agent_key=agent_key)
+            try:
+                install_agent.install(agent_key=agent_key)
+            except install_agent.AgentDetailsNotFound:
+                console.warning(f"agent {agent_key} not found on the store")
 
     def list_vulnz(self, scan_id: int):
         try:
