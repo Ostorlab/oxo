@@ -32,7 +32,7 @@ class ScannerStateReporter:
             cpu_load=psutil.cpu_percent(interval=1, percpu=False),
             total_cpu=psutil.cpu_count(),
             memory_load=psutil.virtual_memory().percent,
-            total_memory=psutil.virtual_memory().total,
+            total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
             hostname=self._hostname,
             ip=self._ip,
             errors=self._errors,

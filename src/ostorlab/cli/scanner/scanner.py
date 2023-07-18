@@ -20,18 +20,17 @@ WAIT_CAPTURE_INTERVAL = 300
 
 
 async def _start_periodic_persist_state(
-    scanner_id: int,
+    scanner_id: int, scan_id: int | None, errors: str | None
 ):
     while True:
-        loop = asyncio.get_event_loop()
-        report = scanner_state_reporter.ScannerStateReporter(
-            scanner_id=scanner_id,
-            scan_id=None,
+        state_report = scanner_state_reporter.ScannerStateReporter(
+            scanner_id=int(scanner_id),
+            scan_id=scan_id,
             hostname=socket.gethostname(),
             ip=ip.get_public_ip(),
-            errors=None,
+            errors=errors,
         )
-        await loop.run_in_executor(None, report.report)
+        await state_report.report()
         logger.debug("Reporting the scanner state.")
         await asyncio.sleep(WAIT_CAPTURE_INTERVAL)
 
@@ -58,7 +57,13 @@ def scanner(
     if daemon is True and ctx.obj.get("api_key") is not None:
         with dm.DaemonContext():
             loop = asyncio.get_event_loop()
-            loop.create_task(_start_periodic_persist_state(scanner_id=scanner_id))
+            loop.create_task(
+                _start_periodic_persist_state(
+                    scanner_id=scanner_id,
+                    scan_id=ctx.obj.get("scan_id"),
+                    errors=ctx.obj.get("errors"),
+                )
+            )
             loop.run_until_complete(
                 start.subscribe_to_nats(
                     api_key=ctx.obj["api_key"], scanner_id=scanner_id
@@ -72,6 +77,13 @@ def scanner(
                 loop.close()
     if daemon is False and ctx.obj.get("api_key") is not None:
         loop = asyncio.get_event_loop()
+        loop.create_task(
+            _start_periodic_persist_state(
+                scanner_id=scanner_id,
+                scan_id=ctx.obj.get("scan_id"),
+                errors=ctx.obj.get("errors"),
+            )
+        )
         loop.run_until_complete(
             start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
         )
