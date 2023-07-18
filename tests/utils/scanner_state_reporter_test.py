@@ -9,7 +9,7 @@ from ostorlab.utils.defintions import ScannerState
 
 class Memory:
     percent: float = 10
-    total: int = 100
+    total: int = 33454317568
 
 
 @pytest.mark.asyncio
@@ -32,7 +32,7 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         cpu_load=10,
         total_cpu=10,
         memory_load=10,
-        total_memory=100,
+        total_memory=31,
         hostname="",
         ip="",
         errors="",

@@ -29,11 +29,11 @@ class ScannerState:
     """Current scanner state."""
 
     scanner_id: int
-    scan_id: int
+    scan_id: Optional[int]
     cpu_load: float
     memory_load: float
     total_cpu: int
     total_memory: int
     hostname: str
     ip: str
-    errors: str
+    errors: Optional[str]
