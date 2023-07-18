@@ -136,9 +136,9 @@ def _asset_instances_from_request(request) -> List[asset.Asset]:
 
 
 def start_scan(subject, request):
+    del subject
     agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
     assets = _asset_instances_from_request(request)
-    title = request.title
     scan_id = request.scan_id
 
     runtime_instance = registry.select_runtime(
@@ -154,5 +154,5 @@ def start_scan(subject, request):
     runtime_instance.scan(
         agent_group_definition=agent_group_definition,
         assets=assets,
-        title=title,
+        title=None,
     )

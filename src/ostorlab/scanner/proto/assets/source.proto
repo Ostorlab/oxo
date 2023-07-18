@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.source;
+
+message AndroidMetadata {
+  optional string package_name = 1;
+}
+
+message IOSMetadata {
+  optional string bundle_id = 1;
+}
+
+message Message {
+  optional bytes content = 1;
+  optional string path = 2;
+  optional string content_url = 3;
+  oneof metadata_oneof {
+    AndroidMetadata android_metadata = 4;
+    IOSMetadata ios_metadata = 5;
+  }
+  optional string language = 6;
+}

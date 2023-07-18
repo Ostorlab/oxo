@@ -63,7 +63,6 @@ def scanner(
                     scan_id=ctx.obj.get("scan_id"),
                     errors=ctx.obj.get("errors"),
                 )
-            )
             loop.run_until_complete(
                 start.subscribe_to_nats(
                     api_key=ctx.obj["api_key"], scanner_id=scanner_id

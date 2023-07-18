@@ -427,35 +427,6 @@ def vulnerability_location_file(
 
 
 @pytest.fixture()
-def data_scan_saved() -> Dict[str, Any]:
-    return {
-        "data": {
-            "scanners": {
-                "scanners": [
-                    {
-                        "id": "1",
-                        "name": "5485",
-                        "uuid": "a1ffcc25-3aa2-4468-ba8f-013d17acb443",
-                        "description": "dsqd",
-                        "config": {
-                            "busUrl": "nats://nats.nats",
-                            "busClusterId": "cluster_id",
-                            "busClientName": "bus_name",
-                            "subjectBusConfigs": {
-                                "subjectBusConfigs": [
-                                    {"subject": "scan_engine.scan_saved", "queue": "1"},
-                                    {"subject": "test1", "queue": "2"},
-                                ]
-                            },
-                        },
-                    }
-                ]
-            }
-        }
-    }
-
-
-@pytest.fixture()
 def data_start_agent_scan() -> Dict[str, Any]:
     return {
         "data": {

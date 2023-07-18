@@ -1,0 +1,57 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.link;
+
+message Header {
+  optional string name = 1;
+  optional string value = 2;
+}
+
+message Cookie {
+  optional string name = 1;
+  optional string value = 2;
+}
+
+message LocalStorage {
+  optional string url = 1;
+  optional string key = 2;
+  optional string value = 3;
+}
+
+message FormInput {
+  optional string name = 1;
+  optional string value = 2;
+  optional string type = 3;
+}
+
+message Form {
+  repeated FormInput inputs = 1;
+  optional string enctype = 2;
+}
+
+message FormCredential {
+  optional string login = 1;
+  optional string password = 2;
+  optional string url = 3;
+}
+
+message ScriptCredential {
+  optional string script = 1;
+}
+
+message Message {
+  optional string url = 1;
+  optional string method = 2;
+  oneof body_oneof {
+    bytes body = 3;
+    Form form = 4;
+  }
+  repeated Header extra_headers = 5;
+  repeated Cookie cookies = 6;
+  oneof credential_oneof {
+    FormCredential form_credential = 7;
+    ScriptCredential script_credential = 8;
+  }
+  optional Message parent = 9;
+  repeated LocalStorage localstorage_items = 10;
+}
