@@ -3,6 +3,7 @@ import io
 
 from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_definitions
+from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 
 def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
@@ -149,3 +150,28 @@ def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
     )
 
     assert instance_settings.container_image is None
+
+
+def testAgentGroupDefinitionFromNatsRequest_always_returnsValidAgentGroupDefinition(
+    start_agent_scan_nats_request: startAgentScan_pb2.Message,
+) -> None:
+    """Ensure the correct creation of the AgentGroupDefinition instance from a received NATs message."""
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(
+        start_agent_scan_nats_request
+    )
+
+    assert agent_group_def.name == "agent_group42"
+    assert len(agent_group_def.agents) == 2
+
+    assert agent_group_def.agents[0].key == "agent/ostorlab/agent1"
+    assert agent_group_def.agents[0].version == "0.0.1"
+    assert agent_group_def.agents[0].replicas == 42
+    assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
+        name="arg1", type="number", value=b"42", description=None
+    )
+
+    assert agent_group_def.agents[1].key == "agent/ostorlab/agent2"
+    assert agent_group_def.agents[1].version == "0.0.2"
+    assert agent_group_def.agents[1].replicas == 1
+    assert agent_group_def.agents[1].args == []

@@ -12,7 +12,19 @@ from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions, version
 
+MAX_AGENT_REPLICAS = 100
+
 logger = logging.getLogger(__name__)
+
+
+def _process_agent_replicas(replicas: int) -> int:
+    """Add an upper & lower bounds to the number of replicas allowed for an Agent instance."""
+    if replicas <= 0:
+        return 1
+    elif replicas > MAX_AGENT_REPLICAS:
+        return MAX_AGENT_REPLICAS
+    else:
+        return replicas
 
 
 @dataclasses.dataclass
@@ -224,4 +236,39 @@ class AgentGroupDefinition:
         description = agent_group_def.get(
             "description", f"""Agent group : {','.join(agents_names)}"""
         )
+        return cls(agent_settings, name, description)
+
+    @classmethod
+    def from_bus_message(cls, request):
+        """Construct AgentGroupDefinition from a message received in the NATs.
+
+        Args:
+            request : The received message.
+        """
+        agent_settings = []
+        agents_names = []
+        for agent in request.agents:
+            agents_names.append(agent.key)
+            replicas = _process_agent_replicas(agent.replicas)
+
+            agent_def = AgentSettings(
+                key=agent.key,
+                version=agent.version,
+                args=[
+                    defintions.Arg(
+                        name=arg.name,
+                        type=arg.type,
+                        value=arg.value,
+                    )
+                    for arg in agent.args
+                ],
+                replicas=replicas,
+                caps=agent.caps,
+                cyclic_processing_limit=agent.cyclic_processing_limit,
+            )
+
+            agent_settings.append(agent_def)
+
+        name = request.key.split("/")[-1]
+        description = f"Agent group {name}: {','.join(agents_names)}"
         return cls(agent_settings, name, description)
