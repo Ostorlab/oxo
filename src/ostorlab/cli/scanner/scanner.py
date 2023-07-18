@@ -2,16 +2,38 @@
 import asyncio
 import logging
 import sys
+import socket
 
 import click
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.scanner import start
+from ostorlab.utils import scanner_state_reporter
+from ostorlab.utils import ip
 
 console = cli_console.Console()
 
 logger = logging.getLogger(__name__)
+
+WAIT_CAPTURE_INTERVAL = 300
+
+
+async def _start_periodic_persist_state(
+    scanner_id: int,
+):
+    while True:
+        loop = asyncio.get_event_loop()
+        report = scanner_state_reporter.ScannerStateReporter(
+            scanner_id=scanner_id,
+            scan_id=None,
+            hostname=socket.gethostname(),
+            ip=ip.get_public_ip(),
+            errors=None,
+        )
+        await loop.run_in_executor(None, report.report)
+        logger.debug("Reporting the scanner state.")
+        await asyncio.sleep(WAIT_CAPTURE_INTERVAL)
 
 
 @rootcli.command()
@@ -36,6 +58,7 @@ def scanner(
     if daemon is True and ctx.obj.get("api_key") is not None:
         with dm.DaemonContext():
             loop = asyncio.get_event_loop()
+            loop.create_task(_start_periodic_persist_state(scanner_id=scanner_id))
             loop.run_until_complete(
                 start.subscribe_to_nats(
                     api_key=ctx.obj["api_key"], scanner_id=scanner_id

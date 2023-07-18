@@ -13,13 +13,11 @@ class ScannerStateReporter:
     def __init__(
         self,
         scanner_id: int,
-        scan_id: int,
+        scan_id: int | None,
         hostname: str,
         ip: str,
-        errors: str,
-        capture_interval: int = 300,
+        errors: str | None,
     ):
-        self._capture_interval = capture_interval
         self._scanner_id = scanner_id
         self._scan_id = scan_id
         self._hostname = hostname
@@ -49,9 +47,3 @@ class ScannerStateReporter:
         """Capture the current state of the scanner and persist it."""
         state = self._capture_state()
         self._report_state(state)
-
-    async def run(self) -> None:
-        """Run the report method once every _capture_interval seconds."""
-        while True:
-            await self.report()
-            time.sleep(self._capture_interval)
