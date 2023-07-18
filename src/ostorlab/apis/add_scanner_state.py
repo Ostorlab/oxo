@@ -46,17 +46,20 @@ class AddScannerStateAPIRequest(request.APIRequest):
         """
         data = {
             "query": self.query,
-            "variables": json.dumps({"scannerState": {
-                "scannerId": self._state.scanner_id,
-                "scanId": self._state.scan_id,
-                "hostname": self._state.hostname,
-                "ipAddress": self._state.ip,
-                "memoryLoad": self._state.memory_load,
-                "totalMemory": self._state.total_memory,
-                "cpuLoad": self._state.cpu_load,
-                "totalCpu": self._state.total_cpu,
-                "errors": self._state.errors,
-            }
-            })
+            "variables": json.dumps(
+                {
+                    "scannerState": {
+                        "scannerId": self._state.scanner_id,
+                        "scanId": self._state.scan_id,
+                        "hostname": self._state.hostname,
+                        "ipAddress": self._state.ip,
+                        "memoryLoad": self._state.memory_load,
+                        "totalMemory": self._state.total_memory,
+                        "cpuLoad": self._state.cpu_load,
+                        "totalCpu": self._state.total_cpu,
+                        "errors": self._state.errors,
+                    }
+                }
+            ),
         }
         return data
