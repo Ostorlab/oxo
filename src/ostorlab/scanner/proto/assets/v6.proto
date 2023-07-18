@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.v6;
+
+message Message {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 6];
+}

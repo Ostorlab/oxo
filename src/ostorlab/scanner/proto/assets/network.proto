@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+import "ostorlab/scanner/proto/assets/ip.proto";
+
+package ostorlab.scanner.proto.assets.network;
+
+
+message Message {
+  repeated ostorlab.scanner.proto.assets.ip.Message ips = 1;
+}

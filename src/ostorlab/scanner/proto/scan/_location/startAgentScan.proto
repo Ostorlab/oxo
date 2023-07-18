@@ -1,19 +1,19 @@
 syntax = "proto2";
 
-import "ostorlab/agent/message/proto/v3/asset/ip/ip.proto";
-import "ostorlab/agent/message/proto/v3/asset/ip/v4/v4.proto";
-import "ostorlab/agent/message/proto/v3/asset/ip/v6/v6.proto";
-import "ostorlab/agent/message/proto/v3/asset/domain_name/domain_name.proto";
-import "ostorlab/agent/message/proto/v3/asset/file/file.proto";
-import "ostorlab/agent/message/proto/v3/asset/file/android/aab/aab.proto";
-import "ostorlab/agent/message/proto/v3/asset/file/android/apk/apk.proto";
-import "ostorlab/agent/message/proto/v3/asset/file/ios/ipa/ipa.proto";
-import "ostorlab/agent/message/proto/v3/asset/file/source/source.proto";
-import "ostorlab/agent/message/proto/v3/asset/agent/agent.proto";
-import "ostorlab/agent/message/proto/v3/asset/network/network.proto";
-import "ostorlab/agent/message/proto/v3/asset/link/link.proto";
-import "ostorlab/agent/message/proto/v3/asset/store/android_store/android_store.proto";
-import "ostorlab/agent/message/proto/v3/asset/store/ios_store/ios_store.proto";
+import "ostorlab/scanner/proto/assets/ip.proto";
+import "ostorlab/scanner/proto/assets/v4.proto";
+import "ostorlab/scanner/proto/assets/v6.proto";
+import "ostorlab/scanner/proto/assets/domain_name.proto";
+import "ostorlab/scanner/proto/assets/file.proto";
+import "ostorlab/scanner/proto/assets/aab.proto";
+import "ostorlab/scanner/proto/assets/apk.proto";
+import "ostorlab/scanner/proto/assets/ipa.proto";
+import "ostorlab/scanner/proto/assets/source.proto";
+import "ostorlab/scanner/proto/assets/agent.proto";
+import "ostorlab/scanner/proto/assets/network.proto";
+import "ostorlab/scanner/proto/assets/link.proto";
+import "ostorlab/scanner/proto/assets/android_store.proto";
+import "ostorlab/scanner/proto/assets/ios_store.proto";
 
 package  ostorlab.scanner.proto.scan._location.startAgentScan;
 
@@ -35,7 +35,7 @@ message Agent{
 }
 
 message Links {
-    repeated agent.message.proto.v3.asset.link.Message links = 1;
+    repeated ostorlab.scanner.proto.assets.link.Message links = 1;
 }
 
 message Message {
@@ -45,20 +45,18 @@ message Message {
     optional string key = 17;
     oneof asset {
          
-        agent.message.proto.v3.asset.ip.Message ip = 3;
-        agent.message.proto.v3.asset.ip.v4.Message ipv4 = 4;
-        agent.message.proto.v3.asset.ip.v6.Message ipv6 = 5;
-        agent.message.proto.v3.asset.file.Message file = 6;
-        agent.message.proto.v3.asset.file.android.aab.Message aab = 7;
-        agent.message.proto.v3.asset.file.android.apk.Message apk = 8;
-        agent.message.proto.v3.asset.file.ios.ipa.Message ipa = 9;
-        agent.message.proto.v3.asset.file.source.Message source = 10;
-        agent.message.proto.v3.asset.domain_name.Message domain_name = 11;
-        agent.message.proto.v3.asset.agent.Message agent = 12;
-        agent.message.proto.v3.asset.network.Message network = 13;
+        ostorlab.scanner.proto.assets.ip.Message ip = 3;
+        ostorlab.scanner.proto.assets.v4.Message ipv4 = 4;
+        ostorlab.scanner.proto.assets.v6.Message ipv6 = 5;
+        ostorlab.scanner.proto.assets.file.Message file = 6;
+        ostorlab.scanner.proto.assets.aab.Message aab = 7;
+        ostorlab.scanner.proto.assets.apk.Message apk = 8;
+        ostorlab.scanner.proto.assets.ipa.Message ipa = 9;
+        ostorlab.scanner.proto.assets.source.Message source = 10;
+        ostorlab.scanner.proto.assets.domain_name.Message domain_name = 11;
+        ostorlab.scanner.proto.assets.agent.Message agent = 12;
+        ostorlab.scanner.proto.assets.network.Message network = 13;
         Links links = 14;
-        agent.message.proto.v3.asset.store.android_store.Message android_store = 15;
-        agent.message.proto.v3.asset.store.ios_store.Message ios_store = 16;
-    }
-
-}
+        ostorlab.scanner.proto.assets.android_store.Message android_store = 15;
+        ostorlab.scanner.proto.assets.ios_store.Message ios_store = 16;
+    }}
