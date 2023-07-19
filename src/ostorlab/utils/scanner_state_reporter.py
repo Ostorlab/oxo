@@ -1,6 +1,5 @@
 """Reporter logic to read the scanner state periodically and send it to the backend."""
 import psutil
-from typing import Optional
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state
@@ -17,23 +16,23 @@ class ScannerStateReporter:
         ip: str,
     ):
         self._scanner_id = scanner_id
-        self._scan_id = None
+        self.scan_id = None
         self._hostname = hostname
         self._ip = ip
-        self._errors = None
+        self.errors = None
 
     def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""
         state = defintions.ScannerState(
             scanner_id=self._scanner_id,
-            scan_id=self._scan_id,
+            scan_id=self.scan_id,
             cpu_load=psutil.cpu_percent(interval=1, percpu=False),
             total_cpu=psutil.cpu_count(),
             memory_load=psutil.virtual_memory().percent,
             total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
             hostname=self._hostname,
             ip=self._ip,
-            errors=self._errors,
+            errors=self.errors,
         )
         return state
 

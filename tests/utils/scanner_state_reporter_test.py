@@ -37,10 +37,12 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         ip="",
         errors="",
     )
-
     report = scanner_state_reporter.ScannerStateReporter(
-        scanner_id=1, scan_id=1, hostname="", ip="", errors=""
+        scanner_id=1, hostname="", ip=""
     )
+    report.scan_id = 1
+    report.errors = ""
+
     await report.report()
 
     assert api_request_mock.call_args.kwargs["state"] == state

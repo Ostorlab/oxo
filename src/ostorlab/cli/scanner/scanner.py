@@ -3,7 +3,6 @@ import asyncio
 import logging
 import sys
 import socket
-from typing import Optional
 
 import click
 
