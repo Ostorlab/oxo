@@ -13,16 +13,14 @@ class ScannerStateReporter:
     def __init__(
         self,
         scanner_id: int,
-        scan_id: Optional[int],
         hostname: str,
         ip: str,
-        errors: Optional[str],
     ):
         self._scanner_id = scanner_id
-        self._scan_id = scan_id
+        self._scan_id = None
         self._hostname = hostname
         self._ip = ip
-        self._errors = errors
+        self._errors = None
 
     def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""

@@ -21,16 +21,9 @@ WAIT_CAPTURE_INTERVAL = 300
 
 
 async def _start_periodic_persist_state(
-    scanner_id: int, scan_id: Optional[int], errors: Optional[str]
+    state_report: scanner_state_reporter.ScannerStateReporter,
 ):
     while True:
-        state_report = scanner_state_reporter.ScannerStateReporter(
-            scanner_id=int(scanner_id),
-            scan_id=scan_id,
-            hostname=socket.gethostname(),
-            ip=ip.get_public_ip(),
-            errors=errors,
-        )
         await state_report.report()
         logger.debug("Reporting the scanner state.")
         await asyncio.sleep(WAIT_CAPTURE_INTERVAL)
@@ -55,16 +48,14 @@ def scanner(
     # The import is done for Windows compatibility.
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
+    state_report = scanner_state_reporter.ScannerStateReporter(
+        scanner_id=int(scanner_id), hostname=socket.gethostname(), ip=ip.get_ip()
+    )
+
     if daemon is True and ctx.obj.get("api_key") is not None:
         with dm.DaemonContext():
             loop = asyncio.get_event_loop()
-            loop.create_task(
-                _start_periodic_persist_state(
-                    scanner_id=scanner_id,
-                    scan_id=ctx.obj.get("scan_id"),
-                    errors=ctx.obj.get("errors"),
-                )
-            )
+            loop.create_task(_start_periodic_persist_state(state_report=state_report))
             loop.run_until_complete(
                 start.subscribe_to_nats(
                     api_key=ctx.obj["api_key"], scanner_id=scanner_id
@@ -78,13 +69,7 @@ def scanner(
                 loop.close()
     if daemon is False and ctx.obj.get("api_key") is not None:
         loop = asyncio.get_event_loop()
-        loop.create_task(
-            _start_periodic_persist_state(
-                scanner_id=scanner_id,
-                scan_id=ctx.obj.get("scan_id"),
-                errors=ctx.obj.get("errors"),
-            )
-        )
+        loop.create_task(_start_periodic_persist_state(state_report=state_report))
         loop.run_until_complete(
             start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
         )
