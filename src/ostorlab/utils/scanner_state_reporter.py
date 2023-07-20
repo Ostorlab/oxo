@@ -1,6 +1,5 @@
 """Reporter logic to read the scanner state periodically and send it to the backend."""
 import psutil
-import time
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state
@@ -12,32 +11,28 @@ class ScannerStateReporter:
 
     def __init__(
         self,
-        scanner_id: int,
-        scan_id: int,
+        scanner_id: str,
         hostname: str,
         ip: str,
-        errors: str,
-        capture_interval: int = 300,
     ):
-        self._capture_interval = capture_interval
         self._scanner_id = scanner_id
-        self._scan_id = scan_id
+        self.scan_id = None
         self._hostname = hostname
         self._ip = ip
-        self._errors = errors
+        self.errors = None
 
     def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""
         state = defintions.ScannerState(
             scanner_id=self._scanner_id,
-            scan_id=self._scan_id,
+            scan_id=self.scan_id,
             cpu_load=psutil.cpu_percent(interval=1, percpu=False),
             total_cpu=psutil.cpu_count(),
             memory_load=psutil.virtual_memory().percent,
-            total_memory=psutil.virtual_memory().total,
+            total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
             hostname=self._hostname,
             ip=self._ip,
-            errors=self._errors,
+            errors=self.errors,
         )
         return state
 
@@ -49,9 +44,3 @@ class ScannerStateReporter:
         """Capture the current state of the scanner and persist it."""
         state = self._capture_state()
         self._report_state(state)
-
-    async def run(self) -> None:
-        """Run the report method once every _capture_interval seconds."""
-        while True:
-            await self.report()
-            time.sleep(self._capture_interval)

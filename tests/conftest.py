@@ -23,7 +23,7 @@ from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.agent.message.proto.v3.asset.file.android.apk import apk_pb2
+from ostorlab.scanner.proto.assets import apk_pb2
 
 
 @pytest.fixture(scope="session")

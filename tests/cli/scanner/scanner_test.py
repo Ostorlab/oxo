@@ -15,6 +15,6 @@ def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker, requests_mock
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
-        ["--api-key", "test", "scanner", "--daemon", "--scanner-id", "11226DS"],
+        ["--api-key", "test", "scanner", "--daemon", "--scanner-id", "11226"],
     )
     assert daemon_context_open.call_count == 1

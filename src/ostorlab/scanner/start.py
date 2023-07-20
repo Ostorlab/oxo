@@ -1,6 +1,7 @@
 """Module Responsible for subscribing to nats for different subjects."""
 import logging
 import asyncio
+import functools
 
 from nats.js import errors
 
@@ -10,6 +11,7 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.scanner import handler as scanner_handler
 from ostorlab.scanner import nats_conf
 from ostorlab.scanner import callbacks
+from ostorlab.utils import scanner_state_reporter
 
 WAIT_SCHEDULE_SCAN = 60  # seconds
 
@@ -25,8 +27,9 @@ def _handle_exception(context):
 class ScanHandler:
     """Class responsible for handling the subscription to bus handler."""
 
-    def __init__(self):
+    def __init__(self, state_reporter: scanner_state_reporter.ScannerStateReporter):
         self._bus_handlers = []
+        self._state_reporter = state_reporter
 
     async def close(self) -> None:
         for handler in self._bus_handlers:
@@ -56,7 +59,9 @@ class ScanHandler:
                 config=config,
                 subject=bus_conf.subject,
                 queue=bus_conf.queue,
-                cb=callbacks.start_scan,
+                cb=functools.partial(
+                    callbacks.start_scan, state_reporter=self._state_reporter
+                ),
                 start_at="last_received",
                 stream=bus_conf.queue,
             )
@@ -75,17 +80,21 @@ class ScanHandler:
         return bus_handler
 
 
-async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str) -> ScanHandler:
+async def connect_nats(
+    config: nats_conf.ScannerConfig,
+    scanner_id: str,
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
+) -> ScanHandler:
     """connecting to nats.
 
     Args:
         config: The key to connect to ostorlab.
-
         scanner_id: The scanner identifier.
+        state_reporter: The scanner state report.
     """
     try:
         logger.info("starting bus runner for scanner %s", scanner_id)
-        scan_handler = ScanHandler()
+        scan_handler = ScanHandler(state_reporter)
         logger.info("connected, subscribing to plans channels ...")
         await scan_handler.subscribe_all(config)
         logger.info("subscribed")
@@ -94,13 +103,17 @@ async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str) -> Scan
         logger.exception("Failed to establish connection to NATs: %s", e)
 
 
-async def subscribe_to_nats(api_key: str, scanner_id: str) -> None:
+async def subscribe_nats(
+    api_key: str,
+    scanner_id: str,
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
+) -> None:
     """Fetching the scanner configuration and subscribing to nats.
 
     Args:
         api_key: The key to connect to ostorlab.
-
         scanner_id: The scanner identifier.
+        state_reporter: The scanner state report.
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
@@ -108,4 +121,4 @@ async def subscribe_to_nats(api_key: str, scanner_id: str) -> None:
     config = nats_conf.ScannerConfig.from_json(data)
 
     logger.info("Connecting to nats.")
-    await connect_nats(config, scanner_id)
+    await connect_nats(config, scanner_id, state_reporter)
