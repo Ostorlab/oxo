@@ -11,6 +11,7 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.scanner import handler as scanner_handler
 from ostorlab.scanner import nats_conf
 from ostorlab.scanner import callbacks
+from ostorlab.utils import scanner_state_reporter
 
 WAIT_SCHEDULE_SCAN = 60  # seconds
 
