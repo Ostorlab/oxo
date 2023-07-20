@@ -47,7 +47,7 @@ def scanner(
     # The import is done for Windows compatibility.
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
-    state_report = scanner_state_reporter.ScannerStateReporter(
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
     )
 
