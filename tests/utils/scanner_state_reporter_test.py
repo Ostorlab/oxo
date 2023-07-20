@@ -27,7 +27,7 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         "ostorlab.apis.add_scanner_state.AddScannerStateAPIRequest"
     )
     state = ScannerState(
-        scanner_id=1,
+        scanner_id="1",
         scan_id=1,
         cpu_load=10,
         total_cpu=10,
