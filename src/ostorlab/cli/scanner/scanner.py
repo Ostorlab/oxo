@@ -56,8 +56,10 @@ def scanner(
             loop = asyncio.get_event_loop()
             loop.create_task(_start_periodic_persist_state(state_report=state_report))
             loop.run_until_complete(
-                start.subscribe_to_nats(
-                    api_key=ctx.obj["api_key"], scanner_id=scanner_id
+                start.subscribe_nats(
+                    api_key=ctx.obj["api_key"],
+                    scanner_id=scanner_id,
+                    state_report=state_report,
                 )
             )
             try:
@@ -70,7 +72,11 @@ def scanner(
         loop = asyncio.get_event_loop()
         loop.create_task(_start_periodic_persist_state(state_report=state_report))
         loop.run_until_complete(
-            start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
+            start.subscribe_nats(
+                api_key=ctx.obj["api_key"],
+                scanner_id=scanner_id,
+                state_report=state_report,
+            )
         )
         try:
             logger.info("starting forever loop")
