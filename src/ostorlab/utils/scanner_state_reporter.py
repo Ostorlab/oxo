@@ -11,7 +11,7 @@ class ScannerStateReporter:
 
     def __init__(
         self,
-        scanner_id: int,
+        scanner_id: str,
         hostname: str,
         ip: str,
     ):

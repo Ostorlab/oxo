@@ -48,7 +48,7 @@ def scanner(
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
     state_report = scanner_state_reporter.ScannerStateReporter(
-        scanner_id=int(scanner_id), hostname=socket.gethostname(), ip=ip.get_ip()
+        scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
     )
 
     if daemon is True and ctx.obj.get("api_key") is not None:
