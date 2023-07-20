@@ -2,16 +2,30 @@
 import asyncio
 import logging
 import sys
+import socket
 
 import click
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.scanner import start
+from ostorlab.utils import scanner_state_reporter
+from ostorlab.utils import ip
 
 console = cli_console.Console()
 
 logger = logging.getLogger(__name__)
+
+WAIT_CAPTURE_INTERVAL = 300
+
+
+async def _start_periodic_persist_state(
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
+):
+    while True:
+        await state_reporter.report()
+        logger.debug("Reporting the scanner state.")
+        await asyncio.sleep(WAIT_CAPTURE_INTERVAL)
 
 
 @rootcli.command()
@@ -33,12 +47,21 @@ def scanner(
     # The import is done for Windows compatibility.
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
+    )
+
     if daemon is True and ctx.obj.get("api_key") is not None:
         with dm.DaemonContext():
             loop = asyncio.get_event_loop()
+            loop.create_task(
+                _start_periodic_persist_state(state_reporter=state_reporter)
+            )
             loop.run_until_complete(
-                start.subscribe_to_nats(
-                    api_key=ctx.obj["api_key"], scanner_id=scanner_id
+                start.subscribe_nats(
+                    api_key=ctx.obj["api_key"],
+                    scanner_id=scanner_id,
+                    state_reporter=state_reporter,
                 )
             )
             try:
@@ -49,8 +72,13 @@ def scanner(
                 loop.close()
     if daemon is False and ctx.obj.get("api_key") is not None:
         loop = asyncio.get_event_loop()
+        loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
         loop.run_until_complete(
-            start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
+            start.subscribe_nats(
+                api_key=ctx.obj["api_key"],
+                scanner_id=scanner_id,
+                state_reporter=state_reporter,
+            )
         )
         try:
             logger.info("starting forever loop")
