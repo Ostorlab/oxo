@@ -59,4 +59,6 @@ message Message {
         Links links = 14;
         ostorlab.scanner.proto.assets.android_store.Message android_store = 15;
         ostorlab.scanner.proto.assets.ios_store.Message ios_store = 16;
-    }}
+    }
+    optional int32 scan_id = 18;
+}
