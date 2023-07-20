@@ -32,13 +32,13 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
 
     config = nats_conf.ScannerConfig.from_json(data_start_agent_scan)
 
-    state_report = scanner_state_reporter.ScannerStateReporter(
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname=socket.gethostname(),
         ip="192.168.0.1",
     )
     await start.connect_nats(
-        config=config, scanner_id="GGBD-DJJD-DKJK-DJDD", state_report=state_report
+        config=config, scanner_id="GGBD-DJJD-DKJK-DJDD", state_reporter=state_reporter
     )
 
     assert nats_connect_mock.call_count == 1
@@ -54,12 +54,12 @@ async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
         "ostorlab.scanner.handler.ClientBusHandler.add_stream", return_value=None
     )
     config = nats_conf.ScannerConfig.from_json(data_start_agent_scan)
-    state_report = scanner_state_reporter.ScannerStateReporter(
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname=socket.gethostname(),
         ip="192.168.0.1",
     )
-    scan_handler = start.ScanHandler(state_report=state_report)
+    scan_handler = start.ScanHandler(state_reporter=state_reporter)
 
     await scan_handler.subscribe_all(config)
 

@@ -20,10 +20,10 @@ WAIT_CAPTURE_INTERVAL = 300
 
 
 async def _start_periodic_persist_state(
-    state_report: scanner_state_reporter.ScannerStateReporter,
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
 ):
     while True:
-        await state_report.report()
+        await state_reporter.report()
         logger.debug("Reporting the scanner state.")
         await asyncio.sleep(WAIT_CAPTURE_INTERVAL)
 
@@ -54,12 +54,14 @@ def scanner(
     if daemon is True and ctx.obj.get("api_key") is not None:
         with dm.DaemonContext():
             loop = asyncio.get_event_loop()
-            loop.create_task(_start_periodic_persist_state(state_report=state_report))
+            loop.create_task(
+                _start_periodic_persist_state(state_reporter=state_reporter)
+            )
             loop.run_until_complete(
                 start.subscribe_nats(
                     api_key=ctx.obj["api_key"],
                     scanner_id=scanner_id,
-                    state_report=state_report,
+                    state_reporter=state_reporter,
                 )
             )
             try:
@@ -70,12 +72,12 @@ def scanner(
                 loop.close()
     if daemon is False and ctx.obj.get("api_key") is not None:
         loop = asyncio.get_event_loop()
-        loop.create_task(_start_periodic_persist_state(state_report=state_report))
+        loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
         loop.run_until_complete(
             start.subscribe_nats(
                 api_key=ctx.obj["api_key"],
                 scanner_id=scanner_id,
-                state_report=state_report,
+                state_reporter=state_reporter,
             )
         )
         try:

@@ -135,7 +135,7 @@ def _asset_instances_from_request(request) -> List[asset.Asset]:
     return assets
 
 
-def start_scan(subject, request, report_state):
+def start_scan(subject, request, state_reporter):
     del subject
     agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
     assets = _asset_instances_from_request(request)
@@ -145,7 +145,7 @@ def start_scan(subject, request, report_state):
         runtime_type="local", scan_id=scan_id, run_default_agents=False
     )
 
-    report_state.scan_id = scan_id
+    state_reporter.scan_id = scan_id
 
     if runtime_instance.can_run(agent_group_definition=agent_group_definition) is False:
         logger.error(
