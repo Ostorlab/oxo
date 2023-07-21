@@ -19,6 +19,7 @@ logger.setLevel("DEBUG")
 
 
 def _handle_exception(context):
+    """The exception handler for the event loop."""
     logger.error("Caught Loop Exception: %s", context)
 
 
@@ -80,7 +81,6 @@ async def connect_nats(config: nats_conf.ScannerConfig, scanner_id: str) -> Scan
 
     Args:
         config: The key to connect to ostorlab.
-
         scanner_id: The scanner identifier.
     """
     try:
@@ -99,13 +99,16 @@ async def subscribe_to_nats(api_key: str, scanner_id: str) -> None:
 
     Args:
         api_key: The key to connect to ostorlab.
-
         scanner_id: The scanner identifier.
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     data = runner.execute(scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id))
     config = nats_conf.ScannerConfig.from_json(data)
+
+    if config is None:
+        logger.error("No config found to start the connection.")
+        return
 
     logger.info("Connecting to nats.")
     await connect_nats(config, scanner_id)

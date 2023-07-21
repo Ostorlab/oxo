@@ -31,12 +31,13 @@ class ScannerConfig:
         Returns:
             ScannerConfig: An instance of ScannerConfig.
         """
-        subject_configs = (
-            config.get("data", {})
-            .get("scanners", {})
-            .get("scanners", [])[0]
-            .get("config", {})
-        )
+
+        subject_configs = config.get("data", {}).get("scanners", {}).get("scanners", [])
+
+        if len(subject_configs) == 0:
+            return None
+
+        subject_configs = subject_configs[0].get("config", {})
         bus_configs = []
         for subject_config in subject_configs.get("subjectBusConfigs", {}).get(
             "subjectBusConfigs", []
@@ -47,22 +48,15 @@ class ScannerConfig:
                     queue=subject_config.get("queue"),
                 )
             )
-
+        conf = (
+            config.get("data", {})
+            .get("scanners", {})
+            .get("scanners", [])[0]
+            .get("config", {})
+        )
         return cls(
-            bus_url=config.get("data", {})
-            .get("scanners", {})
-            .get("scanners", [])[0]
-            .get("config", {})
-            .get("busUrl"),
-            bus_cluster_id=config.get("data", {})
-            .get("scanners", {})
-            .get("scanners", [])[0]
-            .get("config", {})
-            .get("busClusterId"),
-            bus_client_name=config.get("data", {})
-            .get("scanners", {})
-            .get("scanners", [])[0]
-            .get("config", {})
-            .get("busClientName"),
+            bus_url=conf.get("busUrl"),
+            bus_cluster_id=conf.get("busClusterId"),
+            bus_client_name=conf.get("busClientName"),
             subject_bus_configs=bus_configs,
         )

@@ -35,26 +35,25 @@ def scanner(
 
     if daemon is True and ctx.obj.get("api_key") is not None:
         with dm.DaemonContext():
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(
-                start.subscribe_to_nats(
-                    api_key=ctx.obj["api_key"], scanner_id=scanner_id
-                )
-            )
-            try:
-                logger.info("starting forever loop")
-                loop.run_forever()
-            finally:
-                logger.info("closing loop")
-                loop.close()
-    if daemon is False and ctx.obj.get("api_key") is not None:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            start.subscribe_to_nats(api_key=ctx.obj["api_key"], scanner_id=scanner_id)
-        )
-        try:
-            logger.info("starting forever loop")
-            loop.run_forever()
-        finally:
-            logger.info("closing loop")
-            loop.close()
+            start_nats_subscription_asynchronously(ctx.obj.get("api_key"), scanner_id)
+    elif daemon is False and ctx.obj.get("api_key") is not None:
+        start_nats_subscription_asynchronously(ctx.obj.get("api_key"), scanner_id)
+
+
+def start_nats_subscription_asynchronously(api_key: str, scanner_id: str) -> None:
+    """Run subscription to nats in eventloop.
+
+    Args:
+        api_key: The api key to login to the platform.
+        scanner_id: The id of the scanner.
+    """
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(
+        start.subscribe_to_nats(api_key=api_key, scanner_id=scanner_id)
+    )
+    try:
+        logger.info("starting forever loop")
+        loop.run_forever()
+    finally:
+        logger.info("closing loop")
+        loop.close()
