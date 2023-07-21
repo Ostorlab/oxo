@@ -1,12 +1,16 @@
 """Unittest for local runtime."""
+from typing import Any
+
 import docker
+from docker.models import services as services_model
 import pytest
+from pytest_mock import plugin
+
 import ostorlab
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
-from docker.models import services as services_model
 
 
 @pytest.mark.skip(reason="Missing inject asset agent.")
@@ -182,3 +186,49 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
     scans = local_runtime.LocalRuntime().list()
 
     assert len(scans) == 0
+
+
+@pytest.mark.docker
+def testScanInLocalRuntime_whenFlagToDisableDefaultAgentsIsPassed_shouldNotStartTrackerAndPersistVulnAgents(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """Ensure the tracker & local persist vulnz agents do not get started,
+    when the flag to disable them is passed to the local runtime instance.
+    """
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    agent_runtime_mock = mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime"
+    )
+    local_runtime_instance = local_runtime.LocalRuntime(run_default_agents=False)
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
+    )
+
+    local_runtime_instance.can_run(agent_group_definition=agent_group_definition)
+    local_runtime_instance.scan(
+        title="test local",
+        agent_group_definition=agent_group_definition,
+        assets=[android_apk.AndroidApk(content=b"APK")],
+    )
+
+    start_agent_mock_call_args = agent_runtime_mock.call_args_list
+    assert start_agent_mock_call_args[0][0][0].key == "agent/ostorlab/agent42"
+    assert start_agent_mock_call_args[1][0][0].key == "agent/ostorlab/inject_asset"
+    assert (
+        all(
+            call_arg[0][0].key != "agent/ostorlab/local_persist_vulnz"
+            for call_arg in start_agent_mock_call_args
+        )
+        is True
+    )
+    assert (
+        all(
+            call_arg[0][0].key != "agent/ostorlab/tracker"
+            for call_arg in start_agent_mock_call_args
+        )
+        is True
+    )

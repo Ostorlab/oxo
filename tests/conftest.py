@@ -5,9 +5,11 @@ import sys
 import time
 
 import docker
+from docker.models import networks as networks_model
 import pytest
 import redis
 
+import ostorlab
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
@@ -222,8 +224,8 @@ def image_cleanup(request):
                 client.images.remove(t)
 
 
-@pytest.fixture()
-def db_engine_path(tmpdir):
+@pytest.fixture(name="db_engine_path")
+def local_db_engine_path(tmpdir):
     if sys.platform == "win32":
         path = f"sqlite:///{tmpdir}\\ostorlab_db1.sqlite".replace("\\", "\\\\")
     else:
@@ -420,4 +422,36 @@ def vulnerability_location_file(
             metadata_url,
         ],
         asset=file_asset.File(content=b"file"),
+    )
+
+
+@pytest.fixture
+def local_runtime_mocks(mocker, db_engine_path):
+    def docker_networks():
+        """Method for mocking docker network list."""
+        return [networks_model.Network(attrs={"name": "ostorlab_local_network_1"})]
+
+    mocker.patch(
+        "docker.DockerClient.networks", return_value=networks_model.NetworkCollection()
+    )
+    mocker.patch("docker.DockerClient.networks.list", side_effect=docker_networks)
+    mocker.patch.object(
+        ostorlab.runtimes.local.models.models, "ENGINE_URL", db_engine_path
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.mq.LocalRabbitMQ.start", return_value=None
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.mq.LocalRabbitMQ.is_healthy",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.redis.LocalRedis.start", return_value=None
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.redis.LocalRedis.is_healthy",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_service"
     )
