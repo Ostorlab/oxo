@@ -16,7 +16,7 @@ from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 DEFAULT_PENDING_BYTES_LIMIT = 400 * 1024 * 1024
 
-DEFAULT_CONNECT_TIMEOUT = 20
+DEFAULT_CONNECT_TIMEOUT = datetime.timedelta(seconds=20)
 
 DEFAULT_MAX_INFLIGHT = 1
 
@@ -56,7 +56,7 @@ class ClientBusHandler:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
-    async def connect(self, connect_timeout=DEFAULT_CONNECT_TIMEOUT):
+    async def connect(self, connect_timeout=DEFAULT_CONNECT_TIMEOUT.seconds):
         """
         Connect to the NATS server.
 
