@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.ios_store;
+
+
+message Message {
+  optional string bundle_id = 1;
+}

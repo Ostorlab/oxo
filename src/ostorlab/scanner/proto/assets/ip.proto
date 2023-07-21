@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.asset.ip;
+package ostorlab.scanner.proto.assets.ip;
 
 message Message {
   optional string host = 1;
