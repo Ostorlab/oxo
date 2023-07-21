@@ -5,6 +5,7 @@ import sys
 
 import click
 
+from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.scanner import start
@@ -30,13 +31,15 @@ def scanner(
         console.error("ostorlab scanner sub-command is only supported on Unix systems.")
         raise click.exceptions.Exit(2)
 
+    api_key = config_manager.ConfigurationManager().api_key
+
     # The import is done for Windows compatibility.
     import daemon as dm  # pylint: disable=import-outside-toplevel
 
-    if daemon is True and ctx.obj.get("api_key") is not None:
+    if daemon is True and api_key is not None:
         with dm.DaemonContext():
             start_nats_subscription_asynchronously(ctx.obj.get("api_key"), scanner_id)
-    elif daemon is False and ctx.obj.get("api_key") is not None:
+    elif daemon is False and api_key is not None:
         start_nats_subscription_asynchronously(ctx.obj.get("api_key"), scanner_id)
 
 
