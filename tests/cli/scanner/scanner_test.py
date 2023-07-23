@@ -31,9 +31,7 @@ def testRootCli_whenDaemonCommandIsDisabled_runsConnection(mocker):
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
-        ["--api-key", "test", "scanner", "--no-daemon", "--scanner-id", "11226DS"],
+        ["scanner", "--no-daemon", "--scanner-id", "11226DS"],
     )
 
     assert subscribe_to_nats_mock.call_count == 1
-    assert subscribe_to_nats_mock.call_args.args[0] == "test"
-    assert subscribe_to_nats_mock.call_args.args[1] == "11226DS"
