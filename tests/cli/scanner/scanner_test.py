@@ -11,8 +11,7 @@ from ostorlab.cli import rootcli
 def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker):
     """Run CLI with daemon command."""
     daemon_context_open = mocker.patch("daemon.DaemonContext.open", return_value=None)
-    mocker.patch("ostorlab.cli.scanner.scanner", return_value=None
-                 )
+    mocker.patch("ostorlab.cli.scanner.scanner", return_value=None)
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
@@ -24,7 +23,10 @@ def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker):
 
 def testRootCli_whenDaemonCommandIsDisabled_runsConnection(mocker):
     """Run CLI with --no-daemon command."""
-    subscribe_to_nats_mock = mocker.patch("ostorlab.cli.scanner.scanner.start_nats_subscription_asynchronously", return_value=None)
+    subscribe_to_nats_mock = mocker.patch(
+        "ostorlab.cli.scanner.scanner.start_nats_subscription_asynchronously",
+        return_value=None,
+    )
 
     runner = click_testing.CliRunner()
     runner.invoke(
@@ -35,4 +37,3 @@ def testRootCli_whenDaemonCommandIsDisabled_runsConnection(mocker):
     assert subscribe_to_nats_mock.call_count == 1
     assert subscribe_to_nats_mock.call_args.args[0] == "test"
     assert subscribe_to_nats_mock.call_args.args[1] == "11226DS"
-
