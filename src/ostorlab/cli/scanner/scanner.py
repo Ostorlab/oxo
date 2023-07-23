@@ -44,7 +44,7 @@ def scanner(
 
 
 def start_nats_subscription_asynchronously(
-    api_key: Optional[str] | None, scanner_id: str
+    api_key: Optional[str], scanner_id: str
 ) -> None:
     """Run subscription to nats in eventloop.
 
