@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import sys
+from typing import Optional
 
 import click
 
@@ -20,7 +21,6 @@ logger = logging.getLogger(__name__)
 @click.option("--daemon/--no-daemon", help="Run in daemon mode.", default=True)
 @click.pass_context
 def scanner(
-    ctx: click.core.Context,
     daemon: bool,
     scanner_id: str,
 ) -> None:
@@ -44,7 +44,7 @@ def scanner(
 
 
 def start_nats_subscription_asynchronously(
-    api_key: str | None, scanner_id: str
+    api_key: Optional[str] | None, scanner_id: str
 ) -> None:
     """Run subscription to nats in eventloop.
 
