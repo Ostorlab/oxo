@@ -26,7 +26,7 @@ def scanner(
     scanner_id: str,
 ) -> None:
     """Ostorlab scanner enables running custom instances of scanners.
-    Scanners communicates with NATs to receive start scan messages.\n
+    Scanner communicates with NATs to receive start scan messages.\n
     """
     if sys.platform != "linux":
         console.error("ostorlab scanner sub-command is only supported on Unix systems.")
