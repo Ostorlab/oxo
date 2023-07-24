@@ -3,7 +3,7 @@
 import io
 import sys
 import time
-from typing import Any, Dict
+from typing import Any
 
 import docker
 from docker.models import networks as networks_model
