@@ -83,8 +83,8 @@ def start_nats_subscription_asynchronously(
         )
     )
     try:
-        logger.info("starting forever loop")
+        logger.debug("Closing loop.")
         loop.run_forever()
     finally:
-        logger.info("closing loop")
+        logger.debug("closing loop.")
         loop.close()
