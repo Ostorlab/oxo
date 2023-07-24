@@ -15,7 +15,6 @@ WAIT_SCHEDULE_SCAN = 60  # seconds
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel("DEBUG")
 
 
 def _handle_exception(context):
