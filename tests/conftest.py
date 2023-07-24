@@ -427,7 +427,6 @@ def vulnerability_location_file(
         asset=file_asset.File(content=b"file"),
     )
 
-
 @pytest.fixture()
 def data_start_agent_scan() -> dict[str, Any]:
     return {
@@ -458,7 +457,7 @@ def data_start_agent_scan() -> dict[str, Any]:
 
 
 @pytest.fixture()
-def start_agent_scan_nats_request():
+def start_agent_scan_nats_request() -> startAgentScan_pb2.Message:
     message = startAgentScan_pb2.Message(
         reference_scan_id=42,
         key="agentgroup/ostorlab/agent_group42",
@@ -476,7 +475,6 @@ def start_agent_scan_nats_request():
         apk=apk_pb2.Message(content=b"dummy_apk"),
     )
     return message
-
 
 @pytest.fixture
 def local_runtime_mocks(mocker, db_engine_path):

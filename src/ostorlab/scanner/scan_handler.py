@@ -21,6 +21,7 @@ logger.setLevel("DEBUG")
 
 
 def _handle_exception(context):
+    """The exception handler for the event loop."""
     logger.error("Caught Loop Exception: %s", context)
 
 
@@ -119,6 +120,10 @@ async def subscribe_nats(
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     data = runner.execute(scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id))
     config = nats_conf.ScannerConfig.from_json(data)
+
+    if config is None:
+        logger.error("No config found to start the connection.")
+        return
 
     logger.info("Connecting to nats.")
     await connect_nats(config, scanner_id, state_reporter)

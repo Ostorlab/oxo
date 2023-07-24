@@ -16,7 +16,7 @@ from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 DEFAULT_PENDING_BYTES_LIMIT = 400 * 1024 * 1024
 
-DEFAULT_CONNECT_TIMEOUT = 20
+DEFAULT_CONNECT_TIMEOUT = datetime.timedelta(seconds=20)
 
 DEFAULT_MAX_INFLIGHT = 1
 
@@ -25,10 +25,6 @@ DEFAULT_ACK_WAIT = 120
 DEFAULT_PUBLISH_ACK_WAIT = 30
 
 logger = logging.getLogger(__name__)
-
-
-class Error(Exception):
-    """Base Error."""
 
 
 class ClientBusHandler:
@@ -60,7 +56,7 @@ class ClientBusHandler:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
-    async def connect(self, connect_timeout=DEFAULT_CONNECT_TIMEOUT):
+    async def connect(self, connect_timeout=DEFAULT_CONNECT_TIMEOUT.seconds):
         """
         Connect to the NATS server.
 
@@ -97,7 +93,7 @@ class ClientBusHandler:
         """
         try:
             await self._js.delete_stream(name=name)
-        except errors.ServiceUnavailableError as e:
+        except errors.ObjectDeletedError as e:
             logger.warning("error deleting stream %s: %s", name, e)
 
     async def close(self):
@@ -216,14 +212,12 @@ class BusHandler(ClientBusHandler):
         inbox_sub.pending_bytes_limit = DEFAULT_PENDING_BYTES_LIMIT
 
     async def _process_message(self, message):
-        try:
-            logger.debug("process received message %s", message)
-            self._last_message_received_time = datetime.datetime.now()
-            request = startAgentScan_pb2.Message()
-            request.ParseFromString(message.data)
-            cb = self._subjects_cb_map[message.subject]
+        logger.debug("process received message %s", message)
+        self._last_message_received_time = datetime.datetime.now()
+        request = startAgentScan_pb2.Message()
+        request.ParseFromString(message.data)
+        cb = self._subjects_cb_map.get(message.subject)
+        if cb is not None:
             await cb(message.subject, request)
             logger.debug("Acking message for %s", message.subject)
             await message.ack()
-        except KeyError as e:
-            logger.exception(e)
