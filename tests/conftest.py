@@ -459,7 +459,7 @@ def local_runtime_mocks(mocker, db_engine_path):
 
 
 @pytest.fixture()
-def data_start_agent_scan() -> dict[str:Any]:
+def data_start_agent_scan() -> dict[str, Any]:
     return {
         "data": {
             "scanners": {
