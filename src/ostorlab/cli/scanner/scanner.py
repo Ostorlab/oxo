@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @click.option("--daemon/--no-daemon", help="Run in daemon mode.", default=True)
 @click.pass_context
 def scanner(
+    ctx: click.core.Context,
     daemon: bool,
     scanner_id: str,
 ) -> None:
@@ -31,7 +32,7 @@ def scanner(
         console.error("ostorlab scanner sub-command is only supported on Unix systems.")
         raise click.exceptions.Exit(2)
 
-    api_key = config_manager.ConfigurationManager().api_key
+    api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
 
     # The import is done for Windows compatibility.
     import daemon as dm  # pylint: disable=import-outside-toplevel
