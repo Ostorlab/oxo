@@ -16,7 +16,7 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
         "ostorlab.scanner.handler.ClientBusHandler.connect"
     )
     mocker.patch(
-        "ostorlab.scanner.start.asyncio.events.AbstractEventLoop.run_forever",
+        "ostorlab.scanner.scan_handler.asyncio.events.AbstractEventLoop.run_forever",
         side_effect=Exception,
     )
     nats_add_stream_mock = mocker.patch(
