@@ -8,7 +8,7 @@ import click
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
-from ostorlab.scanner import start
+from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.utils import ip
 
@@ -58,7 +58,7 @@ def scanner(
                 _start_periodic_persist_state(state_reporter=state_reporter)
             )
             loop.run_until_complete(
-                start.subscribe_nats(
+                scan_handler.subscribe_nats(
                     api_key=ctx.obj["api_key"],
                     scanner_id=scanner_id,
                     state_reporter=state_reporter,
@@ -74,7 +74,7 @@ def scanner(
         loop = asyncio.get_event_loop()
         loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
         loop.run_until_complete(
-            start.subscribe_nats(
+            scan_handler.subscribe_nats(
                 api_key=ctx.obj["api_key"],
                 scanner_id=scanner_id,
                 state_reporter=state_reporter,

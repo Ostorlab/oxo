@@ -2,7 +2,7 @@
 import pytest
 import socket
 
-from ostorlab.scanner import start
+from ostorlab.scanner import scan_handler
 from ostorlab.scanner import nats_conf
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.utils import scanner_state_reporter
@@ -37,7 +37,7 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
         hostname=socket.gethostname(),
         ip="192.168.0.1",
     )
-    await start.connect_nats(
+    await scan_handler.connect_nats(
         config=config, scanner_id="GGBD-DJJD-DKJK-DJDD", state_reporter=state_reporter
     )
 
@@ -59,9 +59,9 @@ async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
         hostname=socket.gethostname(),
         ip="192.168.0.1",
     )
-    scan_handler = start.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
-    await scan_handler.subscribe_all(config)
+    await scan_handler_instance.subscribe_all(config)
 
     assert nats_subscribe_mock.call_count == 1
     assert nats_subscribe_mock.await_args.kwargs["subject"] == "scan.startAgentScan"

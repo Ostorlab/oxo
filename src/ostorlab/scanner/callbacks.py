@@ -1,7 +1,7 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 import logging
 import ipaddress
-from typing import List
+from typing import List, Any
 
 from ostorlab.runtimes import registry
 from ostorlab.runtimes import definitions
@@ -19,6 +19,7 @@ from ostorlab.assets import domain_name
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import ios_store
 from ostorlab.assets import agent as agent_asset
+from ostorlab.utils import scanner_state_reporter
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ def _install_agents(runtime_instance: runtime.Runtime, agents) -> None:
 
 
 def _prepare_ip_asset(ip_request) -> asset.Asset:
+    """Return IP assets from a NATs received message."""
     ip_network = ipaddress.ip_network(ip_request.host, strict=False)
     if ip_network.version == 4:
         return ipv4.IPv4(
@@ -50,7 +52,8 @@ def _prepare_ip_asset(ip_request) -> asset.Asset:
         raise ValueError(f"Invalid Ip address {ip_request.host}")
 
 
-def _asset_instances_from_request(request) -> List[asset.Asset]:
+def _extract_assets(request: Any) -> List[asset.Asset]:
+    """Returns list of specific Ostorlab-injectable assets, from a message received from NATs."""
     assets = []
     asset_type = request.WhichOneof("asset")
     if asset_type in ("ip", "ip4v", "ipv6"):
@@ -135,26 +138,50 @@ def _asset_instances_from_request(request) -> List[asset.Asset]:
     return assets
 
 
-def start_scan(subject, request, state_reporter):
-    del subject
-    agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
-    assets = _asset_instances_from_request(request)
-    scan_id = request.scan_id
+def _extract_agent_group_definition(request: Any) -> definitions.AgentGroupDefinition:
+    return definitions.AgentGroupDefinition.from_bus_message(request)
+
+
+def _extract_scan_id(request: Any) -> int:
+    return request.scan_id
+
+
+def _update_state_reporter(
+    state_reporter: scanner_state_reporter.ScannerStateReporter, scan_id: int
+) -> scanner_state_reporter.ScannerStateReporter:
+    state_reporter.scan_id = scan_id
+    return state_reporter
+
+
+def start_scan(
+    request: Any, state_reporter: scanner_state_reporter.ScannerStateReporter
+) -> None:
+    """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
+
+    Args:
+        request: deserialized message.
+        state_reporter: State reporter instance responsible for sending current state of the scanner.
+    """
+
+    agent_group_definition = _extract_agent_group_definition(request)
+    assets = _extract_assets(request)
+    scan_id = _extract_scan_id(request)
+
+    state_reporter = _update_state_reporter(state_reporter, request)
 
     runtime_instance = registry.select_runtime(
         runtime_type="local", scan_id=scan_id, run_default_agents=False
     )
 
-    state_reporter.scan_id = scan_id
+    if runtime_instance.can_run(agent_group_definition=agent_group_definition) is True:
+        _install_agents(runtime_instance, request.agents)
 
-    if runtime_instance.can_run(agent_group_definition=agent_group_definition) is False:
+        runtime_instance.scan(
+            agent_group_definition=agent_group_definition,
+            assets=assets,
+            title=None,
+        )
+    else:
         logger.error(
             "The runtime does not support the provided agent list or group definition."
         )
-    _install_agents(runtime_instance, request.agents)
-
-    runtime_instance.scan(
-        agent_group_definition=agent_group_definition,
-        assets=assets,
-        title=None,
-    )
