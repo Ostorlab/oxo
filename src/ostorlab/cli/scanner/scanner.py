@@ -63,7 +63,9 @@ def scanner(
 
 
 def start_nats_subscription_asynchronously(
-    api_key: Optional[str], scanner_id: str, state_reporter: scanner_state_reporter.ScannerStateReporter
+    api_key: Optional[str],
+    scanner_id: str,
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
 ) -> None:
     """Run subscription to nats in eventloop.
 
@@ -74,11 +76,11 @@ def start_nats_subscription_asynchronously(
     if api_key is None:
         logger.error("No api key provided.")
     loop = asyncio.get_event_loop()
-    loop.create_task(
-        _start_periodic_persist_state(state_reporter=state_reporter)
-    )
+    loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
     loop.run_until_complete(
-        scan_handler.subscribe_nats(api_key=api_key, scanner_id=scanner_id, state_reporter=state_reporter)
+        scan_handler.subscribe_nats(
+            api_key=api_key, scanner_id=scanner_id, state_reporter=state_reporter
+        )
     )
     try:
         logger.info("starting forever loop")
