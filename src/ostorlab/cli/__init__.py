@@ -5,3 +5,4 @@ from ostorlab.cli import agent
 from ostorlab.cli import vulnz
 from ostorlab.cli import agentgroup
 from ostorlab.cli import ci_scan
+from ostorlab.cli import scanner

@@ -3,6 +3,7 @@
 import io
 import sys
 import time
+from typing import Any
 
 import docker
 from docker.models import networks as networks_model
@@ -455,3 +456,32 @@ def local_runtime_mocks(mocker, db_engine_path):
     mocker.patch(
         "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_service"
     )
+
+
+@pytest.fixture()
+def data_start_agent_scan() -> dict[str, Any]:
+    return {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "id": "1",
+                        "name": "5485",
+                        "uuid": "a1ffcc25-3aa2-4468-ba8f-013d17acb443",
+                        "description": "dsqd",
+                        "config": {
+                            "busUrl": "nats://nats.nats",
+                            "busClusterId": "cluster_id",
+                            "busClientName": "bus_name",
+                            "subjectBusConfigs": {
+                                "subjectBusConfigs": [
+                                    {"subject": "scan.startAgentScan", "queue": "1"},
+                                    {"subject": "test1", "queue": "2"},
+                                ]
+                            },
+                        },
+                    }
+                ]
+            }
+        }
+    }
