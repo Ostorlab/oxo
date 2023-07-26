@@ -1,5 +1,6 @@
 """Add scanner state via an API Request."""
 from typing import Dict, Optional
+import json
 
 from ostorlab.apis import request
 from ostorlab.utils import defintions
@@ -44,16 +45,21 @@ class AddScannerStateAPIRequest(request.APIRequest):
               The variables dict to add the scanner state.
         """
         data = {
-            "scannerState": {
-                "scannerId": self._state.scanner_id,
-                "scanId": self._state.scan_id,
-                "hostname": self._state.hostname,
-                "ipAddress": self._state.ip,
-                "memoryLoad": self._state.memory_load,
-                "totalMemory": self._state.total_memory,
-                "cpuLoad": self._state.cpu_load,
-                "totalCpu": self._state.total_cpu,
-                "errors": self._state.errors,
-            }
+            "query": self.query,
+            "variables": json.dumps(
+                {
+                    "scannerState": {
+                        "scannerId": self._state.scanner_id,
+                        "scanId": self._state.scan_id,
+                        "hostname": self._state.hostname,
+                        "ipAddress": self._state.ip,
+                        "memoryLoad": self._state.memory_load,
+                        "totalMemory": self._state.total_memory,
+                        "cpuLoad": self._state.cpu_load,
+                        "totalCpu": self._state.total_cpu,
+                        "errors": self._state.errors,
+                    }
+                }
+            ),
         }
         return data

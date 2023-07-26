@@ -15,12 +15,13 @@ def testRootCli_whenDaemonCommandIsProvided_runsBackground(mocker):
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
-        ["--api-key", "test", "scanner", "--daemon", "--scanner-id", "11226DS"],
+        ["--api-key", "test", "scanner", "--daemon", "--scanner-id", "11226"],
     )
 
     assert daemon_context_open.call_count == 1
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testRootCli_whenDaemonCommandIsDisabled_runsConnection(mocker):
     """Run CLI with --no-daemon command."""
     subscribe_to_nats_mock = mocker.patch(

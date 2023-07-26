@@ -24,6 +24,8 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
+from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.scanner.proto.assets import apk_pb2
 
 
 @pytest.fixture(scope="session")
@@ -426,6 +428,56 @@ def vulnerability_location_file(
     )
 
 
+@pytest.fixture()
+def data_start_agent_scan() -> dict[str, Any]:
+    return {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "id": "1",
+                        "name": "5485",
+                        "uuid": "a1ffcc25-3aa2-4468-ba8f-013d17acb443",
+                        "description": "dsqd",
+                        "config": {
+                            "busUrl": "nats://nats.nats",
+                            "busClusterId": "cluster_id",
+                            "busClientName": "bus_name",
+                            "subjectBusConfigs": {
+                                "subjectBusConfigs": [
+                                    {"subject": "scan.startAgentScan", "queue": "1"},
+                                    {"subject": "test1", "queue": "2"},
+                                ]
+                            },
+                        },
+                    }
+                ]
+            }
+        }
+    }
+
+
+@pytest.fixture()
+def start_agent_scan_nats_request() -> startAgentScan_pb2.Message:
+    message = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                version="0.0.1",
+                replicas=42,
+                args=[startAgentScan_pb2.Arg(name="arg1", type="number", value=b"42")],
+            ),
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent2", version="0.0.2", replicas=1, args=[]
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+    return message
+
+
 @pytest.fixture
 def local_runtime_mocks(mocker, db_engine_path):
     def docker_networks():
@@ -456,32 +508,3 @@ def local_runtime_mocks(mocker, db_engine_path):
     mocker.patch(
         "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_service"
     )
-
-
-@pytest.fixture()
-def data_start_agent_scan() -> dict[str, Any]:
-    return {
-        "data": {
-            "scanners": {
-                "scanners": [
-                    {
-                        "id": "1",
-                        "name": "5485",
-                        "uuid": "a1ffcc25-3aa2-4468-ba8f-013d17acb443",
-                        "description": "dsqd",
-                        "config": {
-                            "busUrl": "nats://nats.nats",
-                            "busClusterId": "cluster_id",
-                            "busClientName": "bus_name",
-                            "subjectBusConfigs": {
-                                "subjectBusConfigs": [
-                                    {"subject": "scan.startAgentScan", "queue": "1"},
-                                    {"subject": "test1", "queue": "2"},
-                                ]
-                            },
-                        },
-                    }
-                ]
-            }
-        }
-    }

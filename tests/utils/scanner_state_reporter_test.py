@@ -9,7 +9,7 @@ from ostorlab.utils.defintions import ScannerState
 
 class Memory:
     percent: float = 10
-    total: int = 100
+    total: int = 33454317568
 
 
 @pytest.mark.asyncio
@@ -27,20 +27,22 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         "ostorlab.apis.add_scanner_state.AddScannerStateAPIRequest"
     )
     state = ScannerState(
-        scanner_id=1,
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
         scan_id=1,
         cpu_load=10,
         total_cpu=10,
         memory_load=10,
-        total_memory=100,
+        total_memory=31,
         hostname="",
         ip="",
         errors="",
     )
-
     report = scanner_state_reporter.ScannerStateReporter(
-        scanner_id=1, scan_id=1, hostname="", ip="", errors=""
+        scanner_id="GGBD-DJJD-DKJK-DJDD", hostname="", ip=""
     )
+    report.scan_id = 1
+    report.errors = ""
+
     await report.report()
 
     assert api_request_mock.call_args.kwargs["state"] == state
