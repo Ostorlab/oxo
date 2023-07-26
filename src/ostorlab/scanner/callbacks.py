@@ -154,7 +154,9 @@ def _update_state_reporter(
 
 
 def start_scan(
-    request: Any, state_reporter: scanner_state_reporter.ScannerStateReporter
+    subject: str,
+    request: Any,
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
 ) -> None:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
@@ -162,6 +164,7 @@ def start_scan(
         request: deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
     """
+    logger.debug("Triggering scan after receiving message on: %s", subject)
 
     agent_group_definition = _extract_agent_group_definition(request)
     assets = _extract_assets(request)

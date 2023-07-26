@@ -49,7 +49,7 @@ class AddScannerStateAPIRequest(request.APIRequest):
             "variables": json.dumps(
                 {
                     "scannerState": {
-                        "scannerId": self._state.scanner_id,
+                        "scannerUuid": self._state.scanner_id,
                         "scanId": self._state.scan_id,
                         "hostname": self._state.hostname,
                         "ipAddress": self._state.ip,

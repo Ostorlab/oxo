@@ -20,8 +20,8 @@ class ScannerConfigAPIRequest(request.APIRequest):
             The query to get the configs.
         """
         return """
-         query scanners($scannerId: Int!){
-          scanners(scannerId: $scannerId){
+         query scanners($scannerUuid: UUID!){
+          scanners(scannerUuid: $scannerUuid){
             scanners{
               id
               name
@@ -53,6 +53,6 @@ class ScannerConfigAPIRequest(request.APIRequest):
         """
         data = {
             "query": self.query,
-            "variables": json.dumps({"scannerId": self._scanner_id}),
+            "variables": json.dumps({"scannerUuid": self._scanner_id}),
         }
         return data
