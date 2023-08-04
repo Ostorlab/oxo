@@ -1,6 +1,4 @@
 """Reporter logic to read the scanner state periodically and send it to the backend."""
-import psutil
-
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state
 from ostorlab.utils import defintions
@@ -23,17 +21,33 @@ class ScannerStateReporter:
 
     def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""
-        state = defintions.ScannerState(
-            scanner_id=self._scanner_id,
-            scan_id=self.scan_id,
-            cpu_load=psutil.cpu_percent(interval=1, percpu=False),
-            total_cpu=psutil.cpu_count(),
-            memory_load=psutil.virtual_memory().percent,
-            total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
-            hostname=self._hostname,
-            ip=self._ip,
-            errors=self.errors,
-        )
+        try:
+            import psutil  # pylint: disable=import-outside-toplevel
+
+            state = defintions.ScannerState(
+                scanner_id=self._scanner_id,
+                scan_id=self.scan_id,
+                cpu_load=psutil.cpu_percent(interval=1, percpu=False),
+                total_cpu=psutil.cpu_count(),
+                memory_load=psutil.virtual_memory().percent,
+                total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
+                hostname=self._hostname,
+                ip=self._ip,
+                errors=self.errors,
+            )
+        except ImportError:
+            state = defintions.ScannerState(
+                scanner_id=self._scanner_id,
+                scan_id=self.scan_id,
+                cpu_load=0,
+                total_cpu=0,
+                memory_load=0,
+                total_memory=0,  # total memory in GB
+                hostname=self._hostname,
+                ip=self._ip,
+                errors=self.errors,
+            )
+
         return state
 
     def _report_state(self, state: defintions.ScannerState) -> None:
