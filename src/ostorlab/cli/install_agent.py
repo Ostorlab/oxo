@@ -112,19 +112,24 @@ def get_agent_details(agent_key: str) -> Dict:
         return agent_details
 
 
-def install(agent_key: str, version: str = "") -> None:
+def install(
+    agent_key: str,
+    version: str = "",
+    docker_client: Optional[docker.DockerClient] = None,
+) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
 
     Args:
         agent_key: key of the agent in agent/org/agentName format.
         version: version of the docker image.
+        docker_client: optional instance of the docker client to use to install the agent.
 
     Returns:
         None
 
     Raises:
-        click Exit exception with satus code 2 when the docker image does not exist.
+        click Exit exception with status code 2 when the docker image does not exist.
     """
 
     agent_details = get_agent_details(agent_key)
@@ -132,14 +137,14 @@ def install(agent_key: str, version: str = "") -> None:
     if agent_docker_location is None or not agent_details.get("versions", {}).get(
         "versions", []
     ):
-        console.error("Agent image location is not yet available")
+        console.error(f"Agent: {agent_key} image location is not yet available")
         raise click.exceptions.Exit(2)
 
     image_name = _image_name_from_key(agent_details["key"])
     logger.debug("searching for image name %s", image_name)
 
     try:
-        docker_client = docker.from_env()
+        docker_client = docker_client or docker.from_env()
 
         if _is_image_present(docker_client, image_name):
             console.info(f"{agent_key} already exist.")
