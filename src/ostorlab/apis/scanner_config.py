@@ -28,7 +28,7 @@ class ScannerConfigAPIRequest(request.APIRequest):
               description
               config{
                 harborCredentials
-                dockerImage
+                harborAccountName
                 busUrl
                 busClusterId
                 busClientName

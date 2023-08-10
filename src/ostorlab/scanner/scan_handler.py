@@ -9,7 +9,7 @@ from nats.js import errors
 from ostorlab.apis import scanner_config
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.scanner import handler as scanner_handler
-from ostorlab.scanner import nats_conf
+from ostorlab.scanner import scanner_conf
 from ostorlab.scanner import callbacks
 from ostorlab.utils import scanner_state_reporter
 
@@ -37,7 +37,7 @@ class ScanHandler:
 
     async def _subscribe(
         self,
-        config: nats_conf.ScannerConfig,
+        config: scanner_conf.ScannerConfig,
         subject,
         queue,
         cb,
@@ -53,24 +53,24 @@ class ScanHandler:
         )
         self._bus_handlers.append(bus_handler)
 
-    async def subscribe_all(self, config: nats_conf.ScannerConfig) -> None:
+    async def subscribe_all(self, config: scanner_conf.ScannerConfig) -> None:
         for bus_conf in config.subject_bus_configs:
             await self._subscribe(
                 config=config,
                 subject=bus_conf.subject,
                 queue=bus_conf.queue,
                 cb=functools.partial(
-                    callbacks.start_scan, state_reporter=self._state_reporter
+                    callbacks.start_scan,
+                    state_reporter=self._state_reporter,
                 ),
                 start_at="last_received",
                 stream=bus_conf.queue,
             )
 
             logger.info("subscribing to %s", bus_conf.subject)
-            return
 
     async def _create_bus_handler(
-        self, config: nats_conf.ScannerConfig
+        self, config: scanner_conf.ScannerConfig
     ) -> scanner_handler.BusHandler:
         bus_handler = scanner_handler.BusHandler(
             bus_url=config.bus_url,
@@ -81,7 +81,7 @@ class ScanHandler:
 
 
 async def connect_nats(
-    config: nats_conf.ScannerConfig,
+    config: scanner_conf.ScannerConfig,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
 ) -> ScanHandler:
@@ -118,7 +118,7 @@ async def subscribe_nats(
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     data = runner.execute(scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id))
-    config = nats_conf.ScannerConfig.from_json(data)
+    config = scanner_conf.ScannerConfig.from_json(data)
 
     if config is None:
         logger.error("No config found to start the connection.")
