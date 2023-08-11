@@ -26,8 +26,6 @@ from ostorlab.utils import scanner_state_reporter
 from ostorlab.scanner import scanner_conf
 
 
-OSTORLAB_REGISTRY = "https://ostorlab.store/"
-
 logger = logging.getLogger(__name__)
 
 
@@ -165,7 +163,7 @@ def _update_state_reporter(
     return state_reporter
 
 
-def _connect_to_containers_registry(
+def _connect_containers_registry(
     configuration: scanner_conf.RegistryConfig,
 ) -> docker.DockerClient:
     """Connect to container registry."""
@@ -173,7 +171,7 @@ def _connect_to_containers_registry(
     client.login(
         username=configuration.username,
         password=configuration.token,
-        registry=OSTORLAB_REGISTRY,
+        registry=configuration.url,
     )
     return client
 
@@ -214,7 +212,7 @@ def _start_scan(
 
     """
     logger.debug("Triggering scan after receiving message on: %s", subject)
-    docker_client = _connect_to_containers_registry(configuration=registry_conf)
+    docker_client = _connect_containers_registry(configuration=registry_conf)
 
     agent_group_definition = _extract_agent_group_definition(request)
     assets = _extract_assets(request)
