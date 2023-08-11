@@ -4,7 +4,7 @@ import io
 import re
 import logging
 import json
-from typing import List, Optional
+from typing import List, Optional, Any
 
 import docker
 
@@ -250,18 +250,20 @@ class AgentGroupDefinition:
         for agent in request.agents:
             agents_names.append(agent.key)
             replicas = _process_agent_replicas(agent.replicas)
+            agent_args = []
+            for arg in agent.args:
+                value = _cast_agent_arg(arg_type=arg.type, arg_value=arg.value)
+                agent_arg = defintions.Arg(
+                    name=arg.name,
+                    type=arg.type,
+                    value=value,
+                )
+                agent_args.append(agent_arg)
 
             agent_def = AgentSettings(
                 key=agent.key,
                 version=agent.version,
-                args=[
-                    defintions.Arg(
-                        name=arg.name,
-                        type=arg.type,
-                        value=arg.value,
-                    )
-                    for arg in agent.args
-                ],
+                args=agent_args,
                 replicas=replicas,
                 caps=agent.caps,
                 cyclic_processing_limit=agent.cyclic_processing_limit,
@@ -272,3 +274,19 @@ class AgentGroupDefinition:
         name = request.key.split("/")[-1]
         description = f"Agent group {name}: {','.join(agents_names)}"
         return cls(agent_settings, name, description)
+
+
+def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
+    # ToDo(deadly-panda): Switch to match case, when we drop support for python3.9.
+    if arg_type == "string":
+        return str(arg_value.decode())
+    elif arg_type == "number":
+        return float(arg_value.decode())
+    elif arg_type == "boolean":
+        return arg_value.decode().lower() == "true"
+    elif arg_type == "array":
+        return json.loads(arg_value.decode())
+    elif arg_type == "object":
+        return json.loads(arg_value.decode())
+    else:
+        raise ValueError(f"Unsupported argument type: {arg_type}")
