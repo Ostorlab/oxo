@@ -1,7 +1,10 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 import logging
 import ipaddress
-from typing import List, Any
+import asyncio
+from typing import List, Any, Optional
+
+import docker
 
 from ostorlab.runtimes import registry
 from ostorlab.runtimes import definitions
@@ -20,17 +23,26 @@ from ostorlab.assets import link as link_asset
 from ostorlab.assets import ios_store
 from ostorlab.assets import agent as agent_asset
 from ostorlab.utils import scanner_state_reporter
+from ostorlab.scanner import scanner_conf
 
+
+OSTORLAB_REGISTRY = "https://ostorlab.store/"
 
 logger = logging.getLogger(__name__)
 
 
-def _install_agents(runtime_instance: runtime.Runtime, agents) -> None:
+def _install_agents(
+    runtime_instance: runtime.Runtime,
+    agents,
+    docker_client: Optional[docker.DockerClient] = None,
+) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
-        runtime_instance.install()
+        runtime_instance.install(docker_client=docker_client)
         for agent in agents:
-            install_agent.install(agent.key, agent.version)
+            install_agent.install(
+                agent_key=agent.key, version=agent.version, docker_client=docker_client
+            )
     except install_agent.AgentDetailsNotFound:
         logger.warning("agent %s not found on the store", agent.key)
 
@@ -143,7 +155,7 @@ def _extract_agent_group_definition(request: Any) -> definitions.AgentGroupDefin
 
 
 def _extract_scan_id(request: Any) -> int:
-    return request.scan_id
+    return int(request.scan_id)
 
 
 def _update_state_reporter(
@@ -153,31 +165,65 @@ def _update_state_reporter(
     return state_reporter
 
 
-def start_scan(
+def _connect_to_containers_registry(
+    configuration: scanner_conf.RegistryConfig,
+) -> docker.DockerClient:
+    """Connect to container registry."""
+    client = docker.from_env()
+    client.login(
+        username=configuration.username,
+        password=configuration.token,
+        registry=OSTORLAB_REGISTRY,
+    )
+    return client
+
+
+async def cb_start_scan(
     subject: str,
     request: Any,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """"""
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+        None, _start_scan, subject, request, state_reporter, registry_conf
+    )
+
+
+def _start_scan(
+    subject: str,
+    request: Any,
+    state_reporter: scanner_state_reporter.ScannerStateReporter,
+    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
     Args:
         request: deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
+        registry_conf: Credentials to the registry, useful to pull agents images.
+
     """
     logger.debug("Triggering scan after receiving message on: %s", subject)
+    docker_client = _connect_to_containers_registry(configuration=registry_conf)
 
     agent_group_definition = _extract_agent_group_definition(request)
     assets = _extract_assets(request)
     scan_id = _extract_scan_id(request)
 
-    state_reporter = _update_state_reporter(state_reporter, request)
+    state_reporter = _update_state_reporter(state_reporter, scan_id)
 
     runtime_instance = registry.select_runtime(
         runtime_type="local", scan_id=scan_id, run_default_agents=False
     )
 
     if runtime_instance.can_run(agent_group_definition=agent_group_definition) is True:
-        _install_agents(runtime_instance, request.agents)
+        _install_agents(
+            runtime_instance=runtime_instance,
+            agents=request.agents,
+            docker_client=docker_client,
+        )
 
         runtime_instance.scan(
             agent_group_definition=agent_group_definition,
