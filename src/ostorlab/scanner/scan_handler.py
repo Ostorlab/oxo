@@ -60,8 +60,9 @@ class ScanHandler:
                 subject=bus_conf.subject,
                 queue=bus_conf.queue,
                 cb=functools.partial(
-                    callbacks.start_scan,
+                    callbacks.cb_start_scan,
                     state_reporter=self._state_reporter,
+                    registry_conf=config.registry_conf,
                 ),
                 start_at="last_received",
                 stream=bus_conf.queue,
