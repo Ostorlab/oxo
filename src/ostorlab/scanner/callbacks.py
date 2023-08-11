@@ -184,7 +184,14 @@ async def cb_start_scan(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
-    """"""
+    """The start agent scan callback.
+
+    Args:
+        subject: Subject of the received message.
+        request: deserialized message.
+        state_reporter: State reporter instance responsible for sending current state of the scanner.
+        registry_conf: Credentials to the registry, useful to pull agents images.
+    """
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(
         None, _start_scan, subject, request, state_reporter, registry_conf
@@ -200,7 +207,8 @@ def _start_scan(
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
     Args:
-        request: deserialized message.
+        subject: Subject of the received message.
+        request: Deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         registry_conf: Credentials to the registry, useful to pull agents images.
 
