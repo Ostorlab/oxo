@@ -446,7 +446,6 @@ def data_start_agent_scan() -> dict[str, Any]:
                             "subjectBusConfigs": {
                                 "subjectBusConfigs": [
                                     {"subject": "scan.startAgentScan", "queue": "1"},
-                                    {"subject": "test1", "queue": "2"},
                                 ]
                             },
                         },
