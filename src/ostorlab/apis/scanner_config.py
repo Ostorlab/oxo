@@ -29,6 +29,7 @@ class ScannerConfigAPIRequest(request.APIRequest):
               config{
                 harborCredentials
                 harborAccountName
+                harborUrl
                 busUrl
                 busClusterId
                 busClientName

@@ -277,7 +277,6 @@ class AgentGroupDefinition:
 
 
 def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
-    # ToDo(deadly-panda): Switch to match case, when we drop support for python3.9.
     if arg_type == "string":
         return str(arg_value.decode())
     elif arg_type == "number":
