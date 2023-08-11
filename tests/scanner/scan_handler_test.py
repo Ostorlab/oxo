@@ -44,6 +44,7 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
     assert nats_connect_mock.call_count == 1
     assert nats_add_stream_mock.call_args.kwargs["subjects"][0] == "scan.startAgentScan"
 
+
 @pytest.mark.asyncio
 async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
     nats_subscribe_mock = mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
