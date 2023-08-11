@@ -10,6 +10,7 @@ class RegistryConfig:
 
     username: str
     token: str
+    url: str
 
 
 @dataclasses.dataclass
@@ -66,6 +67,7 @@ class ScannerConfig:
         registry_conf = RegistryConfig(
             username=conf.get("harborAccountName"),
             token=conf.get("harborCredentials"),
+            url=conf.get("harborUrl"),
         )
         return cls(
             bus_url=conf.get("busUrl"),
