@@ -125,6 +125,13 @@ class AgentMixin(
             arguments[a["name"]] = a.get("value")
         # Override the default values from settings.
         for a in self.settings.args:
+            # Enforce that only declared arguments are accepted.
+            if a.name not in arguments:
+                # TODO(OS-5119): Change behavior to fail of the argument is missing from definition.
+                logger.warning(
+                    "Argument %s is defined in the agent settings but not in the agent definition. Please update your definition file or the agent will fail in the future."
+                )
+
             if a.type == "binary":
                 arguments[a.name] = a.value
             else:
