@@ -574,15 +574,18 @@ class LocalRuntime(runtime.Runtime):
                         return False
         return True
 
-    def install(self) -> None:
+    def install(self, docker_client: Optional[docker.DockerClient] = None) -> None:
         """Installs the default agents.
+
+        Args:
+            docker_client: optional instance of the docker client to use to install the agent.
 
         Returns:
             None
         """
         for agent_key in DEFAULT_AGENTS:
             try:
-                install_agent.install(agent_key=agent_key)
+                install_agent.install(agent_key=agent_key, docker_client=docker_client)
             except install_agent.AgentDetailsNotFound:
                 console.warning(f"agent {agent_key} not found on the store")
 

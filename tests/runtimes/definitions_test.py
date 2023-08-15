@@ -4,6 +4,7 @@ import io
 from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_definitions
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.scanner.proto.assets import apk_pb2
 
 
 def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
@@ -168,10 +169,120 @@ def testAgentGroupDefinitionFromNatsRequest_always_returnsValidAgentGroupDefinit
     assert agent_group_def.agents[0].version == "0.0.1"
     assert agent_group_def.agents[0].replicas == 42
     assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
-        name="arg1", type="number", value=b"42", description=None
+        name="arg1", type="number", value=42.0, description=None
     )
 
     assert agent_group_def.agents[1].key == "agent/ostorlab/agent2"
     assert agent_group_def.agents[1].version == "0.0.2"
     assert agent_group_def.agents[1].replicas == 1
     assert agent_group_def.agents[1].args == []
+
+
+def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeNumber_castsArgumentToFloat() -> (
+    None
+):
+    """Ensure the agent argument, received as bytes, are casted to their corresponding type: Case of numbers."""
+    msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                args=[startAgentScan_pb2.Arg(name="arg1", type="number", value=b"42")],
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(msg)
+
+    assert agent_group_def.name == "agent_group42"
+    assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
+        name="arg1", type="number", value=42.0, description=None
+    )
+    assert isinstance(agent_group_def.agents[0].args[0].value, float) is True
+
+
+def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeString_castsArgumentToString() -> (
+    None
+):
+    """Ensure the agent argument, received as bytes, are casted to their corresponding type: Case of strings."""
+    msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                args=[startAgentScan_pb2.Arg(name="arg1", type="string", value=b"42")],
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(msg)
+
+    assert agent_group_def.name == "agent_group42"
+    assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
+        name="arg1", type="string", value="42", description=None
+    )
+    assert isinstance(agent_group_def.agents[0].args[0].value, str) is True
+
+
+def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeBool_castsArgumentToBoolean() -> (
+    None
+):
+    """Ensure the agent argument, received as bytes, are casted to their corresponding type: Case of booleans."""
+    msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                args=[
+                    startAgentScan_pb2.Arg(name="arg1", type="boolean", value=b"True")
+                ],
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(msg)
+
+    assert agent_group_def.name == "agent_group42"
+    assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
+        name="arg1", type="boolean", value=True, description=None
+    )
+    assert isinstance(agent_group_def.agents[0].args[0].value, bool) is True
+
+
+def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeArray_castsArgumentAndItsElementsToRespectiveTypes() -> (
+    None
+):
+    """Ensure the agent argument, received as bytes, are casted to their corresponding type: Case of nested arrays."""
+    msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                args=[
+                    startAgentScan_pb2.Arg(
+                        name="arg1", type="array", value=b'["value1", "value2", 3]'
+                    )
+                ],
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(msg)
+
+    assert agent_group_def.name == "agent_group42"
+    casted_argument = agent_group_def.agents[0].args[0]
+    assert casted_argument == utils_definitions.Arg(
+        name="arg1", type="array", value=["value1", "value2", 3], description=None
+    )
+    assert isinstance(casted_argument.value, list) is True
+    assert isinstance(casted_argument.value[0], str) is True
+    assert isinstance(casted_argument.value[1], str) is True
+    assert isinstance(casted_argument.value[2], int) is True

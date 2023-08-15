@@ -5,6 +5,15 @@ from typing import List
 
 
 @dataclasses.dataclass
+class RegistryConfig:
+    """Represents the configuration for container registry credentials."""
+
+    username: str
+    token: str
+    url: str
+
+
+@dataclasses.dataclass
 class SubjectBusConfigs:
     """Represents the configuration for a subject and its corresponding queue."""
 
@@ -19,6 +28,7 @@ class ScannerConfig:
     bus_url: str
     bus_cluster_id: str
     bus_client_name: str
+    registry_conf: RegistryConfig
     subject_bus_configs: List[SubjectBusConfigs]
 
     @classmethod
@@ -54,9 +64,16 @@ class ScannerConfig:
             .get("scanners", [])[0]
             .get("config", {})
         )
+        registry_conf = conf.get("registryConfiguration", {})
+        registry_conf_instance = RegistryConfig(
+            username=registry_conf.get("accountName"),
+            token=registry_conf.get("credentials"),
+            url=registry_conf.get("url"),
+        )
         return cls(
             bus_url=conf.get("busUrl"),
             bus_cluster_id=conf.get("busClusterId"),
             bus_client_name=conf.get("busClientName"),
+            registry_conf=registry_conf_instance,
             subject_bus_configs=bus_configs,
         )
