@@ -64,15 +64,16 @@ class ScannerConfig:
             .get("scanners", [])[0]
             .get("config", {})
         )
-        registry_conf = RegistryConfig(
-            username=conf.get("harborAccountName"),
-            token=conf.get("harborCredentials"),
-            url=conf.get("harborUrl"),
+        registry_conf = conf.get("registryConfiguration", {})
+        registry_conf_instance = RegistryConfig(
+            username=registry_conf.get("accountName"),
+            token=registry_conf.get("credentials"),
+            url=registry_conf.get("url"),
         )
         return cls(
             bus_url=conf.get("busUrl"),
             bus_cluster_id=conf.get("busClusterId"),
             bus_client_name=conf.get("busClientName"),
-            registry_conf=registry_conf,
+            registry_conf=registry_conf_instance,
             subject_bus_configs=bus_configs,
         )

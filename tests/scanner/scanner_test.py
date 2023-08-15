@@ -15,9 +15,11 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
                         "name": "scanner_42",
                         "description": "scanner 42 description",
                         "config": {
-                            "harborAccountName": "robot_account",
-                            "harborCredentials": "<secret_key>",
-                            "harborUrl": "https://ostorlab.store/",
+                            "registryConfiguration": {
+                                "accountName": "robot_account",
+                                "credentials": "<secret_key>",
+                                "url": "https://ostorlab.store/",
+                            },
                             "busUrl": "nats://localhost:4222",
                             "busClusterId": "cluster_id",
                             "busClientName": "client_name",

@@ -1,4 +1,4 @@
-"""Receive scanner config (Nats creds, Harbor creds ...)."""
+"""Receive scanner config (Nats creds, container registry creds ...)."""
 
 from typing import Dict, Optional
 import json
@@ -27,9 +27,11 @@ class ScannerConfigAPIRequest(request.APIRequest):
               name
               description
               config{
-                harborCredentials
-                harborAccountName
-                harborUrl
+                registryConfiguration{
+                  accountName
+                  credentials
+                  url
+                }
                 busUrl
                 busClusterId
                 busClientName
