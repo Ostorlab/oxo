@@ -103,7 +103,7 @@ class ClientBusHandler:
 
     async def _error_cb(self, e):
         logger.error("Error: %s", e)
-        logger.erro("Traceback: %s", traceback.print_exc())
+        logger.error("Traceback: %s", traceback.print_exc())
 
     async def _closed_cb(self):
         logger.debug("Connection to Bus is closed.")
