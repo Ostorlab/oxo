@@ -35,7 +35,6 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         total_memory=31,
         hostname="",
         ip="",
-        errors="",
     )
     report = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD", hostname="", ip=""

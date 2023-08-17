@@ -17,7 +17,6 @@ class ScannerStateReporter:
         self.scan_id = None
         self._hostname = hostname
         self._ip = ip
-        self.errors = None
 
     def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""
@@ -33,7 +32,6 @@ class ScannerStateReporter:
                 total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
                 hostname=self._hostname,
                 ip=self._ip,
-                errors=self.errors,
             )
         except ImportError:
             state = defintions.ScannerState(
@@ -45,7 +43,6 @@ class ScannerStateReporter:
                 total_memory=0,  # total memory in GB
                 hostname=self._hostname,
                 ip=self._ip,
-                errors=self.errors,
             )
 
         return state
