@@ -30,7 +30,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         scan_profile: str,
         application: BinaryIO,
         test_credential_ids: Optional[List[int]] = None,
-        sbom_files: list[io.FileIO] = None
+        sbom_files: list[io.FileIO] = None,
     ):
         self._title = title
         self._asset_type = asset_type
@@ -83,9 +83,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                     },
                 }
             ),
-            "map": json.dumps(
-                var_map
-            ),
+            "map": json.dumps(var_map),
         }
         return data
 

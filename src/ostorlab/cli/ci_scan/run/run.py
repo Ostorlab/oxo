@@ -95,7 +95,7 @@ CI_LOGGER = {
     type=click.File(mode="rb"),
     required=False,
     multiple=True,
-    default=[]
+    default=[],
 )
 @click.pass_context
 def run(
