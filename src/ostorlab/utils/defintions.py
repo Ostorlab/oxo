@@ -36,4 +36,3 @@ class ScannerState:
     total_memory: int
     hostname: str
     ip: str
-    errors: Optional[str]
