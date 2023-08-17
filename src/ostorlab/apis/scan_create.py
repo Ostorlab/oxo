@@ -1,5 +1,6 @@
 """Create mobile scan API."""
 import enum
+import io
 import json
 from typing import Dict, Optional, BinaryIO, List
 
@@ -29,12 +30,14 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         scan_profile: str,
         application: BinaryIO,
         test_credential_ids: Optional[List[int]] = None,
+        sbom_files: list[io.FileIO] = None
     ):
         self._title = title
         self._asset_type = asset_type
         self._scan_profile = scan_profile
         self._application = application
         self._test_credential_ids = test_credential_ids
+        self._sbom_files = sbom_files
 
     @property
     def query(self) -> Optional[str]:
@@ -45,8 +48,8 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         """
 
         return """
-mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $scanProfile: String!, $credentialIds: [Int]) {
-  createMobileScan(title: $title, assetType: $assetType, application: $application, scanProfile: $scanProfile, credentialIds: $credentialIds) {
+mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int]) {
+  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds) {
     scan {
       id
     }
@@ -61,6 +64,11 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
         Returns:
             The query and variables to create a scan.
         """
+
+        var_map = {"0": ["variables.application"]}
+        for idx, _ in enumerate(self._sbom_files):
+            var_map[str(idx + 1)] = [f"variables.sboms.{idx}"]
+
         data = {
             "operations": json.dumps(
                 {
@@ -71,13 +79,12 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "application": None,
                         "scanProfile": self._scan_profile,
                         "credentialIds": self._test_credential_ids,
+                        "sboms": [None, None],
                     },
                 }
             ),
             "map": json.dumps(
-                {
-                    "0": ["variables.application"],
-                }
+                var_map
             ),
         }
         return data
@@ -89,4 +96,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
         Returns:
             The file mapping to create a scan.
         """
-        return {"0": self._application}
+        files = {"0": self._application}
+        for idx, sbom_file in enumerate(self._sbom_files):
+            files[str(idx + 1)] = sbom_file
+        return files
