@@ -90,7 +90,7 @@ CI_LOGGER = {
     multiple=True,
 )
 @click.option(
-    "--sbom-files",
+    "--sboms",
     help="Path to sbom file.",
     type=click.File(mode="rb"),
     required=False,
@@ -111,7 +111,7 @@ def run(
     test_credentials_role: List[str],
     test_credentials_name: List[str],
     test_credentials_value: List[str],
-    sbom_files: List[io.FileIO],
+    sboms: List[io.FileIO],
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -156,7 +156,7 @@ def run(
         "test_credentials_name": test_credentials_name,
         "test_credentials_value": test_credentials_value,
     }
-    ctx.obj["sbom_files"] = sbom_files
+    ctx.obj["sboms"] = sboms
 
 
 def apply_break_scan_risk_rating(

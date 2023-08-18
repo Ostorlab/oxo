@@ -30,14 +30,14 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         scan_profile: str,
         application: BinaryIO,
         test_credential_ids: Optional[List[int]] = None,
-        sbom_files: list[io.FileIO] = None,
+        sboms: list[io.FileIO] = None,
     ):
         self._title = title
         self._asset_type = asset_type
         self._scan_profile = scan_profile
         self._application = application
         self._test_credential_ids = test_credential_ids
-        self._sbom_files = sbom_files
+        self._sboms = sboms
 
     @property
     def query(self) -> Optional[str]:
@@ -66,7 +66,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
         """
 
         var_map = {"0": ["variables.application"]}
-        for idx, _ in enumerate(self._sbom_files):
+        for idx, _ in enumerate(self._sboms):
             var_map[str(idx + 1)] = [f"variables.sboms.{idx}"]
 
         data = {
@@ -79,7 +79,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "application": None,
                         "scanProfile": self._scan_profile,
                         "credentialIds": self._test_credential_ids,
-                        "sboms": [None, None],
+                        "sboms": [None for _ in self._sboms],
                     },
                 }
             ),
@@ -95,6 +95,6 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
             The file mapping to create a scan.
         """
         files = {"0": self._application}
-        for idx, sbom_file in enumerate(self._sbom_files):
+        for idx, sbom_file in enumerate(self._sboms):
             files[str(idx + 1)] = sbom_file
         return files

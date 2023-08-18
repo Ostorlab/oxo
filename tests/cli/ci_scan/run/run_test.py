@@ -340,3 +340,46 @@ def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
 
     assert "SCAN_ID" in os.environ
     assert os.environ.get("SCAN_ID") == "1"
+
+
+def testRunScanCLI_withsboms_callApi(
+    mocker: plugin.MockerFixture, requests_mock
+) -> None:
+    """Test ostorlab ci_scan with LogFlavor circleci."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+
+    scan_info_dict = {
+        "data": {
+            "scan": {
+                "progress": "done",
+                "riskRating": "high",
+            }
+        }
+    }
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+
+    runner = CliRunner()
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=10",
+            "--title=scan1",
+            "--sboms",
+            TEST_FILE_PATH,
+            "--sboms",
+            TEST_FILE_PATH,
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert api_caller_mock.call_count == 2

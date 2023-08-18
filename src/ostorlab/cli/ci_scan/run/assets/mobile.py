@@ -61,7 +61,7 @@ def run_mobile_scan(
         title = ctx.obj["title"]
         break_on_risk_rating = ctx.obj["break_on_risk_rating"]
         max_wait_minutes = ctx.obj["max_wait_minutes"]
-        sbom_files = ctx.obj["sbom_files"]
+        sboms = ctx.obj["sboms"]
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -85,7 +85,7 @@ def run_mobile_scan(
                 file,
                 credential_ids,
                 runner,
-                sbom_files,
+                sboms,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -107,9 +107,7 @@ def run_mobile_scan(
         raise click.exceptions.Exit(2) from None
 
 
-def _create_scan(
-    title, scan_profile, asset_type, file, credential_ids, runner, sbom_files
-):
+def _create_scan(title, scan_profile, asset_type, file, credential_ids, runner, sboms):
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
             title=title,
@@ -117,7 +115,7 @@ def _create_scan(
             scan_profile=scan_profile,
             application=file,
             test_credential_ids=credential_ids,
-            sbom_files=sbom_files,
+            sboms=sboms,
         )
     )
     scan_id = scan_result.get("data").get("createMobileScan").get("scan").get("id")
