@@ -3,6 +3,7 @@ Example of usage:
 - ostorlab --api-key='myKey' ci-scan run --scan-profile=full_scan \
            --break-on-risk-rating=medium --title=test_scan [asset] [options].
 """
+import io
 import multiprocessing
 import click
 import time
@@ -88,6 +89,15 @@ CI_LOGGER = {
     required=False,
     multiple=True,
 )
+@click.option(
+    "--sbom",
+    "sboms",
+    help="Path to sbom file.",
+    type=click.File(mode="rb"),
+    required=False,
+    multiple=True,
+    default=[],
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -102,6 +112,7 @@ def run(
     test_credentials_role: List[str],
     test_credentials_name: List[str],
     test_credentials_value: List[str],
+    sboms: List[io.FileIO],
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -146,6 +157,7 @@ def run(
         "test_credentials_name": test_credentials_name,
         "test_credentials_value": test_credentials_value,
     }
+    ctx.obj["sboms"] = sboms
 
 
 def apply_break_scan_risk_rating(
