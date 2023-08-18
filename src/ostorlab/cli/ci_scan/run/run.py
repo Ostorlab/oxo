@@ -90,7 +90,8 @@ CI_LOGGER = {
     multiple=True,
 )
 @click.option(
-    "--sboms",
+    "--sbom",
+    "sboms",
     help="Path to sbom file.",
     type=click.File(mode="rb"),
     required=False,
