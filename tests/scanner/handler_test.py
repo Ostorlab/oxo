@@ -8,6 +8,7 @@ from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 
+@pytest.mark.skip(reason="NATS is not available in github workflow.")
 @pytest.mark.asyncio
 async def testBusHandlerMessageParsing_whenPullingMessage_shouldParseAllAttributes(
     data_start_agent_scan: Dict[str, Any],
