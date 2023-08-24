@@ -3,6 +3,7 @@ import asyncio
 import logging
 import sys
 import socket
+import multiprocessing
 from typing import Optional
 
 import click
@@ -33,12 +34,14 @@ async def _start_periodic_persist_state(
 @rootcli.command()
 @click.option("--scanner-id", help="The scanner identifier.", required=True)
 @click.option("--daemon/--no-daemon", help="Run in daemon mode.", default=True)
+@click.option(
+    "--n",
+    help="Number of scans to run in parallel.",
+    default=1,
+    type=click.IntRange(1, None),
+)
 @click.pass_context
-def scanner(
-    ctx: click.core.Context,
-    daemon: bool,
-    scanner_id: str,
-) -> None:
+def scanner(ctx: click.core.Context, daemon: bool, scanner_id: str, n: str) -> None:
     """Ostorlab scanner enables running custom instances of scanners.
     Scanner communicates with NATs to receive start scan messages.\n
     """
@@ -54,32 +57,55 @@ def scanner(
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
     )
+    nb_parallel_scans = int(n)
+    processes = []
+
+    for nb in range(nb_parallel_scans):
+        process = multiprocessing.Process(
+            target=start_nats_subscription_asynchronously,
+            args=(
+                api_key,
+                scanner_id,
+                state_reporter,
+                nb,
+            ),
+        )
+        process.start()
+        processes.append(process)
 
     if daemon is True:
         with dm.DaemonContext():
-            start_nats_subscription_asynchronously(api_key, scanner_id, state_reporter)
+            for process in processes:
+                process.join()
     else:
-        start_nats_subscription_asynchronously(api_key, scanner_id, state_reporter)
+        for process in processes:
+            process.join()
 
 
 def start_nats_subscription_asynchronously(
     api_key: Optional[str],
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
+    subscription_nb: int,
 ) -> None:
-    """Run subscription to nats in eventloop.
+    """Run subscription to nats in event loop.
 
     Args:
         api_key: The api key to login to the platform.
         scanner_id: The id of the scanner.
+        state_reporter: instance responsible for reporting the scanner state.
+        subscription_nb: Identifier for each of the parallel scans.
     """
     if api_key is None:
         logger.error("No api key provided.")
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
     loop.run_until_complete(
         scan_handler.subscribe_nats(
-            api_key=api_key, scanner_id=scanner_id, state_reporter=state_reporter
+            api_key=api_key,
+            scanner_id=scanner_id,
+            state_reporter=state_reporter,
+            subscription_nb=subscription_nb,
         )
     )
     try:
