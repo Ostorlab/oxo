@@ -1,7 +1,6 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 import logging
 import ipaddress
-import asyncio
 from typing import List, Any, Optional
 
 import docker
@@ -176,32 +175,12 @@ def _connect_containers_registry(
     return client
 
 
-async def cb_start_scan(
+def start_scan(
     subject: str,
     request: Any,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     registry_conf: scanner_conf.RegistryConfig,
-) -> None:
-    """The start agent scan callback.
-
-    Args:
-        subject: Subject of the received message.
-        request: deserialized message.
-        state_reporter: State reporter instance responsible for sending current state of the scanner.
-        registry_conf: Credentials to the registry, useful to pull agents images.
-    """
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(
-        None, _start_scan, subject, request, state_reporter, registry_conf
-    )
-
-
-def _start_scan(
-    subject: str,
-    request: Any,
-    state_reporter: scanner_state_reporter.ScannerStateReporter,
-    registry_conf: scanner_conf.RegistryConfig,
-) -> None:
+) -> str:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
     Args:
@@ -209,7 +188,6 @@ def _start_scan(
         request: Deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         registry_conf: Credentials to the registry, useful to pull agents images.
-
     """
     logger.debug("Triggering scan after receiving message on: %s", subject)
     docker_client = _connect_containers_registry(configuration=registry_conf)
@@ -236,6 +214,7 @@ def _start_scan(
             assets=assets,
             title=None,
         )
+        return runtime_instance.name
     else:
         logger.error(
             "The runtime does not support the provided agent list or group definition."
