@@ -29,10 +29,11 @@ def testScannerCommandInvocation_whenDaemonCommandIsDisabled_runsConnection(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Run CLI with --no-daemon command."""
-    subscribe_to_nats_mock = mocker.patch(
+    mocker.patch(
         "ostorlab.cli.scanner.scanner.start_nats_subscription_asynchronously",
         return_value=None,
     )
+    create_scan_process_mock = mocker.patch("multiprocessing.Process")
 
     runner = click_testing.CliRunner()
     runner.invoke(
@@ -40,20 +41,20 @@ def testScannerCommandInvocation_whenDaemonCommandIsDisabled_runsConnection(
         ["scanner", "--no-daemon", "--scanner-id", "11226DS"],
     )
 
-    assert subscribe_to_nats_mock.call_count == 1
+    assert create_scan_process_mock.call_count == 1
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorrespondingProcesses(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Run CLI with --no-daemon command."""
+    """Ensure the correct number of scan processes are created."""
     create_process_mock = mocker.patch("multiprocessing.Process")
 
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
-        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--n", -1],
+        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--n", 42],
     )
 
     assert create_process_mock.call_count == 42
@@ -63,7 +64,7 @@ def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorre
 def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAndShowHelpMessage(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Run CLI with --no-daemon command."""
+    """Ensure scanner sub-command handles the case where the number of parallel scans is negative."""
     create_process_mock = mocker.patch("multiprocessing.Process")
 
     runner = click_testing.CliRunner()
