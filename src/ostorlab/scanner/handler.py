@@ -8,7 +8,8 @@ import sys
 import traceback
 from typing import Optional
 
-from nats.js import errors
+from nats.js import errors as js_errors
+from nats import errors as nats_errors
 import nats
 from nats.js import api as js_api
 from nats.js import client as js_client
@@ -69,7 +70,7 @@ class ClientBusHandler:
             name=self._name,
             tls=self._tls_context,
             connect_timeout=connect_timeout,
-            error_cb=self._error_cb,
+            error_cb=None,
             closed_cb=self._closed_cb,
             reconnected_cb=self._reconnected_cb,
         )
@@ -83,7 +84,10 @@ class ClientBusHandler:
             name: Name of the stream.
             subjects: Subjects for the stream.
         """
-        await self._js.add_stream(name=name, subjects=subjects)
+        await self._js.add_stream(
+            name=name,
+            subjects=subjects,
+        )
 
     async def delete_stream(self, name):
         """
@@ -94,7 +98,7 @@ class ClientBusHandler:
         """
         try:
             await self._js.delete_stream(name=name)
-        except errors.ObjectDeletedError as e:
+        except js_errors.ObjectDeletedError as e:
             logger.warning("error deleting stream %s: %s", name, e)
 
     async def close(self):
@@ -132,6 +136,7 @@ class BusHandler(ClientBusHandler):
         )
         self._subjects_cb_map = {}
         self._last_message_received_time = datetime.datetime.now()
+        self._psub = None
 
     async def ensure_running_handler(self):
         """Ensure Bus Handler is always running by checking the last received time of a message."""
@@ -152,25 +157,19 @@ class BusHandler(ClientBusHandler):
                     await self.close()
                     logger.debug("exiting process")
                     sys.exit(5)
-            except errors.ServiceUnavailableError as e:
+            except js_errors.ServiceUnavailableError as e:
                 logger.error("Error in ensure running: %s", e)
 
     async def subscribe(
         self,
         subject: str,
-        cb,
-        queue: str = "",
         durable_name: Optional[str] = None,
         start_at: str = "first",
         max_inflight: int = DEFAULT_MAX_INFLIGHT,
-        manual_acks: bool = True,
-        ack_wait: int = DEFAULT_ACK_WAIT,
     ):
         """Start bus subscription.
 
         subject: Subject for the Bus Streaming subscription.
-        cb: Callback that receive the subject and deserialized Proto message.
-        queue: Queue group.
         durable_name: Durable connection name.
         start_at: One of the following options:
            - 'new_only' (default)
@@ -183,8 +182,6 @@ class BusHandler(ClientBusHandler):
          the user instead.
         ack_wait: How long to wait for an ack before being redelivered previous messages.
         """
-        self._subjects_cb_map[subject] = cb
-
         if start_at == "new_only":
             deliver_policy = js_api.DeliverPolicy.NEW
         elif start_at == "first":
@@ -198,28 +195,36 @@ class BusHandler(ClientBusHandler):
         else:
             deliver_policy = js_api.DeliverPolicy.NEW
 
-        sub: js_client.Subscription = await self._js.subscribe(
+        self._psub = await self._js.pull_subscribe(
             subject=subject,
-            queue=queue,
+            durable=durable_name,
             config=js_api.ConsumerConfig(
                 durable_name=durable_name,
-                ack_wait=ack_wait,
+                ack_wait=None,
                 deliver_policy=deliver_policy,
                 max_ack_pending=max_inflight,
             ),
-            cb=self._process_message,
-            manual_ack=manual_acks,
         )
-        inbox_sub = self._nc._subs[sub._id]  # pylint: disable=W0212
-        inbox_sub.pending_bytes_limit = DEFAULT_PENDING_BYTES_LIMIT
 
-    async def _process_message(self, message):
+    async def process_message(
+        self,
+    ):
+        msg, request = None, None
+        if self._psub is not None:
+            try:
+                msg = await self._psub.fetch()
+                logger.debug("Message fetched.")
+                msg = msg[0]
+                request = await self.parse_message(msg)
+                logger.debug("Message parsed.")
+                return msg, request
+            except nats_errors.TimeoutError:
+                await asyncio.sleep(1)
+        return msg, request
+
+    async def parse_message(self, message):
         logger.debug("process received message %s", message)
         self._last_message_received_time = datetime.datetime.now()
         request = startAgentScan_pb2.Message()
         request.ParseFromString(message.data)
-        cb = self._subjects_cb_map.get(message.subject)
-        if cb is not None:
-            await cb(message.subject, request)
-            logger.debug("Acking message for %s", message.subject)
-            await message.ack()
+        return request
