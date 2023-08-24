@@ -36,7 +36,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
     }
 
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(
-        config=api_response_data
+        config=api_response_data,
     )
     assert scanner_conf_instance.bus_url == "nats://localhost:4222"
     assert scanner_conf_instance.bus_cluster_id == "cluster_id"

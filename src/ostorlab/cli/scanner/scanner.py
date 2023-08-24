@@ -86,7 +86,6 @@ def start_nats_subscription_asynchronously(
     api_key: Optional[str],
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
-    subscription_nb: int,
 ) -> None:
     """Run subscription to nats in event loop.
 
@@ -94,7 +93,6 @@ def start_nats_subscription_asynchronously(
         api_key: The api key to login to the platform.
         scanner_id: The id of the scanner.
         state_reporter: instance responsible for reporting the scanner state.
-        subscription_nb: Identifier for each of the parallel scans.
     """
     if api_key is None:
         logger.error("No api key provided.")
@@ -105,7 +103,6 @@ def start_nats_subscription_asynchronously(
             api_key=api_key,
             scanner_id=scanner_id,
             state_reporter=state_reporter,
-            subscription_nb=subscription_nb,
         )
     )
     try:
