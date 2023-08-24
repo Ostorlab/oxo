@@ -1,6 +1,7 @@
-"""Unittests for start module."""
-import pytest
+"""Unit tests for start module."""
 import socket
+
+import pytest
 
 from ostorlab.scanner import scan_handler
 from ostorlab.scanner import scanner_conf
@@ -23,6 +24,8 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
         "ostorlab.scanner.handler.ClientBusHandler.add_stream"
     )
     mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
+    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_msgs")
+    mocker.patch("docker.from_env")
 
     requests_mock.post(
         authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
@@ -30,7 +33,7 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
         status_code=200,
     )
 
-    config = scanner_conf.ScannerConfig.from_json(data_start_agent_scan)
+    config = scanner_conf.ScannerConfig.from_json(config=data_start_agent_scan)
 
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
@@ -53,7 +56,10 @@ async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
     mocker.patch(
         "ostorlab.scanner.handler.ClientBusHandler.add_stream", return_value=None
     )
-    config = scanner_conf.ScannerConfig.from_json(data_start_agent_scan)
+    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_msgs")
+    config = scanner_conf.ScannerConfig.from_json(
+        config=data_start_agent_scan,
+    )
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname=socket.gethostname(),
@@ -65,4 +71,4 @@ async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
 
     assert nats_subscribe_mock.call_count == 1
     assert nats_subscribe_mock.await_args.kwargs["subject"] == "scan.startAgentScan"
-    assert nats_subscribe_mock.await_args.kwargs["queue"] == "1"
+    assert nats_subscribe_mock.await_args.kwargs["durable_name"] == "1"
