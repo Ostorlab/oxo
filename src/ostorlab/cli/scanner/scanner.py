@@ -35,13 +35,15 @@ async def _start_periodic_persist_state(
 @click.option("--scanner-id", help="The scanner identifier.", required=True)
 @click.option("--daemon/--no-daemon", help="Run in daemon mode.", default=True)
 @click.option(
-    "--n",
+    "--parallel",
     help="Number of scans to run in parallel.",
     default=1,
     type=click.IntRange(1, None),
 )
 @click.pass_context
-def scanner(ctx: click.core.Context, daemon: bool, scanner_id: str, n: str) -> None:
+def scanner(
+    ctx: click.core.Context, daemon: bool, scanner_id: str, parallel: str
+) -> None:
     """Ostorlab scanner enables running custom instances of scanners.
     Scanner communicates with NATs to receive start scan messages.\n
     """
@@ -57,17 +59,16 @@ def scanner(ctx: click.core.Context, daemon: bool, scanner_id: str, n: str) -> N
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
     )
-    nb_parallel_scans = int(n)
+    nb_parallel_scans = int(parallel)
     processes = []
 
     for nb in range(nb_parallel_scans):
         process = multiprocessing.Process(
-            target=start_nats_subscription_asynchronously,
+            target=start_scanner,
             args=(
                 api_key,
                 scanner_id,
                 state_reporter,
-                nb,
             ),
         )
         process.start()
@@ -82,7 +83,7 @@ def scanner(ctx: click.core.Context, daemon: bool, scanner_id: str, n: str) -> N
             process.join()
 
 
-def start_nats_subscription_asynchronously(
+def start_scanner(
     api_key: Optional[str],
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,

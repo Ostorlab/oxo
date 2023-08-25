@@ -8,7 +8,7 @@ import sys
 import traceback
 from typing import Optional
 
-from nats.js import errors as js_errors
+from nats.js import errors as jetstream_errors
 from nats import errors as nats_errors
 import nats
 from nats.js import api as js_api
@@ -70,7 +70,7 @@ class ClientBusHandler:
             name=self._name,
             tls=self._tls_context,
             connect_timeout=connect_timeout,
-            error_cb=None,
+            error_cb=None, #self._error_cb,
             closed_cb=self._closed_cb,
             reconnected_cb=self._reconnected_cb,
         )
@@ -98,7 +98,7 @@ class ClientBusHandler:
         """
         try:
             await self._js.delete_stream(name=name)
-        except js_errors.ObjectDeletedError as e:
+        except jetstream_errors.ObjectDeletedError as e:
             logger.warning("error deleting stream %s: %s", name, e)
 
     async def close(self):
@@ -136,7 +136,7 @@ class BusHandler(ClientBusHandler):
         )
         self._subjects_cb_map = {}
         self._last_message_received_time = datetime.datetime.now()
-        self._psub = None
+        self._pull_subscription = None
 
     async def ensure_running_handler(self):
         """Ensure Bus Handler is always running by checking the last received time of a message."""
@@ -157,7 +157,7 @@ class BusHandler(ClientBusHandler):
                     await self.close()
                     logger.debug("exiting process")
                     sys.exit(5)
-            except js_errors.ServiceUnavailableError as e:
+            except jetstream_errors.ServiceUnavailableError as e:
                 logger.error("Error in ensure running: %s", e)
 
     async def subscribe(
@@ -195,7 +195,7 @@ class BusHandler(ClientBusHandler):
         else:
             deliver_policy = js_api.DeliverPolicy.NEW
 
-        self._psub = await self._js.pull_subscribe(
+        self._pull_subscription = await self._js.pull_subscribe(
             subject=subject,
             durable=durable_name,
             config=js_api.ConsumerConfig(
@@ -209,14 +209,16 @@ class BusHandler(ClientBusHandler):
     async def process_message(
         self,
     ):
-        msg, request = None, None
-        if self._psub is not None:
+        msg = None
+        request = None
+
+        if self._pull_subscription is not None:
             try:
-                msg = await self._psub.fetch()
-                logger.debug("Message fetched.")
+                import datetime
+                msg = await self._pull_subscription.fetch()
+                print("Fetching: ", datetime.datetime.now())
                 msg = msg[0]
                 request = await self.parse_message(msg)
-                logger.debug("Message parsed.")
                 return msg, request
             except nats_errors.TimeoutError:
                 await asyncio.sleep(1)

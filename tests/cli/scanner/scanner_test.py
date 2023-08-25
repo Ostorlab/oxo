@@ -30,7 +30,7 @@ def testScannerCommandInvocation_whenDaemonCommandIsDisabled_runsConnection(
 ) -> None:
     """Run CLI with --no-daemon command."""
     mocker.patch(
-        "ostorlab.cli.scanner.scanner.start_nats_subscription_asynchronously",
+        "ostorlab.cli.scanner.scanner.start_scanner",
         return_value=None,
     )
     create_scan_process_mock = mocker.patch("multiprocessing.Process")
@@ -54,7 +54,7 @@ def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorre
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
-        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--n", 42],
+        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--parallel", 42],
     )
 
     assert create_process_mock.call_count == 42
@@ -70,7 +70,7 @@ def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAnd
     runner = click_testing.CliRunner()
     result = runner.invoke(
         rootcli.rootcli,
-        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--n", -42],
+        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--parallel", -42],
     )
 
     assert create_process_mock.call_count == 0

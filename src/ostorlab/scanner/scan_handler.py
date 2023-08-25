@@ -2,11 +2,11 @@
 import logging
 import asyncio
 import datetime
-from typing import List
+from typing import List, Optional
 
 import docker
 from docker.models import services
-from nats.js import errors as js_errors
+from nats.js import errors as jetstream_errors
 from nats import errors as nats_errors
 
 from ostorlab.apis import scanner_config
@@ -28,7 +28,7 @@ class ScanHandler:
     def __init__(self, state_reporter: scanner_state_reporter.ScannerStateReporter):
         self._bus_handlers = []
         self._state_reporter = state_reporter
-        self._client = docker.from_env()
+        self._docker_client = docker.from_env()
 
     async def close(self) -> None:
         for handler in self._bus_handlers:
@@ -68,9 +68,9 @@ class ScanHandler:
             bus_handlers.append(bus_handler)
 
         for bus_handler in bus_handlers:
-            await self.handle_msgs(bus_handler, config)
+            await self.handle_messages(bus_handler, config)
 
-    async def handle_msgs(
+    async def handle_messages(
         self,
         bus_handler: scanner_handler.BusHandler,
         config: scanner_conf.ScannerConfig,
@@ -84,19 +84,18 @@ class ScanHandler:
             bus_handler: instance for performing BUS operations.
             config: The scanner configuration; holds credentials for the registry & streaming server.
         """
-        is_scan_running = False
+        scan_id = None
         while True:
-            if is_scan_running is True:
+            if _is_scan_running(self._docker_client, scan_id=scan_id):
                 await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
             else:
                 try:
-                    scan_id = await self._handle_msg(bus_handler, config)
-                    is_scan_running = _is_scan_running(self._client, scan_id=scan_id)
+                    scan_id = await self._handle_message(bus_handler, config)
                 except nats_errors.TimeoutError:
                     # No available message to fetch.
                     await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
 
-    async def _handle_msg(
+    async def _handle_message(
         self,
         bus_handler: scanner_handler.BusHandler,
         config: scanner_conf.ScannerConfig,
@@ -111,10 +110,12 @@ class ScanHandler:
                     state_reporter=self._state_reporter,
                     registry_conf=config.registry_conf,
                 )
+                import datetime
                 await msg.ack()
+                print("acking: ", datetime.datetime.now())
                 return scan_id
             except Exception as e:  # pylint: disable="broad-except"
-                logger.exception("exception raised: %s", e)
+                logger.exception("Exception: %s", e)
                 await msg.nak()
 
     async def _create_bus_handler(
@@ -128,10 +129,14 @@ class ScanHandler:
         return bus_handler
 
 
-def _is_scan_running(client: docker.DockerClient, scan_id: str) -> bool:
+def _is_scan_running(
+    client: docker.DockerClient, scan_id: Optional[str] = None
+) -> bool:
     """Returns True, if docker services with `ostorlab.universe` label exist,
     False otherwise.
     """
+    if scan_id is None:
+        return False
     scan_services: List[services.Service] = client.services.list(
         filters={"label": f"ostorlab.universe={str(scan_id)}"}
     )
@@ -157,7 +162,7 @@ async def connect_nats(
         await scan_handler.subscribe_all(config)
         logger.info("subscribed")
         return scan_handler
-    except js_errors.ServiceUnavailableError as e:
+    except jetstream_errors.ServiceUnavailableError as e:
         logger.exception("Failed to establish connection to NATs: %s", e)
 
 

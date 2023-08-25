@@ -44,4 +44,4 @@ jobs:
     - name: Running tests with pytest.
       run: |
         set -o pipefail
-        pytest -m "not docker"
+        pytest -m "not docker and not nats"

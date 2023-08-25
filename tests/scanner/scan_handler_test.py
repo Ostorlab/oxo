@@ -24,7 +24,7 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
         "ostorlab.scanner.handler.ClientBusHandler.add_stream"
     )
     mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
-    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_msgs")
+    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_messages")
     mocker.patch("docker.from_env")
 
     requests_mock.post(
@@ -56,7 +56,7 @@ async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
     mocker.patch(
         "ostorlab.scanner.handler.ClientBusHandler.add_stream", return_value=None
     )
-    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_msgs")
+    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_messages")
     config = scanner_conf.ScannerConfig.from_json(
         config=data_start_agent_scan,
     )
