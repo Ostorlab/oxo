@@ -75,4 +75,6 @@ def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAnd
 
     assert create_process_mock.call_count == 0
     assert result.exit_code == 2
-    assert "Invalid value for '--n': -42 is not in the range x>=1" in result.output
+    assert (
+        "Invalid value for '--parallel': -42 is not in the range x>=1" in result.output
+    )
