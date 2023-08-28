@@ -62,7 +62,7 @@ def scanner(
     nb_parallel_scans = int(parallel)
     processes = []
 
-    for nb in range(nb_parallel_scans):
+    for _ in range(nb_parallel_scans):
         process = multiprocessing.Process(
             target=start_scanner,
             args=(

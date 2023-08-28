@@ -22,9 +22,8 @@ DEFAULT_CONNECT_TIMEOUT = datetime.timedelta(seconds=20)
 
 DEFAULT_MAX_INFLIGHT = 1
 
-DEFAULT_ACK_WAIT = 120
+DEFAULT_ACK_WAIT = datetime.timedelta(seconds=180)
 
-DEFAULT_PUBLISH_ACK_WAIT = 30
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +69,7 @@ class ClientBusHandler:
             name=self._name,
             tls=self._tls_context,
             connect_timeout=connect_timeout,
-            error_cb=None, #self._error_cb,
+            error_cb=self._error_cb,
             closed_cb=self._closed_cb,
             reconnected_cb=self._reconnected_cb,
         )
@@ -166,6 +165,7 @@ class BusHandler(ClientBusHandler):
         durable_name: Optional[str] = None,
         start_at: str = "first",
         max_inflight: int = DEFAULT_MAX_INFLIGHT,
+        ack_wait: int = DEFAULT_ACK_WAIT.seconds,
     ):
         """Start bus subscription.
 
@@ -178,8 +178,6 @@ class BusHandler(ClientBusHandler):
            - 'last_received'
            - 'time'
         max_inflight: Max number of message in flight to client.
-        manual_acks: Toggles auto ack functionality in the subscription callback so that it is implemented by
-         the user instead.
         ack_wait: How long to wait for an ack before being redelivered previous messages.
         """
         if start_at == "new_only":
@@ -200,7 +198,7 @@ class BusHandler(ClientBusHandler):
             durable=durable_name,
             config=js_api.ConsumerConfig(
                 durable_name=durable_name,
-                ack_wait=None,
+                ack_wait=ack_wait,
                 deliver_policy=deliver_policy,
                 max_ack_pending=max_inflight,
             ),
@@ -214,9 +212,7 @@ class BusHandler(ClientBusHandler):
 
         if self._pull_subscription is not None:
             try:
-                import datetime
                 msg = await self._pull_subscription.fetch()
-                print("Fetching: ", datetime.datetime.now())
                 msg = msg[0]
                 request = await self.parse_message(msg)
                 return msg, request

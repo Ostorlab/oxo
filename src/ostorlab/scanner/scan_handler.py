@@ -61,7 +61,7 @@ class ScanHandler:
                 config=config,
                 subject=bus_conf.subject,
                 queue=bus_conf.queue,
-                start_at="last_received",
+                start_at="first",
                 stream=bus_conf.queue,
             )
             logger.info("subscribing to %s", bus_conf.subject)
@@ -110,9 +110,7 @@ class ScanHandler:
                     state_reporter=self._state_reporter,
                     registry_conf=config.registry_conf,
                 )
-                import datetime
                 await msg.ack()
-                print("acking: ", datetime.datetime.now())
                 return scan_id
             except Exception as e:  # pylint: disable="broad-except"
                 logger.exception("Exception: %s", e)
