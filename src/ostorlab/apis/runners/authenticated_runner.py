@@ -20,8 +20,7 @@ from ostorlab.apis.runners import login_runner
 from ostorlab.apis.runners import runner
 from ostorlab.cli import console as cli_console
 
-# AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"
-AUTHENTICATED_GRAPHQL_ENDPOINT = "http://172.18.0.3:8002/apis/graphql"
+AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"
 
 
 logger = logging.getLogger(__name__)

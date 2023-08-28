@@ -13,8 +13,7 @@ from ostorlab.apis import request as api_request
 from ostorlab.apis import login
 
 
-# TOKEN_ENDPOINT = "https://api.ostorlab.co/apis/token/"
-TOKEN_ENDPOINT = "http://172.18.0.3:8002/apis/token/"
+TOKEN_ENDPOINT = "https://api.ostorlab.co/apis/token/"
 
 
 class LoginAPIRunner(runner.APIRunner):

@@ -12,8 +12,7 @@ import requests
 from ostorlab.apis import request as api_request
 from ostorlab.apis.runners import runner
 
-# PUBLIC_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/public_graphql"
-PUBLIC_GRAPHQL_ENDPOINT = "http://172.18.0.3:8002/apis/public_graphql"
+PUBLIC_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/public_graphql"
 
 
 class PublicAPIRunner(runner.APIRunner):
