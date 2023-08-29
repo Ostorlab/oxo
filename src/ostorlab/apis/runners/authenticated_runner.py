@@ -22,6 +22,7 @@ from ostorlab.cli import console as cli_console
 
 AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"
 
+
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 

@@ -507,3 +507,18 @@ def local_runtime_mocks(mocker, db_engine_path):
     mocker.patch(
         "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_service"
     )
+
+
+@pytest.fixture
+def apk_start_agent_scan_bus_msg() -> startAgentScan_pb2.Message:
+    return startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                args=[startAgentScan_pb2.Arg(name="arg1", type="number", value=b"42")],
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )

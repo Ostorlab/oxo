@@ -43,4 +43,4 @@ jobs:
         python -m pip install -e .
     - name: Running tests with pytest.
       run: |
-        pytest -m "not docker"
+        pytest -m "not docker and not nats"

@@ -1,7 +1,7 @@
 """Representations of nats configuration definitions."""
 
 import dataclasses
-from typing import List
+from typing import List, Dict, Any
 
 
 @dataclasses.dataclass
@@ -32,7 +32,7 @@ class ScannerConfig:
     subject_bus_configs: List[SubjectBusConfigs]
 
     @classmethod
-    def from_json(cls, config):
+    def from_json(cls, config: Dict[str, Any]):
         """Creates a ScannerConfig instance from a JSON configuration.
 
         Args:
