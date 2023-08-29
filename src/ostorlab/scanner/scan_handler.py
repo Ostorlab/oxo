@@ -16,6 +16,8 @@ from ostorlab.scanner import scanner_conf
 from ostorlab.scanner import callbacks
 from ostorlab.utils import scanner_state_reporter
 
+logger = logging.getLogger(__name__)
+
 
 WAIT_CHECK_MESSAGES = datetime.timedelta(seconds=5)
 
@@ -86,7 +88,7 @@ class ScanHandler:
         """
         scan_id = None
         while True:
-            if _is_scan_running(self._docker_client, scan_id=scan_id):
+            if _is_scan_running(self._docker_client, scan_id=scan_id) is True:
                 await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
             else:
                 try:
@@ -101,20 +103,20 @@ class ScanHandler:
         config: scanner_conf.ScannerConfig,
     ) -> str:
         """Fetch, parse a single message and trigger the corresponding scan."""
-        msg, request = await bus_handler.process_message()
-        if request is not None and msg is not None:
-            try:
-                scan_id = callbacks.start_scan(
-                    subject=msg.subject,
-                    request=request,
-                    state_reporter=self._state_reporter,
-                    registry_conf=config.registry_conf,
-                )
-                await msg.ack()
-                return scan_id
-            except Exception as e:  # pylint: disable="broad-except"
-                logger.exception("Exception: %s", e)
-                await msg.nak()
+        for msg, request in await bus_handler.process_message():
+            if request is not None and msg is not None:
+                try:
+                    scan_id = callbacks.start_scan(
+                        subject=msg.subject,
+                        request=request,
+                        state_reporter=self._state_reporter,
+                        registry_conf=config.registry_conf,
+                    )
+                    await msg.ack()
+                    return scan_id
+                except Exception as e:  # pylint: disable="broad-except"
+                    logger.exception("Exception: %s", e)
+                    await msg.nak()
 
     async def _create_bus_handler(
         self, config: scanner_conf.ScannerConfig

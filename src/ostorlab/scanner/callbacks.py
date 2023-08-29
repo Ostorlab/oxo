@@ -63,6 +63,7 @@ def _prepare_ip_asset(ip_request) -> asset.Asset:
 
 def _extract_assets(request: Any) -> List[asset.Asset]:
     """Returns list of specific Ostorlab-injectable assets, from a message received from NATs."""
+    logger.debug("Extracting assets.")
     assets = []
     asset_type = request.WhichOneof("asset")
     if asset_type in ("ip", "ip4v", "ipv6"):
@@ -144,15 +145,20 @@ def _extract_assets(request: Any) -> List[asset.Asset]:
             request.reference_scan_id,
         )
 
+    logger.debug("Extracted assets: %s.", assets)
     return assets
 
 
 def _extract_agent_group_definition(request: Any) -> definitions.AgentGroupDefinition:
-    return definitions.AgentGroupDefinition.from_bus_message(request)
+    agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
+    logger.debug("Extracted agent group definition: %s.", agent_group_definition)
+    return agent_group_definition
 
 
 def _extract_scan_id(request: Any) -> int:
-    return int(request.scan_id)
+    scan_id = int(request.scan_id)
+    logger.debug("Extracted scan id: %s.", scan_id)
+    return scan_id
 
 
 def _update_state_reporter(
@@ -166,6 +172,7 @@ def _connect_containers_registry(
     configuration: scanner_conf.RegistryConfig,
 ) -> docker.DockerClient:
     """Connect to container registry."""
+    logger.debug("Connecting to private container registry.")
     client = docker.from_env()
     client.login(
         username=configuration.username,

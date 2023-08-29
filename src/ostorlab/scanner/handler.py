@@ -207,18 +207,22 @@ class BusHandler(ClientBusHandler):
     async def process_message(
         self,
     ):
-        msg = None
+        message = None
         request = None
 
         if self._pull_subscription is not None:
             try:
-                msg = await self._pull_subscription.fetch()
-                msg = msg[0]
-                request = await self.parse_message(msg)
-                return msg, request
+                logger.debug("Fetching messages.")
+                msgs = await self._pull_subscription.fetch()
+                for msg in msgs:
+                    message = msg
+                    logger.debug("Processing message: %s", message)
+                    request = await self.parse_message(message)
+                    yield message, request
             except nats_errors.TimeoutError:
+                logger.debug("No message to fetch, sleeping..")
                 await asyncio.sleep(1)
-        return msg, request
+        yield message, request
 
     async def parse_message(self, message):
         logger.debug("process received message %s", message)
