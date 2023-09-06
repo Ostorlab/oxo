@@ -413,13 +413,13 @@ class LocalRuntime(runtime.Runtime):
             raise AgentNotInstalled(agent.key)
 
         runtime_agent = agent_runtime.AgentRuntime(
-            agent,
-            self.name,
-            self._docker_client,
-            self._mq_service,
-            self._redis_service,
-            self._jaeger_service,
-            self._gcp_logging_credential,
+            agent_settings=agent,
+            runtime_name=self.name,
+            docker_client=self._docker_client,
+            mq_service=self._mq_service,
+            redis_service=self._redis_service,
+            jaeger_service=self._jaeger_service,
+            gcp_logging_credential=self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
             self.network, extra_configs, extra_mounts
