@@ -232,3 +232,44 @@ def testScanInLocalRuntime_whenFlagToDisableDefaultAgentsIsPassed_shouldNotStart
         )
         is True
     )
+
+
+@pytest.mark.docker
+def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelInsteadOfIdInLocalDb(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """Ensure if a scan_id is passed as argument to the Local runtime,
+    it should be used to set the universe label for the created docker services,
+    over the scan_id created in the local database."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    agent_runtime_mock = mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime"
+    )
+    local_runtime_instance = local_runtime.LocalRuntime(scan_id=42)
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
+    )
+
+    local_runtime_instance.can_run(agent_group_definition=agent_group_definition)
+    local_runtime_instance.scan(
+        title="test local",
+        agent_group_definition=agent_group_definition,
+        assets=[android_apk.AndroidApk(content=b"APK")],
+    )
+
+    start_agent_mock_call_args = agent_runtime_mock.call_args_list
+    assert (
+        all(
+            mock_call.kwargs["runtime_name"] == 42
+            for mock_call in start_agent_mock_call_args
+        )
+        is True
+    )
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 1
+        scan = session.query(models.Scan).first()
+        assert scan.id != 42
