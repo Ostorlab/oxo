@@ -206,7 +206,7 @@ def start_scan(
     state_reporter = _update_state_reporter(state_reporter, scan_id)
 
     runtime_instance = registry.select_runtime(
-        runtime_type="local", scan_id=scan_id, run_default_agents=False
+        runtime_type="local", scan_id=str(scan_id), run_default_agents=False
     )
 
     if runtime_instance.can_run(agent_group_definition=agent_group_definition) is True:

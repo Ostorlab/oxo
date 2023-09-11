@@ -103,7 +103,7 @@ class ScanHandler:
         config: scanner_conf.ScannerConfig,
     ) -> str:
         """Fetch, parse a single message and trigger the corresponding scan."""
-        for msg, request in await bus_handler.process_message():
+        async for msg, request in bus_handler.process_message():
             if request is not None and msg is not None:
                 try:
                     scan_id = callbacks.start_scan(
