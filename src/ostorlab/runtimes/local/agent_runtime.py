@@ -330,7 +330,7 @@ class AgentRuntime:
         constraints = self.agent.constraints or agent_definition.constraints
         mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = self.agent.restart_policy or agent_definition.restart_policy
-        caps = self.agent.caps or agent_definition.caps
+        caps = self.agent.caps or agent_definition.caps or []
 
         service_name = (
             agent_definition.service_name
