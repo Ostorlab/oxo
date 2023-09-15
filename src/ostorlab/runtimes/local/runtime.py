@@ -90,6 +90,7 @@ class LocalRuntime(runtime.Runtime):
     def __init__(
         self,
         *args,
+        scan_id: Optional[str] = None,
         tracing: Optional[bool] = False,
         mq_exposed_ports: Optional[Dict[int, int]] = None,
         gcp_logging_credential: Optional[str] = None,
@@ -98,6 +99,7 @@ class LocalRuntime(runtime.Runtime):
     ) -> None:
         super().__init__()
         del args, kwargs
+        self._scan_id = scan_id
         self.follow = []
         self._tracing = tracing
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
@@ -112,7 +114,9 @@ class LocalRuntime(runtime.Runtime):
     @property
     def name(self) -> str:
         """Local runtime instance name."""
-        if self._scan_db is not None:
+        if self._scan_id is not None:
+            return self._scan_id
+        elif self._scan_db is not None:
             return str(self._scan_db.id)
         else:
             raise ValueError("Scan not created yet")
@@ -409,13 +413,13 @@ class LocalRuntime(runtime.Runtime):
             raise AgentNotInstalled(agent.key)
 
         runtime_agent = agent_runtime.AgentRuntime(
-            agent,
-            self.name,
-            self._docker_client,
-            self._mq_service,
-            self._redis_service,
-            self._jaeger_service,
-            self._gcp_logging_credential,
+            agent_settings=agent,
+            runtime_name=self.name,
+            docker_client=self._docker_client,
+            mq_service=self._mq_service,
+            redis_service=self._redis_service,
+            jaeger_service=self._jaeger_service,
+            gcp_logging_credential=self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
             self.network, extra_configs, extra_mounts

@@ -209,10 +209,13 @@ class AgentMixin(
             # This exception is not filtered.
             self.on_max_cyclic_process_reached(message)
         except Exception as e:  # pylint: disable="broad-except"
-            logger.exception("exception raised: %s", e)
+            logger.exception("Exception: %s", e)
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
+            # Flush all logging handlers to ensure remote logging is sent before app shutdown.
+            for h in logger.handlers:
+                h.flush()
 
     def _validate_message(self) -> None:
         """Check the message received is valid, currently only check for cyclic processing limit."""

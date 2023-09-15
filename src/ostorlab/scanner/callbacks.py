@@ -1,7 +1,6 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 import logging
 import ipaddress
-import asyncio
 from typing import List, Any, Optional
 
 import docker
@@ -64,6 +63,7 @@ def _prepare_ip_asset(ip_request) -> asset.Asset:
 
 def _extract_assets(request: Any) -> List[asset.Asset]:
     """Returns list of specific Ostorlab-injectable assets, from a message received from NATs."""
+    logger.debug("Extracting assets.")
     assets = []
     asset_type = request.WhichOneof("asset")
     if asset_type in ("ip", "ip4v", "ipv6"):
@@ -145,15 +145,20 @@ def _extract_assets(request: Any) -> List[asset.Asset]:
             request.reference_scan_id,
         )
 
+    logger.debug("Extracted assets: %s.", assets)
     return assets
 
 
 def _extract_agent_group_definition(request: Any) -> definitions.AgentGroupDefinition:
-    return definitions.AgentGroupDefinition.from_bus_message(request)
+    agent_group_definition = definitions.AgentGroupDefinition.from_bus_message(request)
+    logger.debug("Extracted agent group definition: %s.", agent_group_definition)
+    return agent_group_definition
 
 
 def _extract_scan_id(request: Any) -> int:
-    return int(request.scan_id)
+    scan_id = int(request.scan_id)
+    logger.debug("Extracted scan id: %s.", scan_id)
+    return scan_id
 
 
 def _update_state_reporter(
@@ -167,6 +172,7 @@ def _connect_containers_registry(
     configuration: scanner_conf.RegistryConfig,
 ) -> docker.DockerClient:
     """Connect to container registry."""
+    logger.debug("Connecting to private container registry.")
     client = docker.from_env()
     client.login(
         username=configuration.username,
@@ -176,32 +182,12 @@ def _connect_containers_registry(
     return client
 
 
-async def cb_start_scan(
+def start_scan(
     subject: str,
     request: Any,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     registry_conf: scanner_conf.RegistryConfig,
-) -> None:
-    """The start agent scan callback.
-
-    Args:
-        subject: Subject of the received message.
-        request: deserialized message.
-        state_reporter: State reporter instance responsible for sending current state of the scanner.
-        registry_conf: Credentials to the registry, useful to pull agents images.
-    """
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(
-        None, _start_scan, subject, request, state_reporter, registry_conf
-    )
-
-
-def _start_scan(
-    subject: str,
-    request: Any,
-    state_reporter: scanner_state_reporter.ScannerStateReporter,
-    registry_conf: scanner_conf.RegistryConfig,
-) -> None:
+) -> str:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
     Args:
@@ -209,7 +195,6 @@ def _start_scan(
         request: Deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         registry_conf: Credentials to the registry, useful to pull agents images.
-
     """
     logger.debug("Triggering scan after receiving message on: %s", subject)
     docker_client = _connect_containers_registry(configuration=registry_conf)
@@ -221,7 +206,7 @@ def _start_scan(
     state_reporter = _update_state_reporter(state_reporter, scan_id)
 
     runtime_instance = registry.select_runtime(
-        runtime_type="local", scan_id=scan_id, run_default_agents=False
+        runtime_type="local", scan_id=str(scan_id), run_default_agents=False
     )
 
     if runtime_instance.can_run(agent_group_definition=agent_group_definition) is True:
@@ -236,6 +221,7 @@ def _start_scan(
             assets=assets,
             title=None,
         )
+        return runtime_instance.name
     else:
         logger.error(
             "The runtime does not support the provided agent list or group definition."
