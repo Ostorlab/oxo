@@ -107,7 +107,7 @@ def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
     SampleAgent.__init__.assert_called()
 
 
-def testAgentMain_whithNonExistingFile_exits(mocker):
+def testAgentMain_withNonExistingFile_exits(mocker):
     """Test agent when missing definition or settings files to ensure the command exits."""
 
     class SampleAgent(agent.Agent):
@@ -124,7 +124,7 @@ def testAgentMain_whithNonExistingFile_exits(mocker):
         assert wrapper_exception.value.code == 42
 
 
-def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs(agent_mock):
+def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(agent_mock):
     class TestAgent(agent.Agent):
         """Test Agent"""
 
@@ -155,7 +155,7 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs(agent_mock):
 
 
 @pytest.mark.xfail(reason="OS-5119: Awaiting deprecation.")
-def testAgent_withArgMissingFromDefnition_raisesException(agent_mock):
+def testAgent_withArgMissingFromDefinition_raisesException(agent_mock):
     class TestAgent(agent.Agent):
         """Test Agent"""
 
@@ -252,12 +252,21 @@ def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
     )
-
-    message = agent_message.Message.from_data(
-        "v3.control", {"control": {"agents": ["agentY", "agentX", "agentX", "agentX"]}}
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": actual_message.raw,
+        },
     )
 
-    test_agent.process_message(message.selector, message.raw)
+    test_agent.process_message(f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw)
 
     assert process_mock.called is True
 
@@ -343,26 +352,18 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
     )
-
-    technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
-        has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
-        scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
-        make a type specimen book. """
-    vuln_message = agent_message.Message.from_data(
-        "v3.report.vulnerability",
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
         {
-            "title": "some_title",
-            "technical_detail": technical_detail,
-            "risk_rating": "MEDIUM",
+            "body": "Hello, can you hear me?",
         },
     )
-
-    message = agent_message.Message.from_data(
+    control_message = agent_message.Message.from_data(
         "v3.control",
         {
             "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
-            "message": vuln_message.raw,
+            "message": actual_message.raw,
         },
     )
 
-    test_agent.process_message(f"v3.report.vulnerability.{uuid.uuid4()}", message.raw)
+    test_agent.process_message(f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw)
