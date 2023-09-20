@@ -13,8 +13,8 @@ from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.utils import defintions as utils_definitions
 from ostorlab.testing import agent as agent_testing
+from ostorlab.utils import defintions as utils_definitions
 
 logger = logging.getLogger(__name__)
 
@@ -238,7 +238,6 @@ def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
 
         def process(self, message: agent_message.Message) -> None:
             pass
-
         def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
             process_mock(message)
 
@@ -316,3 +315,54 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled
     test_agent.process_message(f"v3.report.vulnerability.{uuid.uuid4()}", message.raw)
 
     assert process_mock.called is False
+
+
+
+def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoad(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker
+) -> None:
+    """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
+
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            raise ValueError("some error")
+
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+
+    technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
+        has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
+        scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
+        make a type specimen book. """
+    vuln_message = agent_message.Message.from_data(
+        "v3.report.vulnerability",
+        {
+            "title": "some_title",
+            "technical_detail": technical_detail,
+            "risk_rating": "MEDIUM",
+        },
+    )
+
+    message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": vuln_message.raw,
+        },
+    )
+
+    test_agent.process_message(f"v3.report.vulnerability.{uuid.uuid4()}", message.raw)

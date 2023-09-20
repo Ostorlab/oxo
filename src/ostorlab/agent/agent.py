@@ -22,6 +22,7 @@ from typing import Dict, Any, Optional, Type, List
 
 import google.cloud.logging
 from google.oauth2 import service_account
+
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
@@ -35,6 +36,45 @@ GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 AGENT_DEFINITION_PATH = "/tmp/ostorlab.yaml"
 
 logger = logging.getLogger(__name__)
+
+
+def _get_system_load_info():
+    """Get system load information.
+    In case psutil is not available we returns an empty dic"""
+    system_info = {}
+
+    try:
+        import psutil
+
+        # Get CPU load information
+        cpu_info = psutil.cpu_percent(interval=1, percpu=True)
+        system_info["cpu_load"] = cpu_info
+
+        # Get memory usage information
+        memory_info = psutil.virtual_memory()
+        system_info["memory_usage"] = {
+            "total": memory_info.total,
+            "available": memory_info.available,
+            "used": memory_info.used,
+            "percent": memory_info.percent,
+        }
+
+        # Get storage information
+        partitions = psutil.disk_partitions()
+        storage_info = {"total": 0, "used": 0, "free": 0}
+        for partition in partitions:
+            partition_usage = psutil.disk_usage(partition.mountpoint)
+            storage_info["total"] += partition_usage.total
+            storage_info["used"] += partition_usage.used
+            storage_info["free"] += partition_usage.free
+
+        system_info["storage"] = storage_info
+
+    except ImportError:
+        # psutil is not available, return an empty dictionary
+        return {}
+
+    return system_info
 
 
 class NonListedMessageSelectorError(exceptions.OstorlabError):
@@ -191,25 +231,27 @@ class AgentMixin(
         Returns:
             None
         """
+
+        self._control_message = agent_message.Message.from_raw("v3.control", message)
+        raw_message = self._control_message.data["message"]
+        # remove the UUID from the selector:
+        selector = ".".join(selector.split(".")[:-1])
+        object_message = agent_message.Message.from_raw(selector, raw_message)
+
+        # Validate the message before processing it.
         try:
-            # Keep track of the current message used later in the emit method.
-            self._control_message = agent_message.Message.from_raw(
-                "v3.control", message
-            )
             self._validate_message()
-
-            raw_message = self._control_message.data["message"]
-
-            # remove the UUID from the selector:
-            selector = ".".join(selector.split(".")[:-1])
-            object_message = agent_message.Message.from_raw(selector, raw_message)
-            logger.debug("call to process with message=%s", raw_message)
-            self.process(object_message)
         except MaximumCyclicProcessReachedError:
-            # This exception is not filtered.
-            self.on_max_cyclic_process_reached(message)
+            self.on_max_cyclic_process_reached(object_message)
+
+        try:
+            logger.debug("Call to process with message= %s", raw_message)
+            self.process(object_message)
         except Exception as e:  # pylint: disable="broad-except"
-            logger.exception("Exception: %s", e)
+            exception_id = uuid.uuid4()
+            logger.error("System Load:(%s): %s", exception_id, _get_system_load_info())
+            logger.error("Message (%s): %s", exception_id, object_message)
+            logger.exception("Exception (%s): %s", exception_id, e)
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
