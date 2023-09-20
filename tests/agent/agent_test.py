@@ -238,6 +238,7 @@ def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
 
         def process(self, message: agent_message.Message) -> None:
             pass
+
         def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
             process_mock(message)
 
@@ -266,7 +267,9 @@ def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
         },
     )
 
-    test_agent.process_message(f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw)
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
 
     assert process_mock.called is True
 
@@ -326,19 +329,18 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled
     assert process_mock.called is False
 
 
-
 def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoad(
     agent_run_mock: agent_testing.AgentRunInstance, mocker
 ) -> None:
     """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
 
+    logger_error = mocker.patch("logging.Logger.error")
 
     class TestAgent(agent.Agent):
         """Helper class to test OpenTelemetry mixin implementation."""
 
         def process(self, message: agent_message.Message) -> None:
             raise ValueError("some error")
-
 
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
@@ -366,4 +368,12 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
-    test_agent.process_message(f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw)
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+    logger_error.assert_called_with(
+        "error while processing message %s, system load: %s",
+        control_message,
+        agent_run_mock.system_load,
+        exc_info=True,
+    )

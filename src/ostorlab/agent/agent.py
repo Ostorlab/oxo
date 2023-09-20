@@ -30,51 +30,13 @@ from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import log_helper
 
 GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
 AGENT_DEFINITION_PATH = "/tmp/ostorlab.yaml"
 
 logger = logging.getLogger(__name__)
-
-
-def _get_system_load_info():
-    """Get system load information.
-    In case psutil is not available we returns an empty dic"""
-    system_info = {}
-
-    try:
-        import psutil
-
-        # Get CPU load information
-        cpu_info = psutil.cpu_percent(interval=1, percpu=True)
-        system_info["cpu_load"] = cpu_info
-
-        # Get memory usage information
-        memory_info = psutil.virtual_memory()
-        system_info["memory_usage"] = {
-            "total": memory_info.total,
-            "available": memory_info.available,
-            "used": memory_info.used,
-            "percent": memory_info.percent,
-        }
-
-        # Get storage information
-        partitions = psutil.disk_partitions()
-        storage_info = {"total": 0, "used": 0, "free": 0}
-        for partition in partitions:
-            partition_usage = psutil.disk_usage(partition.mountpoint)
-            storage_info["total"] += partition_usage.total
-            storage_info["used"] += partition_usage.used
-            storage_info["free"] += partition_usage.free
-
-        system_info["storage"] = storage_info
-
-    except ImportError:
-        # psutil is not available, return an empty dictionary
-        return {}
-
-    return system_info
 
 
 class NonListedMessageSelectorError(exceptions.OstorlabError):
@@ -248,10 +210,11 @@ class AgentMixin(
             logger.debug("Call to process with message= %s", raw_message)
             self.process(object_message)
         except Exception as e:  # pylint: disable="broad-except"
-            exception_id = uuid.uuid4()
-            logger.error("System Load:(%s): %s", exception_id, _get_system_load_info())
-            logger.error("Message (%s): %s", exception_id, object_message)
-            logger.exception("Exception (%s): %s", exception_id, e)
+            system_info = log_helper.get_system_load()
+            if system_info is not None:
+                logger.error("System Load: %s", system_info)
+            logger.error("Message: %s", object_message)
+            logger.exception("Exception: %s", e)
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
