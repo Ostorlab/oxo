@@ -335,7 +335,8 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
     agent_run_mock: agent_testing.AgentRunInstance,
     mocker: plugin.MockerFixture,
 ) -> None:
-    """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
+    """When an exception is raised, the agent should log the exception, the message that was processed,
+    and details about the current state of the system such as cpu, ram..."""
 
     # Prepare
     logger_error = mocker.patch("logging.Logger.error")
@@ -404,7 +405,7 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
     agent_run_mock: agent_testing.AgentRunInstance,
     mocker: plugin.MockerFixture,
 ) -> None:
-    """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
+    """When trying to get system load information and psutil is not available, the agent should log the exception,"""
 
     # Prepare
     logger_error = mocker.patch("logging.Logger.error")
