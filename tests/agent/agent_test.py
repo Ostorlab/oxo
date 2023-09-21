@@ -8,6 +8,7 @@ import time
 import uuid
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
@@ -15,6 +16,7 @@ from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.testing import agent as agent_testing
 from ostorlab.utils import defintions as utils_definitions
+from ostorlab.utils import system_info_helper
 
 logger = logging.getLogger(__name__)
 
@@ -330,10 +332,12 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled
 
 
 def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoad(
-    agent_run_mock: agent_testing.AgentRunInstance, mocker
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
 
+    # Prepare
     logger_error = mocker.patch("logging.Logger.error")
 
     class TestAgent(agent.Agent):
@@ -368,12 +372,91 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
+    # Act
     test_agent.process_message(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
-    logger_error.assert_called_with(
-        "error while processing message %s, system load: %s",
-        control_message,
-        agent_run_mock.system_load,
-        exc_info=True,
+
+    # Assert
+    assert logger_error.call_count == 3
+    # Assert  System information is logged
+    assert "System Load: %s" in logger_error.call_args_list[0][0][0]
+    assert (
+        isinstance(
+            logger_error.call_args_list[0][0][1], system_info_helper.SystemLoadInfo
+        )
+        is True
     )
+    # Assert the message is logged
+    assert (
+        isinstance(logger_error.call_args_list[1][0][1], agent_message.Message) is True
+    )
+    assert logger_error.call_args_list[1][0][1].selector == "v3.healthcheck.ping"
+    assert (
+        logger_error.call_args_list[1][0][1].data["body"] == "Hello, can you hear me?"
+    )
+    # Assert exception is logged
+    assert isinstance(logger_error.call_args_list[2][0][1], ValueError) is True
+    assert "some error" in logger_error.call_args_list[2][0][1].args[0]
+
+
+def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWithMessageAndNoSystemLoad(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
+
+    # Prepare
+    logger_error = mocker.patch("logging.Logger.error")
+    mocker.patch("psutil.virtual_memory", side_effect=ImportError())
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            raise ValueError("some error")
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    # Act
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    # Assert
+    assert logger_error.call_count == 2
+    # Assert the message is logged
+    assert (
+        isinstance(logger_error.call_args_list[0][0][1], agent_message.Message) is True
+    )
+    assert logger_error.call_args_list[0][0][1].selector == "v3.healthcheck.ping"
+    assert (
+        logger_error.call_args_list[0][0][1].data["body"] == "Hello, can you hear me?"
+    )
+    # Assert exception is logged
+    assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
+    assert "some error" in logger_error.call_args_list[1][0][1].args[0]

@@ -4,11 +4,15 @@ from dataclasses import dataclass
 
 @dataclass
 class CpuInfo:
+    """CPU information."""
+
     load: list[float] | float
 
 
 @dataclass
 class MemoryInfo:
+    """Memory information."""
+
     total: int
     available: int
     used: int
@@ -17,6 +21,8 @@ class MemoryInfo:
 
 @dataclass
 class StorageInfo:
+    """Storage information."""
+
     total: int
     used: int
     free: int
@@ -24,11 +30,14 @@ class StorageInfo:
 
 @dataclass
 class SystemLoadInfo:
+    """System load information."""
+
     cpu_load: CpuInfo
     memory_usage: MemoryInfo
     storage: StorageInfo
 
     def __str__(self):
+        """String representation of the system load information."""
         return (
             f"CPU Load: {self.cpu_load.load}\n"
             f"Memory Usage: Total={self.memory_usage.total}, "
@@ -43,9 +52,9 @@ class SystemLoadInfo:
 
 def get_system_load() -> SystemLoadInfo | None:
     """Get system load information.
-    We use psutil to get the system load information. in case psutil is not available, we return None.
+    We use psutil to get the system load information. in case `psutil` is not available, we return None.
     Returns:
-        System load information or None in case psutils is not available.
+        System load information or None in case `psutil` is not available.
     """
     try:
         # Import psutil here to catch the ImportError in case psutil is not available.
