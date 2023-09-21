@@ -37,7 +37,7 @@ class SystemLoadInfo:
     memory_usage: MemoryInfo
     storage: StorageInfo
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation of the system load information."""
         return (
             f"CPU Load: {self.cpu_load.load}\n"
@@ -66,12 +66,12 @@ def get_system_load() -> Optional[SystemLoadInfo]:
         cpu_info = CpuInfo(psutil.cpu_percent(interval=None, percpu=True))
 
         # Get memory usage information
-        memory_info = psutil.virtual_memory()
+        virtual_memory = psutil.virtual_memory()
         memory_info = MemoryInfo(
-            total=memory_info.total,
-            available=memory_info.available,
-            used=memory_info.used,
-            percent=memory_info.percent,
+            total=virtual_memory.total,
+            available=virtual_memory.available,
+            used=virtual_memory.used,
+            percent=virtual_memory.percent,
         )
 
         # Get storage information
