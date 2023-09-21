@@ -53,7 +53,9 @@ class SystemLoadInfo:
 
 def get_system_load() -> Optional[SystemLoadInfo]:
     """Get system load information.
+    
     We use psutil to get the system load information. in case `psutil` is not available, we return None.
+    
     Returns:
         System load information or None in case `psutil` is not available.
     """
