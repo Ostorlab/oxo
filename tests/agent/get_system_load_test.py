@@ -1,3 +1,4 @@
+"""Test for the system info helper."""
 from pytest_mock import plugin
 
 from ostorlab.utils import system_info_helper
