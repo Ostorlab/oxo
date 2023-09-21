@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class CpuInfo:
     """CPU information."""
 
-    load: list[float] | float
+    load: list[float]
 
 
 @dataclass
