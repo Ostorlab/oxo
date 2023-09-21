@@ -30,6 +30,7 @@ from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import system
 
 GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
@@ -209,7 +210,7 @@ class AgentMixin(
             logger.debug("Call to process with message= %s", raw_message)
             self.process(object_message)
         except Exception as e:  # pylint: disable="broad-except"
-            system_info = system_info_helper.get_system_info()
+            system_info = system.get_system_info()
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
             logger.error("Message: %s", object_message)
