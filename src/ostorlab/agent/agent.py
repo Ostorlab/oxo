@@ -212,7 +212,7 @@ class AgentMixin(
         except Exception as e:  # pylint: disable="broad-except"
             system_info = system_info_helper.get_system_load()
             if system_info is not None:
-                logger.error("System Load: %s", system_info)
+                logger.error("System Info: %s", system_info)
             logger.error("Message: %s", object_message)
             logger.exception("Exception: %s", e)
         finally:
