@@ -1,7 +1,7 @@
 """Test for the system info helper."""
 from pytest_mock import plugin
 
-from ostorlab.utils import system_info_helper
+from ostorlab.utils import system
 
 
 def testGetSystemLoad_always_returnCorrectSystemInfo(
@@ -17,7 +17,7 @@ def testGetSystemLoad_always_returnCorrectSystemInfo(
     )
 
     # Act
-    system_info = system_info_helper.get_system_load()
+    system_info = system.get_system_info()
 
     # Assert
     assert system_info is not None
@@ -36,7 +36,7 @@ def testGetSystemLoad_whenPsutilNotAvailable_returnCorrectSystemInfo(
     mocker.patch("psutil.cpu_percent", side_effect=ImportError())
 
     # Act
-    system_info = system_info_helper.get_system_load()
+    system_info = system.get_system_info()
 
     # Assert
     assert system_info is None

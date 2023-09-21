@@ -16,7 +16,7 @@ from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.testing import agent as agent_testing
 from ostorlab.utils import defintions as utils_definitions
-from ostorlab.utils import system_info_helper
+from ostorlab.utils import system
 
 logger = logging.getLogger(__name__)
 
@@ -380,15 +380,10 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
 
     # Assert
     assert logger_error.call_count == 3
-    # Assert  System information is logged
     assert "System Load: %s" in logger_error.call_args_list[0][0][0]
     assert (
-        isinstance(
-            logger_error.call_args_list[0][0][1], system_info_helper.SystemLoadInfo
-        )
-        is True
+        isinstance(logger_error.call_args_list[0][0][1], system.SystemLoadInfo) is True
     )
-    # Assert the message is logged
     assert (
         isinstance(logger_error.call_args_list[1][0][1], agent_message.Message) is True
     )
@@ -396,7 +391,6 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
     assert (
         logger_error.call_args_list[1][0][1].data["body"] == "Hello, can you hear me?"
     )
-    # Assert exception is logged
     assert isinstance(logger_error.call_args_list[2][0][1], ValueError) is True
     assert "some error" in logger_error.call_args_list[2][0][1].args[0]
 
@@ -450,7 +444,6 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
 
     # Assert
     assert logger_error.call_count == 2
-    # Assert the message is logged
     assert (
         isinstance(logger_error.call_args_list[0][0][1], agent_message.Message) is True
     )
@@ -458,6 +451,5 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
     assert (
         logger_error.call_args_list[0][0][1].data["body"] == "Hello, can you hear me?"
     )
-    # Assert exception is logged
     assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
     assert "some error" in logger_error.call_args_list[1][0][1].args[0]
