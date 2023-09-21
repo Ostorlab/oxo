@@ -338,7 +338,6 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
     """When an exception is raised, the agent should log the exception, the message that was processed,
     and details about the current state of the system such as cpu, ram..."""
 
-    # Prepare
     logger_error = mocker.patch("logging.Logger.error")
 
     class TestAgent(agent.Agent):
@@ -373,12 +372,10 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
-    # Act
     test_agent.process_message(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    # Assert
     assert logger_error.call_count == 3
     assert "System Info: %s" in logger_error.call_args_list[0][0][0]
     assert (
@@ -401,7 +398,6 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
 ) -> None:
     """When trying to get system load information and psutil is not available, the agent should log the exception,"""
 
-    # Prepare
     logger_error = mocker.patch("logging.Logger.error")
     mocker.patch("psutil.virtual_memory", side_effect=ImportError())
 
@@ -437,12 +433,10 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
         },
     )
 
-    # Act
     test_agent.process_message(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    # Assert
     assert logger_error.call_count == 2
     assert (
         isinstance(logger_error.call_args_list[0][0][1], agent_message.Message) is True
