@@ -1,3 +1,4 @@
+"""Helper functions to get system information."""
 from dataclasses import dataclass
 
 
@@ -44,9 +45,11 @@ def get_system_load() -> SystemLoadInfo | None:
     """Get system load information.
     We use psutil to get the system load information. in case psutil is not available, we return None.
     Returns:
-        System load information or None.
+        System load information or None in case psutils is not available.
     """
     try:
+        # Import psutil here to catch the ImportError in case psutil is not available.
+        # pylint: disable=import-outside-toplevel
         import psutil
 
         # Get CPU load information
