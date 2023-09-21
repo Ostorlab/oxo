@@ -8,13 +8,15 @@ import time
 import uuid
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.utils import defintions as utils_definitions
 from ostorlab.testing import agent as agent_testing
+from ostorlab.utils import defintions as utils_definitions
+from ostorlab.utils import system
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +109,7 @@ def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
     SampleAgent.__init__.assert_called()
 
 
-def testAgentMain_whithNonExistingFile_exits(mocker):
+def testAgentMain_withNonExistingFile_exits(mocker):
     """Test agent when missing definition or settings files to ensure the command exits."""
 
     class SampleAgent(agent.Agent):
@@ -124,7 +126,7 @@ def testAgentMain_whithNonExistingFile_exits(mocker):
         assert wrapper_exception.value.code == 42
 
 
-def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs(agent_mock):
+def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(agent_mock):
     class TestAgent(agent.Agent):
         """Test Agent"""
 
@@ -155,7 +157,7 @@ def testAgent_withDefaultAndSettingsArgs_retunsExpectedArgs(agent_mock):
 
 
 @pytest.mark.xfail(reason="OS-5119: Awaiting deprecation.")
-def testAgent_withArgMissingFromDefnition_raisesException(agent_mock):
+def testAgent_withArgMissingFromDefinition_raisesException(agent_mock):
     class TestAgent(agent.Agent):
         """Test Agent"""
 
@@ -253,12 +255,23 @@ def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
     )
-
-    message = agent_message.Message.from_data(
-        "v3.control", {"control": {"agents": ["agentY", "agentX", "agentX", "agentX"]}}
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": actual_message.raw,
+        },
     )
 
-    test_agent.process_message(message.selector, message.raw)
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
 
     assert process_mock.called is True
 
@@ -316,3 +329,121 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled
     test_agent.process_message(f"v3.report.vulnerability.{uuid.uuid4()}", message.raw)
 
     assert process_mock.called is False
+
+
+def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoad(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When an exception is raised, the agent should log the exception, the message that was processed,
+    and details about the current state of the system such as cpu, ram..."""
+
+    logger_error = mocker.patch("logging.Logger.error")
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            raise ValueError("some error")
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert logger_error.call_count == 3
+    assert "System Info: %s" in logger_error.call_args_list[0][0][0]
+    assert (
+        isinstance(logger_error.call_args_list[0][0][1], system.SystemLoadInfo) is True
+    )
+    assert (
+        isinstance(logger_error.call_args_list[1][0][1], agent_message.Message) is True
+    )
+    assert logger_error.call_args_list[1][0][1].selector == "v3.healthcheck.ping"
+    assert (
+        logger_error.call_args_list[1][0][1].data["body"] == "Hello, can you hear me?"
+    )
+    assert isinstance(logger_error.call_args_list[2][0][1], ValueError) is True
+    assert "some error" in logger_error.call_args_list[2][0][1].args[0]
+
+
+def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWithMessageAndNoSystemLoad(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When trying to get system load information and psutil is not available, the agent should log the exception,"""
+
+    logger_error = mocker.patch("logging.Logger.error")
+    mocker.patch("psutil.virtual_memory", side_effect=ImportError())
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            raise ValueError("some error")
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert logger_error.call_count == 2
+    assert (
+        isinstance(logger_error.call_args_list[0][0][1], agent_message.Message) is True
+    )
+    assert logger_error.call_args_list[0][0][1].selector == "v3.healthcheck.ping"
+    assert (
+        logger_error.call_args_list[0][0][1].data["body"] == "Hello, can you hear me?"
+    )
+    assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
+    assert "some error" in logger_error.call_args_list[1][0][1].args[0]

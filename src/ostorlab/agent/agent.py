@@ -22,6 +22,7 @@ from typing import Dict, Any, Optional, Type, List
 
 import google.cloud.logging
 from google.oauth2 import service_account
+
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
@@ -29,6 +30,7 @@ from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import system
 
 GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
@@ -191,24 +193,27 @@ class AgentMixin(
         Returns:
             None
         """
+
+        self._control_message = agent_message.Message.from_raw("v3.control", message)
+        raw_message = self._control_message.data["message"]
+        # remove the UUID from the selector:
+        selector = ".".join(selector.split(".")[:-1])
+        object_message = agent_message.Message.from_raw(selector, raw_message)
+
+        # Validate the message before processing it.
         try:
-            # Keep track of the current message used later in the emit method.
-            self._control_message = agent_message.Message.from_raw(
-                "v3.control", message
-            )
             self._validate_message()
-
-            raw_message = self._control_message.data["message"]
-
-            # remove the UUID from the selector:
-            selector = ".".join(selector.split(".")[:-1])
-            object_message = agent_message.Message.from_raw(selector, raw_message)
-            logger.debug("call to process with message=%s", raw_message)
-            self.process(object_message)
         except MaximumCyclicProcessReachedError:
-            # This exception is not filtered.
-            self.on_max_cyclic_process_reached(message)
+            self.on_max_cyclic_process_reached(object_message)
+
+        try:
+            logger.debug("Call to process with message= %s", raw_message)
+            self.process(object_message)
         except Exception as e:  # pylint: disable="broad-except"
+            system_info = system.get_system_info()
+            if system_info is not None:
+                logger.error("System Info: %s", system_info)
+            logger.error("Message: %s", object_message)
             logger.exception("Exception: %s", e)
         finally:
             self.process_cleanup()
