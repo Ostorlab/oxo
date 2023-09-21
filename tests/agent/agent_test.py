@@ -380,7 +380,7 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
 
     # Assert
     assert logger_error.call_count == 3
-    assert "System Load: %s" in logger_error.call_args_list[0][0][0]
+    assert "System Info: %s" in logger_error.call_args_list[0][0][0]
     assert (
         isinstance(logger_error.call_args_list[0][0][1], system.SystemLoadInfo) is True
     )
