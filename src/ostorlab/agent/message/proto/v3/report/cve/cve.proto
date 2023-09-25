@@ -1,0 +1,51 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.report.cve;
+
+message Message {
+    optional int32 scan_id = 1;
+    optional string cve_id = 2;
+    repeated Target targets = 3;
+    optional int32 cwe = 4;
+    optional string description = 5;
+    repeated Reference references = 6;
+    optional string cvss_v3_1_vector = 7;
+    optional string cvss_v3_0_vector = 8;
+    optional string cvss_v2_vector = 9;
+    optional string published_date = 10;
+    optional string modified_date = 11;
+}
+
+
+    
+message Reference {
+    optional string url = 1;
+    optional string source = 2;
+    repeated string tags = 3;
+}
+
+message VersionMatch {
+    optional string start = 1;
+    optional bool start_include =2;
+    optional string end = 3;
+    optional bool end_include = 4;
+}
+
+message CpeMatch {
+    optional string part = 1;
+    optional string vendor = 2;
+    optional string product = 3;
+    optional VersionMatch version = 4;
+    optional string update = 5;
+    optional string edition = 6;
+    optional string language = 7;
+    optional string sw_edition = 8;
+    optional string sw = 9;
+    optional string hw = 10;
+    optional string other = 11;
+    optional bool vulnerable = 12;
+}
+
+message Target {
+    repeated CpeMatch cpe_matches = 1;
+}
