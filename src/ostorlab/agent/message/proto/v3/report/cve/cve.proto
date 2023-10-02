@@ -3,18 +3,72 @@ syntax = "proto2";
 package ostorlab.agent.message.proto.v3.report.cve;
 
 message Message {
-    optional int32 scan_id = 1;
-    optional string cve_id = 2;
-    repeated Target targets = 3;
-    optional int32 cwe = 4;
-    optional string description = 5;
-    repeated Reference references = 6;
-    optional string cvss_v3_1_vector = 7;
-    optional string cvss_v3_0_vector = 8;
-    optional string cvss_v2_vector = 9;
-    optional string published_date = 10;
-    optional string modified_date = 11;
+    optional string cve_id = 1;
+    repeated Target targets = 2;
+    optional int32 cwe = 3;
+    optional string description = 4;
+    repeated Reference references = 5;
+    optional CvssScoreV3 cvss_v3_1_vector = 6;
+    optional CvssScoreV3 cvss_v3_0_vector = 7;
+    optional CvssScoreV2 cvss_v2_vector = 8;
+    optional uint64 published_date = 9;
+    optional uint64 modified_date = 10;
 }
+
+message CvssScoreV2 {
+    optional string version = 1;
+    optional string vectorString = 2;
+    optional string confidentialityImpact = 3;
+    optional string integrityImpact = 4;
+    optional string availabilityImpact = 5;
+    optional int32 baseScore = 6;
+    optional string remediationLevel = 7;
+    optional string reportConfidence = 8;
+    optional int32 temporalScore = 9;
+    optional string confidentialityRequirement = 10;
+    optional string integrityRequirement = 11;
+    optional string availabilityRequirement = 12;
+    optional int32 environmentalScore = 13;
+    optional string accessVector = 14;
+    optional string accessComplexity = 15;
+    optional string authentication = 16;
+    optional string exploitability = 17;
+    optional string collateralDamagePotential = 18;
+    optional string targetDistribution = 19;
+}
+
+message CvssScoreV3 {
+    optional string version = 1;
+    optional string vectorString = 2;
+    optional string confidentialityImpact = 3;
+    optional string integrityImpact = 4;
+    optional string availabilityImpact = 5;
+    optional int32 baseScore = 6;
+    optional string remediationLevel = 7;
+    optional string reportConfidence = 8;
+    optional int32 temporalScore = 9;
+    optional string confidentialityRequirement = 10;
+    optional string integrityRequirement = 11;
+    optional string availabilityRequirement = 12;
+    optional int32 environmentalScore = 13;
+    optional string attackVector = 14; 
+    optional string attackComplexity = 15; 
+    optional string privilegesRequired = 16; 
+    optional string userInteraction = 17; 
+    optional string scope = 18; 
+    optional string baseSeverity = 19;
+    optional string exploitCodeMaturity = 20;
+    optional string temporalSeverity = 21;
+    optional string modifiedAttackVector = 22;
+    optional string modifiedAttackComplexity = 23;
+    optional string modifiedPrivilegesRequired = 24;
+    optional string modifiedUserInteraction = 25;
+    optional string modifiedScope = 26;
+    optional string modifiedConfidentialityImpact = 27;
+    optional string modifiedIntegrityImpact = 28;
+    optional string modifiedAvailabilityImpact = 29;
+    optional string environmentalSeverity = 30;
+}    
 
 
     
