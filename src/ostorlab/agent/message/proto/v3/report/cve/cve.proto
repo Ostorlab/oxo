@@ -14,9 +14,9 @@ message Message {
 }
 
 message CVSS { 
-    optional CVSSv31 v31 = 1;
-    optional CVSSv31 cvss_v3_0 = 2;
-    optional CVSSv2 cvss_v2 = 3;
+    optional CVSSv3 v31 = 1;
+    optional CVSSv3 v30 = 2;
+    optional CVSSv2 v2 = 3;
 }
 
 message CVSSv2 {
@@ -41,7 +41,7 @@ message CVSSv2 {
     optional string target_distribution = 19;
 }
 
-message CVSSv31 {
+message CVSSv3 {
     optional string version = 1;
     optional string vector_string = 2;
     optional string confidentiality_impact = 3;
