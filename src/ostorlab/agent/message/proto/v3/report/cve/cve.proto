@@ -8,18 +8,18 @@ message Message {
     optional int32 cwe = 3;
     optional string description = 4;
     repeated Reference references = 5;
-    optional CvssScores cvss_scores = 6;
+    optional CVSS cvss_scores = 6;
     optional uint64 published_date = 7;
     optional uint64 modified_date = 8;
 }
 
-message CvssScores { 
-    optional CvssScoreV3 cvss_v3_1 = 1;
-    optional CvssScoreV3 cvss_v3_0 = 2;
-    optional CvssScoreV2 cvss_v2 = 3;
+message CVSS { 
+    optional CVSSv31 v31 = 1;
+    optional CVSSv31 cvss_v3_0 = 2;
+    optional CVSSv2 cvss_v2 = 3;
 }
 
-message CvssScoreV2 {
+message CVSSv2 {
     optional string version = 1;
     optional string vector_string = 2;
     optional string confidentiality_impact = 3;
@@ -41,7 +41,7 @@ message CvssScoreV2 {
     optional string target_distribution = 19;
 }
 
-message CvssScoreV3 {
+message CVSSv31 {
     optional string version = 1;
     optional string vector_string = 2;
     optional string confidentiality_impact = 3;
