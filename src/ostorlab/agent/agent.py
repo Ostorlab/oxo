@@ -132,7 +132,8 @@ class AgentMixin(
                 # TODO(OS-5119): Change behavior to fail of the argument is missing from definition.
                 logger.warning(
                     "Argument %s is defined in the agent settings but not in the agent definition. "
-                    "Please update your definition file or the agent will fail in the future."
+                    "Please update your definition file or the agent will fail in the future.",
+                    a.name,
                 )
 
             if a.type == "binary":
