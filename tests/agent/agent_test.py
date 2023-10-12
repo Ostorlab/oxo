@@ -459,21 +459,21 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
     ping_message: agent_message.Message,
 ) -> None:
     """Ensuring the execution of the `at_exit` method in the case of unexpected agent termination."""
-    internal_q = mp.Queue()
+    mp_event = mp.Event()
 
     class TestAgent(agent.Agent):
         """Helper class to test Agent at exit implementation."""
 
-        def __init__(self, agent_definition, agent_settings, queue) -> None:
+        def __init__(self, agent_definition, agent_settings, mp_event) -> None:
             super().__init__(agent_definition, agent_settings)
-            self.queue = queue
+            self.mp_event = mp_event
 
         def process(self, message: agent_message.Message) -> None:
             del message
             time.sleep(2000)
 
         def at_exit(self) -> None:
-            self.queue.put(42)
+            self.mp_event.set()
 
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
@@ -485,12 +485,12 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
         ).to_raw_proto()
     )
 
-    def run_agent(agent_definition, agent_settings, message, queue):
+    def run_agent(agent_definition, agent_settings, message, mp_event):
         """method responsible for running the test agent inside a process."""
         test_agent = TestAgent(
             agent_definition=agent_definition,
             agent_settings=agent_settings,
-            queue=queue,
+            mp_event=mp_event,
         )
         test_agent.process(message)
 
@@ -500,15 +500,14 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
             agent_definition,
             agent_settings,
             ping_message,
-            internal_q,
+            mp_event,
         ),
         daemon=False,
     )
+    mp_event.clear()
     agent_process.start()
     time.sleep(3)
     os.kill(agent_process.pid, signal.SIGTERM)
     agent_process.join()
 
-    assert internal_q.empty() is False
-    assert internal_q.qsize() == 1
-    assert internal_q.get() == 42
+    assert mp_event.is_set() is True
