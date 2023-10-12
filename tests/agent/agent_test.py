@@ -6,6 +6,8 @@ import multiprocessing as mp
 import pathlib
 import time
 import uuid
+import signal
+import os
 
 import pytest
 from pytest_mock import plugin
@@ -212,8 +214,8 @@ def testEmit_whenEmitFromNoProcess_willSendTheAgentNameInControlAgents(
     )
 
     technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
-    has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
-    scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
+    has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and
+    scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to
     make a type specimen book. """
     test_agent.emit(
         "v3.report.vulnerability",
@@ -306,8 +308,8 @@ def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled
     )
 
     technical_detail = """Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum
-        has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and 
-        scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to 
+        has been the standard dummy text ever since the 1500s, when an unknown printer took a galley of type and
+        scrambled it to make a type specimen book. when an unknown printer took a galley of type and scrambled it to
         make a type specimen book. """
     vuln_message = agent_message.Message.from_data(
         "v3.report.vulnerability",
@@ -447,3 +449,64 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
     )
     assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
     assert "some error" in logger_error.call_args_list[1][0][1].args[0]
+
+
+def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtExistAndExit(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+    ping_message: agent_message.Message,
+) -> None:
+    """Ensuring the execution of the `at_exit` method in the case of unexpected agent termination."""
+    internal_q = mp.Queue()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test Agent at exit implementation."""
+
+        def __init__(self, agent_definition, agent_settings, queue) -> None:
+            super().__init__(agent_definition, agent_settings)
+            self.queue = queue
+
+        def process(self, message: agent_message.Message) -> None:
+            del message
+            time.sleep(2000)
+
+        def at_exit(self) -> None:
+            self.queue.put(42)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="testing_agent",
+        ).to_raw_proto()
+    )
+
+    def run_agent(agent_definition, agent_settings, message, queue):
+        """method responsible for running the test agent inside a process."""
+        test_agent = TestAgent(
+            agent_definition=agent_definition,
+            agent_settings=agent_settings,
+            queue=queue,
+        )
+        test_agent.process(message)
+
+    agent_process = mp.Process(
+        target=run_agent,
+        args=(
+            agent_definition,
+            agent_settings,
+            ping_message,
+            internal_q,
+        ),
+        daemon=False,
+    )
+    agent_process.start()
+    time.sleep(3)
+    os.kill(agent_process.pid, signal.SIGTERM)
+    agent_process.join()
+
+    assert internal_q.empty() is False
+    assert internal_q.qsize() == 1
+    assert internal_q.get() == 42
