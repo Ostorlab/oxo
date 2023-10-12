@@ -11,6 +11,7 @@ import pytest
 import redis
 
 import ostorlab
+from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
@@ -521,4 +522,14 @@ def apk_start_agent_scan_bus_msg() -> startAgentScan_pb2.Message:
             ),
         ],
         apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+
+@pytest.fixture
+def ping_message() -> agent_message.Message:
+    return agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
     )

@@ -8,13 +8,12 @@ To use it, check out documentations at https://docs.ostorlab.co/.
 import abc
 import argparse
 import asyncio
-import atexit
 import base64
-import functools
 import json
 import logging
 import os
 import pathlib
+import signal
 import sys
 import threading
 import uuid
@@ -107,6 +106,7 @@ class AgentMixin(
             host=agent_settings.healthcheck_host,
             port=agent_settings.healthcheck_port,
         )
+        signal.signal(signal.SIGTERM, self._handle_signal)
 
     @property
     def definition(self) -> agent_definitions.AgentDefinition:
@@ -158,7 +158,6 @@ class AgentMixin(
         """
         self.add_healthcheck(self.is_healthy)
         self.start_healthcheck()
-        atexit.register(functools.partial(Agent.at_exit, self))
         self._loop.run_until_complete(self.mq_init())
         logger.debug("calling start method")
         # This is call in a thread to avoid blocking calls from affecting the MQ heartbeat running on the main thread.
@@ -243,6 +242,14 @@ class AgentMixin(
             None
         """
         raise NotImplementedError()
+
+    def _handle_signal(self, *args) -> None:
+        """Call the Agent `at_exit` method responsible for executing cleanup
+        in the case of unexpected agent termination.
+        """
+        del args
+        self.at_exit()
+        sys.exit()
 
     @abc.abstractmethod
     def at_exit(self) -> None:
