@@ -39,6 +39,13 @@ message CVSSv2 {
     optional string exploitability = 17;
     optional string collateral_damage_potential = 18;
     optional string target_distribution = 19;
+    optional float impact_score = 20;
+    optional float exploitability_score = 21;
+    optional bool ac_insuf_info = 22; 
+    optional bool obtain_all_privilege = 23; 
+    optional bool obtain_user_privilege = 24; 
+    optional bool obtain_other_privilege = 25; 
+    optional bool user_interaction_required = 26; 
 }
 
 message CVSSv3 {
@@ -72,6 +79,8 @@ message CVSSv3 {
     optional string modified_integrity_impact = 28;
     optional string modified_availability_impact = 29;
     optional string environmental_severity = 30;
+    optional float impact_score = 31;
+    optional float exploitability_score = 32;
 }    
 
 

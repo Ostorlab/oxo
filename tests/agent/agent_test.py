@@ -451,6 +451,7 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
     assert "some error" in logger_error.call_args_list[1][0][1].args[0]
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtExistAndExit(
     agent_run_mock: agent_testing.AgentRunInstance,
     mocker: plugin.MockerFixture,
