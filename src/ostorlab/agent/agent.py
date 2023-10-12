@@ -106,7 +106,7 @@ class AgentMixin(
             host=agent_settings.healthcheck_host,
             port=agent_settings.healthcheck_port,
         )
-        signal.signal(signal.SIGTERM, self._at_exit)
+        signal.signal(signal.SIGTERM, self._handle_signal)
 
     @property
     def definition(self) -> agent_definitions.AgentDefinition:
@@ -243,12 +243,11 @@ class AgentMixin(
         """
         raise NotImplementedError()
 
-    def _at_exit(self, *args) -> None:
+    def _handle_signal(self, *args) -> None:
         """Call the Agent `at_exit` method responsible for executing cleanup
         in the case of unexpected agent termination.
         """
         del args
-        logger.info("Triggering at exit method.")
         self.at_exit()
         sys.exit()
 
