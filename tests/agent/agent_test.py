@@ -7,6 +7,7 @@ import pathlib
 import time
 import uuid
 import signal
+import sys
 import os
 
 import pytest
