@@ -7,4 +7,5 @@ message Message {
     optional string description = 2;
     optional string type = 3;
     optional bool update_if_exist = 4 [default = false];
+    optional string device_id = 5;
 }
