@@ -62,6 +62,47 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
         )
 
 
+def testModelsVulnerability_whenAssetIsNotSupported_doNotRaiseError(
+    mocker, db_engine_path
+):
+    """Test Vulnerability Model implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_scan_db = models.Scan.create("test")
+    with models.Database() as session:
+        init_count = session.query(models.Vulnerability).count()
+    models.Vulnerability.create(
+        title="MyVuln",
+        short_description="Xss",
+        description="Javascript Vuln",
+        recommendation="Sanitize data",
+        technical_detail="a=$input",
+        risk_rating="HIGH",
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={
+            "link": {"url": "http://test.com"},
+            "metadata": [{"type": "CODE_LOCATION", "value": "some/file.swift:42"}],
+        },
+        scan_id=create_scan_db.id,
+    )
+
+    with models.Database() as session:
+        assert session.query(models.Vulnerability).all()[0].location == (
+            "Asset: `{\n"
+            '    "link": {\n'
+            '        "url": "http://test.com"\n'
+            "    },\n"
+            '    "metadata": [\n'
+            "        {\n"
+            '            "type": "CODE_LOCATION",\n'
+            '            "value": "some/file.swift:42"\n'
+            "        }\n"
+            "    ]\n"
+            "}`\n"
+            "CODE_LOCATION: some/file.swift:42  \n"
+        )
+
+
 def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
     mocker, db_engine_path
 ):
