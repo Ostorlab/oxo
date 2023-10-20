@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import json
 import logging
 import pathlib
 from typing import Any, Dict, List, Optional
@@ -188,21 +189,21 @@ class Vulnerability(Base):
         location_markdwon_value = ""
         if location.get("domain_name") is not None:
             domain_name = location["domain_name"].get("name")
-            location_markdwon_value = f"Domain: {domain_name}  \n"
+            location_markdwon_value = f"Domain: `{domain_name}`\n"
         elif location.get("ipv4") is not None:
             host = location["ipv4"].get("host")
-            location_markdwon_value = f"IPv4: {host}  \n"
+            location_markdwon_value = f"IPv4: `{host}`\n"
         elif location.get("ipv6") is not None:
             host = location["ipv6"].get("host")
-            location_markdwon_value = f"IPv6: {host}  \n"
+            location_markdwon_value = f"IPv6: `{host}`\n"
         elif location.get("android_store") is not None:
             package_name = location["android_store"].get("package_name")
-            location_markdwon_value = f"Android package name: {package_name}  \n"
+            location_markdwon_value = f"Android: `{package_name}`\n"
         elif location.get("ios_store") is not None:
             bundle_id = location["ios_store"].get("bundle_id")
-            location_markdwon_value = f"iOS bundle id: {bundle_id}  \n"
+            location_markdwon_value = f"iOS: `{bundle_id}`\n"
         else:
-            raise ValueError(f"Unknown asset : {location}")
+            location_markdwon_value = f"Asset: `{json.dumps(location, indent=4)}`\n"
 
         for metadata_dict in location.get("metadata", []):
             metad_type = metadata_dict.get("type")
