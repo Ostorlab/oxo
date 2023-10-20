@@ -390,7 +390,7 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
         "technical_detail",
     ]
     assert data[0][3] == "High"
-    assert "Android package name: a.b.c" in data[0][2]
+    assert "Android: `a.b.c`" in data[0][2]
     assert "dummy title: https://dummy.co/path" in data[0][-2]
 
 
