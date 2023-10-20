@@ -57,7 +57,7 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
         assert session.query(models.Vulnerability).all()[0].title == "MyVuln"
         assert session.query(models.Vulnerability).all()[0].scan_id == create_scan_db.id
         assert (
-            "iOS bundle id: some.dummy.bundle"
+            "iOS: `some.dummy.bundle`"
             in session.query(models.Vulnerability).all()[0].location
         )
 
