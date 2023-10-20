@@ -68,8 +68,6 @@ def testModelsVulnerability_whenAssetIsNotSupported_doNotRaiseError(
     """Test Vulnerability Model implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
-    with models.Database() as session:
-        init_count = session.query(models.Vulnerability).count()
     models.Vulnerability.create(
         title="MyVuln",
         short_description="Xss",
