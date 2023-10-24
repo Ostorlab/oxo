@@ -24,7 +24,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
         mem_limit=420000,
-        restart_policy="any",
+        restart_policy="",
         open_ports=[
             utils_defintions.PortMapping(20000, 30000),
             utils_defintions.PortMapping(20001, 30001),
@@ -98,7 +98,7 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
         mem_limit=620000,
-        restart_policy="any",
+        restart_policy="",
         open_ports=[
             utils_defintions.PortMapping(20000, 30000),
             utils_defintions.PortMapping(20001, 30001),

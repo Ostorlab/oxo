@@ -17,7 +17,7 @@ class AgentDefinition:
     args: List[Dict[str, Any]] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: List[str] = dataclasses.field(default_factory=list)
-    restart_policy: str = "any"
+    restart_policy: str = ""
     mem_limit: int = None
     open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
     restrictions: List[str] = dataclasses.field(default_factory=list)
@@ -50,7 +50,7 @@ class AgentDefinition:
             args=definition.get("args", []),
             constraints=definition.get("constraints", []),
             mounts=definition.get("mounts", []),
-            restart_policy=definition.get("restart_policy", "any"),
+            restart_policy=definition.get("restart_policy", ""),
             mem_limit=definition.get("mem_limit"),
             open_ports=definition.get("open_ports", []),
             restrictions=definition.get("restrictions", []),
