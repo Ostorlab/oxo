@@ -40,7 +40,7 @@ class AgentSettings:
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
-    restart_policy: str = "any"
+    restart_policy: str = ""
     mem_limit: Optional[int] = None
     open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
@@ -216,7 +216,7 @@ class AgentGroupDefinition:
                 ],
                 constraints=agent.get("constraints", []),
                 mounts=agent.get("mounts", []),
-                restart_policy=agent.get("restart_policy", "any"),
+                restart_policy=agent.get("restart_policy", ""),
                 mem_limit=agent.get("mem_limit"),
                 open_ports=[
                     defintions.PortMapping(

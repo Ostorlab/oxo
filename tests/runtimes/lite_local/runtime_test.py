@@ -130,7 +130,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         mounts=["def_mount1", "def_mount2"],
         mem_limit=420000,
         service_name="my_service",
-        restart_policy="any",
+        restart_policy="",
     )
     mocker.patch(
         "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
@@ -199,7 +199,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         mounts=["def_mount1", "def_mount2"],
         mem_limit=420000,
         service_name="my_service",
-        restart_policy="any",
+        restart_policy="",
         caps=["NET_ADMIN"],
     )
     mocker.patch(
