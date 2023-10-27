@@ -6,4 +6,5 @@ message Message{
   optional float timestamp = 1;
   optional string level = 2;
   optional string message = 3;
+  optional string device_id = 4;
 }
