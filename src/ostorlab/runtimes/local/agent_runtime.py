@@ -9,6 +9,7 @@ import logging
 import hashlib
 import uuid
 import base64
+import random
 from typing import List, Optional
 
 import docker
@@ -340,9 +341,7 @@ class AgentRuntime:
             + "_"
             + self.runtime_name
             + "_"
-            + str(uuid.uuid4())[
-                :7
-            ]  # We add only the first characters due the 64 characters limitations.
+            + str(random.randrange(0, 9999))
         )
 
         env = [
