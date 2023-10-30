@@ -1,5 +1,6 @@
 """Tests for scan run command."""
 import requests
+import pytest
 
 from click.testing import CliRunner
 
@@ -46,6 +47,7 @@ def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
     assert isinstance(result.exception, BaseException)
 
 
+@pytest.mark.docker
 def testRunScanCLI_WhenNoConnection_ShowError(mocker):
     """Test ostorlab scan command with all options and no sub command.
     Should show list of available commands (assets) and exit with error exit_code = 2.
