@@ -14,11 +14,12 @@ message Message {
   repeated string status = 9;
   repeated string emails = 10;
   repeated string dnssec = 11;
-  optional string contact_name = 12;
+  optional string contact_name = 12 [deprecated=true];
   optional string org = 13;
   optional string address = 14;
   optional string city = 15;
   optional string state = 16;
   optional string zipcode = 17;
   optional string country = 18;
+  repeated string contact_names = 19 ;
 }
