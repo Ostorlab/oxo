@@ -339,6 +339,8 @@ class AgentRuntime:
             or self.agent.container_image.replace(":", "_").replace(".", "")
             + "_"
             + self.runtime_name
+            + "_"
+            + str(uuid.uuid4())[:7]
         )
 
         env = [
