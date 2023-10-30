@@ -349,7 +349,9 @@ class AgentRuntime:
             + "_"
             + self.runtime_name
             + "_"
-            + str(uuid.uuid4())[:7]
+            + str(uuid.uuid4())[
+                :7
+            ]  # We add only the first characters due the 64 characters limitations.
         )
 
         env = [
