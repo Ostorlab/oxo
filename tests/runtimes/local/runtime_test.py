@@ -216,7 +216,6 @@ def testScanInLocalRuntime_whenFlagToDisableDefaultAgentsIsPassed_shouldNotStart
     )
 
     start_agent_mock_call_args = agent_runtime_mock.call_args_list
-    start_agent_mock_call_args[0].agent_settings.key
     assert (
         start_agent_mock_call_args[0].kwargs["agent_settings"].key
         == "agent/ostorlab/agent42"
