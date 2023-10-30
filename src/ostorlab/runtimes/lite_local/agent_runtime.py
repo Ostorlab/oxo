@@ -350,7 +350,7 @@ class AgentRuntime:
             + "_"
             + self.runtime_name
             + "_"
-            + "".join([str(random.randint(1, 9)) for _ in range(5)])
+            + str(random.randrange(0, 9999))
         )
 
         env = [
