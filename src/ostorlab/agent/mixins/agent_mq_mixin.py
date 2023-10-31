@@ -6,11 +6,16 @@ Defintion of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
+import datetime
 from typing import List, Optional
 
 import aio_pika
+import tenacity
 
 logger = logging.getLogger(__name__)
+
+MAX_MQ_CALL_RETRIES = 5
+MQ_CALL_WAIT_BEFORE_RETRY = datetime.timedelta(seconds=120)
 
 
 class AgentMQMixin:
@@ -134,6 +139,16 @@ class AgentMQMixin:
         """Callback to implement to process the MQ messages received."""
         raise NotImplementedError()
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(MAX_MQ_CALL_RETRIES),
+        wait=tenacity.wait_fixed(MQ_CALL_WAIT_BEFORE_RETRY.seconds),
+        retry=tenacity.retry_if_exception_type(
+            aio_pika.exceptions.CONNECTION_EXCEPTIONS
+        ),
+        retry_error_callback=lambda retry_state: retry_state.outcome.result()
+        if retry_state.outcome is not None
+        else None,
+    )
     async def async_mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
@@ -152,7 +167,7 @@ class AgentMQMixin:
             await exchange.publish(routing_key=key, message=pika_message)
 
     def mq_send_message(
-        self, key: str, message: bytes, message_priority: Optional[int] = None
+            self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """the method sends the message to the selected key with the defined priority in async mode .
         Args:
