@@ -130,9 +130,6 @@ class AgentMixin(
         for a in self.definition.args:
             arguments[a["name"]] = a.get("value")
         # Override the default values from settings.
-
-        inexistent_args=[] 
-        
         for a in self.settings.args:
             # Enforce that only declared arguments are accepted.
             if a.name not in arguments:
@@ -141,16 +138,12 @@ class AgentMixin(
                     "Please update your definition file or the agent will fail in the future.",
                     a.name,
                 )
-                inexistent_args.append(a.name)
+                raise ArgumentMissingInAgentDefinitionError()
 
             if a.type == "binary":
                 arguments[a.name] = a.value
             else:
                 arguments[a.name] = json.loads(a.value.decode())
-        
-        if len(inexistent_args) > 0:
-            logger.error("Please fix ===========================")
-            raise ArgumentMissingInAgentDefinitionError()
 
         return arguments
 
