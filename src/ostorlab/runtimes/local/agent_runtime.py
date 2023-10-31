@@ -23,7 +23,6 @@ from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
 from ostorlab.runtimes.local.services import jaeger
-from ostorlab.agent import agent as ostorlab_agent
 
 logger = logging.getLogger(__name__)
 
@@ -317,7 +316,7 @@ class AgentRuntime:
                     "Please update your definition file.",
                     arg.name,
                 )
-                raise ostorlab_agent.ArgumentMissingInAgentDefinitionError()
+                raise exceptions.ArgumentMissingInAgentDefinitionError()
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
             endpoint_spec = docker_types_services.EndpointSpec(

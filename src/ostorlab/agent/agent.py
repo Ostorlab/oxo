@@ -47,10 +47,6 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
 
 
-class ArgumentMissingInAgentDefinitionError(exceptions.OstorlabError):
-    """Argument is present in the settings but not in the agent definition."""
-
-
 def _setup_logging(agent_key: str, universe: str) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:

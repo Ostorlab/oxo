@@ -6,7 +6,7 @@ from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_defintions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes.local import agent_runtime
-from ostorlab.agent import agent as ostorlab_agent
+from ostorlab import exceptions
 
 import ostorlab
 
@@ -157,7 +157,7 @@ def testLoaclRunTime_whenAgentArgsAreWrong_shouldFail(
     mocker,
 ):
     """Test local runtime when the arg is present in settings but not in agent definition"""
-    with pytest.raises(ostorlab_agent.ArgumentMissingInAgentDefinitionError):
+    with pytest.raises(exceptions.ArgumentMissingInAgentDefinitionError):
         agent_def = agent_definitions.AgentDefinition(
             name="agent_name_from_def",
             mounts=["def_mount1", "def_mount2"],

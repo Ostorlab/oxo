@@ -21,7 +21,6 @@ from ostorlab import configuration_manager
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
-from ostorlab.agent import agent as ostorlab_agent
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +227,7 @@ class AgentRuntime:
                     "Please update your definition file.",
                     arg.name,
                 )
-                raise ostorlab_agent.ArgumentMissingInAgentDefinitionError()
+                raise exceptions.ArgumentMissingInAgentDefinitionError()
         # The name is hashed to work around size limitation of Docker Config.
         config_name = hashlib.md5(
             f"config_definition_{self.image_name}__{self.runtime_name}_{self._uuid}".encode()
