@@ -138,7 +138,6 @@ class AgentMixin(
                     "Please update your definition file or the agent will fail in the future.",
                     a.name,
                 )
-                raise ArgumentMissingInAgentDefinitionError()
 
             if a.type == "binary":
                 arguments[a.name] = a.value

@@ -161,33 +161,33 @@ def testAgent_withArgMissingFromDefinition_raisesException(agent_mock):
     class TestAgent(agent.Agent):
         """Test Agent"""
 
-    with pytest.raises(agent.ArgumentMissingInAgentDefinitionError):
-        test_agent = TestAgent(
-            agent_definitions.AgentDefinition(
-                name="start_test_agent",
-                out_selectors=["v3.healthcheck.ping"],
-                args=[
-                    {"name": "color", "type": "string", "value": None},
-                    {"name": "speed", "type": "string", "value": b"fast"},
-                ],
-            ),
-            runtime_definitions.AgentSettings(
-                key="agent/ostorlab/start_test_agent",
-                bus_url="amqp://guest:guest@localhost:5672/",
-                bus_exchange_topic="ostorlab_test",
-                healthcheck_port=5301,
-                args=[
-                    utils_definitions.Arg(name="speed", type="binary", value=b"slow"),
-                    utils_definitions.Arg(
-                        name="color", type="string", value=json.dumps("red").encode()
-                    ),
-                    utils_definitions.Arg(
-                        name="force", type="string", value=json.dumps("strong").encode()
-                    ),
-                ],
-            ),
-        )
-        assert test_agent.args is None
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="start_test_agent",
+            out_selectors=["v3.healthcheck.ping"],
+            args=[
+                {"name": "color", "type": "string", "value": None},
+                {"name": "speed", "type": "string", "value": b"fast"},
+            ],
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/start_test_agent",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+            args=[
+                utils_definitions.Arg(name="speed", type="binary", value=b"slow"),
+                utils_definitions.Arg(
+                    name="color", type="string", value=json.dumps("red").encode()
+                ),
+                utils_definitions.Arg(
+                    name="force", type="string", value=json.dumps("strong").encode()
+                ),
+            ],
+        ),
+    )
+
+    assert test_agent.args == {"color": "red", "speed": b"slow"}
 
 
 def testEmit_whenEmitFromNoProcess_willSendTheAgentNameInControlAgents(

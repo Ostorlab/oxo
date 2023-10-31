@@ -1,10 +1,12 @@
 """Unittest for agent runtime."""
 import docker
+import pytest
 
 from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_defintions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes.local import agent_runtime
+from ostorlab.agent import agent as ostorlab_agent
 
 import ostorlab
 
@@ -149,3 +151,66 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
     assert kwargs["mounts"] == ["def_mount1", "def_mount2"]
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 30000
     assert kwargs["restart_policy"]["Condition"] == "any"
+
+
+def testLoaclRunTime_whenAgentArgsAreWrong_shouldFail(
+    mocker,
+):
+    """Test local runtime when the arg is present in settings but not in agent definition"""
+    with pytest.raises(ostorlab_agent.ArgumentMissingInAgentDefinitionError):
+        agent_def = agent_definitions.AgentDefinition(
+            name="agent_name_from_def",
+            mounts=["def_mount1", "def_mount2"],
+            mem_limit=620000,
+            restart_policy="any",
+            open_ports=[
+                utils_defintions.PortMapping(20000, 30000),
+                utils_defintions.PortMapping(20001, 30001),
+            ],
+            args=[
+                {"name": "color", "type": "string", "value": None},
+                {"name": "speed", "type": "string", "value": b"fast"},
+            ],
+        )
+        mocker.patch(
+            "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+            return_value=agent_def,
+        )
+        mocker.patch.object(
+            ostorlab.runtimes.definitions.AgentSettings,
+            "container_image",
+            property(container_name_mock),
+        )
+        mocker.patch(
+            "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+            return_value=None,
+        )
+        mocker.patch(
+            "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+            return_value=None,
+        )
+        mocker.patch(
+            "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+            return_value=None,
+        )
+        create_service_mock = mocker.patch(
+            "docker.models.services.ServiceCollection.create", return_value=None
+        )
+
+        docker_client = docker.from_env()
+        agent_settings = definitions.AgentSettings(
+            key="agent/org/name", args=[utils_defintions.Arg(name="arg", type="string")]
+        )
+
+        runtime_agent = agent_runtime.AgentRuntime(
+            agent_settings,
+            "42",
+            docker_client,
+            mq_service=None,
+            redis_service=None,
+            jaeger_service=None,
+        )
+        runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    call_args = create_service_mock.call_args
+    assert call_args is None
