@@ -160,7 +160,6 @@ class AgentMixin(
 
         Connects to the agent bus, start health check and start listening to new messages.
         """
-        breakpoint()
         self.add_healthcheck(self.is_healthy)
         self.start_healthcheck()
         atexit.register(functools.partial(Agent.at_exit, self))
