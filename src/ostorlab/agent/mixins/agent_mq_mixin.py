@@ -6,15 +6,11 @@ Defintion of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
-import datetime
 from typing import List, Optional
 
 import aio_pika
 
 logger = logging.getLogger(__name__)
-
-MAX_MQ_CALL_RETRIES = 5
-MQ_CALL_WAIT_BEFORE_RETRY = datetime.timedelta(seconds=120)
 
 
 class AgentMQMixin:
@@ -57,7 +53,8 @@ class AgentMQMixin:
     async def _get_connection(self) -> aio_pika.Connection:
         kwargs = {"fail_fast": "false"}
         connection = aio_pika.RobustConnection(url=self._url, loop=self._loop, **kwargs)
-        return await connection.connect()
+        await connection.connect()
+        return connection
 
     async def _get_channel(self) -> aio_pika.Channel:
         async with self._connection_pool.acquire() as connection:
