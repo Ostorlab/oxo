@@ -308,15 +308,6 @@ class AgentRuntime:
             the agent docker service.
         """
         agent_definition = self.create_agent_definition_from_label()
-        agent_yaml_args = [arg.get("name") for arg in agent_definition.args]
-        for arg in self.agent.args:
-            if arg.name not in agent_yaml_args:
-                logger.error(
-                    "Argument %s is defined in the agent settings but not in the agent definition. "
-                    "Please update your definition file.",
-                    arg.name,
-                )
-                raise exceptions.ArgumentMissingInAgentDefinitionError()
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
             endpoint_spec = docker_types_services.EndpointSpec(
