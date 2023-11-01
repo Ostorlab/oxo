@@ -10,7 +10,6 @@ import io
 import logging
 import uuid
 import base64
-import random
 from typing import List, Optional
 
 import docker
@@ -349,8 +348,6 @@ class AgentRuntime:
             or self.agent.container_image.replace(":", "_").replace(".", "")
             + "_"
             + self.runtime_name
-            + "_"
-            + str(random.randrange(0, 9999))
         )
 
         env = [
