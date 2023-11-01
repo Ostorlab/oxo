@@ -1,7 +1,7 @@
 """Define methods to style components for console."""
 
 STYLE_RISK_MAP = {
-    "CRITICAL": "[bold bright_white on #263238  ]Critical[/]",
+    "CRITICAL": "[bold bright_white on #263238]Critical[/]",
     "HIGH": "[bold bright_white on #F55246]High[/]",
     "MEDIUM": "[bold bright_white on #FF9800]Medium[/]",
     "LOW": "[bold bright_white on #FDDB45]Low[/]",
