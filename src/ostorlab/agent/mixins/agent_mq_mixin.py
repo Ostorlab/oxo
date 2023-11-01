@@ -9,6 +9,7 @@ import logging
 from typing import List, Optional
 
 import aio_pika
+import tenacity
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,11 @@ class AgentMQMixin:
             channel = await connection.channel()
             await self._declare_mq_queue(channel, delete_queue_first)
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(
+            aio_pika.exceptions.ChannelInvalidStateError
+        ),
+    )
     async def mq_run(self, delete_queue_first: bool = False) -> None:
         """Use a channel to declare the queue, set the listener on the selectors and consume the received messaged.
         Args:
@@ -158,6 +164,11 @@ class AgentMQMixin:
             )
             await exchange.publish(routing_key=key, message=pika_message)
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(
+            aio_pika.exceptions.ChannelInvalidStateError
+        ),
+    )
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
