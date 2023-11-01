@@ -10,7 +10,6 @@ import datetime
 from typing import List, Optional
 
 import aio_pika
-import tenacity
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +55,9 @@ class AgentMQMixin:
         )
 
     async def _get_connection(self) -> aio_pika.Connection:
-        return await aio_pika.connect_robust(url=self._url, loop=self._loop)
+        kwargs = {"fail_fast": "false"}
+        connection = aio_pika.RobustConnection(url=self._url, loop=self._loop, **kwargs)
+        return await connection.connect()
 
     async def _get_channel(self) -> aio_pika.Channel:
         async with self._connection_pool.acquire() as connection:
@@ -139,16 +140,6 @@ class AgentMQMixin:
         """Callback to implement to process the MQ messages received."""
         raise NotImplementedError()
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(MAX_MQ_CALL_RETRIES),
-        wait=tenacity.wait_fixed(MQ_CALL_WAIT_BEFORE_RETRY.seconds),
-        retry=tenacity.retry_if_exception_type(
-            aio_pika.exceptions.CONNECTION_EXCEPTIONS
-        ),
-        retry_error_callback=lambda retry_state: retry_state.outcome.result()
-        if retry_state.outcome is not None
-        else None,
-    )
     async def async_mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
