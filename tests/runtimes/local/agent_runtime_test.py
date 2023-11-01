@@ -1,10 +1,10 @@
 """Unittest for agent runtime."""
 import docker
 
-from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
-from ostorlab.runtimes.local import agent_runtime
 from ostorlab.utils import defintions as utils_defintions
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes.local import agent_runtime
 
 import ostorlab
 
