@@ -10,7 +10,6 @@ import io
 import logging
 import uuid
 import base64
-import random
 from typing import List, Optional
 
 import docker

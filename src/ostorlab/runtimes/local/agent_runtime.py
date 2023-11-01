@@ -9,7 +9,6 @@ import logging
 import hashlib
 import uuid
 import base64
-import random
 from typing import List, Optional
 
 import docker
@@ -337,7 +336,7 @@ class AgentRuntime:
 
         service_name = (
             agent_definition.service_name
-            or self.agent.container_image.replace(":", "_").replace(".", "")
+            or self.agent.container_image.split(":")[0].replace(".", "")
             + "_"
             + self.runtime_name
         )
