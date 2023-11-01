@@ -9,7 +9,6 @@ import logging
 from typing import List, Optional
 
 import aio_pika
-from aio_pika.abc import AbstractRobustConnection
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ class AgentMQMixin:
             self._get_channel, max_size=64, loop=self._loop
         )
 
-    async def _get_connection(self) -> AbstractRobustConnection:
+    async def _get_connection(self) -> aio_pika.abc.AbstractRobustConnection:
         kwargs = {"fail_fast": "false"}
         return await aio_pika.connect_robust(url=self._url, loop=self._loop, **kwargs)
 
@@ -60,7 +59,9 @@ class AgentMQMixin:
             channel: aio_pika.Channel = await connection.channel()
             return channel
 
-    async def _get_exchange(self, channel: aio_pika.Channel) -> aio_pika.Exchange:
+    async def _get_exchange(
+        self, channel: aio_pika.abc.AbstractChannel
+    ) -> aio_pika.abc.AbstractExchange:
         return await channel.declare_exchange(
             self._topic,
             type=aio_pika.ExchangeType.TOPIC,
@@ -93,7 +94,9 @@ class AgentMQMixin:
         await self._queue.consume(self._mq_process_message, no_ack=False)
 
     async def _declare_mq_queue(
-        self, channel: aio_pika.Channel, delete_queue_first: bool = False
+        self,
+        channel: aio_pika.abc.AbstractRobustChannel,
+        delete_queue_first: bool = False,
     ) -> None:
         """Declare the MQ queue on a given channel.
         The queue is durable, re-declaring the queue will return the same queue
@@ -124,7 +127,9 @@ class AgentMQMixin:
         for k in self._keys:
             await self._queue.bind(exchange, k)
 
-    async def _mq_process_message(self, message: aio_pika.IncomingMessage) -> None:
+    async def _mq_process_message(
+        self, message: aio_pika.abc.AbstractIncomingMessage
+    ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
         logger.debug("incoming pika message received")
         async with message.process(requeue=True, reject_on_redelivered=True):
