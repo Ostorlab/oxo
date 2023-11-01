@@ -4,6 +4,7 @@ Example of usage:
     - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
 import io
 import logging
+import requests
 from typing import List
 
 import click
@@ -99,15 +100,17 @@ def run(
     if runtime_instance.can_run(agent_group_definition=agent_group):
         ctx.obj["agent_group_definition"] = agent_group
         ctx.obj["title"] = title
-
-        if install:
-            # Trigger both the runtime installation routine and install all the provided agents.
-            runtime_instance.install()
-            for ag in agent_group.agents:
-                try:
-                    install_agent.install(ag.key, ag.version)
-                except install_agent.AgentDetailsNotFound:
-                    console.warning(f"agent {ag.key} not found on the store")
+        if install is True:
+            try:
+                # Trigger both the runtime installation routine and install all the provided agents.
+                runtime_instance.install()
+                for ag in agent_group.agents:
+                    try:
+                        install_agent.install(ag.key, ag.version)
+                    except install_agent.AgentDetailsNotFound:
+                        console.warning(f"agent {ag.key} not found on the store")
+            except requests.exceptions.ConnectionError as e:
+                raise click.ClickException(f"Could not install the agents: {e}")
 
         if ctx.invoked_subcommand is None:
             runtime_instance.scan(
