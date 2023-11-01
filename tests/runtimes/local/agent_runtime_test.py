@@ -8,6 +8,7 @@ from ostorlab.runtimes.local import agent_runtime
 
 import ostorlab
 
+
 def container_name_mock(name):
     del name
     return "name"
