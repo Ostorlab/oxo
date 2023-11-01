@@ -1,16 +1,21 @@
 """Define methods to style components for console."""
 
+STYLE_RISK_MAP = {
+    "CRITICAL": "[bold bright_white on #263238  ]Critical[/]",
+    "HIGH": "[bold bright_white on #F55246]High[/]",
+    "MEDIUM": "[bold bright_white on #FF9800]Medium[/]",
+    "LOW": "[bold bright_white on #FDDB45]Low[/]",
+    "POTENTIALLY": "[bold bright_white on #A6A6A6]Potentially[/]",
+    "HARDENING": "[bold bright_white on #A438B6]Hardening[/]",
+    "SECURE": "[bold bright_white on green #2D6B32]Secure[/]",
+    "INFO": "[bold bright_white on #036CDB]Info[/]",
+    "IMPORTANT": "[bold bright_white on #43A047]Important[/]",
+}
+
 
 def style_risk(risk: str) -> str:
     """Stylize the risk with colors."""
-    if risk == "HIGH":
-        return "[bold bright_white on red]High[/]"
-    elif risk == "MEDIUM":
-        return "[bold bright_white on yellow]Medium[/]"
-    elif risk == "LOW":
-        return "[bold bright_white on bright_yellow]Low[/]"
-    else:
-        return risk
+    return STYLE_RISK_MAP.get(risk, risk)
 
 
 def style_progress(progress: str) -> str:
