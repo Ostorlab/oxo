@@ -340,8 +340,6 @@ class AgentRuntime:
             or self.agent.container_image.replace(":", "_").replace(".", "")
             + "_"
             + self.runtime_name
-            + "_"
-            + str(random.randrange(0, 9999))
         )
 
         env = [
