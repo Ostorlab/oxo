@@ -1,15 +1,12 @@
 """Unittest for agent runtime."""
 import docker
-import pytest
 
-from ostorlab.runtimes import definitions
-from ostorlab.utils import defintions as utils_defintions
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import agent_runtime
-from ostorlab import exceptions
+from ostorlab.utils import defintions as utils_defintions
 
 import ostorlab
-
 
 def container_name_mock(name):
     del name
