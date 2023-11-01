@@ -9,6 +9,7 @@ import logging
 from typing import List, Optional
 
 import aio_pika
+from aio_pika.abc import AbstractRobustConnection
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,9 @@ class AgentMQMixin:
             self._get_channel, max_size=64, loop=self._loop
         )
 
-    async def _get_connection(self) -> aio_pika.Connection:
+    async def _get_connection(self) -> AbstractRobustConnection:
         kwargs = {"fail_fast": "false"}
-        connection = aio_pika.RobustConnection(url=self._url, loop=self._loop, **kwargs)
-        await connection.connect()
-        return connection
+        return await aio_pika.connect_robust(url=self._url, loop=self._loop, **kwargs)
 
     async def _get_channel(self) -> aio_pika.Channel:
         async with self._connection_pool.acquire() as connection:
