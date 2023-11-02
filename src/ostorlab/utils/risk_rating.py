@@ -6,6 +6,7 @@ from typing import List
 class RiskRating(enum.Enum):
     """Enumeration of the risk rating of a scan."""
 
+    CRITICAL = "Critical"
     HIGH = "High"
     MEDIUM = "Medium"
     LOW = "Low"
@@ -25,12 +26,13 @@ class RiskRating(enum.Enum):
 
 
 RATINGS_ORDER = {
-    RiskRating.HIGH.name: 0,
-    RiskRating.MEDIUM.name: 1,
-    RiskRating.LOW.name: 2,
-    RiskRating.POTENTIALLY.name: 3,
-    RiskRating.HARDENING.name: 4,
-    RiskRating.SECURE.name: 5,
-    RiskRating.IMPORTANT.name: 6,
-    RiskRating.INFO.name: 7,
+    RiskRating.CRITICAL.name: 0,
+    RiskRating.HIGH.name: 1,
+    RiskRating.MEDIUM.name: 2,
+    RiskRating.LOW.name: 3,
+    RiskRating.POTENTIALLY.name: 4,
+    RiskRating.HARDENING.name: 5,
+    RiskRating.SECURE.name: 6,
+    RiskRating.IMPORTANT.name: 7,
+    RiskRating.INFO.name: 8,
 }

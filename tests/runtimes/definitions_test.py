@@ -34,7 +34,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         args=[utils_definitions.Arg(name="color", type="string", value="red")],
         constraints=[],
         mounts=[],
-        restart_policy="any",
+        restart_policy="",
         open_ports=[],
     )
     dummy_agent_def2 = definitions.AgentSettings(
@@ -42,7 +42,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
         args=[utils_definitions.Arg(name="color", type="string", value="blue")],
         constraints=[],
         mounts=[],
-        restart_policy="any",
+        restart_policy="",
         open_ports=[
             utils_definitions.PortMapping(source_port=50800, destination_port=55000)
         ],
