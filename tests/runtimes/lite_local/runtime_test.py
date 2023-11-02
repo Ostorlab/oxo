@@ -129,7 +129,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
         mem_limit=420000,
-        service_name="my_service",
+        service_name="complex_long_name_special_duplicate_duplicate_name_agent_def",
         restart_policy="",
     )
     mocker.patch(
@@ -185,7 +185,10 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     assert kwargs["resources"]["Limits"]["MemoryBytes"] == 700000
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
-    assert kwargs["name"] == "my_service"
+    assert len(kwargs["name"]) < 63
+    assert (
+        kwargs["name"] == "complex_long_name_special_duplicate_duplicate_name_agent_def"
+    )
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(

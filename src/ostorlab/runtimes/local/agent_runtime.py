@@ -9,6 +9,7 @@ import logging
 import hashlib
 import uuid
 import base64
+import random
 from typing import List, Optional
 
 import docker
@@ -35,6 +36,8 @@ HEALTHCHECK_RETRIES = 10
 HEALTHCHECK_TIMEOUT = 30 * SECOND
 HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = 30 * SECOND
+MAX_SERVICE_NAME_LEN = 63
+MAX_RANDOM_NAME_LEN = 5
 
 
 class Error(exceptions.OstorlabError):
@@ -340,6 +343,10 @@ class AgentRuntime:
             + "_"
             + self.runtime_name
         )
+
+        # We apply the random str only if it will not break the max docker service name characters (63)
+        if MAX_SERVICE_NAME_LEN - len(service_name) - MAX_RANDOM_NAME_LEN > 0:
+            service_name = service_name + "_" + str(random.randrange(0, 9999))
 
         env = [
             f"UNIVERSE={self.runtime_name}",
