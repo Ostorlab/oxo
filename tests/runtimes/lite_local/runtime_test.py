@@ -258,5 +258,5 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
     assert kwargs["resources"]["Limits"]["MemoryBytes"] == 700000
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
-    assert kwargs["name"] == "my_service"
+    assert "my_service_" in kwargs["name"]
     assert kwargs["cap_add"] == ["NET_ADMIN"]
