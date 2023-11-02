@@ -84,6 +84,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
     # assert arguments were overridden by the agent settings.
     assert kwargs["resources"]["Limits"]["MemoryBytes"] == 700000
     assert len(kwargs["name"]) < 63
+    assert "complex_long_name_special_duplicate_agent_42" in kwargs["name"]
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 40000
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
