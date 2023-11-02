@@ -345,7 +345,7 @@ class AgentRuntime:
         )
 
         # We apply the random str only if it will not break the max docker service name characters (63)
-        if MAX_SERVICE_NAME_LEN - len(service_name) - MAX_RANDOM_NAME_LEN > 0:
+        if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
             service_name = service_name + "_" + str(random.randrange(0, 9999))
 
         env = [
