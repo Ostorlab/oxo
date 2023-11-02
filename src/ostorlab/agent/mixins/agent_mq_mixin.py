@@ -52,8 +52,9 @@ class AgentMQMixin:
         )
 
     async def _get_connection(self) -> aio_pika.abc.AbstractRobustConnection:
-        kwargs = {"fail_fast": False}
-        return await aio_pika.connect_robust(url=self._url, loop=self._loop, **kwargs)
+        return await aio_pika.connect_robust(
+            url=self._url, loop=self._loop, fail_fast=False
+        )
 
     async def _get_channel(self) -> aio_pika.Channel:
         async with self._connection_pool.acquire() as connection:
