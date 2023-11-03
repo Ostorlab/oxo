@@ -46,10 +46,6 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
 
 
-class ArgumentMissingInAgentDefinitionError(exceptions.OstorlabError):
-    """Argument is present in the settings but not in the agent definition."""
-
-
 def _setup_logging(agent_key: str, universe: str) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
@@ -133,12 +129,12 @@ class AgentMixin(
         for a in self.settings.args:
             # Enforce that only declared arguments are accepted.
             if a.name not in arguments:
+                # TODO(OS-5119): Change behavior to fail of the argument is missing from definition.
                 logger.warning(
                     "Argument %s is defined in the agent settings but not in the agent definition. "
                     "Please update your definition file or the agent will fail in the future.",
                     a.name,
                 )
-                raise ArgumentMissingInAgentDefinitionError()
 
             if a.type == "binary":
                 arguments[a.name] = a.value
