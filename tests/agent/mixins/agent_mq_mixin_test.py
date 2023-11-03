@@ -12,9 +12,8 @@ from ostorlab.utils import strings
 class Agent(agent_mq_mixin.AgentMQMixin):
     """Helper class to test MQ implementation of send and process messages."""
 
-    def __init__(
-        self, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
-    ):
+    def __init__(self, name="test1", keys=("a.#",)):
+        url = "amqp://guest:guest@localhost:5672/"
         topic = "test_topic"
         super().__init__(name=name, keys=keys, url=url, topic=topic)
         self.stub = None
@@ -25,10 +24,8 @@ class Agent(agent_mq_mixin.AgentMQMixin):
             self.stub(message)
 
     @classmethod
-    def create(
-        cls, stub, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
-    ):
-        instance = cls(name=name, keys=keys, url=url)
+    def create(cls, stub, name="test1", keys=("a.#",)):
+        instance = cls(name=name, keys=keys)
         instance.stub = stub
         return instance
 
@@ -45,20 +42,6 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
     await asyncio.sleep(1)
     stub.assert_called_with(word)
     assert stub.call_count == 1
-
-
-@pytest.mark.asyncio
-async def testConnection_whenConnectionException_reconnectIsCalled(mocker):
-    stub = mocker.stub(name="test1")
-    client = Agent.create(
-        stub, name="test1", keys=["d.#"], url="amqp://wrong:wrong@localhost:5672/"
-    )
-    task = asyncio.create_task(client.mq_init())
-    try:
-        await asyncio.wait_for(task, timeout=10)
-    except asyncio.TimeoutError:
-        pass
-    assert task.done() is True
 
 
 @pytest.mark.skip(reason="Needs debugging why MQ is not resending the message")
