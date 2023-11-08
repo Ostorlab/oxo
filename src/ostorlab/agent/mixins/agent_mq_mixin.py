@@ -9,7 +9,6 @@ import logging
 from typing import List, Optional
 
 import aio_pika
-import tenacity
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +80,6 @@ class AgentMQMixin:
             channel = await connection.channel()
             await self._declare_mq_queue(channel, delete_queue_first)
 
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(
-            aio_pika.exceptions.__all__
-        ),
-    )
     async def mq_run(self, delete_queue_first: bool = False) -> None:
         """Use a channel to declare the queue, set the listener on the selectors and consume the received messaged.
         Args:
@@ -139,10 +133,18 @@ class AgentMQMixin:
     ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
         logger.debug("incoming pika message received")
-        async with message.process(requeue=True, reject_on_redelivered=True):
-            await self._loop.run_in_executor(
-                self._executor, self.process_message, message.routing_key, message.body
-            )
+        try:
+            async with message.process(requeue=True, reject_on_redelivered=True):
+                await self._loop.run_in_executor(
+                    self._executor, self.process_message, message.routing_key, message.body
+                )
+        except aio_pika.exceptions.ChannelInvalidStateError:
+            await self._get_connection()
+            await self._mq_process_message(message)
+
+        except aio_pika.exceptions.ConnectionClosed:
+            await self._get_connection()
+            await self._mq_process_message(message)
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Callback to implement to process the MQ messages received."""
@@ -158,18 +160,21 @@ class AgentMQMixin:
             message_priority: the priority of the message. Default is 0
         """
         logger.debug("sending %s to %s", message, key)
-        async with self._channel_pool.acquire() as channel:
-            exchange = await self._get_exchange(channel)
-            pika_message = aio_pika.Message(
-                body=message, priority=message_priority or 0
-            )
-            await exchange.publish(routing_key=key, message=pika_message)
+        try:
+            async with self._channel_pool.acquire() as channel:
+                exchange = await self._get_exchange(channel)
+                pika_message = aio_pika.Message(
+                    body=message, priority=message_priority or 0
+                )
+                await exchange.publish(routing_key=key, message=pika_message)
+        except aio_pika.exceptions.ConnectionClosed:
+            await self._get_connection()
+            await self.async_mq_send_message(key, message, message_priority)
 
-    @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(
-            aio_pika.exceptions.__all__
-        ),
-    )
+        except aio_pika.exceptions.ChannelInvalidStateError:
+            await self._get_connection()
+            await self.async_mq_send_message(key, message, message_priority)
+
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
