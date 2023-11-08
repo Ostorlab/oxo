@@ -83,7 +83,7 @@ class AgentMQMixin:
 
     @tenacity.retry(
         retry=tenacity.retry_if_exception_type(
-            aio_pika.exceptions.ChannelInvalidStateError
+            aio_pika.exceptions.__all__
         ),
     )
     async def mq_run(self, delete_queue_first: bool = False) -> None:
@@ -167,7 +167,7 @@ class AgentMQMixin:
 
     @tenacity.retry(
         retry=tenacity.retry_if_exception_type(
-            aio_pika.exceptions.ChannelInvalidStateError
+            aio_pika.exceptions.__all__
         ),
     )
     def mq_send_message(
