@@ -140,11 +140,7 @@ class AgentMQMixin:
                 )
         except aio_pika.exceptions.ChannelInvalidStateError:
             await self._get_connection()
-            await self._mq_process_message(message)
-
-        except aio_pika.exceptions.ConnectionClosed:
-            await self._get_connection()
-            await self._mq_process_message(message)
+            await self.mq_run()
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Callback to implement to process the MQ messages received."""
@@ -169,11 +165,7 @@ class AgentMQMixin:
                 await exchange.publish(routing_key=key, message=pika_message)
         except aio_pika.exceptions.ConnectionClosed:
             await self._get_connection()
-            await self.async_mq_send_message(key, message, message_priority)
-
-        except aio_pika.exceptions.ChannelInvalidStateError:
-            await self._get_connection()
-            await self.async_mq_send_message(key, message, message_priority)
+            self.mq_send_message(key, message, message_priority)
 
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
