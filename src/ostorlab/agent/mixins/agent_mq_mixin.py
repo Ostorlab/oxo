@@ -167,7 +167,7 @@ class AgentMQMixin:
             aio_pika.exceptions.ConnectionClosed
         ),
     )
-    async def mq_send_message(
+    def mq_send_message(
             self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """the method sends the message to the selected key with the defined priority in async mode .
