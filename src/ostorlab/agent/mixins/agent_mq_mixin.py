@@ -10,6 +10,7 @@ from typing import List, Optional
 
 import aio_pika
 import tenacity
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,13 +18,13 @@ class AgentMQMixin:
     """MQ Mixin class used to initialize the channel, send messages and process them."""
 
     def __init__(
-            self,
-            name: str,
-            keys: List[str],
-            url: str,
-            topic: str,
-            max_priority: Optional[int] = None,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
+        self,
+        name: str,
+        keys: List[str],
+        url: str,
+        topic: str,
+        max_priority: Optional[int] = None,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
         Args:
@@ -61,7 +62,7 @@ class AgentMQMixin:
             return channel
 
     async def _get_exchange(
-            self, channel: aio_pika.abc.AbstractChannel
+        self, channel: aio_pika.abc.AbstractChannel
     ) -> aio_pika.abc.AbstractExchange:
         return await channel.declare_exchange(
             self._topic,
@@ -95,9 +96,9 @@ class AgentMQMixin:
         await self._queue.consume(self._mq_process_message, no_ack=False)
 
     async def _declare_mq_queue(
-            self,
-            channel: aio_pika.abc.AbstractRobustChannel,
-            delete_queue_first: bool = False,
+        self,
+        channel: aio_pika.abc.AbstractRobustChannel,
+        delete_queue_first: bool = False,
     ) -> None:
         """Declare the MQ queue on a given channel.
         The queue is durable, re-declaring the queue will return the same queue
@@ -129,14 +130,17 @@ class AgentMQMixin:
             await self._queue.bind(exchange, k)
 
     async def _mq_process_message(
-            self, message: aio_pika.abc.AbstractIncomingMessage
+        self, message: aio_pika.abc.AbstractIncomingMessage
     ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
         logger.debug("incoming pika message received")
         try:
             async with message.process(requeue=True, reject_on_redelivered=True):
                 await self._loop.run_in_executor(
-                    self._executor, self.process_message, message.routing_key, message.body
+                    self._executor,
+                    self.process_message,
+                    message.routing_key,
+                    message.body,
                 )
         except aio_pika.exceptions.ChannelInvalidStateError:
             await self.mq_run()
@@ -146,7 +150,7 @@ class AgentMQMixin:
         raise NotImplementedError()
 
     async def async_mq_send_message(
-            self, key: str, message: bytes, message_priority: Optional[int] = None
+        self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """Async Send the message to the provided routing key and its priority.
         Args:
@@ -163,12 +167,10 @@ class AgentMQMixin:
             await exchange.publish(routing_key=key, message=pika_message)
 
     @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(
-            aio_pika.exceptions.ConnectionClosed
-        ),
+        retry=tenacity.retry_if_exception_type(aio_pika.exceptions.ConnectionClosed),
     )
     def mq_send_message(
-            self, key: str, message: bytes, message_priority: Optional[int] = None
+        self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """the method sends the message to the selected key with the defined priority in async mode .
         Args:
