@@ -146,6 +146,18 @@ class AgentMQMixin:
         """Callback to implement to process the MQ messages received."""
         raise NotImplementedError()
 
+    async def async_mq_publish_exchange(self, key, message, message_priority):
+        try:
+            async with self._channel_pool.acquire() as channel:
+                exchange = await self._get_exchange(channel)
+                pika_message = aio_pika.Message(
+                    body=message, priority=message_priority or 0
+                )
+                await exchange.publish(routing_key=key, message=pika_message)
+        except aio_pika.exceptions.ConnectionClosed:
+            await self._get_connection()
+            await self.async_mq_publish_exchange(key, message, message_priority)
+
     async def async_mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
@@ -156,15 +168,7 @@ class AgentMQMixin:
             message_priority: the priority of the message. Default is 0
         """
         logger.debug("sending %s to %s", message, key)
-        try:
-            async with self._channel_pool.acquire() as channel:
-                exchange = await self._get_exchange(channel)
-                pika_message = aio_pika.Message(
-                    body=message, priority=message_priority or 0
-                )
-                await exchange.publish(routing_key=key, message=pika_message)
-        except aio_pika.exceptions.ConnectionClosed:
-            await self._get_connection()
+        await self.async_mq_publish_exchange(key, message, message_priority)
 
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
