@@ -9,6 +9,7 @@ import logging
 from typing import List, Optional
 
 import aio_pika
+import tenacity
 
 logger = logging.getLogger(__name__)
 
@@ -50,15 +51,19 @@ class AgentMQMixin:
             self._get_channel, max_size=64, loop=self._loop
         )
 
-    async def _get_connection(self) -> aio_pika.Connection:
-        return await aio_pika.connect_robust(url=self._url, loop=self._loop)
+    async def _get_connection(self) -> aio_pika.abc.AbstractRobustConnection:
+        return await aio_pika.connect_robust(
+            url=self._url, loop=self._loop, fail_fast=False
+        )
 
     async def _get_channel(self) -> aio_pika.Channel:
         async with self._connection_pool.acquire() as connection:
             channel: aio_pika.Channel = await connection.channel()
             return channel
 
-    async def _get_exchange(self, channel: aio_pika.Channel) -> aio_pika.Exchange:
+    async def _get_exchange(
+        self, channel: aio_pika.abc.AbstractChannel
+    ) -> aio_pika.abc.AbstractExchange:
         return await channel.declare_exchange(
             self._topic,
             type=aio_pika.ExchangeType.TOPIC,
@@ -91,7 +96,9 @@ class AgentMQMixin:
         await self._queue.consume(self._mq_process_message, no_ack=False)
 
     async def _declare_mq_queue(
-        self, channel: aio_pika.Channel, delete_queue_first: bool = False
+        self,
+        channel: aio_pika.abc.AbstractRobustChannel,
+        delete_queue_first: bool = False,
     ) -> None:
         """Declare the MQ queue on a given channel.
         The queue is durable, re-declaring the queue will return the same queue
@@ -122,13 +129,22 @@ class AgentMQMixin:
         for k in self._keys:
             await self._queue.bind(exchange, k)
 
-    async def _mq_process_message(self, message: aio_pika.IncomingMessage) -> None:
+    async def _mq_process_message(
+        self, message: aio_pika.abc.AbstractIncomingMessage
+    ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
         logger.debug("incoming pika message received")
-        async with message.process(requeue=True, reject_on_redelivered=True):
-            await self._loop.run_in_executor(
-                self._executor, self.process_message, message.routing_key, message.body
-            )
+        try:
+            async with message.process(requeue=True, reject_on_redelivered=True):
+                await self._loop.run_in_executor(
+                    self._executor,
+                    self.process_message,
+                    message.routing_key,
+                    message.body,
+                )
+        except aio_pika.exceptions.ChannelInvalidStateError:
+            logger.warning("The channel is closed unexpectedly.")
+            await self.mq_run()
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Callback to implement to process the MQ messages received."""
@@ -151,6 +167,9 @@ class AgentMQMixin:
             )
             await exchange.publish(routing_key=key, message=pika_message)
 
+    @tenacity.retry(
+        retry=tenacity.retry_if_exception_type(aio_pika.exceptions.ConnectionClosed),
+    )
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
@@ -161,6 +180,7 @@ class AgentMQMixin:
             message_priority: the priority to use for the message default is 0.
         """
         logger.debug("sending %s to %s", message, key)
+
         if not self._loop.is_running():
             self._loop.run_until_complete(
                 self.async_mq_send_message(key, message, message_priority)
