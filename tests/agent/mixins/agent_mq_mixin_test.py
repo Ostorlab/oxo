@@ -54,10 +54,12 @@ async def testConnection_whenConnectionException_reconnectIsCalled(mocker):
         stub, name="test1", keys=["d.#"], url="amqp://wrong:wrong@localhost:5672/"
     )
     task = asyncio.create_task(client.mq_init())
+
     try:
         await asyncio.wait_for(task, timeout=10)
     except asyncio.TimeoutError:
         pass
+
     assert task.done() is True
 
 
