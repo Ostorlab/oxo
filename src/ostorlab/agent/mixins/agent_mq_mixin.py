@@ -143,6 +143,7 @@ class AgentMQMixin:
                     message.body,
                 )
         except aio_pika.exceptions.ChannelInvalidStateError:
+            logger.warning("The channel is closed unexpectedly.")
             await self.mq_run()
 
     def process_message(self, selector: str, message: bytes) -> None:
