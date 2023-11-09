@@ -165,8 +165,6 @@ class AgentMQMixin:
                 await exchange.publish(routing_key=key, message=pika_message)
         except aio_pika.exceptions.ConnectionClosed:
             await self._get_connection()
-            self._loop.close()
-            self.mq_send_message(key, message, message_priority)
 
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
