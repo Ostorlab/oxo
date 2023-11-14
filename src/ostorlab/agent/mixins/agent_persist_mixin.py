@@ -237,11 +237,12 @@ class AgentPersistMixin:
         ] = None,
     ) -> bool:
         """
-        Returns False if a network have never been persisted before, else it's returns True
+        Returns False if a network have never been persisted before, else it's returns True.
+
         this method takes
         Args:
-            key: Unique key for the set or a callable that gets the ip network getting check and returns the key.
-            ip_range: IPv4Network or IPv4Network network to persist
+            key: key for the set
+            ip_range: IPv4Network or IPv4Network network to check
             value: Callable to format the IP network. This is helpful to add extra data to the range, like for instance
              the port or service in case many needs to be tested separately.
 

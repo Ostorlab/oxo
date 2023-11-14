@@ -171,7 +171,7 @@ async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(
 @pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue(
+async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTrue(
     mocker, redis_service, clean_redis_data
 ):
     """Test mixin.ip_network_exist returns True if ip_range is added and False if the ip_range
