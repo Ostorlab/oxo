@@ -247,7 +247,8 @@ class AgentPersistMixin:
              the port or service in case many needs to be tested separately.
 
         Returns:
-            returns False if network is never been persisted (diff to add_ip_network shouldn't add it) and True if the network or one of it's super nets already exits.
+            returns False if network is never been persisted (diff to add_ip_network shouldn't add it)
+            and True if the network or one of it's super nets already exits.
         """
         ip_network = ip_range
         while ip_network.prefixlen != 0:
