@@ -176,7 +176,7 @@ async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(
 async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTrue(
     mocker: plugin.MockerFixture,
     redis_service: local_redis_service.LocalRedis,
-    clean_redis_data
+    clean_redis_data,
 ):
     """Test mixin.ip_network_exist returns True if ip_range is added and False if the ip_range
     or one of his supersets already exits"""
