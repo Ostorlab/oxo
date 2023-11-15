@@ -2,6 +2,8 @@
 import ipaddress
 
 import pytest
+from pytest_mock import plugin
+from ostorlab.runtimes.local.services import redis as local_redis_service
 
 from ostorlab.agent.mixins import agent_persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
@@ -165,4 +167,37 @@ async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(
             "test_ip", ipaddress.ip_network("10.10.10.0/28"), lambda net: f"X_{net}_Y"
         )
         is False
+    )
+
+
+@pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
+async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTrue(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data,
+):
+    """Test mixin.ip_network_exist returns True if ip_range is added and False if the ip_range
+    or one of his supersets already exits"""
+    del mocker, redis_service, clean_redis_data
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    assert (
+        mixin.ip_network_exists(
+            "test_ip", ipaddress.ip_network("8.8.8.0/23"), lambda net: f"X_{net}_Y"
+        )
+        is False
+    )
+    mixin.add_ip_network(
+        "test_ip", ipaddress.ip_network("8.8.8.0/23"), lambda net: f"X_{net}_Y"
+    )
+    assert (
+        mixin.ip_network_exists(
+            "test_ip", ipaddress.ip_network("8.8.8.0/23"), lambda net: f"X_{net}_Y"
+        )
+        is True
     )
