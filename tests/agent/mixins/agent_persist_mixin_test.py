@@ -2,6 +2,8 @@
 import ipaddress
 
 import pytest
+from pytest_mock import plugin
+from ostorlab.runtimes.local.services import redis as local_redis_service
 
 from ostorlab.agent.mixins import agent_persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
@@ -172,7 +174,9 @@ async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTrue(
-    mocker, redis_service, clean_redis_data
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data
 ):
     """Test mixin.ip_network_exist returns True if ip_range is added and False if the ip_range
     or one of his supersets already exits"""
