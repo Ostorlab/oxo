@@ -237,7 +237,7 @@ class AgentPersistMixin:
         ] = None,
     ) -> bool:
         """
-        Returns False if a network have never been persisted before, else it's returns True.
+        Returns False if a network have never been persisted before, else it returns True.
 
         this method takes
         Args:
