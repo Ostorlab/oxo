@@ -226,7 +226,7 @@ class AgentPersistMixin:
             member_value = ip_range.exploded
         return self.set_add(key, member_value)
 
-    def ip_network_exist(
+    def ip_network_exists(
         self,
         key: Union[bytes, str],
         ip_range: Union[ipaddress.IPv6Network, ipaddress.IPv4Network],

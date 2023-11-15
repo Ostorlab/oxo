@@ -183,7 +183,7 @@ async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTr
     mixin = agent_persist_mixin.AgentPersistMixin(settings)
 
     assert (
-        mixin.ip_network_exist(
+        mixin.ip_network_exists(
             "test_ip", ipaddress.ip_network("8.8.8.0/23"), lambda net: f"X_{net}_Y"
         )
         is False
@@ -192,7 +192,7 @@ async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTr
         "test_ip", ipaddress.ip_network("8.8.8.0/23"), lambda net: f"X_{net}_Y"
     )
     assert (
-        mixin.ip_network_exist(
+        mixin.ip_network_exists(
             "test_ip", ipaddress.ip_network("8.8.8.0/23"), lambda net: f"X_{net}_Y"
         )
         is True
