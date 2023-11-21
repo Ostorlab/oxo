@@ -39,6 +39,11 @@ message ScriptCredential {
   optional string script = 1;
 }
 
+message BasicCredential {
+  optional string login = 1;
+  optional string password = 2;
+}
+
 message Message {
   optional string url = 1;
   optional string method = 2;
@@ -51,6 +56,7 @@ message Message {
   oneof credential_oneof {
     FormCredential form_credential = 7;
     ScriptCredential script_credential = 8;
+    BasicCredential basic_credential = 11;
   }
   optional Message parent = 9;
   repeated LocalStorage localstorage_items = 10;
