@@ -616,7 +616,8 @@ def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackN
 def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callbackNotCalled(
     agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
 ) -> None:
-    """When processing depth limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
+    """When processing depth limit is not set, the proto default value is 0,
+    the agent behavior must not trigger a callback."""
 
     process_mock = mocker.Mock()
 

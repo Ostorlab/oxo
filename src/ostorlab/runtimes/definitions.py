@@ -50,7 +50,7 @@ class AgentSettings:
     tracing_collector_url: Optional[str] = None
     caps: Optional[List[str]] = None
     cyclic_processing_limit: Optional[int] = None
-    processing_depth_limit: int | None = None
+    processing_depth_limit: Optional[int] = None
 
     @property
     def container_image(self):
