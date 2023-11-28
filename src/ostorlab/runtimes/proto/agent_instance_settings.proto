@@ -56,5 +56,5 @@ message AgentInstanceSettings {
   // Cyclic processing limit, to use to define depth of processing and avoid cyclic loops.
   optional uint32 cyclic_processing_limit = 18;
   // Processing depth limit, to use to set the depth of processing and avoid deep processing that never ends.
-    optional uint32 processing_depth_limit = 19;
+  optional uint32 processing_depth_limit = 19;
 }
