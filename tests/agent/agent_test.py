@@ -526,9 +526,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSet_callbackCalled(
         def process(self, message: agent_message.Message) -> None:
             pass
 
-        def on_max_processing_depth_reached(
-            self, message: agent_message.Message
-        ) -> None:
+        def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
             process_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
@@ -537,7 +535,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSet_callbackCalled(
     )
     agent_settings = runtime_definitions.AgentSettings(
         key="some_key",
-        processing_depth_limit=3,
+        depth_processing_limit=3,
     )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
@@ -551,7 +549,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSet_callbackCalled(
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "control": {"agents": ["agent1", "agent2", "agent3", "agent4"]},
             "message": actual_message.raw,
         },
     )
@@ -576,9 +574,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackN
         def process(self, message: agent_message.Message) -> None:
             pass
 
-        def on_max_processing_depth_reached(
-            self, message: agent_message.Message
-        ) -> None:
+        def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
             process_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
@@ -587,7 +583,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackN
     )
     agent_settings = runtime_definitions.AgentSettings(
         key="some_key",
-        processing_depth_limit=3,
+        depth_processing_limit=3,
     )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
@@ -601,7 +597,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackN
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {"agents": ["agentY", "agentX"]},
+            "control": {"agents": ["agent1", "agent2"]},
             "message": actual_message.raw,
         },
     )
@@ -627,9 +623,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callba
         def process(self, message: agent_message.Message) -> None:
             pass
 
-        def on_max_processing_depth_reached(
-            self, message: agent_message.Message
-        ) -> None:
+        def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
             process_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
@@ -653,7 +647,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callba
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "control": {"agents": ["agent1", "agent2", "agent3", "agent4"]},
             "message": actual_message.raw,
         },
     )

@@ -46,7 +46,7 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
 
 
-class MaximumProcessingDepthReachedError(exceptions.OstorlabError):
+class MaximumDepthProcessReachedError(exceptions.OstorlabError):
     """The processing depth limit is enforced and reached the limit."""
 
 
@@ -87,7 +87,7 @@ class AgentMixin(
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
         self.cyclic_processing_limit = agent_settings.cyclic_processing_limit
-        self.processing_depth_limit = agent_settings.processing_depth_limit
+        self.depth_processing_limit = agent_settings.depth_processing_limit
         # Arguments are defined in the agent definition, and can have a default value. The value can also be set from
         # the scan definition in the agent group. Therefore, we read both and override the value from the passed args.
         self.defined_args = agent_definition.args
@@ -208,14 +208,10 @@ class AgentMixin(
         # Validate the message before processing it.
         try:
             self._validate_message()
-        except (
-            MaximumCyclicProcessReachedError,
-            MaximumProcessingDepthReachedError,
-        ) as e:
-            if isinstance(e, MaximumCyclicProcessReachedError):
-                self.on_max_cyclic_process_reached(object_message)
-            elif isinstance(e, MaximumProcessingDepthReachedError):
-                self.on_max_processing_depth_reached(object_message)
+        except MaximumCyclicProcessReachedError:
+            self.on_max_cyclic_process_reached(object_message)
+        except MaximumDepthProcessReachedError:
+            self.on_max_depth_process_reached(object_message)
 
         try:
             logger.debug("Call to process with message= %s", raw_message)
@@ -245,12 +241,19 @@ class AgentMixin(
             ):
                 raise MaximumCyclicProcessReachedError()
 
-        if self.processing_depth_limit is not None and self.processing_depth_limit != 0:
+        if self.depth_processing_limit is not None and self.depth_processing_limit != 0:
             if (
                 len(self._control_message.data["control"]["agents"])
-                >= self.processing_depth_limit
+                >= self.depth_processing_limit
             ):
-                raise MaximumProcessingDepthReachedError()
+                agent_path = " -> ".join(
+                    self._control_message.data["control"]["agents"]
+                )
+                error_message = (
+                    f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
+                    f"Agents path: {agent_path}"
+                )
+                raise MaximumDepthProcessReachedError(error_message)
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:
@@ -327,12 +330,8 @@ class AgentMixin(
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def on_max_processing_depth_reached(self, message: agent_message.Message) -> None:
-        """Overridable method triggered on max processing depth reached.
-
-        Returns:
-            None
-        """
+    def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on max processing depth reached."""
         raise NotImplementedError()
 
     def emit_raw(
@@ -525,10 +524,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         """
         pass
 
-    def on_max_processing_depth_reached(self, message: agent_message.Message) -> None:
-        """Overridable method triggered on max processing depth reached.
-
-        Returns:
-            None
-        """
+    def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on max processing depth reached."""
         pass
