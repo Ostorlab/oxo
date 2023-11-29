@@ -32,6 +32,7 @@ message Agent{
     repeated Arg args = 4;
     repeated string caps = 5;
     optional uint32 cyclic_processing_limit=6;
+    optional uint32 depth_processing_limit=7;
 }
 
 message Links {

@@ -46,6 +46,10 @@ class MaximumCyclicProcessReachedError(exceptions.OstorlabError):
     """The cyclic process limit is enforced and reach set value."""
 
 
+class MaximumDepthProcessReachedError(exceptions.OstorlabError):
+    """The processing depth limit is enforced and reached the limit."""
+
+
 def _setup_logging(agent_key: str, universe: str) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
@@ -83,6 +87,7 @@ class AgentMixin(
         self.in_selectors = agent_definition.in_selectors
         self.out_selectors = agent_definition.out_selectors
         self.cyclic_processing_limit = agent_settings.cyclic_processing_limit
+        self.depth_processing_limit = agent_settings.depth_processing_limit
         # Arguments are defined in the agent definition, and can have a default value. The value can also be set from
         # the scan definition in the agent group. Therefore, we read both and override the value from the passed args.
         self.defined_args = agent_definition.args
@@ -205,6 +210,8 @@ class AgentMixin(
             self._validate_message()
         except MaximumCyclicProcessReachedError:
             self.on_max_cyclic_process_reached(object_message)
+        except MaximumDepthProcessReachedError:
+            self.on_max_depth_process_reached(object_message)
 
         try:
             logger.debug("Call to process with message= %s", raw_message)
@@ -224,15 +231,22 @@ class AgentMixin(
 
     def _validate_message(self) -> None:
         """Check the message received is valid, currently only check for cyclic processing limit."""
+        control_agents: list[str] = self._control_message.data["control"]["agents"]
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
         ):
-            if (
-                self._control_message.data["control"]["agents"].count(self.name)
-                >= self.cyclic_processing_limit
-            ):
+            if control_agents.count(self.name) >= self.cyclic_processing_limit:
                 raise MaximumCyclicProcessReachedError()
+
+        if self.depth_processing_limit is not None and self.depth_processing_limit != 0:
+            if len(control_agents) >= self.depth_processing_limit:
+                agent_path = " -> ".join(control_agents)
+                error_message = (
+                    f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
+                    f"Agents path: {agent_path}"
+                )
+                raise MaximumDepthProcessReachedError(error_message)
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:
@@ -306,6 +320,11 @@ class AgentMixin(
         Returns:
             None
         """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on max processing depth reached."""
         raise NotImplementedError()
 
     def emit_raw(
@@ -496,4 +515,8 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
+        pass
+
+    def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on max processing depth reached."""
         pass
