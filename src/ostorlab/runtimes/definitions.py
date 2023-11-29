@@ -50,7 +50,7 @@ class AgentSettings:
     tracing_collector_url: Optional[str] = None
     caps: Optional[List[str]] = None
     cyclic_processing_limit: Optional[int] = None
-    processing_depth_limit: Optional[int] = None
+    depth_processing_limit: Optional[int] = None
 
     @property
     def container_image(self):
@@ -124,7 +124,7 @@ class AgentSettings:
             tracing_collector_url=instance.tracing_collector_url,
             caps=instance.caps,
             cyclic_processing_limit=instance.cyclic_processing_limit,
-            processing_depth_limit=instance.processing_depth_limit,
+            depth_processing_limit=instance.depth_processing_limit,
         )
 
     def to_raw_proto(self) -> bytes:
@@ -230,7 +230,7 @@ class AgentGroupDefinition:
                 replicas=agent.get("replicas", 1),
                 caps=agent.get("caps"),
                 cyclic_processing_limit=agent.get("cyclic_processing_limit"),
-                processing_depth_limit=agent.get("processing_depth_limit"),
+                depth_processing_limit=agent.get("depth_processing_limit"),
             )
 
             agent_settings.append(agent_def)
@@ -270,7 +270,7 @@ class AgentGroupDefinition:
                 replicas=replicas,
                 caps=agent.caps,
                 cyclic_processing_limit=agent.cyclic_processing_limit,
-                processing_depth_limit=agent.processing_depth_limit,
+                depth_processing_limit=agent.depth_processing_limit,
             )
 
             agent_settings.append(agent_def)
