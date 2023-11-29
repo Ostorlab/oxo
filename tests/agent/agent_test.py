@@ -513,21 +513,21 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
     assert mp_event.is_set() is True
 
 
-def testProcessMessage_whenProcessingDepthLimitIsSet_callbackCalled(
+def testProcessMessage_whenProcessingDepthLimitIsReached_callbackCalled(
     agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
 ) -> None:
     """When processing depth limit is set and the limit is reached, the process should trigger a callback."""
 
-    process_mock = mocker.Mock()
+    on_max_depth_process_reached_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
-        """Helper class to test OpenTelemetry mixin implementation."""
+        """Helper class to test the max processing depth limit implementation."""
 
         def process(self, message: agent_message.Message) -> None:
             pass
 
         def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
-            process_mock(message)
+            on_max_depth_process_reached_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
@@ -558,7 +558,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSet_callbackCalled(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert process_mock.called is True
+    assert on_max_depth_process_reached_mock.called is True
 
 
 def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackNotCalled(
@@ -566,16 +566,16 @@ def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackN
 ) -> None:
     """When processing depth limit is set, the process should not trigger a callback if limit is not reached."""
 
-    process_mock = mocker.Mock()
+    on_max_depth_process_reached_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
-        """Helper class to test OpenTelemetry mixin implementation."""
+        """Helper class to test the max processing depth limit implementation."""
 
         def process(self, message: agent_message.Message) -> None:
             pass
 
         def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
-            process_mock(message)
+            on_max_depth_process_reached_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
@@ -606,7 +606,7 @@ def testProcessMessage_whenProcessingDepthLimitIsSetAndLimitNotReached_callbackN
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert process_mock.called is False
+    assert on_max_depth_process_reached_mock.called is False
 
 
 def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callbackNotCalled(
@@ -615,16 +615,16 @@ def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callba
     """When processing depth limit is not set, the proto default value is 0,
     the agent behavior must not trigger a callback."""
 
-    process_mock = mocker.Mock()
+    on_max_depth_process_reached_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
-        """Helper class to test OpenTelemetry mixin implementation."""
+        """Helper class to test the max processing depth limit implementation."""
 
         def process(self, message: agent_message.Message) -> None:
             pass
 
         def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
-            process_mock(message)
+            on_max_depth_process_reached_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="agentX",
@@ -656,4 +656,4 @@ def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callba
         f"v3.report.vulnerability.{uuid.uuid4()}", control_message.raw
     )
 
-    assert process_mock.called is False
+    assert on_max_depth_process_reached_mock.called is False
