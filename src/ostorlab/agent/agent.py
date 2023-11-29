@@ -231,24 +231,17 @@ class AgentMixin(
 
     def _validate_message(self) -> None:
         """Check the message received is valid, currently only check for cyclic processing limit."""
+        control_agents: list[str] = self._control_message.data["control"]["agents"]
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
         ):
-            if (
-                self._control_message.data["control"]["agents"].count(self.name)
-                >= self.cyclic_processing_limit
-            ):
+            if control_agents.count(self.name) >= self.cyclic_processing_limit:
                 raise MaximumCyclicProcessReachedError()
 
         if self.depth_processing_limit is not None and self.depth_processing_limit != 0:
-            if (
-                len(self._control_message.data["control"]["agents"])
-                >= self.depth_processing_limit
-            ):
-                agent_path = " -> ".join(
-                    self._control_message.data["control"]["agents"]
-                )
+            if len(control_agents) >= self.depth_processing_limit:
+                agent_path = " -> ".join(control_agents)
                 error_message = (
                     f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
                     f"Agents path: {agent_path}"
