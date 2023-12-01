@@ -44,6 +44,12 @@ message BasicCredential {
   optional string password = 2;
 }
 
+message ComposedCredential {
+  optional BasicCredential basic_credential = 1;
+  optional FormCredential form_credential = 2;
+  optional ScriptCredential script_credential = 3;
+}
+
 message Message {
   optional string url = 1;
   optional string method = 2;
@@ -57,6 +63,7 @@ message Message {
     FormCredential form_credential = 7;
     ScriptCredential script_credential = 8;
     BasicCredential basic_credential = 11;
+    ComposedCredential composed_credential = 12;
   }
   optional Message parent = 9;
   repeated LocalStorage localstorage_items = 10;
