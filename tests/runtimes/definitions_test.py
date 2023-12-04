@@ -2,7 +2,6 @@
 import io
 
 from ostorlab.runtimes import definitions
-from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions as utils_definitions
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 from ostorlab.scanner.proto.assets import apk_pb2
