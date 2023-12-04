@@ -289,8 +289,8 @@ def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeArray_castsArgumen
     assert isinstance(casted_argument.value[2], int) is True
 
 
-def testAgentInstanceSettingsToRawProto_whenProtoIsValid_returnsValidAgentInstanceSettings():
-    """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSerialize():
+    """Unit test to ensure that depth and cyclic processing limits are correctly serialized."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
         bus_url="mq",
@@ -303,8 +303,7 @@ def testAgentInstanceSettingsToRawProto_whenProtoIsValid_returnsValidAgentInstan
     )
 
     proto = instance_settings.to_raw_proto()
-    parsed_proto = agent_instance_settings_pb2.AgentInstanceSettings()
-    parsed_proto.ParseFromString(proto)
+    parsed_proto = instance_settings.from_proto(proto)
 
     assert parsed_proto.key == "agent/ostorlab/BigFuzzer"
     assert parsed_proto.cyclic_processing_limit == 2
