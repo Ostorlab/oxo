@@ -175,6 +175,12 @@ class AgentSettings:
         instance.healthcheck_port = self.healthcheck_port
         instance.caps.extend(self.caps)
 
+        if self.cyclic_processing_limit is not None:
+            instance.cyclic_processing_limit = self.cyclic_processing_limit
+
+        if self.depth_processing_limit is not None:
+            instance.depth_processing_limit = self.depth_processing_limit
+
         if self.redis_url is not None:
             instance.redis_url = self.redis_url
 

@@ -286,3 +286,24 @@ def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeArray_castsArgumen
     assert isinstance(casted_argument.value[0], str) is True
     assert isinstance(casted_argument.value[1], str) is True
     assert isinstance(casted_argument.value[2], int) is True
+
+
+def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSerialize():
+    """Unit test to ensure that depth and cyclic processing limits are correctly serialized."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
+        cyclic_processing_limit=2,
+        depth_processing_limit=3,
+    )
+
+    proto = instance_settings.to_raw_proto()
+    parsed_proto = instance_settings.from_proto(proto)
+
+    assert parsed_proto.key == "agent/ostorlab/BigFuzzer"
+    assert parsed_proto.cyclic_processing_limit == 2
+    assert parsed_proto.depth_processing_limit == 3
