@@ -657,3 +657,53 @@ def testProcessMessage_whenProcessingDepthLimitIsSetFromDefaultProtoValue_callba
     )
 
     assert on_max_depth_process_reached_mock.called is False
+
+
+def testProcessMessage_whenProcessingDepthLimitIsReached_dropMessage(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When processing depth limit is set and the limit is reached, the message should be dropped."""
+
+    process_mock = mocker.Mock()
+    on_max_depth_process_reached_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test the max processing depth limit implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+        def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
+            on_max_depth_process_reached_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="some_key",
+        depth_processing_limit=3,
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you hear me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent1", "agent2", "agent3", "agent4"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert on_max_depth_process_reached_mock.called is True
+    assert process_mock.called is False

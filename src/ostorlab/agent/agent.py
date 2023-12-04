@@ -210,8 +210,10 @@ class AgentMixin(
             self._validate_message()
         except MaximumCyclicProcessReachedError:
             self.on_max_cyclic_process_reached(object_message)
+            return None
         except MaximumDepthProcessReachedError:
             self.on_max_depth_process_reached(object_message)
+            return None
 
         try:
             logger.debug("Call to process with message= %s", raw_message)
