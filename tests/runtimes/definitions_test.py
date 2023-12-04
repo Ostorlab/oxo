@@ -2,6 +2,7 @@
 import io
 
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions as utils_definitions
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 from ostorlab.scanner.proto.assets import apk_pb2
@@ -286,3 +287,25 @@ def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeArray_castsArgumen
     assert isinstance(casted_argument.value[0], str) is True
     assert isinstance(casted_argument.value[1], str) is True
     assert isinstance(casted_argument.value[2], int) is True
+
+
+def testAgentInstanceSettingsToRawProto_whenProtoIsValid_returnsValidAgentInstanceSettings():
+    """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
+        cyclic_processing_limit=2,
+        depth_processing_limit=3,
+    )
+
+    proto = instance_settings.to_raw_proto()
+    parsed_proto = agent_instance_settings_pb2.AgentInstanceSettings()
+    parsed_proto.ParseFromString(proto)
+
+    assert parsed_proto.key == "agent/ostorlab/BigFuzzer"
+    assert parsed_proto.cyclic_processing_limit == 2
+    assert parsed_proto.depth_processing_limit == 3
