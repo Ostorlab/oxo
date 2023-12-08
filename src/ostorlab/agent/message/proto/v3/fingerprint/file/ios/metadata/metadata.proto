@@ -6,7 +6,7 @@ package ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata;
 
 message Permission {
     optional string name = 1;
-    optional string usage_description = 3;
+    optional string usage_description = 2;
 }
 
 message Message {
