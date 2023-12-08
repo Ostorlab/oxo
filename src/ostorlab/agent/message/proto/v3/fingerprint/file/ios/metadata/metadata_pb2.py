@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\nLostorlab/agent/message/proto/v3/fingerprint/file/ios/metadata/metadata.proto\x12=ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata\"5\n\nPermission\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x19\n\x11usage_description\x18\x03 \x01(\t\"|\n\x07Message\x12\x11\n\tbundle_id\x18\x02 \x01(\t\x12^\n\x0bpermissions\x18\x03 \x03(\x0b\x32I.ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata.Permission'
+  serialized_pb=b'\nLostorlab/agent/message/proto/v3/fingerprint/file/ios/metadata/metadata.proto\x12=ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata\"5\n\nPermission\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x19\n\x11usage_description\x18\x03 \x01(\t\"|\n\x07Message\x12\x11\n\tbundle_id\x18\x01 \x01(\t\x12^\n\x0bpermissions\x18\x02 \x03(\x0b\x32I.ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata.Permission'
 )
 
 
@@ -74,14 +74,14 @@ _MESSAGE = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='bundle_id', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata.Message.bundle_id', index=0,
-      number=2, type=9, cpp_type=9, label=1,
+      number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='permissions', full_name='ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata.Message.permissions', index=1,
-      number=3, type=11, cpp_type=10, label=3,
+      number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
