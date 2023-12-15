@@ -458,6 +458,21 @@ def data_start_agent_scan() -> dict[str, Any]:
 
 
 @pytest.fixture()
+def data_list_agent() -> dict[str, Any]:
+    return {"data": {"agent": {"versions": {"versions": [{"version": "0.0.1"}]}}}}
+
+
+@pytest.fixture()
+def data_create_agent_group() -> dict[str, Any]:
+    return {"data": {"publishAgentGroup": {"agentGroup": {"id": "1"}}}}
+
+
+@pytest.fixture()
+def data_create_asset() -> dict[str, Any]:
+    return {"data": {"createAsset": {"asset": {"id": "1"}}}}
+
+
+@pytest.fixture()
 def start_agent_scan_nats_request() -> startAgentScan_pb2.Message:
     message = startAgentScan_pb2.Message(
         reference_scan_id=42,
