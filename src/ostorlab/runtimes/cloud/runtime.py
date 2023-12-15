@@ -492,14 +492,17 @@ class CloudRuntime(runtime.Runtime):
         return True
 
     def _to_serialized(self, value) -> Union[bytes, memoryview, List[Any], str]:
-        has_bytes_scalar_type = isinstance(value, (bytes, memoryview)) is True
-        if has_bytes_scalar_type:
+        if isinstance(value, (bytes, memoryview)) is True:
             return value
-        else:
+        elif isinstance(value, (list, bool)) is True:
             try:
                 return json.dumps(value).encode()
             except TypeError as e:
                 raise ValueError(f"type {value} is not JSON serializable") from e
+        elif isinstance(value, (int, float)) is True:
+            return str(value).encode()
+        elif isinstance(value, str) is True:
+            return value.encode()
 
     def _agents_from_agent_group_def(
         self,
