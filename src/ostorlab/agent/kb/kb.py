@@ -28,6 +28,7 @@ class Entry:
     targeted_by_ransomware: bool = False
     targeted_by_nation_state: bool = False
     cvss_v3_vector: str = ""
+    category_groups: list[dict[str, str | list[str]]] | None = None
 
 
 class MetaKB(type):
@@ -47,6 +48,11 @@ class MetaKB(type):
             encoding="utf-8"
         ) as r:
             meta = json.loads(f.read())
+            category_groups = []
+            for category_key, categories_list in meta.get("categories", {}).items():
+                category_group = {"key": category_key, "categories": categories_list}
+                category_groups.append(category_group)
+
             return Entry(
                 title=meta.get("title"),
                 risk_rating=meta.get("risk_rating"),
@@ -61,6 +67,7 @@ class MetaKB(type):
                 targeted_by_ransomware=meta.get("targeted_by_ransomware", False),
                 targeted_by_nation_state=meta.get("targeted_by_nation_state", False),
                 cvss_v3_vector=meta.get("cvss_v3_vector", ""),
+                category_groups=category_groups,
             )
 
 
