@@ -52,7 +52,7 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None, registry_conf)
 
     apk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(apk_asset, android_apk.AndroidApk)
+    assert isinstance(apk_asset, android_apk.AndroidApk) is True
     assert apk_asset.content == b"dummy_apk"
     assert apk_asset.path is None
     assert apk_asset.content_url is None
@@ -78,7 +78,7 @@ def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None, registry_conf)
 
     aab_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(aab_asset, android_aab.AndroidAab)
+    assert isinstance(aab_asset, android_aab.AndroidAab) is True
     assert aab_asset.content == b"dummy_aab"
     assert aab_asset.path is None
     assert aab_asset.content_url is None
@@ -104,7 +104,7 @@ def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", ipa_start_agent_scan_msg, None, registry_conf)
 
     ipa_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ipa_asset, ios_ipa.IOSIpa)
+    assert isinstance(ipa_asset, ios_ipa.IOSIpa) is True
     assert ipa_asset.content == b"dummy_ipa"
     assert ipa_asset.path is None
     assert ipa_asset.content_url is None
@@ -132,7 +132,7 @@ def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
     )
 
     android_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(android_store_asset, android_store.AndroidStore)
+    assert isinstance(android_store_asset, android_store.AndroidStore) is True
     assert android_store_asset.package_name == "a.b.c"
 
 
@@ -158,7 +158,7 @@ def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
     )
 
     ios_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ios_store_asset, ios_store.IOSStore)
+    assert isinstance(ios_store_asset, ios_store.IOSStore) is True
     assert ios_store_asset.bundle_id == "a.b.c"
 
 
@@ -184,7 +184,7 @@ def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
     )
 
     domain_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(domain_asset, domain_name.DomainName)
+    assert isinstance(domain_asset, domain_name.DomainName) is True
     assert domain_asset.name == "ostorlab.co"
 
 
@@ -215,7 +215,7 @@ def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
     )
 
     agnt_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(agnt_asset, agent_asset.Agent)
+    assert isinstance(agnt_asset, agent_asset.Agent) is True
     assert agnt_asset.key == "agent/ostorlab/agent42"
     assert agnt_asset.version == "0.0.1"
     assert agnt_asset.git_location == "git@github.com:Ostorlab/agent_42.git"
@@ -243,7 +243,7 @@ def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", file_start_agent_scan_msg, None, registry_conf)
 
     file_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(file_asset, file.File)
+    assert isinstance(file_asset, file.File) is True
     assert file_asset.path == "/tmp/dummy_file"
     assert file_asset.content is None
     assert file_asset.content_url is None
@@ -269,7 +269,7 @@ def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", ip_start_agent_scan_msg, None, registry_conf)
 
     ip_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ip_asset, ipv4.IPv4)
+    assert isinstance(ip_asset, ipv4.IPv4) is True
     assert ip_asset.host == "8.8.8.8"
     assert ip_asset.version == 4
     # mask is set with ip_network.prefixlen in _prepare_ip_asset
@@ -296,7 +296,7 @@ def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", ipv4_start_agent_scan_msg, None, registry_conf)
 
     ipv4_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ipv4_asset, ipv4.IPv4)
+    assert isinstance(ipv4_asset, ipv4.IPv4) is True
     assert ipv4_asset.host == "8.8.8.8"
     assert ipv4_asset.version == 4
     assert ipv4_asset.mask == "24"
@@ -322,7 +322,7 @@ def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None, registry_conf)
 
     ipv6_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ipv6_asset, ipv6.IPv6)
+    assert isinstance(ipv6_asset, ipv6.IPv6) is True
     assert ipv6_asset.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
     assert ipv6_asset.version == 6
     # mask is set with ip_network.prefixlen in _prepare_ip_asset
@@ -349,7 +349,7 @@ def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
     callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None, registry_conf)
 
     ipv6_asset = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ipv6_asset, ipv6.IPv6)
+    assert isinstance(ipv6_asset, ipv6.IPv6) is True
     assert ipv6_asset.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
     assert ipv6_asset.version == 6
     assert ipv6_asset.mask == "64"
@@ -382,11 +382,11 @@ def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
     )
 
     link_asst1 = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(link_asst1, link_asset.Link)
+    assert isinstance(link_asst1, link_asset.Link) is True
     assert link_asst1.url == "https://ostorlab.co"
     assert link_asst1.method == "GET"
     link_asst2 = runtime_scan_mock.call_args[1].get("assets")[1]
-    assert isinstance(link_asst2, link_asset.Link)
+    assert isinstance(link_asst2, link_asset.Link) is True
     assert link_asst2.url == "https://google.com"
     assert link_asst2.method == "POST"
 
@@ -420,22 +420,22 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
     )
 
     ip_asset1 = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ip_asset1, ipv4.IPv4)
+    assert isinstance(ip_asset1, ipv4.IPv4) is True
     assert ip_asset1.host == "8.8.8.8"
     assert ip_asset1.version == 4
     assert ip_asset1.mask == "32"
     ip_asset2 = runtime_scan_mock.call_args[1].get("assets")[1]
-    assert isinstance(ip_asset2, ipv4.IPv4)
+    assert isinstance(ip_asset2, ipv4.IPv4) is True
     assert ip_asset2.host == "127.0.0.1"
     assert ip_asset2.version == 4
     assert ip_asset2.mask == "32"
     ip_asset3 = runtime_scan_mock.call_args[1].get("assets")[2]
-    assert isinstance(ip_asset3, ipv6.IPv6)
+    assert isinstance(ip_asset3, ipv6.IPv6) is True
     assert ip_asset3.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
     assert ip_asset3.version == 6
     assert ip_asset3.mask == "128"
     ip_asset4 = runtime_scan_mock.call_args[1].get("assets")[3]
-    assert isinstance(ip_asset4, ipv4.IPv4)
+    assert isinstance(ip_asset4, ipv4.IPv4) is True
     assert ip_asset4.host == "192.168.1.1"
     assert ip_asset4.version == 4
     assert ip_asset4.mask == "24"
