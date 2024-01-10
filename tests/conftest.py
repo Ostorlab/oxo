@@ -27,6 +27,7 @@ from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 from ostorlab.scanner.proto.assets import apk_pb2
+from ostorlab.scanner import scanner_conf
 
 
 @pytest.fixture(scope="session")
@@ -548,3 +549,8 @@ def ping_message() -> agent_message.Message:
             "body": "Hello, can you hear me?",
         },
     )
+
+
+@pytest.fixture
+def registry_conf() -> scanner_conf.RegistryConfig:
+    return scanner_conf.RegistryConfig(username="username", token="token", url="url")

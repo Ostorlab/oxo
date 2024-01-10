@@ -1,7 +1,7 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 import logging
 import ipaddress
-from typing import List, Any, Optional
+from typing import Any
 
 import docker
 
@@ -23,6 +23,7 @@ from ostorlab.assets import ios_store
 from ostorlab.assets import agent as agent_asset
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.scanner import scanner_conf
+from ostorlab.agent.message import proto_dict
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 def _install_agents(
     runtime_instance: runtime.Runtime,
     agents,
-    docker_client: Optional[docker.DockerClient] = None,
+    docker_client: docker.DockerClient | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -44,97 +45,58 @@ def _install_agents(
         logger.warning("agent %s not found on the store", agent.key)
 
 
-def _prepare_ip_asset(ip_request) -> asset.Asset:
-    """Return IP assets from a NATs received message."""
-    ip_network = ipaddress.ip_network(ip_request.host, strict=False)
+def _prepare_ip_asset(ip_asset_value: dict[str, Any]) -> asset.Asset:
+    """Return IP assets from ip_asset_value dict."""
+    host = ip_asset_value.get("host")
+    ip_network = ipaddress.ip_network(host, strict=False)
     if ip_network.version == 4:
         return ipv4.IPv4(
             host=ip_network.network_address.exploded,
-            mask=ip_request.mask or str(ip_network.prefixlen),
+            mask=ip_asset_value.get("mask") or str(ip_network.prefixlen),
         )
     elif ip_network.version == 6:
         return ipv6.IPv6(
             host=ip_network.network_address.exploded,
-            mask=ip_request.mask or str(ip_network.prefixlen),
+            mask=ip_asset_value.get("mask") or str(ip_network.prefixlen),
         )
     else:
-        raise ValueError(f"Invalid Ip address {ip_request.host}")
+        raise ValueError(f"Invalid Ip address {host}")
 
 
-def _extract_assets(request: Any) -> List[asset.Asset]:
+def _extract_assets(request: Any) -> list[asset.Asset]:
     """Returns list of specific Ostorlab-injectable assets, from a message received from NATs."""
     logger.debug("Extracting assets.")
     assets = []
     asset_type = request.WhichOneof("asset")
-    if asset_type in ("ip", "ip4v", "ipv6"):
-        ip_request = request.ip or request.ipv4 or request.ipv6
-        assets.append(_prepare_ip_asset(ip_request))
-
+    asset_value = proto_dict.protobuf_to_dict(getattr(request, asset_type))
+    if asset_type in ("ip", "ipv4", "ipv6"):
+        assets.append(_prepare_ip_asset(asset_value))
     elif asset_type == "android_store":
-        assets.append(
-            android_store.AndroidStore(package_name=request.android_store.package_name)
-        )
-
+        assets.append(android_store.AndroidStore(**asset_value))
     elif asset_type == "ios_store":
-        assets.append(ios_store.IOSStore(bundle_id=request.ios_store.bundle_id))
-
+        assets.append(ios_store.IOSStore(**asset_value))
     elif asset_type == "ipa":
-        assets.append(
-            ios_ipa.IOSIpa(
-                content=request.ipa.content,
-                path=request.ipa.path,
-                content_url=request.ipa.content_url,
-            )
-        )
+        assets.append(ios_ipa.IOSIpa(**asset_value))
     elif asset_type == "apk":
-        assets.append(
-            android_apk.AndroidApk(
-                content=request.apk.content,
-                path=request.apk.path,
-                content_url=request.apk.content_url,
-            )
-        )
+        assets.append(android_apk.AndroidApk(**asset_value))
     elif asset_type == "aab":
-        assets.append(
-            android_aab.AndroidAab(
-                content=request.aab.content,
-                path=request.aab.path,
-                content_url=request.aab.content_url,
-            )
-        )
-    elif asset_type == "domain":
-        assets.append(domain_name.DomainName(name=request.domain_name.name))
-
+        assets.append(android_aab.AndroidAab(**asset_value))
+    elif asset_type == "domain_name":
+        assets.append(domain_name.DomainName(**asset_value))
     elif asset_type == "agent":
-        assets.append(
-            agent_asset.Agent(
-                key=request.agent.key,
-                version=request.agent.version,
-                git_location=request.agent.git_location,
-                docker_location=request.agent.docker_location,
-                yaml_file_location=request.agent.yaml_file_location,
-            )
-        )
-
+        assets.append(agent_asset.Agent(**asset_value))
     elif asset_type == "file":
-        assets.append(
-            file.File(
-                content=request.file.content,
-                path=request.file.path,
-                content_url=request.file.content_url,
-            )
-        )
+        assets.append(file.File(**asset_value))
     elif asset_type == "network":
-        for ip in request.network.ips:
+        for ip in asset_value.get("ips"):
             ip_asset = _prepare_ip_asset(ip)
             assets.append(ip_asset)
-
     elif asset_type == "links":
-        for link in request.links.links:
+        for link in asset_value.get("links"):
             assets.append(
                 link_asset.Link(
-                    url=link.url,
-                    method=link.url or "GET",
+                    url=link.get("url"),
+                    method=link.get("method") or "GET",
                 )
             )
 
