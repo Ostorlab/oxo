@@ -1,7 +1,7 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 import logging
 import ipaddress
-from typing import Any
+from typing import Any, Optional
 
 import docker
 
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 def _install_agents(
     runtime_instance: runtime.Runtime,
     agents,
-    docker_client: docker.DockerClient | None = None,
+    docker_client: Optional[docker.DockerClient] = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
