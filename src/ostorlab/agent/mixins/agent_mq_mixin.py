@@ -168,15 +168,17 @@ class AgentMQMixin:
             await exchange.publish(routing_key=key, message=pika_message)
 
     @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(aio_pika.exceptions.ConnectionClosed),
+        retry=tenacity.retry_if_exception_type(
+            (aio_pika.exceptions.ConnectionClosed, ConnectionResetError)
+        ),
     )
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """the method sends the message to the selected key with the defined priority in async mode .
         Args:
-            keys: Selectors that the queue listens to.
-            message: Message to send .
+            key: Selector that the queue listens to.
+            message: Message to send.
             message_priority: the priority to use for the message default is 0.
         """
         logger.debug("sending %s to %s", message, key)
