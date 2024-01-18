@@ -126,3 +126,19 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
     # make sure the message is received and was not deleted
     stub.assert_called_with(word)
     assert stub.call_count == 1
+
+
+def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(mocker):
+    mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
+    mock_send_message.side_effect = ConnectionResetError
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    with pytest.raises(ConnectionResetError):
+        agent.mq_send_message(key="a.1.2", message=b"test message")
+
+    assert mock_send_message.call_count == 3
