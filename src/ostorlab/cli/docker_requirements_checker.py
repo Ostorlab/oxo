@@ -105,11 +105,13 @@ def is_swarm_initialized() -> bool:
 def init_swarm() -> None:
     """Initializes Docker Swarm.
 
-    This function attempts to initialize Docker Swarm. If the initialization fails, it retries 10 times with a 2-second
-    delay between each attempt. If it still fails after 10 attempts, it raises an OstorlabError.
+    This function attempts to initialize Docker Swarm. If the initialization fails,
+    it retries 10 times with a 2-second  delay between each attempt.
+    If it still fails after 10 attempts, it raises an OstorlabError.
 
     Raises:
-        OstorlabError: If the user does not have permission to run Docker, or if the initialization fails after 10 attempts.
+        OstorlabError: If the user does not have permission to run Docker,
+        or if the initialization fails after 10 attempts.
     """
     if is_user_permitted() is False:
         raise exceptions.OstorlabError("User does not have permission to run docker.")
