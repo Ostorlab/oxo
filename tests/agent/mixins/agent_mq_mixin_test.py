@@ -14,7 +14,7 @@ class Agent(agent_mq_mixin.AgentMQMixin):
     """Helper class to test MQ implementation of send and process messages."""
 
     def __init__(
-            self, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
+        self, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
     ):
         topic = "test_topic"
         super().__init__(name=name, keys=keys, url=url, topic=topic)
@@ -27,7 +27,7 @@ class Agent(agent_mq_mixin.AgentMQMixin):
 
     @classmethod
     def create(
-            cls, stub, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
+        cls, stub, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
     ):
         instance = cls(name=name, keys=keys, url=url)
         instance.stub = stub
@@ -86,7 +86,7 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_s
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(
-        mocker, mq_service
+    mocker, mq_service
 ):
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name="test3")
@@ -129,7 +129,9 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
     assert stub.call_count == 1
 
 
-def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(mocker: req_mocker.Mocker):
+def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
+    mocker: req_mocker.Mocker,
+):
     mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
     mock_send_message.side_effect = ConnectionResetError
     agent = agent_mq_mixin.AgentMQMixin(
