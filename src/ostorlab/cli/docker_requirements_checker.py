@@ -114,7 +114,7 @@ def init_swarm() -> None:
         or if the initialization fails after 10 attempts.
     """
     if is_user_permitted() is False:
-        raise exceptions.OstorlabError("User does not have permission to run docker.")
+        raise errors.DockerException("User does not have permission to run docker.")
     try:
         _init_swarm()
     except errors.DockerException as e:
