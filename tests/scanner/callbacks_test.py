@@ -2,34 +2,33 @@
 
 from pytest_mock import plugin
 
-from ostorlab.scanner import callbacks
-
-from ostorlab.assets import android_apk
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
-from ostorlab.assets import android_store
+from ostorlab.assets import agent as agent_asset
 from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
+from ostorlab.assets import domain_name
 from ostorlab.assets import file
 from ostorlab.assets import ios_ipa
-from ostorlab.assets import domain_name
-from ostorlab.assets import link as link_asset
 from ostorlab.assets import ios_store
-from ostorlab.assets import agent as agent_asset
-from ostorlab.scanner.proto.assets import ip_pb2
-from ostorlab.scanner.proto.assets import v4_pb2
-from ostorlab.scanner.proto.assets import v6_pb2
-from ostorlab.scanner.proto.assets import network_pb2
-from ostorlab.scanner.proto.assets import link_pb2
-from ostorlab.scanner.proto.assets import domain_name_pb2
-from ostorlab.scanner.proto.assets import file_pb2
-from ostorlab.scanner.proto.assets import android_store_pb2
-from ostorlab.scanner.proto.assets import ios_store_pb2
-from ostorlab.scanner.proto.assets import ipa_pb2
-from ostorlab.scanner.proto.assets import apk_pb2
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
+from ostorlab.assets import link as link_asset
+from ostorlab.scanner import callbacks
+from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import aab_pb2
 from ostorlab.scanner.proto.assets import agent_pb2
+from ostorlab.scanner.proto.assets import android_store_pb2
+from ostorlab.scanner.proto.assets import apk_pb2
+from ostorlab.scanner.proto.assets import domain_name_pb2
+from ostorlab.scanner.proto.assets import file_pb2
+from ostorlab.scanner.proto.assets import ios_store_pb2
+from ostorlab.scanner.proto.assets import ip_pb2
+from ostorlab.scanner.proto.assets import ipa_pb2
+from ostorlab.scanner.proto.assets import link_pb2
+from ostorlab.scanner.proto.assets import network_pb2
+from ostorlab.scanner.proto.assets import v4_pb2
+from ostorlab.scanner.proto.assets import v6_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.scanner import scanner_conf
 
 
 def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
@@ -45,6 +44,7 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -71,6 +71,7 @@ def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -97,6 +98,7 @@ def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -123,6 +125,7 @@ def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -149,6 +152,7 @@ def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -175,6 +179,7 @@ def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -206,6 +211,7 @@ def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -236,6 +242,7 @@ def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -262,6 +269,7 @@ def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -289,6 +297,7 @@ def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -315,6 +324,7 @@ def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -342,6 +352,7 @@ def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -373,6 +384,7 @@ def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
@@ -411,6 +423,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
     )
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
