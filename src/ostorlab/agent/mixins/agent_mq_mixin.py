@@ -12,6 +12,8 @@ import aio_pika
 import tenacity
 
 logger = logging.getLogger(__name__)
+NUMBER_RETRIES = 3
+WAIT_FIXED_TIME = 1
 
 
 class AgentMQMixin:
@@ -168,15 +170,20 @@ class AgentMQMixin:
             await exchange.publish(routing_key=key, message=pika_message)
 
     @tenacity.retry(
-        retry=tenacity.retry_if_exception_type(aio_pika.exceptions.ConnectionClosed),
+        retry=tenacity.retry_if_exception_type(
+            (aio_pika.exceptions.ConnectionClosed, ConnectionResetError)
+        ),
+        stop=tenacity.stop_after_attempt(NUMBER_RETRIES),
+        wait=tenacity.wait_fixed(WAIT_FIXED_TIME),
+        reraise=True,
     )
     def mq_send_message(
         self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
-        """the method sends the message to the selected key with the defined priority in async mode .
+        """The method sends the message to the selected key with the defined priority in async mode .
         Args:
-            keys: Selectors that the queue listens to.
-            message: Message to send .
+            key: Selector that the queue listens to.
+            message: Message to send.
             message_priority: the priority to use for the message default is 0.
         """
         logger.debug("sending %s to %s", message, key)
