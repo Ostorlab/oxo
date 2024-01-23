@@ -3,7 +3,7 @@ import dataclasses
 import json
 import pathlib
 
-from typing import Dict
+from typing import Dict, Optional, Union
 
 KB_FOLDER = "KB"
 META_JSON = "meta.json"
@@ -28,6 +28,7 @@ class Entry:
     targeted_by_ransomware: bool = False
     targeted_by_nation_state: bool = False
     cvss_v3_vector: str = ""
+    category_groups: Optional[list[dict[str, Union[str, list[str]]]]] = None
 
 
 class MetaKB(type):
@@ -47,6 +48,11 @@ class MetaKB(type):
             encoding="utf-8"
         ) as r:
             meta = json.loads(f.read())
+            categories = meta.get("categories", {})
+            category_groups = [
+                {"key": k, "categories": v} for k, v in categories.items()
+            ]
+
             return Entry(
                 title=meta.get("title"),
                 risk_rating=meta.get("risk_rating"),
@@ -61,6 +67,7 @@ class MetaKB(type):
                 targeted_by_ransomware=meta.get("targeted_by_ransomware", False),
                 targeted_by_nation_state=meta.get("targeted_by_nation_state", False),
                 cvss_v3_vector=meta.get("cvss_v3_vector", ""),
+                category_groups=category_groups,
             )
 
 
