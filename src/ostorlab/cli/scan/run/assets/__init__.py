@@ -9,3 +9,16 @@ from ostorlab.cli.scan.run.assets import ip
 from ostorlab.cli.scan.run.assets import link
 from ostorlab.cli.scan.run.assets import android_store
 from ostorlab.cli.scan.run.assets import ios_store
+
+__all__ = [
+    agent,
+    android_aab,
+    android_apk,
+    domain_name,
+    file,
+    ios_ipa,
+    ip,
+    link,
+    android_store,
+    ios_store,
+]

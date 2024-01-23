@@ -54,12 +54,12 @@ def rootcli(
 
     if verbose is True:
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for l in loggers:
-            l.setLevel(logging.INFO)
+        for current_logger in loggers:
+            current_logger.setLevel(logging.INFO)
     if debug is True:
         loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for l in loggers:
-            l.setLevel(logging.DEBUG)
+        for current_logger in loggers:
+            current_logger.setLevel(logging.DEBUG)
     if gcp_logging_credential is not None:
         with open(gcp_logging_credential, "r", encoding="utf-8") as source:
             content = source.read()

@@ -10,9 +10,6 @@ from alembic import context
 
 from ostorlab.runtimes.local.models.models import Base
 from ostorlab.runtimes.local.models import models as local_models
-from ostorlab.runtimes.local.models.models import Vulnerability  # pylint: disable=W0611
-from ostorlab.runtimes.local.models.models import Scan  # pylint: disable=W0611
-from ostorlab.runtimes.local.models.models import ScanStatus  # pylint: disable=W0611
 
 
 # this is the Alembic Config object, which provides

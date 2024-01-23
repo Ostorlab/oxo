@@ -62,7 +62,7 @@ def is_docker_working() -> bool:
         True if user has permission to run docker, else False
     """
     if sys.platform == "win32":
-        import pywintypes  # pylint: disable=import-outside-toplevel
+        import pywintypes
 
         try:
             client = docker.from_env()

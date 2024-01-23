@@ -114,7 +114,7 @@ class ScanHandler:
                     )
                     await msg.ack()
                     return scan_id
-                except Exception as e:  # pylint: disable="broad-except"
+                except Exception as e:
                     logger.exception("Exception: %s", e)
                     await msg.nak()
 
