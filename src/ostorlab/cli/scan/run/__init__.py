@@ -2,4 +2,4 @@
 from ostorlab.cli.scan.run import run
 from ostorlab.cli.scan.run import assets
 
-__all__ = [run, assets]
+__all__ = ["run", "assets"]
