@@ -218,7 +218,7 @@ class AgentMixin(
         try:
             logger.debug("Call to process with message= %s", raw_message)
             self.process(object_message)
-        except Exception as e:  # pylint: disable="broad-except"
+        except Exception as e:
             system_info = system.get_system_info()
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
