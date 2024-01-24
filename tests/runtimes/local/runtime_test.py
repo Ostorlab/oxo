@@ -2,11 +2,13 @@
 from typing import Any
 
 import docker
-from docker.models import services as services_model
 import pytest
+from docker.models import services as services_model
 from pytest_mock import plugin
+from requests_mock import mocker as req_mocker
 
 import ostorlab
+from ostorlab import exceptions
 from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
@@ -280,3 +282,41 @@ def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelI
         assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).first()
         assert scan.id != 42
+
+
+@pytest.mark.docker
+def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
+    mocker: plugin.MockerFixture,
+    requests_mock: req_mocker.Mocker,
+) -> None:
+    """Ensure the runtime retries to init swarm if it fails the first time."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=False,
+    )
+    mocker.patch("time.sleep")
+    requests_mock.get(
+        "http+docker://localhost/version", [{"json": {"ApiVersion": "1.35"}}]
+    )
+    requests_mock.get("http+docker://localhost/v1.35/swarm", json={"ID": "1234"})
+    mock_swarm_init = requests_mock.post(
+        "http+docker://localhost/v1.35/swarm/init", status_code=400
+    )
+    local_runtime_instance = local_runtime.LocalRuntime(run_default_agents=False)
+
+    with pytest.raises(exceptions.OstorlabError):
+        local_runtime_instance.can_run(
+            agent_group_definition=definitions.AgentGroupDefinition(agents=[])
+        )
+
+    assert mock_swarm_init.call_count == 3

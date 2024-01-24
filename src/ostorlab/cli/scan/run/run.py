@@ -4,18 +4,18 @@ Example of usage:
     - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
 import io
 import logging
-import requests
 from typing import List
 
 import click
+import requests
 
+from ostorlab import exceptions
+from ostorlab.agent.schema import validator
+from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
 from ostorlab.cli.scan import scan
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
-from ostorlab.cli import console as cli_console
-from ostorlab.agent.schema import validator
-
 
 console = cli_console.Console()
 
@@ -96,8 +96,12 @@ def run(
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
     # set list of log follow.
     runtime_instance.follow = follow
-
-    if runtime_instance.can_run(agent_group_definition=agent_group):
+    try:
+        can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
+    except exceptions.OstorlabError as e:
+        console.error(f"{e}")
+        return None
+    if can_run_scan is True:
         ctx.obj["agent_group_definition"] = agent_group
         ctx.obj["title"] = title
         if install is True:
