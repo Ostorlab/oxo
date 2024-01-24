@@ -10,7 +10,8 @@ from docker import errors
 from ostorlab import exceptions
 
 _SUPPORTED_ARCH_TYPES = ["x86_64", "AMD64"]
-
+RETRY_ATTEMPTS = 10
+WAIT_TIME = 2
 
 # The architecture is checked with a return value that's based on the kernel implementation of the uname(2)
 # system call. So it might be necesarry to handle the same arch with various strings e.g. linux returns x86_64
@@ -122,8 +123,8 @@ def init_swarm() -> None:
 
 
 @tenacity.retry(
-    stop=tenacity.stop_after_attempt(10),
-    wait=tenacity.wait_fixed(2),
+    stop=tenacity.stop_after_attempt(RETRY_ATTEMPTS),
+    wait=tenacity.wait_fixed(WAIT_TIME),
     retry=tenacity.retry_if_exception_type(errors.DockerException),
     reraise=True,
 )

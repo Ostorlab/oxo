@@ -288,7 +288,7 @@ def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelI
 def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
     mocker: plugin.MockerFixture,
     requests_mock: req_mocker.Mocker,
-):
+)->None:
     """Ensure the runtime retries to init swarm if it fails the first time."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True

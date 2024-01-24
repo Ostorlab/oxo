@@ -10,7 +10,7 @@ from ostorlab.cli import docker_requirements_checker
 @pytest.mark.docker
 def testRuntime_WhenCantInitSwarm_shouldRetry(
     mocker: plugin.MockerFixture, requests_mock: req_mocker.Mocker
-):
+) -> None:
     """Ensure the runtime retries to init swarm if it fails the first time."""
     mocker.patch("time.sleep")
     requests_mock.get(
