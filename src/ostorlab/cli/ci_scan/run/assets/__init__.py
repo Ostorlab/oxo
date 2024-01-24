@@ -2,3 +2,5 @@
 from ostorlab.cli.ci_scan.run.assets import android_apk
 from ostorlab.cli.ci_scan.run.assets import android_aab
 from ostorlab.cli.ci_scan.run.assets import ios_ipa
+
+__all__ = ["android_apk", "android_aab", "ios_ipa"]

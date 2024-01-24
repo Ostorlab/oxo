@@ -1,4 +1,3 @@
-# pylint: disable=C0103
 """Revision reflecting the state of databases created with ostorlab<0.11.2.
 Useful as a starting point for future migrations.
 

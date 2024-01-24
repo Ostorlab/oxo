@@ -21,7 +21,7 @@ class ScannerStateReporter:
     def _capture_state(self) -> defintions.ScannerState:
         """Capture current scanner state."""
         try:
-            import psutil  # pylint: disable=import-outside-toplevel
+            import psutil
 
             state = defintions.ScannerState(
                 scanner_id=self._scanner_id,

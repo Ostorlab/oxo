@@ -6,3 +6,13 @@ from ostorlab.cli.agent import healthcheck
 from ostorlab.cli.agent import delete
 from ostorlab.cli.agent import list as list_cli
 from ostorlab.cli.agent import search as search_cli
+
+__all__ = [
+    "agent",
+    "build",
+    "install",
+    "healthcheck",
+    "delete",
+    "list_cli",
+    "search_cli",
+]
