@@ -1,3 +1,5 @@
 # This file will be used if we want to customize the Ruff configuration.
 extend-exclude = ["*_pb2.py"]
+
+[lint]
 ignore-init-module-imports = true

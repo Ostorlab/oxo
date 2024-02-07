@@ -14,6 +14,7 @@ import rich
 import sqlalchemy
 import tenacity
 from docker.models import services as docker_models_services
+from docker import errors as docker_errors
 from rich import markdown
 from rich import panel
 from sqlalchemy import case
@@ -532,28 +533,30 @@ class LocalRuntime(runtime.Runtime):
 
         universe_ids = set()
         client = docker.from_env()
-        services = client.services.list()
-
-        for s in services:
-            try:
-                service_labels = s.attrs["Spec"]["Labels"]
-                ostorlab_universe_id = service_labels.get("ostorlab.universe")
-                if (
-                    "ostorlab.universe" in service_labels.keys()
-                    and ostorlab_universe_id not in universe_ids
-                ):
-                    universe_ids.add(ostorlab_universe_id)
+        try:
+            services = client.services.list()
+            for s in services:
+                try:
+                    service_labels = s.attrs["Spec"]["Labels"]
+                    ostorlab_universe_id = service_labels.get("ostorlab.universe")
                     if (
-                        ostorlab_universe_id.isnumeric()
-                        and int(ostorlab_universe_id) not in scans
+                        "ostorlab.universe" in service_labels.keys()
+                        and ostorlab_universe_id not in universe_ids
                     ):
-                        console.warning(
-                            f"Scan {ostorlab_universe_id} has not traced in DB."
-                        )
-            except KeyError:
-                logger.warning("The label ostorlab.universe do not exist.")
+                        universe_ids.add(ostorlab_universe_id)
+                        if (
+                            ostorlab_universe_id.isnumeric()
+                            and int(ostorlab_universe_id) not in scans
+                        ):
+                            console.warning(
+                                f"Scan {ostorlab_universe_id} has not traced in DB."
+                            )
+                except KeyError:
+                    logger.warning("The label ostorlab.universe do not exist.")
 
-        return list(scans.values())
+            return list(scans.values())
+        except docker_errors.DockerException as e:
+            console.error(f"Error calling the Docker API: {e}")
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),

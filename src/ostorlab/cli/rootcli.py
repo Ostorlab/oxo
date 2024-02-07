@@ -3,9 +3,6 @@ import logging
 import json
 from typing import Optional
 
-import google.cloud.logging
-from google.oauth2 import service_account
-
 import click
 
 from ostorlab import configuration_manager
@@ -61,11 +58,19 @@ def rootcli(
         for current_logger in loggers:
             current_logger.setLevel(logging.DEBUG)
     if gcp_logging_credential is not None:
-        with open(gcp_logging_credential, "r", encoding="utf-8") as source:
-            content = source.read()
-            info = json.loads(content)
+        try:
+            import google.cloud.logging
+            from google.oauth2 import service_account
 
-        credentials = service_account.Credentials.from_service_account_info(info)
-        client = google.cloud.logging.Client(credentials=credentials)
-        client.setup_logging()
-        ctx.obj["gcp_logging_credential"] = content
+            with open(gcp_logging_credential, "r", encoding="utf-8") as source:
+                content = source.read()
+                info = json.loads(content)
+
+            credentials = service_account.Credentials.from_service_account_info(info)
+            client = google.cloud.logging.Client(credentials=credentials)
+            client.setup_logging()
+            ctx.obj["gcp_logging_credential"] = content
+        except ImportError:
+            logger.error(
+                "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
+            )
