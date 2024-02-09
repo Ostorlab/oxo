@@ -4,10 +4,11 @@ Example of usage:
     - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
 import io
 import logging
+
+import httpx
 from typing import List
 
 import click
-import requests
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
@@ -113,7 +114,7 @@ def run(
                         install_agent.install(ag.key, ag.version)
                     except install_agent.AgentDetailsNotFound:
                         console.warning(f"agent {ag.key} not found on the store")
-            except requests.exceptions.ConnectionError as e:
+            except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
 
         if ctx.invoked_subcommand is None:

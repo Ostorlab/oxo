@@ -2,7 +2,7 @@
 import logging
 
 import click
-import requests
+import httpx
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
@@ -37,12 +37,12 @@ def healthcheck(host: str, port: int, https: bool = False) -> None:
         url = f"http://{host}:{port}/status"
 
     try:
-        response = requests.get(url, timeout=10)
+        response = httpx.get(url, timeout=10)
         if response.status_code != 200:
             console.error(f"Response status code is {response.status_code}")
             raise click.exceptions.Exit(2)
         else:
             console.success(f"Healthcheck OK on {url}!")
-    except requests.ConnectionError as e:
+    except httpx.HTTPError as e:
         console.error(f"Error checking agent health on {url}")
         raise click.exceptions.Exit(2) from e

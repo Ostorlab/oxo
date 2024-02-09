@@ -10,7 +10,7 @@ import logging
 from typing import Dict, Optional, Any
 
 import click
-import requests
+import httpx
 import ubjson
 import json
 
@@ -161,14 +161,14 @@ class AuthenticatedAPIRunner(runner.APIRunner):
 
     def _sent_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {"https": self._proxy}
         else:
             proxy = None
 
-        return requests.post(
+        return httpx.post(
             self.endpoint,
             data=request.data,
             files=request.files,
@@ -219,14 +219,14 @@ class AuthenticatedAPIRunner(runner.APIRunner):
 
     def _send_ubjson_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {"https": self._proxy}
         else:
             proxy = None
 
-        return requests.post(
+        return httpx.post(
             self.endpoint,
             data=ubjson.dumpb(request.data),
             files=request.files,

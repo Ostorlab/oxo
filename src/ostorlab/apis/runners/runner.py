@@ -6,7 +6,7 @@ This module also has classes for authentication errors, API response errors, etc
 import abc
 from typing import Dict, Optional, Any
 
-import requests
+import httpx
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.apis import request as api_request
@@ -60,14 +60,14 @@ class APIRunner(abc.ABC):
 
     def _sent_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {"https": self._proxy}
         else:
             proxy = None
 
-        return requests.post(
+        return httpx.post(
             self.endpoint,
             data=request.data,
             files=request.files,

@@ -7,7 +7,7 @@
 
 from typing import Dict, Any, Optional
 
-import requests
+import httpx
 
 from ostorlab.apis import request as api_request
 from ostorlab.apis.runners import runner
@@ -50,13 +50,13 @@ class PublicAPIRunner(runner.APIRunner):
 
     def _sent_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Sends an API request."""
         if self._proxy is not None:
             proxy = {"https": self._proxy}
         else:
             proxy = None
-        return requests.post(
+        return httpx.post(
             self.endpoint,
             data=request.data,
             proxies=proxy,
