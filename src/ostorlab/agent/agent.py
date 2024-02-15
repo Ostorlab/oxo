@@ -403,7 +403,7 @@ class AgentMixin(
         agent_definition: agent_definitions.AgentDefinition,
         agent_settings: runtime_definitions.AgentSettings,
     ) -> List[str]:
-        """Prepare the in selectors by reading the agent definition and settings.
+        """Prepare the in selectors, taking into account the extended selectors.
 
         Args:
             agent_definition: Agent definition dictating the attributes of the agent.
