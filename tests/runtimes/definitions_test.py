@@ -320,11 +320,11 @@ def testAgentInstanceSettingsToRawProto_whenAcceptedAgentsListIsSet_shouldSerial
         bus_management_url="mq_managment",
         bus_vhost="vhost",
         args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
-        accepted_agents=["agent/org/agent1", "agent/org/agent2"],
+        accepted_agents=["agent1", "agent2"],
     )
 
     proto = instance_settings.to_raw_proto()
     parsed_proto = instance_settings.from_proto(proto)
 
     assert parsed_proto.key == "agent/org/main_agent"
-    assert parsed_proto.accepted_agents == ["agent/org/agent1", "agent/org/agent2"]
+    assert parsed_proto.accepted_agents == ["agent1", "agent2"]

@@ -733,7 +733,7 @@ def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
     )
     agent_settings = runtime_definitions.AgentSettings(
         key="agent/org/main_agent",
-        accepted_agents=["agent/org/agent1", "agent/org/agent2", "agent/org/agent3"],
+        accepted_agents=["agent1", "agent2", "agent3"],
     )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
@@ -747,9 +747,7 @@ def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {
-                "agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent2"]
-            },
+            "control": {"agents": ["agent4", "agent5", "agent2"]},
             "message": actual_message.raw,
         },
     )
@@ -786,7 +784,7 @@ def testProcessMessage_whenAgentNotAccepted_callbackCalled(
     )
     agent_settings = runtime_definitions.AgentSettings(
         key="agent/org/main_agent",
-        accepted_agents=["agent/org/agent1", "agent/org/agent2", "agent/org/agent3"],
+        accepted_agents=["agent1", "agent2", "agent3"],
     )
     test_agent = TestAgent(
         agent_definition=agent_definition, agent_settings=agent_settings
@@ -800,9 +798,7 @@ def testProcessMessage_whenAgentNotAccepted_callbackCalled(
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {
-                "agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent6"]
-            },
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
             "message": actual_message.raw,
         },
     )
