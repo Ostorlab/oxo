@@ -125,19 +125,11 @@
           },
           "mounts": {
             "description": "[Optional] - Array of strings of the mounts of the agent, this will override default mounts.",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "maxLength": 4096
-            }
+            "$ref": "#/CustomTypes/ArrayOfStrings"
           },
           "caps": {
             "description": "[Optional] - Array of strings of kernel capabilities to add to the agent container instance (e.g CAP_NET_ADMIN)",
-            "type": "array",
-            "items": {
-              "type": "string",
-              "maxLength": 4096
-            }
+            "$ref": "#/CustomTypes/ArrayOfStrings"
           },
           "cyclic_processing_limit": {
             "description": "[Optional] - Count of how often the processing of a message can go through the same agent, if no value is specified, means no limit.",
@@ -146,6 +138,10 @@
           "depth_processing_limit": {
             "description": "[Optional] - Count of how deep the processing of a message can go through the agents, if no value is specified, means no limit.",
             "type": "number"
+          },
+          "accepted_agents": {
+            "description": "[Optional] - Array of strings of the accepted agents, if no value is specified, means all agents are accepted.",
+            "$ref": "#/CustomTypes/ArrayOfStrings"
           }
         },
         "required": [

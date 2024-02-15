@@ -307,3 +307,24 @@ def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSer
     assert parsed_proto.key == "agent/ostorlab/BigFuzzer"
     assert parsed_proto.cyclic_processing_limit == 2
     assert parsed_proto.depth_processing_limit == 3
+
+
+def testAgentInstanceSettingsToRawProto_whenAcceptedAgentsListIsSet_shouldSerialize() -> (
+    None
+):
+    """Unit test to ensure that accepted agents list is correctly serialized."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/org/main_agent",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
+        accepted_agents=["agent1", "agent2"],
+    )
+
+    proto = instance_settings.to_raw_proto()
+    parsed_proto = instance_settings.from_proto(proto)
+
+    assert parsed_proto.key == "agent/org/main_agent"
+    assert parsed_proto.accepted_agents == ["agent1", "agent2"]

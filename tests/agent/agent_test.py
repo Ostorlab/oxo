@@ -707,3 +707,137 @@ def testProcessMessage_whenProcessingDepthLimitIsReached_dropMessage(
 
     assert on_max_depth_process_reached_mock.called is True
     assert process_mock.called is False
+
+
+def testProcessMessage_whenAgentIsAccepted_shouldProcessMessage(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the agent is in the list of accepted agents, message should be processed."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test the accepted agents implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        accepted_agents=["agent1", "agent2", "agent3"],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent2"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert process_mock.called is True
+
+
+def testProcessMessage_whenAgentNotAccepted_shouldNotProcessMessage(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the agent is not in the list of accepted agents, the message should not be processed."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test the accepted agents implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        accepted_agents=["agent1", "agent2", "agent3"],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert process_mock.called is False
+
+
+def testProcessMessage_whenAcceptedAgentsNotSet_shouldProcessMessage(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the accepted agents is not set, the message should be processed."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test that the message is processed when the accepted agents is not set."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert process_mock.called is True
