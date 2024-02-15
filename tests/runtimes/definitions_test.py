@@ -328,3 +328,24 @@ def testAgentInstanceSettingsToRawProto_whenAcceptedAgentsListIsSet_shouldSerial
 
     assert parsed_proto.key == "agent/org/main_agent"
     assert parsed_proto.accepted_agents == ["agent1", "agent2"]
+
+
+def testAgentInstanceSettingsToRawProto_whenExtendedInSelectorsListIsSet_shouldSerialize() -> (
+    None
+):
+    """Unit test to ensure that extended in selectors list is correctly serialized."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/org/main_agent",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
+        extended_in_selectors=["in_selector1", "in_selector2"],
+    )
+
+    proto = instance_settings.to_raw_proto()
+    parsed_proto = instance_settings.from_proto(proto)
+
+    assert parsed_proto.key == "agent/org/main_agent"
+    assert parsed_proto.extended_in_selectors == ["in_selector1", "in_selector2"]

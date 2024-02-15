@@ -858,3 +858,156 @@ def testProcessMessage_whenAcceptedAgentsNotSet_shouldProcessMessage(
 
     assert on_agent_not_accepted_error_mock.called is False
     assert process_mock.called is True
+
+
+def testProcessMessage_whenExtendedInSelectorsNotSet_shouldNotUpdateInSelectors(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the extended in selectors is not set, the in selectors should not be updated."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test that the in selectors is not updated when the extended in selectors is not set."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        in_selectors=["v3.asset.file"],
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert test_agent.in_selectors == ["v3.asset.file"]
+    assert process_mock.called is True
+
+
+def testProcessMessage_whenExtendedInSelectorsSet_shouldUpdateInSelectors(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the extended in selectors is set, the in selectors should be updated."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test that the in selectors is updated when the extended in selectors is set."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        in_selectors=["v3.healthcheck.ping", "v3.asset.file"],
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        extended_in_selectors=["v3.asset.ip", "v3.asset.file.ios.ipa"],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert test_agent.in_selectors == [
+        "v3.healthcheck.ping",
+        "v3.asset.file.ios.ipa",
+        "v3.asset.ip",
+    ]
+    assert process_mock.called is True
+
+
+def testProcessMessage_whenExtendedInSelectorsContainsDuplicates_shouldUpdateInSelectorsWithUniqueValues(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the extended in selectors contains duplicates, the in selectors should be updated with unique values."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test that the in selectors is updated with unique values when the extended in selectors
+        contains duplicates."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        in_selectors=["v3.healthcheck.ping", "v3.asset.file"],
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        extended_in_selectors=[
+            "v3.asset.ip",
+            "v3.asset.file.ios.ipa",
+            "v3.asset.file.ios.ipa",
+        ],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert test_agent.in_selectors == [
+        "v3.healthcheck.ping",
+        "v3.asset.file.ios.ipa",
+        "v3.asset.ip",
+    ]
+    assert process_mock.called is True

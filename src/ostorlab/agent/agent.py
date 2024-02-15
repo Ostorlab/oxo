@@ -95,7 +95,7 @@ class AgentMixin(
         self._agent_settings = agent_settings
         self._control_message: Optional[agent_message.Message] = None
         self.name = agent_definition.name
-        self.in_selectors = agent_definition.in_selectors
+        self.in_selectors = self._prepare_in_selectors(agent_definition, agent_settings)
         self.out_selectors = agent_definition.out_selectors
         self.cyclic_processing_limit = agent_settings.cyclic_processing_limit
         self.depth_processing_limit = agent_settings.depth_processing_limit
@@ -397,6 +397,37 @@ class AgentMixin(
             "v3.control", {"control": {"agents": agents}, "message": raw}
         )
         return control_message.raw
+
+    def _prepare_in_selectors(
+        self,
+        agent_definition: agent_definitions.AgentDefinition,
+        agent_settings: runtime_definitions.AgentSettings,
+    ) -> List[str]:
+        """Prepare the in selectors by reading the agent definition and settings.
+
+        Args:
+            agent_definition: Agent definition dictating the attributes of the agent.
+            agent_settings: The settings of the running instance of an agent.
+
+        Returns:
+            List of in selectors.
+        """
+        in_selectors = set(agent_definition.in_selectors)
+        extended_selectors = set(agent_settings.extended_in_selectors)
+
+        in_selectors = [
+            selector
+            for selector in in_selectors
+            if any(
+                selector in extended_selector
+                for extended_selector in extended_selectors
+            )
+            is False
+        ]
+
+        in_selectors.extend(extended_selectors)
+
+        return in_selectors
 
     @classmethod
     def main(cls: Type["AgentMixin"], args: Optional[List[str]] = None) -> None:
