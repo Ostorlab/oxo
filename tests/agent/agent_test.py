@@ -747,7 +747,9 @@ def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {"agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent2"]},
+            "control": {
+                "agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent2"]
+            },
             "message": actual_message.raw,
         },
     )
@@ -798,7 +800,9 @@ def testProcessMessage_whenAgentNotAccepted_callbackCalled(
     control_message = agent_message.Message.from_data(
         "v3.control",
         {
-            "control": {"agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent6"]},
+            "control": {
+                "agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent6"]
+            },
             "message": actual_message.raw,
         },
     )

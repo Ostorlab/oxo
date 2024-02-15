@@ -308,6 +308,7 @@ def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSer
     assert parsed_proto.cyclic_processing_limit == 2
     assert parsed_proto.depth_processing_limit == 3
 
+
 def testAgentInstanceSettingsToRawProto_whenAcceptedAgentsListIsSet_shouldSerialize():
     """Unit test to ensure that accepted agents list is correctly serialized."""
     instance_settings = definitions.AgentSettings(
