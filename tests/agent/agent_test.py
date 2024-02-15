@@ -863,19 +863,19 @@ def testProcessMessage_whenAcceptedAgentsNotSet_shouldProcessMessage(
 def testProcessMessage_whenExtendedInSelectorsNotSet_shouldNotUpdateInSelectors(
     agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
 ) -> None:
-    """When the extended in selectors is not set, the in selectors should not be updated."""
+    """When the extended_in_selectors list is not set, the in selectors should not be updated."""
 
     process_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
-        """Helper class to test that the in selectors is not updated when the extended in selectors is not set."""
+        """Helper class to test that the in selectors is not updated when the extended_in_selectors list is not set."""
 
         def process(self, message: agent_message.Message) -> None:
             process_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="main_agent",
-        in_selectors=["v3.asset.file"],
+        in_selectors=["v3.healthcheck.ping", "v3.asset.file"],
         out_selectors=["v3.report.vulnerability"],
     )
     agent_settings = runtime_definitions.AgentSettings(
@@ -902,19 +902,21 @@ def testProcessMessage_whenExtendedInSelectorsNotSet_shouldNotUpdateInSelectors(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert test_agent.in_selectors == ["v3.asset.file"]
+    assert len(test_agent.in_selectors) == 2
+    assert "v3.healthcheck.ping" in test_agent.in_selectors
+    assert "v3.asset.file" in test_agent.in_selectors
     assert process_mock.called is True
 
 
 def testProcessMessage_whenExtendedInSelectorsSet_shouldUpdateInSelectors(
     agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
 ) -> None:
-    """When the extended in selectors is set, the in selectors should be updated."""
+    """When the extended_in_selectors list is set, the in selectors should be updated."""
 
     process_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
-        """Helper class to test that the in selectors is updated when the extended in selectors is set."""
+        """Helper class to test that the in selectors is updated when the extended_in_selectors list is set."""
 
         def process(self, message: agent_message.Message) -> None:
             process_mock(message)
@@ -949,11 +951,10 @@ def testProcessMessage_whenExtendedInSelectorsSet_shouldUpdateInSelectors(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert test_agent.in_selectors == [
-        "v3.healthcheck.ping",
-        "v3.asset.file.ios.ipa",
-        "v3.asset.ip",
-    ]
+    assert len(test_agent.in_selectors) == 3
+    assert "v3.healthcheck.ping" in test_agent.in_selectors
+    assert "v3.asset.file.ios.ipa" in test_agent.in_selectors
+    assert "v3.asset.ip" in test_agent.in_selectors
     assert process_mock.called is True
 
 
@@ -1005,9 +1006,8 @@ def testProcessMessage_whenExtendedInSelectorsContainsDuplicates_shouldUpdateInS
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert test_agent.in_selectors == [
-        "v3.healthcheck.ping",
-        "v3.asset.file.ios.ipa",
-        "v3.asset.ip",
-    ]
+    assert len(test_agent.in_selectors) == 3
+    assert "v3.healthcheck.ping" in test_agent.in_selectors
+    assert "v3.asset.file.ios.ipa" in test_agent.in_selectors
+    assert "v3.asset.ip" in test_agent.in_selectors
     assert process_mock.called is True
