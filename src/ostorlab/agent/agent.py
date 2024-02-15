@@ -547,3 +547,7 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
     def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max processing depth reached."""
         pass
+
+    def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
+        """Overridable method triggered on agent not accepted."""
+        pass

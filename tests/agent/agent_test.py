@@ -716,7 +716,7 @@ def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
     and process the message."""
 
     process_mock = mocker.Mock()
-    on_agent_not_accepted_error = mocker.Mock()
+    on_agent_not_accepted_error_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
         """Helper class to test the accepted agents implementation."""
@@ -725,7 +725,7 @@ def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
             process_mock(message)
 
         def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
-            on_agent_not_accepted_error(message)
+            on_agent_not_accepted_error_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="main_agent",
@@ -758,7 +758,7 @@ def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert on_agent_not_accepted_error.called is False
+    assert on_agent_not_accepted_error_mock.called is False
     assert process_mock.called is True
 
 
@@ -769,7 +769,7 @@ def testProcessMessage_whenAgentNotAccepted_callbackCalled(
     and do not process the message."""
 
     process_mock = mocker.Mock()
-    on_agent_not_accepted_error = mocker.Mock()
+    on_agent_not_accepted_error_mock = mocker.Mock()
 
     class TestAgent(agent.Agent):
         """Helper class to test the accepted agents implementation."""
@@ -778,7 +778,7 @@ def testProcessMessage_whenAgentNotAccepted_callbackCalled(
             process_mock(message)
 
         def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
-            on_agent_not_accepted_error(message)
+            on_agent_not_accepted_error_mock(message)
 
     agent_definition = agent_definitions.AgentDefinition(
         name="main_agent",
@@ -811,5 +811,5 @@ def testProcessMessage_whenAgentNotAccepted_callbackCalled(
         f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
     )
 
-    assert on_agent_not_accepted_error.called is True
+    assert on_agent_not_accepted_error_mock.called is True
     assert process_mock.called is False
