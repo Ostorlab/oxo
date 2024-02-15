@@ -242,7 +242,9 @@ class AgentMixin(
 
     def _is_valid_message(self) -> bool:
         """Check the message received is valid, currently only check for cyclic processing limit."""
-        control_agents: list[str] = self._control_message.data["control"]["agents"]
+        control_agents: list[str] = self._control_message.data.get("control", {}).get(
+            "agents", []
+        )
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
@@ -259,7 +261,11 @@ class AgentMixin(
                 )
                 raise MaximumDepthProcessReachedError(error_message)
 
-        if self.accepted_agents is not None and len(self.accepted_agents) > 0:
+        if (
+            len(control_agents) > 0
+            and self.accepted_agents is not None
+            and len(self.accepted_agents) > 0
+        ):
             sender_agent = control_agents[-1]
             if sender_agent not in self.accepted_agents:
                 return False
