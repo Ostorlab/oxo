@@ -51,7 +51,7 @@ class AgentSettings:
     caps: Optional[List[str]] = None
     cyclic_processing_limit: Optional[int] = None
     depth_processing_limit: Optional[int] = None
-    accepted_agents: list[str] | None = None
+    accepted_agents: Optional[List[str]] = None
 
     @property
     def container_image(self):
