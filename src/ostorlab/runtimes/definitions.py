@@ -51,6 +51,7 @@ class AgentSettings:
     caps: Optional[List[str]] = None
     cyclic_processing_limit: Optional[int] = None
     depth_processing_limit: Optional[int] = None
+    accepted_agents: list[str] | None = None
 
     @property
     def container_image(self):
@@ -125,6 +126,7 @@ class AgentSettings:
             caps=instance.caps,
             cyclic_processing_limit=instance.cyclic_processing_limit,
             depth_processing_limit=instance.depth_processing_limit,
+            accepted_agents=instance.accepted_agents,
         )
 
     def to_raw_proto(self) -> bytes:
@@ -180,6 +182,9 @@ class AgentSettings:
 
         if self.depth_processing_limit is not None:
             instance.depth_processing_limit = self.depth_processing_limit
+
+        if self.accepted_agents is not None:
+            instance.accepted_agents.extend(self.accepted_agents)
 
         if self.redis_url is not None:
             instance.redis_url = self.redis_url
@@ -237,6 +242,7 @@ class AgentGroupDefinition:
                 caps=agent.get("caps"),
                 cyclic_processing_limit=agent.get("cyclic_processing_limit"),
                 depth_processing_limit=agent.get("depth_processing_limit"),
+                accepted_agents=agent.get("accepted_agents"),
             )
 
             agent_settings.append(agent_def)
@@ -277,6 +283,7 @@ class AgentGroupDefinition:
                 caps=agent.caps,
                 cyclic_processing_limit=agent.cyclic_processing_limit,
                 depth_processing_limit=agent.depth_processing_limit,
+                accepted_agents=agent.accepted_agents,
             )
 
             agent_settings.append(agent_def)

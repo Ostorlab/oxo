@@ -707,3 +707,105 @@ def testProcessMessage_whenProcessingDepthLimitIsReached_dropMessage(
 
     assert on_max_depth_process_reached_mock.called is True
     assert process_mock.called is False
+
+
+def testProcessMessage_whenAgentIsAccepted_callbackNotCalled(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the agent is in the list of accepted agents, the process should not trigger a callback
+    and process the message."""
+
+    process_mock = mocker.Mock()
+    on_agent_not_accepted_error = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test the accepted agents implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+        def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
+            on_agent_not_accepted_error(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        accepted_agents=["agent/org/agent1", "agent/org/agent2", "agent/org/agent3"],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent2"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert on_agent_not_accepted_error.called is False
+    assert process_mock.called is True
+
+
+def testProcessMessage_whenAgentNotAccepted_callbackCalled(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the agent is not in the list of accepted agents, the process should trigger a callback
+    and do not process the message."""
+
+    process_mock = mocker.Mock()
+    on_agent_not_accepted_error = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test the accepted agents implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+        def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
+            on_agent_not_accepted_error(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        accepted_agents=["agent/org/agent1", "agent/org/agent2", "agent/org/agent3"],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent/org/agent4", "agent/org/agent5", "agent/org/agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert on_agent_not_accepted_error.called is True
+    assert process_mock.called is False

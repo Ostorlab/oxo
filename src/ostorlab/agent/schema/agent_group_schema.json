@@ -146,6 +146,14 @@
           "depth_processing_limit": {
             "description": "[Optional] - Count of how deep the processing of a message can go through the agents, if no value is specified, means no limit.",
             "type": "number"
+          },
+          "accepted_agents": {
+            "description": "[Optional] - Array of strings of the accepted agents, if no value is specified, means all agents are accepted.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 4096
+            }
           }
         },
         "required": [
