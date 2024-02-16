@@ -47,10 +47,6 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
     """The processing depth limit is enforced and reached the limit."""
 
 
-class AgentNotAcceptedError(exceptions.OstorlabError):
-    """The agent is not in the list of accepted agents."""
-
-
 def _setup_logging(agent_key: str, universe: str) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
@@ -223,15 +219,13 @@ class AgentMixin(
 
         # Validate the message before processing it.
         try:
-            self._validate_message()
+            if self._is_valid_message() is False:
+                return None
         except MaximumCyclicProcessReachedError:
             self.on_max_cyclic_process_reached(object_message)
             return None
         except MaximumDepthProcessReachedError:
             self.on_max_depth_process_reached(object_message)
-            return None
-        except AgentNotAcceptedError:
-            self.on_agent_not_accepted_error(object_message)
             return None
 
         try:
@@ -250,9 +244,11 @@ class AgentMixin(
             for h in logger.handlers:
                 h.flush()
 
-    def _validate_message(self) -> None:
+    def _is_valid_message(self) -> bool:
         """Check the message received is valid, currently only check for cyclic processing limit."""
-        control_agents: list[str] = self._control_message.data["control"]["agents"]
+        control_agents: list[str] = self._control_message.data.get("control", {}).get(
+            "agents", []
+        )
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
@@ -269,10 +265,16 @@ class AgentMixin(
                 )
                 raise MaximumDepthProcessReachedError(error_message)
 
-        if self.accepted_agents is not None and len(self.accepted_agents) > 0:
-            if control_agents[-1] not in self.accepted_agents:
-                error_message = f"Cannot process message from {control_agents[-1]}, since it is not in the list of accepted agents {self.accepted_agents}"
-                raise AgentNotAcceptedError(error_message)
+        if (
+            len(control_agents) > 0
+            and self.accepted_agents is not None
+            and len(self.accepted_agents) > 0
+        ):
+            sender_agent = control_agents[-1]
+            if sender_agent not in self.accepted_agents:
+                return False
+
+        return True
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:
@@ -351,11 +353,6 @@ class AgentMixin(
     @abc.abstractmethod
     def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max processing depth reached."""
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
-        """Overridable method triggered on agent not accepted."""
         raise NotImplementedError()
 
     def emit_raw(
@@ -550,8 +547,4 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
 
     def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max processing depth reached."""
-        pass
-
-    def on_agent_not_accepted_error(self, message: agent_message.Message) -> None:
-        """Overridable method triggered on agent not accepted."""
         pass
