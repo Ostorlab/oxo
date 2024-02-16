@@ -333,7 +333,7 @@ def testAgentInstanceSettingsToRawProto_whenAcceptedAgentsListIsSet_shouldSerial
 def testAgentInstanceSettingsToRawProto_whenExtendedInSelectorsListIsSet_shouldSerialize() -> (
     None
 ):
-    """Unit test to ensure that extended in selectors list is correctly serialized."""
+    """Unit test to ensure that agent settings in selectors list is correctly serialized."""
     instance_settings = definitions.AgentSettings(
         key="agent/org/main_agent",
         bus_url="mq",
