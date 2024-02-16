@@ -341,11 +341,11 @@ def testAgentInstanceSettingsToRawProto_whenExtendedInSelectorsListIsSet_shouldS
         bus_management_url="mq_managment",
         bus_vhost="vhost",
         args=[utils_definitions.Arg(name="speed", type="string", value="fast")],
-        extended_in_selectors=["in_selector1", "in_selector2"],
+        in_selectors=["in_selector1", "in_selector2"],
     )
 
     proto = instance_settings.to_raw_proto()
     parsed_proto = instance_settings.from_proto(proto)
 
     assert parsed_proto.key == "agent/org/main_agent"
-    assert parsed_proto.extended_in_selectors == ["in_selector1", "in_selector2"]
+    assert parsed_proto.in_selectors == ["in_selector1", "in_selector2"]
