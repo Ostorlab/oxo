@@ -841,3 +841,100 @@ def testProcessMessage_whenAcceptedAgentsNotSet_shouldProcessMessage(
     )
 
     assert process_mock.called is True
+
+
+def testProcessMessage_whenAgentSettingsInSelectorsNotSet_shouldUseAgentDefinitionInSelectors(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the agent settings in selectors are not set, the agent definition in selectors should be used."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test that the agent settings in selectors are used when not set."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        in_selectors=["v3.healthcheck.ping", "v3.asset.file"],
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert len(test_agent.in_selectors) == 2
+    assert "v3.healthcheck.ping" in test_agent.in_selectors
+    assert "v3.asset.file" in test_agent.in_selectors
+    assert process_mock.called is True
+
+
+def testProcessMessage_whenAgentSettingsInSelectorsSet_shouldUseAgentSettingsInSelectors(
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
+) -> None:
+    """When the agent settings in selectors are set, the agent settings in selectors should be used."""
+
+    process_mock = mocker.Mock()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test that the agent settings in selectors are used when set."""
+
+        def process(self, message: agent_message.Message) -> None:
+            process_mock(message)
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="main_agent",
+        in_selectors=["v3.healthcheck.ping", "v3.asset.file"],
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/org/main_agent",
+        in_selectors=["v3.healthcheck.ping", "v3.asset.file.ios.ipa"],
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {
+            "body": "Hello, can you process me?",
+        },
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agent4", "agent5", "agent6"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert len(test_agent.in_selectors) == 2
+    assert "v3.healthcheck.ping" in test_agent.in_selectors
+    assert "v3.asset.file.ios.ipa" in test_agent.in_selectors
+    assert process_mock.called is True

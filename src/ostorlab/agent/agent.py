@@ -91,7 +91,11 @@ class AgentMixin(
         self._agent_settings = agent_settings
         self._control_message: Optional[agent_message.Message] = None
         self.name = agent_definition.name
-        self.in_selectors = agent_definition.in_selectors
+        self.in_selectors = (
+            agent_settings.in_selectors
+            if len(agent_settings.in_selectors) > 0
+            else agent_definition.in_selectors
+        )
         self.out_selectors = agent_definition.out_selectors
         self.cyclic_processing_limit = agent_settings.cyclic_processing_limit
         self.depth_processing_limit = agent_settings.depth_processing_limit

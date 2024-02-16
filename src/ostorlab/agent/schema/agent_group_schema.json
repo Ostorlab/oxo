@@ -142,6 +142,10 @@
           "accepted_agents": {
             "description": "[Optional] - Array of strings of the accepted agents, if no value is specified, means all agents are accepted.",
             "$ref": "#/CustomTypes/ArrayOfStrings"
+          },
+          "in_selectors": {
+            "description": "[Optional] - Array of strings of the in_selectors that the agent should listen to.",
+            "$ref": "#/CustomTypes/ArrayOfStrings"
           }
         },
         "required": [
