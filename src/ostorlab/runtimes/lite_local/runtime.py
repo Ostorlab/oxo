@@ -293,9 +293,8 @@ class LiteLocalRuntime(runtime.Runtime):
             network_name=self.network,
             extra_configs=extra_configs,
             extra_mounts=extra_mounts,
-            replicas=agent.replicas
+            replicas=agent.replicas,
         )
-
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
@@ -352,7 +351,6 @@ class LiteLocalRuntime(runtime.Runtime):
                 )
             ],
         )
-
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),

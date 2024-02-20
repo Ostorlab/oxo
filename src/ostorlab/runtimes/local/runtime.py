@@ -423,7 +423,10 @@ class LocalRuntime(runtime.Runtime):
             gcp_logging_credential=self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
-            self.network, extra_configs, extra_mounts
+            network_name=self.network,
+            extra_configs=extra_configs,
+            extra_mounts=extra_mounts,
+            replicas=agent.replicas or 1,
         )
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)
