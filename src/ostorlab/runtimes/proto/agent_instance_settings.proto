@@ -59,4 +59,6 @@ message AgentInstanceSettings {
   optional uint32 depth_processing_limit = 19;
   // The list of accepted agents from which the agent should process messages.
   repeated string accepted_agents = 20;
+  // In selectors used to override the default selectors used by the agent.
+  repeated string in_selectors = 21;
 }

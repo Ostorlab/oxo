@@ -34,6 +34,7 @@ message Agent{
     optional uint32 cyclic_processing_limit=6;
     optional uint32 depth_processing_limit=7;
     repeated string accepted_agents = 8;
+    repeated string in_selectors = 9;
 }
 
 message Links {

@@ -52,6 +52,7 @@ class AgentSettings:
     cyclic_processing_limit: Optional[int] = None
     depth_processing_limit: Optional[int] = None
     accepted_agents: Optional[List[str]] = None
+    in_selectors: Optional[List[str]] = dataclasses.field(default_factory=list)
 
     @property
     def container_image(self):
@@ -127,6 +128,7 @@ class AgentSettings:
             cyclic_processing_limit=instance.cyclic_processing_limit,
             depth_processing_limit=instance.depth_processing_limit,
             accepted_agents=instance.accepted_agents,
+            in_selectors=instance.in_selectors,
         )
 
     def to_raw_proto(self) -> bytes:
@@ -164,6 +166,7 @@ class AgentSettings:
         instance.constraints.extend(self.constraints)
         instance.mounts.extend(self.mounts)
         instance.restart_policy = self.restart_policy
+        instance.in_selectors.extend(self.in_selectors)
         if self.mem_limit is not None:
             instance.mem_limit = self.mem_limit
 
@@ -243,6 +246,7 @@ class AgentGroupDefinition:
                 cyclic_processing_limit=agent.get("cyclic_processing_limit"),
                 depth_processing_limit=agent.get("depth_processing_limit"),
                 accepted_agents=agent.get("accepted_agents"),
+                in_selectors=agent.get("in_selectors", []),
             )
 
             agent_settings.append(agent_def)
@@ -284,6 +288,7 @@ class AgentGroupDefinition:
                 cyclic_processing_limit=agent.cyclic_processing_limit,
                 depth_processing_limit=agent.depth_processing_limit,
                 accepted_agents=agent.accepted_agents,
+                in_selectors=agent.in_selectors,
             )
 
             agent_settings.append(agent_def)
