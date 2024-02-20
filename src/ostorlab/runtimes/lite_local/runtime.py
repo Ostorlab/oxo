@@ -289,7 +289,7 @@ class LiteLocalRuntime(runtime.Runtime):
             self._tracing_collector_url,
             self._gcp_logging_credential,
         )
-        agent_service = runtime_agent.create_agent_service(
+        runtime_agent.create_agent_service(
             network_name=self.network,
             extra_configs=extra_configs,
             extra_mounts=extra_mounts,
