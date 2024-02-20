@@ -428,9 +428,6 @@ class LocalRuntime(runtime.Runtime):
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)
 
-        if agent.replicas > 1:
-            self._scale_service(agent_service, agent.replicas)
-
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_exponential(multiplier=1, max=12),

@@ -372,6 +372,7 @@ class AgentRuntime:
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit),
             cap_add=caps,
+            mode=docker_types_services.ServiceMode("replicated", replicas),
         )
 
         return agent_service
