@@ -496,14 +496,6 @@ class LocalRuntime(runtime.Runtime):
             ],
         )
 
-    def _scale_service(
-        self, service: docker_models_services.Service, replicas: int
-    ) -> None:
-        """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
-        the service object, then calling the scale API."""
-        for s in self._docker_client.services.list():
-            if s.name == service.name:
-                s.scale(replicas)
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
