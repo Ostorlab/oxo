@@ -1,10 +1,18 @@
 """Utils API to play with Docker Volumes."""
-import pathlib
-import tempfile
-from typing import Dict
 
+import io
+import tarfile
+import time
+
+from typing import Dict
 import docker
+from docker import types as docker_types
 from docker import errors as docker_errors
+
+from ostorlab.utils import strings
+
+TEMP_IMAGE = "busybox:latest"
+TEMP_DESTINATION = "/dst"
 
 
 class VolumeWriter:
@@ -18,29 +26,62 @@ class VolumeWriter:
         self._client = docker.from_env()
 
     def write(self, volume_name: str, contents: Dict[str, bytes]) -> None:
-        """Write content volume at a path.
+        """Write content volume at path.
+
         Args:
             volume_name: The volume name to create. This command will override existing volumes with the same name.
-            contents: Dict of a path where the content will be written to in the volume and content in bytes format.
+            contents: Dict of path where the content will written to in the volume and content in bytes format.
         Returns:
             None
         """
+        self._install_image()
+        self._create_volume(volume_name)
+        self._write_content(volume_name, contents)
+
+    def _install_image(self) -> None:
+        """Installs a busybox image for the form."""
+        self._client.images.pull(TEMP_IMAGE)
+
+    def _create_volume(self, name: str) -> None:
+        """Override existing images."""
         try:
-            self._client.volumes.get(volume_name).remove()
+            self._client.volumes.get(name).remove()
         except docker_errors.NotFound:
             pass
+        self._client.volumes.create(name)
 
-        # Create a new directory in the system's temporary directory
-        volume_path = pathlib.Path(tempfile.gettempdir()) / volume_name
-        volume_path.mkdir(parents=True, exist_ok=True)
-        for path, content in contents.items():
-            with open(volume_path / path, "ab") as file:
-                file.write(content)
-        self._client.volumes.create(
-            volume_name,
-            driver="local",
-            driver_opts={"type": "none", "device": str(volume_path), "o": "bind"},
+    def _prepare_tar(self, contents: Dict[str, bytes]) -> io.BytesIO:
+        """Copy API expects a tar, this api prepares one with the file content."""
+        pw_tarstream = io.BytesIO()
+        with tarfile.TarFile(fileobj=pw_tarstream, mode="w") as pw_tar:
+            for path, content in contents.items():
+                tarinfo = tarfile.TarInfo(name=path)
+                tarinfo.size = len(content)
+                tarinfo.mtime = int(time.time())
+                pw_tar.addfile(tarinfo, io.BytesIO(content))
+        pw_tarstream.seek(0)
+        return pw_tarstream
+
+    def _write_content(self, volume_name: str, contents: Dict[str, bytes]) -> None:
+        """Use the docker copy API to write content to target volume."""
+        temp_container_name = strings.random_string(9)
+        self._client.containers.run(
+            TEMP_IMAGE,
+            name=temp_container_name,
+            command="sleep infinity",
+            detach=True,
+            remove=True,
+            mounts=[
+                docker_types.Mount(
+                    target=TEMP_DESTINATION, source=volume_name, type="volume"
+                )
+            ],
         )
+        pw_tarstream = self._prepare_tar(contents)
+
+        container = self._client.containers.get(temp_container_name)
+        container.put_archive(TEMP_DESTINATION, pw_tarstream)
+        container.stop()
 
 
 def create_volume(volume_name: str, contents: Dict[str, bytes]) -> None:
