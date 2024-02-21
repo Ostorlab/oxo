@@ -1,10 +1,11 @@
 """Tests for vulnz list command."""
+import requests_mock as rq_mock
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import rootcli
 from ostorlab.runtimes.local.models import models
-from pytest_mock import plugin
 
 
 def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLocal_showsVulnzInfo(
@@ -194,64 +195,64 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
     assert "Scan 1: Found 1 vulnerabilities." in result_exact.output
     assert (
         """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
-│    │ command      │ dummy.co     │             │              │ command      │
-│    │ execution    │ URL:         │             │              │ execution    │
-│    │              │ https://dum… │             │              │              │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
+    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
+    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
+    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
+    │ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
+    │    │ command      │ dummy.co     │             │              │ command      │
+    │    │ execution    │ URL:         │             │              │ execution    │
+    │    │              │ https://dum… │             │              │              │
+    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
         in result_exact.output
     )
     assert result_gte.exception is None
     assert (
         """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
-│    │ command      │ dummy.co     │             │              │ command      │
-│    │ execution    │ URL:         │             │              │ execution    │
-│    │              │ https://dum… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 3  │ The          │ Domain:      │ Medium      │ 5:6:7        │ The          │
-│    │ application  │ dummy.co     │             │              │ application  │
-│    │ calls the    │ URL:         │             │              │ calls the    │
-│    │ registerRec… │ https://dum… │             │              │ registerRec… │
-│    │ method with  │              │             │              │ method with  │
-│    │ the argument │              │             │              │ the argument │
-│    │ flags set to │              │             │              │ flags set to │
-│    │ RECEIVER_EX… │              │             │              │ RECEIVER_EX… │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
+    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
+    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
+    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
+    │ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
+    │    │ command      │ dummy.co     │             │              │ command      │
+    │    │ execution    │ URL:         │             │              │ execution    │
+    │    │              │ https://dum… │             │              │              │
+    ├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
+    │ 3  │ The          │ Domain:      │ Medium      │ 5:6:7        │ The          │
+    │    │ application  │ dummy.co     │             │              │ application  │
+    │    │ calls the    │ URL:         │             │              │ calls the    │
+    │    │ registerRec… │ https://dum… │             │              │ registerRec… │
+    │    │ method with  │              │             │              │ method with  │
+    │    │ the argument │              │             │              │ the argument │
+    │    │ flags set to │              │             │              │ flags set to │
+    │    │ RECEIVER_EX… │              │             │              │ RECEIVER_EX… │
+    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
         in result_gte.output
     )
     assert result_lte.exception is None
     assert (
         """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 4  │ Application  │ Domain:      │ Secure      │ 5:6:7        │ Application  │
-│    │ is compiled  │ dummy.co     │             │              │ is compiled  │
-│    │ with debug   │ URL:         │             │              │ with debug   │
-│    │ mode         │ https://dum… │             │              │ mode         │
-│    │ disabled     │              │             │              │ disabled     │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 2  │ List of      │ Domain:      │ Info        │ 5:6:7        │ List of      │
-│    │ dynamic code │ dummy.co     │             │              │ dynamic code │
-│    │ loading API  │ URL:         │             │              │ loading API  │
-│    │ calls        │ https://dum… │             │              │ calls        │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 3  │ The          │ Domain:      │ Medium      │ 5:6:7        │ The          │
-│    │ application  │ dummy.co     │             │              │ application  │
-│    │ calls the    │ URL:         │             │              │ calls the    │
-│    │ registerRec… │ https://dum… │             │              │ registerRec… │
-│    │ method with  │              │             │              │ method with  │
-│    │ the argument │              │             │              │ the argument │
-│    │ flags set to │              │             │              │ flags set to │
-│    │ RECEIVER_EX… │              │             │              │ RECEIVER_EX… │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
+    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
+    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
+    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
+    │ 4  │ Application  │ Domain:      │ Secure      │ 5:6:7        │ Application  │
+    │    │ is compiled  │ dummy.co     │             │              │ is compiled  │
+    │    │ with debug   │ URL:         │             │              │ with debug   │
+    │    │ mode         │ https://dum… │             │              │ mode         │
+    │    │ disabled     │              │             │              │ disabled     │
+    ├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
+    │ 2  │ List of      │ Domain:      │ Info        │ 5:6:7        │ List of      │
+    │    │ dynamic code │ dummy.co     │             │              │ dynamic code │
+    │    │ loading API  │ URL:         │             │              │ loading API  │
+    │    │ calls        │ https://dum… │             │              │ calls        │
+    ├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
+    │ 3  │ The          │ Domain:      │ Medium      │ 5:6:7        │ The          │
+    │    │ application  │ dummy.co     │             │              │ application  │
+    │    │ calls the    │ URL:         │             │              │ calls the    │
+    │    │ registerRec… │ https://dum… │             │              │ registerRec… │
+    │    │ method with  │              │             │              │ method with  │
+    │    │ the argument │              │             │              │ the argument │
+    │    │ flags set to │              │             │              │ flags set to │
+    │    │ RECEIVER_EX… │              │             │              │ RECEIVER_EX… │
+    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
         in result_lte.output
     )
 
@@ -289,19 +290,19 @@ def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsLocal_showsCorrectResu
     assert "Scan 1: Found 1 vulnerabilities." in result.output
     assert (
         """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
-│    │ command      │ dummy.co     │             │              │ command      │
-│    │ execution    │ URL:         │             │              │ execution    │
-│    │              │ https://dum… │             │              │              │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
+    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
+    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
+    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
+    │ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
+    │    │ command      │ dummy.co     │             │              │ command      │
+    │    │ execution    │ URL:         │             │              │ execution    │
+    │    │              │ https://dum… │             │              │              │
+    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
         in result.output
     )
 
 
-def testOstorlabVulnzListCLI_whenFilterIsNotCorrect_showBadOptionUsageError(
+def testOstorlabVulnzListCLI_whenFilterIsNotCorrectAndRuntimeIsLocal_showBadOptionUsageError(
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
@@ -333,4 +334,248 @@ def testOstorlabVulnzListCLI_whenFilterIsNotCorrect_showBadOptionUsageError(
     assert result.exception is not None
     assert (
         "Error: --filter-type / -f can only be used with risk-rating" in result.output
+    )
+
+
+def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrectResult(
+    requests_mock: rq_mock.Mocker,
+) -> None:
+    """Test ostorlab vulnz list command with filter by title and runtime is cloud.
+    Should show the correct result."""
+    mock_response = {
+        "data": {
+            "scan": {
+                "vulnerabilities": {
+                    "vulnerabilities": [
+                        {
+                            "id": "38312829",
+                            "detail": {
+                                "title": "Remote command execution",
+                                "shortDescription": "Remote command execution",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "HIGH",
+                            },
+                        },
+                        {
+                            "id": "38312828",
+                            "detail": {
+                                "title": "List of dynamic code loading API calls",
+                                "shortDescription": "List of dynamic code loading API calls",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "INFO",
+                            },
+                        },
+                        {
+                            "id": "38312827",
+                            "detail": {
+                                "title": "The application calls the registerReceiver method with the argument flags set to RECEIVER_EXPORTED",
+                                "shortDescription": "The application calls the registerReceiver method with the argument flags set to RECEIVER_EXPORTED",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "MEDIUM",
+                            },
+                        },
+                        {
+                            "id": "38312826",
+                            "detail": {
+                                "title": "Application is compiled with debug mode disabled",
+                                "shortDescription": "Application is compiled with debug mode disabled",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "SECURE",
+                            },
+                        },
+                        {
+                            "id": "38312825",
+                            "detail": {
+                                "title": "Server Side Inclusion",
+                                "shortDescription": "Server Side Inclusion",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "CRITICAL",
+                            },
+                        },
+                    ]
+                }
+            }
+        }
+    }
+    runner = CliRunner()
+    requests_mock.post("https://api.ostorlab.co/apis/graphql", json=mock_response)
+
+    result_exact = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "--runtime",
+            "cloud",
+            "list",
+            "--scan-id",
+            "56835",
+            "--risk-rating",
+            "HIGH",
+        ],
+    )
+    result_gte = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "--runtime",
+            "cloud",
+            "list",
+            "--scan-id",
+            "56835",
+            "--risk-rating",
+            "MEDIUM",
+            "--filter-type",
+            "gte",
+        ],
+    )
+    result_lte = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "--runtime",
+            "cloud",
+            "list",
+            "--scan-id",
+            "56835",
+            "--risk-rating",
+            "MEDIUM",
+            "--filter-type",
+            "lte",
+        ],
+    )
+
+    assert "Scan 56835: Found 1 vulnerabilities." in result_exact.output
+    assert (
+        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
+│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
+│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
+╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
+│ 38312829 │ Remote      │             │ High       │ CVSS:3.0/A… │ Remote     │
+│          │ command     │             │            │             │ command    │
+│          │ execution   │             │            │             │ execution  │
+└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
+        in result_exact.output
+    )
+    assert "Scan 56835: Found 3 vulnerabilities." in result_gte.output
+    assert (
+        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
+│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
+│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
+╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
+│ 38312829 │ Remote      │             │ High       │ CVSS:3.0/A… │ Remote     │
+│          │ command     │             │            │             │ command    │
+│          │ execution   │             │            │             │ execution  │
+├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 38312827 │ The         │             │ Medium     │ CVSS:3.0/A… │ The        │
+│          │ application │             │            │             │ applicati… │
+│          │ calls the   │             │            │             │ calls the  │
+│          │ registerRe… │             │            │             │ registerR… │
+│          │ method with │             │            │             │ method     │
+│          │ the         │             │            │             │ with the   │
+│          │ argument    │             │            │             │ argument   │
+│          │ flags set   │             │            │             │ flags set  │
+│          │ to          │             │            │             │ to         │
+│          │ RECEIVER_E… │             │            │             │ RECEIVER_… │
+├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 38312825 │ Server Side │             │ Critical   │ CVSS:3.0/A… │ Server     │
+│          │ Inclusion   │             │            │             │ Side       │
+│          │             │             │            │             │ Inclusion  │
+└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
+        in result_gte.output
+    )
+    assert "Scan 56835: Found 3 vulnerabilities." in result_lte.output
+    assert (
+        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
+│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
+│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
+╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
+│ 38312828 │ List of     │             │ Info       │ CVSS:3.0/A… │ List of    │
+│          │ dynamic     │             │            │             │ dynamic    │
+│          │ code        │             │            │             │ code       │
+│          │ loading API │             │            │             │ loading    │
+│          │ calls       │             │            │             │ API calls  │
+├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 38312827 │ The         │             │ Medium     │ CVSS:3.0/A… │ The        │
+│          │ application │             │            │             │ applicati… │
+│          │ calls the   │             │            │             │ calls the  │
+│          │ registerRe… │             │            │             │ registerR… │
+│          │ method with │             │            │             │ method     │
+│          │ the         │             │            │             │ with the   │
+│          │ argument    │             │            │             │ argument   │
+│          │ flags set   │             │            │             │ flags set  │
+│          │ to          │             │            │             │ to         │
+│          │ RECEIVER_E… │             │            │             │ RECEIVER_… │
+├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 38312826 │ Application │             │ Secure     │ CVSS:3.0/A… │ Applicati… │
+│          │ is compiled │             │            │             │ is         │
+│          │ with debug  │             │            │             │ compiled   │
+│          │ mode        │             │            │             │ with debug │
+│          │ disabled    │             │            │             │ mode       │
+│          │             │             │            │             │ disabled   │
+└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
+        in result_lte.output
+    )
+
+
+def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsCloud_showsCorrectResult(
+    requests_mock: rq_mock.Mocker,
+) -> None:
+    """Test ostorlab vulnz list command with filter by title and runtime is cloud.
+    Should show the correct result."""
+    mock_response = {
+        "data": {
+            "scan": {
+                "vulnerabilities": {
+                    "vulnerabilities": [
+                        {
+                            "id": "38312829",
+                            "detail": {
+                                "title": "Remote command execution",
+                                "shortDescription": "Remote command execution",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "HIGH",
+                            },
+                        },
+                        {
+                            "id": "38312828",
+                            "detail": {
+                                "title": "List of dynamic code loading API calls",
+                                "shortDescription": "List of dynamic code loading API calls",
+                                "cvssV3Vector": "CVSS:3.0/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+                                "riskRating": "INFO",
+                            },
+                        },
+                    ]
+                }
+            }
+        }
+    }
+    runner = CliRunner()
+    requests_mock.post("https://api.ostorlab.co/apis/graphql", json=mock_response)
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "--runtime",
+            "cloud",
+            "list",
+            "--scan-id",
+            "56835",
+            "--title",
+            "command execu",
+        ],
+    )
+
+    assert "Scan 56835: Found 1 vulnerabilities." in result.output
+    assert (
+        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
+│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
+│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
+╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
+│ 38312829 │ Remote      │             │ High       │ CVSS:3.0/A… │ Remote     │
+│          │ command     │             │            │             │ command    │
+│          │ execution   │             │            │             │ execution  │
+└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
+        in result.output
     )

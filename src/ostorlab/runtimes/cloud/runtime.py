@@ -5,10 +5,10 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
-from typing import Any, List, Optional, Dict, Union
-import logging
-
 import json
+import logging
+from typing import Any, List, Optional, Dict, Union
+
 import click
 import markdownify
 import rich
@@ -35,6 +35,18 @@ from ostorlab.utils import styles
 
 AgentType = Dict[str, Union[str, List]]
 console = cli_console.Console()
+
+RISK_RATINGS_ORDER = {
+    "CRITICAL": 8,
+    "HIGH": 7,
+    "MEDIUM": 6,
+    "LOW": 5,
+    "POTENTIALLY": 4,
+    "HARDENING": 3,
+    "SECURE": 2,
+    "IMPORTANT": 1,
+    "INFO": 0,
+}
 
 
 class CloudRuntime(runtime.Runtime):
@@ -206,25 +218,53 @@ class CloudRuntime(runtime.Runtime):
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
         return location_markdwon_value
 
-    def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+    def list_vulnz(
+        self,
+        scan_id: int,
+        page: int = 1,
+        number_elements: int = 10,
+        filter_risk_rating: Optional[str] = None,
+        filter_type: Optional[str] = None,
+        title: Optional[str] = None,
+    ) -> None:
         """List vulnz from the cloud using and render them in a table.
 
         Args:
             scan_id: scan id to list vulnz from.
             page: optional page number.
             number_elements: optional number of elements per page.
+            filter_risk_rating: optional risk rating to filter vulnz by.
+            filter_type: optional filter type for risk rating ('exact', 'gte', 'lte').
+            title: optional title to filter vulnz by.
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(
                 vulnz_list.VulnzListAPIRequest(
-                    scan_id=scan_id, number_elements=number_elements, page=page
+                    scan_id=scan_id,
+                    number_elements=number_elements,
+                    page=page,
                 )
             )
             vulnerabilities = response["data"]["scan"]["vulnerabilities"][
                 "vulnerabilities"
             ]
             vulnz_list_table = []
+
+            if filter_risk_rating is not None and filter_type is not None:
+                vulnerabilities = [
+                    vuln
+                    for vuln in vulnerabilities
+                    if self._is_included_vuln(vuln, filter_risk_rating, filter_type) is True
+                ]
+
+            if title is not None:
+                vulnerabilities = [
+                    vuln
+                    for vuln in vulnerabilities
+                    if title.lower() in vuln["detail"]["title"].lower()
+                ]
+
             for vulnerability in vulnerabilities:
                 vulnerability_location_markdown = self._prepare_vuln_location_markdown(
                     vulnerability.get("vulnerabilityLocation")
@@ -243,6 +283,7 @@ class CloudRuntime(runtime.Runtime):
                         "location": markdown.Markdown(vulnerability_location_markdown),
                     }
                 )
+
             columns = {
                 "Id": "id",
                 "Title": "title",
@@ -264,7 +305,12 @@ class CloudRuntime(runtime.Runtime):
                 page = page + 1
                 if click.confirm(f"page {page + 1} of {num_pages}"):
                     self.list_vulnz(
-                        scan_id=scan_id, page=page, number_elements=number_elements
+                        scan_id=scan_id,
+                        page=page,
+                        number_elements=number_elements,
+                        filter_risk_rating=filter_risk_rating,
+                        filter_type=filter_type,
+                        title=title,
                     )
         except runner.Error:
             console.error(f"scan with id {scan_id} does not exist.")
@@ -579,3 +625,21 @@ class CloudRuntime(runtime.Runtime):
             title, asset_id, agent_group_id
         )
         _ = api_runner.execute(request)
+
+    def _is_included_vuln(
+        self, vuln: Dict[str, Any], risk_rating: str, filter_type: str
+    ) -> bool:
+        """Check if a vulnerability is included in the filter."""
+        if filter_type == "exact":
+            return vuln["detail"]["riskRating"].upper() == risk_rating.upper()
+        elif filter_type == "gte":
+            return (
+                RISK_RATINGS_ORDER[vuln["detail"]["riskRating"].upper()]
+                >= RISK_RATINGS_ORDER[risk_rating.upper()]
+            )
+        elif filter_type == "lte":
+            return (
+                RISK_RATINGS_ORDER[vuln["detail"]["riskRating"].upper()]
+                <= RISK_RATINGS_ORDER[risk_rating.upper()]
+            )
+        return False
