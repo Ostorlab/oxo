@@ -4,17 +4,17 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 import logging
+from concurrent import futures
 from typing import Dict, List
 from typing import Optional
-from concurrent import futures
 
 import click
 import docker
 import rich
 import sqlalchemy
 import tenacity
-from docker.models import services as docker_models_services
 from docker import errors as docker_errors
+from docker.models import services as docker_models_services
 from rich import markdown
 from rich import panel
 from sqlalchemy import case
@@ -30,9 +30,9 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
-from ostorlab.runtimes.local.services import jaeger
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
@@ -423,13 +423,13 @@ class LocalRuntime(runtime.Runtime):
             gcp_logging_credential=self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
-            self.network, extra_configs, extra_mounts
+            network_name=self.network,
+            extra_configs=extra_configs,
+            extra_mounts=extra_mounts,
+            replicas=agent.replicas or 1,
         )
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)
-
-        if agent.replicas > 1:
-            self._scale_service(agent_service, agent.replicas)
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
@@ -498,15 +498,6 @@ class LocalRuntime(runtime.Runtime):
                 )
             ],
         )
-
-    def _scale_service(
-        self, service: docker_models_services.Service, replicas: int
-    ) -> None:
-        """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
-        the service object, then calling the scale API."""
-        for s in self._docker_client.services.list():
-            if s.name == service.name:
-                s.scale(replicas)
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
