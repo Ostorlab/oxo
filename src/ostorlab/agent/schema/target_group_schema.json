@@ -10,10 +10,6 @@
         "package_name": {
           "description": "[Required] - Package name of the app.",
           "type": "string"
-        },
-        "sbom": {
-          "description": "[Optional] - Package name of the app.",
-          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     },
@@ -24,10 +20,6 @@
         "path": {
           "description": "[Required] - Android app file path.",
           "type": "string"
-        },
-        "sbom": {
-          "description": "[Optional] - Package name of the app.",
-          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     },
@@ -38,10 +30,6 @@
         "path": {
           "description": "[Required] - Android app file path.",
           "type": "string"
-        },
-        "sbom": {
-          "description": "[Optional] - Package name of the app.",
-          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     },
@@ -66,10 +54,6 @@
         "paths": {
           "description": "[Required] - Ios app file path.",
           "type": "string"
-        },
-        "sbom": {
-          "description": "[Optional] - Package name of the app.",
-          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     },
@@ -196,6 +180,9 @@
           "items" : {
             "$ref": "#/CustomTypes/ipType"
           }
+        },
+        "sbom": {
+          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     }

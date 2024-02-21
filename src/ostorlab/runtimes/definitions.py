@@ -1,11 +1,12 @@
 """Agent and Agent group definitions and settings dataclasses."""
 import dataclasses
+import enum
 import io
 import pathlib
 import re
 import logging
 import json
-from typing import Any
+from typing import List, Dict, Optional, Any
 import ipaddress
 
 import docker
@@ -39,32 +40,38 @@ def _process_agent_replicas(replicas: int) -> int:
         return replicas
 
 
+class AppType(enum.Enum):
+    IOS_IPA = enum.auto()
+    ANDROID_APK = enum.auto()
+    ANDROID_AAB = enum.auto()
+
+
 @dataclasses.dataclass
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
 
     key: str
-    version: str | None = None
-    bus_url: str | None = ""
-    bus_exchange_topic: str | None = ""
-    bus_management_url: str | None = ""
-    bus_vhost: str | None = ""
-    args: list[defintions.Arg] = dataclasses.field(default_factory=list)
-    constraints: list[str] = dataclasses.field(default_factory=list)
-    mounts: list[str] | None = dataclasses.field(default_factory=list)
+    version: Optional[str] = None
+    bus_url: Optional[str] = ""
+    bus_exchange_topic: Optional[str] = ""
+    bus_management_url: Optional[str] = ""
+    bus_vhost: Optional[str] = ""
+    args: List[defintions.Arg] = dataclasses.field(default_factory=list)
+    constraints: Optional[List[str]] = dataclasses.field(default_factory=list)
+    mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
     restart_policy: str = ""
-    mem_limit: int | None = None
-    open_ports: list[defintions.PortMapping] = dataclasses.field(default_factory=list)
+    mem_limit: Optional[int] = None
+    open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
     healthcheck_host: str = "0.0.0.0"
     healthcheck_port: int = 5000
-    redis_url: str | None = None
-    tracing_collector_url: str | None = None
-    caps: list[str] | None = None
-    cyclic_processing_limit: int | None = None
-    depth_processing_limit: int | None = None
-    accepted_agents: list[str] | None = None
-    in_selectors: list[str] | None = dataclasses.field(default_factory=list)
+    redis_url: Optional[str] = None
+    tracing_collector_url: Optional[str] = None
+    caps: Optional[List[str]] = None
+    cyclic_processing_limit: Optional[int] = None
+    depth_processing_limit: Optional[int] = None
+    accepted_agents: Optional[List[str]] = None
+    in_selectors: Optional[List[str]] = dataclasses.field(default_factory=list)
 
     @property
     def container_image(self):
@@ -214,9 +221,9 @@ class AgentSettings:
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
 
-    agents: list[AgentSettings]
-    name: str | None = None
-    description: str | None = None
+    agents: List[AgentSettings]
+    name: Optional[str] = None
+    description: Optional[str] = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -312,9 +319,9 @@ class AgentGroupDefinition:
 
 @dataclasses.dataclass
 class AssetsDefinition:
-    targets: list[base_asset.Asset]
-    name: str | None = None
-    description: str | None = None
+    targets: List[base_asset.Asset]
+    name: Optional[str] = None
+    description: Optional[str] = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -333,30 +340,18 @@ class AssetsDefinition:
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
+        sbom_assets = assets.get("sbom", [])
 
-        assets_def: list[assets.Asset] = []
+        assets_def: List[assets.Asset] = []
+        assets_def.extend(_collect_apps(android_aab_file_assets, AppType.ANDROID_AAB))
+        assets_def.extend(_collect_apps(android_apk_file_assets, AppType.ANDROID_APK))
+        assets_def.extend(_collect_apps(ios_file_assets, AppType.IOS_IPA))
+
         for asset in android_store_assets:
             assets_def.append(
                 android_store_asset.AndroidStore(package_name=asset.get("package_name"))
             )
 
-        for asset in android_aab_file_assets:
-            content = _load_asset_from_file(asset.get("path", ""))
-            if content is None:
-                continue
-            assets_def.append(
-                android_aab_asset.AndroidAab(content=content, path=asset.get("path"))
-            )
-            assets_def.extend(_collect_sbom_assets(asset.get("sbom")))
-
-        for asset in android_apk_file_assets:
-            content = _load_asset_from_file(asset.get("path", ""))
-            if content is None:
-                continue
-            assets_def.append(
-                android_apk_asset.AndroidApk(content=content, path=asset.get("path"))
-            )
-            assets_def.extend(_collect_sbom_assets(asset.get("sbom")))
         for asset in ios_store_assets:
             assets_def.append(
                 ios_store_asset.IOSStore(bundle_id=asset.get("bundle_id"))
@@ -375,14 +370,12 @@ class AssetsDefinition:
                 link_asset.Link(url=asset.get("url"), method=asset.get("method"))
             )
 
-        for asset in ios_file_assets:
-            content = _load_asset_from_file(asset.get("path", ""))
+        for asset in sbom_assets:
+            content = _load_asset_from_file(asset)
             if content is None:
                 continue
-            assets_def.append(
-                ios_ipa_asset.IOSIpa(content=content, path=asset.get("path", ""))
-            )
-            assets_def.extend(_collect_sbom_assets(asset.get("sbom")))
+            assets_def.append(file_asset.File(content=content, path=asset))
+
         return cls(
             targets=assets_def,
             name=target_group_def.get("name"),
@@ -405,7 +398,7 @@ def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
         raise ValueError(f"Unsupported argument type: {arg_type}")
 
 
-def _parse_ip_asset(ip_asset: dict[str:Any]) -> base_asset.Asset | None:
+def _parse_ip_asset(ip_asset: Dict[str:Any]) -> Optional[base_asset.Asset]:
     ip_string = ip_asset.get("host")
     try:
         ip = ipaddress.ip_address(ip_string)
@@ -420,7 +413,7 @@ def _parse_ip_asset(ip_asset: dict[str:Any]) -> base_asset.Asset | None:
     return None
 
 
-def _load_asset_from_file(path: str) -> bytes | None:
+def _load_asset_from_file(path: str) -> Optional[bytes]:
     path = pathlib.Path(path)
     try:
         content = path.read_bytes()
@@ -430,12 +423,22 @@ def _load_asset_from_file(path: str) -> bytes | None:
     return content
 
 
-def _collect_sbom_assets(sbom_files: list[str] | None) -> list[file_asset.File]:
-    if sbom_files is None:
-        return []
-    sbom_assets: [file_asset.File] = []
-    for file in sbom_files:
-        content = _load_asset_from_file(file)
+def _collect_apps(assets: List[Dict[str, Any]], app_type: AppType) -> List[base_asset]:
+    assets_def: List[base_asset] = []
+    for asset in assets:
+        content = _load_asset_from_file(asset.get("path", ""))
         if content is None:
             continue
-        sbom_assets.append(file_asset.File(content=content))
+        if app_type == AppType.IOS_IPA:
+            assets_def.append(
+                ios_ipa_asset.IOSIpa(content=content, path=asset.get("path"))
+            )
+        elif app_type == AppType.ANDROID_APK:
+            assets_def.append(
+                android_apk_asset.AndroidApk(content=content, path=asset.get("path"))
+            )
+        elif app_type == AppType.ANDROID_AAB:
+            assets_def.append(
+                android_aab_asset.AndroidAab(content=content, path=asset.get("path"))
+            )
+    return assets_def
