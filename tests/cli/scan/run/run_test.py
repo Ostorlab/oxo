@@ -5,6 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
+from ostorlab import exceptions
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -305,3 +306,27 @@ def testScanRun_whenNoAssetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
     )
 
     assert "Sub-command ip specified with --no-asset flag." in result.output
+
+
+def testScanRunCloudRuntime_whenRuntimeRaisesException_showsErrorMessage(mocker):
+    """Test error message shown when runtime fails and exits gracefully."""
+
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run",
+        side_effect=exceptions.OstorlabError("Error message"),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert isinstance(result.exception, SystemExit) is True
+    assert "Error message" in result.output
