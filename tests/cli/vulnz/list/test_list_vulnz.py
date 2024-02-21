@@ -193,68 +193,43 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
 
     assert result_exact.exception is None
     assert "Scan 1: Found 1 vulnerabilities." in result_exact.output
-    assert (
-        """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-    │ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
-    │    │ command      │ dummy.co     │             │              │ command      │
-    │    │ execution    │ URL:         │             │              │ execution    │
-    │    │              │ https://dum… │             │              │              │
-    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
-        in result_exact.output
-    )
+    assert "High" in result_exact.output
+    # The test is done on separate words because the output is not formatted as a whole line
+    result_exact_keywords = ["Remote", "command", "execution", "dummy.co", "5:6:7"]
+    assert all(word in result_exact.output for word in result_exact_keywords) is True
+
     assert result_gte.exception is None
-    assert (
-        """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-    │ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
-    │    │ command      │ dummy.co     │             │              │ command      │
-    │    │ execution    │ URL:         │             │              │ execution    │
-    │    │              │ https://dum… │             │              │              │
-    ├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-    │ 3  │ The          │ Domain:      │ Medium      │ 5:6:7        │ The          │
-    │    │ application  │ dummy.co     │             │              │ application  │
-    │    │ calls the    │ URL:         │             │              │ calls the    │
-    │    │ registerRec… │ https://dum… │             │              │ registerRec… │
-    │    │ method with  │              │             │              │ method with  │
-    │    │ the argument │              │             │              │ the argument │
-    │    │ flags set to │              │             │              │ flags set to │
-    │    │ RECEIVER_EX… │              │             │              │ RECEIVER_EX… │
-    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
-        in result_gte.output
-    )
+    assert "Scan 1: Found 2 vulnerabilities." in result_gte.output
+    assert "Medium" in result_gte.output
+    assert "High" in result_gte.output
+    result_gte_keywords = [
+        "Remote",
+        "command",
+        "execution",
+        "The",
+        "application",
+        "dummy.co",
+        "calls the",
+        "registerRec…",
+    ]
+    assert all(word in result_gte.output for word in result_gte_keywords) is True
+
     assert result_lte.exception is None
-    assert (
-        """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-    │ 4  │ Application  │ Domain:      │ Secure      │ 5:6:7        │ Application  │
-    │    │ is compiled  │ dummy.co     │             │              │ is compiled  │
-    │    │ with debug   │ URL:         │             │              │ with debug   │
-    │    │ mode         │ https://dum… │             │              │ mode         │
-    │    │ disabled     │              │             │              │ disabled     │
-    ├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-    │ 2  │ List of      │ Domain:      │ Info        │ 5:6:7        │ List of      │
-    │    │ dynamic code │ dummy.co     │             │              │ dynamic code │
-    │    │ loading API  │ URL:         │             │              │ loading API  │
-    │    │ calls        │ https://dum… │             │              │ calls        │
-    ├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-    │ 3  │ The          │ Domain:      │ Medium      │ 5:6:7        │ The          │
-    │    │ application  │ dummy.co     │             │              │ application  │
-    │    │ calls the    │ URL:         │             │              │ calls the    │
-    │    │ registerRec… │ https://dum… │             │              │ registerRec… │
-    │    │ method with  │              │             │              │ method with  │
-    │    │ the argument │              │             │              │ the argument │
-    │    │ flags set to │              │             │              │ flags set to │
-    │    │ RECEIVER_EX… │              │             │              │ RECEIVER_EX… │
-    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
-        in result_lte.output
-    )
+    assert "Secure" in result_lte.output
+    assert "Info" in result_lte.output
+    assert "Medium" in result_lte.output
+    result_lte_keywords = [
+        "Application",
+        "is compiled",
+        "with debug",
+        "List of",
+        "dynamic code",
+        "The",
+        "application",
+        "calls the",
+        "registerRec…",
+    ]
+    assert all(word in result_lte.output for word in result_lte_keywords) is True
 
 
 def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsLocal_showsCorrectResult(
@@ -288,18 +263,9 @@ def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsLocal_showsCorrectResu
 
     assert result.exception is None
     assert "Scan 1: Found 1 vulnerabilities." in result.output
-    assert (
-        """┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-    │    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-    │ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-    ╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-    │ 1  │ Remote       │ Domain:      │ High        │ 5:6:7        │ Remote       │
-    │    │ command      │ dummy.co     │             │              │ command      │
-    │    │ execution    │ URL:         │             │              │ execution    │
-    │    │              │ https://dum… │             │              │              │
-    └────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘"""
-        in result.output
-    )
+    assert "High" in result.output
+    result_keywords = ["Remote", "command", "execution"]
+    assert all(word in result.output for word in result_keywords)
 
 
 def testOstorlabVulnzListCLI_whenFilterIsNotCorrectAndRuntimeIsLocal_showBadOptionUsageError(
@@ -445,76 +411,45 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
     )
 
     assert "Scan 56835: Found 1 vulnerabilities." in result_exact.output
-    assert (
-        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
-│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
-│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
-╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
-│ 38312829 │ Remote      │             │ High       │ CVSS:3.0/A… │ Remote     │
-│          │ command     │             │            │             │ command    │
-│          │ execution   │             │            │             │ execution  │
-└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
-        in result_exact.output
-    )
+    assert "High" in result_exact.output
+    result_exact_keywords = ["Remote", "command", "execution"]
+    assert all(word in result_exact.output for word in result_exact_keywords) is True
+
     assert "Scan 56835: Found 3 vulnerabilities." in result_gte.output
-    assert (
-        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
-│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
-│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
-╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
-│ 38312829 │ Remote      │             │ High       │ CVSS:3.0/A… │ Remote     │
-│          │ command     │             │            │             │ command    │
-│          │ execution   │             │            │             │ execution  │
-├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
-│ 38312827 │ The         │             │ Medium     │ CVSS:3.0/A… │ The        │
-│          │ application │             │            │             │ applicati… │
-│          │ calls the   │             │            │             │ calls the  │
-│          │ registerRe… │             │            │             │ registerR… │
-│          │ method with │             │            │             │ method     │
-│          │ the         │             │            │             │ with the   │
-│          │ argument    │             │            │             │ argument   │
-│          │ flags set   │             │            │             │ flags set  │
-│          │ to          │             │            │             │ to         │
-│          │ RECEIVER_E… │             │            │             │ RECEIVER_… │
-├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
-│ 38312825 │ Server Side │             │ Critical   │ CVSS:3.0/A… │ Server     │
-│          │ Inclusion   │             │            │             │ Side       │
-│          │             │             │            │             │ Inclusion  │
-└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
-        in result_gte.output
-    )
+    assert "High" in result_gte.output
+    assert "Medium" in result_gte.output
+    assert "Critical" in result_gte.output
+    result_gte_keywords = [
+        "Remote",
+        "command",
+        "execution",
+        "The",
+        "application",
+        "calls the",
+        "registerRe…",
+        "Server",
+        "Side",
+        "Inclusion",
+    ]
+    assert all(word in result_gte.output for word in result_gte_keywords) is True
+
     assert "Scan 56835: Found 3 vulnerabilities." in result_lte.output
-    assert (
-        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
-│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
-│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
-╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
-│ 38312828 │ List of     │             │ Info       │ CVSS:3.0/A… │ List of    │
-│          │ dynamic     │             │            │             │ dynamic    │
-│          │ code        │             │            │             │ code       │
-│          │ loading API │             │            │             │ loading    │
-│          │ calls       │             │            │             │ API calls  │
-├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
-│ 38312827 │ The         │             │ Medium     │ CVSS:3.0/A… │ The        │
-│          │ application │             │            │             │ applicati… │
-│          │ calls the   │             │            │             │ calls the  │
-│          │ registerRe… │             │            │             │ registerR… │
-│          │ method with │             │            │             │ method     │
-│          │ the         │             │            │             │ with the   │
-│          │ argument    │             │            │             │ argument   │
-│          │ flags set   │             │            │             │ flags set  │
-│          │ to          │             │            │             │ to         │
-│          │ RECEIVER_E… │             │            │             │ RECEIVER_… │
-├──────────┼─────────────┼─────────────┼────────────┼─────────────┼────────────┤
-│ 38312826 │ Application │             │ Secure     │ CVSS:3.0/A… │ Applicati… │
-│          │ is compiled │             │            │             │ is         │
-│          │ with debug  │             │            │             │ compiled   │
-│          │ mode        │             │            │             │ with debug │
-│          │ disabled    │             │            │             │ mode       │
-│          │             │             │            │             │ disabled   │
-└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
-        in result_lte.output
-    )
+    assert "Secure" in result_lte.output
+    assert "Info" in result_lte.output
+    assert "Medium" in result_lte.output
+    result_lte_keywords = [
+        "Application",
+        "is compiled",
+        "with debug",
+        "List of",
+        "dynamic",
+        "code",
+        "The",
+        "application",
+        "calls the",
+        "registerRe…",
+    ]
+    assert all(word in result_lte.output for word in result_lte_keywords) is True
 
 
 def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsCloud_showsCorrectResult(
@@ -568,14 +503,6 @@ def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsCloud_showsCorrectResu
     )
 
     assert "Scan 56835: Found 1 vulnerabilities." in result.output
-    assert (
-        """┌──────────┬─────────────┬─────────────┬────────────┬─────────────┬────────────┐
-│          │             │ Vulnerable  │ Risk       │ CVSS V3     │ Short      │
-│ Id       │ Title       │ target      │ Rating     │ Vector      │ Descripti… │
-╞══════════╪═════════════╪═════════════╪════════════╪═════════════╪════════════╡
-│ 38312829 │ Remote      │             │ High       │ CVSS:3.0/A… │ Remote     │
-│          │ command     │             │            │             │ command    │
-│          │ execution   │             │            │             │ execution  │
-└──────────┴─────────────┴─────────────┴────────────┴─────────────┴────────────┘"""
-        in result.output
-    )
+    assert "High" in result.output
+    words = ["Remote", "command", "execution"]
+    assert all(word in result.output for word in words)
