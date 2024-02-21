@@ -403,7 +403,7 @@ assets:
       - /tests/files/sbom.spec
       - /tests/files/sbom_fake.spec
 """
-    mocker.patch("pathlib.PosixPath.read_bytes", return_value=b"content")
+    mocker.patch("pathlib.Path.read_bytes", return_value=b"content")
     assets = [
         android_aab_asset.AndroidAab(
             content=b"content", path="/tests/files/fake_app.aab"
