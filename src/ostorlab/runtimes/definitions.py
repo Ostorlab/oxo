@@ -398,7 +398,7 @@ def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
         raise ValueError(f"Unsupported argument type: {arg_type}")
 
 
-def _parse_ip_asset(ip_asset: Dict[str:Any]) -> Optional[base_asset.Asset]:
+def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
     ip_string = ip_asset.get("host")
     try:
         ip = ipaddress.ip_address(ip_string)
@@ -423,7 +423,9 @@ def _load_asset_from_file(path: str) -> Optional[bytes]:
     return content
 
 
-def _collect_apps(assets: List[Dict[str, Any]], app_type: AppType) -> List[base_asset]:
+def _collect_apps(
+    assets: List[Dict[str, Any]], app_type: AppType
+) -> List[base_asset.Asset]:
     assets_def: List[base_asset] = []
     for asset in assets:
         content = _load_asset_from_file(asset.get("path", ""))
