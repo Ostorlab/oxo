@@ -255,7 +255,8 @@ class CloudRuntime(runtime.Runtime):
                 vulnerabilities = [
                     vuln
                     for vuln in vulnerabilities
-                    if self._is_included_vuln(vuln, filter_risk_rating, filter_type) is True
+                    if self._is_included_vuln(vuln, filter_risk_rating, filter_type)
+                    is True
                 ]
 
             if title is not None:
