@@ -191,13 +191,14 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
         ["vulnz", "list", "-s", str(create_scan_db.id), "-r", "MEDIUM", "-f", "lte"],
     )
 
+    # results exact
     assert result_exact.exception is None
     assert "Scan 1: Found 1 vulnerabilities." in result_exact.output
     assert "High" in result_exact.output
     # The test is done on separate words because the output is not formatted as a whole line
     result_exact_keywords = ["Remote", "command", "execution", "dummy.co", "5:6:7"]
     assert all(word in result_exact.output for word in result_exact_keywords) is True
-
+    # results gte (greater than or equal)
     assert result_gte.exception is None
     assert "Scan 1: Found 2 vulnerabilities." in result_gte.output
     assert "Medium" in result_gte.output
@@ -213,7 +214,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
         "registerRec…",
     ]
     assert all(word in result_gte.output for word in result_gte_keywords) is True
-
+    # results lte (less than or equal)
     assert result_lte.exception is None
     assert "Secure" in result_lte.output
     assert "Info" in result_lte.output
@@ -265,7 +266,7 @@ def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsLocal_showsCorrectResu
     assert "Scan 1: Found 1 vulnerabilities." in result.output
     assert "High" in result.output
     result_keywords = ["Remote", "command", "execution"]
-    assert all(word in result.output for word in result_keywords)
+    assert all(word in result.output for word in result_keywords) is True
 
 
 def testOstorlabVulnzListCLI_whenFilterIsNotCorrectAndRuntimeIsLocal_showBadOptionUsageError(
@@ -410,11 +411,12 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
         ],
     )
 
+    # results exact
     assert "Scan 56835: Found 1 vulnerabilities." in result_exact.output
     assert "High" in result_exact.output
     result_exact_keywords = ["Remote", "command", "execution"]
     assert all(word in result_exact.output for word in result_exact_keywords) is True
-
+    # results gte (greater than or equal)
     assert "Scan 56835: Found 3 vulnerabilities." in result_gte.output
     assert "High" in result_gte.output
     assert "Medium" in result_gte.output
@@ -432,7 +434,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
         "Inclusion",
     ]
     assert all(word in result_gte.output for word in result_gte_keywords) is True
-
+    # results lte (less than or equal)
     assert "Scan 56835: Found 3 vulnerabilities." in result_lte.output
     assert "Secure" in result_lte.output
     assert "Info" in result_lte.output
@@ -505,4 +507,4 @@ def testOstorlabVulnzListCLI_whenFilterByTitleAndRuntimeIsCloud_showsCorrectResu
     assert "Scan 56835: Found 1 vulnerabilities." in result.output
     assert "High" in result.output
     words = ["Remote", "command", "execution"]
-    assert all(word in result.output for word in words)
+    assert all(word in result.output for word in words) is True
