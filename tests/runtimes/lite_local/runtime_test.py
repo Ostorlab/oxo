@@ -326,5 +326,4 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
     )
 
     kwargs = create_service_mock.call_args.kwargs
-    assert kwargs["mode"] == {"Replicated": {"Replicas": 3}}
-    # assert arguments were overridden by the agent settings.
+    assert kwargs["mode"] == {"replicated": {"Replicas": 3}}

@@ -4,17 +4,17 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 import logging
+from concurrent import futures
 from typing import Dict, List
 from typing import Optional
-from concurrent import futures
 
 import click
 import docker
 import rich
 import sqlalchemy
 import tenacity
-from docker.models import services as docker_models_services
 from docker import errors as docker_errors
+from docker.models import services as docker_models_services
 from rich import markdown
 from rich import panel
 from sqlalchemy import case
@@ -30,9 +30,9 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
-from ostorlab.runtimes.local.services import jaeger
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
@@ -498,7 +498,6 @@ class LocalRuntime(runtime.Runtime):
                 )
             ],
         )
-
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
