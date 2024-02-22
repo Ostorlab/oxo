@@ -222,6 +222,9 @@ assets:
   androidApkFile:
       - path: /home/organisation/assets/application.apk
       - path: /home/organisation/assets/application.apk
+  androidAabFile:
+      - path: /home/organisation/assets/application.aab
+      - path: /home/organisation/assets/application.aab
   iosStore:
       - bundle_id: "com.example.app"
       - bundle_id: "com.example_2.app"
