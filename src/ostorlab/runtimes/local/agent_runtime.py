@@ -300,10 +300,12 @@ class AgentRuntime:
         network_name: str,
         extra_configs: Optional[List[docker.types.ConfigReference]] = None,
         extra_mounts: Optional[List[docker.types.Mount]] = None,
+        replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
 
         Args:
+            replicas:  number of replicas to create
             network_name: network name to attach the service to.
             extra_configs: list of docker ConfigReferences that will be exposed to the service.
 
@@ -372,6 +374,7 @@ class AgentRuntime:
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit),
             cap_add=caps,
+            mode=docker_types_services.ServiceMode("replicated", replicas),
         )
 
         return agent_service

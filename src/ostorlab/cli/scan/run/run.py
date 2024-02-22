@@ -115,7 +115,8 @@ def run(
         can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
     except exceptions.OstorlabError as e:
         console.error(f"{e}")
-        return None
+        raise click.ClickException("Runtime encountered an error to run scan") from e
+
     if can_run_scan is True:
         ctx.obj["agent_group_definition"] = agent_group
         ctx.obj["title"] = title

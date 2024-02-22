@@ -3,9 +3,9 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services.
 """
 import logging
+from concurrent import futures
 from typing import List
 from typing import Optional
-from concurrent import futures
 
 import click
 import docker
@@ -289,12 +289,12 @@ class LiteLocalRuntime(runtime.Runtime):
             self._tracing_collector_url,
             self._gcp_logging_credential,
         )
-        agent_service = runtime_agent.create_agent_service(
-            self.network, extra_configs, extra_mounts
+        runtime_agent.create_agent_service(
+            network_name=self.network,
+            extra_configs=extra_configs,
+            extra_mounts=extra_mounts,
+            replicas=agent.replicas,
         )
-
-        if agent.replicas > 1:
-            self._scale_service(agent_service, agent.replicas)
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
@@ -351,15 +351,6 @@ class LiteLocalRuntime(runtime.Runtime):
                 )
             ],
         )
-
-    def _scale_service(
-        self, service: docker_models_services.Service, replicas: int
-    ) -> None:
-        """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
-        the service object, then calling the scale API."""
-        for s in self._docker_client.services.list():
-            if s.name == service.name:
-                s.scale(replicas)
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
