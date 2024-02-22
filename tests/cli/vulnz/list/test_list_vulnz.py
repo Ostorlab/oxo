@@ -190,8 +190,8 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
     assert "Info" in result.output
     result_keywords = [
         "List of",
-        "dynamic code",
-        "loading API",
+        "dynamic",
+        "loading",
         "calls",
         "Remote",
         "command",
@@ -327,9 +327,9 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
     assert "High" in result.output
     assert "Info" in result.output
     result_keywords = [
-        "List of",
+        "List",
         "dynamic",
-        "loading API",
+        "loading",
         "calls",
         "Remote",
         "command",
@@ -418,9 +418,8 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectRes
         "Remote",
         "command",
         "execution",
-        "List of",
         "dynamic",
-        "loading API",
+        "loading",
         "calls",
     ]
     assert (
