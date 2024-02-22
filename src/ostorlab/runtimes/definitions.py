@@ -1,6 +1,5 @@
 """Agent and Agent group definitions and settings dataclasses."""
 import dataclasses
-import enum
 import io
 import pathlib
 import re
@@ -21,6 +20,7 @@ from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
+from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import asset as base_asset
 
@@ -37,12 +37,6 @@ def _process_agent_replicas(replicas: int) -> int:
         return MAX_AGENT_REPLICAS
     else:
         return replicas
-
-
-class AppType(enum.Enum):
-    IOS_IPA = enum.auto()
-    ANDROID_APK = enum.auto()
-    ANDROID_AAB = enum.auto()
 
 
 @dataclasses.dataclass
@@ -341,9 +335,30 @@ class AssetsDefinition:
         link_assets = assets.get("link", [])
 
         assets_def: List[assets.Asset] = []
-        assets_def.extend(_collect_apps(android_aab_file_assets, AppType.ANDROID_AAB))
-        assets_def.extend(_collect_apps(android_apk_file_assets, AppType.ANDROID_APK))
-        assets_def.extend(_collect_apps(ios_file_assets, AppType.IOS_IPA))
+
+        for asset in android_aab_file_assets:
+            content = _load_asset_from_file(asset.get("path", ""))
+            if content is None:
+                continue
+            assets_def.append(
+                android_aab_asset.AndroidAab(content=content, path=asset.get("path"))
+            )
+
+        for asset in android_apk_file_assets:
+            content = _load_asset_from_file(asset.get("path", ""))
+            if content is None:
+                continue
+            assets_def.append(
+                android_apk_asset.AndroidApk(content=content, path=asset.get("path"))
+            )
+
+        for asset in ios_file_assets:
+            content = _load_asset_from_file(asset.get("path", ""))
+            if content is None:
+                continue
+            assets_def.append(
+                ios_ipa_asset.IOSIpa(content=content, path=asset.get("path"))
+            )
 
         for asset in android_store_assets:
             assets_def.append(
@@ -401,7 +416,7 @@ def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
     if ip.version == 4:
         return ipv4_asset.IPv4(host=ip_string, mask=ip_asset.get("mask"))
     if ip.version == 6:
-        return ipv4_asset.IPv4(host=ip_string, mask=ip_asset.get("mask"))
+        return ipv6_asset.IPv6(host=ip_string, mask=ip_asset.get("mask"))
     return None
 
 
@@ -413,26 +428,3 @@ def _load_asset_from_file(path: str) -> Optional[bytes]:
         logger.info(f"Could not open {path}: {e}.")
         return None
     return content
-
-
-def _collect_apps(
-    assets: List[Dict[str, Any]], app_type: AppType
-) -> List[base_asset.Asset]:
-    assets_def: List[base_asset] = []
-    for asset in assets:
-        content = _load_asset_from_file(asset.get("path", ""))
-        if content is None:
-            continue
-        if app_type == AppType.IOS_IPA:
-            assets_def.append(
-                ios_ipa_asset.IOSIpa(content=content, path=asset.get("path"))
-            )
-        elif app_type == AppType.ANDROID_APK:
-            assets_def.append(
-                android_apk_asset.AndroidApk(content=content, path=asset.get("path"))
-            )
-        elif app_type == AppType.ANDROID_AAB:
-            assets_def.append(
-                android_aab_asset.AndroidAab(content=content, path=asset.get("path"))
-            )
-    return assets_def
