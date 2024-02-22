@@ -168,7 +168,7 @@ agents:
 ostorlab scan run --install -g agent_group.yaml domain-name example.com
 ```
 
-* Injection of assets via a yaml file is also supported:
+* Scanning a list of assets is supported using a Yaml asset definition file:
 
 Inject domain name assets `example.com` and `example_2.com`
 
