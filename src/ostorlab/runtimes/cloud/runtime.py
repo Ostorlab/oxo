@@ -36,18 +36,6 @@ from ostorlab.utils import styles
 AgentType = Dict[str, Union[str, List]]
 console = cli_console.Console()
 
-RISK_RATINGS_ORDER = {
-    "CRITICAL": 8,
-    "HIGH": 7,
-    "MEDIUM": 6,
-    "LOW": 5,
-    "POTENTIALLY": 4,
-    "HARDENING": 3,
-    "SECURE": 2,
-    "IMPORTANT": 1,
-    "INFO": 0,
-}
-
 
 class CloudRuntime(runtime.Runtime):
     """Cloud runtime runs agents from Ostorlab Cloud."""
@@ -223,9 +211,8 @@ class CloudRuntime(runtime.Runtime):
         scan_id: int,
         page: int = 1,
         number_elements: int = 10,
-        filter_risk_rating: Optional[str] = None,
-        filter_type: Optional[str] = None,
-        title: Optional[str] = None,
+        filter_risk_rating: Optional[List[str]] = None,
+        search: Optional[str] = None,
     ) -> None:
         """List vulnz from the cloud using and render them in a table.
 
@@ -234,8 +221,7 @@ class CloudRuntime(runtime.Runtime):
             page: optional page number.
             number_elements: optional number of elements per page.
             filter_risk_rating: optional risk rating to filter vulnz by.
-            filter_type: optional filter type for risk rating ('exact', 'gte', 'lte').
-            title: optional title to filter vulnz by.
+            search: optional search string to filter vulnz by.
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
@@ -251,20 +237,27 @@ class CloudRuntime(runtime.Runtime):
             ]
             vulnz_list_table = []
 
-            if filter_risk_rating is not None and filter_type is not None:
-                vulnerabilities = [
+            if filter_risk_rating is not None:
+                filter_risk_rating = [risk.upper() for risk in filter_risk_rating]
+                vulz_risk_rating = [
                     vuln
                     for vuln in vulnerabilities
-                    if self._is_included_vuln(vuln, filter_risk_rating, filter_type)
-                    is True
+                    if vuln["detail"]["riskRating"].upper() in filter_risk_rating
                 ]
+                vulnerabilities = vulz_risk_rating
 
-            if title is not None:
-                vulnerabilities = [
+            if search is not None:
+                search = search.lower()
+                vulz_search = [
                     vuln
                     for vuln in vulnerabilities
-                    if title.lower() in vuln["detail"]["title"].lower()
+                    if search in vuln["detail"]["title"].lower()
+                    or search in vuln["detail"]["shortDescription"].lower()
+                    or search in vuln["detail"]["description"].lower()
+                    or search in vuln["detail"]["recommendation"].lower()
+                    or search in vuln["technicalDetail"].lower()
                 ]
+                vulnerabilities = vulz_search
 
             for vulnerability in vulnerabilities:
                 vulnerability_location_markdown = self._prepare_vuln_location_markdown(
@@ -310,8 +303,7 @@ class CloudRuntime(runtime.Runtime):
                         page=page,
                         number_elements=number_elements,
                         filter_risk_rating=filter_risk_rating,
-                        filter_type=filter_type,
-                        title=title,
+                        search=search,
                     )
         except runner.Error:
             console.error(f"scan with id {scan_id} does not exist.")
@@ -626,21 +618,3 @@ class CloudRuntime(runtime.Runtime):
             title, asset_id, agent_group_id
         )
         _ = api_runner.execute(request)
-
-    def _is_included_vuln(
-        self, vuln: Dict[str, Any], risk_rating: str, filter_type: str
-    ) -> bool:
-        """Check if a vulnerability is included in the filter."""
-        if filter_type == "exact":
-            return vuln["detail"]["riskRating"].upper() == risk_rating.upper()
-        elif filter_type == "gte":
-            return (
-                RISK_RATINGS_ORDER[vuln["detail"]["riskRating"].upper()]
-                >= RISK_RATINGS_ORDER[risk_rating.upper()]
-            )
-        elif filter_type == "lte":
-            return (
-                RISK_RATINGS_ORDER[vuln["detail"]["riskRating"].upper()]
-                <= RISK_RATINGS_ORDER[risk_rating.upper()]
-            )
-        return False

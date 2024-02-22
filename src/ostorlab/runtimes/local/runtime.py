@@ -52,18 +52,6 @@ DEFAULT_AGENTS = [
     LOCAL_PERSIST_VULNZ_AGENT_DEFAULT,
 ]
 
-RISK_RATINGS_ORDER = {
-    "CRITICAL": 8,
-    "HIGH": 7,
-    "MEDIUM": 6,
-    "LOW": 5,
-    "POTENTIALLY": 4,
-    "HARDENING": 3,
-    "SECURE": 2,
-    "IMPORTANT": 1,
-    "INFO": 0,
-}
-
 
 class UnhealthyService(exceptions.OstorlabError):
     """A service by the runtime is considered unhealthy."""
@@ -602,34 +590,29 @@ class LocalRuntime(runtime.Runtime):
     def list_vulnz(
         self,
         scan_id: int,
-        filter_risk_rating: Optional[str],
-        filter_type: str,
-        title: Optional[str],
+        filter_risk_rating: Optional[List[str]],
+        search: Optional[str],
     ) -> None:
         try:
             with models.Database() as session:
                 query = session.query(models.Vulnerability).filter_by(scan_id=scan_id)
                 if filter_risk_rating is not None:
-                    if filter_type == "exact":
-                        query = query.filter_by(risk_rating=filter_risk_rating.upper())
-                    elif filter_type == "gte":
-                        query = query.filter(
-                            case(
-                                value=models.Vulnerability.risk_rating,
-                                whens=RISK_RATINGS_ORDER,
-                            )
-                            >= RISK_RATINGS_ORDER[filter_risk_rating.upper()]
+                    filter_risk_rating = [r.upper() for r in filter_risk_rating]
+                    query = query.filter(
+                        models.Vulnerability.risk_rating.in_(filter_risk_rating)
+                    )
+
+                if search is not None:
+                    query = query.filter(
+                        sqlalchemy.or_(
+                            models.Vulnerability.title.ilike(f"%{search}%"),
+                            models.Vulnerability.short_description.ilike(f"%{search}%"),
+                            models.Vulnerability.description.ilike(f"%{search}%"),
+                            models.Vulnerability.recommendation.ilike(f"%{search}%"),
+                            models.Vulnerability.technical_detail.ilike(f"%{search}%"),
                         )
-                    elif filter_type == "lte":
-                        query = query.filter(
-                            case(
-                                value=models.Vulnerability.risk_rating,
-                                whens=RISK_RATINGS_ORDER,
-                            )
-                            <= RISK_RATINGS_ORDER[filter_risk_rating.upper()]
-                        )
-                if title is not None:
-                    query = query.filter(models.Vulnerability.title.contains(title))
+                    )
+
                 vulnerabilities = query.order_by(models.Vulnerability.title).all()
             vulnz_list = []
             for vulnerability in vulnerabilities:
