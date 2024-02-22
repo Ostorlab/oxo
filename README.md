@@ -240,9 +240,6 @@ assets:
       - host: "10.21.11.11"
         mask: 30
       - host: 0.1.2.1
-  sbom:
-      - path: /home/organisation/assets/pubspec.yaml
-      - path: /home/organisation/assets/packages.json
 ```
 
 ## The Pitch

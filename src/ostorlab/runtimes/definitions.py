@@ -22,7 +22,6 @@ from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.assets import file as file_asset
 from ostorlab.assets import asset as base_asset
 
 MAX_AGENT_REPLICAS = 100
@@ -340,7 +339,6 @@ class AssetsDefinition:
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
-        sbom_assets = assets.get("sbom", [])
 
         assets_def: List[assets.Asset] = []
         assets_def.extend(_collect_apps(android_aab_file_assets, AppType.ANDROID_AAB))
@@ -369,12 +367,6 @@ class AssetsDefinition:
             assets_def.append(
                 link_asset.Link(url=asset.get("url"), method=asset.get("method"))
             )
-
-        for asset in sbom_assets:
-            content = _load_asset_from_file(asset)
-            if content is None:
-                continue
-            assets_def.append(file_asset.File(content=content, path=asset))
 
         return cls(
             targets=assets_def,

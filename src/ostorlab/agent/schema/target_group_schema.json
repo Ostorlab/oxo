@@ -40,10 +40,6 @@
         "bundle_id": {
           "description": "[Required] - App bundle id.",
           "type": "string"
-        },
-        "sbom": {
-          "description": "[Optional] - Package name of the app.",
-          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     },
@@ -101,13 +97,6 @@
           "description": "[Optional] - Network mask.",
           "type": "number"
         }
-      }
-    },
-    "sbomType": {
-      "description": "[Optional] - A list of paths for sbom files.",
-      "type": "array",
-      "items": {
-        "type": "string"
       }
     }
   },
@@ -180,9 +169,6 @@
           "items" : {
             "$ref": "#/CustomTypes/ipType"
           }
-        },
-        "sbom": {
-          "$ref" : "#/CustomTypes/sbomType"
         }
       }
     }
