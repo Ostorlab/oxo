@@ -249,7 +249,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
 def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrectResult(
     requests_mock: rq_mock.Mocker,
 ) -> None:
-    """Test ostorlab vulnz list command with filter by title and runtime is cloud.
+    """Test ostorlab vulnz list command with filter by risk rating and runtime is cloud.
     Should show the correct result."""
     mock_response = {
         "data": {
