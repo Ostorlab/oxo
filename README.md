@@ -222,15 +222,21 @@ assets:
   androidApkFile:
       - path: /home/organisation/assets/application.apk
       - path: /home/organisation/assets/application.apk
+      - url: https://exanple.storage.com/production.apk
+      - url: https://exanple.storage.com/dev.apk
   androidAabFile:
       - path: /home/organisation/assets/application.aab
       - path: /home/organisation/assets/application.aab
+      - url: https://exanple.storage.com/production.aab
+      - url: https://exanple.storage.com/dev.aab
   iosStore:
       - bundle_id: "com.example.app"
       - bundle_id: "com.example_2.app"
   iosFile:
       - path: /home/organisation/assets/application.ipa
       - path: /home/organisation/assets/application.ipa
+      - url: https://exanple.storage.com/production.ipa
+      - url: https://exanple.storage.com/dev.ipa
   link:
       - url: "https://www.nasa.gov/humans-in-space/artemis/"
         method: "GET"

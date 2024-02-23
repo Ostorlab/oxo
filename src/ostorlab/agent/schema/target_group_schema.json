@@ -18,7 +18,11 @@
       "type": "object",
       "properties": {
         "path": {
-          "description": "[Required] - Android apk file path.",
+          "description": "[Optional] - Android apk file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Android apk file link.",
           "type": "string"
         }
       }
@@ -28,7 +32,11 @@
       "type": "object",
       "properties": {
         "path": {
-          "description": "[Required] - Android aab file path.",
+          "description": "[Optional] - Android aab file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Android aab file link.",
           "type": "string"
         }
       }
@@ -48,7 +56,11 @@
       "type": "object",
       "properties": {
         "paths": {
-          "description": "[Required] - Ios app file path.",
+          "description": "[Optional] - Ios app file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Ios app file link.",
           "type": "string"
         }
       }

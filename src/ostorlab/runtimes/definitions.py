@@ -339,36 +339,43 @@ class AssetsDefinition:
 
         for asset in android_aab_file_assets:
             path = asset.get("path")
-            if _is_url(path) is True:
-                assets_def.append(android_aab_asset.AndroidAab(content_url=path))
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
                 continue
-
-            content = _load_asset_from_file(asset.get("path", ""))
-            if content is None:
-                continue
-            assets_def.append(android_aab_asset.AndroidAab(content=content, path=path))
+            assets_def.append(
+                android_aab_asset.AndroidAab(
+                    content=content, path=path, content_url=url
+                )
+            )
 
         for asset in android_apk_file_assets:
             path = asset.get("path")
-            if _is_url(path) is True:
-                assets_def.append(android_apk_asset.AndroidApk(content_url=path))
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
                 continue
-
-            content = _load_asset_from_file(asset.get("path", ""))
-            if content is None:
-                continue
-            assets_def.append(android_apk_asset.AndroidApk(content=content, path=path))
+            assets_def.append(
+                android_apk_asset.AndroidApk(
+                    content=content, path=path, content_url=url
+                )
+            )
 
         for asset in ios_file_assets:
             path = asset.get("path")
-            if _is_url(path) is True:
-                assets_def.append(ios_ipa_asset.IOSIpa(content_url=path))
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
                 continue
-
-            content = _load_asset_from_file(asset.get("path", ""))
-            if content is None:
-                continue
-            assets_def.append(ios_ipa_asset.IOSIpa(content=content, path=path))
+            assets_def.append(
+                ios_ipa_asset.IOSIpa(content=content, path=path, content_url=url)
+            )
 
         for asset in android_store_assets:
             assets_def.append(

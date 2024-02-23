@@ -385,7 +385,7 @@ assets:
       - bundle_id: "test.this.schema"
   iosFile:
       - path: /files/fake_app.ipa
-      - path: https://cia.sketchy.com/secret_files.ipa
+      - url: https://cia.sketchy.com/secret_files.ipa
   link:
       - url: "https://cia.sketchy.com/secret_files"
         method: "GET"
@@ -414,10 +414,7 @@ assets:
             content=b"content", path="/tests/files/fake_app_2.aab"
         ),
         ios_ipa_asset.IOSIpa(content=b"content", path="/files/fake_app.ipa"),
-        ios_ipa_asset.IOSIpa(
-            content_url="https://cia.sketchy.com/secret_files.ipa",
-            path="/files/fake_app.ipa",
-        ),
+        ios_ipa_asset.IOSIpa(content_url="https://cia.sketchy.com/secret_files.ipa"),
         android_store_asset.AndroidStore(package_name="com.ceaser.salad"),
         android_store_asset.AndroidStore(package_name="test.this.schema"),
         ios_store_asset.IOSStore(bundle_id="com.ceaser.salad"),
