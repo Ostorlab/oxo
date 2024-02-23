@@ -5,10 +5,10 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
-from typing import Any, List, Optional, Dict, Union
-import logging
-
 import json
+import logging
+from typing import Any, List, Optional, Dict, Union
+
 import click
 import markdownify
 import rich
@@ -206,25 +206,59 @@ class CloudRuntime(runtime.Runtime):
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
         return location_markdwon_value
 
-    def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+    def list_vulnz(
+        self,
+        scan_id: int,
+        page: int = 1,
+        number_elements: int = 10,
+        filter_risk_rating: Optional[List[str]] = None,
+        search: Optional[str] = None,
+    ) -> None:
         """List vulnz from the cloud using and render them in a table.
 
         Args:
             scan_id: scan id to list vulnz from.
             page: optional page number.
             number_elements: optional number of elements per page.
+            filter_risk_rating: optional risk rating to filter vulnz by.
+            search: optional search string to filter vulnz by.
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(
                 vulnz_list.VulnzListAPIRequest(
-                    scan_id=scan_id, number_elements=number_elements, page=page
+                    scan_id=scan_id,
+                    number_elements=number_elements,
+                    page=page,
                 )
             )
             vulnerabilities = response["data"]["scan"]["vulnerabilities"][
                 "vulnerabilities"
             ]
             vulnz_list_table = []
+
+            if filter_risk_rating is not None:
+                filter_risk_rating = [risk.upper() for risk in filter_risk_rating]
+                vulz_risk_rating = [
+                    vuln
+                    for vuln in vulnerabilities
+                    if vuln["detail"]["riskRating"].upper() in filter_risk_rating
+                ]
+                vulnerabilities = vulz_risk_rating
+
+            if search is not None:
+                search = search.lower()
+                vulz_search = [
+                    vuln
+                    for vuln in vulnerabilities
+                    if search in vuln["detail"]["title"].lower()
+                    or search in vuln["detail"]["shortDescription"].lower()
+                    or search in vuln["detail"]["description"].lower()
+                    or search in vuln["detail"]["recommendation"].lower()
+                    or search in vuln["technicalDetail"].lower()
+                ]
+                vulnerabilities = vulz_search
+
             for vulnerability in vulnerabilities:
                 vulnerability_location_markdown = self._prepare_vuln_location_markdown(
                     vulnerability.get("vulnerabilityLocation")
@@ -243,6 +277,7 @@ class CloudRuntime(runtime.Runtime):
                         "location": markdown.Markdown(vulnerability_location_markdown),
                     }
                 )
+
             columns = {
                 "Id": "id",
                 "Title": "title",
@@ -264,7 +299,11 @@ class CloudRuntime(runtime.Runtime):
                 page = page + 1
                 if click.confirm(f"page {page + 1} of {num_pages}"):
                     self.list_vulnz(
-                        scan_id=scan_id, page=page, number_elements=number_elements
+                        scan_id=scan_id,
+                        page=page,
+                        number_elements=number_elements,
+                        filter_risk_rating=filter_risk_rating,
+                        search=search,
                     )
         except runner.Error:
             console.error(f"scan with id {scan_id} does not exist.")
