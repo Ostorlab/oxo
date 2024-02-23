@@ -8,27 +8,27 @@
       "type": "object",
       "properties": {
         "package_name": {
-          "description": "[Required] - Package name of the app.",
+          "description": "[Required] - Package name of the android app.",
           "type": "string"
         }
       }
     },
     "androidApkFileType": {
-      "description": "[Optional] - Android app file asset.",
+      "description": "[Optional] - Android apk file asset.",
       "type": "object",
       "properties": {
         "path": {
-          "description": "[Required] - Android app file path.",
+          "description": "[Required] - Android apk file path.",
           "type": "string"
         }
       }
     },
     "androidAabFileType": {
-      "description": "[Optional] - Android app file asset.",
+      "description": "[Optional] - Android aab file asset.",
       "type": "object",
       "properties": {
         "path": {
-          "description": "[Required] - Android app file path.",
+          "description": "[Required] - Android aab file path.",
           "type": "string"
         }
       }
