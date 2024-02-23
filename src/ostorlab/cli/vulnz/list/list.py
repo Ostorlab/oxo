@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 @vulnz.command(name="list")
 @click.option("--scan-id", "-s", "scan_id", help="Id of the scan.", required=True)
 @click.option(
-    "--risk-rating", "-r", "risk_rating", help="Filter vulnerabilities by risk ratings. Accept comma-separated ratings."
+    "--risk-rating",
+    "-r",
+    "risk_rating",
+    help="Filter vulnerabilities by risk ratings. Accept comma-separated ratings.",
 )
 @click.option("--search", "-sh", help="Search in all content of the vulnerabilities.")
 @click.pass_context
