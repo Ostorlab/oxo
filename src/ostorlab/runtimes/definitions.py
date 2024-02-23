@@ -7,6 +7,7 @@ import logging
 import json
 from typing import List, Dict, Optional, Any
 import ipaddress
+import validators
 
 import docker
 
@@ -337,28 +338,37 @@ class AssetsDefinition:
         assets_def: List[assets.Asset] = []
 
         for asset in android_aab_file_assets:
+            path = asset.get("path")
+            if _is_url(path) is True:
+                assets_def.append(android_aab_asset.AndroidAab(content_url=path))
+                continue
+
             content = _load_asset_from_file(asset.get("path", ""))
             if content is None:
                 continue
-            assets_def.append(
-                android_aab_asset.AndroidAab(content=content, path=asset.get("path"))
-            )
+            assets_def.append(android_aab_asset.AndroidAab(content=content, path=path))
 
         for asset in android_apk_file_assets:
+            path = asset.get("path")
+            if _is_url(path) is True:
+                assets_def.append(android_apk_asset.AndroidApk(content_url=path))
+                continue
+
             content = _load_asset_from_file(asset.get("path", ""))
             if content is None:
                 continue
-            assets_def.append(
-                android_apk_asset.AndroidApk(content=content, path=asset.get("path"))
-            )
+            assets_def.append(android_apk_asset.AndroidApk(content=content, path=path))
 
         for asset in ios_file_assets:
+            path = asset.get("path")
+            if _is_url(path) is True:
+                assets_def.append(ios_ipa_asset.IOSIpa(content_url=path))
+                continue
+
             content = _load_asset_from_file(asset.get("path", ""))
             if content is None:
                 continue
-            assets_def.append(
-                ios_ipa_asset.IOSIpa(content=content, path=asset.get("path"))
-            )
+            assets_def.append(ios_ipa_asset.IOSIpa(content=content, path=path))
 
         for asset in android_store_assets:
             assets_def.append(
@@ -428,3 +438,10 @@ def _load_asset_from_file(path: str) -> Optional[bytes]:
         logger.info(f"Could not open {path}: {e}.")
         return None
     return content
+
+
+def _is_url(path: str) -> bool:
+    if validators.url(path) is True:
+        return True
+    else:
+        return False

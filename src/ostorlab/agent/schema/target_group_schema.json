@@ -58,7 +58,7 @@
       "type": "object",
       "properties": {
         "url": {
-          "description": "[Required] - url linktype.",
+          "description": "[Required] - url link type.",
           "type": "string"
         },
         "method": {
@@ -175,8 +175,6 @@
   },
   "required": [
     "kind",
-    "description",
-    "name",
     "assets"
   ]
 }
