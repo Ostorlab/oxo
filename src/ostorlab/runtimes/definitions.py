@@ -442,7 +442,7 @@ def _load_asset_from_file(path: str) -> Optional[bytes]:
     try:
         content = path.read_bytes()
     except OSError as e:
-        logger.info(f"Could not open {path}: {e}.")
+        logger.error(f"Could not open {path}: {e}.")
         return None
     return content
 
