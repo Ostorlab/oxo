@@ -342,8 +342,7 @@ class CloudRuntime(runtime.Runtime):
                         filter_risk_rating=filter_risk_rating,
                         search=search,
                     )
-        except runner.Error as error_msg:
-            console.error(error_msg)
+        except runner.Error:
             console.error(f"scan with id {scan_id} does not exist.")
 
     def _prepare_references_markdown(

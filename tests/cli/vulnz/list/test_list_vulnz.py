@@ -258,6 +258,10 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                     "vulnerabilities": [
                         {
                             "id": "38312829",
+                            "vulnerabilityLocation": {
+                                "asset": {"bundleId": "com.comerica.tmconnectmobile"},
+                                "metadata": [],
+                            },
                             "detail": {
                                 "title": "Remote command execution",
                                 "shortDescription": "Remote command execution",
@@ -267,6 +271,12 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                         },
                         {
                             "id": "38312828",
+                            "vulnerabilityLocation": {
+                                "asset": {
+                                    "packageName": "com.firsttennessee.prepaid.vmcp"
+                                },
+                                "metadata": [],
+                            },
                             "detail": {
                                 "title": "List of dynamic code loading API calls",
                                 "shortDescription": "List of dynamic code loading API calls",
@@ -276,6 +286,10 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                         },
                         {
                             "id": "38312827",
+                            "vulnerabilityLocation": {
+                                "asset": {"name": "www.example.com"},
+                                "metadata": [],
+                            },
                             "detail": {
                                 "title": "The application calls the registerReceiver method with the argument flags set to RECEIVER_EXPORTED",
                                 "shortDescription": "The application calls the registerReceiver method with the argument flags set to RECEIVER_EXPORTED",
@@ -285,6 +299,12 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                         },
                         {
                             "id": "38312826",
+                            "vulnerabilityLocation": {
+                                "asset": {"host": "91.235.134.131"},
+                                "metadata": [
+                                    {"metadataType": "PORT", "metadataValue": "443"}
+                                ],
+                            },
                             "detail": {
                                 "title": "Application is compiled with debug mode disabled",
                                 "shortDescription": "Application is compiled with debug mode disabled",
@@ -294,6 +314,12 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                         },
                         {
                             "id": "38312825",
+                            "vulnerabilityLocation": {
+                                "asset": {
+                                    "host": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+                                },
+                                "metadata": [],
+                            },
                             "detail": {
                                 "title": "Server Side Inclusion",
                                 "shortDescription": "Server Side Inclusion",
@@ -351,6 +377,10 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectRes
                         {
                             "id": "38312829",
                             "technicalDetail": "a=$input",
+                            "vulnerabilityLocation": {
+                                "asset": {"bundleId": "com.comerica.tmconnectmobile"},
+                                "metadata": [],
+                            },
                             "detail": {
                                 "title": "Remote command execution",
                                 "shortDescription": "Remote command execution",
@@ -363,6 +393,12 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectRes
                         {
                             "id": "38312828",
                             "technicalDetail": "a=$input",
+                            "vulnerabilityLocation": {
+                                "asset": {
+                                    "packageName": "com.firsttennessee.prepaid.vmcp"
+                                },
+                                "metadata": [],
+                            },
                             "detail": {
                                 "title": "List of dynamic code loading API calls",
                                 "shortDescription": "List of dynamic code loading API calls",
