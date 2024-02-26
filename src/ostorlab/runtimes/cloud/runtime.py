@@ -4,11 +4,11 @@ The remote runtime provides capabilities identical to local runtime with extra f
 improved data visualization, automated scaling for improved performance, agent improved data warehouse for improved
 detection and several other improvements.
 """
-
-from typing import Any, List, Optional, Dict, Union
-import logging
-
+import ipaddress
 import json
+import logging
+from typing import Any, List, Optional, Dict, Union
+
 import click
 import markdownify
 import rich
@@ -182,20 +182,26 @@ class CloudRuntime(runtime.Runtime):
         if location is None or asset_data is None:
             return ""
         location_markdwon_value = ""
-        if asset_data.get("domain") is not None:
-            domain_name = asset_data.get("domain").get("name")
+        if asset_data.get("name") is not None:
+            domain_name = asset_data.get("name")
             location_markdwon_value = f"Domain: {domain_name}  \n"
-        elif asset_data.get("ipv4") is not None:
-            host = asset_data.get("ipv4").get("host")
+        elif (
+            asset_data.get("host") is not None
+            and self._is_ipv4(asset_data.get("host")) is True
+        ):
+            host = asset_data.get("host")
             location_markdwon_value = f"IPv4: {host}  \n"
-        elif asset_data.get("ipv6") is not None:
-            host = asset_data.get("ipv6").get("host")
+        elif (
+            asset_data.get("host") is not None
+            and self._is_ipv6(asset_data.get("host")) is True
+        ):
+            host = asset_data.get("host")
             location_markdwon_value = f"IPv6: {host}  \n"
-        elif asset_data.get("androidApp") is not None:
-            package_name = asset_data.get("androidApp").get("packageName")
+        elif asset_data.get("packageName") is not None:
+            package_name = asset_data.get("packageName")
             location_markdwon_value = f"Android package name: {package_name}  \n"
-        elif asset_data.get("iosApp") is not None:
-            bundle_id = asset_data.get("iosApp").get("bundleId")
+        elif asset_data.get("bundleId") is not None:
+            bundle_id = asset_data.get("bundleId")
             location_markdwon_value = f"iOS bundle id: {bundle_id}  \n"
         else:
             raise ValueError(f"Unknown asset : {asset_data}")
@@ -204,27 +210,92 @@ class CloudRuntime(runtime.Runtime):
             metad_type = metadata.get("metadataType")
             metad_value = metadata.get("metadataValue")
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
+
         return location_markdwon_value
 
-    def list_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+    def _is_ipv4(self, ip: str) -> bool:
+        """Check if the provided IP is an IPv4 address.
+
+        Args:
+            ip: The IP address to check.
+
+        Returns:
+            True if the IP is an IPv4 address, False otherwise.
+        """
+        try:
+            ipaddress.IPv4Address(ip)
+            return True
+        except ipaddress.AddressValueError:
+            return False
+
+    def _is_ipv6(self, ip: str) -> bool:
+        """Check if the provided IP is an IPv6 address.
+
+        Args:
+            ip: The IP address to check.
+
+        Returns:
+            True if the IP is an IPv6 address, False otherwise.
+        """
+        try:
+            ipaddress.IPv6Address(ip)
+            return True
+        except ipaddress.AddressValueError:
+            return False
+
+    def list_vulnz(
+        self,
+        scan_id: int,
+        page: int = 1,
+        number_elements: int = 10,
+        filter_risk_rating: Optional[List[str]] = None,
+        search: Optional[str] = None,
+    ) -> None:
         """List vulnz from the cloud using and render them in a table.
 
         Args:
             scan_id: scan id to list vulnz from.
             page: optional page number.
             number_elements: optional number of elements per page.
+            filter_risk_rating: optional risk rating to filter vulnz by.
+            search: optional search string to filter vulnz by.
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(
                 vulnz_list.VulnzListAPIRequest(
-                    scan_id=scan_id, number_elements=number_elements, page=page
+                    scan_id=scan_id,
+                    number_elements=number_elements,
+                    page=page,
                 )
             )
             vulnerabilities = response["data"]["scan"]["vulnerabilities"][
                 "vulnerabilities"
             ]
             vulnz_list_table = []
+
+            if filter_risk_rating is not None:
+                filter_risk_rating = [risk.upper() for risk in filter_risk_rating]
+                vulz_risk_rating = [
+                    vuln
+                    for vuln in vulnerabilities
+                    if vuln["detail"]["riskRating"].upper() in filter_risk_rating
+                ]
+                vulnerabilities = vulz_risk_rating
+
+            if search is not None:
+                search = search.lower()
+                vulz_search = [
+                    vuln
+                    for vuln in vulnerabilities
+                    if search in vuln["detail"]["title"].lower()
+                    or search in vuln["detail"]["shortDescription"].lower()
+                    or search in vuln["detail"]["description"].lower()
+                    or search in vuln["detail"]["recommendation"].lower()
+                    or search in vuln["technicalDetail"].lower()
+                ]
+                vulnerabilities = vulz_search
+
             for vulnerability in vulnerabilities:
                 vulnerability_location_markdown = self._prepare_vuln_location_markdown(
                     vulnerability.get("vulnerabilityLocation")
@@ -243,6 +314,7 @@ class CloudRuntime(runtime.Runtime):
                         "location": markdown.Markdown(vulnerability_location_markdown),
                     }
                 )
+
             columns = {
                 "Id": "id",
                 "Title": "title",
@@ -264,7 +336,11 @@ class CloudRuntime(runtime.Runtime):
                 page = page + 1
                 if click.confirm(f"page {page + 1} of {num_pages}"):
                     self.list_vulnz(
-                        scan_id=scan_id, page=page, number_elements=number_elements
+                        scan_id=scan_id,
+                        page=page,
+                        number_elements=number_elements,
+                        filter_risk_rating=filter_risk_rating,
+                        search=search,
                     )
         except runner.Error:
             console.error(f"scan with id {scan_id} does not exist.")

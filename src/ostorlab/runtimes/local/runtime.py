@@ -587,15 +587,33 @@ class LocalRuntime(runtime.Runtime):
             except install_agent.AgentDetailsNotFound:
                 console.warning(f"agent {agent_key} not found on the store")
 
-    def list_vulnz(self, scan_id: int):
+    def list_vulnz(
+        self,
+        scan_id: int,
+        filter_risk_rating: Optional[List[str]],
+        search: Optional[str],
+    ) -> None:
         try:
             with models.Database() as session:
-                vulnerabilities = (
-                    session.query(models.Vulnerability)
-                    .filter_by(scan_id=scan_id)
-                    .order_by(models.Vulnerability.title)
-                    .all()
-                )
+                query = session.query(models.Vulnerability).filter_by(scan_id=scan_id)
+                if filter_risk_rating is not None:
+                    filter_risk_rating = [r.upper() for r in filter_risk_rating]
+                    query = query.filter(
+                        models.Vulnerability.risk_rating.in_(filter_risk_rating)
+                    )
+
+                if search is not None:
+                    query = query.filter(
+                        sqlalchemy.or_(
+                            models.Vulnerability.title.ilike(f"%{search}%"),
+                            models.Vulnerability.short_description.ilike(f"%{search}%"),
+                            models.Vulnerability.description.ilike(f"%{search}%"),
+                            models.Vulnerability.recommendation.ilike(f"%{search}%"),
+                            models.Vulnerability.technical_detail.ilike(f"%{search}%"),
+                        )
+                    )
+
+                vulnerabilities = query.order_by(models.Vulnerability.title).all()
             vulnz_list = []
             for vulnerability in vulnerabilities:
                 vulnerability_location = vulnerability.location or ""
