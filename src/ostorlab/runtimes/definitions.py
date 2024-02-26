@@ -7,7 +7,6 @@ import logging
 import json
 from typing import List, Dict, Optional, Any
 import ipaddress
-import validators
 
 import docker
 
@@ -445,10 +444,3 @@ def _load_asset_from_file(path: str) -> Optional[bytes]:
         logger.error(f"Could not open {path}: {e}.")
         return None
     return content
-
-
-def _is_url(path: str) -> bool:
-    if validators.url(path) is True:
-        return True
-    else:
-        return False
