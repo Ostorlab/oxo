@@ -1,0 +1,8 @@
+ agents:
+- args: []
+  depth_processing_limit: 0
+  key: agent/ostorlab/agent42
+  replicas: 1
+description: Invalid agent group definition.
+kind: AgentGroup
+name: invalid_agent_group

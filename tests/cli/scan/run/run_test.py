@@ -1,7 +1,9 @@
 """Tests for scan run command."""
+import pathlib
+
+from pytest_mock import plugin
 import requests
 import pytest
-
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
@@ -330,3 +332,31 @@ def testScanRunCloudRuntime_whenRuntimeRaisesException_showsErrorMessage(mocker)
 
     assert isinstance(result.exception, SystemExit) is True
     assert "Error message" in result.output
+
+
+def testScanRunLocalRuntime_whenIInvalidYamlAgentGroupDefinition_showsErrorMessage(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure the Agent group definition YAML is handled gracefully when a parsing error is encountered."""
+    invalid_agent_group = (
+        pathlib.Path(__file__).parent / "invalid_agent_group_definition.yaml"
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=cloud",
+            "run",
+            "-g",
+            invalid_agent_group,
+            "--title=invalid_scan",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert isinstance(result.exception, SystemExit)
+    assert result.exit_code == 2
+    assert "Agent group definition YAML parse error" in result.output
