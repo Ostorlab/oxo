@@ -1,16 +1,28 @@
 """Agent and Agent group definitions and settings dataclasses."""
 import dataclasses
 import io
+import pathlib
 import re
 import logging
 import json
-from typing import List, Optional, Any
+from typing import List, Dict, Optional, Any
+import ipaddress
 
 import docker
 
 from ostorlab.agent.schema import loader
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions, version
+from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab.assets import android_aab as android_aab_asset
+from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import ios_ipa as ios_ipa_asset
+from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ipv4 as ipv4_asset
+from ostorlab.assets import ipv6 as ipv6_asset
+from ostorlab.assets import link as link_asset
+from ostorlab.assets import asset as base_asset
 
 MAX_AGENT_REPLICAS = 100
 
@@ -38,7 +50,7 @@ class AgentSettings:
     bus_management_url: Optional[str] = ""
     bus_vhost: Optional[str] = ""
     args: List[defintions.Arg] = dataclasses.field(default_factory=list)
-    constraints: List[str] = dataclasses.field(default_factory=list)
+    constraints: Optional[List[str]] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
     restart_policy: str = ""
     mem_limit: Optional[int] = None
@@ -298,6 +310,102 @@ class AgentGroupDefinition:
         return cls(agent_settings, name, description)
 
 
+@dataclasses.dataclass
+class AssetsDefinition:
+    targets: List[base_asset.Asset]
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+    @classmethod
+    def from_yaml(cls, group: io.FileIO):
+        """Construct TargetGroupDefinition from yaml file.
+
+        Args:
+            group : target group .yaml file.
+        """
+        target_group_def = loader.load_target_group_yaml(group)
+        assets = target_group_def["assets"]
+        android_store_assets = assets.get("androidStore", [])
+        android_aab_file_assets = assets.get("androidAabFile", [])
+        android_apk_file_assets = assets.get("androidApkFile", [])
+        ios_store_assets = assets.get("iosStore", [])
+        ios_file_assets = assets.get("iosFile", [])
+        ip_assets = assets.get("ip", [])
+        domain_assets = assets.get("domain", [])
+        link_assets = assets.get("link", [])
+
+        assets_def: List[assets.Asset] = []
+
+        for asset in android_aab_file_assets:
+            path = asset.get("path")
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
+                continue
+            assets_def.append(
+                android_aab_asset.AndroidAab(
+                    content=content, path=path, content_url=url
+                )
+            )
+
+        for asset in android_apk_file_assets:
+            path = asset.get("path")
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
+                continue
+            assets_def.append(
+                android_apk_asset.AndroidApk(
+                    content=content, path=path, content_url=url
+                )
+            )
+
+        for asset in ios_file_assets:
+            path = asset.get("path")
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
+                continue
+            assets_def.append(
+                ios_ipa_asset.IOSIpa(content=content, path=path, content_url=url)
+            )
+
+        for asset in android_store_assets:
+            assets_def.append(
+                android_store_asset.AndroidStore(package_name=asset.get("package_name"))
+            )
+
+        for asset in ios_store_assets:
+            assets_def.append(
+                ios_store_asset.IOSStore(bundle_id=asset.get("bundle_id"))
+            )
+
+        for asset in ip_assets:
+            ip_asset = _parse_ip_asset(asset)
+            if ip_asset is not None:
+                assets_def.append(ip_asset)
+
+        for asset in domain_assets:
+            assets_def.append(domain_name_asset.DomainName(name=asset.get("name")))
+
+        for asset in link_assets:
+            assets_def.append(
+                link_asset.Link(url=asset.get("url"), method=asset.get("method"))
+            )
+
+        return cls(
+            targets=assets_def,
+            name=target_group_def.get("name"),
+            description=target_group_def.get("description"),
+        )
+
+
 def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
     if arg_type == "string":
         return str(arg_value.decode())
@@ -311,3 +419,28 @@ def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
         return json.loads(arg_value.decode())
     else:
         raise ValueError(f"Unsupported argument type: {arg_type}")
+
+
+def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
+    ip_string = ip_asset.get("host")
+    try:
+        ip = ipaddress.ip_address(ip_string)
+    except ValueError:
+        logger.info(f"Invalid ip address: {ip_string}")
+        return None
+
+    if ip.version == 4:
+        return ipv4_asset.IPv4(host=ip_string, mask=ip_asset.get("mask"))
+    if ip.version == 6:
+        return ipv6_asset.IPv6(host=ip_string, mask=ip_asset.get("mask"))
+    return None
+
+
+def _load_asset_from_file(path: str) -> Optional[bytes]:
+    path = pathlib.Path(path)
+    try:
+        content = path.read_bytes()
+    except OSError as e:
+        logger.error(f"Could not open {path}: {e}.")
+        return None
+    return content
