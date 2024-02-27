@@ -8,6 +8,7 @@ from typing import List
 
 import click
 import requests
+from ruamel.yaml import error
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
@@ -88,8 +89,13 @@ def run(
                 agent_group_definition
             )
         except validator.ValidationError as e:
-            console.error(f"{e}")
-            raise click.ClickException("Invalid Agent Group Definition.") from e
+            console.error("Invalid agent group definition.")
+            console.print(f"{e}")
+            raise click.exceptions.Exit(2)
+        except error.YAMLError as e:
+            console.error("Agent group definition YAML parse error:")
+            console.print(f"{e}")
+            raise click.exceptions.Exit(2)
     else:
         raise click.ClickException("Missing agent list or agent group definition.")
 
