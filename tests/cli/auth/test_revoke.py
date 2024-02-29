@@ -9,15 +9,16 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import rootcli
 
 
-def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(requests_mock):
+def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_mock):
     """Test ostorlab auth revoke command with valid api key id.
     Should delete api data from storage.
     """
 
     api_data_dict = {"data": {"revokeApiKey": {"result": True}}}
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=api_data_dict,
         status_code=200,
     )
@@ -29,7 +30,7 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(request
 
 @mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, "unauthenticate")
 def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
-    mock_console, requests_mock
+    mock_console, httpx_mock
 ):
     """Test ostorlab auth revoke command with wrong api key id.
     Should unauthenticate user.
@@ -48,8 +49,9 @@ def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
 
     mock_console.return_value = None
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=errors_dict,
         status_code=200,
     )

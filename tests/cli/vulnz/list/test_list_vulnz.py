@@ -1,5 +1,4 @@
 """Tests for vulnz list command."""
-import requests_mock as rq_mock
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -44,7 +43,7 @@ def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLo
 
 
 def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(
-    requests_mock,
+    httpx_mock,
 ):
     """Ensure the vulnz list cli command correctly handles case where the scan is not found by the API."""
     mock_response = {
@@ -57,8 +56,9 @@ def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(
         ],
     }
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=mock_response,
         status_code=401,
     )
@@ -69,7 +69,7 @@ def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(
 
 
 def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(
-    requests_mock,
+    httpx_mock,
 ):
     """Ensure the vulnz list cli command displays the vulnerabilities information correctly."""
     mock_response = {
@@ -101,7 +101,9 @@ def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(
         }
     }
     runner = CliRunner()
-    requests_mock.post("https://api.ostorlab.co/apis/graphql", json=mock_response)
+    httpx_mock.add_response(
+        method="POST", url="https://api.ostorlab.co/apis/graphql", json=mock_response
+    )
     result = runner.invoke(
         rootcli.rootcli, ["vulnz", "--runtime", "cloud", "list", "--scan-id", "56835"]
     )
@@ -247,7 +249,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
 
 
 def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrectResult(
-    requests_mock: rq_mock.Mocker,
+    httpx_mock,
 ) -> None:
     """Test ostorlab vulnz list command with filter by risk rating and runtime is cloud.
     Should show the correct result."""
@@ -333,7 +335,9 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
         }
     }
     runner = CliRunner()
-    requests_mock.post("https://api.ostorlab.co/apis/graphql", json=mock_response)
+    httpx_mock.add_response(
+        method="POST", url="https://api.ostorlab.co/apis/graphql", json=mock_response
+    )
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -365,7 +369,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
 
 
 def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectResult(
-    requests_mock: rq_mock.Mocker,
+    httpx_mock,
 ) -> None:
     """Test ostorlab vulnz list command with filter by search and runtime is cloud.
     Should show the correct result."""
@@ -414,7 +418,9 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectRes
         }
     }
     runner = CliRunner()
-    requests_mock.post("https://api.ostorlab.co/apis/graphql", json=mock_response)
+    httpx_mock.add_response(
+        method="POST", url="https://api.ostorlab.co/apis/graphql", json=mock_response
+    )
 
     result_title = runner.invoke(
         rootcli.rootcli,

@@ -48,7 +48,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(
-    requests_mock,
+    httpx_mock,
 ):
     """Test ostorlab describe command when Correct command and correct scan id should show list of vulnz."""
     mock_response = {
@@ -102,8 +102,9 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
             }
         }
     }
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=mock_response,
         status_code=200,
     )
@@ -122,7 +123,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(
-    requests_mock,
+    httpx_mock,
 ):
     """Test ostorlab describe command when Correct command and scan does not exist."""
     mock_response = {
@@ -134,8 +135,9 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundEr
             }
         ]
     }
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=mock_response,
         status_code=200,
     )

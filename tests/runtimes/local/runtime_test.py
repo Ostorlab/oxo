@@ -5,7 +5,6 @@ import docker
 import pytest
 from docker.models import services as services_model
 from pytest_mock import plugin
-from requests_mock import mocker as req_mocker
 
 import ostorlab
 from ostorlab import exceptions
@@ -287,7 +286,7 @@ def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelI
 @pytest.mark.docker
 def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
     mocker: plugin.MockerFixture,
-    requests_mock: req_mocker.Mocker,
+    httpx_mock,
 ) -> None:
     """Ensure the runtime retries to init swarm if it fails the first time."""
     mocker.patch(
@@ -305,12 +304,12 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
         return_value=False,
     )
     mocker.patch("time.sleep")
-    requests_mock.get(
+    httpx_mock.get(
         "http+docker://localhost/version", [{"json": {"ApiVersion": "1.35"}}]
     )
-    requests_mock.get("http+docker://localhost/v1.35/swarm", json={"ID": "1234"})
-    mock_swarm_init = requests_mock.post(
-        "http+docker://localhost/v1.35/swarm/init", status_code=400
+    httpx_mock.get("http+docker://localhost/v1.35/swarm", json={"ID": "1234"})
+    mock_swarm_init = httpx_mock.add_response(
+        method="POST", url="http+docker://localhost/v1.35/swarm/init", status_code=400
     )
     local_runtime_instance = local_runtime.LocalRuntime(run_default_agents=False)
 

@@ -8,7 +8,7 @@ from unittest import mock
 
 
 def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(
-    requests_mock,
+    httpx_mock,
 ):
     """Test ostorlab scan stop command with valid scan id.
     Should stop the scan with the given scan id.
@@ -17,8 +17,9 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(
     scan_data = {"data": {"stopScan": {"scan": {"id": "123456"}}}}
 
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=scan_data,
         status_code=200,
     )
@@ -31,7 +32,7 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(
 
 
 def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(
-    requests_mock,
+    httpx_mock,
 ):
     """Test ostorlab scan stop command with invalid scan id.
     Should show error message.
@@ -40,8 +41,9 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(
     scan_data = {"errors": [{"message": "Scan matching query does not exist."}]}
 
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=scan_data,
         status_code=200,
     )

@@ -342,9 +342,7 @@ def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
     assert os.environ.get("SCAN_ID") == "1"
 
 
-def testRunScanCLI_withsboms_callApi(
-    mocker: plugin.MockerFixture, requests_mock
-) -> None:
+def testRunScanCLI_withsboms_callApi(mocker: plugin.MockerFixture, httpx_mock) -> None:
     """Test ostorlab ci_scan with LogFlavor circleci."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
