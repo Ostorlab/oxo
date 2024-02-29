@@ -1,4 +1,5 @@
 """Unit tests for start module."""
+
 import socket
 
 import pytest

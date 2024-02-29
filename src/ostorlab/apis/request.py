@@ -1,4 +1,5 @@
 """Module responsible for preparing an API request."""
+
 import abc
 import logging
 from typing import Dict, Optional

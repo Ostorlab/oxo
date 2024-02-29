@@ -1,4 +1,5 @@
 """Unit test for version helper class."""
+
 from ostorlab.utils import version
 
 

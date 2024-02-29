@@ -1,4 +1,5 @@
 """Stream logs of a service from a thread."""
+
 import threading
 from typing import Generator
 

@@ -1,6 +1,7 @@
 """Asset of type .IPA (IOS App Store Package).
 This module takes care of preparing a file of type .IPA before injecting it to the runtime instance.
 """
+
 import io
 import logging
 from typing import Tuple, Optional

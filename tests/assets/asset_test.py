@@ -1,4 +1,5 @@
 """Unit tests for asset."""
+
 import dataclasses
 
 from ostorlab.agent.message import serializer

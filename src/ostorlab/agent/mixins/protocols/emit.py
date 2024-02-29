@@ -1,4 +1,5 @@
 """Definition of the emitting protocol exposing the emit method."""
+
 from typing import Any, Dict, Protocol, Optional
 
 

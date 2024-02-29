@@ -2,6 +2,7 @@
 It invokes the migration engine.
 The lines 11-15, 31 & 86 were manually added.
 """
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config

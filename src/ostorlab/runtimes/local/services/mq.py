@@ -1,4 +1,5 @@
 """RabbitMQ service in charge of routing Agent messages."""
+
 import hashlib
 import binascii
 import logging

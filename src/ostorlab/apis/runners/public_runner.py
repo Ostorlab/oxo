@@ -1,8 +1,8 @@
 """Handles the public API calls.
 
-    Typical usage example:
-    public_runner = PublicAPIRunner()
-    public_runner.execute()
+Typical usage example:
+public_runner = PublicAPIRunner()
+public_runner.execute()
 """
 
 from typing import Dict, Any, Optional

@@ -1,4 +1,5 @@
 """Tests for auth login command."""
+
 import functools
 from unittest import mock
 import click

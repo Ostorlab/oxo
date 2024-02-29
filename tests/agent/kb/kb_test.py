@@ -1,4 +1,5 @@
 """Unit test for KB resolution."""
+
 import pytest
 
 from ostorlab.agent.kb import kb

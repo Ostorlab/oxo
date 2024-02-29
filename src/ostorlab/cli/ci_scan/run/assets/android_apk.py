@@ -1,6 +1,7 @@
 """Asset of type .APK package file.
 This module takes care of preparing a file of type .APK before calling the create mobile scan API.
 """
+
 import io
 import click
 

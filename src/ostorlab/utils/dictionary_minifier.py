@@ -1,6 +1,7 @@
 """Module offering methods to minify a dictionary,
 by truncating its string & bytes values to a specific configurable size.
 """
+
 from typing import Any, Callable, Dict, List, Union
 
 TRUNCATE_SIZE = 256

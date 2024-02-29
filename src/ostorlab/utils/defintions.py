@@ -1,4 +1,5 @@
 """Common definition types."""
+
 import dataclasses
 from typing import Optional, Union
 

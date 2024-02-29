@@ -1,4 +1,5 @@
 """Agent and Agent group definitions and settings dataclasses."""
+
 import dataclasses
 import io
 import pathlib

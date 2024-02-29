@@ -1,4 +1,5 @@
 """ci_scan module that handles running a scan on the CI."""
+
 from ostorlab.cli.rootcli import rootcli
 
 

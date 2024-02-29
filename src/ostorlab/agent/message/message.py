@@ -21,6 +21,7 @@ weight: int
 }
 
 """
+
 import dataclasses
 from typing import Any, Dict
 

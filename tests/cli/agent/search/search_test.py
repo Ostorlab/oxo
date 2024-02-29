@@ -1,4 +1,5 @@
 """Tests for CLI agent search command."""
+
 from unittest import mock
 from click import testing
 from ostorlab.apis.runners import public_runner

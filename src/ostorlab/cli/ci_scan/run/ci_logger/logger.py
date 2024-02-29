@@ -1,4 +1,5 @@
 """Logger is in charge of defining the output format based on CI expected output."""
+
 import abc
 
 

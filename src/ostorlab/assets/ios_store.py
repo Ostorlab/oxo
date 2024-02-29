@@ -1,4 +1,5 @@
 """Ios bundle_id target asset"""
+
 import dataclasses
 
 from ostorlab.assets import asset

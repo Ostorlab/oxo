@@ -1,4 +1,5 @@
 """Domain name asset definition."""
+
 import dataclasses
 
 from ostorlab.assets import asset

@@ -1,4 +1,5 @@
 """Tests for scan stop command."""
+
 from click.testing import CliRunner
 from ostorlab.cli import rootcli
 from ostorlab.apis.runners import authenticated_runner

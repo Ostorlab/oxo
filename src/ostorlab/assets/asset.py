@@ -1,4 +1,5 @@
 """Abstract Asset class to define the scan target and its properties."""
+
 import abc
 from typing import Callable, Any, Type
 

@@ -1,4 +1,5 @@
 """Module Responsible for subscribing to nats for different subjects."""
+
 import logging
 import asyncio
 import datetime

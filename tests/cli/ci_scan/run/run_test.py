@@ -1,4 +1,5 @@
 """Tests for scan run command."""
+
 import os
 import pathlib
 

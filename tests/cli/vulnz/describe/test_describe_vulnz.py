@@ -1,4 +1,5 @@
 """Tests for vulnz describe command."""
+
 from click.testing import CliRunner
 
 from ostorlab.apis.runners import authenticated_runner

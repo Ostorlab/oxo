@@ -1,4 +1,5 @@
 """Utils to handle scan risk rating."""
+
 import enum
 from typing import List
 

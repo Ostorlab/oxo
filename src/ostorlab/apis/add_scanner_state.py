@@ -1,4 +1,5 @@
 """Add scanner state via an API Request."""
+
 from typing import Dict, Optional
 import json
 

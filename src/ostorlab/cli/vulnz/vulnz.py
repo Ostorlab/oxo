@@ -1,4 +1,5 @@
 """Vulnz module that handles listing and describing a vulnerability."""
+
 import click
 
 from ostorlab.cli.rootcli import rootcli

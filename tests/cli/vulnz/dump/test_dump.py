@@ -1,4 +1,5 @@
 """Unittest for vulnz dump command."""
+
 import csv
 import json
 import pathlib

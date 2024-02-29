@@ -1,4 +1,5 @@
 """Create Agent Group via an API Request."""
+
 from typing import Dict, List, Optional, Union
 
 from ostorlab.apis import request
