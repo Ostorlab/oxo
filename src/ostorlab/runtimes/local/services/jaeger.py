@@ -1,4 +1,5 @@
 """Jaeger service to collect Agent traces."""
+
 import logging
 from typing import Dict, Optional
 

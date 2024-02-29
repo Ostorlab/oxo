@@ -1,6 +1,7 @@
 """Asset of type .AAB package file.
 This module takes care of preparing a file of type .AAB before calling the create mobile scan API.
 """
+
 import io
 import click
 

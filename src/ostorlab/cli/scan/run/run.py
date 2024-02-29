@@ -2,6 +2,7 @@
 This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
 Example of usage:
     - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
+
 import io
 import logging
 from typing import List

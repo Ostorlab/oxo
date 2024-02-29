@@ -1,4 +1,5 @@
 """Tests for AgentPersistMixin module."""
+
 import ipaddress
 
 import pytest

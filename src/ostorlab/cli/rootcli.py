@@ -1,4 +1,5 @@
 """This module is the entry point for ostorlab CLI."""
+
 import logging
 import json
 from typing import Optional

@@ -1,4 +1,5 @@
 """Serializer handles matching of selector to the proper protobuf message definition."""
+
 import importlib
 import logging
 import os

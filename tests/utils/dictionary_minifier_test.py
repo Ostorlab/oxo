@@ -1,4 +1,5 @@
 """Unit test for the dictionary minifier module."""
+
 import json
 
 from ostorlab.utils import dictionary_minifier

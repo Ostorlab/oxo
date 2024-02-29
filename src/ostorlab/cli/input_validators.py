@@ -1,4 +1,5 @@
 """Module offering methods to validate CLI user input."""
+
 import re
 
 import click

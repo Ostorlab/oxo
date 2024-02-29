@@ -1,4 +1,5 @@
 """Tests for scan run command."""
+
 import pathlib
 
 from pytest_mock import plugin

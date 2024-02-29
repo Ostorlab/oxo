@@ -1,4 +1,5 @@
 """Ostorlab main package."""
+
 import logging
 
 import click

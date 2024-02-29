@@ -1,4 +1,5 @@
 """Version utility class to make easy to compare semantic version strings."""
+
 from semver import version as semver_version
 
 

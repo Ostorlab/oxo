@@ -1,6 +1,7 @@
 """Common logic for Mobile Assets of type .APK package file AAB package file and IPA .
 This module takes care of preparing the application file and calling the create mobile scan API.
 """
+
 import io
 import click
 import itertools

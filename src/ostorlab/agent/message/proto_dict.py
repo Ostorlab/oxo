@@ -4,7 +4,8 @@ both inefficient and resource intensive.
 
 This code is credited to protobuf-to-dict. The app is written and maintained by Ben Hodgson, with significant
 contributions from Nino Walker, Jonathan Klaassen, and Tristram Gräbener.
- """
+"""
+
 from google.protobuf.descriptor import FieldDescriptor
 from ostorlab import exceptions
 from typing import Dict, Callable, Any

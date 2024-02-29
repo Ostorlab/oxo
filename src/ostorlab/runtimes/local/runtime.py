@@ -3,6 +3,7 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services, like
 a local RabbitMQ.
 """
+
 import logging
 from concurrent import futures
 from typing import Dict, List

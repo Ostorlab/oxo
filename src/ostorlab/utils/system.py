@@ -1,4 +1,5 @@
 """Helper functions to get system information."""
+
 from dataclasses import dataclass
 from typing import Optional
 

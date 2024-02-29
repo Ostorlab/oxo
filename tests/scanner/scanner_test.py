@@ -1,4 +1,5 @@
 """Unit test for the scanner configuration module."""
+
 from ostorlab.scanner import scanner_conf
 
 

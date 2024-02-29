@@ -11,6 +11,7 @@ Typical usage:
     status_agent.start()
 ```
 """
+
 import logging
 from threading import Thread
 from typing import Optional, Callable, List

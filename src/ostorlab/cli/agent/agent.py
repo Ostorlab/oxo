@@ -1,4 +1,5 @@
 """Agent module that handles building, searching, installing, bootstraping and running an agent."""
+
 from ostorlab.cli.rootcli import rootcli
 
 

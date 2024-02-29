@@ -1,4 +1,5 @@
 """Tests for vulnz list command."""
+
 import requests_mock as rq_mock
 from click.testing import CliRunner
 from pytest_mock import plugin

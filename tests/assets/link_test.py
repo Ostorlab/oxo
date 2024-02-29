@@ -1,4 +1,5 @@
 """Unit tests for Link asset."""
+
 from ostorlab.agent.message import serializer
 from ostorlab.assets import link
 

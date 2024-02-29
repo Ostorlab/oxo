@@ -1,4 +1,5 @@
 """Unittest for runtime definitions."""
+
 import io
 
 from ostorlab.agent import definitions

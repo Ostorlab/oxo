@@ -11,6 +11,7 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 """
+
 import ipaddress
 import logging
 from typing import Dict, Set, Callable, Optional, Union

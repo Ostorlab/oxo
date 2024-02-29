@@ -1,4 +1,5 @@
 """Module responsible for installing an agent : Pulling the image from the ostorlab store."""
+
 import logging
 from typing import Dict, Optional, Generator
 

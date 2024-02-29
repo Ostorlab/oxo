@@ -1,4 +1,5 @@
 """Scanner module that run scanner command in daemon mode."""
+
 import asyncio
 import logging
 import sys

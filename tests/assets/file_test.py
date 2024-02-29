@@ -1,4 +1,5 @@
 """Unit tests for File asset."""
+
 from ostorlab.agent.message import serializer
 from ostorlab.assets import file as file_asset
 

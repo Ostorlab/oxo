@@ -1,4 +1,5 @@
 """Asset of type Link."""
+
 import logging
 from typing import List
 

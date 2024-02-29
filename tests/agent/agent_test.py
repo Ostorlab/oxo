@@ -1,4 +1,5 @@
 """Agent class unit tests."""
+
 import datetime
 import json
 import logging
