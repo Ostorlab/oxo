@@ -1,4 +1,5 @@
 """Unit tests for install_progress.py module."""
+
 from ostorlab.cli.agent.install import install_progress
 
 
