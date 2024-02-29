@@ -19,7 +19,6 @@ import threading
 import uuid
 from typing import Dict, Any, Optional, Type, List
 
-
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
@@ -92,10 +91,15 @@ class AgentMixin(
         self._agent_settings = agent_settings
         self._control_message: Optional[agent_message.Message] = None
         self.name = agent_definition.name
-        self.in_selectors = agent_definition.in_selectors
+        self.in_selectors = (
+            agent_settings.in_selectors
+            if len(agent_settings.in_selectors) > 0
+            else agent_definition.in_selectors
+        )
         self.out_selectors = agent_definition.out_selectors
         self.cyclic_processing_limit = agent_settings.cyclic_processing_limit
         self.depth_processing_limit = agent_settings.depth_processing_limit
+        self.accepted_agents = agent_settings.accepted_agents
         # Arguments are defined in the agent definition, and can have a default value. The value can also be set from
         # the scan definition in the agent group. Therefore, we read both and override the value from the passed args.
         self.defined_args = agent_definition.args
@@ -215,7 +219,8 @@ class AgentMixin(
 
         # Validate the message before processing it.
         try:
-            self._validate_message()
+            if self._is_valid_message() is False:
+                return None
         except MaximumCyclicProcessReachedError:
             self.on_max_cyclic_process_reached(object_message)
             return None
@@ -239,9 +244,11 @@ class AgentMixin(
             for h in logger.handlers:
                 h.flush()
 
-    def _validate_message(self) -> None:
+    def _is_valid_message(self) -> bool:
         """Check the message received is valid, currently only check for cyclic processing limit."""
-        control_agents: list[str] = self._control_message.data["control"]["agents"]
+        control_agents: list[str] = self._control_message.data.get("control", {}).get(
+            "agents", []
+        )
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
@@ -257,6 +264,17 @@ class AgentMixin(
                     f"Agents path: {agent_path}"
                 )
                 raise MaximumDepthProcessReachedError(error_message)
+
+        if (
+            len(control_agents) > 0
+            and self.accepted_agents is not None
+            and len(self.accepted_agents) > 0
+        ):
+            sender_agent = control_agents[-1]
+            if sender_agent not in self.accepted_agents:
+                return False
+
+        return True
 
     @abc.abstractmethod
     def process_cleanup(self) -> None:

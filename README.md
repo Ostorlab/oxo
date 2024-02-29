@@ -168,6 +168,89 @@ agents:
 ostorlab scan run --install -g agent_group.yaml domain-name example.com
 ```
 
+* Scanning a list of assets is supported using a Yaml asset definition file:
+
+Inject domain name assets `example.com` and `example_2.com`
+
+```shell
+ostorlab scan run --install -g agent_group.yaml -a assets_group.yaml
+```
+
+```yaml
+# file: asset_group.yaml
+description: Target group definition
+kind: targetGroup
+name: master_scan
+assets:
+  domain:
+    - name: "example.com"
+    - name: "example_2.com"
+```
+
+Inject IOS store assets with the bundle_ids `com.example.app` and `com.example_2.app`
+
+```shell
+ostorlab scan run --install -g agent_group.yaml -a assets_group.yaml
+```
+
+```yaml
+# file: asset_group.yaml
+description: Target group definition
+kind: targetGroup
+name: master_scan
+assets:
+  iosStore:
+    - bundle_id: "com.example.app"
+    - bundle_id: "com.example_2.app"
+```
+
+Here is a more encompassing example:
+
+```shell
+ostorlab scan run --install -g agent_group.yaml -a assets_group.yaml
+```
+
+```yaml
+# file: asset_group.yaml
+description: Target group definition for the NSA
+kind: targetGroup
+name: master_scan
+assets:
+  androidStore:
+      - package_name: "com.example.app"
+      - package_name: "com.example_2.app"
+  androidApkFile:
+      - path: /home/organisation/assets/application.apk
+      - path: /home/organisation/assets/application.apk
+      - url: https://exanple.storage.com/production.apk
+      - url: https://exanple.storage.com/dev.apk
+  androidAabFile:
+      - path: /home/organisation/assets/application.aab
+      - path: /home/organisation/assets/application.aab
+      - url: https://exanple.storage.com/production.aab
+      - url: https://exanple.storage.com/dev.aab
+  iosStore:
+      - bundle_id: "com.example.app"
+      - bundle_id: "com.example_2.app"
+  iosFile:
+      - path: /home/organisation/assets/application.ipa
+      - path: /home/organisation/assets/application.ipa
+      - url: https://exanple.storage.com/production.ipa
+      - url: https://exanple.storage.com/dev.ipa
+  link:
+      - url: "https://www.nasa.gov/humans-in-space/artemis/"
+        method: "GET"
+      - url: "https://www.nasa.gov/specials/artemis/"
+        method: "POST"
+  domain:
+      - name: "example.co"
+      - name: "example_2.dev"
+  ip:
+      - host: "10.21.11.11"
+        mask: 30
+      - host: 0.1.2.1
+```
+
 ## The Pitch
 
 Testing for even the most simple vulnerabilities often requires chaining multiple tools. Take for instance scanning

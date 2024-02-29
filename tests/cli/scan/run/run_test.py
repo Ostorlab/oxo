@@ -1,10 +1,13 @@
 """Tests for scan run command."""
+import pathlib
+
+from pytest_mock import plugin
 import requests
 import pytest
-
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
+from ostorlab import exceptions
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -305,3 +308,55 @@ def testScanRun_whenNoAssetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
     )
 
     assert "Sub-command ip specified with --no-asset flag." in result.output
+
+
+def testScanRunCloudRuntime_whenRuntimeRaisesException_showsErrorMessage(mocker):
+    """Test error message shown when runtime fails and exits gracefully."""
+
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run",
+        side_effect=exceptions.OstorlabError("Error message"),
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert isinstance(result.exception, SystemExit) is True
+    assert "Error message" in result.output
+
+
+def testScanRunLocalRuntime_whenIInvalidYamlAgentGroupDefinition_showsErrorMessage(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure the Agent group definition YAML is handled gracefully when a parsing error is encountered."""
+    invalid_agent_group = (
+        pathlib.Path(__file__).parent / "invalid_agent_group_definition.yaml"
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=cloud",
+            "run",
+            "-g",
+            invalid_agent_group,
+            "--title=invalid_scan",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert isinstance(result.exception, SystemExit)
+    assert result.exit_code == 2
+    assert "Agent group definition YAML parse error" in result.output

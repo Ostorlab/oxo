@@ -9,6 +9,8 @@ import httpx
 from typing import List
 
 import click
+import requests
+from ruamel.yaml import error
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
@@ -39,6 +41,13 @@ logger = logging.getLogger(__name__)
     required=False,
 )
 @click.option(
+    "--assets",
+    "-a",
+    type=click.File("r"),
+    help="Path to target list definition file (yaml).",
+    required=False,
+)
+@click.option(
     "--install", "-i", help="Install missing agents.", is_flag=True, required=False
 )
 @click.option(
@@ -58,12 +67,13 @@ def run(
     ctx: click.core.Context,
     agent: List[str],
     agent_group_definition: io.FileIO,
+    assets: io.FileIO,
     title: str,
     install: bool,
     follow: List[str],
     no_asset: bool,
 ) -> None:
-    """Start a new scan on a specific asset.\n
+    """Start a new scan on your assets.\n
     Example:\n
         - ostorlab scan run --agent=agent/ostorlab/nmap --agent=agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
@@ -72,7 +82,7 @@ def run(
             f"Sub-command {ctx.invoked_subcommand} specified with --no-asset flag."
         )
         raise click.exceptions.Exit(2)
-    if no_asset is False and ctx.invoked_subcommand is None:
+    if no_asset is False and ctx.invoked_subcommand is None and assets is None:
         console.error("Error: Missing command.")
         click.echo(ctx.get_help())
         raise click.exceptions.Exit(2)
@@ -89,11 +99,23 @@ def run(
                 agent_group_definition
             )
         except validator.ValidationError as e:
-            console.error(f"{e}")
-            raise click.ClickException("Invalid Agent Group Definition.") from e
+            console.error("Invalid agent group definition.")
+            console.print(f"{e}")
+            raise click.exceptions.Exit(2)
+        except error.YAMLError as e:
+            console.error("Agent group definition YAML parse error:")
+            console.print(f"{e}")
+            raise click.exceptions.Exit(2)
     else:
         raise click.ClickException("Missing agent list or agent group definition.")
 
+    asset_group = None
+    if assets is not None:
+        try:
+            asset_group = definitions.AssetsDefinition.from_yaml(assets)
+        except validator.ValidationError as e:
+            console.error(f"{e}")
+            raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
     # set list of log follow.
     runtime_instance.follow = follow
@@ -101,7 +123,8 @@ def run(
         can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
     except exceptions.OstorlabError as e:
         console.error(f"{e}")
-        return None
+        raise click.ClickException("Runtime encountered an error to run scan") from e
+
     if can_run_scan is True:
         ctx.obj["agent_group_definition"] = agent_group
         ctx.obj["title"] = title
@@ -121,7 +144,7 @@ def run(
             runtime_instance.scan(
                 title=ctx.obj["title"],
                 agent_group_definition=ctx.obj["agent_group_definition"],
-                assets=None,
+                assets=asset_group if asset_group is None else asset_group.targets,
             )
     else:
         raise click.ClickException(

@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Target Group Schema",
+  "description": "Target Group json-specification : A full description of fields of a target group definition yaml file.",
+  "CustomTypes": {
+    "androidStoreType": {
+      "description": "[Optional] - Android store asset.",
+      "type": "object",
+      "properties": {
+        "package_name": {
+          "description": "[Required] - Package name of the android app.",
+          "type": "string"
+        }
+      }
+    },
+    "androidApkFileType": {
+      "description": "[Optional] - Android apk file asset.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "[Optional] - Android apk file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Android apk file link.",
+          "type": "string"
+        }
+      }
+    },
+    "androidAabFileType": {
+      "description": "[Optional] - Android aab file asset.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "[Optional] - Android aab file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Android aab file link.",
+          "type": "string"
+        }
+      }
+    },
+    "iosStoreType": {
+      "description": "[Optional] - Ios app Store asset.",
+      "type": "object",
+      "properties": {
+        "bundle_id": {
+          "description": "[Required] - App bundle id.",
+          "type": "string"
+        }
+      }
+    },
+    "iosFileType": {
+      "description": "[Optional] - Ios app file asset.",
+      "type": "object",
+      "properties": {
+        "paths": {
+          "description": "[Optional] - Ios app file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Ios app file link.",
+          "type": "string"
+        }
+      }
+    },
+    "linkType": {
+      "description": "[Optional] - Link asset.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "description": "[Required] - url link type.",
+          "type": "string"
+        },
+        "method": {
+          "description": "[Required] - Target method.",
+          "type": "string"
+        },
+        "port": {
+          "description": "[Optional] - Target's port.",
+          "type": "number"
+        },
+        "path": {
+          "description": "[Optional] - Link's path.",
+          "type": "string"
+        }
+      }
+    },
+    "domainType": {
+      "description": "[Optional] - Domain name asset.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "[Required] - Domain name.",
+          "type": "string"
+        }
+      }
+    },
+    "ipType": {
+      "description": "[Optional] - Ip asset.",
+      "type": "object",
+      "properties": {
+        "host": {
+          "description": "[Required] - The ip host.",
+          "type": "string"
+        },
+        "mask": {
+          "description": "[Optional] - Network mask.",
+          "type": "number"
+        }
+      }
+    }
+  },
+  "properties": {
+    "kind": {
+      "description": "[Required] - Only expected value : targetGroup.",
+      "type": "string",
+      "enum": [
+        "targetGroup"
+      ]
+    },
+    "name": {
+      "description": "[Optional] - Target group full Name, accept lower case ascii, number and _, - characters.",
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$",
+      "maxLength": 512
+    },
+    "description": {
+      "description": "[Required] - Description of the target group.",
+      "type": "string"
+    },
+    "assets": {
+      "description": "[Required] - List of dictionary-like objects explaining the targets belonging to the current target group.",
+      "type": "object",
+      "properties": {
+        "androidStore": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/androidStoreType"
+          }
+        },
+        "androidApkFile": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/androidApkFileType"
+          }
+        },
+        "androidAabFile": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/androidAabFileType"
+          }
+        },
+        "iosStore": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/iosStoreType"
+          }
+        },
+        "iosFile": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/iosFileType"
+          }
+        },
+        "link": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/linkType"
+          }
+        },
+        "domain": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/domainType"
+          }
+        },
+        "ip": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/ipType"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "kind",
+    "assets"
+  ]
+}

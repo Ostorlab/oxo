@@ -114,7 +114,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
                                 ],
                             },
                             "vulnerabilityLocation": {
-                                "asset": {"androidApp": {"packageName": "a.b.c"}},
+                                "asset": {"packageName": "a.b.c"},
                                 "metadata": [
                                     {
                                         "metadataType": "CODE_LOCATION",
