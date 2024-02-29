@@ -1,6 +1,5 @@
 """Unittest for cloud runtime."""
 import io
-import json
 from typing import Dict, List, Optional, Union
 
 from ostorlab.apis import request
@@ -85,7 +84,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
     httpx_mock.add_response(
         method="POST",
         url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-        json=data_list_agent
+        json=data_list_agent,
     )
     httpx_mock.add_response(
         method="POST",

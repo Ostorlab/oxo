@@ -16,7 +16,8 @@ def testRuntime_WhenCantInitSwarm_shouldRetry(
         url="http+docker://localhost/version", json={"ApiVersion": "1.35"}
     )
     httpx_mock.add_response(
-        url="http+docker://localhost/v1.35/swarm", json={"ID": "1234"})
+        url="http+docker://localhost/v1.35/swarm", json={"ID": "1234"}
+    )
     httpx_mock.add_response(
         url="http+docker://localhost/v1.35/swarm/init", status_code=400
     )

@@ -9,7 +9,6 @@ import httpx
 from typing import List
 
 import click
-import requests
 from ruamel.yaml import error
 
 from ostorlab import exceptions
