@@ -3,6 +3,7 @@ Example of usage:
 - ostorlab --api-key='myKey' ci-scan run --scan-profile=full_scan \
            --break-on-risk-rating=medium --title=test_scan [asset] [options].
 """
+
 import io
 import multiprocessing
 import click

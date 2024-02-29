@@ -1,4 +1,5 @@
 """Unit tests for OpenTelemetryMixin module."""
+
 import json
 import sys
 import tempfile

@@ -1,4 +1,5 @@
 """Vulnz Describe command."""
+
 import logging
 from typing import Optional
 

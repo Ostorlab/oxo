@@ -1,4 +1,5 @@
 """Unit test for the agent health check mixin."""
+
 import time
 
 import requests

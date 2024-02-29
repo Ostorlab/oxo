@@ -1,8 +1,8 @@
 """Handles calls to the token API.
 
-    Typical usage example:
-    public_runner = LoginAPIRunner(username, password, otp_token)
-    public_runner.login_user()
+Typical usage example:
+public_runner = LoginAPIRunner(username, password, otp_token)
+public_runner.login_user()
 """
 
 import requests

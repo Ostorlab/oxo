@@ -1,4 +1,5 @@
 """Display the agent install progress."""
+
 from typing import Dict, Iterator
 
 from rich import progress

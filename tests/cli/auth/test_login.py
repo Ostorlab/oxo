@@ -1,4 +1,5 @@
 """Tests for auth login command."""
+
 from unittest import mock
 import click
 from click.testing import CliRunner

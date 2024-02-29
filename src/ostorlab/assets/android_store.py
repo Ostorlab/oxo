@@ -1,4 +1,5 @@
 """Android store package target asset."""
+
 import dataclasses
 
 from ostorlab.assets import asset

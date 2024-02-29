@@ -1,4 +1,5 @@
 """Tests for serializer module."""
+
 import pytest
 
 from ostorlab.agent.message import serializer

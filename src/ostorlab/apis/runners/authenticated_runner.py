@@ -1,10 +1,11 @@
 """Handles all authenticated API calls and behind the scenes operations such as authentication, validation, etc.
 
-    Typical usage example:
+Typical usage example:
 
-    authenticated_runner = AuthenticatedAPIRunner(username, password, token_duration)
-    authenticated_runner.authenticate()
+authenticated_runner = AuthenticatedAPIRunner(username, password, token_duration)
+authenticated_runner.authenticate()
 """
+
 import datetime
 import logging
 from typing import Dict, Optional, Any

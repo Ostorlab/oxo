@@ -1,4 +1,5 @@
 """Vulnz dump command."""
+
 import logging
 
 import click

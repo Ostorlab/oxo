@@ -1,4 +1,5 @@
 """Agent List command."""
+
 import logging
 
 import docker

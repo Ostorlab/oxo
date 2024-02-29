@@ -1,5 +1,6 @@
 """Asset of type file.
 This module takes care of preparing a generic file of type before injecting it to the runtime instance."""
+
 import io
 import logging
 from typing import Optional, Tuple

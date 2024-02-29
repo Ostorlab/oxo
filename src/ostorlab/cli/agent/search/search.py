@@ -1,4 +1,5 @@
 """Agent search command."""
+
 import logging
 from typing import Dict
 

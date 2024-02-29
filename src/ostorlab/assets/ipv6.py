@@ -1,4 +1,5 @@
 """IPv6 address asset."""
+
 import dataclasses
 from typing import Optional
 

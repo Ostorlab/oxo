@@ -1,5 +1,6 @@
 """Asset of type IP.
 This module takes care of preparing an IP asset, either single address, a range with mask for both v4 and v6."""
+
 import ipaddress
 import logging
 from typing import List

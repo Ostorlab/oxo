@@ -1,4 +1,5 @@
 """Tests for the docker_requirements_checker module."""
+
 import pytest
 from pytest_mock import plugin
 from requests_mock import mocker as req_mocker

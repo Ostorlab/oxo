@@ -1,4 +1,5 @@
 """Agent Healthcheck commands."""
+
 import logging
 
 import click

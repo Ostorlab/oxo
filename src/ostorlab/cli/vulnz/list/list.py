@@ -1,4 +1,5 @@
 """Vulnz List command."""
+
 import logging
 from typing import Optional
 

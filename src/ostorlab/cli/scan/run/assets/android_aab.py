@@ -1,5 +1,6 @@
 """Asset of type .AAB package file.
 This module takes care of preparing a file of type .aab before injecting it to the runtime instance."""
+
 import io
 import logging
 from typing import Tuple, Optional
