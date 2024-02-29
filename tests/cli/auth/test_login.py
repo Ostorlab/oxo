@@ -1,6 +1,8 @@
 """Tests for auth login command."""
+import functools
 from unittest import mock
 import click
+import httpx
 from click.testing import CliRunner
 
 from ostorlab import configuration_manager
@@ -85,17 +87,25 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_prom
     mock_prompt.return_value = None
     runner = CliRunner()
     token_dict = {"token": "2fd7a589-64b4-442e-95aa-eb0d082aab63"}
-    httpx_mock.add_response(
-        method="POST",
-        url=login_runner.TOKEN_ENDPOINT,
-        json=[
-            {
-                "json": {"non_field_errors": ['Must include "otp_token"']},
-                "status_code": 400,
-            },
-            {"json": token_dict, "status_code": 200},
-        ],
+
+    responses = [
+        {
+            "json": {"non_field_errors": ['Must include "otp_token"']},
+            "status_code": 400,
+        },
+        {"json": token_dict, "status_code": 200},
+    ]
+    response_idx = 0
+
+    def _request_callback(request, response_idx):
+        response = httpx.Response(**responses[response_idx])
+        response_idx += 1
+        return response
+
+    httpx_mock.add_callback(
+        functools.partial(_request_callback, response_idx=response_idx)
     )
+
     runner.invoke(rootcli.rootcli, ["auth", "login"], input="username\npassword")
 
     mock_prompt.assert_called()

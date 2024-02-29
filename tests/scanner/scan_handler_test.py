@@ -5,13 +5,12 @@ import pytest
 
 from ostorlab.scanner import scan_handler
 from ostorlab.scanner import scanner_conf
-from ostorlab.apis.runners import authenticated_runner
 from ostorlab.utils import scanner_state_reporter
 
 
 @pytest.mark.asyncio
 async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
-    httpx_mock, mocker, data_start_agent_scan
+    mocker, data_start_agent_scan
 ):
     nats_connect_mock = mocker.patch(
         "ostorlab.scanner.handler.ClientBusHandler.connect"
@@ -26,13 +25,6 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
     mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
     mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_messages")
     mocker.patch("docker.from_env")
-
-    httpx_mock.add_response(
-        method="POST",
-        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-        json=data_start_agent_scan,
-        status_code=200,
-    )
 
     config = scanner_conf.ScannerConfig.from_json(config=data_start_agent_scan)
 
