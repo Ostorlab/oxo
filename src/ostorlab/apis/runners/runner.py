@@ -62,17 +62,11 @@ class APIRunner(abc.ABC):
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
     ) -> httpx.Response:
         """Sends an API request."""
-        if self._proxy is not None:
-            proxy = {"https": self._proxy}
-        else:
-            proxy = None
-
-        return httpx.post(
-            self.endpoint,
-            data=request.data,
-            files=request.files,
-            headers=headers,
-            proxies=proxy,
-            verify=self._verify,
-            timeout=REQUEST_TIMEOUT,
-        )
+        with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
+            return client.post(
+                self.endpoint,
+                data=request.data,
+                files=request.files,
+                headers=headers,
+                timeout=REQUEST_TIMEOUT,
+            )
