@@ -41,11 +41,11 @@ class AgentInstallProgress(progress.Progress):
                     if task_id not in download_tasks:
                         task = prg.add_task(
                             f"[red]Download : {task_id}",
-                            total=log["progressDetail"]["total"],
+                            total=log.get("progressDetail", {}).get("total"),
                         )
                         download_tasks[task_id] = task
                     task = download_tasks[task_id]
-                    current_progress = log["progressDetail"]["current"]
+                    current_progress = log.get("progressDetail", {}).get("current")
                     prg.update(task, completed=current_progress)
 
                 elif "Download complete" in log.get("status", []):
@@ -59,11 +59,11 @@ class AgentInstallProgress(progress.Progress):
                     if task_id not in extract_tasks:
                         task = prg.add_task(
                             f"[red]Extract : {task_id}",
-                            total=log["progressDetail"]["total"],
+                            total=log.get("progressDetail", {}).get("total"),
                         )
                         extract_tasks[task_id] = task
                     task = extract_tasks[task_id]
-                    current_progress = log["progressDetail"]["current"]
+                    current_progress = log.get("progressDetail", {}).get("current")
                     prg.update(task, completed=current_progress)
 
         console.success("Installation successful")
