@@ -1,4 +1,4 @@
-"""Unittests for the CLI agent install command."""
+"""Unit tests for the CLI agent install command."""
 
 import re
 

@@ -3,5 +3,4 @@ types-psutil
 types-click
 types-protobuf
 types-redis
-types-urllib3
 typing_extensions

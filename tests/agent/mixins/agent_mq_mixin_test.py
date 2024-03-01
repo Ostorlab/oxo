@@ -20,7 +20,7 @@ class Agent(agent_mq_mixin.AgentMQMixin):
         self.stub = None
 
     def process_message(self, selector, message):
-        """Process the MQ messages using stub callback for the unittests."""
+        """Process the MQ messages using stub callback for the Unit tests."""
         if self.stub is not None:
             self.stub(message)
 
