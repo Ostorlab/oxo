@@ -8,7 +8,7 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import rootcli
 
 
-def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, requests_mock):
+def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, httpx_mock):
     """Test ostorlab agent search CLI command with Autenticated API returns list of agents."""
     mock.patch("ostorlab.api.runners.authenticated_runner")
     mocker.patch(
@@ -38,8 +38,9 @@ def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, requests_mock)
             }
         }
     }
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=agents_dict,
         status_code=200,
     )
@@ -52,7 +53,7 @@ def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, requests_mock)
     assert "vuln" in result.output
 
 
-def testAgentSearchCLI_WhenPublicRunner_listAgents(mocker, requests_mock):
+def testAgentSearchCLI_WhenPublicRunner_listAgents(mocker, httpx_mock):
     """Test ostorlab agent search CLI command with Public API returns list of agents."""
     agents_dict = {
         "data": {
@@ -77,8 +78,11 @@ def testAgentSearchCLI_WhenPublicRunner_listAgents(mocker, requests_mock):
         }
     }
 
-    requests_mock.post(
-        public_runner.PUBLIC_GRAPHQL_ENDPOINT, json=agents_dict, status_code=200
+    httpx_mock.add_response(
+        method="POST",
+        url=public_runner.PUBLIC_GRAPHQL_ENDPOINT,
+        json=agents_dict,
+        status_code=200,
     )
     runner = testing.CliRunner()
 

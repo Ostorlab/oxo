@@ -10,7 +10,7 @@ from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes import runtime
 
 
-def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
+def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(httpx_mock):
     """Test ostorlab scan list command with correct commands and CLoud runtime.
     Should show scans information.
     """
@@ -46,8 +46,9 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
     }
 
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=scans_data,
         status_code=200,
     )
@@ -59,7 +60,7 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(requests_mock):
 
 @mock.patch.object(console.Console, "error")
 def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
-    mock_console, requests_mock
+    mock_console, httpx_mock
 ):
     """Test ostorlab scan list command with correct commands and options
     but the user is not authenticated.
@@ -68,8 +69,11 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
 
     mock_console.return_value = None
     runner = CliRunner()
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT, json={}, status_code=401
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json={},
+        status_code=401,
     )
     result = runner.invoke(rootcli.rootcli, ["scan", "--runtime=cloud", "list"])
     assert result.exception is None

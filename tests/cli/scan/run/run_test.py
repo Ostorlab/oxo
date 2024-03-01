@@ -3,7 +3,7 @@
 import pathlib
 
 from pytest_mock import plugin
-import requests
+import httpx
 import pytest
 from click.testing import CliRunner
 
@@ -63,7 +63,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.install",
-        side_effect=requests.exceptions.ConnectionError("No internet connection"),
+        side_effect=httpx.ConnectError("No internet connection"),
     )
     api_ubjson_requests = mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute_ubjson_request"

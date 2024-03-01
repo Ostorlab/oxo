@@ -82,7 +82,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
-    requests_mock, tmpdir
+    httpx_mock, tmpdir
 ):
     """Test ostorlab vulnz dump command with correct commands and options and the selected runtime is cloud.
     Should create a json file with the vulnerabilities.
@@ -144,8 +144,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
         }
     }
 
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=list_vulnz,
         status_code=200,
     )
@@ -181,7 +182,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
-    requests_mock, tmpdir
+    httpx_mock, tmpdir
 ):
     """Test ostorlab vulnz dump command with correct commands and options and runtime is cloud.
     Should create a json file with the vulnerabilities.
@@ -230,8 +231,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
         }
     }
 
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=list_vulnz,
         status_code=200,
     )
@@ -280,7 +282,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
     assert "title1: https://url1.co/page2" in data[0][-2]
 
 
-def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(requests_mock, tmpdir):
+def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(httpx_mock, tmpdir):
     """Test ostorlab vulnz dump command with correct commands and wrong scan id.
     Should show not found error.
 
@@ -297,8 +299,9 @@ def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(requests_mock, tmpdir):
         "data": {"scan": "null"},
     }
 
-    requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=list_vulnz,
         status_code=200,
     )
