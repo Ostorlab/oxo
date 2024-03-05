@@ -361,3 +361,24 @@ def testScanRunLocalRuntime_whenIInvalidYamlAgentGroupDefinition_showsErrorMessa
     assert isinstance(result.exception, SystemExit)
     assert result.exit_code == 2
     assert "Agent group definition YAML parse error" in result.output
+
+
+def testOstorlabScanRunCLI_whenWrongArgsFormatProvided_showsErrorMessage():
+    """Test ostorlab scan command with wrong args format. Should show error message."""
+
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "--arg=test,test",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert "Invalid argument test,test. Expected format: name:value" in result.output
+
+    assert result.exit_code == 2

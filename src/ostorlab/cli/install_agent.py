@@ -7,12 +7,9 @@ import click
 import docker
 import docker.errors
 
-from ostorlab import configuration_manager
-from ostorlab.apis import agent_details as agent_details_api
-from ostorlab.apis.runners import public_runner, authenticated_runner
-from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.install import install_progress
+from ostorlab.cli import utils
 
 logger = logging.getLogger(__name__)
 
@@ -79,40 +76,6 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
         return False
 
 
-def get_agent_details(agent_key: str) -> Dict:
-    """Sends an API request with the agent key, and retrieve the agent information.
-
-    Args:
-        agent_key: the agent key in the form : agent/org/name
-
-    Returns:
-        dictionary of the agent information like : name, dockerLocation..
-
-    Raises:
-        click Exit exception with satus code 2 when API response is invalid.
-    """
-    config_manager = configuration_manager.ConfigurationManager()
-
-    if config_manager.is_authenticated:
-        runner = authenticated_runner.AuthenticatedAPIRunner()
-    else:
-        runner = public_runner.PublicAPIRunner()
-
-    try:
-        response = runner.execute(agent_details_api.AgentDetailsAPIRequest(agent_key))
-    except base_runner.ResponseError as e:
-        raise AgentDetailsNotFound("requested agent not found") from e
-
-    if "errors" in response:
-        error_message = f"""The provided agent key : {agent_key} does not correspond to any agent.
-        Please make sure you have the correct agent key.
-        """
-        raise AgentDetailsNotFound(error_message)
-    else:
-        agent_details = response["data"]["agent"]
-        return agent_details
-
-
 def install(
     agent_key: str,
     version: str = "",
@@ -133,7 +96,7 @@ def install(
         click Exit exception with status code 2 when the docker image does not exist.
     """
 
-    agent_details = get_agent_details(agent_key)
+    agent_details = utils.get_agent_details(agent_key)
     agent_docker_location = agent_details["dockerLocation"]
     if agent_docker_location is None or not agent_details.get("versions", {}).get(
         "versions", []

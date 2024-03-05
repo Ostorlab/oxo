@@ -17,8 +17,11 @@ from ostorlab.agent.schema import validator
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
 from ostorlab.cli.scan import scan
+from ostorlab.cli import types
+from ostorlab.cli import utils
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.utils import defintions as utils_definitions
 
 console = cli_console.Console()
 
@@ -30,6 +33,15 @@ logger = logging.getLogger(__name__)
     "--agent",
     multiple=True,
     help="List of agents keys. to use in the scan.",
+    required=False,
+)
+@click.option(
+    "--arg",
+    multiple=True,
+    help="""Add an argument to an agent. The argument should be in the format: key:value where key is the name of the 
+    argument. the value is the value of the argument. Example: --arg ports=80,443,8080 --arg timeout=1000
+    """,
+    type=types.AgentArgType(),
     required=False,
 )
 @click.option("--title", "-t", help="Scan title.")
@@ -66,6 +78,7 @@ logger = logging.getLogger(__name__)
 def run(
     ctx: click.core.Context,
     agent: List[str],
+    arg: list[types.AgentArg],
     agent_group_definition: io.FileIO,
     assets: io.FileIO,
     title: str,
@@ -139,7 +152,24 @@ def run(
                         console.warning(f"agent {ag.key} not found on the store")
             except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
-
+        if arg is not None and len(arg) > 0:
+            for agent_setting in agent_group.agents:
+                try:
+                    agent_definition = utils.get_agent_definition(agent_setting.key)
+                    for current_arg in arg:
+                        for supported_arg in agent_definition.args:
+                            if current_arg.name == supported_arg.get("name"):
+                                agent_setting.args.append(
+                                    utils_definitions.Arg(
+                                        name=current_arg.name,
+                                        type=supported_arg.get("type", "string"),
+                                        value=current_arg.value,
+                                    )
+                                )
+                except install_agent.AgentDetailsNotFound:
+                    console.warning(
+                        f"agent {agent_setting.key} not found. use oxo agent install {agent_setting.key} to install it"
+                    )
         if ctx.invoked_subcommand is None:
             runtime_instance.scan(
                 title=ctx.obj["title"],
