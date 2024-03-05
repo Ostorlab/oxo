@@ -81,7 +81,7 @@ class VolumeWriter:
 
         container = self._client.containers.get(temp_container_name)
         container.put_archive(TEMP_DESTINATION, pw_tarstream)
-        container.stop()
+        container.stop(timeout=1)
 
 
 def create_volume(volume_name: str, contents: Dict[str, bytes]) -> None:
