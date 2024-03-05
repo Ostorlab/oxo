@@ -1,4 +1,5 @@
 """iOS .IPA asset."""
+
 import dataclasses
 from typing import Optional
 

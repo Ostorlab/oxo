@@ -1,4 +1,5 @@
 """KB provides automatic mapping from the KB entry folder name to the meta content."""
+
 import dataclasses
 import json
 import pathlib

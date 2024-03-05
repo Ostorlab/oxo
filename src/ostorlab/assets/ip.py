@@ -1,4 +1,5 @@
 """IP address asset."""
+
 import dataclasses
 import ipaddress
 from typing import Optional

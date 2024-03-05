@@ -1,4 +1,5 @@
 """File asset."""
+
 import dataclasses
 from typing import Optional
 

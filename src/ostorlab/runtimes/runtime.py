@@ -1,4 +1,5 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
+
 import abc
 import dataclasses
 from typing import List, Optional

@@ -9,7 +9,12 @@ from ostorlab.apis import request
 class VulnzListAPIRequest(request.APIRequest):
     """Lists the remote vulnz of a scan."""
 
-    def __init__(self, scan_id: int, number_elements: int, page: int):
+    def __init__(
+        self,
+        scan_id: int,
+        number_elements: int,
+        page: int,
+    ):
         self._scan_id = scan_id
         self._number_elements = number_elements
         self._page = page
@@ -32,7 +37,33 @@ class VulnzListAPIRequest(request.APIRequest):
                     vulnerabilities{
                         id
                         technicalDetail
-                        vulnerabilityLocation
+                        vulnerabilityLocation {
+                          asset {
+                            ... on NGAndroidAppAssetType {
+                              packageName
+                            }
+                            
+                            ... on NGIOSAppAssetType {
+                                bundleId
+                            }
+                            
+                            ... on NGIPv6AssetType {
+                                host
+                            }
+                            
+                            ... on NGIPv4AssetType {
+                                host
+                            }
+                            
+                            ... on NGDomainAssetType {
+                                name
+                            }
+                          }
+                          metadata {
+                            metadataType
+                            metadataValue
+                          }
+                        }
                         detail{
                           title
                           shortDescription

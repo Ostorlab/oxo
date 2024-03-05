@@ -1,4 +1,5 @@
 """Unit test for the Client handler of the messaging queue."""
+
 from typing import Dict, Any
 
 import pytest

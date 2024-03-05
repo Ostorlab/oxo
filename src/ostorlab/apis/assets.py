@@ -1,4 +1,5 @@
 """Create Asset via an API Request."""
+
 import json
 from typing import Dict, Optional
 

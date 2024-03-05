@@ -5,12 +5,13 @@ Usage
                  bus_username, bus_password)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
+
+import base64
 import hashlib
 import io
 import logging
-import uuid
-import base64
 import random
+import uuid
 from typing import List, Optional
 
 import docker
@@ -309,10 +310,13 @@ class AgentRuntime:
         network_name: str,
         extra_configs: Optional[List[docker.types.ConfigReference]] = None,
         extra_mounts: Optional[List[docker.types.Mount]] = None,
+        replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
 
         Args:
+            replicas: number of replicas for the service.
+            extra_mounts: list of docker Mounts that will be exposed to the service.
             network_name: network name to attach the service to.
             extra_configs: list of docker ConfigReferences that will be exposed to the service.
 
@@ -381,6 +385,7 @@ class AgentRuntime:
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit),
             cap_add=caps,
+            mode=docker_types_services.ServiceMode("replicated", replicas),
         )
 
         return agent_service

@@ -1,13 +1,13 @@
 """Handles the public API calls.
 
-    Typical usage example:
-    public_runner = PublicAPIRunner()
-    public_runner.execute()
+Typical usage example:
+public_runner = PublicAPIRunner()
+public_runner.execute()
 """
 
 from typing import Dict, Any, Optional
 
-import requests
+import httpx
 
 from ostorlab.apis import request as api_request
 from ostorlab.apis.runners import runner
@@ -50,16 +50,11 @@ class PublicAPIRunner(runner.APIRunner):
 
     def _sent_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
-    ) -> requests.Response:
+    ) -> httpx.Response:
         """Sends an API request."""
-        if self._proxy is not None:
-            proxy = {"https": self._proxy}
-        else:
-            proxy = None
-        return requests.post(
-            self.endpoint,
-            data=request.data,
-            proxies=proxy,
-            verify=self._verify,
-            timeout=runner.REQUEST_TIMEOUT,
-        )
+        with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
+            return client.post(
+                self.endpoint,
+                data=request.data,
+                timeout=runner.REQUEST_TIMEOUT,
+            )

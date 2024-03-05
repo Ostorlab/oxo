@@ -1,4 +1,5 @@
 """Redis service in charge of providing capabilities like QPS limiting, distributed locking and distributed storage."""
+
 import logging
 from typing import Dict
 
@@ -55,12 +56,6 @@ class LocalRedis:
         self._create_network()
         self._redis_service = self._start_redis()
 
-        if self._redis_service is not None and not self._is_service_healthy():
-            logger.error(
-                "Redis container for service %s is not ready", self._redis_service.id
-            )
-            return
-
     def stop(self):
         """Stop the local Redis instance."""
         for service in self._docker_client.services.list():
@@ -111,12 +106,12 @@ class LocalRedis:
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
-        wait=tenacity.wait_exponential(multiplier=1, max=12),
+        wait=tenacity.wait_fixed(0.5),
         # return last value and don't raise RetryError exception.
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def _is_service_healthy(self) -> bool:
+    def is_service_healthy(self) -> bool:
         logger.info("checking service %s", self._redis_service.name)
         return self.is_healthy
 

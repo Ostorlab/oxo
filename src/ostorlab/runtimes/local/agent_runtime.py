@@ -4,12 +4,13 @@ Usage
     agent_runtime = AgentRuntime(agent_settings, runtime_name, docker_client, mq_service, redis_service, jaeger_service)
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
+
+import base64
+import hashlib
 import io
 import logging
-import hashlib
-import uuid
-import base64
 import random
+import uuid
 from typing import List, Optional
 
 import docker
@@ -21,9 +22,9 @@ from ostorlab import configuration_manager
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
-from ostorlab.runtimes.local.services import jaeger
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,10 @@ MOUNT_VARIABLES = {"$CONFIG_HOME": str(configuration_manager.OSTORLAB_PRIVATE_DI
 HEALTHCHECK_HOST = "0.0.0.0"
 HEALTHCHECK_PORT = 5000
 SECOND = 1000000000
-HEALTHCHECK_RETRIES = 10
+HEALTHCHECK_RETRIES = 300
 HEALTHCHECK_TIMEOUT = 30 * SECOND
-HEALTHCHECK_START_PERIOD = 2 * SECOND
-HEALTHCHECK_INTERVAL = 30 * SECOND
+HEALTHCHECK_START_PERIOD = 1 * SECOND
+HEALTHCHECK_INTERVAL = 1 * SECOND
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
 
@@ -300,10 +301,12 @@ class AgentRuntime:
         network_name: str,
         extra_configs: Optional[List[docker.types.ConfigReference]] = None,
         extra_mounts: Optional[List[docker.types.Mount]] = None,
+        replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
 
         Args:
+            replicas:  number of replicas to create
             network_name: network name to attach the service to.
             extra_configs: list of docker ConfigReferences that will be exposed to the service.
 
@@ -372,6 +375,7 @@ class AgentRuntime:
             endpoint_spec=endpoint_spec,
             resources=docker_types_services.Resources(mem_limit=mem_limit),
             cap_add=caps,
+            mode=docker_types_services.ServiceMode("replicated", replicas),
         )
 
         return agent_service

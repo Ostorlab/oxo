@@ -1,9 +1,10 @@
 """Validation of Yaml configuration files against json schema files.
 
-    Typical usage example:
-    validator = Validator(json_schema_file_object)
-    validator.validate(yaml_file_object)
+Typical usage example:
+validator = Validator(json_schema_file_object)
+validator.validate(yaml_file_object)
 """
+
 import io
 import json
 

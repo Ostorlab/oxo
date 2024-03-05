@@ -1,12 +1,12 @@
 """Unittest for agent runtime."""
+
 import docker
 
-from ostorlab.runtimes import definitions
-from ostorlab.utils import defintions as utils_defintions
-from ostorlab.agent import definitions as agent_definitions
-from ostorlab.runtimes.local import agent_runtime
-
 import ostorlab
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import agent_runtime
+from ostorlab.utils import defintions as utils_defintions
 
 
 def container_name_mock(name):
@@ -14,7 +14,7 @@ def container_name_mock(name):
     return "complex_long_name_special_duplicate_agent:v1026"
 
 
-def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreatedwithAgentSettings(
+def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreatedWithAgentSettings(
     mocker,
 ):
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
@@ -90,7 +90,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
 
 
-def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_serviceCreatedwithAgentDef(
+def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_serviceCreatedWithAgentDef(
     mocker,
 ):
     """Test creation of the agent service : Case where agent settings values are empty,
@@ -151,3 +151,74 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
     assert kwargs["mounts"] == ["def_mount1", "def_mount2"]
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 30000
     assert kwargs["restart_policy"]["Condition"] == "any"
+
+
+def testCreateAgentService_whenReplicasIsProvided_serviceCreatedWithReplicas(
+    mocker,
+):
+    """Test creation of the agent service : Case where agent definitions & agent settings have different values for
+    some attributes, the agent settings values should override.
+    """
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=["def_mount1", "def_mount2"],
+        mem_limit=420000,
+        restart_policy="",
+        open_ports=[
+            utils_defintions.PortMapping(20000, 30000),
+            utils_defintions.PortMapping(20001, 30001),
+        ],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    settings_open_ports = [
+        utils_defintions.PortMapping(20000, 40000),
+        utils_defintions.PortMapping(20002, 40002),
+    ]
+    agent_settings = definitions.AgentSettings(
+        key="agent/org/name",
+        mounts=["settings_mount1"],
+        mem_limit=700000,
+        restart_policy="on-failure",
+        constraints=["constraint1"],
+        open_ports=settings_open_ports,
+    )
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+    )
+    runtime_agent.create_agent_service(
+        network_name="test", extra_configs=[], replicas=3
+    )
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["mode"] == {"replicated": {"Replicas": 3}}

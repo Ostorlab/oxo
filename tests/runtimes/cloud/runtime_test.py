@@ -1,4 +1,5 @@
 """Unittest for cloud runtime."""
+
 import io
 from typing import Dict, List, Optional, Union
 
@@ -50,7 +51,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
 
 
 def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
-    mocker, requests_mock, data_list_agent, data_create_agent_group, data_create_asset
+    mocker, httpx_mock, data_list_agent, data_create_agent_group, data_create_asset
 ):
     """Unittest for the scan stop method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
@@ -80,14 +81,23 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
                     - "url2"
     """
     valid_yaml_def = io.StringIO(valid_yaml)
-    mock_api_requests = requests_mock.post(
-        authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-        [
-            {"json": data_list_agent, "status_code": 200},
-            {"json": data_create_agent_group, "status_code": 200},
-            {"json": data_create_asset, "status_code": 200},
-        ],
+
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=data_list_agent,
     )
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=data_create_agent_group,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=data_create_asset,
+    )
+
     agent_group = definitions.AgentGroupDefinition.from_yaml(valid_yaml_def)
     mock_agent_group = mocker.patch(
         "ostorlab.apis.agent_group.CreateAgentGroupAPIRequest",
@@ -98,7 +108,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
         title="Cloud scan", agent_group_definition=agent_group, assets=[]
     )
 
-    history = mock_api_requests.request_history
+    history = httpx_mock.get_requests()
     assert len(history) == 4
     assert mock_agent_group.call_args[0][2][0]["args"][0]["value"] == b"red"
     assert mock_agent_group.call_args[0][2][0]["args"][1]["value"] == b"100"

@@ -1,4 +1,5 @@
 """mock agent implements the required methods to test the agent's behavior without using external components."""
+
 import dataclasses
 
 import pytest

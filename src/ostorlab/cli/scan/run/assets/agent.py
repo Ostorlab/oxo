@@ -1,4 +1,5 @@
 """Asset of type agent for meta-scanning."""
+
 import logging
 from typing import Optional
 

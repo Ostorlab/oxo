@@ -1,4 +1,5 @@
 """Logger is in charge of defining the output format based on CircleCI expected output."""
+
 import os
 
 from ostorlab.cli import console as cli_console

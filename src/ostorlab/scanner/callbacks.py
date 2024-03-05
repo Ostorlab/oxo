@@ -1,4 +1,5 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
+
 import logging
 import ipaddress
 from typing import Any, Optional

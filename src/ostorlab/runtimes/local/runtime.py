@@ -3,18 +3,19 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services, like
 a local RabbitMQ.
 """
+
 import logging
+from concurrent import futures
 from typing import Dict, List
 from typing import Optional
-from concurrent import futures
 
 import click
 import docker
 import rich
 import sqlalchemy
 import tenacity
-from docker.models import services as docker_models_services
 from docker import errors as docker_errors
+from docker.models import services as docker_models_services
 from rich import markdown
 from rich import panel
 from sqlalchemy import case
@@ -30,9 +31,9 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
-from ostorlab.runtimes.local.services import jaeger
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
@@ -201,10 +202,6 @@ class LocalRuntime(runtime.Runtime):
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
                 self._start_pre_agents()
-                console.info("Checking pre-agents are healthy")
-                is_healthy = self._check_agents_healthy()
-                if is_healthy is False:
-                    raise AgentNotHealthy()
 
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
@@ -363,13 +360,26 @@ class LocalRuntime(runtime.Runtime):
             self._log_streamer.stream(self._jaeger_service.service)
 
     def _check_services_healthy(self):
-        """Check if the rabbitMQ service is running and healthy."""
-        if self._mq_service is None or self._mq_service.is_healthy is False:
+        """Check if the core services are running and healthy."""
+        return self._are_services_ready()
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(20),
+        wait=tenacity.wait_fixed(0.5),
+        retry_error_callback=lambda lv: lv.outcome,
+        retry=tenacity.retry_if_result(lambda v: v is False),
+    )
+    def _are_services_ready(self) -> bool:
+        if self._mq_service is None or self._mq_service.is_service_healthy() is False:
             raise UnhealthyService("MQ service is unhealthy.")
-        if self._redis_service is None or self._redis_service.is_healthy is False:
+        if (
+            self._redis_service is None
+            or self._redis_service.is_service_healthy() is False
+        ):
             raise UnhealthyService("Redis service is unhealthy.")
         if self._tracing is True and (
-            self._jaeger_service is None or self._jaeger_service.is_healthy is False
+            self._jaeger_service is None
+            or self._jaeger_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
 
@@ -423,17 +433,17 @@ class LocalRuntime(runtime.Runtime):
             gcp_logging_credential=self._gcp_logging_credential,
         )
         agent_service = runtime_agent.create_agent_service(
-            self.network, extra_configs, extra_mounts
+            network_name=self.network,
+            extra_configs=extra_configs,
+            extra_mounts=extra_mounts,
+            replicas=agent.replicas or 1,
         )
         if agent.key in self.follow:
             self._log_streamer.stream(agent_service)
 
-        if agent.replicas > 1:
-            self._scale_service(agent_service, agent.replicas)
-
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
-        wait=tenacity.wait_exponential(multiplier=1, max=12),
+        wait=tenacity.wait_fixed(0.5),
         # return last value and don't raise RetryError exception.
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
@@ -499,15 +509,6 @@ class LocalRuntime(runtime.Runtime):
             ],
         )
 
-    def _scale_service(
-        self, service: docker_models_services.Service, replicas: int
-    ) -> None:
-        """Calling scale directly on the service causes an API error. This is a workaround that simulates refreshing
-        the service object, then calling the scale API."""
-        for s in self._docker_client.services.list():
-            if s.name == service.name:
-                s.scale(replicas)
-
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
 
@@ -560,7 +561,7 @@ class LocalRuntime(runtime.Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
-        wait=tenacity.wait_exponential(multiplier=1, max=20),
+        wait=tenacity.wait_fixed(0.5),
         # return last value and don't raise RetryError exception.
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
@@ -596,15 +597,33 @@ class LocalRuntime(runtime.Runtime):
             except install_agent.AgentDetailsNotFound:
                 console.warning(f"agent {agent_key} not found on the store")
 
-    def list_vulnz(self, scan_id: int):
+    def list_vulnz(
+        self,
+        scan_id: int,
+        filter_risk_rating: Optional[List[str]],
+        search: Optional[str],
+    ) -> None:
         try:
             with models.Database() as session:
-                vulnerabilities = (
-                    session.query(models.Vulnerability)
-                    .filter_by(scan_id=scan_id)
-                    .order_by(models.Vulnerability.title)
-                    .all()
-                )
+                query = session.query(models.Vulnerability).filter_by(scan_id=scan_id)
+                if filter_risk_rating is not None:
+                    filter_risk_rating = [r.upper() for r in filter_risk_rating]
+                    query = query.filter(
+                        models.Vulnerability.risk_rating.in_(filter_risk_rating)
+                    )
+
+                if search is not None:
+                    query = query.filter(
+                        sqlalchemy.or_(
+                            models.Vulnerability.title.ilike(f"%{search}%"),
+                            models.Vulnerability.short_description.ilike(f"%{search}%"),
+                            models.Vulnerability.description.ilike(f"%{search}%"),
+                            models.Vulnerability.recommendation.ilike(f"%{search}%"),
+                            models.Vulnerability.technical_detail.ilike(f"%{search}%"),
+                        )
+                    )
+
+                vulnerabilities = query.order_by(models.Vulnerability.title).all()
             vulnz_list = []
             for vulnerability in vulnerabilities:
                 vulnerability_location = vulnerability.location or ""

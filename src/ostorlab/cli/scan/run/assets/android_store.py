@@ -1,4 +1,5 @@
 """This module triggers a scan using the android_store asset."""
+
 import logging
 from typing import Tuple, Optional
 

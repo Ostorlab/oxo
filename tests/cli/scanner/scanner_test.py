@@ -1,4 +1,5 @@
 """Unit tests for the ostorlab scanner subcommand."""
+
 import sys
 
 import pytest

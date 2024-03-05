@@ -1,4 +1,5 @@
 """Create mobile scan API."""
+
 import enum
 import io
 import json

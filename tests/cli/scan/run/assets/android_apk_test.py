@@ -1,4 +1,5 @@
 """Tests for scan run android-apk command."""
+
 from click.testing import CliRunner
 
 from ostorlab.cli import rootcli

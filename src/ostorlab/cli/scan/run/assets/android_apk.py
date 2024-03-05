@@ -1,6 +1,7 @@
 """Asset of type .APK package file.
 This module takes care of preparing a file of type .APK before injecting it to the runtime instance.
 """
+
 import io
 import logging
 from typing import Tuple, Optional

@@ -1,4 +1,5 @@
 """Unit test for strings utils module."""
+
 import pytest
 
 from ostorlab.utils import strings
