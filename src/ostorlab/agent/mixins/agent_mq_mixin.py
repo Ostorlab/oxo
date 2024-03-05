@@ -165,7 +165,9 @@ class AgentMQMixin:
         async with self._channel_pool.acquire() as channel:
             exchange = await self._get_exchange(channel)
             pika_message = aio_pika.Message(
-                body=message, priority=message_priority or 0
+                body=message,
+                priority=message_priority or 0,
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
             )
             await exchange.publish(routing_key=key, message=pika_message)
 
