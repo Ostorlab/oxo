@@ -202,10 +202,6 @@ class LocalRuntime(runtime.Runtime):
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
                 self._start_pre_agents()
-                console.info("Checking pre-agents are healthy")
-                is_healthy = self._check_agents_healthy()
-                if is_healthy is False:
-                    raise AgentNotHealthy()
 
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
