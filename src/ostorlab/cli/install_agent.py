@@ -142,20 +142,17 @@ def install(
         raise click.exceptions.Exit(2)
 
     image_name = _image_name_from_key(agent_details["key"])
+    expected_version = version or agent_details["versions"]["versions"][0]["version"]
     logger.debug("searching for image name %s", image_name)
 
     try:
         docker_client = docker_client or docker.from_env()
 
-        if _is_image_present(docker_client, image_name):
+        if _is_image_present(docker_client, f"{image_name}:v{expected_version}"):
             console.info(f"{agent_key} already exist.")
         else:
             console.info(
                 f"Pulling the image {agent_docker_location} from the ostorlab store."
-            )
-
-            expected_version = (
-                version or agent_details["versions"]["versions"][0]["version"]
             )
             pull_logs_generator = _pull_logs(
                 docker_client, agent_docker_location, f"v{expected_version}"
