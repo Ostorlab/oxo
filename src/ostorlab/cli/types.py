@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclasses.dataclass
 class AgentArg:
     name: str
-    value: Optional[Union[str, list[str]]] = None
+    value: Union[str, list[str]]
 
 
 class AgentArgType(click.ParamType):
