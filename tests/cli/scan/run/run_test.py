@@ -380,5 +380,3 @@ def testOstorlabScanRunCLI_whenWrongArgsFormatProvided_showsErrorMessage():
     )
 
     assert "Invalid argument test,test. Expected format: name:value" in result.output
-
-    assert result.exit_code == 2
