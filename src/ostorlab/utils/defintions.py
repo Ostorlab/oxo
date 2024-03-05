@@ -1,6 +1,7 @@
 """Common definition types."""
 
 import dataclasses
+from typing import Optional, Union
 
 
 @dataclasses.dataclass
@@ -11,8 +12,8 @@ class Arg:
 
     name: str
     type: str
-    value: bytes | int | float | str | bool | list[str] | None = None
-    description: str | None = None
+    value: Optional[Union[bytes, int, float, str, bool]] = None
+    description: Optional[str] = None
 
 
 @dataclasses.dataclass
@@ -28,7 +29,7 @@ class ScannerState:
     """Current scanner state."""
 
     scanner_id: str
-    scan_id: int | None
+    scan_id: Optional[int]
     cpu_load: float
     memory_load: float
     total_cpu: int
