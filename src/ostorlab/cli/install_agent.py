@@ -142,9 +142,7 @@ def install(
         raise click.exceptions.Exit(2)
 
     image_name = _image_name_from_key(agent_details["key"])
-    expected_version = (
-            version or agent_details["versions"]["versions"][0]["version"]
-    )
+    expected_version = version or agent_details["versions"]["versions"][0]["version"]
     logger.debug("searching for image name %s", image_name)
 
     try:
