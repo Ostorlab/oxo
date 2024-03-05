@@ -2,7 +2,7 @@
 
 import logging
 import dataclasses
-from typing import Union
+from typing import Union, Optional
 
 from ostorlab.cli import console as cli_console
 import click
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @dataclasses.dataclass
 class AgentArg:
     name: str
-    value: Union[str, list[str]] | None = None
+    value: Optional[Union[str, list[str]]] = None
 
 
 class AgentArgType(click.ParamType):

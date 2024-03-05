@@ -12,7 +12,7 @@ class Arg:
 
     name: str
     type: str
-    value: Optional[Union[bytes, int, float, str, bool]] = None
+    value: Optional[Union[bytes, int, float, str, bool, list[str]]] = None
     description: Optional[str] = None
 
 
