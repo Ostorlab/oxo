@@ -360,13 +360,26 @@ class LocalRuntime(runtime.Runtime):
             self._log_streamer.stream(self._jaeger_service.service)
 
     def _check_services_healthy(self):
-        """Check if the rabbitMQ service is running and healthy."""
-        if self._mq_service is None or self._mq_service.is_healthy is False:
+        """Check if the core services are running and healthy."""
+        return self._are_services_ready()
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(20),
+        wait=tenacity.wait_fixed(0.5),
+        retry_error_callback=lambda lv: lv.outcome,
+        retry=tenacity.retry_if_result(lambda v: v is False),
+    )
+    def _are_services_ready(self) -> bool:
+        if self._mq_service is None or self._mq_service.is_service_healthy() is False:
             raise UnhealthyService("MQ service is unhealthy.")
-        if self._redis_service is None or self._redis_service.is_healthy is False:
+        if (
+            self._redis_service is None
+            or self._redis_service.is_service_healthy() is False
+        ):
             raise UnhealthyService("Redis service is unhealthy.")
         if self._tracing is True and (
-            self._jaeger_service is None or self._jaeger_service.is_healthy is False
+            self._jaeger_service is None
+            or self._jaeger_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
 
