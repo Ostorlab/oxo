@@ -2,7 +2,7 @@
 
 import logging
 import dataclasses
-from typing import Union, Optional
+from typing import Union
 
 from ostorlab.cli import console as cli_console
 import click
