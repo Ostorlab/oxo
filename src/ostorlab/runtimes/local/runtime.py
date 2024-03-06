@@ -23,6 +23,7 @@ from sqlalchemy import case
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
+from ostorlab.cli import agent_fetcher
 from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli import dumpers
 from ostorlab.cli import install_agent
@@ -594,7 +595,7 @@ class LocalRuntime(runtime.Runtime):
         for agent_key in DEFAULT_AGENTS:
             try:
                 install_agent.install(agent_key=agent_key, docker_client=docker_client)
-            except install_agent.AgentDetailsNotFound:
+            except agent_fetcher.AgentDetailsNotFound:
                 console.warning(f"agent {agent_key} not found on the store")
 
     def list_vulnz(

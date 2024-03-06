@@ -2,6 +2,7 @@
 
 import click
 
+from ostorlab.cli import agent_fetcher
 from ostorlab.cli.agent import agent as agent_command
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
@@ -32,6 +33,6 @@ def install(agent: str, version: str = "") -> None:
     else:
         try:
             install_agent.install(agent, version)
-        except install_agent.AgentDetailsNotFound as e:
+        except agent_fetcher.AgentDetailsNotFound as e:
             console.error(e)
             raise click.exceptions.Exit(2)

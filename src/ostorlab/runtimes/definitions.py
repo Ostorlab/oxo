@@ -284,11 +284,10 @@ class AgentGroupDefinition:
             replicas = _process_agent_replicas(agent.replicas)
             agent_args = []
             for arg in agent.args:
-                value = _cast_agent_arg(arg_type=arg.type, arg_value=arg.value)
                 agent_arg = defintions.Arg(
                     name=arg.name,
                     type=arg.type,
-                    value=value,
+                    value=arg.value,
                 )
                 agent_args.append(agent_arg)
 
@@ -405,21 +404,6 @@ class AssetsDefinition:
             name=target_group_def.get("name"),
             description=target_group_def.get("description"),
         )
-
-
-def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
-    if arg_type == "string":
-        return str(arg_value.decode())
-    elif arg_type == "number":
-        return float(arg_value.decode())
-    elif arg_type == "boolean":
-        return arg_value.decode().lower() == "true"
-    elif arg_type == "array":
-        return json.loads(arg_value.decode())
-    elif arg_type == "object":
-        return json.loads(arg_value.decode())
-    else:
-        raise ValueError(f"Unsupported argument type: {arg_type}")
 
 
 def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
