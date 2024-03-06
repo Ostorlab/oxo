@@ -17,9 +17,12 @@ class Arg:
     description: Optional[str] = None
 
     def __post_init__(self) -> None:
-        # When the value comes from a message received in the NATS.
         if isinstance(self.value, bytes):
-            self._parse_value_string(self.value.decode())
+            if self.type == "binary":
+                self.value = self.value
+            # When the value comes from a message received in the NATS.
+            else:
+                self._parse_value_string(self.value.decode())
 
         # When the value comes from the CLI arguments using --arg.
         elif isinstance(self.value, str):
