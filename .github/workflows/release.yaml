@@ -25,13 +25,12 @@ jobs:
     - name: Install dependencies.
       run: |
         python -m pip install --upgrade pip
-        pip install .[testing]
         pip install .[scanner]
         pip install .[agent]
         pip install pyinstaller
 
-    - run: pyinstaller src/ostorlab/main.py
+    - run: pyinstaller --onefile --add-data="./*:." --distpath ${{ matrix.python-version }}-${{ matrix.os }}-dist  src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
-        path: dist/*
+        path: ${{ matrix.python-version }}-${{ matrix.os }}-dist/*
