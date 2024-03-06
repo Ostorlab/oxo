@@ -163,7 +163,7 @@ class AgentMixin(agent_mq_mixin.AgentMQMixin, abc.ABC):
     def run(self) -> None:
         """Starts running the agent.
 
-        Connects to the agent bus, start listening to new messages.
+        Connects to the agent bus, starts listening to new messages.
         """
         self._loop.run_until_complete(self.mq_init())
         logger.debug("calling start method")
