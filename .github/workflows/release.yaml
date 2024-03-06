@@ -33,5 +33,5 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.python-version }}-${{ matrix.os }}-oxo/
+        name: ${{ matrix.python-version }}-${{ matrix.os }}-oxo
         path: ${{ matrix.python-version }}-${{ matrix.os }}-dist/*
