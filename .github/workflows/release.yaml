@@ -27,11 +27,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install .[scanner]
         pip install .[agent]
+        pip install .
         pip install pyinstaller
 
-    - run: pyinstaller --onefile --add-data="./*:." --distpath ${{ matrix.python-version }}-${{ matrix.os }}-dist  src/ostorlab/main.py
+    - run: pyinstaller --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist  src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.python-version }}-${{ matrix.os }}-oxo
-        path: ${{ matrix.python-version }}-${{ matrix.os }}-dist/*
+        name: ${{ matrix.os }}-${{ matrix.python-version }}-oxo
+        path: ${{ matrix.os }}-${{ matrix.python-version }}-dist/*
