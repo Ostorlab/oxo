@@ -6,9 +6,9 @@ import time
 from typing import Any
 
 import docker
-from docker.models import networks as networks_model
 import pytest
 import redis
+from docker.models import networks as networks_model
 
 import ostorlab
 from ostorlab.agent.message import message as agent_message
@@ -25,9 +25,9 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
-from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner import scanner_conf
+from ostorlab.scanner.proto.assets import apk_pb2
+from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 
 @pytest.fixture(scope="session")
@@ -37,7 +37,7 @@ def mq_service():
         name="core_mq", network="test_network", exposed_ports={5672: 5672, 15672: 15672}
     )
     lrm.start()
-    time.sleep(3)
+    lrm.is_service_healthy()
     yield lrm
     lrm.stop()
 
