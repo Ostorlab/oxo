@@ -30,7 +30,7 @@ jobs:
         pip install .[agent]
         pip install pyinstaller
 
-    - run: pyinstaller ostorlab/src/ostorlab/main.py
+    - run: pyinstaller src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
