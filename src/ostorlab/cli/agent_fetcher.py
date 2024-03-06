@@ -1,6 +1,5 @@
 """Module responsible for fetching the agent details from the container image."""
 
-import logging
 import io
 from typing import Any
 
@@ -14,8 +13,6 @@ from ostorlab.apis.runners import public_runner, authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.agent import definitions as agent_definitions
-
-logger = logging.getLogger(__name__)
 
 console = cli_console.Console()
 
