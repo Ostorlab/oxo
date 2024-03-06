@@ -30,13 +30,6 @@ logger = logging.getLogger(__name__)
 
 MOUNT_VARIABLES = {"$CONFIG_HOME": str(configuration_manager.OSTORLAB_PRIVATE_DIR)}
 
-HEALTHCHECK_HOST = "0.0.0.0"
-HEALTHCHECK_PORT = 5000
-SECOND = 1000000000
-HEALTHCHECK_RETRIES = 300
-HEALTHCHECK_TIMEOUT = 30 * SECOND
-HEALTHCHECK_START_PERIOD = 1 * SECOND
-HEALTHCHECK_INTERVAL = 1 * SECOND
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
 
@@ -259,28 +252,10 @@ class AgentRuntime:
         self.agent.bus_exchange_topic = f"ostorlab_topic_{self.runtime_name}"
         self.agent.bus_management_url = self.mq_service.management_url
         self.agent.bus_vhost = self.mq_service.vhost
-        self.agent.healthcheck_host = HEALTHCHECK_HOST
-        self.agent.healthcheck_port = HEALTHCHECK_PORT
         self.agent.redis_url = self.redis_service.url
         self.agent.tracing_collector_url = (
             self.jaeger_service.url if self.jaeger_service is not None else None
         )
-
-    def create_docker_healthchek(self) -> docker.types.Healthcheck:
-        """Create a docker healthcheck configuration for the agent service.
-
-        Returns:
-            docker healthcheck configuration.
-        """
-        # wait 2s and check max 5 times with 0.5s between each check.
-        healthcheck = docker.types.Healthcheck(
-            test=["CMD", "ostorlab", "agent", "healthcheck"],
-            retries=HEALTHCHECK_RETRIES,
-            timeout=HEALTHCHECK_TIMEOUT,
-            start_period=HEALTHCHECK_START_PERIOD,
-            interval=HEALTHCHECK_INTERVAL,
-        )
-        return healthcheck
 
     def replace_variable_mounts(self, mounts: List[str]):
         """Replace path variables for the container mounts
@@ -368,7 +343,6 @@ class AgentRuntime:
                 condition=restart_policy
             ),
             mounts=mounts,
-            healthcheck=self.create_docker_healthchek(),
             labels={"ostorlab.universe": self.runtime_name},
             configs=configs,
             constraints=constraints,
