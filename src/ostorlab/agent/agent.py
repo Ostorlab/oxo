@@ -157,7 +157,8 @@ class AgentMixin(
             if a.type == "binary":
                 arguments[a.name] = a.value
             else:
-                arguments[a.name] = json.loads(a.value.decode())
+                arg_value = a.value.decode() if isinstance(a.value, bytes) else a.value
+                arguments[a.name] = json.loads(arg_value)
 
         return arguments
 
