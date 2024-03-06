@@ -172,14 +172,14 @@ def run(
                                 except ValueError as e:
                                     console.error(f"{e}")
                                     raise click.ClickException(
-                                        f"{cli_argument.value} is not a Valid value for {cli_argument.name}. please "
-                                        f"check the agent documentation for the correct value type. at "
+                                        f"{cli_argument.value} is not a Valid value for {cli_argument.name}. Please "
+                                        f"check the agent documentation for the correct value type at "
                                         f"https://github.com/ostorlab/agent_{agent_setting.key.split('/')[-1]}/blob"
                                         f"/main/ostorlab.yaml"
                                     ) from e
                 except agent_fetcher.AgentDetailsNotFound:
                     console.warning(
-                        f"Agent {agent_setting.key} not found. use oxo agent install {agent_setting.key} to install it"
+                        f"Agent {agent_setting.key} not found. Use oxo agent install {agent_setting.key} to install it."
                     )
         if ctx.invoked_subcommand is None:
             runtime_instance.scan(

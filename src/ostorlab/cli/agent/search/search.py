@@ -79,7 +79,7 @@ def search_agents(search: str) -> Dict:
     """
     config_manager = configuration_manager.ConfigurationManager()
 
-    if config_manager.is_authenticated:
+    if config_manager.is_authenticated is True:
         runner = authenticated_runner.AuthenticatedAPIRunner()
     else:
         runner = public_runner.PublicAPIRunner()

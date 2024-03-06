@@ -4,16 +4,16 @@ import logging
 import io
 from typing import Any
 
+import click
+import docker
+import docker.errors
+
 from ostorlab import configuration_manager
 from ostorlab.apis import agent_details as agent_details_api
 from ostorlab.apis.runners import public_runner, authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.agent import definitions as agent_definitions
-
-import click
-import docker
-import docker.errors
 
 logger = logging.getLogger(__name__)
 
