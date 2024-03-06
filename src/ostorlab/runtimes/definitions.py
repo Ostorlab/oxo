@@ -74,7 +74,7 @@ class AgentSettings:
         logger.debug("Searching container name %s with version %s", image, self.version)
         client = docker.from_env()
         matching_tag_versions = []
-        for img in client.images.list():
+        for img in client.images.list(name=image):
             for t in img.tags:
                 splitted_tag = t.split(":")
                 if len(splitted_tag) == 2:
