@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['/home/azouiten/ostorlab/src/ostorlab/main.py'],
+    ['./src/ostorlab/main.py'],
     pathex=[],
     binaries=[],
-    datas=[('/home/azouiten/ostorlab/*', '.')],
+    datas=[('./*', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
