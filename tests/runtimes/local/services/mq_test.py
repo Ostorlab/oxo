@@ -32,7 +32,7 @@ def testLocalRabbitMQStart_always_rabbitMQServiceIsStartedWithFixedHostname(
     service = d_client.services.list(filters={"name": "mq_core_mq"})[0]
 
     assert (
-        service.attrs["Spec"]["TaskTemplate"]["ContainerSpec"]["Hostname"] == "rabbitmq"
+        service.attrs["Spec"]["TaskTemplate"]["ContainerSpec"]["Hostname"] == "mq"
     )
     assert service.attrs["Spec"]["TaskTemplate"]["ContainerSpec"]["Mounts"] == [
         {"Source": "core_mq_mq_data", "Target": "/var/lib/rabbitmq", "Type": "volume"}
