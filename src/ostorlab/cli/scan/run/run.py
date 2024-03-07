@@ -153,7 +153,7 @@ def run(
             except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
         if arg is not None and len(arg) > 0:
-            agent_group.agents = _add_args_to_agents_settings(
+            agent_group.agents = add_cli_args_to_agent_settings(
                 agent_group.agents, cli_args=arg
             )
         if ctx.invoked_subcommand is None:
@@ -168,9 +168,22 @@ def run(
         )
 
 
-def _add_args_to_agents_settings(
+def add_cli_args_to_agent_settings(
     agents_settings: list[definitions.AgentSettings], cli_args: list[types.AgentArg]
 ) -> list[definitions.AgentSettings]:
+    """
+    Adds CLI arguments to the agent settings if they are supported by the agent.
+
+    Args:
+        agents_settings : A list of agent settings.
+        cli_args : A list of CLI Agent arguments.
+
+    Returns:
+         The updated list of agent settings.
+
+    Raises:
+        click.exceptions.Exit: If agent details are not found.
+    """
     for agent_setting in agents_settings:
         try:
             agent_definition = agent_fetcher.get_definition(agent_setting.key)
