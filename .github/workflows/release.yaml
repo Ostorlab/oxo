@@ -34,7 +34,7 @@ jobs:
       run: pip freeze
 
     - run: |
-        pyinstaller -name oxo --log-level DEBUG --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist --hidden-import alembic --hidden-import docker --hidden-import src/ostorlab/main.py
+        pyinstaller --name oxo --log-level DEBUG --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist --hidden-import alembic --hidden-import docker --hidden-import src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
