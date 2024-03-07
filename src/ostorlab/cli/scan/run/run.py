@@ -38,8 +38,8 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--arg",
     multiple=True,
-    help="""Add an argument to an agent. The argument should be in the format: arg_name=arg_value.
-     Example: --arg fast_mode=true
+    help="""Add an argument to an agent. The argument should be in the format: <name>:<value>.
+     Example: --arg fast_mode:true
     """,
     type=types.AgentArgType(),
     required=False,
@@ -173,7 +173,7 @@ def _add_args_to_agents_settings(
 ) -> list[definitions.AgentSettings]:
     for agent_setting in agents_settings:
         try:
-            agent_definition = agent_fetcher.get_agent_definition(agent_setting.key)
+            agent_definition = agent_fetcher.get_definition(agent_setting.key)
         except agent_fetcher.AgentDetailsNotFound as e:
             console.error(e)
             raise click.exceptions.Exit(2)

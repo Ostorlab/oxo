@@ -28,7 +28,7 @@ class AgentDetailsNotFound(Error):
     """Agent not found error."""
 
 
-def fetch_agent_details(agent_key: str) -> dict[Any, Any]:
+def get_details(agent_key: str) -> dict[Any, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:
@@ -62,14 +62,19 @@ def fetch_agent_details(agent_key: str) -> dict[Any, Any]:
         return agent_details
 
 
-def get_agent_definition(
+def get_definition(
     agent_key: str,
 ) -> agent_definitions.AgentDefinition:
-    """Fetch args of an agent from container image.
+    """Fetch the agent definition.
+
     Args:
-        agent_key: key of the agent in agent/org/agentName format.
+         agent_key: key of the agent in agent/org/agentName format.
+
     Returns:
         agent_definition: AgentDefinition object containing the agent definition.
+
+    Raises:
+         AgentDetailsNotFound: If the agent image is not found.
     """
     image_name = get_container_image(agent_key)
     if image_name is None:
@@ -84,12 +89,12 @@ def get_agent_definition(
 
 
 def get_container_image(agent_key: str, version: Optional[str] = None) -> Optional[str]:
-    """
-    Get agent container image name based on agent key and optional version.
+    """Get the agent container image name based on the agent key and optional version. If the version is not specified,
+    the latest version is returned if found. otherwise, None is returned.
 
     Args:
         agent_key : The agent key.
-        version : The version of the container image. If None, the latest version is returned.
+        version : The version of the container image.
 
     Returns:
         The matching container image name with version. None if no matching image found.
