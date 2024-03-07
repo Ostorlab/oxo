@@ -202,10 +202,10 @@ def _add_cli_args_to_agent_settings(
                                 value=cli_argument.value,
                             )
                         )
+                        break
                     except ValueError as e:
                         console.warning(
                             f"Could not set argument {cli_argument.name} to {cli_argument.value} because of "
                             f"the following error: {e}"
                         )
-                    break
     return agents_settings
