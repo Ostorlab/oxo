@@ -9,7 +9,7 @@ from typing import Optional, Union, Any
 class Arg:
     """Data class holding a definition of an argument for an agent.
     The actual type of value will be determined using the type attribute.
-    The type could be one of the following: string, number, int, boolean, array, or object."""
+    The type could be one of the following: string, number, boolean, binary array, or object."""
 
     name: str
     type: str
@@ -29,13 +29,13 @@ class Arg:
                 value = value
             # When the value comes from a message received in the NATS.
             else:
-                value = Arg.parse_value_string(
-                    value_str=value.decode(), actual_type=type
+                value = Arg.convert_str_to_type(
+                    value_str=value.decode(), target_type=type
                 )
 
         # When the value comes from the CLI arguments using --arg.
         elif isinstance(value, str):
-            value = Arg.parse_value_string(value_str=value, actual_type=type)
+            value = Arg.convert_str_to_type(value_str=value, target_type=type)
 
         # When the value comes from the CLI with a YAML file for the group definition.
         else:
@@ -45,19 +45,31 @@ class Arg:
         return cls(name, type, value, description)
 
     @staticmethod
-    def parse_value_string(actual_type: str, value_str: str) -> Any:
-        if actual_type == "string":
+    def convert_str_to_type(target_type: str, value_str: str) -> Any:
+        """
+        Convert a string value to the specified type.
+
+        Args:
+            target_type: The desired data type to convert the value to.
+
+            value_str: The string representation of the value.
+
+        Returns:
+            Any: The converted value of the specified type.
+
+        Raises:
+            ValueError: If the target_type is not supported or If the value_str cannot be converted to the specified type.
+        """
+        if target_type == "string":
             return value_str
-        elif actual_type == "number":
-            return float(value_str)
-        elif actual_type == "int":
+        elif target_type in ("int", "number"):
             return int(value_str)
-        elif actual_type == "boolean":
+        elif target_type == "boolean":
             return value_str.lower() == "true"
-        elif actual_type in ("array", "object"):
+        elif target_type in ("array", "object"):
             return json.loads(value_str)
         else:
-            raise ValueError(f"Unsupported argument type: {actual_type}")
+            raise ValueError(f"Unsupported argument type: {target_type}")
 
 
 @dataclasses.dataclass
