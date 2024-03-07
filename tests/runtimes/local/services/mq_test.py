@@ -26,7 +26,7 @@ def testLocalRabbitMQStart_onOperationalConditions_rabbitMQServiceIsStarted():
 def testLocalRabbitMQStart_always_rabbitMQServiceIsStartedWithFixedHostname(
     mq_service: mq.LocalRabbitMQ,
 ) -> None:
-    """Test service is healthy after start and unhealthy after stop."""
+    """Test MQ service is started with a fixed host name."""
     d_client = docker.from_env()
 
     service = d_client.services.list(filters={"name": "mq_core_mq"})[0]
