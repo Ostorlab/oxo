@@ -27,12 +27,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install .[scanner]
         pip install .[agent]
-        pip install .
+        python -m pip install -e .
         pip install pyinstaller
 
-    - run: pyinstaller --log-level DEBUG --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist --specpath ./  src/ostorlab/main.py
+    - name: Debug dependencies.
+      run: pip freeze
+
+    - run: |
+        pyinstaller -name oxo --log-level DEBUG --onefile --add-data="./*:."\
+        --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist \
+        --hidden-import alembic --hidden-import docker --hidden-import src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-${{ matrix.python-version }}-oxo
+        name: ${{ matrix.os }}-${{ matrix.python-version }}
         path: ${{ matrix.os }}-${{ matrix.python-version }}-dist/*
