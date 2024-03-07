@@ -30,7 +30,7 @@ jobs:
         pip install .
         pip install pyinstaller
 
-    - run: pyinstaller -v --log-level TRACE --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist --specpath ./  src/ostorlab/main.py
+    - run: pyinstaller --log-level TRACE --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist --specpath ./  src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
