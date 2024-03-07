@@ -36,18 +36,6 @@ def agent_mock(mocker) -> List[object]:
     mocker.patch(
         "ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run", return_value=None
     )
-    mocker.patch(
-        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.start_healthcheck",
-        return_value=None,
-    )
-    mocker.patch(
-        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.add_healthcheck",
-        return_value=None,
-    )
-    mocker.patch(
-        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
-        return_value=None,
-    )
 
     def mq_send_message(key, message):
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
@@ -194,18 +182,6 @@ def agent_run_mock(mocker) -> AgentRunInstance:
     )
     mocker.patch(
         "ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_run", return_value=None
-    )
-    mocker.patch(
-        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.start_healthcheck",
-        return_value=None,
-    )
-    mocker.patch(
-        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.add_healthcheck",
-        return_value=None,
-    )
-    mocker.patch(
-        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
-        return_value=None,
     )
 
     def mq_send_message(key, message):
