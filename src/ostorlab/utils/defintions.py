@@ -62,8 +62,10 @@ class Arg:
         """
         if target_type == "string":
             return value_str
-        elif target_type in ("int", "number"):
+        elif target_type == "int":
             return int(value_str)
+        elif target_type == "number":
+            return float(value_str)
         elif target_type == "boolean":
             return value_str.lower() == "true"
         elif target_type in ("array", "object"):
