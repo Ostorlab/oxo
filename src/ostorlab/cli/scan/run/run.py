@@ -153,7 +153,7 @@ def run(
             except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
         if arg is not None and len(arg) > 0:
-            agent_group.agents = add_cli_args_to_agent_settings(
+            agent_group.agents = _add_cli_args_to_agent_settings(
                 agent_group.agents, cli_args=arg
             )
         if ctx.invoked_subcommand is None:
@@ -168,7 +168,7 @@ def run(
         )
 
 
-def add_cli_args_to_agent_settings(
+def _add_cli_args_to_agent_settings(
     agents_settings: list[definitions.AgentSettings], cli_args: list[types.AgentArg]
 ) -> list[definitions.AgentSettings]:
     """
@@ -187,32 +187,25 @@ def add_cli_args_to_agent_settings(
     for agent_setting in agents_settings:
         try:
             agent_definition = agent_fetcher.get_definition(agent_setting.key)
-        except agent_fetcher.AgentDetailsNotFound as e:
-            console.error(e)
+        except agent_fetcher.AgentDetailsNotFound:
+            console.error(f"Agent {agent_setting.key} not found.")
             raise click.exceptions.Exit(2)
 
         for cli_argument in cli_args:
-            supported_arg = next(
-                (
-                    arg
-                    for arg in agent_definition.args
-                    if arg.get("name") == cli_argument.name
-                ),
-                None,
-            )
-            if supported_arg is None:
-                continue
-            try:
-                agent_setting.args.append(
-                    utils_definitions.Arg.from_values(
-                        name=cli_argument.name,
-                        type=supported_arg.get("type", "string"),
-                        value=cli_argument.value,
-                    )
-                )
-            except ValueError as e:
-                console.warning(
-                    f"Could not set argument {cli_argument.name} to {cli_argument.value} because of "
-                    f"the following error: {e}"
-                )
+            for arg in agent_definition.args:
+                if arg.get("name") == cli_argument.name:
+                    try:
+                        agent_setting.args.append(
+                            utils_definitions.Arg.build(
+                                name=cli_argument.name,
+                                type=arg.get("type", "string"),
+                                value=cli_argument.value,
+                            )
+                        )
+                    except ValueError as e:
+                        console.warning(
+                            f"Could not set argument {cli_argument.name} to {cli_argument.value} because of "
+                            f"the following error: {e}"
+                        )
+                    break
     return agents_settings

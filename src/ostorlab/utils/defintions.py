@@ -17,7 +17,7 @@ class Arg:
     description: Optional[str] = None
 
     @classmethod
-    def from_values(
+    def build(
         cls,
         name: str,
         type: str,
@@ -29,13 +29,11 @@ class Arg:
                 value = value
             # When the value comes from a message received in the NATS.
             else:
-                value = Arg.convert_str_to_type(
-                    value_str=value.decode(), target_type=type
-                )
+                value = Arg.convert_str(value_str=value.decode(), target_type=type)
 
         # When the value comes from the CLI arguments using --arg.
         elif isinstance(value, str):
-            value = Arg.convert_str_to_type(value_str=value, target_type=type)
+            value = Arg.convert_str(value_str=value, target_type=type)
 
         # When the value comes from the CLI with a YAML file for the group definition.
         else:
@@ -45,7 +43,7 @@ class Arg:
         return cls(name, type, value, description)
 
     @staticmethod
-    def convert_str_to_type(target_type: str, value_str: str) -> Any:
+    def convert_str(value_str: str, target_type: str) -> Any:
         """
         Convert a string value to the specified type.
 

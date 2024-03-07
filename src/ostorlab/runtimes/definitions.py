@@ -89,7 +89,7 @@ class AgentSettings:
             bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
             args=[
-                defintions.Arg.from_values(name=a.name, type=a.type, value=a.value)
+                defintions.Arg.build(name=a.name, type=a.type, value=a.value)
                 for a in instance.args
             ],
             constraints=instance.constraints,
@@ -254,7 +254,7 @@ class AgentGroupDefinition:
             replicas = _process_agent_replicas(agent.replicas)
             agent_args = []
             for arg in agent.args:
-                agent_arg = defintions.Arg.from_values(
+                agent_arg = defintions.Arg.build(
                     name=arg.name,
                     type=arg.type,
                     value=arg.value,

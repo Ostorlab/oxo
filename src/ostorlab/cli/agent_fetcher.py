@@ -38,7 +38,7 @@ def get_details(agent_key: str) -> dict[Any, Any]:
         dictionary of the agent information like : name, dockerLocation..
 
     Raises:
-        click Exit exception with satus code 2 when API response is invalid.
+        AgentDetailsNotFound: If the agent is not found.
     """
     config_manager = configuration_manager.ConfigurationManager()
 
@@ -90,7 +90,7 @@ def get_definition(
 
 def get_container_image(agent_key: str, version: Optional[str] = None) -> Optional[str]:
     """Get the agent container image name based on the agent key and optional version. If the version is not specified,
-    the latest version is returned if found. otherwise, None is returned.
+    the latest version is returned if found, otherwise, None is returned.
 
     Args:
         agent_key : The agent key.
