@@ -204,6 +204,10 @@ class LocalRuntime(runtime.Runtime):
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
 
+            if self._run_default_agents is True:
+                console.info("Starting post-agents")
+                self._start_post_agents()
+
             console.info("Checking services are healthy")
             self._check_services_healthy()
             console.info("Checking agents are healthy")
@@ -215,15 +219,6 @@ class LocalRuntime(runtime.Runtime):
                 self._inject_assets(assets)
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
-
-            if self._run_default_agents is True:
-                console.info("Starting post-agents")
-                self._start_post_agents()
-                console.info("Checking post-agents are healthy")
-                is_healthy = self._check_agents_healthy()
-                if is_healthy is False:
-                    raise AgentNotHealthy()
-
             console.success("Scan created successfully")
         except AgentNotHealthy:
             console.error("Agent not starting")

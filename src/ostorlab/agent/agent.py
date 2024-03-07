@@ -1,7 +1,7 @@
 """Agent class.
 
 All agents should inherit from the agent class to access the different features, like automated message
-serialization, message receiving and sending, selector enrollment, agent health check, etc.
+serialization, message receiving and sending, selector enrollment, etc.
 
 To use it, check out documentations at https://docs.ostorlab.co/.
 """
@@ -23,7 +23,6 @@ from typing import Dict, Any, Optional, Type, List
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
-from ostorlab.agent.mixins import agent_healthcheck_mixin
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
@@ -67,9 +66,7 @@ def _setup_logging(agent_key: str, universe: str) -> None:
             )
 
 
-class AgentMixin(
-    agent_mq_mixin.AgentMQMixin, agent_healthcheck_mixin.AgentHealthcheckMixin, abc.ABC
-):
+class AgentMixin(agent_mq_mixin.AgentMQMixin, abc.ABC):
     """Agent mixin handles all the heavy lifting.
 
     The agent mixin start the healthcheck service, connects the MQ and start listening to the process message.
@@ -117,12 +114,6 @@ class AgentMixin(
             keys=[f"{s}.#" for s in self.in_selectors],
             url=self.bus_url,
             topic=self.bus_exchange_topic,
-        )
-        agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(
-            self,
-            name=agent_definition.name,
-            host=agent_settings.healthcheck_host,
-            port=agent_settings.healthcheck_port,
         )
         signal.signal(signal.SIGTERM, self._handle_signal)
 
@@ -172,10 +163,8 @@ class AgentMixin(
     def run(self) -> None:
         """Starts running the agent.
 
-        Connects to the agent bus, start health check and start listening to new messages.
+        Connects to the agent bus, starts listening to new messages.
         """
-        self.add_healthcheck(self.is_healthy)
-        self.start_healthcheck()
         self._loop.run_until_complete(self.mq_init())
         logger.debug("calling start method")
         # This is call in a thread to avoid blocking calls from affecting the MQ heartbeat running on the main thread.
