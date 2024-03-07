@@ -88,7 +88,7 @@ def install(
         click Exit exception with status code 2 when the docker image does not exist.
     """
 
-    agent_details = agent_fetcher.get_agent_details(agent_key)
+    agent_details = agent_fetcher.fetch_agent_details(agent_key)
     agent_docker_location = agent_details["dockerLocation"]
     if agent_docker_location is None or not agent_details.get("versions", {}).get(
         "versions", []

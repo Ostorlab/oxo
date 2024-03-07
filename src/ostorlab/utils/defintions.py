@@ -2,7 +2,7 @@
 
 import dataclasses
 import json
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 
 @dataclasses.dataclass
@@ -16,36 +16,48 @@ class Arg:
     value: Optional[Union[bytes, int, float, str, bool]] = None
     description: Optional[str] = None
 
-    def __post_init__(self) -> None:
-        if isinstance(self.value, bytes):
-            if self.type == "binary":
-                self.value = self.value
+    @classmethod
+    def from_values(
+        cls,
+        name: str,
+        type: str,
+        value: Optional[Union[bytes, int, float, str, bool]] = None,
+        description: Optional[str] = None,
+    ) -> "Arg":
+        if isinstance(value, bytes):
+            if type == "binary":
+                value = value
             # When the value comes from a message received in the NATS.
             else:
-                self._parse_value_string(self.value.decode())
+                value = Arg.parse_value_string(
+                    value_str=value.decode(), actual_type=type
+                )
 
         # When the value comes from the CLI arguments using --arg.
-        elif isinstance(self.value, str):
-            self._parse_value_string(self.value)
+        elif isinstance(value, str):
+            value = Arg.parse_value_string(value_str=value, actual_type=type)
 
         # When the value comes from the CLI with a YAML file for the group definition.
         else:
             # In this case, we don't need to parse the value since it will already be in the correct type.
             pass
 
-    def _parse_value_string(self, value_str: str) -> None:
-        if self.type == "string":
-            self.value = value_str
-        elif self.type == "number":
-            self.value = float(value_str)
-        elif self.type == "int":
-            self.value = int(value_str)
-        elif self.type == "boolean":
-            self.value = value_str.lower() == "true"
-        elif self.type in ("array", "object"):
-            self.value = json.loads(value_str)
+        return cls(name, type, value, description)
+
+    @staticmethod
+    def parse_value_string(actual_type: str, value_str: str) -> Any:
+        if actual_type == "string":
+            return value_str
+        elif actual_type == "number":
+            return float(value_str)
+        elif actual_type == "int":
+            return int(value_str)
+        elif actual_type == "boolean":
+            return value_str.lower() == "true"
+        elif actual_type in ("array", "object"):
+            return json.loads(value_str)
         else:
-            raise ValueError(f"Unsupported argument type: {self.type}")
+            raise ValueError(f"Unsupported argument type: {actual_type}")
 
 
 @dataclasses.dataclass

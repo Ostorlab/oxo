@@ -1,9 +1,10 @@
 """Module responsible for fetching the agent details from the container image."""
 
+import logging
 import io
-from typing import Any
+from typing import Any, Optional
+import re
 
-import click
 import docker
 import docker.errors
 
@@ -13,8 +14,10 @@ from ostorlab.apis.runners import public_runner, authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.utils import version as version_definition
 
 console = cli_console.Console()
+logger = logging.getLogger(__name__)
 
 
 class Error(Exception):
@@ -25,7 +28,7 @@ class AgentDetailsNotFound(Error):
     """Agent not found error."""
 
 
-def get_agent_details(agent_key: str) -> dict[Any, Any]:
+def fetch_agent_details(agent_key: str) -> dict[Any, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:
@@ -39,7 +42,7 @@ def get_agent_details(agent_key: str) -> dict[Any, Any]:
     """
     config_manager = configuration_manager.ConfigurationManager()
 
-    if config_manager.is_authenticated:
+    if config_manager.is_authenticated is True:
         runner = authenticated_runner.AuthenticatedAPIRunner()
     else:
         runner = public_runner.PublicAPIRunner()
@@ -68,21 +71,57 @@ def get_agent_definition(
     Returns:
         agent_definition: AgentDefinition object containing the agent definition.
     """
-
-    docker_client = docker.from_env()
-    agent_details = get_agent_details(agent_key)
-    agent_docker_location = agent_details["dockerLocation"]
-    if agent_docker_location is None or not agent_details.get("versions", {}).get(
-        "versions", []
-    ):
-        console.error(f"Agent: {agent_key} image location is not yet available")
-        raise click.exceptions.Exit(2)
-
-    image_name = f'{agent_details["key"].replace("/", "_")}:v{agent_details["versions"]["versions"][0]["version"]}'
-    docker_image = docker_client.images.get(image_name)
-
+    image_name = get_container_image(agent_key)
+    if image_name is None:
+        raise AgentDetailsNotFound(f"Agent {agent_key} not found")
+    client = docker.from_env()
+    docker_image = client.images.get(image_name)
     yaml_definition_string = docker_image.labels.get("agent_definition")
     with io.StringIO(yaml_definition_string) as file:
         agent_definition = agent_definitions.AgentDefinition.from_yaml(file)
 
     return agent_definition
+
+
+def get_container_image(agent_key: str, version: Optional[str] = None) -> Optional[str]:
+    """
+    Get agent container image name based on agent key and optional version.
+
+    Args:
+        agent_key : The agent key.
+        version : The version of the container image. If None, the latest version is returned.
+
+    Returns:
+        The matching container image name with version. None if no matching image found.
+    """
+    image = agent_key.replace("/", "_")
+    logger.debug("Searching container name %s with version %s", image, version)
+    client = docker.from_env()
+    matching_tag_versions = []
+    for img in client.images.list(name=image):
+        for t in img.tags:
+            splitted_tag = t.split(":")
+            if len(splitted_tag) == 2:
+                t_name, t_tag = splitted_tag
+            else:
+                t_name = ":".join(splitted_tag[:-1])
+                t_tag = splitted_tag[-1]
+            if t_name == image and version is None:
+                try:
+                    matching_tag_versions.append(version_definition.Version(t_tag[1:]))
+                except ValueError:
+                    logger.warning("Invalid version %s", t_tag[1:])
+            elif t_name == image and version is not None:
+                if re.match(version, t_tag[1:]) is not None:
+                    try:
+                        matching_tag_versions.append(
+                            version_definition.Version(t_tag[1:])
+                        )
+                    except ValueError:
+                        logger.warning("Invalid version %s", t_tag[1:])
+
+    if len(matching_tag_versions) == 0:
+        return None
+
+    matching_version = max(matching_tag_versions)
+    return f"{image}:v{matching_version}"

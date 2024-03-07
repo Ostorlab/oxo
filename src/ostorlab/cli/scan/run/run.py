@@ -153,34 +153,9 @@ def run(
             except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
         if arg is not None and len(arg) > 0:
-            for agent_setting in agent_group.agents:
-                try:
-                    agent_definition = agent_fetcher.get_agent_definition(
-                        agent_setting.key
-                    )
-                    for cli_argument in arg:
-                        for supported_arg in agent_definition.args:
-                            if cli_argument.name == supported_arg.get("name"):
-                                try:
-                                    agent_setting.args.append(
-                                        utils_definitions.Arg(
-                                            name=cli_argument.name,
-                                            type=supported_arg.get("type", "string"),
-                                            value=cli_argument.value,
-                                        )
-                                    )
-                                except ValueError as e:
-                                    console.error(f"{e}")
-                                    raise click.ClickException(
-                                        f"{cli_argument.value} is not a Valid value for {cli_argument.name}. Please "
-                                        f"check the agent documentation for the correct value type at "
-                                        f"https://github.com/ostorlab/agent_{agent_setting.key.split('/')[-1]}/blob"
-                                        f"/main/ostorlab.yaml"
-                                    ) from e
-                except agent_fetcher.AgentDetailsNotFound:
-                    console.warning(
-                        f"Agent {agent_setting.key} not found. Use oxo agent install {agent_setting.key} to install it."
-                    )
+            agent_group.agents = _add_args_to_agents_settings(
+                agent_group.agents, cli_args=arg
+            )
         if ctx.invoked_subcommand is None:
             runtime_instance.scan(
                 title=ctx.obj["title"],
@@ -191,3 +166,40 @@ def run(
         raise click.ClickException(
             "The runtime does not support the provided agent list or group definition."
         )
+
+
+def _add_args_to_agents_settings(
+    agents_settings: list[definitions.AgentSettings], cli_args: list[types.AgentArg]
+) -> list[definitions.AgentSettings]:
+    for agent_setting in agents_settings:
+        try:
+            agent_definition = agent_fetcher.get_agent_definition(agent_setting.key)
+        except agent_fetcher.AgentDetailsNotFound as e:
+            console.error(e)
+            raise click.exceptions.Exit(2)
+
+        for cli_argument in cli_args:
+            supported_arg = next(
+                (
+                    arg
+                    for arg in agent_definition.args
+                    if arg.get("name") == cli_argument.name
+                ),
+                None,
+            )
+            if supported_arg is None:
+                continue
+            try:
+                agent_setting.args.append(
+                    utils_definitions.Arg.from_values(
+                        name=cli_argument.name,
+                        type=supported_arg.get("type", "string"),
+                        value=cli_argument.value,
+                    )
+                )
+            except ValueError as e:
+                console.warning(
+                    f"Could not set argument {cli_argument.name} to {cli_argument.value} because of "
+                    f"the following error: {e}"
+                )
+    return agents_settings
