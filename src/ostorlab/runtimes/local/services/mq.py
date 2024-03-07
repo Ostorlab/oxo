@@ -149,7 +149,7 @@ class LocalRabbitMQ:
             return self._docker_client.services.create(
                 image=self._mq_image,
                 networks=[self._network],
-                hostname="rabbitmq",
+                hostname="mq",
                 name=self._mq_host,
                 env=[
                     "TASK_ID={{.Task.Slot}}",
