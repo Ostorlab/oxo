@@ -9,7 +9,7 @@ a = Analysis(
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=["docker", "alembic"],
     excludes=[],
     noarchive=False,
 )
@@ -21,7 +21,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='main',
+    name='oxo',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
