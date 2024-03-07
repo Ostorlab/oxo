@@ -196,8 +196,6 @@ class LocalRuntime(runtime.Runtime):
             self._create_network()
             console.info("Starting services")
             self._start_services()
-            console.info("Checking services are healthy")
-            self._check_services_healthy()
 
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
@@ -205,6 +203,9 @@ class LocalRuntime(runtime.Runtime):
 
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
+
+            console.info("Checking services are healthy")
+            self._check_services_healthy()
             console.info("Checking agents are healthy")
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
