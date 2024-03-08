@@ -320,3 +320,15 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
         )
 
     assert mock_swarm_init.call_count == 3
+
+
+def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Unit test for the scan list method when docker throws an exception, its handled and doesn't crash."""
+
+    mocker.patch("docker.from_env", side_effect=docker.errors.DockerException)
+
+    scans = local_runtime.LocalRuntime().list()
+
+    assert scans is None
