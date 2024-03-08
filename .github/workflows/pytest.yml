@@ -44,7 +44,7 @@ jobs:
         set -o pipefail
         pytest -m "not docker and not nats"
       if: matrix.os == 'ubuntu-latest'
-    - name: Running tests with pytest for ubuntu.
+    - name: Running tests with pytest for windows.
       run: |
         pytest -m "not docker and not nats"
       if: matrix.os == 'windows-latest'
