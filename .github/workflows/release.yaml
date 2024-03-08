@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
         os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
 
     steps:
@@ -25,18 +25,15 @@ jobs:
     - name: Install dependencies.
       run: |
         python -m pip install --upgrade pip
+        pip install .
         pip install .[scanner]
         pip install .[agent]
-        python -m pip install -e .
         pip install pyinstaller
 
-    - name: Debug dependencies.
-      run: pip freeze
-
     - run: |
-        pyinstaller --name oxo --log-level DEBUG --onefile --add-data="./*:." --distpath ${{ matrix.os }}-${{ matrix.python-version }}-dist --hidden-import alembic --hidden-import logging.config --hidden-import docker --hidden-import click src/ostorlab/main.py
+        pyinstaller --name oxo --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.os }}-${{ matrix.python-version }}
-        path: ${{ matrix.os }}-${{ matrix.python-version }}-dist/*
+        path: dist/*
