@@ -3,17 +3,16 @@
 import dataclasses
 import io
 import pathlib
-import re
 import logging
 import json
 from typing import List, Dict, Optional, Any
 import ipaddress
 
-import docker
 
 from ostorlab.agent.schema import loader
+from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
-from ostorlab.utils import defintions, version
+from ostorlab.utils import defintions
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -69,36 +68,7 @@ class AgentSettings:
 
     @property
     def container_image(self):
-        """Agent image name."""
-        image = self.key.replace("/", "_")
-        logger.debug("Searching container name %s with version %s", image, self.version)
-        client = docker.from_env()
-        matching_tag_versions = []
-        for img in client.images.list(name=image):
-            for t in img.tags:
-                splitted_tag = t.split(":")
-                if len(splitted_tag) == 2:
-                    t_name, t_tag = splitted_tag
-                else:
-                    t_name = ":".join(splitted_tag[:-1])
-                    t_tag = splitted_tag[-1]
-                if t_name == image and self.version is None:
-                    try:
-                        matching_tag_versions.append(version.Version(t_tag[1:]))
-                    except ValueError:
-                        logger.warning("Invalid version %s", t_tag[1:])
-                elif t_name == image and self.version is not None:
-                    if re.match(self.version, t_tag[1:]) is not None:
-                        try:
-                            matching_tag_versions.append(version.Version(t_tag[1:]))
-                        except ValueError:
-                            logger.warning("Invalid version %s", t_tag[1:])
-
-        if not matching_tag_versions:
-            return None
-
-        matching_version = max(matching_tag_versions)
-        return f"{image}:v{matching_version}"
+        return agent_fetcher.get_container_image(self.key, self.version)
 
     @classmethod
     def from_proto(cls, proto: bytes) -> "AgentSettings":
@@ -119,7 +89,7 @@ class AgentSettings:
             bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
             args=[
-                defintions.Arg(name=a.name, type=a.type, value=a.value)
+                defintions.Arg.build(name=a.name, type=a.type, value=a.value)
                 for a in instance.args
             ],
             constraints=instance.constraints,
@@ -284,11 +254,10 @@ class AgentGroupDefinition:
             replicas = _process_agent_replicas(agent.replicas)
             agent_args = []
             for arg in agent.args:
-                value = _cast_agent_arg(arg_type=arg.type, arg_value=arg.value)
-                agent_arg = defintions.Arg(
+                agent_arg = defintions.Arg.build(
                     name=arg.name,
                     type=arg.type,
-                    value=value,
+                    value=arg.value,
                 )
                 agent_args.append(agent_arg)
 
@@ -405,21 +374,6 @@ class AssetsDefinition:
             name=target_group_def.get("name"),
             description=target_group_def.get("description"),
         )
-
-
-def _cast_agent_arg(arg_type: str, arg_value: bytes) -> Any:
-    if arg_type == "string":
-        return str(arg_value.decode())
-    elif arg_type == "number":
-        return float(arg_value.decode())
-    elif arg_type == "boolean":
-        return arg_value.decode().lower() == "true"
-    elif arg_type == "array":
-        return json.loads(arg_value.decode())
-    elif arg_type == "object":
-        return json.loads(arg_value.decode())
-    else:
-        raise ValueError(f"Unsupported argument type: {arg_type}")
 
 
 def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:

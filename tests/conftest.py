@@ -25,9 +25,10 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
-from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.scanner import scanner_conf
+from ostorlab.agent import definitions as agent_definitions
 
 
 @pytest.fixture(scope="session")
@@ -554,3 +555,14 @@ def ping_message() -> agent_message.Message:
 @pytest.fixture
 def registry_conf() -> scanner_conf.RegistryConfig:
     return scanner_conf.RegistryConfig(username="username", token="token", url="url")
+
+
+@pytest.fixture
+def nmap_agent_definition() -> agent_definitions.AgentDefinition:
+    """Returns a dummy agent definition for nmap agent."""
+    return agent_definitions.AgentDefinition(
+        name="nmap",
+        args=[
+            {"name": "fast_mode", "type": "boolean", "value": None},
+        ],
+    )

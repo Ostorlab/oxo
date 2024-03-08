@@ -17,8 +17,11 @@ from ostorlab.agent.schema import validator
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
 from ostorlab.cli.scan import scan
+from ostorlab.cli import types
+from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.utils import defintions as utils_definitions
 
 console = cli_console.Console()
 
@@ -30,6 +33,15 @@ logger = logging.getLogger(__name__)
     "--agent",
     multiple=True,
     help="List of agents keys. to use in the scan.",
+    required=False,
+)
+@click.option(
+    "--arg",
+    multiple=True,
+    help="""Add an argument to an agent. The argument should be in the format: <name>:<value>.
+     Example: --arg fast_mode:true
+    """,
+    type=types.AgentArgType(),
     required=False,
 )
 @click.option("--title", "-t", help="Scan title.")
@@ -66,6 +78,7 @@ logger = logging.getLogger(__name__)
 def run(
     ctx: click.core.Context,
     agent: List[str],
+    arg: list[types.AgentArg],
     agent_group_definition: io.FileIO,
     assets: io.FileIO,
     title: str,
@@ -135,11 +148,14 @@ def run(
                 for ag in agent_group.agents:
                     try:
                         install_agent.install(ag.key, ag.version)
-                    except install_agent.AgentDetailsNotFound:
+                    except agent_fetcher.AgentDetailsNotFound:
                         console.warning(f"agent {ag.key} not found on the store")
             except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
-
+        if arg is not None and len(arg) > 0:
+            agent_group.agents = _add_cli_args_to_agent_settings(
+                agent_group.agents, cli_args=arg
+            )
         if ctx.invoked_subcommand is None:
             runtime_instance.scan(
                 title=ctx.obj["title"],
@@ -150,3 +166,46 @@ def run(
         raise click.ClickException(
             "The runtime does not support the provided agent list or group definition."
         )
+
+
+def _add_cli_args_to_agent_settings(
+    agents_settings: list[definitions.AgentSettings], cli_args: list[types.AgentArg]
+) -> list[definitions.AgentSettings]:
+    """
+    Adds CLI arguments to the agent settings if they are supported by the agent.
+
+    Args:
+        agents_settings : A list of agent settings.
+        cli_args : A list of CLI Agent arguments.
+
+    Returns:
+         The updated list of agent settings.
+
+    Raises:
+        click.exceptions.Exit: If agent details are not found.
+    """
+    for agent_setting in agents_settings:
+        try:
+            agent_definition = agent_fetcher.get_definition(agent_setting.key)
+        except agent_fetcher.AgentDetailsNotFound:
+            console.error(f"Agent {agent_setting.key} not found.")
+            raise click.exceptions.Exit(2)
+
+        for cli_argument in cli_args:
+            for arg in agent_definition.args:
+                if arg.get("name") == cli_argument.name:
+                    try:
+                        agent_setting.args.append(
+                            utils_definitions.Arg.build(
+                                name=cli_argument.name,
+                                type=arg.get("type", "string"),
+                                value=cli_argument.value,
+                            )
+                        )
+                        break
+                    except ValueError as e:
+                        console.warning(
+                            f"Could not set argument {cli_argument.name} to {cli_argument.value} because of "
+                            f"the following error: {e}"
+                        )
+    return agents_settings
