@@ -23,6 +23,7 @@ from sqlalchemy import case
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
+from ostorlab.cli import agent_fetcher
 from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli import dumpers
 from ostorlab.cli import install_agent
@@ -196,8 +197,6 @@ class LocalRuntime(runtime.Runtime):
             self._create_network()
             console.info("Starting services")
             self._start_services()
-            console.info("Checking services are healthy")
-            self._check_services_healthy()
 
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
@@ -205,6 +204,13 @@ class LocalRuntime(runtime.Runtime):
 
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
+
+            if self._run_default_agents is True:
+                console.info("Starting post-agents")
+                self._start_post_agents()
+
+            console.info("Checking services are healthy")
+            self._check_services_healthy()
             console.info("Checking agents are healthy")
             is_healthy = self._check_agents_healthy()
             if is_healthy is False:
@@ -214,15 +220,6 @@ class LocalRuntime(runtime.Runtime):
                 self._inject_assets(assets)
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
-
-            if self._run_default_agents is True:
-                console.info("Starting post-agents")
-                self._start_post_agents()
-                console.info("Checking post-agents are healthy")
-                is_healthy = self._check_agents_healthy()
-                if is_healthy is False:
-                    raise AgentNotHealthy()
-
             console.success("Scan created successfully")
         except AgentNotHealthy:
             console.error("Agent not starting")
@@ -533,8 +530,8 @@ class LocalRuntime(runtime.Runtime):
                 )
 
         universe_ids = set()
-        client = docker.from_env()
         try:
+            client = docker.from_env()
             services = client.services.list()
             for s in services:
                 try:
@@ -594,7 +591,7 @@ class LocalRuntime(runtime.Runtime):
         for agent_key in DEFAULT_AGENTS:
             try:
                 install_agent.install(agent_key=agent_key, docker_client=docker_client)
-            except install_agent.AgentDetailsNotFound:
+            except agent_fetcher.AgentDetailsNotFound:
                 console.warning(f"agent {agent_key} not found on the store")
 
     def list_vulnz(
