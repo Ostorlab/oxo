@@ -1,11 +1,11 @@
 """RabbitMQ service in charge of routing Agent messages."""
 
-import hashlib
 import binascii
+import hashlib
 import logging
 import os
-import uuid
 import pathlib
+import uuid
 from typing import Dict
 
 import docker
@@ -143,9 +143,13 @@ class LocalRabbitMQ:
             service_mode = types.services.ServiceMode("replicated", replicas=1)
             mq_advanced_configuration = self._create_mq_advanced_config()
             configs = [mq_advanced_configuration]
+            persistent_storage = docker.types.Mount(
+                target="/var/lib/rabbitmq", source=f"{self._name}_mq_data"
+            )
             return self._docker_client.services.create(
                 image=self._mq_image,
                 networks=[self._network],
+                hostname="mq",
                 name=self._mq_host,
                 env=[
                     "TASK_ID={{.Task.Slot}}",
@@ -157,6 +161,7 @@ class LocalRabbitMQ:
                 labels={"ostorlab.universe": self._name, "ostorlab.mq": ""},
                 configs=configs,
                 endpoint_spec=endpoint_spec,
+                mounts=[persistent_storage],
             )
         except docker.errors.APIError as e:
             error_message = f"MQ service could not be started. Reason: {e}."
