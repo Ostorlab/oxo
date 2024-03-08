@@ -533,8 +533,8 @@ class LocalRuntime(runtime.Runtime):
                 )
 
         universe_ids = set()
-        client = docker.from_env()
         try:
+            client = docker.from_env()
             services = client.services.list()
             for s in services:
                 try:
