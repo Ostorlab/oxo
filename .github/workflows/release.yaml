@@ -12,15 +12,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-
-    - name: Init and update data submodule.
-      run: |
-        git submodule init
-        git submodule update
 
     - name: Install dependencies.
       run: |
