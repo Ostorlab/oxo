@@ -97,9 +97,9 @@ class TraceExporter:
             )
             service_account_key_temp_file.write(service_account_json_content)
             # the env variable GOOGLE_APPLICATION_CREDENTIALS points to a file defining the service account credentials
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-                service_account_key_temp_file.name
-            )
+            os.environ[
+                "GOOGLE_APPLICATION_CREDENTIALS"
+            ] = service_account_key_temp_file.name
         return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
 
 

@@ -46,9 +46,9 @@ class AgentMQMixin:
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._queue: Optional[aio_pika.Queue] = None
-        self._connection_pool: aio_pika.pool.Pool[aio_pika.Connection] = (
-            aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
-        )
+        self._connection_pool: aio_pika.pool.Pool[
+            aio_pika.Connection
+        ] = aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
         self._channel_pool: aio_pika.pool.Pool[aio_pika.Channel] = aio_pika.pool.Pool(
             self._get_channel, max_size=64, loop=self._loop
         )
