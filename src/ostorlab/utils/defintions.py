@@ -66,7 +66,12 @@ class Arg:
             return float(value_str)
         elif target_type == "boolean":
             return value_str.lower() == "true"
-        elif target_type in ("array", "object"):
+        elif target_type == "array":
+            try:
+                return json.loads(value_str)
+            except ValueError:
+                return value_str.split(",")
+        elif target_type == "object":
             return json.loads(value_str)
         else:
             raise ValueError(f"Unsupported argument type: {target_type}")
