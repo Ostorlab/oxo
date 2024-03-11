@@ -1,5 +1,5 @@
 on:
-  release:
+  push:
 
 jobs:
   build:
@@ -28,7 +28,7 @@ jobs:
         pip install pyinstaller
 
     - run: |
-        pyinstaller --name oxo --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
+        pyinstaller --name oxo --debug=imports --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
 
     - uses: actions/upload-artifact@v2
       with:
