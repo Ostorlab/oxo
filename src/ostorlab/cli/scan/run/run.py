@@ -63,8 +63,8 @@ logger = logging.getLogger(__name__)
     "--install", "-i", help="Install missing agents.", is_flag=True, required=False
 )
 @click.option(
-    "--follow",
-    help="Follow logs of provided list of agents and services.",
+    "--unfollow",
+    help="Don't show logs of provided list of agents and services.",
     multiple=True,
     default=[],
 )
@@ -83,7 +83,7 @@ def run(
     assets: io.FileIO,
     title: str,
     install: bool,
-    follow: List[str],
+    unfollow: List[str],
     no_asset: bool,
 ) -> None:
     """Start a new scan on your assets.\n
@@ -131,6 +131,8 @@ def run(
             raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
     # set list of log follow.
+    agent_keys = [agent.key for agent in agent_group.agents]
+    follow = set(agent_keys) - set(unfollow)
     runtime_instance.follow = follow
     try:
         can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
