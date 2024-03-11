@@ -1,0 +1,35 @@
+on:
+  release:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+    - name: Install dependencies.
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+        pip install .[scanner]
+        pip install .[agent]
+        pip install pyinstaller
+
+    - run: |
+        pyinstaller --name oxo --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
+    - uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.os }}-${{ matrix.python-version }}
+        path: dist/*
