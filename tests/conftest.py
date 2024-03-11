@@ -564,5 +564,6 @@ def nmap_agent_definition() -> agent_definitions.AgentDefinition:
         name="nmap",
         args=[
             {"name": "fast_mode", "type": "boolean", "value": None},
+            {"name": "scripts", "type": "array", "value": None},
         ],
     )
