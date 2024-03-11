@@ -1,5 +1,5 @@
 on:
-  push:
+  release:
 
 jobs:
   build:
@@ -28,8 +28,7 @@ jobs:
         pip install pyinstaller
 
     - run: |
-        pyinstaller --name oxo --debug=imports --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click --hidden-import py-ubjson --hidden-import nats-py --hidden-import Werkzeug --hidden-import aio-pika --hidden-import flask --hidden-import google-cloud-logging --hidden-import opentelemetry-distro --hidden-import opentelemetry-exporter-jaeger --hidden-import opentelemetry-exporter-gcp-trace --hidden-import psutil --hidden-import python-daemon src/ostorlab/main.py
-
+        pyinstaller --name oxo --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
     - uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.os }}-${{ matrix.python-version }}
