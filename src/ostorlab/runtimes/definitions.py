@@ -89,7 +89,7 @@ class AgentSettings:
             bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
             args=[
-                defintions.Arg.build(name=a.name, type=a.type, value=a.value)
+                defintions.Arg(name=a.name, type=a.type, value=a.value)
                 for a in instance.args
             ],
             constraints=instance.constraints,
