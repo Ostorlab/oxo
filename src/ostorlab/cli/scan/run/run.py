@@ -68,7 +68,7 @@ logger = logging.getLogger(__name__)
     default=[],
 )
 @click.option(
-    "--unfollow",
+    "--no-follow",
     help="Start the scan without following the logs.",
     is_flag=True,
     default=False,
@@ -90,7 +90,7 @@ def run(
     title: str,
     install: bool,
     follow: List[str],
-    unfollow: bool,
+    no_follow: bool,
     no_asset: bool,
 ) -> None:
     """Start a new scan on your assets.\n
@@ -140,7 +140,7 @@ def run(
 
     # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]
-    agents_to_follow = _prepare_agents_to_follow(agent_keys, follow, unfollow)
+    agents_to_follow = _prepare_agents_to_follow(agent_keys, follow, no_follow)
     runtime_instance.follow = agents_to_follow
 
     try:
