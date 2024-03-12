@@ -1,5 +1,7 @@
 on:
   release:
+    types: [published]
+
 
 jobs:
   build:
@@ -8,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
-        os: ['windows-latest', 'ubuntu-latest', 'macos-latest']
+        os: ['windows-latest']
 
     steps:
     - uses: actions/checkout@v4
@@ -27,8 +29,8 @@ jobs:
         pip install pyinstaller
 
     - run: |
-        pyinstaller --name oxo --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
-    - uses: actions/upload-artifact@v2
+        pyinstaller --name oxo_${{ matrix.os }} --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
+    - name: Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: ${{ matrix.os }}-${{ matrix.python-version }}
-        path: dist/*
+        files: dist/oxo_${{ matrix.os }}.exe
