@@ -80,18 +80,17 @@ class AgentKeyTpe(click.ParamType):
         """
         try:
             forward_slash_count = cli_value.count("/")
-            match forward_slash_count:
-                case 0:
-                    return f"{OSTORLAB_AGENTS_PREFIX}/{cli_value}"
-                case 1:
-                    if cli_value.startswith("@") is True:
-                        return f"agent/{cli_value[1:]}"
-                    else:
-                        raise ValueError
-                case 2:
-                    return cli_value
-                case _:
+            if forward_slash_count == 0:
+                return f"{OSTORLAB_AGENTS_PREFIX}/{cli_value}"
+            elif forward_slash_count == 1:
+                if cli_value.startswith("@"):
+                    return f"agent/{cli_value[1:]}"
+                else:
                     raise ValueError
+            elif forward_slash_count == 2:
+                return cli_value
+            else:
+                raise ValueError
         except ValueError:
             self.fail(
                 message=f"Invalid agent key: {cli_value}. The expected formats are: key (ostorlab organization will "
