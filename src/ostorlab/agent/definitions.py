@@ -32,6 +32,7 @@ class AgentDefinition:
     image: str = None
     service_name: str = None
     caps: Optional[List[str]] = None
+    supported_architectures: Optional[list[str]] = None
 
     @classmethod
     def from_yaml(cls, file: io.TextIOWrapper) -> "AgentDefinition":
@@ -65,4 +66,5 @@ class AgentDefinition:
             image=definition.get("image"),
             service_name=definition.get("service_name"),
             caps=definition.get("caps"),
+            supported_architectures=definition.get("supported_architectures"),
         )

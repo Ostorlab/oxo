@@ -125,6 +125,10 @@
           "$ref": "#/CustomTypes/agentPortMapping"
         }
       },
+      "supported_architectures": {
+        "description": "[Optional] - Array of supported architectures of the agent.",
+        "$ref": "#/CustomTypes/ArrayOfStrings"
+      },
       "docker_file_path": {
         "description": "[Optional] - Path to the Dockerfile of the agent.",
         "$ref": "#/CustomTypes/Path"
