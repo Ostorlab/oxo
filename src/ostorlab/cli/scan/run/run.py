@@ -32,8 +32,10 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--agent",
     multiple=True,
-    help="List of agents keys. to use in the scan.",
+    help="To include an agent in the scan, add its key. The expected formats are: key (ostorlab organization will be "
+    "used by default) | @org/key | agent/org/key",
     required=False,
+    type=types.AgentKeyTpe(),
 )
 @click.option(
     "--arg",

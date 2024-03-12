@@ -5,6 +5,8 @@ from typing import Optional
 
 import click
 
+OSTORLAB_AGENTS_PREFIX = "agent/ostorlab"
+
 
 @dataclasses.dataclass
 class AgentArg:
@@ -46,6 +48,54 @@ class AgentArgType(click.ParamType):
             self.fail(
                 message=f"Invalid argument {arg_value}. The expected format is name:value. Example: --arg "
                 f"fast_mode:false",
+                param=param,
+                ctx=ctx,
+            )
+
+
+class AgentKeyTpe(click.ParamType):
+    """Custom Click type for parsing agent keys."""
+
+    name = "agent_key"
+
+    def convert(
+        self,
+        cli_value: str,
+        param: Optional[click.Parameter],
+        ctx: Optional[click.Context],
+    ) -> str:
+        """Override convert method from ParamType class to parse agent keys and convert them into the right key if
+        applicable.
+
+        Args:
+            cli_value: The cli value for agent key.
+            param: The parameter using this type for conversion. Defaults to None.
+            ctx: The current click context. Defaults to None.
+
+        Returns:
+            str: The agent key.
+
+        Raises:
+            click.BadParameter: If the agent key is malformed.
+        """
+        try:
+            forward_slash_count = cli_value.count("/")
+            match forward_slash_count:
+                case 0:
+                    return f"{OSTORLAB_AGENTS_PREFIX}/{cli_value}"
+                case 1:
+                    if cli_value.startswith("@") is True:
+                        return f"agent/{cli_value[1:]}"
+                    else:
+                        raise ValueError
+                case 2:
+                    return cli_value
+                case _:
+                    raise ValueError
+        except ValueError:
+            self.fail(
+                message=f"Invalid agent key: {cli_value}. The expected formats are: key (ostorlab organization will "
+                f"be used by default) | @org/key | agent/org/key",
                 param=param,
                 ctx=ctx,
             )
