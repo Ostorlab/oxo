@@ -149,6 +149,7 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
     assert new_instance.bus_url == "mq"
     assert new_instance.bus_exchange_topic == "topic"
     assert len(new_instance.args) == 1
+    assert new_instance.args[0].value == b'"fast"'
 
 
 def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():

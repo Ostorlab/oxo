@@ -9,7 +9,7 @@ from docker import errors
 
 from ostorlab import exceptions
 
-_SUPPORTED_ARCH_TYPES = ["x86_64", "AMD64"]
+_SUPPORTED_ARCH_TYPES = ["x86_64", "AMD64", "arm64"]
 RETRY_ATTEMPTS = 10
 WAIT_TIME = 2
 
@@ -38,13 +38,8 @@ def is_sys_arch_supported() -> bool:
     Returns:
         True if the architecture is supported, else False
     """
-    if sys.platform == "darwin" and "ARM" in platform.version():
-        # On mac os, uname returns x86 even on arm64 if the process calling it is running via rosetta. We parse for ARM
-        # in platform.version() to determine the arch on mac os
+    if platform.machine() not in _SUPPORTED_ARCH_TYPES:
         return False
-    else:
-        if platform.machine() not in _SUPPORTED_ARCH_TYPES:
-            return False
     return True
 
 
