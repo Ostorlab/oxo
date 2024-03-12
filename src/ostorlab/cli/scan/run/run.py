@@ -5,11 +5,10 @@ Example of usage:
 
 import io
 import logging
-
-import httpx
 from typing import List
 
 import click
+import httpx
 from ruamel.yaml import error
 
 from ostorlab import exceptions
@@ -63,10 +62,17 @@ logger = logging.getLogger(__name__)
     "--install", "-i", help="Install missing agents.", is_flag=True, required=False
 )
 @click.option(
-    "--unfollow",
-    help="Don't show logs of provided list of agents and services.",
+    "--follow",
+    help="Follow logs of provided list of agents and services.",
     multiple=True,
     default=[],
+)
+@click.option(
+    "--unfollow",
+    help="Start the scan without following the logs.",
+    is_flag=True,
+    default=False,
+    required=False,
 )
 @click.option(
     "--no-asset",
@@ -83,7 +89,8 @@ def run(
     assets: io.FileIO,
     title: str,
     install: bool,
-    unfollow: List[str],
+    follow: List[str],
+    unfollow: bool,
     no_asset: bool,
 ) -> None:
     """Start a new scan on your assets.\n
@@ -130,10 +137,12 @@ def run(
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
-    # set list of log follow.
+
+    # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]
-    follow = set(agent_keys) - set(unfollow)
-    runtime_instance.follow = follow
+    agents_to_follow = _prepare_agents_to_follow(agent_keys, follow, unfollow)
+    runtime_instance.follow = agents_to_follow
+
     try:
         can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
     except exceptions.OstorlabError as e:
@@ -168,6 +177,32 @@ def run(
         raise click.ClickException(
             "The runtime does not support the provided agent list or group definition."
         )
+
+
+def _prepare_agents_to_follow(
+    agent_keys: List[str], follow: List[str], unfollow: bool
+) -> set[str]:
+    """
+    Prepares the list of agents to follow based on the provided list of agents to follow and unfollow.
+
+    Args:
+        agent_keys : List of agent keys.
+        follow : List of agents to follow.
+        unfollow : Flag to unfollow all agents.
+
+    Returns:
+        The list of agents to follow.
+    """
+    # If unfollow is True, we don't follow any agent.
+    if unfollow is True:
+        return set()
+
+    # If follow is provided, we follow only the provided agents.
+    if len(follow) > 0:
+        return set(follow)
+
+    # If follow is not provided, we follow all the agents.
+    return set(agent_keys)
 
 
 def _add_cli_args_to_agent_settings(
