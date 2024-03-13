@@ -180,7 +180,7 @@ def run(
 
 
 def _prepare_agents_to_follow(
-    agent_keys: List[str], follow: List[str], unfollow: bool
+    agent_keys: List[str], follow: List[str], no_follow: bool
 ) -> set[str]:
     """
     Prepares the list of agents to follow based on the provided list of agents to follow and unfollow.
@@ -188,13 +188,13 @@ def _prepare_agents_to_follow(
     Args:
         agent_keys : List of agent keys.
         follow : List of agents to follow.
-        unfollow : Flag to unfollow all agents.
+        no_follow : Flag to determine if we should log the agents.
 
     Returns:
         The list of agents to follow.
     """
-    # If unfollow is True, we don't follow any agent.
-    if unfollow is True:
+    # If no_follow is True, we don't follow any agent.
+    if no_follow is True:
         return set()
 
     # If follow is provided, we follow only the provided agents.

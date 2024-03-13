@@ -383,3 +383,80 @@ def testOstorlabScanRunCLI_whenWrongArgsFormatProvided_showsErrorMessage() -> No
         "Invalid argument test,test. The expected format is name:value."
         in result.output
     )
+
+
+def testOstorlabScanRunCLI_whenDefault_shouldLogAllAgents():
+    """Test ostorlab scan command when no follow option is provided,
+    should log all agents.
+    """
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/asteroid",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert "Scan created successfully" in result.output
+    assert result.output.count("starting agent ...") == 2
+    assert "agent_ostorlab_nmap_" in result.output
+    assert "agent_ostorlab_asteroid_" in result.output
+    assert "agent_ostorlab_inject_asset" not in result.output
+
+
+def testOstorlabScanRunCLI_whenNoFollow_shouldNotLogAnyAgent():
+    """Test ostorlab scan command when follow option is provided,
+    should not log any agent.
+    """
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--no-follow",
+            "--agent=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/asteroid",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert "Scan created successfully" in result.output
+    assert result.output.count("starting agent ...") == 0
+    assert "agent_ostorlab_nmap_" not in result.output
+    assert "agent_ostorlab_asteroid_" not in result.output
+    assert "agent_ostorlab_inject_asset" not in result.output
+
+
+def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents():
+    """Test ostorlab scan command when follow option is provided,
+    should log specified agents.
+    """
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--follow=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/asteroid",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert "Scan created successfully" in result.output
+    assert result.output.count("starting agent ...") == 1
+    assert "agent_ostorlab_nmap_" in result.output
+    assert "agent_ostorlab_asteroid_" not in result.output
+    assert "agent_ostorlab_inject_asset" not in result.output
