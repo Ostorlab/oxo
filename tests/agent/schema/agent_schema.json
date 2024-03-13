@@ -23,7 +23,7 @@
         "type": "array",
         "items": {
           "type": "string",
-          "enum": ["linux/arm64/v8", "linux/amd64", "linux/x86_64"]
+          "enum": ["linux/arm64/v8", "linux/x86_64"]
         }
       },
       "agentPortMapping": {
