@@ -396,6 +396,7 @@ def testOstorlabScanRunCLI_whenDefault_shouldLogAllAgents():
         [
             "scan",
             "run",
+            "--install",
             "--agent=agent/ostorlab/nmap",
             "--agent=agent/ostorlab/asteroid",
             "ip",
@@ -421,6 +422,7 @@ def testOstorlabScanRunCLI_whenNoFollow_shouldNotLogAnyAgent():
         [
             "scan",
             "run",
+            "--install",
             "--no-follow",
             "--agent=agent/ostorlab/nmap",
             "--agent=agent/ostorlab/asteroid",
@@ -447,6 +449,7 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents():
         [
             "scan",
             "run",
+            "--install",
             "--follow=agent/ostorlab/nmap",
             "--agent=agent/ostorlab/nmap",
             "--agent=agent/ostorlab/asteroid",
