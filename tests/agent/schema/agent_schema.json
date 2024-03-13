@@ -18,6 +18,14 @@
         "maxLength": 4096,
         "pattern": "((?:[^/]*/)*)(.*)"
       },
+      "SupportedArchitectures": {
+        "description": "An array of strings of enum value type.",
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": ["linux/arm64/v8", "linux/x86_64"]
+        }
+      },
       "agentPortMapping": {
         "description": "[Optional] - Array of dictionary-like objects, defining the port mapping.",
         "type": "array",
@@ -127,7 +135,7 @@
       },
       "supported_architectures": {
         "description": "[Optional] - Array of supported architectures of the agent.",
-        "$ref": "#/CustomTypes/ArrayOfStrings"
+        "$ref": "#/CustomTypes/SupportedArchitectures"
       },
       "docker_file_path": {
         "description": "[Optional] - Path to the Dockerfile of the agent.",
