@@ -9,6 +9,7 @@ from click.testing import CliRunner
 
 from ostorlab.cli import rootcli
 from ostorlab import exceptions
+from ostorlab.cli.scan.run import run
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -407,3 +408,125 @@ def testOstorlabScanRunCLI_whenInvalidArgKey_showsErrorMessage(
     )
 
     assert f"Invalid agent key: {invalid_agent_key}" in result.output
+
+
+def testPrepareAgentsToFollow_whenNoFollow_shouldReturnEmptyList() -> None:
+    """Test prepare_agents_to_follow function when no follow option is provided.
+    Should return empty list.
+    """
+    result = run.prepare_agents_to_follow([], [], True)
+
+    assert result == set()
+
+
+def testPrepareAgentsToFollow_whenFollow_shouldReturnSpecifiedAgents() -> None:
+    """Test prepare_agents_to_follow function when follow option is provided.
+    Should return specified agents.
+    """
+    result = run.prepare_agents_to_follow(
+        ["agent/ostorlab/nmap", "agent/ostorlab/asteroid"],
+        ["agent/ostorlab/nmap"],
+        False,
+    )
+
+    assert len(result) == 1
+    assert "agent/ostorlab/nmap" in result
+
+
+def testPrepareAgentsToFollow_whenDefault_shouldReturnAllAgents() -> None:
+    """Test prepare_agents_to_follow function when follow option is provided.
+    Should return specified agents.
+    """
+    result = run.prepare_agents_to_follow(
+        ["agent/ostorlab/nmap", "agent/ostorlab/asteroid"], [], False
+    )
+
+    assert len(result) == 2
+    assert "agent/ostorlab/nmap" in result
+    assert "agent/ostorlab/asteroid" in result
+
+
+def testOstorlabScanRunCLI_whenDefault_shouldLogAllAgents(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan command when no follow option is provided,
+    should log all agents.
+    """
+    runner = CliRunner()
+    spy_follow = mocker.spy(run, "prepare_agents_to_follow")
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/asteroid",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert spy_follow.called is True
+    assert spy_follow.call_count == 1
+    assert len(spy_follow.spy_return) == 2
+    assert "agent/ostorlab/nmap" in spy_follow.spy_return
+    assert "agent/ostorlab/asteroid" in spy_follow.spy_return
+    assert "agent/ostorlab_inject_asset" not in spy_follow.spy_return
+
+
+def testOstorlabScanRunCLI_whenNoFollow_shouldNotLogAnyAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan command when follow option is provided,
+    should not log any agent.
+    """
+    runner = CliRunner()
+    spy_follow = mocker.spy(run, "prepare_agents_to_follow")
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--no-follow",
+            "--agent=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/asteroid",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert spy_follow.called is True
+    assert spy_follow.call_count == 1
+    assert len(spy_follow.spy_return) == 0
+
+
+def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan command when follow option is provided,
+    should log specified agents.
+    """
+    runner = CliRunner()
+    spy_follow = mocker.spy(run, "prepare_agents_to_follow")
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--follow=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/nmap",
+            "--agent=agent/ostorlab/asteroid",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert spy_follow.called is True
+    assert spy_follow.call_count == 1
+    assert len(spy_follow.spy_return) == 1
+    assert "agent/ostorlab/nmap" in spy_follow.spy_return
+    assert "agent/ostorlab/asteroid" not in spy_follow.spy_return
+    assert "agent/ostorlab_inject_asset" not in spy_follow.spy_return
