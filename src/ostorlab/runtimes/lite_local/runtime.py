@@ -298,8 +298,8 @@ class LiteLocalRuntime(runtime.Runtime):
         )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(50),
-        wait=tenacity.wait_fixed(0.5),
+        stop=tenacity.stop_after_attempt(20),
+        wait=tenacity.wait_exponential(multiplier=1, max=12),
         # return last value and don't raise RetryError exception.
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
@@ -354,8 +354,8 @@ class LiteLocalRuntime(runtime.Runtime):
         )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(50),
-        wait=tenacity.wait_fixed(0.5),
+        stop=tenacity.stop_after_attempt(20),
+        wait=tenacity.wait_exponential(multiplier=1, max=20),
         # return last value and don't raise RetryError exception.
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
