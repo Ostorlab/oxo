@@ -386,6 +386,30 @@ def testOstorlabScanRunCLI_whenWrongArgsFormatProvided_showsErrorMessage() -> No
     )
 
 
+@pytest.mark.parametrize(
+    "invalid_agent_key", ["/nmap", "@agent/ostorlab/nmap/", "agent/ostorlab/nmap/"]
+)
+def testOstorlabScanRunCLI_whenInvalidArgKey_showsErrorMessage(
+    invalid_agent_key: str,
+) -> None:
+    """Test ostorlab scan command with wrong agent key. Should show error message."""
+
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            f"--agent={invalid_agent_key}",
+            "--arg=test,test",
+            "ip",
+            "127.0.0.1",
+        ],
+    )
+
+    assert f"Invalid agent key: {invalid_agent_key}" in result.output
+
+
 def testPrepareAgentsToFollow_whenNoFollow_shouldReturnEmptyList() -> None:
     """Test prepare_agents_to_follow function when no follow option is provided.
     Should return empty list.
