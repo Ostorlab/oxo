@@ -3,6 +3,8 @@
 from click.testing import CliRunner
 from pytest_mock import plugin
 
+import pytest
+
 from ostorlab.cli import rootcli
 from ostorlab.agent import definitions as agent_definitions
 
@@ -151,3 +153,48 @@ def testScanRunFile_whenPassedArgIsOfTypeArrayAndSupportedByTheAgent_callScanWit
     assert color_arg.value == ["script1", "script2"]
     assert color_arg.name == "scripts"
     assert color_arg.type == "array"
+
+
+@pytest.mark.parametrize(
+    "cli_agent_key, expected_agent_key",
+    [
+        ("nmap", "agent/ostorlab/nmap"),
+        ("@dev/nmap", "agent/dev/nmap"),
+        ("agent/test/nmap", "agent/test/nmap"),
+    ],
+)
+def testScanRunIP_whenAgentKeyPassed_callScanWithValidSettings(
+    mocker: plugin.MockerFixture,
+    nmap_agent_definition: agent_definitions.AgentDefinition,
+    cli_agent_key: str,
+    expected_agent_key: str,
+) -> None:
+    """Test the ostorlab scan run IP command with different agent key formats."""
+    runner = CliRunner()
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+    mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_definition",
+        return_value=nmap_agent_definition,
+    )
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=True
+    )
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            f"--agent={cli_agent_key}",
+            "--arg=scripts:script1,script2",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert scan_mocked.call_count == 1
+    assert (
+        scan_mocked.call_args[1].get("agent_group_definition").agents[0].key
+        == expected_agent_key
+    )
