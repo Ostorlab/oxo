@@ -435,7 +435,7 @@ def testOstorlabScanRunCLI_whenNoFollow_shouldNotLogAnyAgent():
     assert "agent_ostorlab_asteroid_" not in result.output
     assert "agent_ostorlab_inject_asset" not in result.output
 
-    
+
 def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents():
     """Test ostorlab scan command when follow option is provided,
     should log specified agents.
@@ -460,7 +460,7 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents():
     assert "agent_ostorlab_nmap_" in result.output
     assert "agent_ostorlab_asteroid_" not in result.output
     assert "agent_ostorlab_inject_asset" not in result.output
-    
+
 
 @pytest.mark.parametrize(
     "invalid_agent_key", ["/nmap", "@agent/ostorlab/nmap/", "agent/ostorlab/nmap/"]
