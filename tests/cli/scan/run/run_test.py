@@ -386,8 +386,7 @@ def testOstorlabScanRunCLI_whenWrongArgsFormatProvided_showsErrorMessage() -> No
 
 
 @pytest.mark.parametrize(
-    "invalid_agent_key",
-    ["/nmap", "@agent/ostorlab/nmap/"],
+    "invalid_agent_key", ["/nmap", "@agent/ostorlab/nmap/", "agent/ostorlab/nmap/"]
 )
 def testOstorlabScanRunCLI_whenInvalidArgKey_showsErrorMessage(
     invalid_agent_key: str,

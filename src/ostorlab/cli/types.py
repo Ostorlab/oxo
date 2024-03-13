@@ -53,7 +53,7 @@ class AgentArgType(click.ParamType):
             )
 
 
-class AgentKeyTpe(click.ParamType):
+class AgentKeyType(click.ParamType):
     """Custom Click type for parsing agent keys."""
 
     name = "agent_key"

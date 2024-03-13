@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
     help="List agents keys (agent/<org>/<name> or @<org>/<name>). Org name can be omitted for defaults agent hosted "
     "by Ostorlab.",
     required=False,
-    type=types.AgentKeyTpe(),
+    type=types.AgentKeyType(),
 )
 @click.option(
     "--arg",

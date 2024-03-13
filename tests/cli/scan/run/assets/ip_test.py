@@ -163,7 +163,7 @@ def testScanRunFile_whenPassedArgIsOfTypeArrayAndSupportedByTheAgent_callScanWit
         ("agent/test/nmap", "agent/test/nmap"),
     ],
 )
-def testScanRunFile_whenAgentKeyPassed_callScanWithValidSettings(
+def testScanRunIP_whenAgentKeyPassed_callScanWithValidSettings(
     mocker: plugin.MockerFixture,
     nmap_agent_definition: agent_definitions.AgentDefinition,
     cli_agent_key: str,
