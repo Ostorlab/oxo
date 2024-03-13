@@ -78,23 +78,17 @@ class AgentKeyTpe(click.ParamType):
         Raises:
             click.BadParameter: If the agent key is malformed.
         """
-        try:
-            forward_slash_count = cli_value.count("/")
-            if forward_slash_count == 0:
-                return f"{OSTORLAB_AGENTS_PREFIX}/{cli_value}"
-            elif forward_slash_count == 1:
-                if cli_value.startswith("@"):
-                    return f"agent/{cli_value[1:]}"
-                else:
-                    raise ValueError
-            elif forward_slash_count == 2:
-                return cli_value
-            else:
-                raise ValueError
-        except ValueError:
+        forward_slash_count = cli_value.count("/")
+        if forward_slash_count == 0:
+            return f"{OSTORLAB_AGENTS_PREFIX}/{cli_value}"
+        elif forward_slash_count == 1 and cli_value.startswith("@") is True:
+            return f"agent/{cli_value[1:]}"
+        elif forward_slash_count == 2:
+            return cli_value
+        else:
             self.fail(
-                message=f"Invalid agent key: {cli_value}. The expected formats are: key (ostorlab organization will "
-                f"be used by default) | @org/key | agent/org/key",
+                message=f"Invalid agent key: {cli_value}. The expected formats are:  (agent/<org>/<name> or "
+                f"@<org>/<name>). Org name can be omitted for defaults agent hosted by Ostorlab.",
                 param=param,
                 ctx=ctx,
             )
