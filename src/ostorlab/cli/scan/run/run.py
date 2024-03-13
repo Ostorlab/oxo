@@ -142,8 +142,7 @@ def run(
 
     # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]
-    agents_to_follow = _prepare_agents_to_follow(agent_keys, follow, no_follow)
-    runtime_instance.follow = agents_to_follow
+    runtime_instance.follow = prepare_agents_to_follow(agent_keys, follow, no_follow)
 
     try:
         can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
@@ -181,7 +180,7 @@ def run(
         )
 
 
-def _prepare_agents_to_follow(
+def prepare_agents_to_follow(
     agent_keys: List[str], follow: List[str], no_follow: bool
 ) -> set[str]:
     """
