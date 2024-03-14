@@ -26,6 +26,7 @@ jobs:
         pip install .[scanner]
         pip install .[agent]
 
+    - name: Create DMG file
     - run: |
         hdiutil create -fs HFS+ -format UDRW -srcfolder . oxo.dmg
     - name: Release
