@@ -315,7 +315,7 @@ to control their behavior.
 # Publish your first Agent
 
 To write your first agent, you can check out a full
-tutorial [here](https://docs.ostorlab.co/tutorials/write-an-ostorlab-agent.html).
+tutorial [here](https://oxo.ostorlab.co/tutorials/write_an_agent).
 
 The steps are basically the following:
 
