@@ -1,5 +1,5 @@
 """
-Setup file for ostorlab.
+Setup file for OXO.
 Use setup.cfg to configure your project.
 
 This file was generated with PyScaffold 4.1.1.

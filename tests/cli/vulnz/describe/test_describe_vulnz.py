@@ -10,7 +10,7 @@ from ostorlab.runtimes.local.models import models
 def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(
     mocker, db_engine_path
 ):
-    """Test ostorlab vulnz describe command with correct commands and options.
+    """Test oxo vulnz describe command with correct commands and options.
     Should show vulnz details.
     """
     runner = CliRunner()

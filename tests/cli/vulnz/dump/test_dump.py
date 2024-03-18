@@ -14,7 +14,7 @@ from ostorlab.runtimes.local.models import models
 def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
     mocker, tmpdir, db_engine_path
 ):
-    """Test ostorlab vulnz dump command with correct commands and options.
+    """Test oxo vulnz dump command with correct commands and options.
     Should create a json file with the vulnerabilities.
 
     tmpdir : pytest fixture for temporary paths & files.
@@ -84,7 +84,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
     httpx_mock, tmpdir
 ):
-    """Test ostorlab vulnz dump command with correct commands and options and the selected runtime is cloud.
+    """Test oxo vulnz dump command with correct commands and options and the selected runtime is cloud.
     Should create a json file with the vulnerabilities.
 
     tmpdir : pytest fixture for temporary paths & files.
@@ -184,7 +184,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
     httpx_mock, tmpdir
 ):
-    """Test ostorlab vulnz dump command with correct commands and options and runtime is cloud.
+    """Test oxo vulnz dump command with correct commands and options and runtime is cloud.
     Should create a json file with the vulnerabilities.
 
     tmpdir : pytest fixture for temporary paths & files.
@@ -283,7 +283,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
 
 
 def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(httpx_mock, tmpdir):
-    """Test ostorlab vulnz dump command with correct commands and wrong scan id.
+    """Test oxo vulnz dump command with correct commands and wrong scan id.
     Should show not found error.
 
     tmpdir : pytest fixture for temporary paths & files.
@@ -330,7 +330,7 @@ def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(httpx_mock, tmpdir):
 def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
     mocker, tmpdir, db_engine_path
 ):
-    """Test ostorlab vulnz dump command with correct commands and options.
+    """Test oxo vulnz dump command with correct commands and options.
     Should create a csv file with the vulnerabilities.
 
     tmpdir : pytest fixture for temporary paths & files.
@@ -401,7 +401,7 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
 def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(
     mocker, tmpdir, db_engine_path
 ):
-    """Test ostorlab vulnz dump command with correct commands and options.
+    """Test oxo vulnz dump command with correct commands and options.
     Should create a json file with the vulnerabilities, ordered by the risk severity.
 
     tmpdir : pytest fixture for temporary paths & files.

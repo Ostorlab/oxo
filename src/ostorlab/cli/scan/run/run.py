@@ -1,7 +1,7 @@
 """Module for the command run inside the group scan.
 This module takes care of preparing the selected runtime and the lists of provided agents, before starting a scan.
 Example of usage:
-    - ostorlab scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
+    - oxo scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
 
 import io
 import logging
@@ -97,7 +97,7 @@ def run(
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
-        - ostorlab scan run --agent=agent/ostorlab/nmap --agent=agent/google/tsunami --title=test_scan ip 8.8.8.8
+        - oxo scan run --agent=agent/ostorlab/nmap --agent=agent/google/tsunami --title=test_scan ip 8.8.8.8
     """
     if no_asset is True and ctx.invoked_subcommand is not None:
         console.error(

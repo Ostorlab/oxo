@@ -10,7 +10,7 @@ from ostorlab.agent import definitions as agent_definitions
 
 
 def testScanRunIp_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):
-    """Test ostorlab scan run ip command with no options and no sub command.
+    """Test oxo scan run ip command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
     runner = CliRunner()
@@ -27,7 +27,7 @@ def testScanRunIp_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker)
 def testRunScanIp__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
     mocker,
 ):
-    """Test ostorlab scan run ip with non supported runtime, should exit with return code 1."""
+    """Test oxo scan run ip with non supported runtime, should exit with return code 1."""
 
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=False
@@ -55,7 +55,7 @@ def testScanRunFile_whenPassedArgSupportedByTheAgent_callScanWithValidSettings(
     mocker: plugin.MockerFixture,
     nmap_agent_definition: agent_definitions.AgentDefinition,
 ) -> None:
-    """Test ostorlab scan run ip command with valid arguments."""
+    """Test oxo scan run ip command with valid arguments."""
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
@@ -90,7 +90,7 @@ def testScanRunFile_whenPassedArgIsNotSupportedByTheAgent_callScanWithValidSetti
     mocker: plugin.MockerFixture,
     nmap_agent_definition: agent_definitions.AgentDefinition,
 ) -> None:
-    """Test ostorlab scan run ip command with arguments not supported by the agent."""
+    """Test oxo scan run ip command with arguments not supported by the agent."""
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
@@ -124,7 +124,7 @@ def testScanRunFile_whenPassedArgIsOfTypeArrayAndSupportedByTheAgent_callScanWit
     mocker: plugin.MockerFixture,
     nmap_agent_definition: agent_definitions.AgentDefinition,
 ) -> None:
-    """Test ostorlab scan run ip command with valid array argument."""
+    """Test oxo scan run ip command with valid array argument."""
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
@@ -169,7 +169,7 @@ def testScanRunIP_whenAgentKeyPassed_callScanWithValidSettings(
     cli_agent_key: str,
     expected_agent_key: str,
 ) -> None:
-    """Test the ostorlab scan run IP command with different agent key formats."""
+    """Test the oxo scan run IP command with different agent key formats."""
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)

@@ -6,7 +6,7 @@ from ostorlab.cli import rootcli
 
 
 def testAgentDeleteCLI_always_listDockerImagesWithAgent(mocker):
-    """Test ostorlab agent delete CLI command.
+    """Test oxo agent delete CLI command.
 
     This is just a smoke test to avoid a complex mock.
     """

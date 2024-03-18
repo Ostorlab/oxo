@@ -3,7 +3,7 @@
 All agents should inherit from the agent class to access the different features, like automated message
 serialization, message receiving and sending, selector enrollment, agent health check, etc.
 
-To use it, check out documentations at https://docs.ostorlab.co/.
+To use it, check out documentations at https://oxo.ostorlab.co/docs.
 """
 
 import abc
@@ -492,7 +492,7 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
     stops. The function is not called when the program is killed by a signal not handled by Python, when a Python fatal
     internal error is detected, or when `os._exit()` is called.
 
-    For example and more details on how to implement an agent, refer to https://docs.ostorlab.co.
+    For example and more details on how to implement an agent, refer to https://oxo.ostorlab.co/tutorials/write_an_agent.
     """
 
     def is_healthy(self) -> bool:

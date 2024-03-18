@@ -6,7 +6,7 @@ from ostorlab.cli import rootcli
 
 
 def testAgentHealthcheckCLI_whenAgentIsNotHealthy_commandExitsWithError():
-    """Test ostorlab agent healthcheck CLI command when healthcheck should fail."""
+    """Test oxo agent healthcheck CLI command when healthcheck should fail."""
     runner = testing.CliRunner()
 
     result = runner.invoke(rootcli.rootcli, ["agent", "healthcheck"])
@@ -16,7 +16,7 @@ def testAgentHealthcheckCLI_whenAgentIsNotHealthy_commandExitsWithError():
 
 
 def testAgentHealthcheckCLI_whenAgentIsHealthy_commandExitsWithoutError():
-    """Test ostorlab agent healthcheck CLI command when healthcheck should pass."""
+    """Test oxo agent healthcheck CLI command when healthcheck should pass."""
     runner = testing.CliRunner()
 
     result = runner.invoke(

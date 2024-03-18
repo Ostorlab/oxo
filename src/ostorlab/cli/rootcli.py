@@ -1,4 +1,4 @@
-"""This module is the entry point for ostorlab CLI."""
+"""This module is the entry point for OXO CLI."""
 
 import logging
 import json

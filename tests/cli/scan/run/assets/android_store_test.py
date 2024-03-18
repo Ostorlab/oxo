@@ -6,7 +6,7 @@ from ostorlab.cli import rootcli
 
 
 def testScanRunAndroidStore_whenNoOptionsProvided_shouldExitAndShowError(mocker):
-    """Test ostorlab scan run android-store command with no options and no sub command.
+    """Test oxo scan run android-store command with no options and no sub command.
     Should show error message and exit with exit_code = 2."""
 
     runner = CliRunner()

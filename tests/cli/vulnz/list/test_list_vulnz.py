@@ -11,7 +11,7 @@ from ostorlab.runtimes.local.models import models
 def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLocal_showsVulnzInfo(
     mocker, db_engine_path
 ):
-    """Test ostorlab vulnz list command with correct commands and options.
+    """Test oxo vulnz list command with correct commands and options.
     Should show vulnz information.
     """
     runner = CliRunner()
@@ -116,7 +116,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
-    """Test ostorlab vulnz list command with filter by risk rating and runtime is local.
+    """Test oxo vulnz list command with filter by risk rating and runtime is local.
     Should show the correct results."""
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -207,7 +207,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
-    """Test ostorlab vulnz list command with filter by search and runtime is local.
+    """Test oxo vulnz list command with filter by search and runtime is local.
     Should show the correct results."""
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -252,7 +252,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
 def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrectResult(
     httpx_mock,
 ) -> None:
-    """Test ostorlab vulnz list command with filter by risk rating and runtime is cloud.
+    """Test oxo vulnz list command with filter by risk rating and runtime is cloud.
     Should show the correct result."""
     mock_response = {
         "data": {
@@ -372,7 +372,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
 def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectResult(
     httpx_mock,
 ) -> None:
-    """Test ostorlab vulnz list command with filter by search and runtime is cloud.
+    """Test oxo vulnz list command with filter by search and runtime is cloud.
     Should show the correct result."""
     mock_response = {
         "data": {
