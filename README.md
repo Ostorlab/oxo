@@ -3,7 +3,7 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-# Ostorlab Scan Orchestration Engine aka OXO
+# OXO Scan Orchestration Engine
 
 Ostorlab is a security scanning framework built for modularity, scalability and simplicity.
 
@@ -349,10 +349,3 @@ Implementation of popular tools like:
 * ~~[Subjack](https://github.com/haccer/subjack): Subdomain takeover scanning tool.~~
 * [DnsReaper](https://github.com/punk-security/dnsReaper): Subdomain takeover scanning tool.
 
-## Roadmap
-
-* Add support for ARM64 agents
-* Add Kubernetes-based runtime
-* Support for Mypyc to improve performance
-* Reduce start-time (switch from slow starting services to faster alternatives like NATS or Redis Queues)
-* Support for running agent as standalone tools
