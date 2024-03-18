@@ -143,29 +143,16 @@ class CreateAssetAPIRequest(request.APIRequest):
                     "packageName": self._asset.package_name,
                 }
             }
-        elif isinstance(self._asset, ip.IP):
+        elif any(
+            isinstance(self._asset, t)
+            for t in (
+                ip.IP,
+                ipv4.IPv4,
+                ipv6.IPv6,
+            )
+        ):
             asset_type_variables = {
-                "ip": {
-                    "host": self._asset.host,
-                    "mask": self._asset.mask,
-                    "version": self._asset.version,
-                }
-            }
-        elif isinstance(self._asset, ipv4.IPv4):
-            asset_type_variables = {
-                "ipV4": {
-                    "host": self._asset.host,
-                    "mask": self._asset.mask,
-                    "version": self._asset.version,
-                }
-            }
-        elif isinstance(self._asset, ipv6.IPv6):
-            asset_type_variables = {
-                "ipV6": {
-                    "host": self._asset.host,
-                    "mask": self._asset.mask,
-                    "version": self._asset.version,
-                }
+                "network": {"network": [f"{self._asset.host}/{self._asset.mask}"]}
             }
         elif isinstance(self._asset, list):
             if all(isinstance(a, link.Link) for a in self._asset) is True:

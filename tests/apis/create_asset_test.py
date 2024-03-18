@@ -31,6 +31,7 @@ def testcreateAssetApiRequest_whenAssetDoesNotRequireUploadedFiles_returnsReques
 
     assert "operations" not in api_request.data
     assert "map" not in api_request.data
+    assert "127.0.0.1/32" in api_request.data["variables"]
 
 
 def testcreateAssetApiRequest_whenAssetTypeIsUnknown_raisesNotImplementedError():
