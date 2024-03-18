@@ -235,7 +235,7 @@ class LocalRuntime(runtime.Runtime):
         except agent_runtime.MissingAgentDefinitionLabel as e:
             console.error(
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
-                f" docker instead of `ostorlab agent build` command"
+                f" docker instead of `oxo agent build` command"
             )
             self.stop(str(self._scan_db.id))
 

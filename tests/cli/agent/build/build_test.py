@@ -10,7 +10,7 @@ from ostorlab.cli import rootcli
 
 
 def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage():
-    """Test ostorlab agent build CLI command without the required file option. Should show help message, and confirm
+    """Test oxo agent build CLI command without the required file option. Should show help message, and confirm
     the --file option is missing.
     """
     runner = testing.CliRunner()
@@ -32,7 +32,7 @@ def _is_docker_image_present(image: str):
 
 
 def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
-    """Test ostorlab agent build CLI command : Case where the command is valid. The agent container should be built."""
+    """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     dummy_def_yaml_file_path = (
         Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
     )
@@ -54,7 +54,7 @@ def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
 def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(
     image_cleanup,
 ):
-    """Test ostorlab agent build CLI command : Case where the command is valid. The agent container should be built."""
+    """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     del image_cleanup
     dummy_def_yaml_file_path = Path(__file__).parent / "assets/dummydef.yaml"
     runner = testing.CliRunner()
@@ -75,7 +75,7 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
 def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_showsMessageAndExists(
     image_cleanup,
 ):
-    """Test ostorlab agent build CLI command : Case where the command is valid. The agent container should be built."""
+    """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     del image_cleanup
     dummy_def_yaml_file_path = Path(__file__).parent / "assets/dummydef.yaml"
     runner = testing.CliRunner()
@@ -106,7 +106,7 @@ def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_showsMessageAndExi
 def testAgentBuildCLI_whenImageAlreadyExistsAndForceFlagPassed_buildCompletedAndNoRaiseImageNotFoundExcep(
     image_cleanup,
 ):
-    """Test ostorlab agent build CLI command : Case where the command is valid, the image exists and force flag is
+    """Test oxo agent build CLI command : Case where the command is valid, the image exists and force flag is
     passed. The agent container should be built.
     """
     del image_cleanup

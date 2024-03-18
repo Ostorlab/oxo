@@ -9,7 +9,7 @@ from ostorlab.cli import rootcli
 def testScanRunFile_whenUrlIsProvided_callScanWithValidListOFAssets(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Test ostorlab scan run file command with --url option.Should call scan with valid list of assets."""
+    """Test oxo scan run file command with --url option.Should call scan with valid list of assets."""
 
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
@@ -49,7 +49,7 @@ def testScanRunFile_whenUrlIsProvided_callScanWithValidListOFAssets(
 def testScanRunFile_whenFileProvided_callScanWithValidListOFAssets(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Test ostorlab scan run file command with --file option.Should call scan with valid list of assets."""
+    """Test oxo scan run file command with --file option.Should call scan with valid list of assets."""
 
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)

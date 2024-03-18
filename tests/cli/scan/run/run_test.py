@@ -125,7 +125,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
 def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
     mocker,
 ):
-    """Test ostorlab scan run command with all valid options and no sub command.
+    """Test oxo scan run command with all valid options and no sub command.
     Should show list of available commands (assets) and exit with error exit_code = 2.
     """
 
@@ -150,7 +150,7 @@ def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
 
 
 def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(mocker):
-    """Unittest ostorlab scan run in cloud runtime with all valid options and arguments.
+    """Unittest oxo scan run in cloud runtime with all valid options and arguments.
     Should send api requests for creating Agent group, asset & scan.
     And displays Scan created successfully.
     """
@@ -216,7 +216,7 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
 
 
 def testScanRunCloudRuntime_whenValidMultipleLinksGiven_CreatesAgGrAssetAndScan(mocker):
-    """Unittest ostorlab scan run in cloud runtime with multiple links.
+    """Unittest oxo scan run in cloud runtime with multiple links.
     Should send api requests for creating Agent group, asset & scan.
     And displays Scan created successfully.
     """

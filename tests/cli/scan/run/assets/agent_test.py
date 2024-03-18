@@ -6,7 +6,7 @@ from ostorlab.cli import rootcli
 
 
 def testScanRunAgent_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):
-    """Test ostorlab scan run agent command with no options and no sub command.
+    """Test oxo scan run agent command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
     runner = CliRunner()
@@ -23,7 +23,7 @@ def testScanRunAgent_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mock
 def testRunScanAgent__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
     mocker,
 ):
-    """Test ostorlab scan run agent with non-supported runtime, should exit with return code 1."""
+    """Test oxo scan run agent with non-supported runtime, should exit with return code 1."""
 
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=False

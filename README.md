@@ -37,7 +37,7 @@ To run any of these tools combined, simply run the following command:
 > Ostorlab CLI is accessible also using the `oxo` alias for convenience.
 
 ```shell
-ostorlab scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
+oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
 ```
 
 or 
@@ -67,8 +67,8 @@ ostorlab scan list
 Once the scan has completed, to access the scan results, run:
 
 ```shell
-ostorlab vulnz list --scan-id <scan-id>
-ostorlab vulnz describe --vuln-id <vuln-id>
+oxo vulnz list --scan-id <scan-id>
+oxo vulnz describe --vuln-id <vuln-id>
 ```
 
 # Examples
@@ -107,7 +107,7 @@ agents:
 ```
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml ip 8.8.8.8 8.8.4.4
+oxo scan run --install -g agent_group.yaml ip 8.8.8.8 8.8.4.4
 ```
 
 * Run a web scan:
@@ -124,7 +124,7 @@ agents:
 ```
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml domain-name example.com
+oxo scan run --install -g agent_group.yaml domain-name example.com
 ```
 
 * List all subdomains, resolve their IP addresses and run a network scan:
@@ -144,7 +144,7 @@ agents:
 ```
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml domain-name example.com
+oxo scan run --install -g agent_group.yaml domain-name example.com
 ```
 
 * Brute force all TLDs of a subdomain and resolve their IP addresses:
@@ -165,7 +165,7 @@ agents:
 ```
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml domain-name example.com
+oxo scan run --install -g agent_group.yaml domain-name example.com
 ```
 
 * Scanning a list of assets is supported using a Yaml asset definition file:
@@ -173,7 +173,7 @@ ostorlab scan run --install -g agent_group.yaml domain-name example.com
 Inject domain name assets `example.com` and `example_2.com`
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml -a assets_group.yaml
+oxo scan run --install -g agent_group.yaml -a assets_group.yaml
 ```
 
 ```yaml
@@ -190,7 +190,7 @@ assets:
 Inject IOS store assets with the bundle_ids `com.example.app` and `com.example_2.app`
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml -a assets_group.yaml
+oxo scan run --install -g agent_group.yaml -a assets_group.yaml
 ```
 
 ```yaml
@@ -207,7 +207,7 @@ assets:
 Here is a more encompassing example:
 
 ```shell
-ostorlab scan run --install -g agent_group.yaml -a assets_group.yaml
+oxo scan run --install -g agent_group.yaml -a assets_group.yaml
 ```
 
 ```yaml

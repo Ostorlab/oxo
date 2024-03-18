@@ -6,7 +6,7 @@ from ostorlab.cli import rootcli
 
 
 def testScanRunAndroidApk_whenNoOptionsProvided_shouldExitAndShowError(mocker):
-    """Test ostorlab scan run android-apk command with no options and no sub command.
+    """Test oxo scan run android-apk command with no options and no sub command.
     Should show error message and exit with exit_code = 2."""
 
     runner = CliRunner()
@@ -26,7 +26,7 @@ def testScanRunAndroidApk_whenNoOptionsProvided_shouldExitAndShowError(mocker):
 def testScanRunAndroidApk_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowError(
     mocker,
 ):
-    """Test ostorlab scan run android-apk command when both file & url options are provided.
+    """Test oxo scan run android-apk command when both file & url options are provided.
     Should show error message and exit with exit_code = 2."""
 
     runner = CliRunner()

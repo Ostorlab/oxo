@@ -6,7 +6,7 @@ from ostorlab.cli import rootcli
 
 
 def testAgentListCLI_always_listDockerImagesWithAgent(mocker):
-    """Test ostorlab agent list CLI command returns list of installed agents.
+    """Test oxo agent list CLI command returns list of installed agents.
 
     This is just a smoke test to avoid a complex mock
     """

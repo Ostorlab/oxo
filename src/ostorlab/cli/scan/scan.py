@@ -97,9 +97,9 @@ def scan(
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
         - To show list of scans:\n
-        ostorlab scan list\n
+        oxo scan list\n
         - To stop a scan:\n
-        ostorlab scan stop <scan-id>\n
+        oxo scan stop <scan-id>\n
     """
     try:
         if mq_exposed_ports is not None:

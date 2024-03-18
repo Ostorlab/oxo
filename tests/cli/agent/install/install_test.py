@@ -11,7 +11,7 @@ from ostorlab.cli import rootcli
 
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
-    """Test ostorlab agent install CLI command without the required agent_key option.
+    """Test oxo agent install CLI command without the required agent_key option.
     Should show help message, and confirm the --agent option is missing.
     """
     runner = testing.CliRunner()
@@ -24,7 +24,7 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
 
 
 def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(httpx_mock, mocker):
-    """Test ostorlab agent install CLI command with a wrong agent_key value.
+    """Test oxo agent install CLI command with a wrong agent_key value.
     Should show message.
     """
 
@@ -59,7 +59,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(httpx_mock, 
 
 
 def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, httpx_mock):
-    """Test ostorlab agent install CLI command with a valid agent_key value should install the agent."""
+    """Test oxo agent install CLI command with a valid agent_key value should install the agent."""
 
     image_pull_mock = mocker.patch("docker.api.client.APIClient.pull", autospec=True)
     image_get_mock = mocker.patch(
