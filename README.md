@@ -5,9 +5,9 @@
 
 # OXO Scan Orchestration Engine
 
-Ostorlab is a security scanning framework built for modularity, scalability and simplicity.
+OXO is a security scanning framework built for modularity, scalability and simplicity.
 
-Ostorlab Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
+OXO Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
 
 ![Scan Run](images/scan_run.gif)
 
@@ -18,7 +18,7 @@ Docker is required to run scans locally. To install docker, please follow these
 
 # Installing
 
-Ostorlab ships as a Python package on pypi. To install it, simply run the following command if you have `pip` already
+OXO ships as a Python package on pypi. To install it, simply run the following command if you have `pip` already
 installed.
 
 ```shell
@@ -27,14 +27,14 @@ pip install -U ostorlab
 
 # Getting Started
 
-Ostorlab ships with a store that boasts dozens of agents, from network scanning agents like nmap, openvas, nuclei or
+OXO ships with a store that boasts dozens of agents, from network scanning agents like nmap, openvas, nuclei or
 tsunami,
 web scanner like Zap, web fingerprinting tools like Whatweb and Wappalyzer, DNS brute forcing like Subfinder and Dnsx,
 malware file scanning like Virustotal and much more.
 
 To run any of these tools combined, simply run the following command:
 
-> Ostorlab CLI is accessible also using the `oxo` alias for convenience.
+> OXO CLI is accessible using the `oxo` command.
 
 ```shell
 oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
@@ -61,7 +61,7 @@ Agents are shipped as standard docker images.
 To check the scan status, run:
 
 ```shell
-ostorlab scan list
+oxo scan list
 ```
 
 Once the scan has completed, to access the scan results, run:
@@ -264,10 +264,10 @@ for a Log4J bug, this requires:
 Tools will often re-invent the wheel by poorly re-implementing all of these and then add their detection. These often
 results in poor detectors as most of these are complex tasks that requires specialized tools.
 
-Ostorlab offers the ease of chaining the specialized tools to focus on perform the required task, offering increased
+OXO offers the ease of chaining the specialized tools to focus on perform the required task, offering increased
 detection, faster delivery.
 
-To do that, Ostorlab provides on the following:
+To do that, OXO provides on the following:
 
 * A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, like distributed locking,
   QPS limiting, multiple instance parallelization ...
@@ -283,7 +283,7 @@ To do that, Ostorlab provides on the following:
 
 # Assets
 
-Ostorlab supports scanning of multiple asset types, below is the list of currently supported:
+OXO supports scanning of multiple asset types, below is the list of currently supported:
 
 | Asset       | Description                                                                        |
 |-------------|------------------------------------------------------------------------------------|
@@ -298,7 +298,7 @@ Ostorlab supports scanning of multiple asset types, below is the list of current
 
 # The Store
 
-Ostorlab lists all agents on a public store where you can search and also publish your own agents.
+OXO lists all agents on a public store where you can search and also publish your own agents.
 
 ![Store](images/store2.gif)
 
