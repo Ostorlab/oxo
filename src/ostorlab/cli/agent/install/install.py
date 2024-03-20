@@ -7,13 +7,17 @@ from ostorlab.cli.agent import agent as agent_command
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
 from ostorlab.cli import docker_requirements_checker
-
+from ostorlab.cli import types
 
 console = cli_console.Console()
 
 
 @agent_command.command()
-@click.argument("agent", required=True)
+@click.argument(
+    "agent",
+    required=True,
+    type=types.AgentKeyType(),
+)
 @click.option("--version", "-v", help="Agent version.", required=False)
 def install(agent: str, version: str = "") -> None:
     """Install an agent : pull the image from the ostorlab store."""
