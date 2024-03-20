@@ -65,6 +65,6 @@ jobs:
           # relative path to the place where source code with Dockerfile is located
           context: .
           tags: |
-            ostorlab.store/ostorlab/ostorlab:${{env.TAG}}
-            ostorlab.store/ostorlab/ostorlab:latest
+            ostorlab/oxo:${{env.TAG}}
+            ostorlab/oxo:latest
           push: true
