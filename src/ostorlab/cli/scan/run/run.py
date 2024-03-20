@@ -65,8 +65,10 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--follow",
-    help="Follow logs of provided list of agents and services.",
+    help="Follow logs of provided list of agents given by their keys (agent/<org>/<name> or <org>/<name>). "
+    "Org name can be omitted for defaults agents hosted by Ostorlab.",
     multiple=True,
+    type=types.AgentKeyType(),
     default=[],
 )
 @click.option(
