@@ -54,7 +54,6 @@ jobs:
       - name: Login to ostorlab store
         uses: docker/login-action@v1
         with:
-          registry: ostorlab.store
           username: ${{ secrets.store_user }}
           password: ${{ secrets.store_password }}
       - name: truncate current tag
