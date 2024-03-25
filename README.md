@@ -349,3 +349,14 @@ Implementation of popular tools like:
 * ~~[Subjack](https://github.com/haccer/subjack): Subdomain takeover scanning tool.~~
 * [DnsReaper](https://github.com/punk-security/dnsReaper): Subdomain takeover scanning tool.
 
+## Credits
+
+As an open-source project in a rapidly developing field, we are always open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+
+We would like to thank the following contributors for their help in making OXO a better tool:
+
+* [@jamu85](https://github.com/jamu85)
+
+* [@ju-c](https://github.com/ju-c)
+
+* [@distortedsignal](https://github.com/distortedsignal)
