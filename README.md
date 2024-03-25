@@ -355,8 +355,8 @@ As an open-source project in a rapidly developing field, we are always open to c
 
 We would like to thank the following contributors for their help in making OXO a better tool:
 
-[@jamu85](https://github.com/jamu85)
+* [@jamu85](https://github.com/jamu85)
 
-[@ju-c](https://github.com/ju-c)
+* [@ju-c](https://github.com/ju-c)
 
-[@distortedsignal](https://github.com/distortedsignal)
+* [@distortedsignal](https://github.com/distortedsignal)
