@@ -355,8 +355,8 @@ As an open-source project in a rapidly developing field, we are always open to c
 
 We would like to thank the following contributors for their help in making OXO a better tool:
 
-[@jamu85](https://github.com/jamu85) - Implement arch check  https://github.com/Ostorlab/oxo/pull/314
+[@jamu85](https://github.com/jamu85)
 
-[@ju-c](https://github.com/ju-c) - Fixing a typo (from 'reutrn' to 'return')  https://github.com/Ostorlab/oxo/pull/174
+[@ju-c](https://github.com/ju-c)
 
-[@distortedsignal](https://github.com/distortedsignal) - Add minimum python version  https://github.com/Ostorlab/oxo/pull/555
+[@distortedsignal](https://github.com/distortedsignal)
