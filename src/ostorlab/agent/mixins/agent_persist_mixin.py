@@ -63,7 +63,7 @@ class AgentPersistMixin:
         Returns:
             True if it is a member, False otherwise.
         """
-        return self._redis_client.sismember(key, value)
+        return self._redis_client.sismember(key, value) == 1
 
     def set_len(self, key: Union[bytes, str]) -> int:
         """Helper function that returns the set cardinality (number of elements) of the set stored at key.
