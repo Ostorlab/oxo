@@ -71,6 +71,17 @@ oxo vulnz list --scan-id <scan-id>
 oxo vulnz describe --vuln-id <vuln-id>
 ```
 
+# Docker Image 
+To run `oxo` in a container, you may use the publically available image and run the following command:  
+
+```shell
+docker run -v /var/run/docker.sock:/var/run/docker.sock ostorlab/oxo:latest scan run --install --agent nmap --agent nuclei --agent tsunami ip 8.8.8.8
+```
+
+Notes:
+* The command starts directly with: `scan run`, this is because the `ostorlab/oxo` image has `oxo` as an `entrypoint`.
+* It is important to mount the docker socket so `oxo` can create the agent in the host machine.
+
 # Examples
 
 Agents accept argument to tweak their behavior, like setting the default ports for nmap or passing the API key to
