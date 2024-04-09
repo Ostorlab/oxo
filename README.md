@@ -72,7 +72,7 @@ oxo vulnz describe --vuln-id <vuln-id>
 ```
 
 # Docker Image 
-To run `oxo` in a container use the publically available image and run the following command:  
+To run `oxo` in a container, you may use the publically available image and run the following command:  
 
 ```shell
 docker run -v /var/run/docker.sock:/var/run/docker.sock ostorlab/oxo:latest scan run --install --agent nmap --agent nuclei --agent tsunami ip 8.8.8.8
