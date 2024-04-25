@@ -3,11 +3,19 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
+> [!IMPORTANT]
+> OXO (previously known as Ostorlab) has reached v1.0.0, [Release announcement](https://oxo.ostorlab.co/docs/whats_new).
+
 # OXO Scan Orchestration Engine
 
 OXO is a security scanning framework built for modularity, scalability and simplicity.
 
 OXO Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
+
+
+* Documentation: https://oxo.ostorlab.co/docs
+* Agents Store: https://oxo.ostorlab.co/store
+* Examples: https://oxo.ostorlab.co/tutorials/examples
 
 ![Scan Run](images/scan_run.gif)
 
@@ -22,7 +30,7 @@ OXO ships as a Python package on pypi. To install it, simply run the following c
 installed.
 
 ```shell
-pip install -U ostorlab
+pip install -U oxo
 ```
 
 # Getting Started
@@ -37,7 +45,7 @@ To run any of these tools combined, simply run the following command:
 > OXO CLI is accessible using the `oxo` command.
 
 ```shell
-oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
+oxo scan run --install --agent nmap --agent openvas --agent tsunami --agent nuclei ip 8.8.8.8
 ```
 
 or 
@@ -49,10 +57,10 @@ oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openva
 
 This command will download and install the following scanning agents:
 
-* `agent/ostorlab/nmap`
-* `agent/ostorlab/tsunami`
-* `agent/ostorlab/nuclei`
-* `agent/ostorlab/openvas`
+* [agent/ostorlab/nmap](https://oxo.ostorlab.co/store/agent/ostorlab/nmap)
+* [agent/ostorlab/tsunami](https://oxo.ostorlab.co/store/agent/ostorlab/tsunami)
+* [agent/ostorlab/nuclei](https://oxo.ostorlab.co/store/agent/ostorlab/nuclei)
+* [agent/ostorlab/openvas](https://oxo.ostorlab.co/store/agent/ostorlab/openvas)
 
 And will scan the target IP address `8.8.8.8`.
 
@@ -72,7 +80,7 @@ oxo vulnz describe --vuln-id <vuln-id>
 ```
 
 # Docker Image 
-To run `oxo` in a container, you may use the publically available image and run the following command:  
+To run `oxo` in a container, you may use the publicly available image and run the following command:  
 
 ```shell
 docker run -v /var/run/docker.sock:/var/run/docker.sock ostorlab/oxo:latest scan run --install --agent nmap --agent nuclei --agent tsunami ip 8.8.8.8
@@ -273,9 +281,9 @@ for a Log4J bug, this requires:
 * Callback interception
 
 Tools will often re-invent the wheel by poorly re-implementing all of these and then add their detection. These often
-results in poor detectors as most of these are complex tasks that requires specialized tools.
+result in poor detectors as most of these are complex tasks that require specialized tools.
 
-OXO offers the ease of chaining the specialized tools to focus on perform the required task, offering increased
+OXO offers the ease of chaining the specialized tools to focus on performing the required task, offering increased
 detection, faster delivery.
 
 To do that, OXO provides on the following:
