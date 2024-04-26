@@ -3,9 +3,6 @@
 [![Ostorlab blog](https://img.shields.io/badge/blog-ostorlab%20news-red)](https://blog.ostorlab.co/)
 [![Twitter Follow](https://img.shields.io/twitter/follow/ostorlabsec.svg?style=social)](https://twitter.com/ostorlabsec)
 
-> [!IMPORTANT]
-> OXO (previously known as Ostorlab) has reached v1.0.0, [Release announcement](https://oxo.ostorlab.co/docs/whats_new).
-
 # OXO Scan Orchestration Engine
 
 OXO is a security scanning framework built for modularity, scalability and simplicity.
@@ -13,9 +10,10 @@ OXO is a security scanning framework built for modularity, scalability and simpl
 OXO Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
 
 
-* Documentation: https://oxo.ostorlab.co/docs
-* Agents Store: https://oxo.ostorlab.co/store
-* Examples: https://oxo.ostorlab.co/tutorials/examples
+* [Documentation](https://oxo.ostorlab.co/docs)
+* [Agents Store](https://oxo.ostorlab.co/store)
+* [CLI Manual](https://oxo.ostorlab.co/docs/cli)
+* [Examples](https://oxo.ostorlab.co/docs/examples)
 
 ![Scan Run](images/scan_run.gif)
 
@@ -89,216 +87,6 @@ docker run -v /var/run/docker.sock:/var/run/docker.sock ostorlab/oxo:latest scan
 Notes:
 * The command starts directly with: `scan run`, this is because the `ostorlab/oxo` image has `oxo` as an `entrypoint`.
 * It is important to mount the docker socket so `oxo` can create the agent in the host machine.
-
-# Examples
-
-Agents accept argument to tweak their behavior, like setting the default ports for nmap or passing the API key to
-Virustotal. Agents composition can also be saved to a YAML file for latter use. See below some examples
-
-* Run a network scan:
-
-```yaml
-# file: agent_group.yaml
-kind: AgentGroup
-description: Grouping of 6 agents.
-agents:
-  - key: agent/ostorlab/nmap
-    args:
-      - name: ports
-        type: string
-        description: List of ports to scan.
-        value: '22,443,80'
-  - key: agent/ostorlab/tsunami
-    args: [ ]
-  - key: agent/ostorlab/openvas
-    args: [ ]
-  - key: agent/ostorlab/nuclei
-    args:
-      - name: template_urls
-        type: array
-        description: List of template urls to run. These will be fetched by the agent
-          and passed to Nuclei.
-        value: ""
-      - name: use_default_templates
-        type: boolean
-        description: use nuclei's default templates to scan.
-        value: true
-```
-
-```shell
-oxo scan run --install -g agent_group.yaml ip 8.8.8.8 8.8.4.4
-```
-
-* Run a web scan:
-
-```yaml
-# file: agent_group.yaml
-kind: AgentGroup
-description: Grouping of 4 agents.
-agents:
-  - key: agent/ostorlab/zap
-    args: [ ]
-  - key: agent/ostorlab/whatweb
-    args: [ ]
-```
-
-```shell
-oxo scan run --install -g agent_group.yaml domain-name example.com
-```
-
-* List all subdomains, resolve their IP addresses and run a network scan:
-
-```yaml
-# file: agent_group.yaml
-kind: AgentGroup
-description: Grouping of 5 agents.
-agents:
-  - key: agent/ostorlab/nmap
-    args: [ ]
-    port_mapping: [ ]
-  - key: agent/ostorlab/subfinder
-    args: [ ]
-  - key: agent/ostorlab/dnsx
-    args: [ ]
-```
-
-```shell
-oxo scan run --install -g agent_group.yaml domain-name example.com
-```
-
-* Brute force all TLDs of a subdomain and resolve their IP addresses:
-
-```yaml
-# file: agent_group.yaml
-kind: AgentGroup
-description: Grouping of 5 agents.
-agents:
-  - key: agent/ostorlab/nmap
-    args: [ ]
-  - key: agent/ostorlab/all_tlds
-    args: [ ]
-  - key: agent/ostorlab/subfinder
-    args: [ ]
-  - key: agent/ostorlab/dnsx
-    args: [ ]
-```
-
-```shell
-oxo scan run --install -g agent_group.yaml domain-name example.com
-```
-
-* Scanning a list of assets is supported using a Yaml asset definition file:
-
-Inject domain name assets `example.com` and `example_2.com`
-
-```shell
-oxo scan run --install -g agent_group.yaml -a assets_group.yaml
-```
-
-```yaml
-# file: asset_group.yaml
-description: Target group definition
-kind: targetGroup
-name: master_scan
-assets:
-  domain:
-    - name: "example.com"
-    - name: "example_2.com"
-```
-
-Inject IOS store assets with the bundle_ids `com.example.app` and `com.example_2.app`
-
-```shell
-oxo scan run --install -g agent_group.yaml -a assets_group.yaml
-```
-
-```yaml
-# file: asset_group.yaml
-description: Target group definition
-kind: targetGroup
-name: master_scan
-assets:
-  iosStore:
-    - bundle_id: "com.example.app"
-    - bundle_id: "com.example_2.app"
-```
-
-Here is a more encompassing example:
-
-```shell
-oxo scan run --install -g agent_group.yaml -a assets_group.yaml
-```
-
-```yaml
-# file: asset_group.yaml
-description: Target group definition for the NSA
-kind: targetGroup
-name: master_scan
-assets:
-  androidStore:
-      - package_name: "com.example.app"
-      - package_name: "com.example_2.app"
-  androidApkFile:
-      - path: /home/organisation/assets/application.apk
-      - path: /home/organisation/assets/application.apk
-      - url: https://exanple.storage.com/production.apk
-      - url: https://exanple.storage.com/dev.apk
-  androidAabFile:
-      - path: /home/organisation/assets/application.aab
-      - path: /home/organisation/assets/application.aab
-      - url: https://exanple.storage.com/production.aab
-      - url: https://exanple.storage.com/dev.aab
-  iosStore:
-      - bundle_id: "com.example.app"
-      - bundle_id: "com.example_2.app"
-  iosFile:
-      - path: /home/organisation/assets/application.ipa
-      - path: /home/organisation/assets/application.ipa
-      - url: https://exanple.storage.com/production.ipa
-      - url: https://exanple.storage.com/dev.ipa
-  link:
-      - url: "https://www.nasa.gov/humans-in-space/artemis/"
-        method: "GET"
-      - url: "https://www.nasa.gov/specials/artemis/"
-        method: "POST"
-  domain:
-      - name: "example.co"
-      - name: "example_2.dev"
-  ip:
-      - host: "10.21.11.11"
-        mask: 30
-      - host: 0.1.2.1
-```
-
-## The Pitch
-
-Testing for even the most simple vulnerabilities often requires chaining multiple tools. Take for instance scanning
-for a Log4J bug, this requires:
-
-* Crawling
-* Path brute forcing
-* Request Injection Point fuzzing
-* Callback interception
-
-Tools will often re-invent the wheel by poorly re-implementing all of these and then add their detection. These often
-result in poor detectors as most of these are complex tasks that require specialized tools.
-
-OXO offers the ease of chaining the specialized tools to focus on performing the required task, offering increased
-detection, faster delivery.
-
-To do that, OXO provides on the following:
-
-* A simple, yet powerful SDK to make simple cases effortless while supporting the complex one, like distributed locking,
-  QPS limiting, multiple instance parallelization ...
-* A battle-tested framework that has been powering Ostorlab Platform for years and used to perform complex dynamic
-  analysis setup and demanding static analysis workloads running on multiple machines.
-* Performant and scalable design, thanks to the use of message queue with dynamic routing, binary and compact message
-  serialisation with protobuf, universal file format using docker image and resilient deployment thanks to docker swarm.
-* A store of agents that makes it easy to use and discover tools to add your toolset.
-* An automated builder to take the hassle away of building and publishing.
-* A GUI to prepare and write down your tool collection setup.
-* Focus on documentation, multiple tutorials and upcoming videos and conference presentations.
-* A ready to use one-click template repo to get started.
 
 # Assets
 
