@@ -15,7 +15,7 @@ OXO Engine combines specialized tools to work cohesively to find vulnerabilities
 * [CLI Manual](https://oxo.ostorlab.co/docs/cli)
 * [Examples](https://oxo.ostorlab.co/docs/examples)
 
-![Scan Run](images/scan_run.gif)
+![Main oxo](images/main_oxo_gif.gif)
 
 # Requirements
 
@@ -107,17 +107,8 @@ OXO supports scanning of multiple asset types, below is the list of currently su
 
 OXO lists all agents on a public store where you can search and also publish your own agents.
 
-![Store](images/store2.gif)
+![Store](images/store-preview.gif)
 
-In addition, the store, a graphical agent group builder is also available to compose multiple agents and see how
-they would interact with each other.
-
-![Store](images/store.gif)
-
-The builder also helps with generating the agent group YAML file to set special arguments that can be passed to agents
-to control their behavior.
-
-![Build](images/agent_group.gif)
 
 # Publish your first Agent
 
