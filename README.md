@@ -28,7 +28,7 @@ OXO ships as a Python package on pypi. To install it, simply run the following c
 installed.
 
 ```shell
-pip install -U oxo
+pip install -U ostorlab
 ```
 
 # Getting Started
