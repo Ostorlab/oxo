@@ -4,7 +4,6 @@ import asyncio
 from unittest import mock
 
 import pytest
-from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.utils import strings
@@ -130,11 +129,10 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
 
 
 def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
-    mocker: plugin.MockerFixture,
-) -> None:
+    mocker,
+):
     mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
     mock_send_message.side_effect = ConnectionResetError
-    mocker.patch("time.sleep")
     agent = agent_mq_mixin.AgentMQMixin(
         name="test",
         keys=["a.#"],

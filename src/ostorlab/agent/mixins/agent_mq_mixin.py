@@ -195,7 +195,6 @@ class AgentMQMixin:
                 self.async_mq_send_message(key, message, message_priority)
             )
         else:
-            task = self._loop.create_task(
+            self._loop.create_task(
                 self.async_mq_send_message(key, message, message_priority)
             )
-            self._loop.run_until_complete(task)
