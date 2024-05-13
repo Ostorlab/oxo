@@ -198,11 +198,9 @@ class AgentMixin(
                 self._loop.run_forever()
                 tasks = asyncio.all_tasks()
                 # give canceled tasks the last chance to run.
-                _ = [
-                    self._loop.run_until_complete(task)
-                    for task in tasks
-                    if (task.done() or task.cancelled()) is False
-                ]
+                for task in tasks:
+                    if (task.done() or task.cancelled()) is False:
+                        self._loop.run_until_complete(task)
 
         finally:
             logger.debug("closing bus and loop")
