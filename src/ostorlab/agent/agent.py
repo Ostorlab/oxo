@@ -67,7 +67,7 @@ def _setup_logging(agent_key: str, universe: str) -> None:
             )
 
 
-def _at_exit_loop() -> None:
+def _cancel_tasks() -> None:
     """Cancel all tasks when receiving a SIGINT (Interrupt from keyboard) or a SIGTERM (termination)."""
     for task in asyncio.all_tasks():
         task.cancel()
@@ -193,13 +193,16 @@ class AgentMixin(
             if self.in_selectors is not None and len(self.in_selectors) > 0:
                 logger.debug("starting mq run")
                 self._loop.run_until_complete(self.mq_run())
-                for sig in (signal.SIGINT, signal.SIGTERM):
-                    self._loop.add_signal_handler(sig, _at_exit_loop)
+                self._loop.add_signal_handler(signal.SIGINT, _cancel_tasks)
+                self._loop.add_signal_handler(signal.SIGTERM, _cancel_tasks)
                 self._loop.run_forever()
                 tasks = asyncio.all_tasks()
-                for task in [t for t in tasks if (t.done() or t.cancelled()) is False]:
-                    # give canceled tasks the last chance to run.
+                # give canceled tasks the last chance to run.
+                _ = [
                     self._loop.run_until_complete(task)
+                    for task in tasks
+                    if (task.done() or task.cancelled()) is False
+                ]
 
         finally:
             logger.debug("closing bus and loop")
