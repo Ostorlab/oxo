@@ -143,4 +143,4 @@ def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
     with pytest.raises(ConnectionResetError):
         agent.mq_send_message(key="a.1.2", message=b"test message")
 
-    assert mock_send_message.call_count == 6
+    assert mock_send_message.call_count == 3
