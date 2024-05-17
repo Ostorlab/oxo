@@ -10,11 +10,10 @@ from typing import List, Optional
 
 import aio_pika
 import tenacity
-from aiormq import exceptions as aiormq_exceptions
 
 logger = logging.getLogger(__name__)
-NUMBER_RETRIES = 6
-WAIT_FIXED_TIME = 5
+NUMBER_RETRIES = 3
+WAIT_FIXED_TIME = 1
 
 
 class AgentMQMixin:
@@ -174,12 +173,7 @@ class AgentMQMixin:
 
     @tenacity.retry(
         retry=tenacity.retry_if_exception_type(
-            (
-                aio_pika.exceptions.ConnectionClosed,
-                ConnectionResetError,
-                aiormq_exceptions.ChannelInvalidStateError,
-                aiormq_exceptions.AMQPConnectionError,
-            )
+            (aio_pika.exceptions.ConnectionClosed, ConnectionResetError)
         ),
         stop=tenacity.stop_after_attempt(NUMBER_RETRIES),
         wait=tenacity.wait_fixed(WAIT_FIXED_TIME),
@@ -201,13 +195,6 @@ class AgentMQMixin:
                 self.async_mq_send_message(key, message, message_priority)
             )
         else:
-            future = asyncio.run_coroutine_threadsafe(
-                self.async_mq_send_message(key, message, message_priority), self._loop
+            self._loop.create_task(
+                self.async_mq_send_message(key, message, message_priority)
             )
-            try:
-                result = future.result()
-            except Exception as exc:
-                logger.warning("The coroutine raised an exception: %s", exc)
-                raise
-            else:
-                logger.debug("The coroutine returned: %s", result)
