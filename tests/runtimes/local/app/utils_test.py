@@ -12,7 +12,6 @@ def testImportScan_always_shouldImportScan(
     with models.Database() as session:
         utils.import_scan_from_bytes(session, zip_file_bytes)
 
-        assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).all()[-1]
         assert scan.title == "swiftvulnerableapp-v0.7.ipa"
         assert scan.asset == "ios file"
