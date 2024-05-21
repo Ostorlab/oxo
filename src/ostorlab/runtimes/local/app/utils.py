@@ -1,5 +1,6 @@
 """utils module: contains utility functions to export/import the scan details."""
 
+import datetime
 import io
 import json
 import zipfile
@@ -32,7 +33,12 @@ def _import_scan(
     asset_dict = json.loads(archive.read(ASSET_JSON))
     scan.title = scan_dict.get("title")
     scan.asset = asset_dict.get("type")
-    last_status: str | None = None
+    scan.created_time = (
+        datetime.datetime.strptime(scan_dict.get("created_time"), "%Y-%m-%d %H:%M:%S")
+        if scan_dict.get("created_time") is not None
+        else datetime.datetime.now()
+    )
+    last_status: Optional[str] = None
     for status in sorted(scan_dict["status"], key=lambda s: s["id"]):
         if status["key"] == "progress":
             models.ScanStatus.create(

@@ -1,3 +1,5 @@
+from typing import Optional
+
 import graphene
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
@@ -18,7 +20,7 @@ class ImportScanMutation(graphene.Mutation):
         root,
         info: graphql_base.ResolveInfo,
         file: scalars.Upload,
-        scan_id: int | None = None,
+        scan_id: Optional[int] = None,
     ):
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
