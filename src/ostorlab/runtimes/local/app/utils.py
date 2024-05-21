@@ -3,6 +3,7 @@
 import io
 import json
 import zipfile
+from typing import Optional
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import risk_rating
@@ -15,7 +16,7 @@ VULNERABILITY_JSON = "vulnerability.json"
 def import_scan_from_bytes(
     session: models.Database,
     file_data: bytes,
-    append_to_scan: models.Scan | None = None,
+    append_to_scan: Optional[models.Scan] = None,
 ) -> None:
     file = io.BytesIO(file_data)
     scan = append_to_scan or models.Scan()
