@@ -267,7 +267,7 @@ class Vulnerability(Base):
 
 
 class ScanStatus(Base):
-    """The Scan model"""
+    """The Scan Status model"""
 
     __tablename__ = "scan_status"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)

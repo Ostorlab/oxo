@@ -1,6 +1,7 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
 import io
+import pathlib
 import sys
 import time
 from typing import Any
@@ -567,3 +568,10 @@ def nmap_agent_definition() -> agent_definitions.AgentDefinition:
             {"name": "scripts", "type": "array", "value": None},
         ],
     )
+
+
+@pytest.fixture
+def zip_file_bytes() -> bytes:
+    """Returns a dummy zip file."""
+    zip_path = pathlib.Path(__file__).parent / "files" / "exported_scan_re.zip"
+    return zip_path.read_bytes()

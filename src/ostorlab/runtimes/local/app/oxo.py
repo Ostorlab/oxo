@@ -1,0 +1,30 @@
+import graphene
+from graphene_file_upload import scalars
+from graphql.execution import base as graphql_base
+
+from ostorlab.runtimes.local.app import utils
+from ostorlab.runtimes.local.models import models
+
+
+class ImportScanMutation(graphene.Mutation):
+    class Arguments:
+        scan_id = graphene.Int(required=False)
+        file = scalars.Upload(required=True)
+
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        file: scalars.Upload,
+        scan_id: int | None = None,
+    ):
+        with models.Database() as session:
+            scan = session.query(models.Scan).filter_by(id=scan_id).first()
+            utils.import_scan_from_bytes(session, file.read(), scan)
+            return ImportScanMutation(message="Scan imported successfully")
+
+
+class Mutations(graphene.ObjectType):
+    import_scan = ImportScanMutation.Field(description="Import scan from file")
