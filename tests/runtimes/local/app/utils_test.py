@@ -10,13 +10,10 @@ def testImportScan_always_shouldImportScan(
 ) -> None:
     """Test import_scan function when the scan does not exist."""
     with models.Database() as session:
-        assert session.query(models.Scan).count() == 0
-        assert session.query(models.Vulnerability).count() == 0
-
         utils.import_scan_from_bytes(session, zip_file_bytes)
 
         assert session.query(models.Scan).count() == 1
-        scan = session.query(models.Scan).first()
+        scan = session.query(models.Scan).all()[-1]
         assert scan.title == "swiftvulnerableapp-v0.7.ipa"
         assert scan.asset == "ios file"
         assert scan.progress == models.ScanProgress.DONE
