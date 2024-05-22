@@ -25,6 +25,7 @@ RATINGS_ORDER = {
 
 
 class Query(graphene.ObjectType):
+    """Query object type."""
     scans = graphene.Field(
         types.ScansType,
         scan_ids=graphene.List(graphene.Int, required=False),
@@ -190,6 +191,7 @@ class Query(graphene.ObjectType):
 
 
 class ImportScanMutation(graphene.Mutation):
+    """Import scan mutation."""
     class Arguments:
         scan_id = graphene.Int(required=False)
         file = scalars.Upload(required=True)
