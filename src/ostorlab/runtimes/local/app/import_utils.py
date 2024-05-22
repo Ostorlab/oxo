@@ -1,4 +1,4 @@
-"""utils module: contains utility functions to export/import the scan details."""
+"""import utils module: contains utility functions to import the scan details."""
 
 import datetime
 import io
