@@ -10,7 +10,7 @@ def testImportScan_always_shouldImportScan(
 ) -> None:
     """Test import_scan function when the scan does not exist."""
     with models.Database() as session:
-        utils.import_scan_from_bytes(session, zip_file_bytes)
+        utils.import_scan(session, zip_file_bytes)
 
         scan = session.query(models.Scan).all()[-1]
         assert scan.title == "swiftvulnerableapp-v0.7.ipa"

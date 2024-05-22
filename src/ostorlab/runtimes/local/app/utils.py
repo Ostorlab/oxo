@@ -14,11 +14,18 @@ ASSET_JSON = "asset.json"
 VULNERABILITY_JSON = "vulnerability.json"
 
 
-def import_scan_from_bytes(
+def import_scan(
     session: models.Database,
     file_data: bytes,
     append_to_scan: Optional[models.Scan] = None,
 ) -> None:
+    """Import the scan details from the given file data.
+
+    Args:
+        session (models.Database): The database session.
+        file_data (bytes): The file data to import.
+        append_to_scan (Optional[models.Scan], optional): The scan to append to. Defaults to None.
+    """
     file = io.BytesIO(file_data)
     scan = append_to_scan or models.Scan()
     with zipfile.ZipFile(file, "r", zipfile.ZIP_DEFLATED, True) as archive:
