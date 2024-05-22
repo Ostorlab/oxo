@@ -5,7 +5,7 @@ import graphql
 from graphene_file_upload import scalars
 
 from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local.app import utils, common
+from ostorlab.runtimes.local.app import import_utils, common
 from ostorlab.runtimes.local.app import types
 from graphql.execution import base as graphql_base
 
@@ -168,7 +168,7 @@ class ImportScanMutation(graphene.Mutation):
     ):
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
-            utils.import_scan_from_bytes(session, file.read(), scan)
+            import_utils.import_scan(session, file.read(), scan)
             return ImportScanMutation(message="Scan imported successfully")
 
 
