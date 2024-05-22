@@ -53,11 +53,9 @@ class Query(graphene.ObjectType):
         with models.Database() as session:
             scans = session.query(models.Scan)
 
-            # Filtering
             if scan_ids is not None:
                 scans = scans.filter(models.Scan.id.in_(scan_ids))
 
-            # Ordering
             order_by_filter = None
             if order_by == types.ScanOrderByEnum.ScanId:
                 order_by_filter = models.Scan.id
@@ -100,13 +98,11 @@ class Query(graphene.ObjectType):
         with models.Database() as session:
             vulnerabilities = session.query(models.Vulnerability)
 
-            # Filtering
             if vulnerability_ids is not None:
                 vulnerabilities = vulnerabilities.filter(
                     models.Vulnerability.id.in_(vulnerability_ids)
                 )
 
-            # Ordering
             order_by_filter = None
             if order_by == types.VulnerabilityOrderByEnum.VulnerabilityId:
                 order_by_filter = models.Vulnerability.id
