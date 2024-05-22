@@ -12,4 +12,5 @@ from ostorlab.runtimes.local.app import app
 @click.pass_context
 def serve(ctx: click.core.Context, host: str, port: int) -> None:
     """Run the Flask serve with the specified host and port."""
-    app.flask_app.run(host=host, port=port)
+    flask_app = app.create_app(graphiql=True)
+    flask_app.run(host=host, port=port)
