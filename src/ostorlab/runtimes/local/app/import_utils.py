@@ -74,6 +74,7 @@ def _import_vulnz(
             description=vulnerability["detail"]["description"],
             recommendation=vulnerability["detail"]["recommendation"],
             scan_id=scan.id,
+            # TODO (elyousfi5): Import cvss_v3_vector, references, and location when they are exported
         )
         session.add(vulnz)
     session.commit()
