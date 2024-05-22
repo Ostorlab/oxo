@@ -77,7 +77,7 @@ class Query(graphene.ObjectType):
             elif order_by == types.ScanOrderByEnum.Progress:
                 order_by_filter = models.Scan.progress
 
-            if order_by_filter is not None and sort == common.SortEnum.Desc:
+            if order_by_filter is not None and sort == common.SortEnum.DESC:
                 scans = scans.order_by(order_by_filter.desc())
             elif order_by_filter is not None:
                 scans = scans.order_by(order_by_filter)
