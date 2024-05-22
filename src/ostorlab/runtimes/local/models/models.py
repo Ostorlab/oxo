@@ -220,8 +220,8 @@ class Vulnerability(Base):
         recommendation: str,
         technical_detail: str,
         risk_rating: str,
-        cvss_v3_vector: str,
-        dna: str,
+        cvss_v3_vector: Optional[str] = None,
+        dna: Optional[str] = None,
         references: Optional[List[Dict[str, str]]] = None,
         location: Optional[Dict[str, Any]] = None,
     ):
@@ -267,7 +267,7 @@ class Vulnerability(Base):
 
 
 class ScanStatus(Base):
-    """The Scan model"""
+    """The Scan Status model"""
 
     __tablename__ = "scan_status"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)

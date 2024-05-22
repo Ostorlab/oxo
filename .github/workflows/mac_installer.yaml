@@ -25,6 +25,7 @@ jobs:
         pip install .
         pip install .[scanner]
         pip install .[agent]
+        pip install .[serve]
 
     - name: Create DMG file
     - run: |

@@ -38,6 +38,7 @@ jobs:
         pip install .[testing]
         pip install .[scanner]
         pip install .[agent]
+        pip install .[serve]
         python -m pip install -e .
     - name: Running tests with pytest.
       run: |

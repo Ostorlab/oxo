@@ -1,16 +1,20 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
 import io
+import pathlib
 import sys
 import time
 from typing import Any
 
 import docker
+import flask
 import pytest
 import redis
 from docker.models import networks as networks_model
+from flask import testing
 
 import ostorlab
+from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
 from ostorlab.assets import android_aab as android_aab_asset
@@ -23,12 +27,12 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.runtimes.local.app import app
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
+from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.scanner import scanner_conf
-from ostorlab.agent import definitions as agent_definitions
 
 
 @pytest.fixture(scope="session")
@@ -567,3 +571,26 @@ def nmap_agent_definition() -> agent_definitions.AgentDefinition:
             {"name": "scripts", "type": "array", "value": None},
         ],
     )
+
+
+@pytest.fixture
+def zip_file_bytes() -> bytes:
+    """Returns a dummy zip file."""
+    zip_path = pathlib.Path(__file__).parent / "files" / "exported_scan_re.zip"
+    return zip_path.read_bytes()
+
+
+@pytest.fixture
+def flask_app() -> flask.Flask:
+    """Fixture for creating a Flask app."""
+    flask_app = app.create_app()
+
+    ctx = flask_app.app_context()
+    ctx.push()
+    return flask_app
+
+
+@pytest.fixture
+def client(flask_app: flask.Flask) -> testing.FlaskClient:
+    """Fixture for creating a Flask test client."""
+    return flask_app.test_client()
