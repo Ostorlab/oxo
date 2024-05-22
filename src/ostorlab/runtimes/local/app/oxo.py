@@ -50,6 +50,17 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.ScanOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
     ) -> Optional[types.ScansType]:
+        """Resolve scans query.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            scan_ids (Optional[List[int]], optional): List of scan ids. Defaults to None.
+            order_by (Optional[types.ScanOrderByEnum], optional): Order by filter. Defaults to None.
+            sort (Optional[common.SortEnum], optional): Sort filter. Defaults to None.
+
+        Returns:
+            Optional[types.ScansType]: List of scans.
+        """
         with models.Database() as session:
             scans = session.query(models.Scan)
 
@@ -76,6 +87,15 @@ class Query(graphene.ObjectType):
             return types.ScansType(scans=scans.all())
 
     def resolve_scan(self, info: graphql_base.ResolveInfo, id: int) -> types.ScanType:
+        """Resolve scan query.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            id (int): Scan id.
+
+        Returns:
+            types.ScanType: Scan.
+        """
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=id).first()
             if scan is None:
@@ -95,6 +115,17 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.VulnerabilityOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
     ) -> Optional[types.VulnerabilitiesType]:
+        """Resolve vulnerabilities query.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            vulnerability_ids (Optional[List[int]], optional): List of vulnerability ids. Defaults to None.
+            order_by (Optional[types.VulnerabilityOrderByEnum], optional): Order by filter. Defaults to None.
+            sort (Optional[common.SortEnum], optional): Sort filter. Defaults to None.
+
+        Returns:
+            Optional[types.VulnerabilitiesType]: List of vulnerabilities.
+        """
         with models.Database() as session:
             vulnerabilities = session.query(models.Vulnerability)
 
@@ -130,6 +161,15 @@ class Query(graphene.ObjectType):
     def resolve_vulnerability(
         self, info: graphql_base.ResolveInfo, id: int
     ) -> types.VulnerabilityType:
+        """Resolve vulnerability query.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            id (int): Vulnerability id.
+
+        Returns:
+            types.VulnerabilityType: Vulnerability.
+        """
         with models.Database() as session:
             vulnerability = session.query(models.Vulnerability).filter_by(id=id).first()
             if vulnerability is None:
@@ -163,6 +203,16 @@ class ImportScanMutation(graphene.Mutation):
         file: scalars.Upload,
         scan_id: Optional[int] = None,
     ):
+        """Import scan mutation.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            file (scalars.Upload): File to import.
+            scan_id (Optional[int], optional): Scan id. Defaults to None.
+
+        Returns:
+            ImportScanMutation: Import scan mutation.
+        """
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
             import_utils.import_scan(session, file.read(), scan)
