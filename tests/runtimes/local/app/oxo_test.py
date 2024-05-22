@@ -75,6 +75,7 @@ def testQuerySingleScan_always_shouldReturnSingleScan(
     """
 
     response = client.post("/graphql", json={"query": query, "variables": {"id": 1}})
+
     assert response.status_code == 200
     response_json = response.get_json()
     assert response_json["data"]["scan"]["id"] == 1
@@ -111,6 +112,7 @@ def testQuerySingleVulnerability_always_shouldReturnSingleVulnerability(
     """
 
     response = client.post("/graphql", json={"query": query, "variables": {"id": 1}})
+
     assert response.status_code == 200
     response_json = response.get_json()
     assert response_json["data"]["vulnerability"]["id"] == 1
@@ -170,6 +172,7 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
     response = client.post(
         "/graphql", json={"query": query, "variables": {"scanIds": [1, 2]}}
     )
+
     assert response.status_code == 200
     response_json = response.get_json()
     assert response_json["data"]["scans"]["scans"][0]["id"] == 2
@@ -229,6 +232,7 @@ def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
     response = client.post(
         "/graphql", json={"query": query, "variables": {"vulnerabilityIds": [1, 2]}}
     )
+
     assert response.status_code == 200
     response_json = response.get_json()
     assert response_json["data"]["vulnerabilities"]["vulnerabilities"][0]["id"] == 2

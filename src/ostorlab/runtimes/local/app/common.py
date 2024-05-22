@@ -1,3 +1,5 @@
+"""common utilities for the flask app."""
+
 import graphene
 
 

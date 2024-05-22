@@ -77,7 +77,7 @@ class Query(graphene.ObjectType):
 
             return types.ScansType(scans=scans.all())
 
-    def resolve_scan(self, info: graphql_base.ResolveInfo, id: int):
+    def resolve_scan(self, info: graphql_base.ResolveInfo, id: int) -> types.ScanType:
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=id).first()
             if scan is None:
@@ -131,7 +131,9 @@ class Query(graphene.ObjectType):
 
             return types.VulnerabilitiesType(vulnerabilities=vulnerabilities.all())
 
-    def resolve_vulnerability(self, info: graphql_base.ResolveInfo, id: int):
+    def resolve_vulnerability(
+        self, info: graphql_base.ResolveInfo, id: int
+    ) -> types.VulnerabilityType:
         with models.Database() as session:
             vulnerability = session.query(models.Vulnerability).filter_by(id=id).first()
             if vulnerability is None:
