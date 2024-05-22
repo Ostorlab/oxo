@@ -26,6 +26,7 @@ jobs:
         pip install .
         pip install .[scanner]
         pip install .[agent]
+        pip install .[serve]
         pip install pyinstaller
 
     - run: |
