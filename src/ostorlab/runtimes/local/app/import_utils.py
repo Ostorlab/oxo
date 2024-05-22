@@ -7,7 +7,6 @@ import zipfile
 from typing import Optional
 
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating
 
 SCAN_JSON = "scan.json"
 ASSET_JSON = "asset.json"
@@ -64,17 +63,17 @@ def _import_vulnz(
 ) -> None:
     vulnerabilities = json.loads(archive.read(VULNERABILITY_JSON))
     for vulnerability in vulnerabilities:
-        vulnz = models.Vulnerability(
-            technical_detail=vulnerability["technical_detail"],
-            risk_rating=risk_rating.RiskRating[
-                vulnerability["custom_risk_rating"].upper()
-            ],
-            title=vulnerability["detail"]["title"],
-            short_description=vulnerability["detail"]["short_description"],
-            description=vulnerability["detail"]["description"],
-            recommendation=vulnerability["detail"]["recommendation"],
+        vulnz = models.Vulnerability.create(
+            technical_detail=vulnerability.get("technical_detail"),
+            risk_rating=vulnerability.get("custom_risk_rating").upper(),
+            title=vulnerability.get("detail").get("title"),
+            short_description=vulnerability.get("detail").get("short_description"),
+            description=vulnerability.get("detail").get("description"),
+            recommendation=vulnerability.get("detail").get("recommendation"),
             scan_id=scan.id,
-            # TODO (elyousfi5): Import cvss_v3_vector, references, and location when they are exported
+            references=vulnerability.get("detail").get("references"),
+            location=vulnerability.get("detail").get("location"),
+            cvss_v3_vector=vulnerability.get("cvss_v3_vector"),
         )
         session.add(vulnz)
     session.commit()
