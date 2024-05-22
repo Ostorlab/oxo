@@ -2,24 +2,26 @@ from typing import Optional, List
 
 import graphene
 import graphql
+import sqlalchemy
 from graphene_file_upload import scalars
-
-from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local.app import import_utils, common
-from ostorlab.runtimes.local.app import types
 from graphql.execution import base as graphql_base
 
-CASE_SQL = """CASE risk_rating
-           WHEN 'critical' THEN 0
-           WHEN 'high' THEN 1
-           WHEN 'medium' THEN 2
-           WHEN 'low' THEN 3
-           WHEN 'potentially' THEN 4
-           WHEN 'hardening' THEN 5
-           WHEN 'secure' THEN 6
-           WHEN 'important' THEN 7
-           WHEN 'info' THEN 8
-           end """
+from ostorlab.runtimes.local.app import import_utils, common
+from ostorlab.runtimes.local.app import types
+from ostorlab.runtimes.local.models import models
+from ostorlab.utils import risk_rating
+
+RATINGS_ORDER = {
+    risk_rating.RiskRating.CRITICAL.name: 8,
+    risk_rating.RiskRating.HIGH.name: 7,
+    risk_rating.RiskRating.MEDIUM.name: 6,
+    risk_rating.RiskRating.LOW.name: 5,
+    risk_rating.RiskRating.POTENTIALLY.name: 4,
+    risk_rating.RiskRating.HARDENING.name: 3,
+    risk_rating.RiskRating.SECURE.name: 2,
+    risk_rating.RiskRating.IMPORTANT.name: 1,
+    risk_rating.RiskRating.INFO.name: 0,
+}
 
 
 class Query(graphene.ObjectType):
@@ -111,10 +113,12 @@ class Query(graphene.ObjectType):
             elif order_by == types.VulnerabilityOrderByEnum.Title:
                 order_by_filter = models.Vulnerability.title
             elif order_by == types.VulnerabilityOrderByEnum.RiskRating:
-                vulnerabilities = vulnerabilities.extra(
-                    select={"risk_rating_index": CASE_SQL}
+                order_by_filter = sqlalchemy.case(
+                    [
+                        (models.Vulnerability.risk_rating == rating, order)
+                        for rating, order in RATINGS_ORDER.items()
+                    ],
                 )
-                order_by_filter = "risk_rating_index"
 
             if order_by_filter is not None and sort == common.SortEnum.Desc:
                 vulnerabilities = vulnerabilities.order_by(order_by_filter.desc())
