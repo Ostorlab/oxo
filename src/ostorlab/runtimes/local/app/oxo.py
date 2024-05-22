@@ -127,12 +127,12 @@ class Query(graphene.ObjectType):
             return types.VulnerabilitiesType(vulnerabilities=vulnerabilities.all())
 
     def resolve_vulnerability(
-        self, info: graphql_base.ResolveInfo, vulnerability_id: int
+        self, info: graphql_base.ResolveInfo, id: int
     ):
         with models.Database() as session:
             vulnerability = (
                 session.query(models.Vulnerability)
-                .filter_by(id=vulnerability_id)
+                .filter_by(id=id)
                 .first()
             )
             if vulnerability is None:
