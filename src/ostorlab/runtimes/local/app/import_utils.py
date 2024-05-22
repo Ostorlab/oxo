@@ -29,7 +29,7 @@ def import_scan(
     scan = append_to_scan or models.Scan()
     with zipfile.ZipFile(file, "r", zipfile.ZIP_DEFLATED, True) as archive:
         _import_scan(scan, archive, session)
-        _import_vulnz(scan, archive, session)
+        _import_vulnz(scan, archive)
 
 
 def _import_scan(
@@ -58,12 +58,10 @@ def _import_scan(
     session.commit()
 
 
-def _import_vulnz(
-    scan: models.Scan, archive: zipfile.ZipFile, session: models.Database
-) -> None:
+def _import_vulnz(scan: models.Scan, archive: zipfile.ZipFile) -> None:
     vulnerabilities = json.loads(archive.read(VULNERABILITY_JSON))
     for vulnerability in vulnerabilities:
-        vulnz = models.Vulnerability.create(
+        models.Vulnerability.create(
             technical_detail=vulnerability.get("technical_detail"),
             risk_rating=vulnerability.get("custom_risk_rating").upper(),
             title=vulnerability.get("detail").get("title"),
@@ -75,5 +73,3 @@ def _import_vulnz(
             location=vulnerability.get("detail").get("location"),
             cvss_v3_vector=vulnerability.get("cvss_v3_vector"),
         )
-        session.add(vulnz)
-    session.commit()
