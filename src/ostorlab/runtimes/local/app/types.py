@@ -5,8 +5,7 @@ class ScanOrderByEnum(graphene.Enum):
     ScanId = 1
     Title = 2
     CreatedTime = 3
-    RiskRating = 4
-    Progress = 6
+    Progress = 4
 
 
 class ScanType(graphene.ObjectType):
