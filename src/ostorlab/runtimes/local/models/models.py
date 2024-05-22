@@ -220,8 +220,8 @@ class Vulnerability(Base):
         recommendation: str,
         technical_detail: str,
         risk_rating: str,
-        cvss_v3_vector: str,
-        dna: str,
+        cvss_v3_vector: Optional[str] = None,
+        dna: Optional[str] = None,
         references: Optional[List[Dict[str, str]]] = None,
         location: Optional[Dict[str, Any]] = None,
     ):

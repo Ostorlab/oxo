@@ -7,7 +7,6 @@ import zipfile
 from typing import Optional
 
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating
 
 SCAN_JSON = "scan.json"
 ASSET_JSON = "asset.json"
@@ -30,7 +29,7 @@ def import_scan(
     scan = append_to_scan or models.Scan()
     with zipfile.ZipFile(file, "r", zipfile.ZIP_DEFLATED, True) as archive:
         _import_scan(scan, archive, session)
-        _import_vulnz(scan, archive, session)
+        _import_vulnz(scan, archive)
 
 
 def _import_scan(
@@ -59,21 +58,18 @@ def _import_scan(
     session.commit()
 
 
-def _import_vulnz(
-    scan: models.Scan, archive: zipfile.ZipFile, session: models.Database
-) -> None:
+def _import_vulnz(scan: models.Scan, archive: zipfile.ZipFile) -> None:
     vulnerabilities = json.loads(archive.read(VULNERABILITY_JSON))
     for vulnerability in vulnerabilities:
-        vulnz = models.Vulnerability(
-            technical_detail=vulnerability["technical_detail"],
-            risk_rating=risk_rating.RiskRating[
-                vulnerability["custom_risk_rating"].upper()
-            ],
-            title=vulnerability["detail"]["title"],
-            short_description=vulnerability["detail"]["short_description"],
-            description=vulnerability["detail"]["description"],
-            recommendation=vulnerability["detail"]["recommendation"],
+        models.Vulnerability.create(
+            technical_detail=vulnerability.get("technical_detail"),
+            risk_rating=vulnerability.get("custom_risk_rating").upper(),
+            title=vulnerability.get("detail").get("title"),
+            short_description=vulnerability.get("detail").get("short_description"),
+            description=vulnerability.get("detail").get("description"),
+            recommendation=vulnerability.get("detail").get("recommendation"),
             scan_id=scan.id,
+            references=vulnerability.get("detail").get("references"),
+            location=vulnerability.get("detail").get("location"),
+            cvss_v3_vector=vulnerability.get("cvss_v3_vector"),
         )
-        session.add(vulnz)
-    session.commit()
