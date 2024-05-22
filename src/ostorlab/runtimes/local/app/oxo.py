@@ -66,7 +66,7 @@ class Query(graphene.ObjectType):
             elif order_by == types.ScanOrderByEnum.Progress:
                 order_by_filter = models.Scan.progress
 
-            if order_by_filter is not None and sort == types.common.Desc:
+            if order_by_filter is not None and sort == common.SortEnum.Desc:
                 scans = scans.order_by(order_by_filter.desc())
             elif order_by_filter is not None:
                 scans = scans.order_by(order_by_filter)
@@ -85,6 +85,7 @@ class Query(graphene.ObjectType):
                 title=scan.title,
                 asset=scan.asset,
                 progress=scan.progress,
+                created_time=scan.created_time,
             )
 
     def resolve_vulnerabilities(
@@ -126,21 +127,15 @@ class Query(graphene.ObjectType):
 
             return types.VulnerabilitiesType(vulnerabilities=vulnerabilities.all())
 
-    def resolve_vulnerability(
-        self, info: graphql_base.ResolveInfo, id: int
-    ):
+    def resolve_vulnerability(self, info: graphql_base.ResolveInfo, id: int):
         with models.Database() as session:
-            vulnerability = (
-                session.query(models.Vulnerability)
-                .filter_by(id=id)
-                .first()
-            )
+            vulnerability = session.query(models.Vulnerability).filter_by(id=id).first()
             if vulnerability is None:
                 raise graphql.GraphQLError("Vulnerability not found")
             return types.VulnerabilityType(
                 id=vulnerability.id,
                 technical_detail=vulnerability.technical_detail,
-                risk_rating=vulnerability.risk_rating.name,
+                risk_rating=vulnerability.risk_rating,
                 cvss_v3_vector=vulnerability.cvss_v3_vector,
                 dna=vulnerability.dna,
                 title=vulnerability.title,

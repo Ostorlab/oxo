@@ -1,5 +1,6 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
+import datetime
 import io
 import pathlib
 import sys
@@ -8,12 +9,11 @@ from typing import Any
 
 import docker
 import flask
+import ostorlab
 import pytest
 import redis
 from docker.models import networks as networks_model
 from flask import testing
-
-import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
@@ -28,11 +28,13 @@ from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes.local.app import app
+from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.utils import risk_rating
 
 
 @pytest.fixture(scope="session")
@@ -578,6 +580,80 @@ def zip_file_bytes() -> bytes:
     """Returns a dummy zip file."""
     zip_path = pathlib.Path(__file__).parent / "files" / "exported_scan_re.zip"
     return zip_path.read_bytes()
+
+
+@pytest.fixture
+def web_scan() -> None:
+    """Create a dummy web scan."""
+    with models.Database() as session:
+        scan = models.Scan(
+            title="Web Scan",
+            asset="Web",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan)
+        vulnerability = models.Vulnerability(
+            title="XSS",
+            short_description="Cross Site Scripting",
+            description="Cross Site Scripting",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan.id,
+        )
+        session.add(vulnerability)
+        session.commit()
+
+
+@pytest.fixture
+def ios_scans() -> None:
+    """Create a dummy ios scan."""
+    with models.Database() as session:
+        scan1 = models.Scan(
+            title="iOS Scan 1 ",
+            asset="iOS",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        scan2 = models.Scan(
+            title="iOS Scan 2",
+            asset="iOS",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan1)
+        session.add(scan2)
+        vulnerability1 = models.Vulnerability(
+            title="XSS",
+            short_description="Cross Site Scripting",
+            description="Cross Site Scripting",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability2 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan2.id,
+        )
+        session.add(vulnerability1)
+        session.add(vulnerability2)
+        session.commit()
 
 
 @pytest.fixture
