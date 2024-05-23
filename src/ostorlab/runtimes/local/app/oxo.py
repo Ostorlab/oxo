@@ -2,10 +2,17 @@ from typing import Optional, List
 
 import graphene
 import graphql
+import httpx
 import sqlalchemy
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
+from ruamel.yaml import error
 
+from ostorlab import exceptions
+from ostorlab.agent.schema import validator
+from ostorlab.cli import agent_fetcher
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.app import import_utils, common
 from ostorlab.runtimes.local.app import types
 from ostorlab.runtimes.local.models import models
@@ -46,11 +53,11 @@ class Query(graphene.ObjectType):
     vulnerability = graphene.Field(types.VulnerabilityType, id=graphene.Int())
 
     def resolve_scans(
-        self,
-        info: graphql_base.ResolveInfo,
-        scan_ids: Optional[List[int]] = None,
-        order_by: Optional[types.ScanOrderByEnum] = None,
-        sort: Optional[common.SortEnum] = None,
+            self,
+            info: graphql_base.ResolveInfo,
+            scan_ids: Optional[List[int]] = None,
+            order_by: Optional[types.ScanOrderByEnum] = None,
+            sort: Optional[common.SortEnum] = None,
     ) -> Optional[types.ScansType]:
         """Resolve scans query.
 
@@ -111,11 +118,11 @@ class Query(graphene.ObjectType):
             )
 
     def resolve_vulnerabilities(
-        self,
-        info: graphql_base.ResolveInfo,
-        vulnerability_ids: Optional[List[int]] = None,
-        order_by: Optional[types.VulnerabilityOrderByEnum] = None,
-        sort: Optional[common.SortEnum] = None,
+            self,
+            info: graphql_base.ResolveInfo,
+            vulnerability_ids: Optional[List[int]] = None,
+            order_by: Optional[types.VulnerabilityOrderByEnum] = None,
+            sort: Optional[common.SortEnum] = None,
     ) -> Optional[types.VulnerabilitiesType]:
         """Resolve vulnerabilities query.
 
@@ -161,7 +168,7 @@ class Query(graphene.ObjectType):
             return types.VulnerabilitiesType(vulnerabilities=vulnerabilities.all())
 
     def resolve_vulnerability(
-        self, info: graphql_base.ResolveInfo, id: int
+            self, info: graphql_base.ResolveInfo, id: int
     ) -> types.VulnerabilityType:
         """Resolve vulnerability query.
 
@@ -202,10 +209,10 @@ class ImportScanMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
-        info: graphql_base.ResolveInfo,
-        file: scalars.Upload,
-        scan_id: Optional[int] = None,
+            root,
+            info: graphql_base.ResolveInfo,
+            file: scalars.Upload,
+            scan_id: Optional[int] = None,
     ):
         """Import scan mutation.
 
@@ -223,5 +230,81 @@ class ImportScanMutation(graphene.Mutation):
             return ImportScanMutation(message="Scan imported successfully")
 
 
+class ScanRunMutation(graphene.Mutation):
+    class Arguments:
+        title = graphene.String()
+        agents = graphene.List(graphene.String)
+        agent_group_definition = graphene.String()
+        assets = graphene.List(graphene.String)
+        install = graphene.Boolean()
+        package_names = graphene.List(graphene.String)
+
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(
+            root,
+            info: graphql_base.ResolveInfo,
+            title: Optional[str] = None,
+            agents: Optional[List[str]] = None,
+            agent_group_definition: Optional[str] = None,
+            assets: Optional[List[str]] = None,
+            install: Optional[bool] = False,
+    ):
+        if agents is not None:
+            agents_settings: List[definitions.AgentSettings] = []
+            for agent_key in agents:
+                agents_settings.append(definitions.AgentSettings(key=agent_key))
+
+            agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
+
+        elif agent_group_definition is not None:
+            try:
+                agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
+            except validator.ValidationError as e:
+                raise graphql.GraphQLError(f"Invalid agent group definition: {e}")
+            except error.YAMLError as e:
+                raise graphql.GraphQLError(f"Agent group definition YAML parse error:: {e}")
+        else:
+            raise graphql.GraphQLError("Missing agent list or agent group definition.")
+
+        asset_group = None
+        if assets is not None:
+            try:
+                asset_group = definitions.AssetsDefinition.from_yaml(assets)
+            except validator.ValidationError as e:
+                raise graphql.GraphQLError(f"Invalid asset group definition: {e}")
+            except error.YAMLError as e:
+                raise graphql.GraphQLError(f"Asset group definition YAML parse error: {e}")
+
+        runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
+        runtime_instance.follow = []
+
+        try:
+            can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
+        except exceptions.OstorlabError as e:
+            raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
+
+        if can_run_scan is True:
+            if install is True:
+                try:
+                    runtime_instance.install()
+                    for ag in agent_group.agents:
+                        try:
+                            # TODO (elyousfi1): Implement agent installation
+                            pass
+                        except agent_fetcher.AgentDetailsNotFound:
+                            graphql.GraphQLError(f"Agent {ag.key} not found on the store.")
+                except httpx.HTTPError as e:
+                    raise graphql.GraphQLError(f"Could not install the agents: {e}")
+
+            runtime_instance.scan(
+                title=title,
+                agent_group_definition=agent_group,
+                assets=asset_group if asset_group is None else asset_group.targets,
+            )
+
+
 class Mutations(graphene.ObjectType):
     import_scan = ImportScanMutation.Field(description="Import scan from file")
+    scan_run = ScanRunMutation.Field(description="Run a scan")
