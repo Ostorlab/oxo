@@ -1,5 +1,7 @@
 """common utilities for the flask app."""
 
+from typing import Optional
+
 import graphene
 import cvss
 
@@ -25,7 +27,7 @@ class RiskRatingEnum(graphene.Enum):
     INFO = "Info"
 
 
-def compute_cvss_v3_base_score(vector: str | None) -> float | None:
+def compute_cvss_v3_base_score(vector: Optional[str]) -> Optional[float]:
     """Compute the CVSS v3 base score from the vector.
 
     Args:

@@ -593,6 +593,7 @@ def web_scan() -> None:
             created_time=datetime.datetime.now(),
         )
         session.add(scan)
+        session.commit()
         vulnerability = models.Vulnerability(
             title="XSS",
             short_description="Cross Site Scripting",
