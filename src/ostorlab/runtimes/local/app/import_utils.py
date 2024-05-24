@@ -45,16 +45,19 @@ def _import_scan(
         else datetime.datetime.now()
     )
     last_status: Optional[str] = None
-    for status in sorted(scan_dict["status"], key=lambda s: s["id"]):
-        if status["key"] == "progress":
-            models.ScanStatus.create(
-                key=status["key"], value=status["value"], scan_id=scan.id
-            )
-            last_status = status["value"].upper()
-    scan.progress = models.ScanProgress[last_status]
 
     if scan.id is None:
         session.add(scan)
+    session.commit()
+
+    for status in sorted(scan_dict["status"], key=lambda s: s["id"]):
+        scan_id: int = scan.id
+        models.ScanStatus.create(
+            key=status["key"], value=status["value"], scan_id=scan_id
+        )
+        if status["key"] == "progress":
+            last_status = status["value"].upper()
+    scan.progress = models.ScanProgress[last_status]
     session.commit()
 
 
