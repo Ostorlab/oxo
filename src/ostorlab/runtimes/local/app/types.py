@@ -1,6 +1,7 @@
 """Graphene types for the local runtime."""
 
 import collections
+from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
@@ -170,9 +171,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_vulnerabilities(
         self: models.Scan,
         info: graphql_base.ResolveInfo,
-        detail_titles: list[str] | None = None,
-        vuln_ids: list[int] | None = None,
-        page: int | None = None,
+        detail_titles: Optional[List[str]] = None,
+        vuln_ids: Optional[List[int]] = None,
+        page: Optional[int] = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> OxoVulnerabilitiesType:
         """Resolve vulnerabilities query.
@@ -219,7 +220,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_kb_vulnerabilities(
         self: models.Scan,
         info: graphql_base.ResolveInfo,
-        detail_title: str | None = None,
+        detail_title: Optional[str] = None,
     ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
         """Resolve knowledge base vulnerabilities query.
 
@@ -258,7 +259,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     @staticmethod
     def _build_kb_vulnerabilities(
-        scan: models.Scan, detail_title: str | None = None
+        scan: models.Scan, detail_title: Optional[str] = None
     ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
         """Build knowledge base vulnerabilities.
 

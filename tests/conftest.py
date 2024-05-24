@@ -583,7 +583,7 @@ def zip_file_bytes() -> bytes:
 
 
 @pytest.fixture
-def web_scan() -> None:
+def web_scan(clean_db: None) -> None:
     """Create a dummy web scan."""
     with models.Database() as session:
         scan = models.Scan(
@@ -611,7 +611,7 @@ def web_scan() -> None:
 
 
 @pytest.fixture
-def ios_scans() -> None:
+def ios_scans(clean_db: None) -> None:
     """Create a dummy ios scan."""
     with models.Database() as session:
         scan1 = models.Scan(
@@ -672,3 +672,13 @@ def flask_app() -> flask.Flask:
 def client(flask_app: flask.Flask) -> testing.FlaskClient:
     """Fixture for creating a Flask test client."""
     return flask_app.test_client()
+
+
+@pytest.fixture
+def clean_db(request) -> None:
+    """Clean the database."""
+    with models.Database() as session:
+        session.query(models.Vulnerability).delete()
+        session.query(models.Scan).delete()
+        session.query(models.ScanStatus).delete()
+        session.commit()

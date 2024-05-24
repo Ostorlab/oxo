@@ -30,7 +30,7 @@ class Query(graphene.ObjectType):
         self,
         info: graphql_base.ResolveInfo,
         scan_ids: Optional[List[int]] = None,
-        page: int | None = None,
+        page: Optional[int] = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
         order_by: Optional[types.OxoScanOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
