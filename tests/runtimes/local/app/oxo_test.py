@@ -280,3 +280,55 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
         kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[1].title
+
+
+def testRunScanMutation_always_shouldRunScan(
+    client: flask.testing.FlaskClient,
+    agent_group_definition: bytes,
+    asset_group_definition: bytes,
+) -> None:
+    """Test importScan mutation."""
+    with models.Database() as session:
+        nbr_scans_before_run = session.query(models.Scan).count()
+        query = """
+            mutation RunScan($agentGroupDefinition: Upload!, $assets: Upload!, $install: Boolean!) 
+                {
+                    runScan(agentGroupDefinition: $agentGroupDefinition, assets: $assets, install: $install) 
+                        { message } 
+                }
+        """
+        test_group = "test_group.yaml"
+        asset_group = "asset_group.yaml"
+        data = {
+            "operations": json.dumps(
+                {
+                    "query": query,
+                    "variables": {
+                        "agentGroupDefinition": None,
+                        "assets": None,
+                        "install": True,
+                    },
+                }
+            ),
+            "map": json.dumps(
+                {
+                    "agentGroupDefinition": ["variables.agentGroupDefinition"],
+                    "assets": ["variables.assets"],
+                }
+            ),
+        }
+        data["agentGroupDefinition"] = (io.BytesIO(agent_group_definition), test_group)
+        data["assets"] = (io.BytesIO(asset_group_definition), asset_group)
+
+        response = client.post(
+            "/graphql", data=data, content_type="multipart/form-data"
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_run = session.query(models.Scan).count()
+        assert (
+            response_json["data"]["importScan"]["message"]
+            == "Scan imported successfully"
+        )
+        assert nbr_scans_after_run == nbr_scans_before_run + 1

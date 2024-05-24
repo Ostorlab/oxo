@@ -1,0 +1,7 @@
+kind: AgentGroup
+description: Agent group definition for autoscaler testing.
+agents:
+  - args: [ ]
+    key: agent/ostorlab/nmap
+  - args: [ ]
+    key: agent/ostorlab/asteroid

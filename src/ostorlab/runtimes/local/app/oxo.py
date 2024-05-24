@@ -206,9 +206,11 @@ class ScanRunMutation(graphene.Mutation):
                 agent_group_definition=agent_group,
                 assets=asset_group if asset_group is None else asset_group.targets,
             )
-            return ScanRunMutation(
-                message=message_status or "Scan started successfully"
-            )
+
+            if message_status is not None:
+                raise graphql.GraphQLError(message_status)
+
+            return ScanRunMutation(message="Scan started successfully")
 
 
 class Mutations(graphene.ObjectType):

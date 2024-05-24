@@ -1,0 +1,6 @@
+description: Target group definition
+kind: targetGroup
+name: master_scan
+assets:
+  ip:
+      - host: "8.8.8.8"

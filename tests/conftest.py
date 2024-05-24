@@ -583,6 +583,20 @@ def zip_file_bytes() -> bytes:
 
 
 @pytest.fixture
+def agent_group_definition() -> bytes:
+    """Returns a dummy agent group definition."""
+    test_group = pathlib.Path(__file__).parent / "files" / "test_group.yaml"
+    return test_group.read_bytes()
+
+
+@pytest.fixture
+def asset_group_definition() -> bytes:
+    """Returns a dummy asset group definition."""
+    asset_group = pathlib.Path(__file__).parent / "files" / "asset_group.yaml"
+    return asset_group.read_bytes()
+
+
+@pytest.fixture
 def web_scan(clean_db: None) -> None:
     """Create a dummy web scan."""
     with models.Database() as session:
