@@ -1,7 +1,7 @@
 import flask
 from graphene_file_upload import flask as graphene_upload_flask
 
-from ostorlab.runtimes.local.app.schema import schema
+from ostorlab.serve_app.schema import schema
 
 
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:

@@ -1,5 +1,6 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
+import datetime
 import io
 import pathlib
 import sys
@@ -8,12 +9,11 @@ from typing import Any
 
 import docker
 import flask
+import ostorlab
 import pytest
 import redis
 from docker.models import networks as networks_model
 from flask import testing
-
-import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
@@ -27,12 +27,14 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.runtimes.local.app import app
+from ostorlab.serve_app import app
+from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.utils import risk_rating
 
 
 @pytest.fixture(scope="session")
@@ -581,6 +583,82 @@ def zip_file_bytes() -> bytes:
 
 
 @pytest.fixture
+def web_scan(clean_db: None) -> None:
+    """Create a dummy web scan."""
+    with models.Database() as session:
+        scan = models.Scan(
+            title="Web Scan",
+            asset="Web",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan)
+        session.commit()
+        vulnerability = models.Vulnerability(
+            title="XSS",
+            short_description="Cross Site Scripting",
+            description="Cross Site Scripting",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan.id,
+        )
+        session.add(vulnerability)
+        session.commit()
+
+
+@pytest.fixture
+def ios_scans(clean_db: None) -> None:
+    """Create a dummy ios scan."""
+    with models.Database() as session:
+        scan1 = models.Scan(
+            title="iOS Scan 1 ",
+            asset="iOS",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        scan2 = models.Scan(
+            title="iOS Scan 2",
+            asset="iOS",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan1)
+        session.add(scan2)
+        session.commit()
+        vulnerability1 = models.Vulnerability(
+            title="XSS",
+            short_description="Cross Site Scripting",
+            description="Cross Site Scripting",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability2 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan2.id,
+        )
+        session.add(vulnerability1)
+        session.add(vulnerability2)
+        session.commit()
+
+
+@pytest.fixture
 def flask_app() -> flask.Flask:
     """Fixture for creating a Flask app."""
     flask_app = app.create_app()
@@ -594,3 +672,80 @@ def flask_app() -> flask.Flask:
 def client(flask_app: flask.Flask) -> testing.FlaskClient:
     """Fixture for creating a Flask test client."""
     return flask_app.test_client()
+
+
+@pytest.fixture
+def clean_db(request) -> None:
+    """Clean the database."""
+    with models.Database() as session:
+        session.query(models.Vulnerability).delete()
+        session.query(models.Scan).delete()
+        session.query(models.ScanStatus).delete()
+        session.commit()
+
+
+@pytest.fixture
+def android_scan(clean_db: None) -> None:
+    """Create dummy android scan."""
+    with models.Database() as session:
+        scan1 = models.Scan(
+            title="Android Scan 1 ",
+            asset="Android file",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan1)
+        session.commit()
+        vulnerability1 = models.Vulnerability(
+            title="XSS",
+            short_description="Cross Site Scripting",
+            description="Cross Site Scripting",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.LOW,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability2 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability3 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.MEDIUM,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability4 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.CRITICAL,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        session.add(vulnerability1)
+        session.add(vulnerability2)
+        session.add(vulnerability3)
+        session.add(vulnerability4)
+        session.commit()
