@@ -281,6 +281,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 )
 
             kbs = vulnerabilities.group_by(
+                models.Vulnerability.title,
                 models.Vulnerability.risk_rating,
                 models.Vulnerability.cvss_v3_vector,
                 models.Vulnerability.short_description,
