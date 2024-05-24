@@ -15,8 +15,7 @@ from ostorlab.agent.schema import validator
 from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime
-from ostorlab.runtimes.local.app import import_utils, common
-from ostorlab.runtimes.local.app import types
+from ostorlab.serve_app import import_utils, types, common
 from ostorlab.runtimes.local.models import models
 
 DEFAULT_NUMBER_ELEMENTS = 15

@@ -1,13 +1,14 @@
 """Graphene types for the local runtime."""
 
 import collections
+import enum
 from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
 
-from ostorlab.runtimes.local.app import common
+from ostorlab.serve_app import common
 from ostorlab.runtimes.local.models import models
 
 DEFAULT_NUMBER_ELEMENTS = 15
@@ -27,10 +28,10 @@ RISK_RATINGS_ORDER = {
 class OxoScanOrderByEnum(graphene.Enum):
     """Enum for the elements to order a scan by."""
 
-    ScanId = 1
-    Title = 2
-    CreatedTime = 3
-    Progress = 4
+    ScanId = enum.auto()
+    Title = enum.auto()
+    CreatedTime = enum.auto()
+    Progress = enum.auto()
 
 
 class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -281,19 +282,23 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 )
 
             kbs = vulnerabilities.group_by(
-                models.Vulnerability.risk_rating,
-                models.Vulnerability.cvss_v3_vector,
+                models.Vulnerability.title,
                 models.Vulnerability.short_description,
                 models.Vulnerability.recommendation,
+            ).all()
+
+            distinct_vulnz = vulnerabilities.distinct(
+                models.Vulnerability.risk_rating,
+                models.Vulnerability.cvss_v3_vector,
             ).all()
 
             kb_dict = collections.defaultdict(list)
             cvss_dict = collections.defaultdict(list)
 
             aggregated_kb = []
-            for kb in kbs:
-                kb_dict[kb.title].append(kb.risk_rating)
-                cvss_dict[kb.title].append(kb.cvss_v3_vector)
+            for vuln in distinct_vulnz:
+                kb_dict[vuln.title].append(vuln.risk_rating)
+                cvss_dict[vuln.title].append(vuln.cvss_v3_vector)
 
             for kb in kbs:
                 vulnerabilities = vulnerabilities.filter(

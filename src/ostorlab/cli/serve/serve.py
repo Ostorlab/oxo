@@ -3,7 +3,7 @@
 import click
 
 from ostorlab.cli.rootcli import rootcli
-from ostorlab.runtimes.local.app import app
+from ostorlab.serve_app import app
 
 
 @rootcli.command()

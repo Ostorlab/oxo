@@ -1,6 +1,6 @@
 """Unit tests for common.py."""
 
-from ostorlab.runtimes.local.app import common
+from ostorlab.serve_app import common
 
 
 def testComputeCvssv3BaseScore_whenVectorIsValid_returnTheRightScore() -> None:

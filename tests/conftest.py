@@ -27,7 +27,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.runtimes.local.app import app
+from ostorlab.serve_app import app
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
@@ -695,4 +695,71 @@ def clean_db(request) -> None:
         session.query(models.Vulnerability).delete()
         session.query(models.Scan).delete()
         session.query(models.ScanStatus).delete()
+        session.commit()
+
+
+@pytest.fixture
+def android_scan(clean_db: None) -> None:
+    """Create dummy android scan."""
+    with models.Database() as session:
+        scan1 = models.Scan(
+            title="Android Scan 1 ",
+            asset="Android file",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan1)
+        session.commit()
+        vulnerability1 = models.Vulnerability(
+            title="XSS",
+            short_description="Cross Site Scripting",
+            description="Cross Site Scripting",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.LOW,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability2 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.HIGH,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability3 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.MEDIUM,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        vulnerability4 = models.Vulnerability(
+            title="SQL Injection",
+            short_description="SQL Injection",
+            description="SQL Injection",
+            recommendation="Sanitize data",
+            technical_detail="a=$input",
+            risk_rating=risk_rating.RiskRating.CRITICAL,
+            cvss_v3_vector="5:6:7",
+            dna="121312",
+            location="",
+            scan_id=scan1.id,
+        )
+        session.add(vulnerability1)
+        session.add(vulnerability2)
+        session.add(vulnerability3)
+        session.add(vulnerability4)
         session.commit()
