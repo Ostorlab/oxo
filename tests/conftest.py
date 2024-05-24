@@ -590,6 +590,13 @@ def agent_group_definition() -> bytes:
 
 
 @pytest.fixture
+def invalid_test_group() -> bytes:
+    """Returns a dummy agent group definition."""
+    test_group = pathlib.Path(__file__).parent / "files" / "invalid_test_group.yaml"
+    return test_group.read_bytes()
+
+
+@pytest.fixture
 def asset_group_definition() -> bytes:
     """Returns a dummy asset group definition."""
     asset_group = pathlib.Path(__file__).parent / "files" / "asset_group.yaml"

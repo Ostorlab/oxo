@@ -363,7 +363,51 @@ def testRunScanMutation_always_shouldRunScan(
         response_json = response.get_json()
         nbr_scans_after_run = session.query(models.Scan).count()
         assert (
-            response_json["data"]["importScan"]["message"]
-            == "Scan imported successfully"
+            response_json["data"]["runScan"]["message"] == "Scan started successfully"
         )
         assert nbr_scans_after_run == nbr_scans_before_run + 1
+
+
+def testRunScanMutation_whenInvalidAgentGroup_shouldRaiseError(
+    client: flask.testing.FlaskClient,
+    invalid_test_group: bytes,
+    asset_group_definition: bytes,
+) -> None:
+    """Test importScan mutation."""
+    query = """
+        mutation RunScan($agentGroupDefinition: Upload!, $assets: Upload!, $install: Boolean!) 
+            {
+                runScan(agentGroupDefinition: $agentGroupDefinition, assets: $assets, install: $install) 
+                    { message } 
+            }
+    """
+    test_group = "invalid_test_group.yaml"
+    asset_group = "asset_group.yaml"
+    data = {
+        "operations": json.dumps(
+            {
+                "query": query,
+                "variables": {
+                    "agentGroupDefinition": None,
+                    "assets": None,
+                    "install": True,
+                },
+            }
+        ),
+        "map": json.dumps(
+            {
+                "agentGroupDefinition": ["variables.agentGroupDefinition"],
+                "assets": ["variables.assets"],
+            }
+        ),
+    }
+    data["agentGroupDefinition"] = (io.BytesIO(invalid_test_group), test_group)
+    data["assets"] = (io.BytesIO(asset_group_definition), asset_group)
+
+    response = client.post("/graphql", data=data, content_type="multipart/form-data")
+
+    assert response.status_code == 200, response.get_json()
+    assert (
+        json.loads(response.data).get("errors")[0].get("message")
+        == "Agent agent/ostorlab/someagent not installed"
+    )
