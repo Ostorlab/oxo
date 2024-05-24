@@ -2,7 +2,7 @@
 
 import graphene
 
-from ostorlab.runtimes.local.app import oxo
+from ostorlab.serve_app import oxo
 
 
 class Mutations(oxo.Mutations, graphene.ObjectType):

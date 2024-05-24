@@ -6,8 +6,7 @@ import graphene
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
-from ostorlab.runtimes.local.app import import_utils, common
-from ostorlab.runtimes.local.app import types
+from ostorlab.serve_app import import_utils, types, common
 from ostorlab.runtimes.local.models import models
 
 DEFAULT_NUMBER_ELEMENTS = 15

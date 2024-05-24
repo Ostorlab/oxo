@@ -1,6 +1,6 @@
 """Unit tests for the import_scan module."""
 
-from ostorlab.runtimes.local.app import import_utils
+from ostorlab.serve_app import import_utils
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import risk_rating
 

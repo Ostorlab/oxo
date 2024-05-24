@@ -27,7 +27,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.runtimes.local.app import app
+from ostorlab.serve_app import app
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service

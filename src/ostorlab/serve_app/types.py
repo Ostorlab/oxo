@@ -1,13 +1,14 @@
 """Graphene types for the local runtime."""
 
 import collections
+import enum
 from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
 
-from ostorlab.runtimes.local.app import common
+from ostorlab.serve_app import common
 from ostorlab.runtimes.local.models import models
 
 DEFAULT_NUMBER_ELEMENTS = 15
@@ -27,10 +28,10 @@ RISK_RATINGS_ORDER = {
 class OxoScanOrderByEnum(graphene.Enum):
     """Enum for the elements to order a scan by."""
 
-    ScanId = 1
-    Title = 2
-    CreatedTime = 3
-    Progress = 4
+    ScanId = enum.auto()
+    Title = enum.auto()
+    CreatedTime = enum.auto()
+    Progress = enum.auto()
 
 
 class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -282,8 +283,6 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
             kbs = vulnerabilities.group_by(
                 models.Vulnerability.title,
-                models.Vulnerability.risk_rating,
-                models.Vulnerability.cvss_v3_vector,
                 models.Vulnerability.short_description,
                 models.Vulnerability.recommendation,
             ).all()
@@ -308,7 +307,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                         v
                         for v in cvss_dict[kb.title]
                         if v is not None
-                        and common.compute_cvss_v3_base_score(v) is not None
+                           and common.compute_cvss_v3_base_score(v) is not None
                     ]
                 if len(cvss_v3_vectors) > 0:
                     highest_cvss_v3_vector = max(
