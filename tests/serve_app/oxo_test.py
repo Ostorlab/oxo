@@ -280,3 +280,38 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
         kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[1].title
+
+
+def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
+    client: flask.testing.FlaskClient, android_scan: models.Scan
+) -> None:
+    """Test query for multiple vulnerabilities with max risk rating."""
+    query = """
+        query Scans {
+            scans {
+                scans {
+                    title
+                    messageStatus
+                    progress
+                    kbVulnerabilities {
+                        highestRiskRating
+                        kb {
+                            title
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    response = client.post("/graphql", json={"query": query})
+
+    assert response.status_code == 200, response.get_json()
+    max_risk_rating = response.get_json()["data"]["scans"]["scans"][0][
+        "kbVulnerabilities"
+    ][0]["highestRiskRating"]
+    assert max_risk_rating == "CRITICAL"
+    max_risk_rating = response.get_json()["data"]["scans"]["scans"][0][
+        "kbVulnerabilities"
+    ][1]["highestRiskRating"]
+    assert max_risk_rating == "LOW"

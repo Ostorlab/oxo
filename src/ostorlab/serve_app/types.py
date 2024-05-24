@@ -287,13 +287,18 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 models.Vulnerability.recommendation,
             ).all()
 
+            distinct_vulnz = vulnerabilities.distinct(
+                models.Vulnerability.risk_rating,
+                models.Vulnerability.cvss_v3_vector,
+            ).all()
+
             kb_dict = collections.defaultdict(list)
             cvss_dict = collections.defaultdict(list)
 
             aggregated_kb = []
-            for kb in kbs:
-                kb_dict[kb.title].append(kb.risk_rating)
-                cvss_dict[kb.title].append(kb.cvss_v3_vector)
+            for vuln in distinct_vulnz:
+                kb_dict[vuln.title].append(vuln.risk_rating)
+                cvss_dict[vuln.title].append(vuln.cvss_v3_vector)
 
             for kb in kbs:
                 vulnerabilities = vulnerabilities.filter(
@@ -307,7 +312,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                         v
                         for v in cvss_dict[kb.title]
                         if v is not None
-                           and common.compute_cvss_v3_base_score(v) is not None
+                        and common.compute_cvss_v3_base_score(v) is not None
                     ]
                 if len(cvss_v3_vectors) > 0:
                     highest_cvss_v3_vector = max(
