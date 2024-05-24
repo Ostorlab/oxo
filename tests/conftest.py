@@ -627,6 +627,7 @@ def ios_scans() -> None:
         )
         session.add(scan1)
         session.add(scan2)
+        session.commit()
         vulnerability1 = models.Vulnerability(
             title="XSS",
             short_description="Cross Site Scripting",

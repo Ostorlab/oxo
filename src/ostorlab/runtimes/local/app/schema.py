@@ -1,14 +1,15 @@
+"""Oxo schema."""
+
 import graphene
 
-from ostorlab.runtimes.local.app.oxo import Mutations as ScanMutations
-from ostorlab.runtimes.local.app.oxo import Query as ScanQuery
+from ostorlab.runtimes.local.app import oxo
 
 
-class Mutations(ScanMutations, graphene.ObjectType):
+class Mutations(oxo.Mutations, graphene.ObjectType):
     pass
 
 
-class Query(ScanQuery, graphene.ObjectType):
+class Query(oxo.Query, graphene.ObjectType):
     pass
 
 
