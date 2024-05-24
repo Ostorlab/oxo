@@ -1,11 +1,20 @@
 """Oxo GraphQL queries and mutations."""
 
+import io
 from typing import Optional, List
 
 import graphene
+import graphql
+import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
+from ruamel.yaml import error
 
+from ostorlab import exceptions
+from ostorlab.agent.schema import validator
+from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.app import import_utils, common
 from ostorlab.runtimes.local.app import types
 from ostorlab.runtimes.local.models import models
@@ -117,9 +126,8 @@ class ImportScanMutation(graphene.Mutation):
 class ScanRunMutation(graphene.Mutation):
     class Arguments:
         title = graphene.String()
-        agents = graphene.List(graphene.String)
-        agent_group_definition = graphene.String()
-        assets = graphene.List(graphene.String)
+        agent_group_definition = scalars.Upload()
+        assets = scalars.Upload()
         install = graphene.Boolean()
         package_names = graphene.List(graphene.String)
 
@@ -127,28 +135,36 @@ class ScanRunMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-            root,
-            info: graphql_base.ResolveInfo,
-            title: Optional[str] = None,
-            agents: Optional[List[str]] = None,
-            agent_group_definition: Optional[str] = None,
-            assets: Optional[List[str]] = None,
-            install: Optional[bool] = False,
-    ):
-        if agents is not None:
-            agents_settings: List[definitions.AgentSettings] = []
-            for agent_key in agents:
-                agents_settings.append(definitions.AgentSettings(key=agent_key))
+        root,
+        info: graphql_base.ResolveInfo,
+        title: Optional[str] = None,
+        agent_group_definition: Optional[io.FileIO] = None,
+        assets: Optional[io.FileIO] = None,
+        install: Optional[bool] = False,
+    ) -> "ScanRunMutation":
+        """Run scan mutation.
 
-            agent_group = definitions.AgentGroupDefinition(agents=agents_settings)
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            title (Optional[str], optional): Scan title. Defaults to None.
+            agent_group_definition (Optional[io.FileIO], optional): Agent group definition. Defaults to None.
+            assets (Optional[io.FileIO], optional): Assets. Defaults to None.
+            install (Optional[bool], optional): Install agents. Defaults to False.
 
-        elif agent_group_definition is not None:
+        Returns:
+            ScanRunMutation: Scan run mutation.
+        """
+        if agent_group_definition is not None:
             try:
-                agent_group = definitions.AgentGroupDefinition.from_yaml(agent_group_definition)
+                agent_group = definitions.AgentGroupDefinition.from_yaml(
+                    agent_group_definition
+                )
             except validator.ValidationError as e:
                 raise graphql.GraphQLError(f"Invalid agent group definition: {e}")
             except error.YAMLError as e:
-                raise graphql.GraphQLError(f"Agent group definition YAML parse error:: {e}")
+                raise graphql.GraphQLError(
+                    f"Agent group definition YAML parse error:: {e}"
+                )
         else:
             raise graphql.GraphQLError("Missing agent list or agent group definition.")
 
@@ -156,10 +172,13 @@ class ScanRunMutation(graphene.Mutation):
         if assets is not None:
             try:
                 asset_group = definitions.AssetsDefinition.from_yaml(assets)
+                pass
             except validator.ValidationError as e:
                 raise graphql.GraphQLError(f"Invalid asset group definition: {e}")
             except error.YAMLError as e:
-                raise graphql.GraphQLError(f"Asset group definition YAML parse error: {e}")
+                raise graphql.GraphQLError(
+                    f"Asset group definition YAML parse error: {e}"
+                )
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
         runtime_instance.follow = []
@@ -168,26 +187,30 @@ class ScanRunMutation(graphene.Mutation):
             can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
         except exceptions.OstorlabError as e:
             raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
-
         if can_run_scan is True:
             if install is True:
                 try:
                     runtime_instance.install()
                     for ag in agent_group.agents:
                         try:
-                            # TODO (elyousfi1): Implement agent installation
-                            pass
+                            install_agent.install(ag.key, ag.version)
                         except agent_fetcher.AgentDetailsNotFound:
-                            graphql.GraphQLError(f"Agent {ag.key} not found on the store.")
+                            graphql.GraphQLError(
+                                f"Agent {ag.key} not found on the store."
+                            )
                 except httpx.HTTPError as e:
                     raise graphql.GraphQLError(f"Could not install the agents: {e}")
 
-            runtime_instance.scan(
+            message_status = runtime_instance.scan(
                 title=title,
                 agent_group_definition=agent_group,
                 assets=asset_group if asset_group is None else asset_group.targets,
+            )
+            return ScanRunMutation(
+                message=message_status or "Scan started successfully"
             )
 
 
 class Mutations(graphene.ObjectType):
     import_scan = ImportScanMutation.Field(description="Import scan from file")
+    run_scan = ScanRunMutation.Field(description="Run scan")

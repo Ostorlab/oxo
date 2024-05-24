@@ -171,7 +171,7 @@ class LocalRuntime(runtime.Runtime):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: Optional[List[base_asset.Asset]],
-    ) -> None:
+    ) -> Optional[str]:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -183,7 +183,7 @@ class LocalRuntime(runtime.Runtime):
             assets: the target asset to scan.
 
         Returns:
-            None
+            str: message indicating the scan status.
         """
         try:
             console.info("Creating scan entry")
@@ -222,22 +222,30 @@ class LocalRuntime(runtime.Runtime):
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
         except AgentNotHealthy:
-            console.error("Agent not starting")
+            message = "Agent not starting"
+            console.error(message)
             self.stop(self._scan_db.id)
             self._update_scan_progress("ERROR")
             self.stop(str(self._scan_db.id))
+            return message
         except AgentNotInstalled as e:
-            console.error(f"Agent {e} not installed")
+            message = f"Agent {e} not installed"
+            console.error(message)
             self.stop(str(self._scan_db.id))
+            return message
         except UnhealthyService as e:
-            console.error(f"Unhealthy service {e}")
+            message = f"Unhealthy service {e}"
+            console.error(message)
             self.stop(str(self._scan_db.id))
+            return message
         except agent_runtime.MissingAgentDefinitionLabel as e:
-            console.error(
+            message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
+            console.error(message)
             self.stop(str(self._scan_db.id))
+            return message
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
