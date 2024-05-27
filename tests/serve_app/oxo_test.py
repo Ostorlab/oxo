@@ -409,5 +409,5 @@ def testRunScanMutation_whenInvalidAgentGroup_shouldRaiseError(
     assert response.status_code == 200, response.get_json()
     assert (
         json.loads(response.data).get("errors")[0].get("message")
-        == "Agent agent/ostorlab/someagent not installed"
+        == "Runtime encountered an error to run scan: Agent agent/ostorlab/someagent not installed"
     )
