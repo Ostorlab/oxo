@@ -171,7 +171,6 @@ class ScanRunMutation(graphene.Mutation):
         if assets is not None:
             try:
                 asset_group = definitions.AssetsDefinition.from_yaml(assets)
-                pass
             except validator.ValidationError as e:
                 raise graphql.GraphQLError(f"Invalid asset group definition: {e}")
             except error.YAMLError as e:
@@ -203,7 +202,7 @@ class ScanRunMutation(graphene.Mutation):
             message_status = runtime_instance.scan(
                 title=title,
                 agent_group_definition=agent_group,
-                assets=asset_group if asset_group is None else asset_group.targets,
+                assets=asset_group.targets if asset_group is not None else None,
             )
 
             if message_status is not None:
