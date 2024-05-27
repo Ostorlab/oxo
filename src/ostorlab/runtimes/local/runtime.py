@@ -226,26 +226,26 @@ class LocalRuntime(runtime.Runtime):
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
         except AgentNotHealthy:
-            message = "Agent not starting."
+            message = "Agent not starting"
             console.error(message)
             self.stop(self._scan_db.id)
             self._update_scan_progress("ERROR")
             self.stop(str(self._scan_db.id))
             raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
-            message = f"Agent {e} not installed."
+            message = f"Agent {e} not installed"
             console.error(message)
             self.stop(str(self._scan_db.id))
             raise AgentNotInstalled(message)
         except UnhealthyService as e:
-            message = f"Unhealthy service {e}."
+            message = f"Unhealthy service {e}"
             console.error(message)
             self.stop(str(self._scan_db.id))
             raise UnhealthyService(message)
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
-                f" docker instead of `oxo agent build` command."
+                f" docker instead of `oxo agent build` command"
             )
             console.error(message)
             self.stop(str(self._scan_db.id))
