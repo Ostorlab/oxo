@@ -175,7 +175,7 @@ def run(
                 runtime_instance.scan(
                     title=ctx.obj["title"],
                     agent_group_definition=ctx.obj["agent_group_definition"],
-                    assets=asset_group if asset_group is None else asset_group.targets,
+                    assets=asset_group.targets if asset_group is not None else None,
                 )
             except exceptions.OstorlabError as e:
                 logger.error(f"Error running scan: {e}")
