@@ -171,11 +171,14 @@ def run(
                 agent_group.agents, cli_args=arg
             )
         if ctx.invoked_subcommand is None:
-            runtime_instance.scan(
-                title=ctx.obj["title"],
-                agent_group_definition=ctx.obj["agent_group_definition"],
-                assets=asset_group if asset_group is None else asset_group.targets,
-            )
+            try:
+                runtime_instance.scan(
+                    title=ctx.obj["title"],
+                    agent_group_definition=ctx.obj["agent_group_definition"],
+                    assets=asset_group if asset_group is None else asset_group.targets,
+                )
+            except exceptions.OstorlabError as e:
+                logger.error(f"Error running scan: {e}")
     else:
         raise click.ClickException(
             "The runtime does not support the provided agent list or group definition."

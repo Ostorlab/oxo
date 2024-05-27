@@ -67,6 +67,10 @@ class AgentNotHealthy(exceptions.OstorlabError):
     """Agent not healthy."""
 
 
+class MissingAgentDefinition(exceptions.OstorlabError):
+    """Agent definition is missing."""
+
+
 def _has_container_image(agent: definitions.AgentSettings):
     """Check if container image is available"""
     return agent.container_image is not None
@@ -227,17 +231,17 @@ class LocalRuntime(runtime.Runtime):
             self.stop(self._scan_db.id)
             self._update_scan_progress("ERROR")
             self.stop(str(self._scan_db.id))
-            return message
+            raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
             message = f"Agent {e} not installed"
             console.error(message)
             self.stop(str(self._scan_db.id))
-            return message
+            raise AgentNotInstalled(message)
         except UnhealthyService as e:
             message = f"Unhealthy service {e}"
             console.error(message)
             self.stop(str(self._scan_db.id))
-            return message
+            raise UnhealthyService(message)
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
@@ -245,7 +249,7 @@ class LocalRuntime(runtime.Runtime):
             )
             console.error(message)
             self.stop(str(self._scan_db.id))
-            return message
+            raise MissingAgentDefinition(message)
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).

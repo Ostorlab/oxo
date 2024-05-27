@@ -199,14 +199,16 @@ class ScanRunMutation(graphene.Mutation):
                 except httpx.HTTPError as e:
                     raise graphql.GraphQLError(f"Could not install the agents: {e}")
 
-            message_status = runtime_instance.scan(
-                title=title,
-                agent_group_definition=agent_group,
-                assets=asset_group.targets if asset_group is not None else None,
-            )
-
-            if message_status is not None:
-                raise graphql.GraphQLError(message_status)
+            try:
+                runtime_instance.scan(
+                    title=title,
+                    agent_group_definition=agent_group,
+                    assets=asset_group.targets if asset_group is not None else None,
+                )
+            except exceptions.OstorlabError as e:
+                raise graphql.GraphQLError(
+                    f"Runtime encountered an error to run scan: {e}"
+                )
 
             return ScanRunMutation(message="Scan started successfully")
 
