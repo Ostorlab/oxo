@@ -210,7 +210,7 @@ class ScanRunMutation(graphene.Mutation):
                     f"Runtime encountered an error to run scan: {e}"
                 )
 
-            return ScanRunMutation(message="Scan started successfully")
+            return ScanRunMutation(message="Scan started successfully.")
 
 
 class Mutations(graphene.ObjectType):
