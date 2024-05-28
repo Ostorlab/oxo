@@ -459,3 +459,52 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
+
+
+def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
+    client: testing.FlaskClient,
+) -> None:
+    """Ensure push agent group create an agent group."""
+
+    query = """mutation publishAgentGroup($agentGroup: AgentGroupCreateInputType!) {
+                      publishAgentGroup(agentGroup: $agentGroup) {
+                        agentGroup {
+                            key
+                        }
+                      }
+                    }"""
+
+    variables = {
+        "agentGroup": {
+            "name": "test_agent_group",
+            "description": "agent description",
+            "agents": [
+                {
+                    "agentKey": "agent_key",
+                    "args": [{"name": "arg1", "type": "type1", "value": "value1"}],
+                }
+            ],
+        }
+    }
+
+    response = client.post("/graphql", json={"query": query, "variables": variables})
+
+    assert response.status_code == 200, response.get_json()
+    key = response.get_json()["data"]["publishAgentGroup"]["agentGroup"]["key"]
+    assert key == "agentgroup/test_agent_group"
+    with models.Database() as session:
+        assert (
+            session.query(models.AgentGroup).filter_by(name="test_agent_group").count()
+            == 1
+        )
+        agent_group = (
+            session.query(models.AgentGroup).filter_by(name="test_agent_group").first()
+        )
+        assert agent_group.description == "agent description"
+        assert agent_group.agents[0].key == "agent_key"
+        assert agent_group.agents[0].agent_groups[0].name == "test_agent_group"
+        arg = session.query(models.AgentArgument).filter_by(name="arg1").first()
+        assert arg.name == "arg1"
+        assert arg.type == "type1"
+        assert arg.value == b"value1"
+        assert arg.agent_id == agent_group.agents[0].id

@@ -181,15 +181,15 @@ class PublishAgentGroupMutation(graphene.Mutation):
     """Create agent group."""
 
     class Arguments:
-        agent_group = types.OxoAgentGroupCreateInputType(required=True)
+        agent_group = types.AgentGroupCreateInputType(required=True)
 
-    agent_group = graphene.Field(types.OxoAgentGroupType)
+    agent_group = graphene.Field(types.AgentGroupType)
 
     @staticmethod
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        agent_group: types.OxoAgentGroupCreateInputType,
+        agent_group: types.AgentGroupCreateInputType,
     ) -> "PublishAgentGroupMutation":
         """Create agent group.
 
@@ -202,8 +202,9 @@ class PublishAgentGroupMutation(graphene.Mutation):
         """
 
         group = models.AgentGroup.create(
-            agent_group_yaml=agent_group.agent_group_definition,
-            asset_types=agent_group.asset_types,
+            name=agent_group.name,
+            description=agent_group.description,
+            agents=agent_group.agents,
         )
         return PublishAgentGroupMutation(agent_group=group)
 
@@ -213,7 +214,6 @@ class Mutations(graphene.ObjectType):
         description="Delete a scan & all its information."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
-    import_scan = ImportScanMutation.Field(description="Import scan from file")
     publish_agent_group = PublishAgentGroupMutation.Field(
         description="Create agent group"
     )

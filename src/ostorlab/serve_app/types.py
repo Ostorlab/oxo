@@ -6,7 +6,6 @@ from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
-from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
 from ostorlab.serve_app import common
@@ -345,35 +344,49 @@ class OxoScansType(graphene.ObjectType):
     scans = graphene.List(OxoScanType, required=True)
 
 
-class OxoAgentGroupCreateInputType(graphene.InputObjectType):
+class AgentArgumentInputType(graphene.InputObjectType):
+    name = graphene.String(required=True)
+    type = graphene.String(required=True)
+    description = graphene.String(required=False)
+    value = common.Bytes(required=False)
+
+
+class AgentGroupAgentCreateInputType(graphene.InputObjectType):
+    agent_key = graphene.String(required=True)
+    args = graphene.List(AgentArgumentInputType)
+
+
+class AgentGroupCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group."""
 
-    agent_group_definition = scalars.Upload(required=True)
-    asset_types = graphene.Argument(graphene.JSONString, required=True)
+    name = graphene.String(required=True)
+    description = graphene.String(required=True)
+    agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
 
 
-class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """SQLAlchemy object type for an agent."""
-
-    class Meta:
-        model = models.Agent
-        only_fields = (
-            "id",
-            "key",
-        )
-
-class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
+class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for an agent group."""
 
-    agents = graphene.List(OxoAgentType)
+    key = graphene.String()
 
     class Meta:
         model = models.AgentGroup
 
         only_fields = (
             "id",
-            "key",
+            "name",
             "description",
-            "asset_types",
             "created_time",
         )
+
+    def resolve_key(self: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
+        """Resolve key query.
+
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            str: The key of the agent group.
+        """
+        return f"agentgroup/{self.name}"

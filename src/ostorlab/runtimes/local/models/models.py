@@ -2,7 +2,6 @@
 
 import datetime
 import enum
-import io
 import json
 import logging
 import pathlib
@@ -22,7 +21,6 @@ from alembic.util import exc as alembic_exceptions
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
-from ostorlab.runtimes import definitions
 from ostorlab.utils import risk_rating as utils_rik_rating
 
 
@@ -388,12 +386,13 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(name: str, description: str) -> "AgentGroup":
+    def create(name: str, description: str, agents: List[Agent]) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
-            key: Agent group key.
+            name: Agent group key.
             description: Agent group description.
+            agents: List of agents.
         Returns:
             AgentGroup object.
         """
@@ -402,6 +401,19 @@ class AgentGroup(Base):
             description=description,
             created_time=datetime.datetime.now(),
         )
+
+        for agent in agents:
+            new_agent = Agent.create(agent.agent_key)
+            agent_group.agents.append(new_agent)
+            for argument in agent.args:
+                AgentArgument.create(
+                    agent_id=new_agent.id,
+                    name=argument.name,
+                    type=argument.type,
+                    description=argument.description,
+                    value=argument.value,
+                )
+
         with Database() as session:
             session.add(agent_group)
             session.commit()
