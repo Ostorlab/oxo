@@ -345,6 +345,8 @@ class OxoScansType(graphene.ObjectType):
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
+    """Input object type for an agent argument."""
+
     name = graphene.String(required=True)
     type = graphene.String(required=True)
     description = graphene.String(required=False)
@@ -352,6 +354,8 @@ class AgentArgumentInputType(graphene.InputObjectType):
 
 
 class AgentGroupAgentCreateInputType(graphene.InputObjectType):
+    """Input object type for creating an agent group agent."""
+
     agent_key = graphene.String(required=True)
     args = graphene.List(AgentArgumentInputType)
 

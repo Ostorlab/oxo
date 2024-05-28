@@ -36,6 +36,14 @@ class Bytes(scalars.Scalar):
 
     @staticmethod
     def coerce_bytes(value: Union[str, bytes, memoryview, list]) -> bytes:
+        """Coerce a value to bytes.
+
+        Args:
+            value (str | bytes | memoryview | list): Value to coerce.
+
+        Returns:
+            bytes: Coerced value.
+        """
         if isinstance(value, bytes):
             return value
         elif isinstance(value, memoryview):
@@ -52,6 +60,7 @@ class Bytes(scalars.Scalar):
 
     @staticmethod
     def parse_literal(ast):
+        """Parse a literal value."""
         raise NotImplementedError("ast is not supported")
 
     @staticmethod
