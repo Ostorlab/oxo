@@ -128,7 +128,6 @@ class ScanRunMutation(graphene.Mutation):
         agent_group_definition = scalars.Upload()
         assets = scalars.Upload()
         install = graphene.Boolean()
-        package_names = graphene.List(graphene.String)
 
     message = graphene.String()
 
