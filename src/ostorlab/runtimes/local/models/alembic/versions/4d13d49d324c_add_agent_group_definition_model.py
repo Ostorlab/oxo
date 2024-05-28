@@ -30,7 +30,6 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("key", sa.String(length=255), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("asset_types", sa.JSON(), nullable=True),
         sa.Column("created_time", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )

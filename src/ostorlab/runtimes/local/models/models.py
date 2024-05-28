@@ -379,7 +379,6 @@ class AgentGroup(Base):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     key = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
-    asset_types = sqlalchemy.Column(sqlalchemy.JSON)
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
 
     agents = orm.relationship(
@@ -387,20 +386,18 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(key: str, description: str, asset_types: dict[str, Any]) -> "AgentGroup":
+    def create(key: str, description: str) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
             key: Agent group key.
             description: Agent group description.
-            asset_types: Agent group asset types.
         Returns:
             AgentGroup object.
         """
         agent_group = AgentGroup(
             key=key,
             description=description,
-            asset_types=asset_types,
             created_time=datetime.datetime.now(),
         )
         with Database() as session:

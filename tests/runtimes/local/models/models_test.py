@@ -202,15 +202,12 @@ def testModelsAgentGroup_always_createsAgentGroup(
 ) -> None:
     """Test Agent Group save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.AgentGroup.create("test", "test", {"asset_types": ["type1", "type2"]})
+    models.AgentGroup.create("test", "test")
 
     with models.Database() as session:
         assert session.query(models.AgentGroup).count() == 1
         assert session.query(models.AgentGroup).all()[0].key == "test"
         assert session.query(models.AgentGroup).all()[0].description == "test"
-        assert session.query(models.AgentGroup).all()[0].asset_types == {
-            "asset_types": ["type1", "type2"]
-        }
 
 
 def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
@@ -219,9 +216,7 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
     """Test Agent Group Mapping save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     agent = models.Agent.create("test")
-    agent_group = models.AgentGroup.create(
-        "test", "test", {"asset_types": ["type1", "type2"]}
-    )
+    agent_group = models.AgentGroup.create("test", "test")
     models.AgentGroupMapping.create(agent_id=agent.id, agent_group_id=agent_group.id)
 
     with models.Database() as session:
@@ -230,9 +225,5 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
         assert session.query(models.AgentGroupMapping).count() == 1
         assert (
             session.query(models.Agent).all()[0].agent_groups[0].key == agent_group.key
-        )
-        assert (
-            session.query(models.Agent).all()[0].agent_groups[0].asset_types
-            == agent_group.asset_types
         )
         assert session.query(models.AgentGroup).all()[0].agents[0].key == agent.key
