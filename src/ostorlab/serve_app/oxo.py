@@ -102,7 +102,7 @@ class Query(graphene.ObjectType):
         with models.Database() as session:
             scan = session.query(models.Scan).get(scan_id)
             if scan is None:
-                raise graphql.GraphQLError("Scan not found")
+                raise graphql.GraphQLError("Scan not found.")
 
             return scan
 
@@ -163,12 +163,13 @@ class DeleteScanMutation(graphene.Mutation):
             graphql.GraphQLError in case the scan does not exist.
 
         Returns:
+            Boolean `True` if the delete operation is successful.
 
         """
         with models.Database() as session:
             scan_query = session.query(models.Scan).filter_by(id=scan_id)
             if scan_query.count() == 0:
-                raise graphql.GraphQLError("Scan not found")
+                raise graphql.GraphQLError("Scan not found.")
             scan_query.delete()
             session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
             session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()

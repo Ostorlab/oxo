@@ -373,10 +373,10 @@ def testQueryScan_whenScanExists_returnScanInfo(
     assert len(vulnerabilities) > 0
     assert vulnerabilities[0]["riskRating"] == "LOW"
     assert vulnerabilities[0]["detail"]["title"] == "XSS"
-    assert vulnerabilities[0]["description"] == "Cross Site Scripting"
+    assert vulnerabilities[0]["detail"]["description"] == "Cross Site Scripting"
 
 
-def testQueryScan_whenScanDoesNotExist_returnsErrorMessage(
+def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
     client: testing.FlaskClient,
 ) -> None:
     """Ensure the scan query returns an error when the scan does not exist."""
@@ -393,13 +393,13 @@ def testQueryScan_whenScanDoesNotExist_returnsErrorMessage(
     )
 
     assert response.status_code == 200, response.get_json()
-    assert response.get_json()["errors"][0]["message"] == "Scan not found"
+    assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
 def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
     client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
-    """Ensure the delete scan mutation returns an error message when the scan does not exist."""
+    """Ensure the delete scan mutation deletes the scan, its statuses & vulnerabilities."""
     with models.Database() as session:
         nb_scans_before_delete = session.query(models.Scan).count()
         nb_vulnz_before_delete = (
@@ -441,7 +441,7 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
 
-def testDeleteScanMutation_whenScanDoesNotExist_returnsErrorMessage(
+def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
     client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
@@ -458,4 +458,4 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnsErrorMessage(
     )
 
     assert response.status_code == 200, response.get_json()
-    assert response.get_json()["errors"][0]["message"] == "Scan not found"
+    assert response.get_json()["errors"][0]["message"] == "Scan not found."
