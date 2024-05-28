@@ -8,7 +8,7 @@ from ostorlab.assets import asset
 @dataclasses.dataclass
 @asset.selector("v3.asset.store.ios_testflight")
 class IOSTestflight(asset.Asset):
-    """Ios testflight target asset."""
+    """iOS testflight target asset."""
 
     def __init__(self, application_url: str):
         self.application_url = application_url
