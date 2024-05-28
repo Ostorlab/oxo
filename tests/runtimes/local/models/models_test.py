@@ -160,7 +160,9 @@ def testModelsVulnerability_whenRiskRatingIsCritcal_doNotRaiseError(
         assert session.query(models.Vulnerability).first().scan_id == create_scan_db.id
 
 
-def testModelsAgent_always_createsAgent(mocker, db_engine_path):
+def testModelsAgent_always_createsAgent(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Agent save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.Agent.create("test")
@@ -170,7 +172,9 @@ def testModelsAgent_always_createsAgent(mocker, db_engine_path):
         assert session.query(models.Agent).all()[0].key == "test"
 
 
-def testModelsAgentArgument_always_createsAgentArgument(mocker, db_engine_path):
+def testModelsAgentArgument_always_createsAgentArgument(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Agent Argument save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_agent_db = models.Agent.create("test")
@@ -193,7 +197,9 @@ def testModelsAgentArgument_always_createsAgentArgument(mocker, db_engine_path):
         )
 
 
-def testModelsAgentGroup_always_createsAgentGroup(mocker, db_engine_path):
+def testModelsAgentGroup_always_createsAgentGroup(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Agent Group save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.AgentGroup.create("test", "test", {"asset_types": ["type1", "type2"]})
@@ -207,7 +213,9 @@ def testModelsAgentGroup_always_createsAgentGroup(mocker, db_engine_path):
         }
 
 
-def testModelsAgentGroupMapping_always_createsAgentGroupMapping(mocker, db_engine_path):
+def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Agent Group Mapping save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     agent = models.Agent.create("test")
