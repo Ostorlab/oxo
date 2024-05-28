@@ -3,13 +3,13 @@
 import io
 import json
 
-import flask
+from flask import testing
 
 from ostorlab.runtimes.local.models import models
 
 
 def testImportScanMutation_always_shouldImportScan(
-    client: flask.testing.FlaskClient, zip_file_bytes: bytes
+    client: testing.FlaskClient, zip_file_bytes: bytes
 ) -> None:
     """Test importScan mutation."""
     with models.Database() as session:
@@ -55,7 +55,7 @@ def testImportScanMutation_always_shouldImportScan(
 
 
 def testQueryMultipleScans_always_shouldReturnMultipleScans(
-    client: flask.testing.FlaskClient, ios_scans: models.Scan
+    client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans."""
     with models.Database() as session:
@@ -96,7 +96,7 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
 
 
 def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResults(
-    client: flask.testing.FlaskClient, ios_scans: models.Scan
+    client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans with pagination and sort ascending."""
     with models.Database() as session:
@@ -147,7 +147,7 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
 
 
 def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
-    client: flask.testing.FlaskClient, ios_scans: models.Scan
+    client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans when no scan ids are specified."""
     with models.Database() as session:
@@ -186,7 +186,7 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
 
 
 def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
-    client: flask.testing.FlaskClient, ios_scans: models.Scan
+    client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple vulnerabilities."""
     with models.Database() as session:
@@ -232,7 +232,7 @@ def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
 
 
 def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilities(
-    client: flask.testing.FlaskClient, ios_scans: models.Scan
+    client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple KB vulnerabilities."""
     with models.Database() as session:
@@ -283,7 +283,7 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
 
 
 def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
-    client: flask.testing.FlaskClient, android_scan: models.Scan
+    client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Test query for multiple vulnerabilities with max risk rating."""
     query = """
@@ -315,3 +315,147 @@ def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
         "kbVulnerabilities"
     ][1]["highestRiskRating"]
     assert max_risk_rating == "LOW"
+
+
+def testQueryScan_whenScanExists_returnScanInfo(
+    client: testing.FlaskClient, android_scan: models.Scan
+) -> None:
+    """Ensure the scan query returns the correct scan with all its information."""
+    query = """
+        query Scan ($scanId: Int!){
+            scan (scanId: $scanId){
+                id
+                title
+                asset
+                createdTime
+                messageStatus
+                progress
+                vulnerabilities {
+                    vulnerabilities {
+                        id
+                        technicalDetail
+                        riskRating
+                        cvssV3Vector
+                        dna
+                        detail {
+                            title
+                            shortDescription
+                            description
+                            recommendation
+                            references
+                        }
+                        cvssV3BaseScore
+                    }
+                }
+                kbVulnerabilities {
+                    highestRiskRating
+                    highestCvssV3Vector
+                    highestCvssV3BaseScore
+                    kb {
+                        title
+                    }
+                }
+            }
+        }
+    """
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"scanId": android_scan.id}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    scan_data = response.get_json()["data"]["scan"]
+    assert scan_data["id"] == str(android_scan.id)
+    assert scan_data["title"] == android_scan.title
+    assert scan_data["progress"] == "DONE"
+
+    vulnerabilities = scan_data["vulnerabilities"]["vulnerabilities"]
+    assert len(vulnerabilities) > 0
+    assert vulnerabilities[0]["riskRating"] == "LOW"
+    assert vulnerabilities[0]["detail"]["title"] == "XSS"
+    assert vulnerabilities[0]["description"] == "Cross Site Scripting"
+
+
+def testQueryScan_whenScanDoesNotExist_returnsErrorMessage(
+    client: testing.FlaskClient,
+) -> None:
+    """Ensure the scan query returns an error when the scan does not exist."""
+    query = """
+        query Scan ($scanId: Int!){
+            scan (scanId: $scanId){
+                id
+            }
+        }
+    """
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"scanId": 42}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["errors"][0]["message"] == "Scan not found"
+
+
+def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
+    client: testing.FlaskClient, android_scan: models.Scan
+) -> None:
+    """Ensure the delete scan mutation returns an error message when the scan does not exist."""
+    with models.Database() as session:
+        nb_scans_before_delete = session.query(models.Scan).count()
+        nb_vulnz_before_delete = (
+            session.query(models.Vulnerability)
+            .filter_by(scan_id=android_scan.id)
+            .count()
+        )
+        nb_status_before_delete = (
+            session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
+        )
+
+    query = """
+        mutation DeleteScan ($scanId: Int!){
+            deleteScan (scanId: $scanId) {
+                result
+            }
+        }
+    """
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"scanId": android_scan.id}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert nb_scans_before_delete > 0
+    assert nb_vulnz_before_delete > 0
+    assert nb_status_before_delete > 0
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 0
+        assert (
+            session.query(models.Vulnerability)
+            .filter_by(scan_id=android_scan.id)
+            .count()
+            == 0
+        )
+        assert (
+            session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
+            == 0
+        )
+
+
+def testDeleteScanMutation_whenScanDoesNotExist_returnsErrorMessage(
+    client: testing.FlaskClient,
+) -> None:
+    """Ensure the delete scan mutation returns an error message when the scan does not exist."""
+    query = """
+        mutation DeleteScan ($scanId: Int!){
+            deleteScan (scanId: $scanId) {
+                result
+            }
+        }
+    """
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"scanId": 42}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["errors"][0]["message"] == "Scan not found"
