@@ -65,7 +65,7 @@ class Query(graphene.ObjectType):
                 order_by_filter = models.Scan.created_time
             elif order_by == types.OxoScanOrderByEnum.Progress:
                 order_by_filter = models.Scan.progress
-            if order_by_filter is not None and sort == common.SortEnum.DESC:
+            if order_by_filter is not None and sort == common.SortEnum.Desc:
                 scans = scans.order_by(order_by_filter.desc())
             elif order_by_filter is not None:
                 scans = scans.order_by(order_by_filter)

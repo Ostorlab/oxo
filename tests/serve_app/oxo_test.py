@@ -126,7 +126,7 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
                 "page": 1,
                 "numberElements": 2,
                 "orderBy": "ScanId",
-                "sort": "ASC",
+                "sort": "Asc",
             },
         },
     )

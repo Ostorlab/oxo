@@ -9,8 +9,8 @@ import cvss
 class SortEnum(graphene.Enum):
     """Sort enum, for the sorting order of the results."""
 
-    ASC = 1
-    DESC = 2
+    Asc = 1
+    Desc = 2
 
 
 class RiskRatingEnum(graphene.Enum):
