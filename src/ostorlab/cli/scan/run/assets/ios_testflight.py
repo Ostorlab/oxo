@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="ios-testflight")
 @click.option("--application-url", required=False)
 @click.pass_context
-def ios_store(ctx: click.core.Context, application_url: str) -> None:
+def ios_testflight(ctx: click.core.Context, application_url: str) -> None:
     """Run scan using testflight url."""
     runtime = ctx.obj["runtime"]
     assets = [ios_testflight_asset.IOSTestflight(application_url=application_url)]
