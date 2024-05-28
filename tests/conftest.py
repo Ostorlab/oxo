@@ -758,3 +758,16 @@ def android_scan(clean_db: None) -> None:
         session.add(vulnerability4)
         session.commit()
     yield scan
+
+
+@pytest.fixture
+def agent_group() -> None:
+    """Create dummy agent group."""
+    agent = models.Agent.create(
+        key="Agent 1",
+    )
+    models.AgentGroup.create(
+        name="ag_1",
+        description="Agent Group 1",
+        agents=[agent],
+    )

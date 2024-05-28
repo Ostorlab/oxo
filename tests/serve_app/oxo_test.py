@@ -508,3 +508,48 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
         assert arg.type == "type1"
         assert arg.value == b"value1"
         assert arg.agent_id == agent_group.agents[0].id
+
+
+def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
+    client: testing.FlaskClient, agent_group: models.AgentGroup
+) -> None:
+    """Ensure the delete agent group mutation deletes the agent group."""
+    with models.Database() as session:
+        nbr_agent_groups_before_delete = session.query(models.AgentGroup).count()
+
+    query = """
+        mutation DeleteAgentGroup ($agentGroupId: Int!){
+            deleteAgentGroup (agentGroupId: $agentGroupId) {
+                result
+            }
+        }
+    """
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"agentGroupId": agent_group.id}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["deleteAgentGroup"]["result"] is True
+    with models.Database() as session:
+        assert session.query(models.AgentGroup).count() == nbr_agent_groups_before_delete - 1
+
+
+def testDeleteAgentGroupMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
+    client: testing.FlaskClient,
+) -> None:
+    """Ensure the delete agent group mutation returns an error message when the agent group does not exist."""
+    query = """
+        mutation DeleteAgentGroup ($agentGroupId: Int!){
+            deleteAgentGroup (agentGroupId: $agentGroupId) {
+                result
+            }
+        }
+    """
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"agentGroupId": 42}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["errors"][0]["message"] == "AgentGroup not found."

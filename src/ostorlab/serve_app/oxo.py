@@ -209,9 +209,43 @@ class PublishAgentGroupMutation(graphene.Mutation):
         return PublishAgentGroupMutation(agent_group=group)
 
 
+class DeleteAgentGroupMutation(graphene.Mutation):
+    """Delete agent group mutation."""
+
+    class Arguments:
+        agent_group_id = graphene.Int(required=True)
+
+    result = graphene.Boolean()
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        agent_group_id: int,
+    ) -> "DeleteAgentGroupMutation":
+        """Delete agent group mutation.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            agent_group_id (int): Agent group id.
+
+        Returns:
+            DeleteAgentGroupMutation: Delete agent group mutation.
+        """
+        with models.Database() as session:
+            agent_group_query = session.query(models.AgentGroup).filter_by(id=agent_group_id)
+            if agent_group_query.count() == 0:
+                raise graphql.GraphQLError("AgentGroup not found.")
+            agent_group_query.delete()
+            # TODO (elyousfi5): delete the associated scan if needed
+            return DeleteAgentGroupMutation(result=True)
+
 class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(
         description="Delete a scan & all its information."
+    )
+    delete_agent_group = DeleteAgentGroupMutation.Field(
+        description="Delete agent group."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
     publish_agent_group = PublishAgentGroupMutation.Field(
