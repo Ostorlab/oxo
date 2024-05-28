@@ -333,7 +333,7 @@ class AgentArgument(Base):
     name = sqlalchemy.Column(sqlalchemy.String(255))
     type = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
-    default_value = sqlalchemy.Column(sqlalchemy.Text)
+    value = sqlalchemy.Column(sqlalchemy.Text)
 
     agent_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("agent.id"))
 
@@ -343,7 +343,7 @@ class AgentArgument(Base):
         name: str,
         type: str,
         description: Optional[str] = None,
-        default_value: Optional[str] = None,
+        value: Optional[str] = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
@@ -352,7 +352,7 @@ class AgentArgument(Base):
             name: Argument name.
             type: Argument type.
             description: Argument description.
-            default_value: Argument default value.
+            value: Argument default value.
         Returns:
             AgentArgument object.
         """
@@ -361,7 +361,7 @@ class AgentArgument(Base):
             name=name,
             type=type,
             description=description,
-            default_value=default_value,
+            value=value,
         )
         with Database() as session:
             session.add(agent_argument)
