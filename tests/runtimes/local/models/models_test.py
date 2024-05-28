@@ -206,7 +206,7 @@ def testModelsAgentGroup_always_createsAgentGroup(
 
     with models.Database() as session:
         assert session.query(models.AgentGroup).count() == 1
-        assert session.query(models.AgentGroup).all()[0].key == "test"
+        assert session.query(models.AgentGroup).all()[0].name == "test"
         assert session.query(models.AgentGroup).all()[0].description == "test"
 
 
@@ -224,6 +224,7 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
         assert session.query(models.AgentGroup).count() == 1
         assert session.query(models.AgentGroupMapping).count() == 1
         assert (
-            session.query(models.Agent).all()[0].agent_groups[0].key == agent_group.key
+            session.query(models.Agent).all()[0].agent_groups[0].name
+            == agent_group.name
         )
         assert session.query(models.AgentGroup).all()[0].agents[0].key == agent.key

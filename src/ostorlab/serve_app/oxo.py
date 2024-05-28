@@ -152,7 +152,7 @@ class DeleteScanMutation(graphene.Mutation):
         root,
         info: graphql_base.ResolveInfo,
         scan_id: int,
-    ) -> "ImportScanMutation":
+    ) -> "DeleteScanMutation":
         """Delete a scan & its information.
 
         Args:

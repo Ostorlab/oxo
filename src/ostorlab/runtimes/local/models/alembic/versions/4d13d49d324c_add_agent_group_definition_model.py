@@ -28,7 +28,7 @@ def upgrade() -> None:
     op.create_table(
         "agent_group",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("key", sa.String(length=255), nullable=True),
+        sa.Column("name", sa.String(length=255), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("created_time", sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint("id"),

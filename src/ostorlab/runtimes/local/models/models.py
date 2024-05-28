@@ -379,7 +379,7 @@ class AgentGroup(Base):
 
     __tablename__ = "agent_group"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    key = sqlalchemy.Column(sqlalchemy.String(255))
+    name = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
 
@@ -388,7 +388,7 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(key: str, description: str) -> "AgentGroup":
+    def create(name: str, description: str) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
@@ -398,7 +398,7 @@ class AgentGroup(Base):
             AgentGroup object.
         """
         agent_group = AgentGroup(
-            key=key,
+            name=name,
             description=description,
             created_time=datetime.datetime.now(),
         )
