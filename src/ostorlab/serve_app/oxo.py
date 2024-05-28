@@ -113,5 +113,39 @@ class ImportScanMutation(graphene.Mutation):
             return ImportScanMutation(message="Scan imported successfully")
 
 
+class PublishAgentGroupMutation(graphene.Mutation):
+    """Create agent group."""
+
+    class Arguments:
+        agent_group = types.AgentGroupCreateInputType(required=True)
+
+    agent_group = graphene.Field(types.AgentGroupType)
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        agent_group: types.AgentGroupCreateInputType,
+    ) -> "PublishAgentGroupMutation":
+        """Create agent group.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            agent_group (types.AgentGroupCreateInputType): Agent group to create.
+
+        Returns:
+            PublishAgentGroupMutation: Publish agent group mutation.
+        """
+
+        agent_group = models.AgentGroup.create(
+            agent_group_yaml=agent_group.agent_group_definition,
+            asset_types=agent_group.asset_types,
+        )
+        return PublishAgentGroupMutation(agent_group=agent_group)
+
+
 class Mutations(graphene.ObjectType):
     import_scan = ImportScanMutation.Field(description="Import scan from file")
+    publish_agent_group = PublishAgentGroupMutation.Field(
+        description="Create agent group"
+    )

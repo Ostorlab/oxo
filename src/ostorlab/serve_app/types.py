@@ -6,6 +6,7 @@ from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
+from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
 from ostorlab.serve_app import common
@@ -342,3 +343,25 @@ class OxoScansType(graphene.ObjectType):
     """Graphene object type for a list of scans."""
 
     scans = graphene.List(OxoScanType, required=True)
+
+
+class AgentGroupCreateInputType(graphene.InputObjectType):
+    """Input object type for creating an agent group."""
+
+    agent_group_definition = scalars.Upload(required=True)
+    asset_types = graphene.Argument(graphene.JSONString, required=True)
+
+
+class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for an agent group."""
+
+    class Meta:
+        model = models.AgentGroup
+
+        only_fields = (
+            "id",
+            "key",
+            "description",
+            "asset_types",
+            "created_time",
+        )

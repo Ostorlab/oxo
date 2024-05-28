@@ -2,6 +2,7 @@
 
 import datetime
 import enum
+import io
 import json
 import logging
 import pathlib
@@ -21,6 +22,7 @@ from alembic.util import exc as alembic_exceptions
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
+from ostorlab.runtimes import definitions
 from ostorlab.utils import risk_rating as utils_rik_rating
 
 
@@ -384,22 +386,42 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(key: str, description: str, asset_types: dict[str, Any]) -> "AgentGroup":
+    def create(
+        agent_group_yaml: io.FileIO, asset_types: Dict[str, Any]
+    ) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
-            key: Agent group key.
-            description: Agent group description.
-            asset_types: Agent group asset types.
+            agent_group_yaml: Agent group yaml file.
         Returns:
             AgentGroup object.
         """
+
+        agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
+            agent_group_yaml
+        )
+        agent_settings = agent_group_definition.agents
+
         agent_group = AgentGroup(
-            key=key,
-            description=description,
+            key=agent_group_definition.name,
+            description=agent_group_definition.description,
             asset_types=asset_types,
             created_time=datetime.datetime.now(),
         )
+
+        for agent_setting in agent_settings:
+            agent = Agent.create(agent_setting.key)
+            for argument in agent_setting.args:
+                AgentArgument.create(
+                    agent_id=agent.id,
+                    name=argument.name,
+                    type=argument.type,
+                    description=argument.description,
+                    value=argument.value,
+                )
+
+            agent_group.agents.append(agent)
+
         with Database() as session:
             session.add(agent_group)
             session.commit()
