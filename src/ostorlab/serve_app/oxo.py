@@ -117,15 +117,15 @@ class PublishAgentGroupMutation(graphene.Mutation):
     """Create agent group."""
 
     class Arguments:
-        agent_group = types.AgentGroupCreateInputType(required=True)
+        agent_group = types.OxoAgentGroupCreateInputType(required=True)
 
-    agent_group = graphene.Field(types.AgentGroupType)
+    agent_group = graphene.Field(types.OxoAgentGroupType)
 
     @staticmethod
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        agent_group: types.AgentGroupCreateInputType,
+        agent_group: types.OxoAgentGroupCreateInputType,
     ) -> "PublishAgentGroupMutation":
         """Create agent group.
 
@@ -137,11 +137,11 @@ class PublishAgentGroupMutation(graphene.Mutation):
             PublishAgentGroupMutation: Publish agent group mutation.
         """
 
-        agent_group = models.AgentGroup.create(
+        group = models.AgentGroup.create(
             agent_group_yaml=agent_group.agent_group_definition,
             asset_types=agent_group.asset_types,
         )
-        return PublishAgentGroupMutation(agent_group=agent_group)
+        return PublishAgentGroupMutation(agent_group=group)
 
 
 class Mutations(graphene.ObjectType):

@@ -345,15 +345,27 @@ class OxoScansType(graphene.ObjectType):
     scans = graphene.List(OxoScanType, required=True)
 
 
-class AgentGroupCreateInputType(graphene.InputObjectType):
+class OxoAgentGroupCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group."""
 
     agent_group_definition = scalars.Upload(required=True)
     asset_types = graphene.Argument(graphene.JSONString, required=True)
 
 
-class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
+class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for an agent."""
+
+    class Meta:
+        model = models.Agent
+        only_fields = (
+            "id",
+            "key",
+        )
+
+class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for an agent group."""
+
+    agents = graphene.List(OxoAgentType)
 
     class Meta:
         model = models.AgentGroup
