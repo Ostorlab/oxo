@@ -2,6 +2,7 @@
 
 from typing import Optional, List
 
+import graphql
 import graphene
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
@@ -23,6 +24,9 @@ class Query(graphene.ObjectType):
         order_by=types.OxoScanOrderByEnum(required=False),
         sort=common.SortEnum(required=False),
         description="List of scans.",
+    )
+    scan = graphene.Field(
+        types.OxoScanType, scan_id=graphene.Int(), description="Retrieve scan by id."
     )
 
     def resolve_scans(
@@ -80,6 +84,28 @@ class Query(graphene.ObjectType):
             else:
                 return types.OxoScansType(scans=scans)
 
+    def resolve_scan(
+        self, info: graphql_base.ResolveInfo, scan_id: int
+    ) -> types.OxoScanType:
+        """Retrieve scan by its id.
+
+        Args:
+            info: `graphql_base.ResolveInfo` instance.
+            scan_id: The scan ID.
+
+        Raises:
+            graphql.GraphQLError in case the scan does not exist.
+
+        Returns:
+            The scan information.
+        """
+        with models.Database() as session:
+            scan = session.query(models.Scan).get(scan_id)
+            if scan is None:
+                raise graphql.GraphQLError("Scan not found.")
+
+            return scan
+
 
 class ImportScanMutation(graphene.Mutation):
     """Import scan mutation."""
@@ -111,6 +137,44 @@ class ImportScanMutation(graphene.Mutation):
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
             import_utils.import_scan(session, file.read(), scan)
             return ImportScanMutation(message="Scan imported successfully")
+
+
+class DeleteScanMutation(graphene.Mutation):
+    """Delete Scan & its information mutation."""
+
+    class Arguments:
+        scan_id = graphene.Int(required=True)
+
+    result = graphene.Boolean()
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        scan_id: int,
+    ) -> "ImportScanMutation":
+        """Delete a scan & its information.
+
+        Args:
+            info: `graphql_base.ResolveInfo` instance.
+            scan_id: The scan ID.
+
+        Raises:
+            graphql.GraphQLError in case the scan does not exist.
+
+        Returns:
+            Boolean `True` if the delete operation is successful.
+
+        """
+        with models.Database() as session:
+            scan_query = session.query(models.Scan).filter_by(id=scan_id)
+            if scan_query.count() == 0:
+                raise graphql.GraphQLError("Scan not found.")
+            scan_query.delete()
+            session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
+            session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()
+            session.commit()
+            return DeleteScanMutation(result=True)
 
 
 class PublishAgentGroupMutation(graphene.Mutation):
@@ -145,6 +209,10 @@ class PublishAgentGroupMutation(graphene.Mutation):
 
 
 class Mutations(graphene.ObjectType):
+    delete_scan = DeleteScanMutation.Field(
+        description="Delete a scan & all its information."
+    )
+    import_scan = ImportScanMutation.Field(description="Import scan from file.")
     import_scan = ImportScanMutation.Field(description="Import scan from file")
     publish_agent_group = PublishAgentGroupMutation.Field(
         description="Create agent group"

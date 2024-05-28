@@ -688,13 +688,21 @@ def clean_db(request) -> None:
 def android_scan(clean_db: None) -> None:
     """Create dummy android scan."""
     with models.Database() as session:
-        scan1 = models.Scan(
+        scan = models.Scan(
             title="Android Scan 1 ",
             asset="Android file",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
-        session.add(scan1)
+        session.add(scan)
+        session.commit()
+        scan_status = models.ScanStatus(
+            created_time=datetime.datetime.now(),
+            key="dummy-key",
+            value="dummy-value",
+            scan_id=scan.id,
+        )
+        session.add(scan_status)
         session.commit()
         vulnerability1 = models.Vulnerability(
             title="XSS",
@@ -706,7 +714,7 @@ def android_scan(clean_db: None) -> None:
             cvss_v3_vector="5:6:7",
             dna="121312",
             location="",
-            scan_id=scan1.id,
+            scan_id=scan.id,
         )
         vulnerability2 = models.Vulnerability(
             title="SQL Injection",
@@ -718,7 +726,7 @@ def android_scan(clean_db: None) -> None:
             cvss_v3_vector="5:6:7",
             dna="121312",
             location="",
-            scan_id=scan1.id,
+            scan_id=scan.id,
         )
         vulnerability3 = models.Vulnerability(
             title="SQL Injection",
@@ -730,7 +738,7 @@ def android_scan(clean_db: None) -> None:
             cvss_v3_vector="5:6:7",
             dna="121312",
             location="",
-            scan_id=scan1.id,
+            scan_id=scan.id,
         )
         vulnerability4 = models.Vulnerability(
             title="SQL Injection",
@@ -742,10 +750,11 @@ def android_scan(clean_db: None) -> None:
             cvss_v3_vector="5:6:7",
             dna="121312",
             location="",
-            scan_id=scan1.id,
+            scan_id=scan.id,
         )
         session.add(vulnerability1)
         session.add(vulnerability2)
         session.add(vulnerability3)
         session.add(vulnerability4)
         session.commit()
+    yield scan

@@ -168,7 +168,10 @@ class Vulnerability(Base):
     description = sqlalchemy.Column(sqlalchemy.Text)
     recommendation = sqlalchemy.Column(sqlalchemy.Text)
     references = sqlalchemy.Column(sqlalchemy.Text)
-    scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("scan.id"))
+    scan_id = sqlalchemy.Column(
+        sqlalchemy.Integer,
+        sqlalchemy.ForeignKey("scan.id"),
+    )
     location = sqlalchemy.Column(sqlalchemy.Text)
 
     @staticmethod
@@ -378,7 +381,6 @@ class AgentGroup(Base):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     key = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
-    asset_types = sqlalchemy.Column(sqlalchemy.JSON)
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
 
     agents = orm.relationship(
@@ -386,42 +388,20 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(
-        agent_group_yaml: io.FileIO, asset_types: Dict[str, Any]
-    ) -> "AgentGroup":
+    def create(key: str, description: str) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
-            agent_group_yaml: Agent group yaml file.
+            key: Agent group key.
+            description: Agent group description.
         Returns:
             AgentGroup object.
         """
-
-        agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
-            agent_group_yaml
-        )
-        agent_settings = agent_group_definition.agents
-
         agent_group = AgentGroup(
-            key=agent_group_definition.name,
-            description=agent_group_definition.description,
-            asset_types=asset_types,
+            key=key,
+            description=description,
             created_time=datetime.datetime.now(),
         )
-
-        for agent_setting in agent_settings:
-            agent = Agent.create(agent_setting.key)
-            for argument in agent_setting.args:
-                AgentArgument.create(
-                    agent_id=agent.id,
-                    name=argument.name,
-                    type=argument.type,
-                    description=argument.description,
-                    value=argument.value,
-                )
-
-            agent_group.agents.append(agent)
-
         with Database() as session:
             session.add(agent_group)
             session.commit()
