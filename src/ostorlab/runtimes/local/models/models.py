@@ -127,6 +127,9 @@ class Scan(Base):
     asset = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
+    agent_group_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id")
+    )
 
     @staticmethod
     def create(asset, title: str = ""):
@@ -293,3 +296,141 @@ class ScanStatus(Base):
             session.add(scan_status)
             session.commit()
             return scan_status
+
+
+class Agent(Base):
+    """The Agent model"""
+
+    __tablename__ = "agent"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    key = sqlalchemy.Column(sqlalchemy.String(255))
+
+    agent_groups = orm.relationship(
+        "AgentGroup", secondary="agent_group_mapping", back_populates="agents"
+    )
+
+    @staticmethod
+    def create(key: str) -> "Agent":
+        """Persist the agent in the database.
+
+        Args:
+            key: Agent key.
+        Returns:
+            Agent object.
+        """
+        agent = Agent(key=key)
+        with Database() as session:
+            session.add(agent)
+            session.commit()
+            return agent
+
+
+class AgentArgument(Base):
+    """The Agent Argument model"""
+
+    __tablename__ = "agent_argument"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    name = sqlalchemy.Column(sqlalchemy.String(255))
+    type = sqlalchemy.Column(sqlalchemy.String(255))
+    description = sqlalchemy.Column(sqlalchemy.Text)
+    default_value = sqlalchemy.Column(sqlalchemy.Text)
+
+    agent_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("agent.id"))
+
+    @staticmethod
+    def create(
+        agent_id: int,
+        name: str,
+        type: str,
+        description: Optional[str] = None,
+        default_value: Optional[str] = None,
+    ) -> "AgentArgument":
+        """Persist the agent argument in the database.
+
+        Args:
+            agent_id: Agent id.
+            name: Argument name.
+            type: Argument type.
+            description: Argument description.
+            default_value: Argument default value.
+        Returns:
+            AgentArgument object.
+        """
+        agent_argument = AgentArgument(
+            agent_id=agent_id,
+            name=name,
+            type=type,
+            description=description,
+            default_value=default_value,
+        )
+        with Database() as session:
+            session.add(agent_argument)
+            session.commit()
+            return agent_argument
+
+
+class AgentGroup(Base):
+    """The Agent Group model"""
+
+    __tablename__ = "agent_group"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    key = sqlalchemy.Column(sqlalchemy.String(255))
+    description = sqlalchemy.Column(sqlalchemy.Text)
+    asset_types = sqlalchemy.Column(sqlalchemy.JSON)
+    created_time = sqlalchemy.Column(sqlalchemy.DateTime)
+
+    agents = orm.relationship(
+        "Agent", secondary="agent_group_mapping", back_populates="agent_groups"
+    )
+
+    @staticmethod
+    def create(key: str, description: str, asset_types: dict[str, Any]) -> "AgentGroup":
+        """Persist the agent group in the database.
+
+        Args:
+            key: Agent group key.
+            description: Agent group description.
+            asset_types: Agent group asset types.
+        Returns:
+            AgentGroup object.
+        """
+        agent_group = AgentGroup(
+            key=key,
+            description=description,
+            asset_types=asset_types,
+            created_time=datetime.datetime.now(),
+        )
+        with Database() as session:
+            session.add(agent_group)
+            session.commit()
+            return agent_group
+
+
+class AgentGroupMapping(Base):
+    """The Agent Group Mapping model"""
+
+    __tablename__ = "agent_group_mapping"
+    agent_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("agent.id"), primary_key=True
+    )
+    agent_group_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id"), primary_key=True
+    )
+
+    @staticmethod
+    def create(agent_id: int, agent_group_id: int) -> "AgentGroupMapping":
+        """Persist the agent group mapping in the database.
+
+        Args:
+            agent_id: Agent id.
+            agent_group_id: Agent group id.
+        Returns:
+            AgentGroupMapping object.
+        """
+        agent_group_mapping = AgentGroupMapping(
+            agent_id=agent_id, agent_group_id=agent_group_id
+        )
+        with Database() as session:
+            session.add(agent_group_mapping)
+            session.commit()
+            return agent_group_mapping
