@@ -761,13 +761,14 @@ def android_scan(clean_db: None) -> None:
 
 
 @pytest.fixture
-def agent_group() -> None:
+def agent_group() -> models.AgentGroup:
     """Create dummy agent group."""
-    agent = models.Agent.create(
-        key="Agent 1",
-    )
-    models.AgentGroup.create(
-        name="ag_1",
-        description="Agent Group 1",
-        agents=[agent],
-    )
+    with models.Database() as session:
+        agent_group = models.AgentGroup(
+            name="Agent Group 1",
+            description="Agent Group 1 description",
+            created_time=datetime.datetime.now(),
+        )
+        session.add(agent_group)
+        session.commit()
+        return agent_group

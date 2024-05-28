@@ -532,7 +532,10 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["data"]["deleteAgentGroup"]["result"] is True
     with models.Database() as session:
-        assert session.query(models.AgentGroup).count() == nbr_agent_groups_before_delete - 1
+        assert (
+            session.query(models.AgentGroup).count()
+            == nbr_agent_groups_before_delete - 1
+        )
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupDoesNotExist_returnErrorMessage(

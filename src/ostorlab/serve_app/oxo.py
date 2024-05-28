@@ -233,12 +233,15 @@ class DeleteAgentGroupMutation(graphene.Mutation):
             DeleteAgentGroupMutation: Delete agent group mutation.
         """
         with models.Database() as session:
-            agent_group_query = session.query(models.AgentGroup).filter_by(id=agent_group_id)
+            agent_group_query = session.query(models.AgentGroup).filter_by(
+                id=agent_group_id
+            )
             if agent_group_query.count() == 0:
                 raise graphql.GraphQLError("AgentGroup not found.")
             agent_group_query.delete()
-            # TODO (elyousfi5): delete the associated scan if needed
+            session.commit()
             return DeleteAgentGroupMutation(result=True)
+
 
 class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(

@@ -5,8 +5,8 @@ import enum
 import json
 import logging
 import pathlib
-from typing import Any, Dict, List, Optional
 import types
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -23,10 +23,8 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import risk_rating as utils_rik_rating
 
-
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
 OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
-
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -386,7 +384,7 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(name: str, description: str, agents: List[Agent]) -> "AgentGroup":
+    def create(name: str, description: str, agents: Any) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
