@@ -166,7 +166,10 @@ class Vulnerability(Base):
     description = sqlalchemy.Column(sqlalchemy.Text)
     recommendation = sqlalchemy.Column(sqlalchemy.Text)
     references = sqlalchemy.Column(sqlalchemy.Text)
-    scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("scan.id"))
+    scan_id = sqlalchemy.Column(
+        sqlalchemy.Integer,
+        sqlalchemy.ForeignKey("scan.id"),
+    )
     location = sqlalchemy.Column(sqlalchemy.Text)
 
     @staticmethod
