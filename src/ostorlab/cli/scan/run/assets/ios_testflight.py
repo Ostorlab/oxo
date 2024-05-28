@@ -1,7 +1,6 @@
 """This module triggers a scan using the ios_testflight asset."""
 
 import logging
-from typing import Tuple, Optional
 
 import click
 
