@@ -158,3 +158,73 @@ def testModelsVulnerability_whenRiskRatingIsCritcal_doNotRaiseError(
             == "Javascript Critical vuln"
         )
         assert session.query(models.Vulnerability).first().scan_id == create_scan_db.id
+
+
+def testModelsAgent_always_createsAgent(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test Agent save implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.Agent.create("test")
+
+    with models.Database() as session:
+        assert session.query(models.Agent).count() == 1
+        assert session.query(models.Agent).all()[0].key == "test"
+
+
+def testModelsAgentArgument_always_createsAgentArgument(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test Agent Argument save implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_agent_db = models.Agent.create("test")
+    models.AgentArgument.create(
+        agent_id=create_agent_db.id,
+        name="test",
+        type="test",
+        description="test",
+        value="test",
+    )
+
+    with models.Database() as session:
+        assert session.query(models.AgentArgument).count() == 1
+        assert session.query(models.AgentArgument).all()[0].name == "test"
+        assert session.query(models.AgentArgument).all()[0].type == "test"
+        assert session.query(models.AgentArgument).all()[0].description == "test"
+        assert session.query(models.AgentArgument).all()[0].value == "test"
+        assert (
+            session.query(models.AgentArgument).all()[0].agent_id == create_agent_db.id
+        )
+
+
+def testModelsAgentGroup_always_createsAgentGroup(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test Agent Group save implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.AgentGroup.create("test", "test")
+
+    with models.Database() as session:
+        assert session.query(models.AgentGroup).count() == 1
+        assert session.query(models.AgentGroup).all()[0].name == "test"
+        assert session.query(models.AgentGroup).all()[0].description == "test"
+
+
+def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test Agent Group Mapping save implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    agent = models.Agent.create("test")
+    agent_group = models.AgentGroup.create("test", "test")
+    models.AgentGroupMapping.create(agent_id=agent.id, agent_group_id=agent_group.id)
+
+    with models.Database() as session:
+        assert session.query(models.Agent).count() == 1
+        assert session.query(models.AgentGroup).count() == 1
+        assert session.query(models.AgentGroupMapping).count() == 1
+        assert (
+            session.query(models.Agent).all()[0].agent_groups[0].name
+            == agent_group.name
+        )
+        assert session.query(models.AgentGroup).all()[0].agents[0].key == agent.key
