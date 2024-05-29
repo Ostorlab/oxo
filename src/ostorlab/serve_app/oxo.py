@@ -2,13 +2,15 @@
 
 from typing import Optional, List
 
-import graphql
 import graphene
+import graphql
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
-from ostorlab.serve_app import import_utils, types, common
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import common
+from ostorlab.serve_app import import_utils
+from ostorlab.serve_app import types
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -77,10 +79,15 @@ class Query(graphene.ObjectType):
                 scans = scans.order_by(models.Scan.id.desc())
 
             if page is not None and number_elements > 0:
-                scans = scans.offset((page - 1) * number_elements).limit(
-                    number_elements
+                p = common.Paginator(scans, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
                 )
-                return types.OxoScansType(scans=scans)
+                return types.OxoScansType(scans=page, page_info=page_info)
             else:
                 return types.OxoScansType(scans=scans)
 
