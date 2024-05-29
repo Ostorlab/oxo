@@ -175,10 +175,15 @@ class Query(graphene.ObjectType):
                 )
 
             if page is not None and number_elements > 0:
-                agent_groups_query = agent_groups_query.offset(
-                    (page - 1) * number_elements
-                ).limit(number_elements)
-                return types.AgentGroupsType(agent_groups=agent_groups_query)
+                p = common.Paginator(agent_groups_query, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return types.AgentGroupsType(agent_groups=page, page_info=page_info)
             else:
                 return types.AgentGroupsType(agent_groups=agent_groups_query)
 

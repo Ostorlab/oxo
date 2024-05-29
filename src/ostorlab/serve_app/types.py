@@ -370,7 +370,6 @@ class AgentArgumentsType(graphene.ObjectType):
     """Graphene object type for a list of agent arguments."""
 
     args = graphene.List(AgentArgumentType, required=True)
-    # TODO: page_info = graphene.Field(common.PageInfo, required=False)
 
 
 class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -410,7 +409,6 @@ class AgentsType(graphene.ObjectType):
     """Graphene object type for a list of agents."""
 
     agents = graphene.List(AgentType, required=True)
-    # TODO: page_info = graphene.Field(common.PageInfo, required=False)
 
 
 class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -463,4 +461,4 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
 class AgentGroupsType(graphene.ObjectType):
     agent_groups = graphene.List(AgentGroupType, required=True)
-    # TODO: page_info = graphene.Field(common.PageInfo, required=False)
+    page_info = graphene.Field(common.PageInfo, required=False)

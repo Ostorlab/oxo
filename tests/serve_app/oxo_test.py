@@ -602,3 +602,78 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
     assert agent2_args[0]["value"] == "hello"
+
+
+def testQueryAgentGroupsWithPagination_always_returnPageInfo(
+    client: testing.FlaskClient, agent_groups: models.AgentGroup
+) -> None:
+    """Test query for agent groups with pagination."""
+    with models.Database() as session:
+        agent_groups = session.query(models.AgentGroup).all()
+        assert agent_groups is not None
+
+    query = """
+            query AgentGroups ($page: Int, $numberElements: Int, $orderBy: AgentGroupOrderByEnum, $sort: SortEnum){
+                agentGroups (page: $page, numberElements: $numberElements, orderBy: $orderBy, sort: $sort) {
+                    agentGroups {
+                        id
+                        name
+                        description
+                        createdTime
+                        key
+                        agents {
+                            agents {
+                                id
+                                key
+                                args {
+                                    args {
+                                        id
+                                        name
+                                        type
+                                        description
+                                        value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pageInfo {
+                        count
+                        numPages
+                        hasPrevious
+                        hasNext
+                    }
+                }
+            }
+    """
+
+    response = client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "page": 2,
+                "numberElements": 1,
+                "orderBy": "AgentGroupId",
+                "sort": "Asc",
+            },
+        },
+    )
+
+    assert response.status_code == 200, response.get_json()
+    response_data = response.get_json()["data"]["agentGroups"]
+
+    agent_groups_data = response_data["agentGroups"]
+    page_info = response_data["pageInfo"]
+
+    assert len(agent_groups_data) == 1
+
+    agent_group = agent_groups_data[0]
+    assert agent_group["name"] == agent_groups[1].name
+    assert agent_group["description"] == agent_groups[1].description
+    assert agent_group["key"] == f"agentgroup/{agent_groups[1].name}"
+    assert agent_group["createdTime"] == agent_groups[1].created_time.isoformat()
+    assert page_info["count"] == 2
+    assert page_info["numPages"] == 2
+    assert page_info["hasPrevious"] is True
+    assert page_info["hasNext"] is False
