@@ -116,7 +116,7 @@ class Paginator:
     def count(self):
         """Return the total number of objects, across all pages."""
         c = getattr(self.object_list, "count", None)
-        if callable(c) and not inspect.isbuiltin(c) and inspect.method_has_no_args(c):
+        if callable(c) is True and inspect.isbuiltin(c) is False:
             return c()
         return len(self.object_list)
 
