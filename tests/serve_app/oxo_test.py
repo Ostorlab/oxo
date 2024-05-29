@@ -469,6 +469,7 @@ def testStopScanMutation_always_shouldStopScan(
         nbr_scans_before_import = session.query(models.Scan).count()
         scan = session.query(models.Scan).first()
         scan_progress = scan.progress
+
         query = """
             mutation stopScan($scanId: String!){
   stopScan(scanId: $scanId){
@@ -482,9 +483,8 @@ def testStopScanMutation_always_shouldStopScan(
             "/graphql", json={"query": query, "variables": {"scanId": str(scan.id)}}
         )
 
-        session.refresh(scan)
-
         assert response.status_code == 200, response.content
+        session.refresh(scan)
         scan = session.query(models.Scan).first()
         response_json = response.get_json()
         nbr_scans_after_import = session.query(models.Scan).count()
