@@ -461,12 +461,12 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
-def testStopScanMutation_always_shouldStopScan(
+def testStopScanMutation_whenScanIsRunning_shouldStopScan(
     client: testing.FlaskClient, in_progress_web_scan: None
 ) -> None:
     """Test stopScan mutation when scan is running should stop scan."""
     with models.Database() as session:
-        nbr_scans_before_import = session.query(models.Scan).count()
+        nbr_scans_before = session.query(models.Scan).count()
         scan = session.query(models.Scan).first()
         scan_progress = scan.progress
 
@@ -487,12 +487,12 @@ def testStopScanMutation_always_shouldStopScan(
         session.refresh(scan)
         scan = session.query(models.Scan).first()
         response_json = response.get_json()
-        nbr_scans_after_import = session.query(models.Scan).count()
+        nbr_scans_after = session.query(models.Scan).count()
         assert response_json["data"] == {"stopScan": {"scan": {"id": "1"}}}
-        assert nbr_scans_before_import == 1
+        assert nbr_scans_before == 1
         assert scan.progress == models.ScanProgress.STOPPED
         assert scan.progress != scan_progress
-        assert nbr_scans_after_import == nbr_scans_before_import
+        assert nbr_scans_after == nbr_scans_before
 
 
 def testStopScanMutation_whenNoScanFound_shouldReturnError(
