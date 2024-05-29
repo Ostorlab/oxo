@@ -1,5 +1,7 @@
 """Unit tests for common.py."""
 
+import pytest
+
 from ostorlab.serve_app import common
 
 
@@ -23,3 +25,29 @@ def testComputeCvssv3BaseScore_whenVectorIsNone_returnNone() -> None:
     vector = None
 
     assert common.compute_cvss_v3_base_score(vector) is None
+
+
+@pytest.mark.parametrize(
+    "items,per_page, num_pages, expected_pages",
+    [
+        ([], 1, 1, []),
+        ([1, 2, 3, 4, 5], 2, 3, [[1, 2], [3, 4], [5]]),
+        ([1, 2, 3, 4, 5], 3, 2, [[1, 2, 3], [4, 5]]),
+        ([1, 2, 3, 4, 5], 5, 1, [[1, 2, 3, 4, 5]]),
+    ],
+)
+def testPaginator_always_returnTheRightPages(
+    items, per_page, num_pages, expected_pages
+) -> None:
+    """Test that the function returns the right page when the page is less than the total."""
+
+    paginator = common.Paginator(items, per_page)
+    assert paginator.count == len(items)
+    pages = []
+    for page_number in range(1, paginator.num_pages + 1):
+        page = paginator.page(page_number)
+        pages.append(list(page))
+        assert page.number == page_number
+        assert page.has_next() == (page_number < paginator.num_pages)
+        assert page.has_previous() == (page_number > 1)
+    assert pages == expected_pages

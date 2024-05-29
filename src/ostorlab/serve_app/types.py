@@ -8,8 +8,8 @@ import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
 
-from ostorlab.serve_app import common
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import common
 
 DEFAULT_NUMBER_ELEMENTS = 15
 RISK_RATINGS_ORDER = {
@@ -342,3 +342,4 @@ class OxoScansType(graphene.ObjectType):
     """Graphene object type for a list of scans."""
 
     scans = graphene.List(OxoScanType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)
