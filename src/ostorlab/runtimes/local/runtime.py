@@ -225,6 +225,7 @@ class LocalRuntime(runtime.Runtime):
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
+            return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
             console.error(message)

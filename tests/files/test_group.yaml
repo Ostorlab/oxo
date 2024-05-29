@@ -1,7 +1,0 @@
-kind: AgentGroup
-description: Agent group definition for testing.
-agents:
-  - args: [ ]
-    key: agent/ostorlab/nmap
-  - args: [ ]
-    key: agent/ostorlab/asteroid

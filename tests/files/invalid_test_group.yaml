@@ -1,5 +1,0 @@
-kind: AgentGroup
-description: Agent group definition for testing.
-agents:
-  - args: [ ]
-    key: agent/ostorlab/someagent

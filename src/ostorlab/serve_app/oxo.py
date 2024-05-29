@@ -1,6 +1,5 @@
 """Oxo GraphQL queries and mutations."""
 
-import io
 from typing import Optional, List
 
 import graphene
@@ -8,12 +7,11 @@ import graphql
 import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
-from ruamel.yaml import error
 
 from ostorlab import exceptions
-from ostorlab.agent.schema import validator
 from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions
+from ostorlab.utils import defintions as utils_definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab.serve_app import import_utils, types, common
 from ostorlab.runtimes.local.models import models
@@ -185,63 +183,77 @@ class DeleteScanMutation(graphene.Mutation):
             return DeleteScanMutation(result=True)
 
 
-class ScanRunMutation(graphene.Mutation):
+class RunScanMutation(graphene.Mutation):
     class Arguments:
-        title = graphene.String()
-        agent_group_definition = scalars.Upload()
-        assets = scalars.Upload()
-        install = graphene.Boolean()
+        scan = types.OxoAgentScanInputType(required=True)
+        install = graphene.Boolean(required=False, default_value=False)
 
-    message = graphene.String()
+    scan = graphene.Field(types.OxoScanType)
 
     @staticmethod
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        title: Optional[str] = None,
-        agent_group_definition: Optional[io.FileIO] = None,
-        assets: Optional[io.FileIO] = None,
+        scan: types.OxoAgentScanInputType,
         install: Optional[bool] = False,
-    ) -> "ScanRunMutation":
+    ) -> "RunScanMutation":
         """Run scan mutation.
 
         Args:
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-            title (Optional[str], optional): Scan title. Defaults to None.
-            agent_group_definition (Optional[io.FileIO], optional): Agent group definition. Defaults to None.
-            assets (Optional[io.FileIO], optional): Assets. Defaults to None.
-            install (Optional[bool], optional): Install agents. Defaults to False.
+            info: `graphql_base.ResolveInfo` instance.
+            scan: The scan information.
+            install: Whether to install the agents or not.
+
+        Raises:
+            graphql.GraphQLError in case of an error.
 
         Returns:
-            ScanRunMutation: Scan run mutation.
+            The scan information.
         """
-        if agent_group_definition is not None:
-            try:
-                agent_group = definitions.AgentGroupDefinition.from_yaml(
-                    agent_group_definition
-                )
-            except validator.ValidationError as e:
-                raise graphql.GraphQLError(f"Invalid agent group definition: {e}")
-            except error.YAMLError as e:
-                raise graphql.GraphQLError(
-                    f"Agent group definition YAML parse error:: {e}"
-                )
-        else:
-            raise graphql.GraphQLError("Missing agent list or agent group definition.")
 
-        asset_group = None
-        if assets is not None:
-            try:
-                asset_group = definitions.AssetsDefinition.from_yaml(assets)
-            except validator.ValidationError as e:
-                raise graphql.GraphQLError(f"Invalid asset group definition: {e}")
-            except error.YAMLError as e:
-                raise graphql.GraphQLError(
-                    f"Asset group definition YAML parse error: {e}"
-                )
+        with models.Database() as session:
+            agent_group = (
+                session.query(models.AgentGroup)
+                .filter_by(id=scan.agent_group_id)
+                .first()
+            )
+            assets = (
+                session.query(models.Asset)
+                .filter(models.Asset.id.in_(scan.asset_ids))
+                .all()
+            )
+
+            if agent_group is None:
+                raise graphql.GraphQLError("Agent group not found.")
+
+            if assets is None or len(assets) == 0:
+                raise graphql.GraphQLError("Assets not found.")
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
         runtime_instance.follow = []
+
+        agent_group = definitions.AgentGroupDefinition(
+            name=agent_group.name,
+            description=agent_group.description,
+            agents=[
+                definitions.AgentSettings(
+                    key=agent.key.split(":")[0],
+                    version=agent.key.split(":")[1] if ":" in agent.key else None,
+                    args=[
+                        utils_definitions.Arg.build(
+                            name=arg.name,
+                            type=arg.type,
+                            value=arg.value,
+                            description=arg.description,
+                        )
+                        for arg in agent.args
+                    ],
+                )
+                for agent in agent_group.agents
+            ],
+        )
+
+        # TODO (elyousfi5): Add asset group definition
 
         try:
             can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
@@ -262,17 +274,17 @@ class ScanRunMutation(graphene.Mutation):
                     raise graphql.GraphQLError(f"Could not install the agents: {e}")
 
             try:
-                runtime_instance.scan(
-                    title=title,
+                scan = runtime_instance.scan(
+                    title=scan.title,
                     agent_group_definition=agent_group,
-                    assets=asset_group.targets if asset_group is not None else None,
+                    assets=assets,
                 )
             except exceptions.OstorlabError as e:
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"
                 )
 
-            return ScanRunMutation(message="Scan started successfully")
+            return RunScanMutation(scan=scan)
 
 
 class Mutations(graphene.ObjectType):
@@ -280,4 +292,4 @@ class Mutations(graphene.ObjectType):
         description="Delete a scan & all its information."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
-    run_scan = ScanRunMutation.Field(description="Run scan")
+    run_scan = RunScanMutation.Field(description="Run scan")

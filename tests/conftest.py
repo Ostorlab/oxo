@@ -583,27 +583,6 @@ def zip_file_bytes() -> bytes:
 
 
 @pytest.fixture
-def agent_group_definition() -> bytes:
-    """Returns a dummy agent group definition."""
-    test_group = pathlib.Path(__file__).parent / "files" / "test_group.yaml"
-    return test_group.read_bytes()
-
-
-@pytest.fixture
-def invalid_test_group() -> bytes:
-    """Returns a dummy agent group definition."""
-    test_group = pathlib.Path(__file__).parent / "files" / "invalid_test_group.yaml"
-    return test_group.read_bytes()
-
-
-@pytest.fixture
-def asset_group_definition() -> bytes:
-    """Returns a dummy asset group definition."""
-    asset_group = pathlib.Path(__file__).parent / "files" / "asset_group.yaml"
-    return asset_group.read_bytes()
-
-
-@pytest.fixture
 def web_scan(clean_db: None) -> None:
     """Create a dummy web scan."""
     with models.Database() as session:
@@ -779,3 +758,45 @@ def android_scan(clean_db: None) -> None:
         session.add(vulnerability4)
         session.commit()
     yield scan
+
+
+@pytest.fixture
+def agent_group(clean_db: None) -> models.AgentGroup:
+    """Create dummy agent groups."""
+    with models.Database() as session:
+        agent1 = models.Agent(
+            key="agent/ostorlab/agent1",
+        )
+        agent2 = models.Agent(
+            key="agent/ostorlab/agent2",
+        )
+        session.add(agent1)
+        session.add(agent2)
+        session.commit()
+
+        arg1 = models.AgentArgument(
+            agent_id=agent1.id, name="arg1", type="number", value="42"
+        )
+        arg2 = models.AgentArgument(
+            agent_id=agent2.id, name="arg2", type="string", value="hello"
+        )
+        session.add(arg1)
+        session.add(arg2)
+        session.commit()
+
+        agent_group = models.AgentGroup(
+            name="Agent Group 1",
+            description="Agent Group 1",
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+        )
+        session.add(agent_group)
+        session.commit()
+
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent1.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent2.id
+        )
+
+        return agent_group

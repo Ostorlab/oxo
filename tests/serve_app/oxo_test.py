@@ -463,95 +463,41 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 
 def testRunScanMutation_always_shouldRunScan(
     client: testing.FlaskClient,
-    agent_group_definition: bytes,
-    asset_group_definition: bytes,
+    agent_group: models.AgentGroup,  # assets: [models.Asset]
 ) -> None:
     """Test importScan mutation."""
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($agentGroupDefinition: Upload!, $assets: Upload!, $install: Boolean!) 
-                {
-                    runScan(agentGroupDefinition: $agentGroupDefinition, assets: $assets, install: $install) 
-                        { message } 
+            mutation runScan($scan: OxoAgentScanInputType!) {
+              runScan(scan: $scan) {
+                scan {
+                  id        
                 }
+              }
+            }
         """
-        test_group = "test_group.yaml"
-        asset_group = "asset_group.yaml"
         data = {
             "operations": json.dumps(
                 {
                     "query": query,
                     "variables": {
-                        "agentGroupDefinition": None,
-                        "assets": None,
-                        "install": True,
+                        "scan": {
+                            "title": "some_title",
+                            "assetIds": [1],
+                            "agentGroupId": agent_group.id,
+                            "install": True,
+                        },
                     },
                 }
-            ),
-            "map": json.dumps(
-                {
-                    "agentGroupDefinition": ["variables.agentGroupDefinition"],
-                    "assets": ["variables.assets"],
-                }
-            ),
+            )
         }
-        data["agentGroupDefinition"] = (io.BytesIO(agent_group_definition), test_group)
-        data["assets"] = (io.BytesIO(asset_group_definition), asset_group)
 
-        response = client.post(
-            "/graphql", data=data, content_type="multipart/form-data"
-        )
+        response = client.post("/graphql", data=data, content_type="application/json")
 
         assert response.status_code == 200, response.get_json()
         response_json = response.get_json()
         nbr_scans_after_run = session.query(models.Scan).count()
-        assert (
-            response_json["data"]["runScan"]["message"] == "Scan started successfully"
-        )
         assert nbr_scans_after_run == nbr_scans_before_run + 1
-
-
-def testRunScanMutation_whenInvalidAgentGroup_shouldRaiseError(
-    client: testing.FlaskClient,
-    invalid_test_group: bytes,
-    asset_group_definition: bytes,
-) -> None:
-    """Test importScan mutation."""
-    query = """
-        mutation RunScan($agentGroupDefinition: Upload!, $assets: Upload!, $install: Boolean!) 
-            {
-                runScan(agentGroupDefinition: $agentGroupDefinition, assets: $assets, install: $install) 
-                    { message } 
-            }
-    """
-    test_group = "invalid_test_group.yaml"
-    asset_group = "asset_group.yaml"
-    data = {
-        "operations": json.dumps(
-            {
-                "query": query,
-                "variables": {
-                    "agentGroupDefinition": None,
-                    "assets": None,
-                    "install": True,
-                },
-            }
-        ),
-        "map": json.dumps(
-            {
-                "agentGroupDefinition": ["variables.agentGroupDefinition"],
-                "assets": ["variables.assets"],
-            }
-        ),
-    }
-    data["agentGroupDefinition"] = (io.BytesIO(invalid_test_group), test_group)
-    data["assets"] = (io.BytesIO(asset_group_definition), asset_group)
-
-    response = client.post("/graphql", data=data, content_type="multipart/form-data")
-
-    assert response.status_code == 200, response.get_json()
-    assert (
-        json.loads(response.data).get("errors")[0].get("message")
-        == "Runtime encountered an error to run scan: Agent agent/ostorlab/someagent not installed"
-    )
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
