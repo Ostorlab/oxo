@@ -464,7 +464,7 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     client: testing.FlaskClient,
 ) -> None:
-    """Ensure push agent group create an agent group."""
+    """Ensure the publish agent group mutation creates an agent group."""
 
     query = """mutation publishAgentGroup($agentGroup: AgentGroupCreateInputType!) {
                       publishAgentGroup(agentGroup: $agentGroup) {
