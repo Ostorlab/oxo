@@ -124,8 +124,23 @@ class Query(graphene.ObjectType):
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
         order_by: Optional[types.AgentGroupOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
-        agent_group_ids: list[int] | None = None,
-    ):
+        agent_group_ids: Optional[List[int]] = None,
+    ) -> types.AgentGroupsType:
+        """Resolve agent groups query.
+
+        Args:
+            info: GraphQL resolve info.
+            search: Search string.
+            page: Page number.
+            number_elements: Number of elements.
+            order_by: Order by filter.
+            sort: Sort filter.
+            agent_group_ids: List of agent group ids.
+
+        Returns:
+            types.AgentGroupsType: List of agent groups.
+        """
+
         if number_elements <= 0:
             return types.AgentGroupsType(agent_groups=[])
 

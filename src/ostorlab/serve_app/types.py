@@ -420,6 +420,8 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     agents = graphene.Field(AgentsType, required=True)
 
     class Meta:
+        """Meta class for the agent group object type."""
+
         model = models.AgentGroup
 
         only_fields = (
