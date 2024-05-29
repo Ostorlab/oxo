@@ -459,3 +459,59 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
+
+
+def testStopScanMutation_always_shouldStopScan(
+    client: testing.FlaskClient, in_progress_web_scan: None
+) -> None:
+    """Test stopScan mutation when scan is running should stop scan."""
+    with models.Database() as session:
+        nbr_scans_before_import = session.query(models.Scan).count()
+        scan = session.query(models.Scan).first()
+        scan_progress = scan.progress
+        query = """
+            mutation stopScan($scanId: String!){
+  stopScan(scanId: $scanId){
+    scan{
+      id
+    }
+  }
+}
+        """
+        response = client.post(
+            "/graphql", json={"query": query, "variables": {"scanId": str(scan.id)}}
+        )
+
+        session.refresh(scan)
+
+        assert response.status_code == 200, response.content
+        scan = session.query(models.Scan).first()
+        response_json = response.get_json()
+        nbr_scans_after_import = session.query(models.Scan).count()
+        assert response_json["data"] == {"stopScan": {"scan": {"id": "1"}}}
+        assert nbr_scans_before_import == 1
+        assert scan.progress == models.ScanProgress.STOPPED
+        assert scan.progress != scan_progress
+        assert nbr_scans_after_import == nbr_scans_before_import
+
+
+def testStopScanMutation_whenNoScanFound_shouldReturnError(
+    client: testing.FlaskClient,
+) -> None:
+    """Test stopScan mutation when scan doesn't exist should return error message."""
+    query = """
+        mutation stopScan($scanId: String!){
+stopScan(scanId: $scanId){
+scan{
+  id
+}
+}
+}
+    """
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"scanId": "5"}}
+    )
+
+    assert response.status_code == 200, response.content
+    response_json = response.get_json()
+    assert response_json["errors"][0]["message"] == "Scan not found."

@@ -9,6 +9,7 @@ from graphql.execution import base as graphql_base
 
 from ostorlab.serve_app import import_utils, types, common
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local import runtime as local_runtime
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -177,8 +178,46 @@ class DeleteScanMutation(graphene.Mutation):
             return DeleteScanMutation(result=True)
 
 
+class StopScanMutation(graphene.Mutation):
+    """stop scan mutation."""
+
+    class Arguments:
+        scan_id = graphene.String(required=True)
+
+    scan = graphene.Field(types.OxoScanType)
+
+    def mutate(root, info: graphql_base.ResolveInfo, scan_id: str):
+        """Stop the desired scan.
+
+        Args:
+            info: `graphql_base.ResolveInfo` instance.
+            scan_id: The scan ID.
+
+        Raises:
+            graphql.GraphQLError in case the scan does not exist or the scan id is invalid.
+
+        Returns:
+            The stopped scan.
+
+        """
+        with models.Database() as session:
+            try:
+                int_scan_id = int(scan_id)
+            except ValueError:
+                raise graphql.GraphQLError("%s not a valid scan id.", int_scan_id)
+
+            scan = session.query(models.Scan).get(int_scan_id)
+            if scan is None:
+                raise graphql.GraphQLError("Scan not found.")
+            local_runtime.LocalRuntime().stop(scan_id=scan_id)
+            return StopScanMutation(scan=scan)
+
+
 class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(
         description="Delete a scan & all its information."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
+    stop_scan = StopScanMutation.Field(
+        description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
+    )
