@@ -3,6 +3,7 @@
 import io
 import json
 
+import ubjson
 from flask import testing
 
 from ostorlab.runtimes.local.models import models
@@ -481,13 +482,16 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
             "agents": [
                 {
                     "agentKey": "agent_key",
-                    "args": [{"name": "arg1", "type": "type1", "value": "value1"}],
+                    "args": [{"name": "arg1", "type": "type1", "value": b"value1"}],
                 }
             ],
         }
     }
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
-    response = client.post("/graphql", json={"query": query, "variables": variables})
+    response = client.post(
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+    )
 
     assert response.status_code == 200, response.get_json()
     key = response.get_json()["data"]["publishAgentGroup"]["agentGroup"]["key"]
