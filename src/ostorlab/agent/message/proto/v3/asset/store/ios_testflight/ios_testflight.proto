@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.asset.store.ios_testflight;
+
+
+message Message {
+  required string application_url = 1;
+}

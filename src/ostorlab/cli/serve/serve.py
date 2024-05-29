@@ -3,7 +3,6 @@
 import click
 
 from ostorlab.cli.rootcli import rootcli
-from ostorlab.serve_app import app
 
 
 @rootcli.command()
@@ -12,5 +11,13 @@ from ostorlab.serve_app import app
 @click.pass_context
 def serve(ctx: click.core.Context, host: str, port: int) -> None:
     """Run the Flask serve with the specified host and port."""
+    try:
+        from ostorlab.serve_app import app
+    except ImportError as e:
+        missing_dependency = e.name
+        raise click.ClickException(
+            f"The '{missing_dependency}' package is required for the 'serve' command. "
+            f"Please install it using 'pip install ostorlab[serve]'."
+        )
     flask_app = app.create_app(graphiql=True)
     flask_app.run(host=host, port=port)
