@@ -91,11 +91,11 @@ class Page(collections.abc.Sequence):
             self.object_list = list(self.object_list)
         return self.object_list[index]
 
-    def has_next(self):
+    def has_next(self) -> bool:
         """Return True if there is a next page."""
         return self.number < self.paginator.num_pages
 
-    def has_previous(self):
+    def has_previous(self) -> bool:
         """Return True if there is a previous page."""
         return self.number > 1
 
@@ -113,7 +113,7 @@ class Paginator:
         self.per_page = per_page
 
     @cached_property
-    def count(self):
+    def count(self) -> int:
         """Return the total number of objects, across all pages."""
         c = getattr(self.object_list, "count", None)
         if callable(c) is True and inspect.isbuiltin(c) is False:

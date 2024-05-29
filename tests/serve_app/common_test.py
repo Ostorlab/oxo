@@ -37,7 +37,7 @@ def testComputeCvssv3BaseScore_whenVectorIsNone_returnNone() -> None:
     ],
 )
 def testPaginator_always_returnTheRightPages(
-    items, per_page, num_pages, expected_pages
+    items: list[int], per_page: int, num_pages: int, expected_pages: list[list[int]]
 ) -> None:
     """Test that the function returns the right page when the page is less than the total."""
 
