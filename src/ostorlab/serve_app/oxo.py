@@ -29,6 +29,16 @@ class Query(graphene.ObjectType):
         types.OxoScanType, scan_id=graphene.Int(), description="Retrieve scan by id."
     )
 
+    agent_groups = graphene.Field(
+        types.AgentGroupsType,
+        search=graphene.String(required=False),
+        page=graphene.Int(required=False),
+        number_elements=graphene.Int(required=False),
+        order_by=graphene.Argument(types.AgentGroupOrderByEnum, required=False),
+        sort=graphene.Argument(common.SortEnum, required=False),
+        agent_group_ids=graphene.List(graphene.Int),
+    )
+
     def resolve_scans(
         self,
         info: graphql_base.ResolveInfo,
@@ -105,6 +115,57 @@ class Query(graphene.ObjectType):
                 raise graphql.GraphQLError("Scan not found.")
 
             return scan
+
+    def resolve_agent_groups(
+        self,
+        info,
+        search: str = None,
+        page=None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
+        order_by: Optional[types.AgentGroupOrderByEnum] = None,
+        sort: Optional[common.SortEnum] = None,
+        agent_group_ids: list[int] | None = None,
+    ):
+        if number_elements <= 0:
+            return types.AgentGroupsType(agent_groups=[])
+
+        with models.Database() as session:
+            agent_groups_query = session.query(models.AgentGroup)
+
+            if agent_group_ids is not None:
+                agent_groups_query = agent_groups_query.filter(
+                    models.AgentGroup.id.in_(agent_group_ids)
+                )
+
+            if search is not None:
+                agent_groups_query = agent_groups_query.filter(
+                    models.AgentGroup.name.ilike(f"%{search}%")
+                )
+
+            order_by_filter = None
+            if order_by == types.AgentGroupOrderByEnum.AgentGroupId:
+                order_by_filter = models.AgentGroup.id
+            elif order_by == types.AgentGroupOrderByEnum.Name:
+                order_by_filter = models.AgentGroup.name
+            elif order_by == types.AgentGroupOrderByEnum.CreatedTime:
+                order_by_filter = models.AgentGroup.created_time
+
+            if sort == common.SortEnum.Desc and order_by_filter is not None:
+                agent_groups_query = agent_groups_query.order_by(order_by_filter.desc())
+            elif order_by_filter is not None:
+                agent_groups_query = agent_groups_query.order_by(order_by_filter)
+            else:
+                agent_groups_query = agent_groups_query.order_by(
+                    models.AgentGroup.id.desc()
+                )
+
+            if page is not None and number_elements > 0:
+                agent_groups_query = agent_groups_query.offset(
+                    (page - 1) * number_elements
+                ).limit(number_elements)
+                return types.AgentGroupsType(agent_groups=agent_groups_query)
+            else:
+                return types.AgentGroupsType(agent_groups=agent_groups_query)
 
 
 class ImportScanMutation(graphene.Mutation):
