@@ -226,7 +226,9 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
         agent_group = models.AgentGroup(name="test", description="test")
         session.add(agent_group)
         session.commit()
-        models.AgentGroupMapping.create(agent_id=agent.id, agent_group_id=agent_group.id)
+        models.AgentGroupMapping.create(
+            agent_id=agent.id, agent_group_id=agent_group.id
+        )
 
         assert session.query(models.Agent).count() == 1
         assert session.query(models.AgentGroup).count() == 1
