@@ -1,3 +1,5 @@
+from typing import Optional
+
 import flask
 from graphene_file_upload import flask as graphene_upload_flask
 
@@ -16,7 +18,7 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
     )
 
     @app.before_request
-    def authenticate() -> tuple[flask.Response, int] | None:
+    def authenticate() -> Optional[tuple[flask.Response, int]]:
         """Authenticate the request."""
         api_key = flask.request.headers.get("X-API-KEY")
         if api_key is None or models.APIKey.is_valid(api_key) is False:
