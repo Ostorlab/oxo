@@ -35,9 +35,9 @@ class OxoScanOrderByEnum(graphene.Enum):
 
 
 class AgentGroupOrderByEnum(graphene.Enum):
-    AgentGroupId = 1
-    Name = 2
-    CreatedTime = 3
+    AgentGroupId = enum.auto()
+    Name = enum.auto()
+    CreatedTime = enum.auto()
 
 
 class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
