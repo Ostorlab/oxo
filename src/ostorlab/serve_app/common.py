@@ -12,6 +12,7 @@ import graphene
 
 class PageInfo(graphene.ObjectType):
     """Page info object type."""
+
     count = graphene.Int()
     num_pages = graphene.Int()
     has_next = graphene.Boolean()
