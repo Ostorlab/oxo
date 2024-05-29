@@ -2,7 +2,9 @@
 
 import click
 
+from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
+from ostorlab.runtimes.local.models.models import APIKey
 
 
 @rootcli.command()
@@ -20,4 +22,7 @@ def serve(ctx: click.core.Context, host: str, port: int) -> None:
             f"Please install it using 'pip install ostorlab[serve]'."
         )
     flask_app = app.create_app(graphiql=True)
+    api_key = APIKey.get_or_create()
+    console = cli_console.Console()
+    console.info(f"To authenticate, use the following API key: {api_key.key}")
     flask_app.run(host=host, port=port)

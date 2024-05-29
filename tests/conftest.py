@@ -9,11 +9,12 @@ from typing import Any
 
 import docker
 import flask
-import ostorlab
 import pytest
 import redis
 from docker.models import networks as networks_model
 from flask import testing
+
+import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
@@ -27,13 +28,13 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.serve_app import app
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.serve_app import app
 from ostorlab.utils import risk_rating
 
 
@@ -670,8 +671,17 @@ def flask_app() -> flask.Flask:
 
 @pytest.fixture
 def client(flask_app: flask.Flask) -> testing.FlaskClient:
-    """Fixture for creating a Flask test client."""
-    return flask_app.test_client()
+    """Fixture for creating a Flask test client witch no authentication."""
+    test_app = flask_app.test_client()
+    test_app.application.before_request_funcs = {}
+    return test_app
+
+
+@pytest.fixture
+def protected_flask_app(flask_app: flask.Flask) -> testing.FlaskClient:
+    """Fixture for creating a Flask test client with authentication."""
+    test_app = flask_app.test_client()
+    return test_app
 
 
 @pytest.fixture

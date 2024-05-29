@@ -459,3 +459,55 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
+
+
+def testQueryMultipleScans_whenApiKeysIsValid_returnScans(
+    protected_flask_app: testing.FlaskClient, ios_scans: models.Scan
+) -> None:
+    """Test query for multiple scans when the API key is valid."""
+    api_key = models.APIKey.get_or_create()
+    query = """
+        query Scans {
+            scans {
+                scans {
+                    id
+                    title
+                    asset
+                    progress
+                    createdTime
+                }
+            }
+        }
+    """
+
+    response = protected_flask_app.post(
+        "/graphql", json={"query": query}, headers={"X-API-KEY": api_key.key}
+    )
+
+    assert response.status_code == 200
+
+
+def testQueryMultipleScans_whenApiKeysIsInvalid_returnUnauthorized(
+    protected_flask_app: testing.FlaskClient, ios_scans: models.Scan
+) -> None:
+    """Test query for multiple scans when the API key is invalid."""
+    query = """
+        query Scans {
+            scans {
+                scans {
+                    id
+                    title
+                    asset
+                    progress
+                    createdTime
+                }
+            }
+        }
+    """
+
+    response = protected_flask_app.post(
+        "/graphql", json={"query": query}, headers={"X-API-KEY": "invalid"}
+    )
+
+    assert response.status_code == 401
+    assert response.get_json()["error"] == "Unauthorized"
