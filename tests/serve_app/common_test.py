@@ -42,6 +42,7 @@ def testPaginator_always_returnTheRightPages(
     """Test that the function returns the right page when the page is less than the total."""
 
     paginator = common.Paginator(items, per_page)
+    
     assert paginator.count == len(items)
     pages = []
     for page_number in range(1, paginator.num_pages + 1):
