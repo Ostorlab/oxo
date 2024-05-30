@@ -19,6 +19,15 @@ class PageInfo(graphene.ObjectType):
     has_previous = graphene.Boolean()
 
 
+class PageInfo(graphene.ObjectType):
+    """Page info object type."""
+
+    count = graphene.Int()
+    num_pages = graphene.Int()
+    has_next = graphene.Boolean()
+    has_previous = graphene.Boolean()
+
+
 class SortEnum(graphene.Enum):
     """Sort enum, for the sorting order of the results."""
 
