@@ -9,11 +9,13 @@ from typing import Any, List
 
 import docker
 import flask
-import ostorlab
 import pytest
 import redis
 from docker.models import networks as networks_model
-from flask import testing
+from flask import testing as flask_testing
+from werkzeug import test as werkzeug_test
+
+import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
@@ -27,13 +29,13 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.serve_app import app
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.serve_app import app
 from ostorlab.utils import risk_rating
 
 
@@ -669,8 +671,23 @@ def flask_app() -> flask.Flask:
 
 
 @pytest.fixture
-def client(flask_app: flask.Flask) -> testing.FlaskClient:
-    """Fixture for creating a Flask test client."""
+def unauthenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskClient:
+    """Fixture for creating an unauthenticated Flask test client."""
+    return flask_app.test_client()
+
+
+@pytest.fixture
+def authenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskClient:
+    """Fixture for creating an authenticated Flask test client."""
+
+    class CustomFlaskClient(flask_testing.FlaskClient):
+        def open(self, *args: Any, **kwargs: Any) -> werkzeug_test.TestResponse:
+            headers = kwargs.pop("headers", {})
+            headers["X-API-Key"] = models.APIKey.get_or_create().key
+            kwargs["headers"] = headers
+            return super().open(*args, **kwargs)
+
+    flask_app.test_client_class = CustomFlaskClient
     return flask_app.test_client()
 
 
