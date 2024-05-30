@@ -498,10 +498,6 @@ def testScansQuery_withPagination_shouldReturnPageInfo(
     }
 
 
-def test(android_scan):
-    pass
-
-
 def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     client: testing.FlaskClient, agent_groups: models.AgentGroup
 ) -> None:
