@@ -5,7 +5,7 @@ import io
 import pathlib
 import sys
 import time
-from typing import Any
+from typing import Any, List
 
 import docker
 import flask
@@ -695,6 +695,10 @@ def clean_db(request) -> None:
         session.query(models.Vulnerability).delete()
         session.query(models.Scan).delete()
         session.query(models.ScanStatus).delete()
+        session.query(models.Agent).delete()
+        session.query(models.AgentArgument).delete()
+        session.query(models.AgentGroup).delete()
+        session.query(models.AgentGroupMapping).delete()
         session.commit()
 
 
@@ -772,3 +776,53 @@ def android_scan(clean_db: None) -> None:
         session.add(vulnerability4)
         session.commit()
     yield scan
+
+
+@pytest.fixture
+def agent_groups(clean_db: None) -> List[models.AgentGroup]:
+    """Create dummy agent groups."""
+    with models.Database() as session:
+        agent1 = models.Agent(
+            key="agent/ostorlab/agent1",
+        )
+        agent2 = models.Agent(
+            key="agent/ostorlab/agent2",
+        )
+        session.add(agent1)
+        session.add(agent2)
+        session.commit()
+
+        arg1 = models.AgentArgument(
+            agent_id=agent1.id, name="arg1", type="number", value="42"
+        )
+        arg2 = models.AgentArgument(
+            agent_id=agent2.id, name="arg2", type="string", value="hello"
+        )
+        session.add(arg1)
+        session.add(arg2)
+        session.commit()
+
+        agent_group1 = models.AgentGroup(
+            name="Agent Group 1",
+            description="Agent Group 1",
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+        )
+        agent_group2 = models.AgentGroup(
+            name="Agent Group 2",
+            description="Agent Group 2",
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+        )
+        session.add(agent_group1)
+        session.add(agent_group2)
+        session.commit()
+
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group1.id, agent_id=agent1.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group1.id, agent_id=agent2.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group2.id, agent_id=agent1.id
+        )
+        return [agent_group1, agent_group2]
