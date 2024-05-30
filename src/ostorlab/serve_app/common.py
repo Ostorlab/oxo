@@ -4,12 +4,12 @@ import collections
 import inspect
 from functools import cached_property
 from math import ceil
-from typing import Optional
 import struct
 from typing import Optional, Union
 
 import cvss
 import graphene
+from graphene.types import scalars
 
 
 class PageInfo(graphene.ObjectType):
@@ -19,8 +19,6 @@ class PageInfo(graphene.ObjectType):
     num_pages = graphene.Int()
     has_next = graphene.Boolean()
     has_previous = graphene.Boolean()
-import graphene
-from graphene.types import scalars
 
 
 class SortEnum(graphene.Enum):

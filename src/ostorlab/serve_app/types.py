@@ -487,31 +487,3 @@ class AgentGroupCreateInputType(graphene.InputObjectType):
     name = graphene.String(required=True)
     description = graphene.String(required=True)
     agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
-
-
-class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """SQLAlchemy object type for an agent group."""
-
-    key = graphene.String()
-
-    class Meta:
-        model = models.AgentGroup
-
-        only_fields = (
-            "id",
-            "name",
-            "description",
-            "created_time",
-        )
-
-    def resolve_key(self: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
-        """Resolve key query.
-
-        Args:
-            self (models.AgentGroup): The agent group object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-
-        Returns:
-            str: The key of the agent group.
-        """
-        return f"agentgroup/{self.name}"
