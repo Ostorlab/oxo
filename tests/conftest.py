@@ -631,29 +631,41 @@ def ios_scans(clean_db: None) -> None:
         session.add(scan1)
         session.add(scan2)
         session.commit()
-        vulnerability1 = models.Vulnerability(
+        vulnerability1 = models.Vulnerability.create(
             title="XSS",
             short_description="Cross Site Scripting",
             description="Cross Site Scripting",
             recommendation="Sanitize data",
             technical_detail="a=$input",
-            risk_rating=risk_rating.RiskRating.HIGH,
+            risk_rating=risk_rating.RiskRating.HIGH.name,
             cvss_v3_vector="5:6:7",
             dna="121312",
-            location="",
+            location={},
             scan_id=scan1.id,
+            references=[
+                {
+                    "title": "C++ Core Guidelines R.10 - Avoid malloc() and free()",
+                    "url": "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free",
+                }
+            ],
         )
-        vulnerability2 = models.Vulnerability(
+        vulnerability2 = models.Vulnerability.create(
             title="SQL Injection",
             short_description="SQL Injection",
             description="SQL Injection",
             recommendation="Sanitize data",
             technical_detail="a=$input",
-            risk_rating=risk_rating.RiskRating.HIGH,
+            risk_rating=risk_rating.RiskRating.HIGH.name,
             cvss_v3_vector="5:6:7",
             dna="121312",
-            location="",
+            location={},
             scan_id=scan2.id,
+            references=[
+                {
+                    "title": "C++ Core Guidelines R.10 - Avoid malloc() and free()",
+                    "url": "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free",
+                }
+            ],
         )
         session.add(vulnerability1)
         session.add(vulnerability2)

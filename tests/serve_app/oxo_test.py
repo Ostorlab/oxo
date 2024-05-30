@@ -255,6 +255,10 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
                                 title
                                 shortDescription
                                 recommendation
+                                references {
+                                    title
+                                    url
+                                }
                             }
                         }
                     }
@@ -281,6 +285,14 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
         kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[1].title
+    assert (
+        kb_vulnerability["references"][0]["title"]
+        == "C++ Core Guidelines R.10 - Avoid malloc() and free()"
+    )
+    assert (
+        kb_vulnerability["references"][0]["url"]
+        == "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free"
+    )
 
 
 def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
@@ -343,7 +355,6 @@ def testQueryScan_whenScanExists_returnScanInfo(
                             shortDescription
                             description
                             recommendation
-                            references
                         }
                         cvssV3BaseScore
                     }
