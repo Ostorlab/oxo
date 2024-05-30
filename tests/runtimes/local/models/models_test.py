@@ -326,7 +326,7 @@ def testAssetModels_whenCreateAndroidStore_assetCreated(
 def testAssetModels_whenCreateIosFile_assetCreated(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
-    """Ensure we correctly persist the iOS store information."""
+    """Ensure we correctly persist the iOS file information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.IosFile.create(bundle_id="a.b.c", path="https://remote.bucket.com/ios_app")
 
@@ -340,7 +340,7 @@ def testAssetModels_whenCreateIosFile_assetCreated(
 def testAssetModels_whenCreateAndroidFile_assetCreated(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
-    """Ensure we correctly persist the iOS store information."""
+    """Ensure we correctly persist the android file information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.AndroidFile.create(
         package_name="a.b.c", path="https://remote.bucket.com/android_app"
@@ -356,7 +356,7 @@ def testAssetModels_whenCreateAndroidFile_assetCreated(
 def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
-    """Ensure we correctly persist the iOS store information."""
+    """Ensure we correctly persist the scan and its asset & query the asset information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.AndroidStore.create(
         package_name="a.b.c", application_name="Dummy application"
@@ -383,3 +383,27 @@ def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
         assert asset_instance.package_name == "a.b.c"
         assert asset_instance.application_name == "Dummy application"
         assert len(session.query(models.AndroidStore).all()[0].scans) == 1
+
+
+def testAssetModels_whenMultipleAssets_shouldHaveUniqueIdsPerTable(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly assets depending on their type and their IDs are unique in the base asset table."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.AndroidStore.create(
+        package_name="a.b.c", application_name="Dummy application"
+    )
+    models.IosStore.create(bundle_id="a.b.c", application_name="Dummy application")
+
+    with models.Database() as session:
+        assert session.query(models.Asset).count() == 2
+        assert session.query(models.AndroidStore).count() == 1
+        assert session.query(models.IosStore).count() == 1
+        assert (
+            session.query(models.Asset).all()[0].id
+            == session.query(models.AndroidStore).all()[0].id
+        )
+        assert (
+            session.query(models.Asset).all()[1].id
+            == session.query(models.IosStore).all()[0].id
+        )
