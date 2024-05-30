@@ -5,6 +5,7 @@ import enum
 import json
 import logging
 import pathlib
+import uuid
 from typing import Any, Dict, List, Optional
 import types
 
@@ -434,3 +435,60 @@ class AgentGroupMapping(Base):
             session.add(agent_group_mapping)
             session.commit()
             return agent_group_mapping
+
+
+class APIKey(Base):
+    """The API Key model"""
+
+    __tablename__ = "api_key"
+    key = sqlalchemy.Column(
+        sqlalchemy.String(150), unique=True, nullable=False, primary_key=True
+    )
+
+    @staticmethod
+    def create() -> "APIKey":
+        """Persist the API key in the database.
+
+        Returns:
+            APIKey object.
+        """
+        with Database() as session:
+            api_key = APIKey(key=str(uuid.uuid4()))
+            session.add(api_key)
+            session.commit()
+            return api_key
+
+    @staticmethod
+    def get_or_create() -> "APIKey":
+        """Get or create the API key in the database.
+
+        Returns:
+            APIKey object.
+        """
+        with Database() as session:
+            api_key = session.query(APIKey).first()
+            if api_key is None:
+                api_key = APIKey.create()
+            return api_key
+
+    @staticmethod
+    def is_valid(api_key: str) -> bool:
+        """Check if the API key is valid.
+
+        Args:
+            api_key: API key to check.
+        Returns:
+            Boolean.
+        """
+        with Database() as session:
+            api_key = session.query(APIKey).filter_by(key=api_key).first()
+            return api_key is not None
+
+    @staticmethod
+    def refresh() -> "APIKey":
+        """Revoke the current API key and create a new one."""
+        with Database() as session:
+            session.query(APIKey).delete()
+            session.commit()
+            api_key = APIKey.create()
+            return api_key

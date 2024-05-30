@@ -228,3 +228,50 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
             == agent_group.name
         )
         assert session.query(models.AgentGroup).all()[0].agents[0].key == agent.key
+
+
+def testModelsAPIKeyGetOrCreate_never_createsNewAPIKeyIfOneExists(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key get_or_create implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    models.APIKey.get_or_create()
+    models.APIKey.get_or_create()
+    with models.Database() as session:
+        assert session.query(models.APIKey).count() == 1
+
+
+def testModelsAPIKeyValidation_whenKeyIsValid_returnsTrue(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key validation implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    api_key = models.APIKey.get_or_create()
+
+    assert api_key.is_valid(api_key.key) is True
+
+
+def testModelsAPIKeyValidation_whenKeyIsInvalid_returnsFalse(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key validation implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    api_key = models.APIKey.get_or_create()
+
+    assert api_key.is_valid("invalid_key") is False
+
+
+def testModelsAPIKeyRefresh_always_createsNewAPIKey(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key refresh implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    current_api_key = models.APIKey.get_or_create()
+
+    models.APIKey.refresh()
+
+    new_api_key = models.APIKey.get_or_create()
+    assert current_api_key.key != new_api_key.key
