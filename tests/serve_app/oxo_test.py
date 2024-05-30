@@ -9,7 +9,7 @@ from ostorlab.runtimes.local.models import models
 
 
 def testImportScanMutation_always_shouldImportScan(
-    authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
+        authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
 ) -> None:
     """Test importScan mutation."""
     with models.Database() as session:
@@ -48,14 +48,14 @@ def testImportScanMutation_always_shouldImportScan(
         response_json = response.get_json()
         nbr_scans_after_import = session.query(models.Scan).count()
         assert (
-            response_json["data"]["importScan"]["message"]
-            == "Scan imported successfully"
+                response_json["data"]["importScan"]["message"]
+                == "Scan imported successfully"
         )
         assert nbr_scans_after_import == nbr_scans_before_import + 1
 
 
 def testQueryMultipleScans_always_shouldReturnMultipleScans(
-    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans."""
     with models.Database() as session:
@@ -77,8 +77,7 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
     """
 
     response = authenticated_flask_client.post(
-        "/graphql",
-        json={"query": query, "variables": {"scanIds": [1, 2]}},
+        "/graphql", json={"query": query, "variables": {"scanIds": [1, 2]}}
     )
 
     assert response.status_code == 200, response.get_json()
@@ -97,7 +96,7 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
 
 
 def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResults(
-    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans with pagination and sort ascending."""
     with models.Database() as session:
@@ -148,7 +147,7 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
 
 
 def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
-    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans when no scan ids are specified."""
     with models.Database() as session:
@@ -187,7 +186,7 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
 
 
 def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
-    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple vulnerabilities."""
     with models.Database() as session:
@@ -233,7 +232,7 @@ def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
 
 
 def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilities(
-    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple KB vulnerabilities."""
     with models.Database() as session:
@@ -270,7 +269,7 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
     ][0]["kb"]
     assert kb_vulnerability["recommendation"] == kb_vulnerabilities[0].recommendation
     assert (
-        kb_vulnerability["shortDescription"] == kb_vulnerabilities[0].short_description
+            kb_vulnerability["shortDescription"] == kb_vulnerabilities[0].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[0].title
     kb_vulnerability = response.get_json()["data"]["scans"]["scans"][0][
@@ -278,13 +277,13 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
     ][0]["kb"]
     assert kb_vulnerability["recommendation"] == kb_vulnerabilities[1].recommendation
     assert (
-        kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
+            kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[1].title
 
 
 def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
-    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+        authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Test query for multiple vulnerabilities with max risk rating."""
     query = """
@@ -319,7 +318,7 @@ def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
 
 
 def testQueryScan_whenScanExists_returnScanInfo(
-    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+        authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the scan query returns the correct scan with all its information."""
     query = """
@@ -378,7 +377,7 @@ def testQueryScan_whenScanExists_returnScanInfo(
 
 
 def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
-    authenticated_flask_client: testing.FlaskClient,
+        authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the scan query returns an error when the scan does not exist."""
     query = """
@@ -398,7 +397,7 @@ def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
 
 
 def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
-    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+        authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the delete scan mutation deletes the scan, its statuses & vulnerabilities."""
     with models.Database() as session:
@@ -431,19 +430,19 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
     with models.Database() as session:
         assert session.query(models.Scan).count() == 0
         assert (
-            session.query(models.Vulnerability)
-            .filter_by(scan_id=android_scan.id)
-            .count()
-            == 0
+                session.query(models.Vulnerability)
+                .filter_by(scan_id=android_scan.id)
+                .count()
+                == 0
         )
         assert (
-            session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
-            == 0
+                session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
+                == 0
         )
 
 
 def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
-    authenticated_flask_client: testing.FlaskClient,
+        authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
     query = """
@@ -462,8 +461,264 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
+def testScansQuery_withPagination_shouldReturnPageInfo(
+        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan, web_scan: models.Scan
+) -> None:
+    """Test the scan query with pagination, should return the correct pageInfo."""
+
+    with models.Database() as session:
+        scans = session.query(models.Scan).all()
+        assert scans is not None
+
+    query = """query Scans($scanIds: [Int!], $page: Int, $numberElements: Int) {
+  scans(scanIds: $scanIds, page: $page, numberElements: $numberElements) {
+    pageInfo{
+      count
+      numPages
+      hasNext
+      hasPrevious
+    }
+    scans {
+      id
+    }
+  }
+}
+"""
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": {"page": 1, "numberElements": 2}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["scans"]["pageInfo"] == {
+        "count": 3,
+        "hasNext": True,
+        "hasPrevious": False,
+        "numPages": 2,
+    }
+
+
+def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
+        authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+) -> None:
+    """Test query for multiple agent groups."""
+    with models.Database() as session:
+        agent_groups = (
+            session.query(models.AgentGroup)
+            .filter(models.AgentGroup.id.in_([1, 2]))
+            .all()
+        )
+        assert agent_groups is not None
+
+    query = """
+            query AgentGroups ($orderBy: AgentGroupOrderByEnum, $sort: SortEnum){
+                agentGroups (orderBy: $orderBy, sort: $sort) {
+                    agentGroups {
+                        id
+                        name
+                        description
+                        createdTime
+                        key
+                        agents {
+                            agents {
+                                id
+                                key
+                                args {
+                                    args {
+                                        id
+                                        name
+                                        type
+                                        description
+                                        value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={"query": query, "variables": {"orderBy": "AgentGroupId", "sort": "Asc"}},
+    )
+
+    assert response.status_code == 200, response.get_json()
+    agent_groups_data = response.get_json()["data"]["agentGroups"]["agentGroups"]
+    assert len(agent_groups_data) == 2
+    agent_group1 = agent_groups_data[0]
+    agent_group2 = agent_groups_data[1]
+    assert agent_group1["name"] == agent_groups[0].name
+    assert agent_group1["description"] == agent_groups[0].description
+    assert agent_group1["key"] == f"agentgroup/{agent_groups[0].name}"
+    assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
+    assert agent_group2["name"] == agent_groups[1].name
+    assert agent_group2["description"] == agent_groups[1].description
+    assert agent_group2["key"] == f"agentgroup/{agent_groups[1].name}"
+    assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
+    agent_group1_agents = agent_group1["agents"]["agents"]
+    agent_group2_agents = agent_group2["agents"]["agents"]
+    assert len(agent_group1_agents) == 2
+    assert len(agent_group2_agents) == 1
+    assert agent_group1_agents[0]["key"] == "agent/ostorlab/agent1"
+    assert agent_group1_agents[1]["key"] == "agent/ostorlab/agent2"
+    assert agent_group2_agents[0]["key"] == "agent/ostorlab/agent1"
+    agent1_args = agent_group1_agents[0]["args"]["args"]
+    agent2_args = agent_group1_agents[1]["args"]["args"]
+    assert len(agent1_args) == 1
+    assert len(agent2_args) == 1
+    assert agent1_args[0]["name"] == "arg1"
+    assert agent1_args[0]["type"] == "number"
+    assert agent1_args[0]["value"] == "42"
+    assert agent2_args[0]["name"] == "arg2"
+    assert agent2_args[0]["type"] == "string"
+    assert agent2_args[0]["value"] == "hello"
+
+
+def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
+        authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+) -> None:
+    """Test query for a single agent group."""
+    with models.Database() as session:
+        agent_group = session.query(models.AgentGroup).filter_by(id=1).first()
+        assert agent_group is not None
+
+    query = """
+            query AgentGroup ($agentGroupIds: [Int!]){
+                agentGroups (agentGroupIds: $agentGroupIds) {
+                    agentGroups {
+                        id
+                        name
+                        description
+                        createdTime
+                        key
+                        agents {
+                            agents {
+                                id
+                                key
+                                args {
+                                    args {
+                                        id
+                                        name
+                                        type
+                                        description
+                                        value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": {"agentGroupIds": [1]}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    agent_groups_data = response.get_json()["data"]["agentGroups"]["agentGroups"]
+    assert len(agent_groups_data) == 1
+    agent_group_data = agent_groups_data[0]
+    assert agent_group_data["name"] == agent_group.name
+    assert agent_group_data["description"] == agent_group.description
+    assert agent_group_data["key"] == f"agentgroup/{agent_group.name}"
+    assert agent_group_data["createdTime"] == agent_group.created_time.isoformat()
+    agent_group_agents = agent_group_data["agents"]["agents"]
+    assert len(agent_group_agents) == 2
+    assert agent_group_agents[0]["key"] == "agent/ostorlab/agent1"
+    assert agent_group_agents[1]["key"] == "agent/ostorlab/agent2"
+    agent1_args = agent_group_agents[0]["args"]["args"]
+    agent2_args = agent_group_agents[1]["args"]["args"]
+    assert len(agent1_args) == 1
+    assert len(agent2_args) == 1
+    assert agent1_args[0]["name"] == "arg1"
+    assert agent1_args[0]["type"] == "number"
+    assert agent1_args[0]["value"] == "42"
+    assert agent2_args[0]["name"] == "arg2"
+    assert agent2_args[0]["type"] == "string"
+    assert agent2_args[0]["value"] == "hello"
+
+
+def testQueryAgentGroupsWithPagination_always_returnPageInfo(
+        authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+) -> None:
+    """Test query for agent groups with pagination."""
+    with models.Database() as session:
+        agent_groups = session.query(models.AgentGroup).all()
+        assert agent_groups is not None
+
+    query = """
+            query AgentGroups ($page: Int, $numberElements: Int, $orderBy: AgentGroupOrderByEnum, $sort: SortEnum){
+                agentGroups (page: $page, numberElements: $numberElements, orderBy: $orderBy, sort: $sort) {
+                    agentGroups {
+                        id
+                        name
+                        description
+                        createdTime
+                        key
+                        agents {
+                            agents {
+                                id
+                                key
+                                args {
+                                    args {
+                                        id
+                                        name
+                                        type
+                                        description
+                                        value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pageInfo {
+                        count
+                        numPages
+                        hasPrevious
+                        hasNext
+                    }
+                }
+            }
+    """
+
+    response = authenticated_flask_client.post(
+        authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
+    "/graphql",
+    json = {
+        "query": query,
+        "variables": {
+            "page": 2,
+            "numberElements": 1,
+            "orderBy": "AgentGroupId",
+            "sort": "Asc",
+        },
+    },
+    )
+
+    assert response.status_code == 200, response.get_json()
+    response_data = response.get_json()["data"]["agentGroups"]
+
+    agent_groups_data = response_data["agentGroups"]
+    page_info = response_data["pageInfo"]
+
+    assert len(agent_groups_data) == 1
+
+    agent_group = agent_groups_data[0]
+    assert agent_group["name"] == agent_groups[1].name
+    assert agent_group["description"] == agent_groups[1].description
+    assert agent_group["key"] == f"agentgroup/{agent_groups[1].name}"
+    assert agent_group["createdTime"] == agent_groups[1].created_time.isoformat()
+    assert page_info["count"] == 2
+    assert page_info["numPages"] == 2
+    assert page_info["hasPrevious"] is True
+    assert page_info["hasNext"] is False
+
+
 def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
-    unauthenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+        unauthenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans when the API key is invalid."""
     query = """
