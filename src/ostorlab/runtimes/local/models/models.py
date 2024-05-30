@@ -483,3 +483,12 @@ class APIKey(Base):
         with Database() as session:
             api_key = session.query(APIKey).filter_by(key=api_key).first()
             return api_key is not None
+
+    @staticmethod
+    def refresh() -> "APIKey":
+        """Revoke the current API key and create a new one."""
+        with Database() as session:
+            session.query(APIKey).delete()
+            session.commit()
+            api_key = APIKey.create()
+            return api_key
