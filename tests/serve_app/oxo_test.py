@@ -738,7 +738,7 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
             "/graphql", json={"query": query, "variables": {"scanId": str(scan.id)}}
         )
 
-        assert response.status_code == 200, response.content
+        assert response.status_code == 200, response.get_json()
         session.refresh(scan)
         scan = session.query(models.Scan).first()
         response_json = response.get_json()
@@ -767,6 +767,6 @@ scan{
         "/graphql", json={"query": query, "variables": {"scanId": "5"}}
     )
 
-    assert response.status_code == 200, response.content
+    assert response.status_code == 200, response.get_json()
     response_json = response.get_json()
     assert response_json["errors"][0]["message"] == "Scan not found."
