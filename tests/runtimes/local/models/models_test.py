@@ -269,9 +269,9 @@ def testModelsAPIKeyRefresh_always_createsNewAPIKey(
 ) -> None:
     """Test API Key refresh implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-
     current_api_key = models.APIKey.get_or_create()
-    models.APIKey.refresh()
-    new_api_key = models.APIKey.get_or_create()
 
+    models.APIKey.refresh()
+
+    new_api_key = models.APIKey.get_or_create()
     assert current_api_key.key != new_api_key.key

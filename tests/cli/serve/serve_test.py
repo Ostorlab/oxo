@@ -14,8 +14,8 @@ def testOstorlabServe_whenRefreshApiKeyFlagIsProvided_refreshApiKey(
         "ostorlab.runtimes.local.models.models.APIKey.refresh"
     )
     mocker.patch("ostorlab.serve_app.app.create_app")
-
     runner = CliRunner()
+
     result = runner.invoke(rootcli.rootcli, ["serve", "--refresh-api-key"])
 
     assert mocked_refresh_api_key.called is True
@@ -30,8 +30,8 @@ def testOstorlabServe_whenRefreshApiKeyFlagIsNotProvided_getOrCreateApiKey(
         "ostorlab.runtimes.local.models.models.APIKey.refresh"
     )
     mocker.patch("ostorlab.serve_app.app.create_app")
-
     runner = CliRunner()
+
     result = runner.invoke(rootcli.rootcli, ["serve"])
 
     assert mocked_refresh_api_key.called is False
