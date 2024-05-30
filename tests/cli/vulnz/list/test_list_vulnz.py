@@ -31,6 +31,7 @@ def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLo
             "metadata": [{"type": "URL", "value": "https://dummy.co/dummy"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
     result = runner.invoke(
         rootcli.rootcli, ["vulnz", "list", "-s", str(vuln_db.scan_id)]
@@ -135,6 +136,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
             "metadata": [{"type": "URL", "value": "https://dummy.co/dummy"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
     models.Vulnerability.create(
         title="List of dynamic code loading API calls",
@@ -150,6 +152,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
             "metadata": [{"type": "URL", "value": "https://dummy.co/dummy"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
     models.Vulnerability.create(
         title="The application calls the registerReceiver method with the argument flags set to RECEIVER_EXPORTED",
@@ -165,6 +168,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
             "metadata": [{"type": "URL", "value": "https://dummy.co/dummy"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
     models.Vulnerability.create(
         title="Application is compiled with debug mode disabled",
@@ -180,6 +184,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
             "metadata": [{"type": "URL", "value": "https://dummy.co/dummy"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
 
     result = runner.invoke(
@@ -226,6 +231,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
             "metadata": [{"type": "URL", "value": "https://dummy.co/dummy"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
 
     result_title = runner.invoke(
