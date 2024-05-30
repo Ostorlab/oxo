@@ -722,7 +722,7 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
 
 
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
-    client: testing.FlaskClient, clean_db: None
+    client: testing.FlaskClient,
 ) -> None:
     """Ensure the publish agent group mutation creates an agent group."""
 
