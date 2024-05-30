@@ -12,7 +12,8 @@ import flask
 import pytest
 import redis
 from docker.models import networks as networks_model
-from flask import testing
+from flask import testing as flask_testing
+from werkzeug import test as werkzeug_test
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
@@ -670,18 +671,24 @@ def flask_app() -> flask.Flask:
 
 
 @pytest.fixture
-def client(flask_app: flask.Flask) -> testing.FlaskClient:
-    """Fixture for creating a Flask test client witch no authentication."""
-    test_app = flask_app.test_client()
-    test_app.application.before_request_funcs = {}
-    return test_app
+def unauthenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskClient:
+    """Fixture for creating an unauthenticated Flask test client."""
+    return flask_app.test_client()
 
 
 @pytest.fixture
-def protected_flask_app(flask_app: flask.Flask) -> testing.FlaskClient:
-    """Fixture for creating a Flask test client with authentication."""
-    test_app = flask_app.test_client()
-    return test_app
+def authenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskClient:
+    """Fixture for creating an authenticated Flask test client."""
+
+    class CustomFlaskClient(flask_testing.FlaskClient):
+        def open(self, *args: Any, **kwargs: Any) -> werkzeug_test.TestResponse:
+            headers = kwargs.pop("headers", {})
+            headers["X-API-Key"] = models.APIKey.get_or_create().key
+            kwargs["headers"] = headers
+            return super().open(*args, **kwargs)
+
+    flask_app.test_client_class = CustomFlaskClient
+    return flask_app.test_client()
 
 
 @pytest.fixture
