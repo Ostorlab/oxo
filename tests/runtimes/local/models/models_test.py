@@ -183,7 +183,7 @@ def testModelsAgentArgument_always_createsAgentArgument(
         name="test",
         type="test",
         description="test",
-        value="test",
+        value=b"test",
     )
 
     with models.Database() as session:
@@ -191,7 +191,7 @@ def testModelsAgentArgument_always_createsAgentArgument(
         assert session.query(models.AgentArgument).all()[0].name == "test"
         assert session.query(models.AgentArgument).all()[0].type == "test"
         assert session.query(models.AgentArgument).all()[0].description == "test"
-        assert session.query(models.AgentArgument).all()[0].value == "test"
+        assert session.query(models.AgentArgument).all()[0].value == b"test"
         assert (
             session.query(models.AgentArgument).all()[0].agent_id == create_agent_db.id
         )

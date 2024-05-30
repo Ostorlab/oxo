@@ -344,7 +344,7 @@ class AgentArgument(Base):
         name: str,
         type: str,
         description: Optional[str] = None,
-        value: Optional[str] = None,
+        value: Optional[bytes] = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
