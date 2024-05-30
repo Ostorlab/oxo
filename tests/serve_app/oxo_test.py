@@ -780,7 +780,7 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
 
 
 def testStopScanMutation_whenNoScanFound_shouldReturnError(
-    client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Test stopScan mutation when scan doesn't exist should return error message."""
     query = """
@@ -792,7 +792,7 @@ scan{
 }
 }
     """
-    response = client.post(
+    response = authenticated_flask_client.post(
         "/graphql", json={"query": query, "variables": {"scanId": "5"}}
     )
 
