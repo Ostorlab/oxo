@@ -1,4 +1,7 @@
+import functools
+
 import flask
+import graphql_server
 from graphene_file_upload import flask as graphene_upload_flask
 import ubjson
 
@@ -32,3 +35,62 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
         """Decode UBJSON request data."""
 
         return ubjson.loadb(request.data)
+
+    def dispatch_request(self):
+        try:
+            request_method = flask.request.method.lower()
+            data = self.parse_body()
+
+            show_graphiql = request_method == "get" and self.should_display_graphiql()
+            catch = show_graphiql
+
+            pretty = self.pretty or show_graphiql or flask.request.args.get("pretty")
+
+            extra_options = {}
+            executor = self.get_executor()
+            if executor:
+                extra_options["executor"] = executor
+
+            execution_results, all_params = graphql_server.run_http_query(
+                self.schema,
+                request_method,
+                data,
+                query_data=flask.request.args,
+                batch_enabled=self.batch,
+                catch=catch,
+                backend=self.get_backend(),
+                root=self.get_root_value(),
+                context=self.get_context(),
+                middleware=self.get_middleware(),
+                **extra_options,
+            )
+
+            content_type = "application/json"
+            if flask.request.mimetype == "application/ubjson":
+                result, status_code = graphql_server.encode_execution_results(
+                    execution_results,
+                    is_batch=isinstance(data, list),
+                    format_error=self.format_error,
+                    encode=functools.partial(ubjson.dumpb),
+                )
+                content_type = "application/ubjson"
+            else:
+                result, status_code = graphql_server.encode_execution_results(
+                    execution_results,
+                    is_batch=isinstance(data, list),
+                    format_error=self.format_error,
+                    encode=functools.partial(self.encode, pretty=pretty),
+                )
+
+            if show_graphiql:
+                return self.render_graphiql(params=all_params[0], result=result)
+
+            return flask.Response(result, status=status_code, content_type=content_type)
+
+        except graphql_server.HttpQueryError as e:
+            return flask.Response(
+                self.encode({"errors": [self.format_error(e)]}),
+                status=e.status_code,
+                headers=e.headers,
+                content_type="application/json",
+            )

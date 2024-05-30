@@ -334,7 +334,7 @@ class AgentArgument(Base):
     name = sqlalchemy.Column(sqlalchemy.String(255))
     type = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
-    value = sqlalchemy.Column(sqlalchemy.Text)
+    value = sqlalchemy.Column(sqlalchemy.LargeBinary)
 
     agent_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("agent.id"))
 

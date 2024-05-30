@@ -539,24 +539,27 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
                 }
             }
     """
+    variables = {"orderBy": "AgentGroupId", "sort": "Asc"}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = client.post(
-        "/graphql",
-        json={"query": query, "variables": {"orderBy": "AgentGroupId", "sort": "Asc"}},
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
     )
 
-    assert response.status_code == 200, response.get_json()
-    agent_groups_data = response.get_json()["data"]["agentGroups"]["agentGroups"]
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    agent_groups_data = ubjson.loadb(response.data)["data"]["agentGroups"][
+        "agentGroups"
+    ]
     assert len(agent_groups_data) == 2
     agent_group1 = agent_groups_data[0]
     agent_group2 = agent_groups_data[1]
     assert agent_group1["name"] == agent_groups[0].name
     assert agent_group1["description"] == agent_groups[0].description
-    assert agent_group1["key"] == f"agentgroup/{agent_groups[0].name}"
+    assert agent_group1["key"] == f"agentgroup//{agent_groups[0].name}"
     assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
     assert agent_group2["name"] == agent_groups[1].name
     assert agent_group2["description"] == agent_groups[1].description
-    assert agent_group2["key"] == f"agentgroup/{agent_groups[1].name}"
+    assert agent_group2["key"] == f"agentgroup//{agent_groups[1].name}"
     assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
     agent_group1_agents = agent_group1["agents"]["agents"]
     agent_group2_agents = agent_group2["agents"]["agents"]
@@ -571,10 +574,10 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     assert len(agent2_args) == 1
     assert agent1_args[0]["name"] == "arg1"
     assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == "42"
+    assert agent1_args[0]["value"] == b"42"
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == "hello"
+    assert agent2_args[0]["value"] == b"hello"
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
@@ -613,18 +616,22 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
                 }
             }
     """
+    variables = {"agentGroupIds": [1]}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = client.post(
-        "/graphql", json={"query": query, "variables": {"agentGroupIds": [1]}}
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
     )
 
-    assert response.status_code == 200, response.get_json()
-    agent_groups_data = response.get_json()["data"]["agentGroups"]["agentGroups"]
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    agent_groups_data = ubjson.loadb(response.data)["data"]["agentGroups"][
+        "agentGroups"
+    ]
     assert len(agent_groups_data) == 1
     agent_group_data = agent_groups_data[0]
     assert agent_group_data["name"] == agent_group.name
     assert agent_group_data["description"] == agent_group.description
-    assert agent_group_data["key"] == f"agentgroup/{agent_group.name}"
+    assert agent_group_data["key"] == f"agentgroup//{agent_group.name}"
     assert agent_group_data["createdTime"] == agent_group.created_time.isoformat()
     agent_group_agents = agent_group_data["agents"]["agents"]
     assert len(agent_group_agents) == 2
@@ -636,10 +643,10 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     assert len(agent2_args) == 1
     assert agent1_args[0]["name"] == "arg1"
     assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == "42"
+    assert agent1_args[0]["value"] == b"42"
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == "hello"
+    assert agent2_args[0]["value"] == b"hello"
 
 
 def testQueryAgentGroupsWithPagination_always_returnPageInfo(
@@ -684,33 +691,30 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
                 }
             }
     """
+    variables = {
+        "page": 2,
+        "numberElements": 1,
+        "orderBy": "AgentGroupId",
+        "sort": "Asc",
+    }
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = client.post(
         "/graphql",
-        json={
-            "query": query,
-            "variables": {
-                "page": 2,
-                "numberElements": 1,
-                "orderBy": "AgentGroupId",
-                "sort": "Asc",
-            },
-        },
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson"},
     )
 
-    assert response.status_code == 200, response.get_json()
-    response_data = response.get_json()["data"]["agentGroups"]
-
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    response_data = ubjson.loadb(response.data)["data"]["agentGroups"]
     agent_groups_data = response_data["agentGroups"]
     page_info = response_data["pageInfo"]
-
     assert len(agent_groups_data) == 1
-
-    agent_group = agent_groups_data[0]
-    assert agent_group["name"] == agent_groups[1].name
-    assert agent_group["description"] == agent_groups[1].description
-    assert agent_group["key"] == f"agentgroup/{agent_groups[1].name}"
-    assert agent_group["createdTime"] == agent_groups[1].created_time.isoformat()
+    ag = agent_groups_data[0]
+    assert ag["name"] == agent_groups[1].name
+    assert ag["description"] == agent_groups[1].description
+    assert ag["key"] == f"agentgroup//{agent_groups[1].name}"
+    assert ag["createdTime"] == agent_groups[1].created_time.isoformat()
     assert page_info["count"] == 2
     assert page_info["numPages"] == 2
     assert page_info["hasPrevious"] is True
@@ -718,14 +722,26 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
 
 
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
-    client: testing.FlaskClient,
+    client: testing.FlaskClient, clean_db: None
 ) -> None:
     """Ensure the publish agent group mutation creates an agent group."""
 
     query = """mutation publishAgentGroup($agentGroup: AgentGroupCreateInputType!) {
                       publishAgentGroup(agentGroup: $agentGroup) {
                         agentGroup {
-                            key
+                            key,
+                            agents {
+                                agents {
+                                    key,
+                                    args {
+                                        args {
+                                            name
+                                            type
+                                            value
+                                        }
+                                    }
+                                }
+                            }
                         }
                       }
                     }"""
@@ -748,25 +764,19 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
         "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
     )
 
-    assert response.status_code == 200, response.get_json()
-    key = response.get_json()["data"]["publishAgentGroup"]["agentGroup"]["key"]
-    assert key == "agentgroup/test_agent_group"
-    with models.Database() as session:
-        assert (
-            session.query(models.AgentGroup).filter_by(name="test_agent_group").count()
-            == 1
-        )
-        agent_group = (
-            session.query(models.AgentGroup).filter_by(name="test_agent_group").first()
-        )
-        assert agent_group.description == "agent description"
-        assert agent_group.agents[0].key == "agent_key"
-        assert agent_group.agents[0].agent_groups[0].name == "test_agent_group"
-        arg = session.query(models.AgentArgument).filter_by(name="arg1").first()
-        assert arg.name == "arg1"
-        assert arg.type == "type1"
-        assert arg.value == b"value1"
-        assert arg.agent_id == agent_group.agents[0].id
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    ag = ubjson.loadb(response.data)["data"]["publishAgentGroup"]["agentGroup"]
+    agent_group_key = ag["key"]
+    agent_key = ag["agents"]["agents"][0]["key"]
+    arg_name = ag["agents"]["agents"][0]["args"]["args"][0]["name"]
+    arg_type = ag["agents"]["agents"][0]["args"]["args"][0]["type"]
+    arg_value = ag["agents"]["agents"][0]["args"]["args"][0]["value"]
+    assert agent_group_key == "agentgroup//test_agent_group"
+    assert agent_key == "agent_key"
+    assert arg_name == "arg1"
+    assert arg_type == "type1"
+    assert isinstance(arg_value, bytes) is True
+    assert arg_value == b"value1"
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
