@@ -750,7 +750,7 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
 
 
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
-    client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the publish agent group mutation creates an agent group."""
 
@@ -758,6 +758,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                       publishAgentGroup(agentGroup: $agentGroup) {
                         agentGroup {
                             key,
+                            name,
                             agents {
                                 agents {
                                     key,
@@ -788,18 +789,20 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     }
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
-    response = client.post(
+    response = authenticated_flask_client.post(
         "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
     ag = ubjson.loadb(response.data)["data"]["publishAgentGroup"]["agentGroup"]
     agent_group_key = ag["key"]
+    agent_group_name = ag["name"]
     agent_key = ag["agents"]["agents"][0]["key"]
     arg_name = ag["agents"]["agents"][0]["args"]["args"][0]["name"]
     arg_type = ag["agents"]["agents"][0]["args"]["args"][0]["type"]
     arg_value = ag["agents"]["agents"][0]["args"]["args"][0]["value"]
     assert agent_group_key == "agentgroup//test_agent_group"
+    assert agent_group_name == "test_agent_group"
     assert agent_key == "agent_key"
     assert arg_name == "arg1"
     assert arg_type == "type1"
@@ -808,7 +811,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
-    client: testing.FlaskClient, agent_group: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient, agent_group: models.AgentGroup
 ) -> None:
     """Ensure the delete agent group mutation deletes the agent group."""
     with models.Database() as session:
@@ -822,7 +825,7 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
         }
     """
 
-    response = client.post(
+    response = authenticated_flask_client.post(
         "/graphql", json={"query": query, "variables": {"agentGroupId": agent_group.id}}
     )
 
@@ -836,7 +839,7 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
-    client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete agent group mutation returns an error message when the agent group does not exist."""
     query = """
@@ -847,7 +850,7 @@ def testDeleteAgentGroupMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
         }
     """
 
-    response = client.post(
+    response = authenticated_flask_client.post(
         "/graphql", json={"query": query, "variables": {"agentGroupId": 42}}
     )
 
