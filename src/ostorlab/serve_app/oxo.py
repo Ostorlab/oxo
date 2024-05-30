@@ -267,7 +267,7 @@ class DeleteScanMutation(graphene.Mutation):
 
 
 class StopScanMutation(graphene.Mutation):
-    """stop scan mutation."""
+    """Stop scan mutation."""
 
     class Arguments:
         scan_id = graphene.String(required=True)
