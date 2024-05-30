@@ -64,7 +64,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
 
             extra_options = {}
             executor = self.get_executor()
-            if executor:
+            if executor is not None:
                 extra_options["executor"] = executor
 
             execution_results, all_params = graphql_server.run_http_query(
@@ -98,7 +98,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
                     encode=functools.partial(self.encode, pretty=pretty),
                 )
 
-            if show_graphiql:
+            if show_graphiql is True:
                 return self.render_graphiql(params=all_params[0], result=result)
 
             return flask.Response(result, status=status_code, content_type=content_type)
