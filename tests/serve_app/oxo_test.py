@@ -461,6 +461,47 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
+def testScansQuery_withPagination_shouldReturnPageInfo(
+    client: testing.FlaskClient, ios_scans: models.Scan, web_scan: models.Scan
+) -> None:
+    """Test the scan query with pagination, should return the correct pageInfo."""
+
+    with models.Database() as session:
+        scans = session.query(models.Scan).all()
+        assert scans is not None
+
+    query = """query Scans($scanIds: [Int!], $page: Int, $numberElements: Int) {
+  scans(scanIds: $scanIds, page: $page, numberElements: $numberElements) {
+    pageInfo{
+      count
+      numPages
+      hasNext
+      hasPrevious
+    }
+    scans {
+      id
+    }
+  }
+}
+"""
+
+    response = client.post(
+        "/graphql", json={"query": query, "variables": {"page": 1, "numberElements": 2}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["scans"]["pageInfo"] == {
+        "count": 3,
+        "hasNext": True,
+        "hasPrevious": False,
+        "numPages": 2,
+    }
+
+
+def test(android_scan):
+    pass
+
+
 def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     client: testing.FlaskClient, agent_groups: models.AgentGroup
 ) -> None:

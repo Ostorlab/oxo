@@ -6,8 +6,8 @@ from functools import cached_property
 from math import ceil
 from typing import Optional
 
-import graphene
 import cvss
+import graphene
 
 
 class PageInfo(graphene.ObjectType):
