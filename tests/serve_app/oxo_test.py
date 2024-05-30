@@ -9,7 +9,7 @@ from ostorlab.runtimes.local.models import models
 
 
 def testImportScanMutation_always_shouldImportScan(
-        authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
+    authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
 ) -> None:
     """Test importScan mutation."""
     with models.Database() as session:
@@ -48,14 +48,14 @@ def testImportScanMutation_always_shouldImportScan(
         response_json = response.get_json()
         nbr_scans_after_import = session.query(models.Scan).count()
         assert (
-                response_json["data"]["importScan"]["message"]
-                == "Scan imported successfully"
+            response_json["data"]["importScan"]["message"]
+            == "Scan imported successfully"
         )
         assert nbr_scans_after_import == nbr_scans_before_import + 1
 
 
 def testQueryMultipleScans_always_shouldReturnMultipleScans(
-        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans."""
     with models.Database() as session:
@@ -77,7 +77,8 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanIds": [1, 2]}}
+        "/graphql",
+        json={"query": query, "variables": {"scanIds": [1, 2]}},
     )
 
     assert response.status_code == 200, response.get_json()
@@ -96,7 +97,7 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
 
 
 def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResults(
-        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans with pagination and sort ascending."""
     with models.Database() as session:
@@ -147,7 +148,7 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
 
 
 def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
-        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans when no scan ids are specified."""
     with models.Database() as session:
@@ -186,7 +187,7 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
 
 
 def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
-        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple vulnerabilities."""
     with models.Database() as session:
@@ -232,7 +233,7 @@ def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
 
 
 def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilities(
-        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+    authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple KB vulnerabilities."""
     with models.Database() as session:
@@ -269,7 +270,7 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
     ][0]["kb"]
     assert kb_vulnerability["recommendation"] == kb_vulnerabilities[0].recommendation
     assert (
-            kb_vulnerability["shortDescription"] == kb_vulnerabilities[0].short_description
+        kb_vulnerability["shortDescription"] == kb_vulnerabilities[0].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[0].title
     kb_vulnerability = response.get_json()["data"]["scans"]["scans"][0][
@@ -277,13 +278,13 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
     ][0]["kb"]
     assert kb_vulnerability["recommendation"] == kb_vulnerabilities[1].recommendation
     assert (
-            kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
+        kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[1].title
 
 
 def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
-        authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Test query for multiple vulnerabilities with max risk rating."""
     query = """
@@ -318,7 +319,7 @@ def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
 
 
 def testQueryScan_whenScanExists_returnScanInfo(
-        authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the scan query returns the correct scan with all its information."""
     query = """
@@ -377,7 +378,7 @@ def testQueryScan_whenScanExists_returnScanInfo(
 
 
 def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
-        authenticated_flask_client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the scan query returns an error when the scan does not exist."""
     query = """
@@ -397,7 +398,7 @@ def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
 
 
 def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
-        authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the delete scan mutation deletes the scan, its statuses & vulnerabilities."""
     with models.Database() as session:
@@ -430,19 +431,19 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
     with models.Database() as session:
         assert session.query(models.Scan).count() == 0
         assert (
-                session.query(models.Vulnerability)
-                .filter_by(scan_id=android_scan.id)
-                .count()
-                == 0
+            session.query(models.Vulnerability)
+            .filter_by(scan_id=android_scan.id)
+            .count()
+            == 0
         )
         assert (
-                session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
-                == 0
+            session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
+            == 0
         )
 
 
 def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
-        authenticated_flask_client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
     query = """
@@ -462,7 +463,9 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 
 
 def testScansQuery_withPagination_shouldReturnPageInfo(
-        authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan, web_scan: models.Scan
+    authenticated_flask_client: testing.FlaskClient,
+    ios_scans: models.Scan,
+    web_scan: models.Scan,
 ) -> None:
     """Test the scan query with pagination, should return the correct pageInfo."""
 
@@ -499,7 +502,7 @@ def testScansQuery_withPagination_shouldReturnPageInfo(
 
 
 def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
-        authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
 ) -> None:
     """Test query for multiple agent groups."""
     with models.Database() as session:
@@ -577,7 +580,7 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
-        authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
 ) -> None:
     """Test query for a single agent group."""
     with models.Database() as session:
@@ -642,7 +645,7 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
 
 
 def testQueryAgentGroupsWithPagination_always_returnPageInfo(
-        authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
 ) -> None:
     """Test query for agent groups with pagination."""
     with models.Database() as session:
@@ -685,17 +688,16 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
     """
 
     response = authenticated_flask_client.post(
-        authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
-    "/graphql",
-    json = {
-        "query": query,
-        "variables": {
-            "page": 2,
-            "numberElements": 1,
-            "orderBy": "AgentGroupId",
-            "sort": "Asc",
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "page": 2,
+                "numberElements": 1,
+                "orderBy": "AgentGroupId",
+                "sort": "Asc",
+            },
         },
-    },
     )
 
     assert response.status_code == 200, response.get_json()
@@ -718,7 +720,7 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
 
 
 def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
-        unauthenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
+    unauthenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
     """Test query for multiple scans when the API key is invalid."""
     query = """
