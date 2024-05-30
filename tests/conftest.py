@@ -779,10 +779,10 @@ def agent_groups(clean_db: None) -> List[models.AgentGroup]:
         session.commit()
 
         arg1 = models.AgentArgument(
-            agent_id=agent1.id, name="arg1", type="number", value="42"
+            agent_id=agent1.id, name="arg1", type="number", value=b"42"
         )
         arg2 = models.AgentArgument(
-            agent_id=agent2.id, name="arg2", type="string", value="hello"
+            agent_id=agent2.id, name="arg2", type="string", value=b"hello"
         )
         session.add(arg1)
         session.add(arg2)
