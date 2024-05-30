@@ -1,5 +1,8 @@
 """Tests for Models class."""
 
+import datetime
+import json
+
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
@@ -262,3 +265,121 @@ def testModelsAPIKeyValidation_whenKeyIsInvalid_returnsFalse(
     api_key = models.APIKey.get_or_create()
 
     assert api_key.is_valid("invalid_key") is False
+
+
+def testAssetModels_whenCreateNetwork_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the network information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.Network.create(ips=["8.8.8.8", "42.42.42.42"])
+
+    with models.Database() as session:
+        assert session.query(models.Network).count() == 1
+        ips = json.loads(session.query(models.Network).all()[0].ips)
+        assert ips == ["8.8.8.8", "42.42.42.42"]
+
+
+def testAssetModels_whenCreateUrl_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the list of target URLs information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.Url.create(links=["https://example.com", "https://example42.com"])
+
+    with models.Database() as session:
+        assert session.query(models.Url).count() == 1
+        links = json.loads(session.query(models.Url).all()[0].links)
+        assert links == ["https://example.com", "https://example42.com"]
+
+
+def testAssetModels_whenCreateIosStore_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the iOS store information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.IosStore.create(bundle_id="a.b.c", application_name="Dummy application")
+
+    with models.Database() as session:
+        assert session.query(models.IosStore).count() == 1
+        asset = session.query(models.IosStore).all()[0]
+        assert asset.bundle_id == "a.b.c"
+        assert asset.application_name == "Dummy application"
+
+
+def testAssetModels_whenCreateAndroidStore_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the android store information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.AndroidStore.create(
+        package_name="a.b.c", application_name="Dummy application"
+    )
+
+    with models.Database() as session:
+        assert session.query(models.AndroidStore).count() == 1
+        asset = session.query(models.AndroidStore).all()[0]
+        assert asset.package_name == "a.b.c"
+        assert asset.application_name == "Dummy application"
+
+
+def testAssetModels_whenCreateIosFile_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the iOS store information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.IosFile.create(bundle_id="a.b.c", path="https://remote.bucket.com/ios_app")
+
+    with models.Database() as session:
+        assert session.query(models.IosFile).count() == 1
+        asset = session.query(models.IosFile).all()[0]
+        assert asset.bundle_id == "a.b.c"
+        assert asset.path == "https://remote.bucket.com/ios_app"
+
+
+def testAssetModels_whenCreateAndroidFile_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the iOS store information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.AndroidFile.create(
+        package_name="a.b.c", path="https://remote.bucket.com/android_app"
+    )
+
+    with models.Database() as session:
+        assert session.query(models.AndroidFile).count() == 1
+        asset = session.query(models.AndroidFile).all()[0]
+        assert asset.package_name == "a.b.c"
+        assert asset.path == "https://remote.bucket.com/android_app"
+
+
+def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the iOS store information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    asset = models.AndroidStore.create(
+        package_name="a.b.c", application_name="Dummy application"
+    )
+    with models.Database() as session:
+        scan = models.Scan(
+            title="Scan 42",
+            asset="a.b.c",
+            created_time=datetime.datetime.now(),
+            progress="NOT_STARTED",
+            asset_id=asset.id,
+            asset_instance=asset,
+        )
+        session.add(scan)
+        session.commit()
+
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 1
+        scan = session.query(models.Scan).all()[0]
+        assert scan.title == "Scan 42"
+        assert scan.progress.name == "NOT_STARTED"
+        asset_instance = scan.asset_instance
+        assert asset_instance.type == "android_store"
+        assert asset_instance.package_name == "a.b.c"
+        assert asset_instance.application_name == "Dummy application"
+        assert len(session.query(models.AndroidStore).all()[0].scans) == 1
