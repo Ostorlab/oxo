@@ -532,14 +532,18 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents(
     assert "agent/ostorlab_inject_asset" not in spy_follow.spy_return
 
 
-def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand() -> None:
+def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab scan command when testflight asset is provided."""
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     runner = CliRunner()
 
     result = runner.invoke(
         rootcli.rootcli,
         [
             "scan",
+            "--runtime=local",
             "run",
             "--agent=agent/ostorlab/nmap",
             "ios-testflight",
