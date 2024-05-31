@@ -885,39 +885,39 @@ scan{
     assert response_json["errors"][0]["message"] == "Scan not found."
 
 
-def testRunScanMutation_always_shouldRunScan(
-    client: testing.FlaskClient,
-    agent_group: models.AgentGroup,  # assets: [models.Asset]
+def testRunScanMutation_whenNetworkAsset_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_nmap: models.AgentGroup,
+    network_asset: models.Asset,
 ) -> None:
     """Test importScan mutation."""
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation runScan($scan: OxoAgentScanInputType!) {
-              runScan(scan: $scan) {
-                scan {
-                  id        
+            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+                runScan(
+                    scan: $scan
+                    install: $install
+                ) {
+                    scan {
+                        id
+                        title
+                    }
                 }
-              }
             }
         """
-        data = {
-            "operations": json.dumps(
-                {
-                    "query": query,
-                    "variables": {
-                        "scan": {
-                            "title": "some_title",
-                            "assetIds": [1],
-                            "agentGroupId": agent_group.id,
-                            "install": True,
-                        },
-                    },
-                }
-            )
+        variables = {
+            "scan": {
+                "title": "Test Scan Network Asset",
+                "assetIds": [network_asset.id],
+                "agentGroupId": agent_group_nmap.id,
+            },
+            "install": True,
         }
 
-        response = client.post("/graphql", data=data, content_type="application/json")
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": variables}
+        )
 
         assert response.status_code == 200, response.get_json()
         response_json = response.get_json()
@@ -925,3 +925,232 @@ def testRunScanMutation_always_shouldRunScan(
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
         assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert (
+            response_json["data"]["runScan"]["scan"]["title"]
+            == "Test Scan Network Asset"
+        )
+
+
+def testRunScanMutation_whenUrl_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_nmap: models.AgentGroup,
+    url_asset: models.Url,
+) -> None:
+    """Test importScan mutation for Url asset."""
+    with models.Database() as session:
+        nbr_scans_before_run = session.query(models.Scan).count()
+        query = """
+            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+                runScan(
+                    scan: $scan
+                    install: $install
+                ) {
+                    scan {
+                        id
+                        title
+                    }
+                }
+            }
+        """
+        variables = {
+            "scan": {
+                "title": "Test Scan Url Asset",
+                "assetIds": [url_asset.id],
+                "agentGroupId": agent_group_nmap.id,
+            },
+            "install": True,
+        }
+
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": variables}
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_run = session.query(models.Scan).count()
+        assert nbr_scans_after_run == nbr_scans_before_run + 1
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert (
+            response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Url Asset"
+        )
+
+
+def testRunScanMutation_whenAndroidFile_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_trufflehog: models.AgentGroup,
+    android_file_asset: models.AndroidFile,
+) -> None:
+    """Test importScan mutation for AndroidFile asset."""
+    with models.Database() as session:
+        nbr_scans_before_run = session.query(models.Scan).count()
+        query = """
+            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+                runScan(
+                    scan: $scan
+                    install: $install
+                ) {
+                    scan {
+                        id
+                        title
+                    }
+                }
+            }
+        """
+        variables = {
+            "scan": {
+                "title": "Test Scan Android File",
+                "assetIds": [android_file_asset.id],
+                "agentGroupId": agent_group_trufflehog.id,
+            },
+            "install": True,
+        }
+
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": variables}
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_run = session.query(models.Scan).count()
+        assert nbr_scans_after_run == nbr_scans_before_run + 1
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert (
+            response_json["data"]["runScan"]["scan"]["title"]
+            == "Test Scan Android File"
+        )
+
+
+def testRunScanMutation_whenIosFile_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_trufflehog: models.AgentGroup,
+    ios_file_asset: models.IosFile,
+) -> None:
+    """Test importScan mutation for IosFile asset."""
+    with models.Database() as session:
+        nbr_scans_before_run = session.query(models.Scan).count()
+        query = """
+            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+                runScan(
+                    scan: $scan
+                    install: $install
+                ) {
+                    scan {
+                        id
+                        title
+                    }
+                }
+            }
+        """
+        variables = {
+            "scan": {
+                "title": "Test Scan Ios File",
+                "assetIds": [ios_file_asset.id],
+                "agentGroupId": agent_group_trufflehog.id,
+            },
+            "install": True,
+        }
+
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": variables}
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_run = session.query(models.Scan).count()
+        assert nbr_scans_after_run == nbr_scans_before_run + 1
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Ios File"
+
+
+def testRunScanMutation_whenAndroidStore_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_inject_asset: models.AgentGroup,
+    android_store: models.AndroidStore,
+) -> None:
+    """Test importScan mutation for AndroidStore asset."""
+    with models.Database() as session:
+        nbr_scans_before_run = session.query(models.Scan).count()
+        query = """
+            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+                runScan(
+                    scan: $scan
+                    install: $install
+                ) {
+                    scan {
+                        id
+                        title
+                    }
+                }
+            }
+        """
+        variables = {
+            "scan": {
+                "title": "Test Scan Android Store",
+                "assetIds": [android_store.id],
+                "agentGroupId": agent_group_inject_asset.id,
+            },
+            "install": True,
+        }
+
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": variables}
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_run = session.query(models.Scan).count()
+        assert nbr_scans_after_run == nbr_scans_before_run + 1
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert (
+            response_json["data"]["runScan"]["scan"]["title"]
+            == "Test Scan Android Store"
+        )
+
+
+def testRunScanMutation_whenIosStore_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_inject_asset: models.AgentGroup,
+    ios_store: models.IosStore,
+) -> None:
+    """Test importScan mutation for IosStore asset."""
+    with models.Database() as session:
+        nbr_scans_before_run = session.query(models.Scan).count()
+        query = """
+            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+                runScan(
+                    scan: $scan
+                    install: $install
+                ) {
+                    scan {
+                        id
+                        title
+                    }
+                }
+            }
+        """
+        variables = {
+            "scan": {
+                "title": "Test Scan Ios Store",
+                "assetIds": [ios_store.id],
+                "agentGroupId": agent_group_inject_asset.id,
+            },
+            "install": True,
+        }
+
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": variables}
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_run = session.query(models.Scan).count()
+        assert nbr_scans_after_run == nbr_scans_before_run + 1
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert (
+            response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Ios Store"
+        )

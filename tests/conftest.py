@@ -892,3 +892,132 @@ def agent_group(clean_db: None) -> models.AgentGroup:
         )
 
         return agent_group
+
+
+@pytest.fixture
+def agent_group_nmap() -> models.AgentGroup:
+    """Create dummy agent groups."""
+    with models.Database() as session:
+        agent1 = models.Agent(
+            key="agent/ostorlab/nmap",
+        )
+        session.add(agent1)
+        session.commit()
+
+        agent_group = models.AgentGroup(
+            name="Agent Group Nmap",
+            description="Agent Group Nmap",
+            created_time=datetime.datetime.now(),
+        )
+        session.add(agent_group)
+        session.commit()
+
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent1.id
+        )
+        return agent_group
+
+
+@pytest.fixture
+def agent_group_trufflehog() -> models.AgentGroup:
+    """Create dummy agent groups."""
+    with models.Database() as session:
+        agent1 = models.Agent(
+            key="agent/ostorlab/trufflehog",
+        )
+        session.add(agent1)
+        session.commit()
+
+        agent_group = models.AgentGroup(
+            name="Agent Group Trufflehog",
+            description="Agent Group Trufflehog",
+            created_time=datetime.datetime.now(),
+        )
+        session.add(agent_group)
+        session.commit()
+
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent1.id
+        )
+        return agent_group
+
+
+@pytest.fixture
+def agent_group_inject_asset() -> models.AgentGroup:
+    """Create dummy agent groups."""
+    with models.Database() as session:
+        agent1 = models.Agent(
+            key="agent/ostorlab/inject_asset",
+        )
+        session.add(agent1)
+        session.commit()
+
+        agent_group = models.AgentGroup(
+            name="Agent Group Inject Asset",
+            description="Agent Group Inject Asset",
+            created_time=datetime.datetime.now(),
+        )
+        session.add(agent_group)
+        session.commit()
+
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent1.id
+        )
+        return agent_group
+
+
+@pytest.fixture
+def network_asset() -> models.Asset:
+    """Create a network asset."""
+    asset = models.Network.create(ips=["8.8.8.8", "8.8.4.4"])
+    return asset
+
+
+@pytest.fixture
+def url_asset() -> models.Asset:
+    """Create a Url asset."""
+    asset = models.Url.create(
+        links=[
+            '{"url": "https://google.com", "method": "GET"}',
+            '{"url": "https://tesla.com","method": "GET"}',
+        ]
+    )
+    return asset
+
+
+@pytest.fixture
+def android_file_asset() -> models.Asset:
+    """Create an AndroidFile asset."""
+    asset = models.AndroidFile.create(
+        package_name="com.example.android",
+        path=str(pathlib.Path(__file__).parent / "files" / "test.apk"),
+    )
+    return asset
+
+
+@pytest.fixture
+def ios_file_asset() -> models.Asset:
+    """Create an IosFile asset."""
+    asset = models.IosFile.create(
+        bundle_id="com.example.ios",
+        path=str(pathlib.Path(__file__).parent / "files" / "test.ipa"),
+    )
+    return asset
+
+
+@pytest.fixture
+def android_store() -> models.Asset:
+    """Create an AndroidStore asset."""
+    asset = models.AndroidStore.create(
+        package_name="com.example.android", application_name="Example Android App"
+    )
+    return asset
+
+
+@pytest.fixture
+def ios_store() -> models.Asset:
+    """Create an IosStore asset."""
+    asset = models.IosStore.create(
+        bundle_id="com.example.ios", application_name="Example iOS App"
+    )
+    return asset

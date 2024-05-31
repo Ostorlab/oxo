@@ -211,5 +211,3 @@ def is_aab(file_content: bytes) -> bool:
             return False
     except zipfile.BadZipFile:
         return False
-
-

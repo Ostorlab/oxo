@@ -1,4 +1,5 @@
 """Oxo GraphQL queries and mutations."""
+
 import ipaddress
 import json
 import pathlib
@@ -359,114 +360,143 @@ class RunScanMutation(graphene.Mutation):
             if assets is None or len(assets) == 0:
                 raise graphql.GraphQLError("Assets not found.")
 
-        runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
-        runtime_instance.follow = []
+            runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
+            runtime_instance.follow = []
 
-        agent_group = definitions.AgentGroupDefinition(
-            name=agent_group.name,
-            description=agent_group.description,
-            agents=[
-                definitions.AgentSettings(
-                    key=agent.key.split(":")[0],
-                    version=agent.key.split(":")[1] if ":" in agent.key else None,
-                    args=[
-                        utils_definitions.Arg.build(
-                            name=arg.name,
-                            type=arg.type,
-                            value=arg.value,
-                            description=arg.description,
-                        )
-                        for arg in agent.args
-                    ],
-                )
-                for agent in agent_group.agents
-            ],
-        )
-
-        try:
-            can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
-        except exceptions.OstorlabError as e:
-            raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
-
-        scan_assets = []
-        for asset in assets:
-            if asset.type == "android_file":
-                file_path = pathlib.Path(asset.path)
-                if file_path.exists() is False:
-                    raise graphql.GraphQLError(f"File {asset.path} not found.")
-                file_bytes = file_path.read_bytes()
-                if common.is_apk(file_bytes) is True or common.is_xapk(file_bytes) is True:
-                    scan_assets.append(
-                        android_apk_asset.AndroidApk(content=file_bytes, path=asset.path)
-                    )
-                elif common.is_aab(file_bytes) is True:
-                    scan_assets.append(
-                        android_aab_asset.AndroidAab(content=file_bytes, path=asset.path)
-                    )
-                else:
-                    raise graphql.GraphQLError(f"Unsupported file type: {asset.path}")
-            elif asset.type == "ios_file":
-                file_path = pathlib.Path(asset.path)
-                if file_path.exists() is False:
-                    raise graphql.GraphQLError(f"File {asset.path} not found.")
-
-                scan_assets.append(
-                    ios_ipa_asset.IOSIpa(content=file_path.read_bytes(), path=asset.path)
-                )
-            elif asset.type == "android_store":
-                scan_assets.append(
-                    android_store_asset.AndroidStore(package_name=asset.package_name)
-                )
-            elif asset.type == "ios_store":
-                scan_assets.append(ios_store_asset.IOSStore(bundle_id=asset.bundle_id))
-            elif asset.type == "network":
-                ips = json.loads(asset.ips)
-                for ip in ips:
-                    ip_network = ipaddress.ip_network(ip, strict=False)
-                    if ip_network.version == 4:
-                        scan_assets.append(ipv4_address_asset.IPv4(host=ip_network.network_address.exploded, mask=str(ip_network.prefixlen)))
-                    elif ip_network.version == 6:
-                        scan_assets.append(
-                            ipv6_address_asset.IPv6(
-                                host=ip_network.network_address.exploded,
-                                mask=str(ip_network.prefixlen),
+            agent_group = definitions.AgentGroupDefinition(
+                name=agent_group.name,
+                description=agent_group.description,
+                agents=[
+                    definitions.AgentSettings(
+                        key=agent.key.split(":")[0],
+                        version=agent.key.split(":")[1] if ":" in agent.key else None,
+                        args=[
+                            utils_definitions.Arg.build(
+                                name=arg.name,
+                                type=arg.type,
+                                value=arg.value,
+                                description=arg.description,
                             )
-                        )
-                    else:
-                        raise graphql.GraphQLError(f"Invalid IP address {ip}")
-            elif asset.type == "urls":
-                urls = json.loads(asset.urls)
-                for url in urls:
-                    scan_assets.append(link_asset.Link(url=url.get("url"), method=url.get("method")))
-            else:
-                raise graphql.GraphQLError(f"Unsupported asset type.")
-
-        if can_run_scan is True:
-            if install is True:
-                try:
-                    runtime_instance.install()
-                    for ag in agent_group.agents:
-                        try:
-                            install_agent.install(ag.key, ag.version)
-                        except agent_fetcher.AgentDetailsNotFound:
-                            graphql.GraphQLError(
-                                f"Agent {ag.key} not found on the store."
-                            )
-                except httpx.HTTPError as e:
-                    raise graphql.GraphQLError(f"Could not install the agents: {e}")
-
+                            for arg in session.query(models.AgentArgument)
+                            .filter_by(agent_id=agent.id)
+                            .all()
+                        ],
+                    )
+                    for agent in agent_group.agents
+                ],
+            )
             try:
-                scan = runtime_instance.scan(
-                    title=scan.title,
-                    agent_group_definition=agent_group,
-                    assets=scan_assets,
+                can_run_scan = runtime_instance.can_run(
+                    agent_group_definition=agent_group
                 )
             except exceptions.OstorlabError as e:
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"
                 )
+            scan_assets = []
+            for asset in assets:
+                if asset.type == "android_file":
+                    file_path = pathlib.Path(asset.path)
+                    if file_path.exists() is False:
+                        raise graphql.GraphQLError(f"File {asset.path} not found.")
+                    file_bytes = file_path.read_bytes()
+                    if (
+                        common.is_apk(file_bytes) is True
+                        or common.is_xapk(file_bytes) is True
+                    ):
+                        scan_assets.append(
+                            android_apk_asset.AndroidApk(
+                                content=file_bytes, path=asset.path
+                            )
+                        )
+                    elif common.is_aab(file_bytes) is True:
+                        scan_assets.append(
+                            android_aab_asset.AndroidAab(
+                                content=file_bytes, path=asset.path
+                            )
+                        )
+                    else:
+                        raise graphql.GraphQLError(
+                            f"Unsupported file type: {asset.path}"
+                        )
+                elif asset.type == "ios_file":
+                    file_path = pathlib.Path(asset.path)
+                    if file_path.exists() is False:
+                        raise graphql.GraphQLError(f"File {asset.path} not found.")
 
-            return RunScanMutation(scan=scan)
+                    scan_assets.append(
+                        ios_ipa_asset.IOSIpa(
+                            content=file_path.read_bytes(), path=asset.path
+                        )
+                    )
+                elif asset.type == "android_store":
+                    scan_assets.append(
+                        android_store_asset.AndroidStore(
+                            package_name=asset.package_name
+                        )
+                    )
+                elif asset.type == "ios_store":
+                    scan_assets.append(
+                        ios_store_asset.IOSStore(bundle_id=asset.bundle_id)
+                    )
+                elif asset.type == "network":
+                    ips = json.loads(asset.ips)
+                    for ip in ips:
+                        ip_network = ipaddress.ip_network(ip, strict=False)
+                        if ip_network.version == 4:
+                            scan_assets.append(
+                                ipv4_address_asset.IPv4(
+                                    host=ip_network.network_address.exploded,
+                                    mask=str(ip_network.prefixlen),
+                                )
+                            )
+                        elif ip_network.version == 6:
+                            scan_assets.append(
+                                ipv6_address_asset.IPv6(
+                                    host=ip_network.network_address.exploded,
+                                    mask=str(ip_network.prefixlen),
+                                )
+                            )
+                        else:
+                            raise graphql.GraphQLError(f"Invalid IP address {ip}")
+                elif asset.type == "urls":
+                    urls = json.loads(asset.links)
+                    for url in urls:
+                        url = json.loads(url)
+                        scan_assets.append(
+                            link_asset.Link(
+                                url=url.get("url"), method=url.get("method")
+                            )
+                        )
+                else:
+                    raise graphql.GraphQLError("Unsupported asset type.")
+
+            if can_run_scan is True:
+                if install is True:
+                    try:
+                        runtime_instance.install()
+                        for ag in agent_group.agents:
+                            try:
+                                install_agent.install(ag.key, ag.version)
+                            except agent_fetcher.AgentDetailsNotFound:
+                                graphql.GraphQLError(
+                                    f"Agent {ag.key} not found on the store."
+                                )
+                    except httpx.HTTPError as e:
+                        raise graphql.GraphQLError(f"Could not install the agents: {e}")
+
+                try:
+                    scan = runtime_instance.scan(
+                        title=scan.title,
+                        agent_group_definition=agent_group,
+                        assets=scan_assets,
+                    )
+                except exceptions.OstorlabError as e:
+                    raise graphql.GraphQLError(
+                        f"Runtime encountered an error to run scan: {e}"
+                    )
+
+                return RunScanMutation(scan=scan)
 
 
 class Mutations(graphene.ObjectType):
