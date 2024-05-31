@@ -69,8 +69,8 @@ class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType
         """Resolve references query.
 
         Args:
-            self (models.Vulnerability): The vulnerability object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            self: The vulnerability object.
+            info: GraphQL resolve info.
 
         Returns:
             List[OxoReferenceType]: List of references.
