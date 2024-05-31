@@ -122,7 +122,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
     assert result.exit_code == 1
 
 
-def testRunScanCLI__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
+def testRunScanCLI_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
     mocker,
 ):
     """Test oxo scan run command with all valid options and no sub command.
@@ -530,3 +530,26 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents(
     assert "agent/ostorlab/nmap" in spy_follow.spy_return
     assert "agent/ostorlab/asteroid" not in spy_follow.spy_return
     assert "agent/ostorlab_inject_asset" not in spy_follow.spy_return
+
+
+def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan command when no follow option is provided,
+    should log all agents.
+    """
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "ios-testflight",
+            "--application-url",
+            "https://testflight.apple.com/join/PM",
+        ],
+    )
+
+    assert "Creating scan entry" in result.output
