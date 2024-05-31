@@ -1,6 +1,7 @@
 from typing import Optional
 
 import flask
+import flask_cors
 from graphene_file_upload import flask as graphene_upload_flask
 
 from ostorlab.runtimes.local.models import models
@@ -12,6 +13,7 @@ AUTHORIZATION_HEADER = "X-API-KEY"
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
     """Create a Flask app with the specified path."""
     app = flask.Flask(__name__)
+    flask_cors.CORS(app)
     app.add_url_rule(
         path,
         view_func=graphene_upload_flask.FileUploadGraphQLView.as_view(
