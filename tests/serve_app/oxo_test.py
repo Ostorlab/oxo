@@ -3,8 +3,10 @@
 import io
 import json
 
+from docker.models import services as services_model
 import ubjson
 from flask import testing
+from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
 
@@ -819,6 +821,72 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
 
     assert response.status_code == 401
     assert response.get_json()["error"] == "Unauthorized"
+
+
+def testStopScanMutation_whenScanIsRunning_shouldStopScan(
+    authenticated_flask_client: testing.FlaskClient,
+    in_progress_web_scan: models.Scan,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test stopScan mutation when scan is running should stop scan."""
+
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+
+    with models.Database() as session:
+        nbr_scans_before = session.query(models.Scan).count()
+        scan = session.query(models.Scan).get(in_progress_web_scan.id)
+        scan_progress = scan.progress
+        query = """
+            mutation stopScan($scanId: Int!){
+  stopScan(scanId: $scanId){
+    scan{
+      id
+    }
+  }
+}
+        """
+        response = authenticated_flask_client.post(
+            "/graphql", json={"query": query, "variables": {"scanId": str(scan.id)}}
+        )
+
+        assert response.status_code == 200, response.get_json()
+        session.refresh(scan)
+        scan = session.query(models.Scan).get(in_progress_web_scan.id)
+        response_json = response.get_json()
+        nbr_scans_after = session.query(models.Scan).count()
+        assert response_json["data"] == {
+            "stopScan": {"scan": {"id": str(in_progress_web_scan.id)}}
+        }
+        assert scan.progress.name == "STOPPED"
+        assert scan.progress != scan_progress
+        assert nbr_scans_after == nbr_scans_before
+
+
+def testStopScanMutation_whenNoScanFound_shouldReturnError(
+    authenticated_flask_client: testing.FlaskClient,
+) -> None:
+    """Test stopScan mutation when scan doesn't exist should return error message."""
+    query = """
+        mutation stopScan($scanId: Int!){
+stopScan(scanId: $scanId){
+scan{
+  id
+}
+}
+}
+    """
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": {"scanId": "5"}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert response_json["errors"][0]["message"] == "Scan not found."
 
 
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(

@@ -131,11 +131,17 @@ class Scan(Base):
     )
 
     @staticmethod
-    def create(asset, title: str = ""):
+    def create(
+        asset: str,
+        title: str = "",
+        progress: sqlalchemy.Enum(ScanProgress) = ScanProgress.NOT_STARTED,
+    ) -> "Scan":
         """Persist the scan in the database.
 
         Args:
+            asset: Asset to scan.
             title: Scan title.
+            progress: Scan progress.
         Returns:
             Scan object.
         """
@@ -144,7 +150,7 @@ class Scan(Base):
                 title=title,
                 asset=asset,
                 created_time=datetime.datetime.now(),
-                progress="NOT_STARTED",
+                progress=progress.name,
             )
             session.add(scan)
             session.commit()

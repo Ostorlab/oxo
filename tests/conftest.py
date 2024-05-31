@@ -613,6 +613,15 @@ def web_scan(clean_db: None) -> None:
 
 
 @pytest.fixture
+def in_progress_web_scan(clean_db: None) -> models.Scan:
+    """Create a dummy web scan."""
+
+    return models.Scan.create(
+        title="Web Scan", asset="Web", progress=models.ScanProgress.IN_PROGRESS
+    )
+
+
+@pytest.fixture
 def ios_scans(clean_db: None) -> None:
     """Create a dummy ios scan."""
     with models.Database() as session:
