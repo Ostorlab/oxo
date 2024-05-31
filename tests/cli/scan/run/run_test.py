@@ -532,12 +532,8 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents(
     assert "agent/ostorlab_inject_asset" not in spy_follow.spy_return
 
 
-def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """Test ostorlab scan command when no follow option is provided,
-    should log all agents.
-    """
+def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand() -> None:
+    """Test ostorlab scan command when testflight asset is provided."""
     runner = CliRunner()
 
     result = runner.invoke(
