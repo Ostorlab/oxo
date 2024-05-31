@@ -921,7 +921,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
             "description": "agent description",
             "agents": [
                 {
-                    "agentKey": "agent_key",
+                    "key": "agent_key",
                     "args": [{"name": "arg1", "type": "type1", "value": b"value1"}],
                 }
             ],

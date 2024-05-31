@@ -444,7 +444,7 @@ class AgentGroup(Base):
         )
 
         for agent in agents:
-            new_agent = Agent.create(agent.agent_key)
+            new_agent = Agent.create(agent.key)
             agent_group.agents.append(new_agent)
             for argument in agent.args:
                 AgentArgument.create(
