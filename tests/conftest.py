@@ -613,7 +613,7 @@ def web_scan(clean_db: None) -> None:
 
 
 @pytest.fixture
-def in_progress_web_scan() -> models.Scan:
+def in_progress_web_scan(clean_db: None) -> models.Scan:
     """Create a dummy web scan."""
 
     return models.Scan.create(
