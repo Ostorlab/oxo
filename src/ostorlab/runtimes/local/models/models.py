@@ -5,6 +5,7 @@ import enum
 import json
 import logging
 import pathlib
+import uuid
 from typing import Any, Dict, List, Optional
 import types
 
@@ -249,7 +250,7 @@ class Vulnerability(Base):
         Returns:
             Vulnerability object.
         """
-        references = Vulnerability._prepare_references_markdown(references)
+        references_md = Vulnerability._prepare_references_markdown(references)
         vuln_location = Vulnerability._prepare_vuln_location_markdown(location)
         vuln = Vulnerability(
             scan_id=scan_id,
@@ -257,7 +258,7 @@ class Vulnerability(Base):
             short_description=short_description,
             description=description,
             recommendation=recommendation,
-            references=references,
+            references=references_md,
             technical_detail=technical_detail,
             risk_rating=risk_rating,
             cvss_v3_vector=cvss_v3_vector,
@@ -268,6 +269,13 @@ class Vulnerability(Base):
         with Database() as session:
             session.add(vuln)
             session.commit()
+
+        for reference in references:
+            Reference.create(
+                title=reference.get("title", ""),
+                url=reference.get("url", ""),
+                vulnerability_id=vuln.id,
+            )
 
         return vuln
 
@@ -299,6 +307,35 @@ class ScanStatus(Base):
             session.add(scan_status)
             session.commit()
             return scan_status
+
+
+class Reference(Base):
+    """The Reference model"""
+
+    __tablename__ = "reference"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    title = sqlalchemy.Column(sqlalchemy.String(255))
+    url = sqlalchemy.Column(sqlalchemy.String(4096))
+    vulnerability_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("vulnerability.id")
+    )
+
+    @staticmethod
+    def create(title: str, url: str, vulnerability_id: int) -> "Reference":
+        """Persist the reference in the database.
+
+        Args:
+            title: Reference title.
+            url: Reference URL.
+            vulnerability_id: Vulnerability id.
+        Returns:
+            Reference object.
+        """
+        reference = Reference(title=title, url=url, vulnerability_id=vulnerability_id)
+        with Database() as session:
+            session.add(reference)
+            session.commit()
+            return reference
 
 
 class Agent(Base):
@@ -434,3 +471,60 @@ class AgentGroupMapping(Base):
             session.add(agent_group_mapping)
             session.commit()
             return agent_group_mapping
+
+
+class APIKey(Base):
+    """The API Key model"""
+
+    __tablename__ = "api_key"
+    key = sqlalchemy.Column(
+        sqlalchemy.String(150), unique=True, nullable=False, primary_key=True
+    )
+
+    @staticmethod
+    def create() -> "APIKey":
+        """Persist the API key in the database.
+
+        Returns:
+            APIKey object.
+        """
+        with Database() as session:
+            api_key = APIKey(key=str(uuid.uuid4()))
+            session.add(api_key)
+            session.commit()
+            return api_key
+
+    @staticmethod
+    def get_or_create() -> "APIKey":
+        """Get or create the API key in the database.
+
+        Returns:
+            APIKey object.
+        """
+        with Database() as session:
+            api_key = session.query(APIKey).first()
+            if api_key is None:
+                api_key = APIKey.create()
+            return api_key
+
+    @staticmethod
+    def is_valid(api_key: str) -> bool:
+        """Check if the API key is valid.
+
+        Args:
+            api_key: API key to check.
+        Returns:
+            Boolean.
+        """
+        with Database() as session:
+            api_key = session.query(APIKey).filter_by(key=api_key).first()
+            return api_key is not None
+
+    @staticmethod
+    def refresh() -> "APIKey":
+        """Revoke the current API key and create a new one."""
+        with Database() as session:
+            session.query(APIKey).delete()
+            session.commit()
+            api_key = APIKey.create()
+            return api_key

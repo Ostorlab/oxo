@@ -8,8 +8,8 @@ import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
 
-from ostorlab.serve_app import common
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import common
 
 DEFAULT_NUMBER_ELEMENTS = 15
 RISK_RATINGS_ORDER = {
@@ -34,8 +34,23 @@ class OxoScanOrderByEnum(graphene.Enum):
     Progress = enum.auto()
 
 
+class AgentGroupOrderByEnum(graphene.Enum):
+    AgentGroupId = enum.auto()
+    Name = enum.auto()
+    CreatedTime = enum.auto()
+
+
+class OxoReferenceType(graphene.ObjectType):
+    """Graphene object type for a reference."""
+
+    title = graphene.String()
+    url = graphene.String()
+
+
 class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for a knowledge base vulnerability."""
+
+    references = graphene.List(OxoReferenceType)
 
     class Meta:
         """Meta class for the knowledge base vulnerability object type."""
@@ -46,8 +61,27 @@ class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType
             "short_description",
             "description",
             "recommendation",
-            "references",
         )
+
+    def resolve_references(
+        self: models.Vulnerability, info: graphql_base.ResolveInfo
+    ) -> List[OxoReferenceType]:
+        """Resolve references query.
+
+        Args:
+            self: The vulnerability object.
+            info: GraphQL resolve info.
+
+        Returns:
+            List of references.
+        """
+        with models.Database() as session:
+            references = session.query(models.Reference).filter(
+                models.Reference.vulnerability_id == self.id
+            )
+            return [
+                OxoReferenceType(title=ref.title, url=ref.url) for ref in references
+            ]
 
 
 class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -107,6 +141,7 @@ class OxoVulnerabilitiesType(graphene.ObjectType):
     """Graphene object type for a list of vulnerabilities."""
 
     vulnerabilities = graphene.List(OxoVulnerabilityType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)
 
 
 class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
@@ -211,10 +246,15 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             vulnerabilities = vulnerabilities.order_by(models.Vulnerability.id)
 
             if page is not None and number_elements > 0:
-                vulnerabilities = vulnerabilities.offset(
-                    (page - 1) * number_elements
-                ).limit(number_elements)
-                return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
+                p = common.Paginator(vulnerabilities, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
             else:
                 return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
@@ -342,6 +382,121 @@ class OxoScansType(graphene.ObjectType):
     """Graphene object type for a list of scans."""
 
     scans = graphene.List(OxoScanType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)
+
+
+class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """Graphene object type for a list of agent arguments."""
+
+    class Meta:
+        """Meta class for the agent arguments object type."""
+
+        model = models.AgentArgument
+        only_fields = (
+            "id",
+            "name",
+            "type",
+            "description",
+            "value",
+        )
+
+
+class AgentArgumentsType(graphene.ObjectType):
+    """Graphene object type for a list of agent arguments."""
+
+    args = graphene.List(AgentArgumentType, required=True)
+
+
+class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for an agent."""
+
+    args = graphene.Field(AgentArgumentsType, required=True)
+
+    class Meta:
+        """Meta class for the agent object type."""
+
+        model = models.Agent
+        only_fields = (
+            "id",
+            "key",
+        )
+
+    def resolve_args(
+        self: models.Agent, info: graphql_base.ResolveInfo
+    ) -> AgentArgumentsType:
+        """Resolve agent arguments query.
+
+        Args:
+            self (models.Agent): The agent object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            AgentArgumentsType: List of agent arguments.
+        """
+        with models.Database() as session:
+            args = session.query(models.AgentArgument).filter(
+                models.AgentArgument.agent_id == self.id
+            )
+            return AgentArgumentsType(args=args)
+
+
+class AgentsType(graphene.ObjectType):
+    """Graphene object type for a list of agents."""
+
+    agents = graphene.List(AgentType, required=True)
+
+
+class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for an agent group."""
+
+    key = graphene.String()
+    agents = graphene.Field(AgentsType, required=True)
+
+    class Meta:
+        """Meta class for the agent group object type."""
+
+        model = models.AgentGroup
+
+        only_fields = (
+            "id",
+            "name",
+            "description",
+            "created_time",
+        )
+
+    def resolve_key(self: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
+        """Resolve key query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            str: The key of the agent group.
+        """
+        return f"agentgroup/{self.name}"
+
+    def resolve_agents(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> AgentsType:
+        """Resolve agents query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            AgentsType: List of agents.
+        """
+        with models.Database() as session:
+            agents = (
+                session.query(models.AgentGroup)
+                .filter(models.AgentGroup.id == self.id)
+                .first()
+                .agents
+            )
+            return AgentsType(agents=agents)
+
+
+class AgentGroupsType(graphene.ObjectType):
+    agent_groups = graphene.List(AgentGroupType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):

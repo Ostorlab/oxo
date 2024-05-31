@@ -54,6 +54,7 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
             "metadata": [{"type": "CODE_LOCATION", "value": "some/file.swift:42"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
 
     with models.Database() as session:
@@ -86,6 +87,7 @@ def testModelsVulnerability_whenAssetIsNotSupported_doNotRaiseError(
             "metadata": [{"type": "CODE_LOCATION", "value": "some/file.swift:42"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
 
     with models.Database() as session:
@@ -145,19 +147,34 @@ def testModelsVulnerability_whenRiskRatingIsCritcal_doNotRaiseError(
             "metadata": [{"type": "CODE_LOCATION", "value": "some/file.swift:42"}],
         },
         scan_id=create_scan_db.id,
+        references=[
+            {
+                "title": "C++ Core Guidelines R.10 - Avoid malloc() and free()",
+                "url": "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free",
+            }
+        ],
     )
 
     with models.Database() as session:
-        assert session.query(models.Vulnerability).first().title == "Critical Vuln"
+        vuln = session.query(models.Vulnerability).first()
+        assert vuln.title == "Critical Vuln"
+        assert vuln.risk_rating == risk_rating.RiskRating.CRITICAL
+        assert vuln.description == "Javascript Critical vuln"
+        assert vuln.scan_id == create_scan_db.id
+        references = (
+            session.query(models.Reference)
+            .filter(models.Reference.vulnerability_id == vuln.id)
+            .all()
+        )
+        assert len(references) == 1
         assert (
-            session.query(models.Vulnerability).first().risk_rating
-            == risk_rating.RiskRating.CRITICAL
+            references[0].title
+            == "C++ Core Guidelines R.10 - Avoid malloc() and free()"
         )
         assert (
-            session.query(models.Vulnerability).first().description
-            == "Javascript Critical vuln"
+            references[0].url
+            == "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free"
         )
-        assert session.query(models.Vulnerability).first().scan_id == create_scan_db.id
 
 
 def testModelsAgent_always_createsAgent(
@@ -228,3 +245,50 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
             == agent_group.name
         )
         assert session.query(models.AgentGroup).all()[0].agents[0].key == agent.key
+
+
+def testModelsAPIKeyGetOrCreate_never_createsNewAPIKeyIfOneExists(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key get_or_create implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    models.APIKey.get_or_create()
+    models.APIKey.get_or_create()
+    with models.Database() as session:
+        assert session.query(models.APIKey).count() == 1
+
+
+def testModelsAPIKeyValidation_whenKeyIsValid_returnsTrue(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key validation implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    api_key = models.APIKey.get_or_create()
+
+    assert api_key.is_valid(api_key.key) is True
+
+
+def testModelsAPIKeyValidation_whenKeyIsInvalid_returnsFalse(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key validation implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    api_key = models.APIKey.get_or_create()
+
+    assert api_key.is_valid("invalid_key") is False
+
+
+def testModelsAPIKeyRefresh_always_createsNewAPIKey(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test API Key refresh implementation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    current_api_key = models.APIKey.get_or_create()
+
+    models.APIKey.refresh()
+
+    new_api_key = models.APIKey.get_or_create()
+    assert current_api_key.key != new_api_key.key

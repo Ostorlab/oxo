@@ -5,15 +5,17 @@ import io
 import pathlib
 import sys
 import time
-from typing import Any
+from typing import Any, List
 
 import docker
 import flask
-import ostorlab
 import pytest
 import redis
 from docker.models import networks as networks_model
-from flask import testing
+from flask import testing as flask_testing
+from werkzeug import test as werkzeug_test
+
+import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_report_vulnerability_mixin
@@ -27,13 +29,13 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.serve_app import app
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+from ostorlab.serve_app import app
 from ostorlab.utils import risk_rating
 
 
@@ -629,29 +631,41 @@ def ios_scans(clean_db: None) -> None:
         session.add(scan1)
         session.add(scan2)
         session.commit()
-        vulnerability1 = models.Vulnerability(
+        vulnerability1 = models.Vulnerability.create(
             title="XSS",
             short_description="Cross Site Scripting",
             description="Cross Site Scripting",
             recommendation="Sanitize data",
             technical_detail="a=$input",
-            risk_rating=risk_rating.RiskRating.HIGH,
+            risk_rating=risk_rating.RiskRating.HIGH.name,
             cvss_v3_vector="5:6:7",
             dna="121312",
-            location="",
+            location={},
             scan_id=scan1.id,
+            references=[
+                {
+                    "title": "C++ Core Guidelines R.10 - Avoid malloc() and free()",
+                    "url": "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free",
+                }
+            ],
         )
-        vulnerability2 = models.Vulnerability(
+        vulnerability2 = models.Vulnerability.create(
             title="SQL Injection",
             short_description="SQL Injection",
             description="SQL Injection",
             recommendation="Sanitize data",
             technical_detail="a=$input",
-            risk_rating=risk_rating.RiskRating.HIGH,
+            risk_rating=risk_rating.RiskRating.HIGH.name,
             cvss_v3_vector="5:6:7",
             dna="121312",
-            location="",
+            location={},
             scan_id=scan2.id,
+            references=[
+                {
+                    "title": "C++ Core Guidelines R.10 - Avoid malloc() and free()",
+                    "url": "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free",
+                }
+            ],
         )
         session.add(vulnerability1)
         session.add(vulnerability2)
@@ -669,8 +683,23 @@ def flask_app() -> flask.Flask:
 
 
 @pytest.fixture
-def client(flask_app: flask.Flask) -> testing.FlaskClient:
-    """Fixture for creating a Flask test client."""
+def unauthenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskClient:
+    """Fixture for creating an unauthenticated Flask test client."""
+    return flask_app.test_client()
+
+
+@pytest.fixture
+def authenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskClient:
+    """Fixture for creating an authenticated Flask test client."""
+
+    class CustomFlaskClient(flask_testing.FlaskClient):
+        def open(self, *args: Any, **kwargs: Any) -> werkzeug_test.TestResponse:
+            headers = kwargs.pop("headers", {})
+            headers["X-API-Key"] = models.APIKey.get_or_create().key
+            kwargs["headers"] = headers
+            return super().open(*args, **kwargs)
+
+    flask_app.test_client_class = CustomFlaskClient
     return flask_app.test_client()
 
 
@@ -681,6 +710,10 @@ def clean_db(request) -> None:
         session.query(models.Vulnerability).delete()
         session.query(models.Scan).delete()
         session.query(models.ScanStatus).delete()
+        session.query(models.Agent).delete()
+        session.query(models.AgentArgument).delete()
+        session.query(models.AgentGroup).delete()
+        session.query(models.AgentGroupMapping).delete()
         session.commit()
 
 
@@ -758,6 +791,56 @@ def android_scan(clean_db: None) -> None:
         session.add(vulnerability4)
         session.commit()
     yield scan
+
+
+@pytest.fixture
+def agent_groups(clean_db: None) -> List[models.AgentGroup]:
+    """Create dummy agent groups."""
+    with models.Database() as session:
+        agent1 = models.Agent(
+            key="agent/ostorlab/agent1",
+        )
+        agent2 = models.Agent(
+            key="agent/ostorlab/agent2",
+        )
+        session.add(agent1)
+        session.add(agent2)
+        session.commit()
+
+        arg1 = models.AgentArgument(
+            agent_id=agent1.id, name="arg1", type="number", value="42"
+        )
+        arg2 = models.AgentArgument(
+            agent_id=agent2.id, name="arg2", type="string", value="hello"
+        )
+        session.add(arg1)
+        session.add(arg2)
+        session.commit()
+
+        agent_group1 = models.AgentGroup(
+            name="Agent Group 1",
+            description="Agent Group 1",
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+        )
+        agent_group2 = models.AgentGroup(
+            name="Agent Group 2",
+            description="Agent Group 2",
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+        )
+        session.add(agent_group1)
+        session.add(agent_group2)
+        session.commit()
+
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group1.id, agent_id=agent1.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group1.id, agent_id=agent2.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group2.id, agent_id=agent1.id
+        )
+        return [agent_group1, agent_group2]
 
 
 @pytest.fixture
