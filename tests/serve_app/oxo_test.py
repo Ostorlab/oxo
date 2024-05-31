@@ -3,7 +3,9 @@
 import io
 import json
 
+from docker.models import services as services_model
 from flask import testing
+from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
 
@@ -818,9 +820,19 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
-    authenticated_flask_client: testing.FlaskClient, in_progress_web_scan: models.Scan
+    authenticated_flask_client: testing.FlaskClient,
+    in_progress_web_scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test stopScan mutation when scan is running should stop scan."""
+
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+
     with models.Database() as session:
         nbr_scans_before = session.query(models.Scan).count()
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
