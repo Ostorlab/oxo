@@ -315,7 +315,7 @@ class Reference(Base):
     __tablename__ = "reference"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String(255))
-    url = sqlalchemy.Column(sqlalchemy.String(255))
+    url = sqlalchemy.Column(sqlalchemy.String(4096))
     vulnerability_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("vulnerability.id")
     )

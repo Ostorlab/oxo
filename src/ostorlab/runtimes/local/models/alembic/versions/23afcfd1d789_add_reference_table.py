@@ -23,7 +23,7 @@ def upgrade() -> None:
         "reference",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("title", sa.String(length=255), nullable=True),
-        sa.Column("url", sa.String(length=255), nullable=True),
+        sa.Column("url", sa.String(length=4096), nullable=True),
         sa.Column("vulnerability_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["vulnerability_id"],
