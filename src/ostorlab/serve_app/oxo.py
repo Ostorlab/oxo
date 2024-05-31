@@ -1,5 +1,6 @@
 """Oxo GraphQL queries and mutations."""
 
+import uuid
 from typing import Optional, List
 
 import graphene
@@ -11,6 +12,7 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
+from ostorlab.serve_app import app
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -265,8 +267,83 @@ class DeleteScanMutation(graphene.Mutation):
             return DeleteScanMutation(result=True)
 
 
+class CreateAssetMutation(graphene.Mutation):
+    """Create asset mutation."""
+
+    class Arguments:
+        asset = types.AssetInputType(required=True)
+
+    asset = types.AssetType()
+
+    @staticmethod
+    def mutate(root, info: graphql_base.ResolveInfo, asset: types.AssetInputType):
+        """Create asset mutation."""
+        CreateAssetMutation._validate(asset)
+        if asset.android_store is not None:
+            new_asset = models.AndroidStore.create(
+                package_name=asset.android_store.package_name,
+                application_name=asset.android_store.application_name,
+            )
+            return CreateAssetMutation(asset=new_asset)
+        if asset.android_file is not None:
+            content = asset.android_file.file.read()
+            android_file_path = (
+                app.OXO_ASSETS_PRIVATE_DIR / f"android_{str(uuid.uuid4())}"
+            )
+            android_file_path.write_bytes(content)
+            new_asset = models.AndroidFile.create(
+                package_name=asset.android_file.package_name,
+                path=str(android_file_path),
+            )
+            return CreateAssetMutation(asset=new_asset)
+        if asset.ios_store is not None:
+            ios_asset = models.IosStore.create(
+                bundle_id=asset.ios_store.bundle_id,
+                application_name=asset.ios_store.application_name,
+            )
+            return CreateAssetMutation(asset=ios_asset)
+        if asset.ios_file is not None:
+            content = asset.ios_file.file.read()
+            ios_file_path = app.OXO_ASSETS_PRIVATE_DIR / f"ios_{str(uuid.uuid4())}"
+            ios_file_path.write_bytes(content)
+            new_asset = models.IosFile.create(
+                bundle_id=asset.ios_file.bundle_id,
+                path=str(ios_file_path),
+            )
+            return CreateAssetMutation(asset=new_asset)
+        if asset.url is not None:
+            new_asset = models.Url.create(links=asset.url.links)
+            return CreateAssetMutation(asset=new_asset)
+
+        if asset.network is not None:
+            new_asset = models.Network.create(ips=asset.network.ips)
+            return CreateAssetMutation(asset=new_asset)
+
+    @staticmethod
+    def _validate(asset: types.AssetInputType):
+        assets = []
+        if asset.android_store:
+            assets.append(asset.android_store)
+        if asset.android_file:
+            assets.append(asset.android_file)
+        if asset.ios_store:
+            assets.append(asset.ios_store)
+        if asset.ios_file:
+            assets.append(asset.ios_file)
+        if asset.url:
+            assets.append(asset.url)
+        if asset.network:
+            assets.append(asset.network)
+
+        if len(assets) <= 0:
+            raise graphql.GraphQLError("Asset input is missing.")
+        if len(assets) >= 2:
+            raise graphql.GraphQLError("Single asset input must be defined.")
+
+
 class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(
         description="Delete a scan & all its information."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
+    create_asset = CreateAssetMutation.Field(description="Create an asset.")

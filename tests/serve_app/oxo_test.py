@@ -2,6 +2,7 @@
 
 import io
 import json
+import pathlib
 
 from flask import testing
 
@@ -743,3 +744,380 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
 
     assert response.status_code == 401
     assert response.get_json()["error"] == "Unauthorized"
+
+
+def testCreateAsset_androidStore_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the android store asset is created successfully through the createAsset API."""
+    del clean_db
+    query = """
+        mutation createAndroidStore($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on AndroidStoreAssetType {
+                        id
+                        packageName
+                        applicationName                    
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "asset": {
+                    "androidStore": {
+                        "applicationName": "fake_app",
+                        "packageName": "a.b.c",
+                    }
+                }
+            },
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAsset"]["asset"]
+    assert asset_data["id"] is not None
+    assert asset_data["packageName"] == "a.b.c"
+    assert asset_data["applicationName"] == "fake_app"
+    with models.Database() as session:
+        assert session.query(models.AndroidStore).count() == 1
+        assert session.query(models.AndroidStore).all()[0].package_name == "a.b.c"
+        assert (
+            session.query(models.AndroidStore).all()[0].application_name == "fake_app"
+        )
+
+
+def testCreateAsset_iOSStore_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the ios store asset is created successfully through the createAsset API."""
+    del clean_db
+    query = """
+        mutation createiOSStore($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on IOSStoreAssetType {
+                        id
+                        bundleId
+                        applicationName                    
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "asset": {
+                    "iosStore": {
+                        "applicationName": "fake_app",
+                        "bundleId": "a.b.c",
+                    }
+                }
+            },
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAsset"]["asset"]
+    assert asset_data["id"] is not None
+    assert asset_data["bundleId"] == "a.b.c"
+    assert asset_data["applicationName"] == "fake_app"
+    with models.Database() as session:
+        assert session.query(models.IosStore).count() == 1
+        assert session.query(models.IosStore).all()[0].bundle_id == "a.b.c"
+        assert session.query(models.IosStore).all()[0].application_name == "fake_app"
+
+
+def testCreateAsset_url_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the url asset & its links are created successfully through the createAsset API."""
+    del clean_db
+    query = """
+        mutation createUrl($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on UrlAssetType {
+                        id
+                        links        
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "asset": {
+                    "url": {
+                        "links": [
+                            "https://www.example.com",
+                            "https://www.example2.com",
+                        ],
+                    }
+                }
+            },
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAsset"]["asset"]
+    assert asset_data["id"] is not None
+    assert asset_data["links"] == [
+        "https://www.example.com",
+        "https://www.example2.com",
+    ]
+    with models.Database() as session:
+        assert session.query(models.Url).count() == 1
+        assert json.loads(session.query(models.Url).all()[0].links) == [
+            "https://www.example.com",
+            "https://www.example2.com",
+        ]
+
+
+def testCreateAsset_network_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the network asset & its ips are created successfully through the createAsset API."""
+    del clean_db
+    query = """
+        mutation createNetwork($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on NetworkAssetType {
+                        id
+                        ips        
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "asset": {
+                    "network": {
+                        "ips": ["8.8.8.8", "42.42.42.42"],
+                    }
+                }
+            },
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAsset"]["asset"]
+    assert asset_data["id"] is not None
+    assert asset_data["ips"] == ["8.8.8.8", "42.42.42.42"]
+    with models.Database() as session:
+        assert session.query(models.Network).count() == 1
+        assert json.loads(session.query(models.Network).all()[0].ips) == [
+            "8.8.8.8",
+            "42.42.42.42",
+        ]
+
+
+def testCreateAsset_androidFile_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the android file is created successfully through the createAsset API."""
+    del clean_db
+    query = """
+        mutation createAndroidFile($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on AndroidFileAssetType {
+                        id
+                        packageName
+                        path 
+                    }
+                }
+            }
+        }
+    """
+    apk_path = pathlib.Path(__file__).parent.parent / "files" / "android.apk"
+    data = {
+        "operations": json.dumps(
+            {
+                "query": query,
+                "variables": {
+                    "asset": {
+                        "androidFile": {
+                            "file": None,
+                            "packageName": "a.b.c",
+                        }
+                    }
+                },
+            }
+        ),
+        "0": apk_path.open("rb"),
+        "map": json.dumps({"0": ["variables.asset.androidFile.file"]}),
+    }
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        data=data,
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAsset"]["asset"]
+    assert asset_data["id"] is not None
+    assert asset_data["packageName"] == "a.b.c"
+    assert ".ostorlab/uploads/android_" in asset_data["path"]
+    with models.Database() as session:
+        assert session.query(models.AndroidFile).count() == 1
+        assert session.query(models.AndroidFile).all()[0].package_name == "a.b.c"
+        assert (
+            ".ostorlab/uploads/android_"
+            in session.query(models.AndroidFile).all()[0].path
+        )
+
+
+def testCreateAsset_iOSFile_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the iOS file is created successfully through the createAsset API."""
+    del clean_db
+    query = """
+        mutation createAndroidFile($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on IOSFileAssetType {
+                        id
+                        bundleId
+                        path 
+                    }
+                }
+            }
+        }
+    """
+    apk_path = pathlib.Path(__file__).parent.parent / "files" / "ios.ipa"
+    data = {
+        "operations": json.dumps(
+            {
+                "query": query,
+                "variables": {
+                    "asset": {
+                        "iosFile": {
+                            "file": None,
+                            "bundleId": "a.b.c",
+                        }
+                    }
+                },
+            }
+        ),
+        "0": apk_path.open("rb"),
+        "map": json.dumps({"0": ["variables.asset.iosFile.file"]}),
+    }
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        data=data,
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAsset"]["asset"]
+    assert asset_data["id"] is not None
+    assert asset_data["bundleId"] == "a.b.c"
+    assert ".ostorlab/uploads/ios_" in asset_data["path"]
+    with models.Database() as session:
+        assert session.query(models.IosFile).count() == 1
+        assert session.query(models.IosFile).all()[0].bundle_id == "a.b.c"
+        assert ".ostorlab/uploads/ios_" in session.query(models.IosFile).all()[0].path
+
+
+def testCreateAsset_whenMultipleAssets_shouldReturnError(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the create asset mutation returns an error message when provided with multiple assets."""
+    del clean_db
+    query = """
+        mutation createAsset($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on AndroidStoreAssetType {
+                        id
+                        packageName
+                        applicationName                    
+                    }
+                    ... on IOSStoreAssetType {
+                        id
+                        bundleId
+                        applicationName                    
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "asset": {
+                    "androidStore": {
+                        "applicationName": "fake_app",
+                        "packageName": "a.b.c",
+                    },
+                    "iosStore": {
+                        "applicationName": "fake_app",
+                        "bundleId": "a.b.c",
+                    },
+                }
+            },
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    assert "errors" in resp.get_json()
+    assert (
+        resp.get_json()["errors"][0]["message"] == "Single asset input must be defined."
+    )
+
+
+def testCreateAsset_whenNoAsset_shouldReturnError(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the create asset mutation returns an error message when not asset is provided."""
+    del clean_db
+    query = """
+        mutation createAsset($asset: AssetInputType!) {
+            createAsset(asset: $asset) {
+                asset {
+                    ... on AndroidStoreAssetType {
+                        id
+                        packageName
+                        applicationName                    
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {"asset": {}},
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    assert "errors" in resp.get_json()
+    assert resp.get_json()["errors"][0]["message"] == "Asset input is missing."

@@ -702,6 +702,13 @@ def clean_db(request) -> None:
         session.query(models.AgentArgument).delete()
         session.query(models.AgentGroup).delete()
         session.query(models.AgentGroupMapping).delete()
+        session.query(models.Asset).delete()
+        session.query(models.AndroidFile).delete()
+        session.query(models.AndroidStore).delete()
+        session.query(models.IosFile).delete()
+        session.query(models.IosStore).delete()
+        session.query(models.Url).delete()
+        session.query(models.Network).delete()
         session.commit()
 
 
