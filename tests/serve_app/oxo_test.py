@@ -501,6 +501,67 @@ def testScansQuery_withPagination_shouldReturnPageInfo(
     }
 
 
+def testVulnerabilitiesQuery_withPagination_shouldReturnPageInfo(
+    authenticated_flask_client: testing.FlaskClient,
+    android_scan: models.Scan,
+) -> None:
+    """Test the vulnerabilities query with pagination, should return the correct pageInfo."""
+
+    with models.Database() as session:
+        vulnerabilities = session.query(models.Vulnerability).all()
+        assert vulnerabilities is not None
+
+    query = """query Scans($scanIds: [Int!], $scanPage: Int, $scanElements: Int, $vulnPage: Int, $vulnElements: Int) {
+        scans(scanIds: $scanIds, page: $scanPage, numberElements: $scanElements) {
+            pageInfo {
+                count
+                numPages
+                hasNext
+                hasPrevious
+            }
+            scans {
+                id
+                title
+                vulnerabilities(page: $vulnPage, numberElements: $vulnElements) {
+                    pageInfo {
+                        count
+                        numPages
+                        hasNext
+                        hasPrevious
+                    }
+                    vulnerabilities {
+                        id
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "scanPage": 1,
+                "scanElements": 1,
+                "vulnPage": 2,
+                "vulnElements": 1,
+            },
+        },
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["scans"]["scans"][0]["vulnerabilities"][
+        "pageInfo"
+    ] == {
+        "count": 4,
+        "hasNext": True,
+        "hasPrevious": True,
+        "numPages": 4,
+    }
+
+
 def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
 ) -> None:
