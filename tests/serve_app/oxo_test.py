@@ -755,7 +755,7 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
         scan_progress = scan.progress
 
         query = """
-            mutation stopScan($scanId: String!){
+            mutation stopScan($scanId: Int!){
   stopScan(scanId: $scanId){
     scan{
       id
@@ -784,7 +784,7 @@ def testStopScanMutation_whenNoScanFound_shouldReturnError(
 ) -> None:
     """Test stopScan mutation when scan doesn't exist should return error message."""
     query = """
-        mutation stopScan($scanId: String!){
+        mutation stopScan($scanId: Int!){
 stopScan(scanId: $scanId){
 scan{
   id

@@ -270,11 +270,11 @@ class StopScanMutation(graphene.Mutation):
     """Stop scan mutation."""
 
     class Arguments:
-        scan_id = graphene.String(required=True)
+        scan_id = graphene.Int(required=True)
 
     scan = graphene.Field(types.OxoScanType)
 
-    def mutate(root, info: graphql_base.ResolveInfo, scan_id: str):
+    def mutate(root, info: graphql_base.ResolveInfo, scan_id: int):
         """Stop the desired scan.
 
         Args:
@@ -289,15 +289,10 @@ class StopScanMutation(graphene.Mutation):
 
         """
         with models.Database() as session:
-            try:
-                int_scan_id = int(scan_id)
-            except ValueError:
-                raise graphql.GraphQLError("%s not a valid scan id.", int_scan_id)
-
-            scan = session.query(models.Scan).get(int_scan_id)
+            scan = session.query(models.Scan).get(scan_id)
             if scan is None:
                 raise graphql.GraphQLError("Scan not found.")
-            local_runtime.LocalRuntime().stop(scan_id=scan_id)
+            local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
             return StopScanMutation(scan=scan)
 
 
