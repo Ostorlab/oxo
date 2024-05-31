@@ -1,5 +1,7 @@
 """Oxo GraphQL queries and mutations."""
-
+import ipaddress
+import json
+import pathlib
 from typing import Optional, List
 
 import graphene
@@ -17,6 +19,15 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
+from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab.assets import android_aab as android_aab_asset
+from ostorlab.assets import ios_ipa as ios_ipa_asset
+from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ipv4 as ipv4_address_asset
+from ostorlab.assets import ipv6 as ipv6_address_asset
+from ostorlab.assets import link as link_asset
+
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -341,12 +352,64 @@ class RunScanMutation(graphene.Mutation):
             ],
         )
 
-        # TODO (elyousfi5): Add asset group definition
-
         try:
             can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
         except exceptions.OstorlabError as e:
             raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
+
+        scan_assets = []
+        for asset in assets:
+            if asset.type == "android_file":
+                file_path = pathlib.Path(asset.path)
+                if file_path.exists() is False:
+                    raise graphql.GraphQLError(f"File {asset.path} not found.")
+                file_bytes = file_path.read_bytes()
+                if common.is_apk(file_bytes) is True or common.is_xapk(file_bytes) is True:
+                    scan_assets.append(
+                        android_apk_asset.AndroidApk(content=file_bytes, path=asset.path)
+                    )
+                elif common.is_aab(file_bytes) is True:
+                    scan_assets.append(
+                        android_aab_asset.AndroidAab(content=file_bytes, path=asset.path)
+                    )
+                else:
+                    raise graphql.GraphQLError(f"Unsupported file type: {asset.path}")
+            elif asset.type == "ios_file":
+                file_path = pathlib.Path(asset.path)
+                if file_path.exists() is False:
+                    raise graphql.GraphQLError(f"File {asset.path} not found.")
+
+                scan_assets.append(
+                    ios_ipa_asset.IOSIpa(content=file_path.read_bytes(), path=asset.path)
+                )
+            elif asset.type == "android_store":
+                scan_assets.append(
+                    android_store_asset.AndroidStore(package_name=asset.package_name)
+                )
+            elif asset.type == "ios_store":
+                scan_assets.append(ios_store_asset.IOSStore(bundle_id=asset.bundle_id))
+            elif asset.type == "network":
+                ips = json.loads(asset.ips)
+                for ip in ips:
+                    ip_network = ipaddress.ip_network(ip, strict=False)
+                    if ip_network.version == 4:
+                        scan_assets.append(ipv4_address_asset.IPv4(host=ip_network.network_address.exploded, mask=str(ip_network.prefixlen)))
+                    elif ip_network.version == 6:
+                        scan_assets.append(
+                            ipv6_address_asset.IPv6(
+                                host=ip_network.network_address.exploded,
+                                mask=str(ip_network.prefixlen),
+                            )
+                        )
+                    else:
+                        raise graphql.GraphQLError(f"Invalid IP address {ip}")
+            elif asset.type == "urls":
+                urls = json.loads(asset.urls)
+                for url in urls:
+                    scan_assets.append(link_asset.Link(url=url.get("url"), method=url.get("method")))
+            else:
+                raise graphql.GraphQLError(f"Unsupported asset type.")
+
         if can_run_scan is True:
             if install is True:
                 try:
@@ -365,7 +428,7 @@ class RunScanMutation(graphene.Mutation):
                 scan = runtime_instance.scan(
                     title=scan.title,
                     agent_group_definition=agent_group,
-                    assets=assets,
+                    assets=scan_assets,
                 )
             except exceptions.OstorlabError as e:
                 raise graphql.GraphQLError(
