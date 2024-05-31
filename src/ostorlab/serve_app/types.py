@@ -113,6 +113,7 @@ class OxoVulnerabilitiesType(graphene.ObjectType):
     """Graphene object type for a list of vulnerabilities."""
 
     vulnerabilities = graphene.List(OxoVulnerabilityType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)
 
 
 class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
@@ -217,10 +218,15 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             vulnerabilities = vulnerabilities.order_by(models.Vulnerability.id)
 
             if page is not None and number_elements > 0:
-                vulnerabilities = vulnerabilities.offset(
-                    (page - 1) * number_elements
-                ).limit(number_elements)
-                return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
+                p = common.Paginator(vulnerabilities, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
             else:
                 return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 

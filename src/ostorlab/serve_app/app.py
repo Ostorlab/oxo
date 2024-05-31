@@ -3,6 +3,7 @@ import functools
 from typing import Optional
 
 import flask
+import flask_cors
 import graphql_server
 from graphene_file_upload import flask as graphene_upload_flask
 import ubjson
@@ -16,6 +17,7 @@ AUTHORIZATION_HEADER = "X-API-KEY"
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
     """Create a Flask app with the specified path."""
     app = flask.Flask(__name__)
+    flask_cors.CORS(app)
     app.add_url_rule(
         path,
         view_func=CustomUBJSONFileUploadGraphQLView.as_view(
