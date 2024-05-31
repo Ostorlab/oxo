@@ -746,14 +746,13 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
-    authenticated_flask_client: testing.FlaskClient, in_progress_web_scan: None
+    authenticated_flask_client: testing.FlaskClient, in_progress_web_scan: models.Scan
 ) -> None:
     """Test stopScan mutation when scan is running should stop scan."""
     with models.Database() as session:
         nbr_scans_before = session.query(models.Scan).count()
-        scan = session.query(models.Scan).first()
+        scan = session.query(models.Scan).get(in_progress_web_scan.id)
         scan_progress = scan.progress
-
         query = """
             mutation stopScan($scanId: Int!){
   stopScan(scanId: $scanId){
@@ -769,12 +768,13 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
 
         assert response.status_code == 200, response.get_json()
         session.refresh(scan)
-        scan = session.query(models.Scan).first()
+        scan = session.query(models.Scan).get(in_progress_web_scan.id)
         response_json = response.get_json()
         nbr_scans_after = session.query(models.Scan).count()
-        assert response_json["data"] == {"stopScan": {"scan": {"id": "1"}}}
-        assert nbr_scans_before == 1
-        assert scan.progress == models.ScanProgress.STOPPED
+        assert response_json["data"] == {
+            "stopScan": {"scan": {"id": str(in_progress_web_scan.id)}}
+        }
+        assert scan.progress.name == "STOPPED"
         assert scan.progress != scan_progress
         assert nbr_scans_after == nbr_scans_before
 
