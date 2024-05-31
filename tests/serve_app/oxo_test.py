@@ -255,6 +255,10 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
                                 title
                                 shortDescription
                                 recommendation
+                                references {
+                                    title
+                                    url
+                                }
                             }
                         }
                     }
@@ -281,6 +285,14 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
         kb_vulnerability["shortDescription"] == kb_vulnerabilities[1].short_description
     )
     assert kb_vulnerability["title"] == kb_vulnerabilities[1].title
+    assert (
+        kb_vulnerability["references"][0]["title"]
+        == "C++ Core Guidelines R.10 - Avoid malloc() and free()"
+    )
+    assert (
+        kb_vulnerability["references"][0]["url"]
+        == "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free"
+    )
 
 
 def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
@@ -343,7 +355,6 @@ def testQueryScan_whenScanExists_returnScanInfo(
                             shortDescription
                             description
                             recommendation
-                            references
                         }
                         cvssV3BaseScore
                     }
@@ -498,6 +509,67 @@ def testScansQuery_withPagination_shouldReturnPageInfo(
         "hasNext": True,
         "hasPrevious": False,
         "numPages": 2,
+    }
+
+
+def testVulnerabilitiesQuery_withPagination_shouldReturnPageInfo(
+    authenticated_flask_client: testing.FlaskClient,
+    android_scan: models.Scan,
+) -> None:
+    """Test the vulnerabilities query with pagination, should return the correct pageInfo."""
+
+    with models.Database() as session:
+        vulnerabilities = session.query(models.Vulnerability).all()
+        assert vulnerabilities is not None
+
+    query = """query Scans($scanIds: [Int!], $scanPage: Int, $scanElements: Int, $vulnPage: Int, $vulnElements: Int) {
+        scans(scanIds: $scanIds, page: $scanPage, numberElements: $scanElements) {
+            pageInfo {
+                count
+                numPages
+                hasNext
+                hasPrevious
+            }
+            scans {
+                id
+                title
+                vulnerabilities(page: $vulnPage, numberElements: $vulnElements) {
+                    pageInfo {
+                        count
+                        numPages
+                        hasNext
+                        hasPrevious
+                    }
+                    vulnerabilities {
+                        id
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "scanPage": 1,
+                "scanElements": 1,
+                "vulnPage": 2,
+                "vulnElements": 1,
+            },
+        },
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["scans"]["scans"][0]["vulnerabilities"][
+        "pageInfo"
+    ] == {
+        "count": 4,
+        "hasNext": True,
+        "hasPrevious": True,
+        "numPages": 4,
     }
 
 

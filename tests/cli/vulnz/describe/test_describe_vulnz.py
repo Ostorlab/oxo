@@ -35,6 +35,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
             "metadata": [{"type": "CODE_LOCATION", "value": "dir/file.js:41"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
 
     result = runner.invoke(
