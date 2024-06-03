@@ -392,8 +392,8 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                         models.Reference.vulnerability_id
                         == kb_vulnerabilities.first().id
                     )
-                    .all()
-                )
+                    .distinct(models.Reference.title)
+                ).all()
                 aggregated_kb.append(
                     OxoAggregatedKnowledgeBaseVulnerabilityType(
                         highest_risk_rating=highest_risk_rating,
