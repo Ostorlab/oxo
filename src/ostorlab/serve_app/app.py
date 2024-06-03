@@ -1,4 +1,4 @@
-import pathlib
+
 from typing import Optional
 
 import flask
@@ -9,12 +9,10 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app.schema import schema
 
 AUTHORIZATION_HEADER = "X-API-KEY"
-OXO_ASSETS_PRIVATE_DIR = pathlib.Path.home() / ".ostorlab" / "uploads"
 
 
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
     """Create a Flask app with the specified path."""
-    OXO_ASSETS_PRIVATE_DIR.mkdir(parents=True, exist_ok=True)
     app = flask.Flask(__name__)
     flask_cors.CORS(app)
     app.add_url_rule(

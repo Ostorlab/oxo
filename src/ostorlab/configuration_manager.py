@@ -36,6 +36,8 @@ class ConfigurationManager(metaclass=SingletonMeta):
         """
         self._private_dir = private_dir
         self._private_dir.mkdir(parents=True, exist_ok=True)
+        self._assets_private_dir = private_dir / "uploads"
+        self._assets_private_dir.mkdir(parents=True, exist_ok=True)
         self._complete_api_key_path = self._private_dir / "key"
         self._api_key: Optional[str] = None
 
@@ -43,6 +45,11 @@ class ConfigurationManager(metaclass=SingletonMeta):
     def conf_path(self) -> pathlib.Path:
         """Private configuration path to store scan result, settings and authentication materials."""
         return self._private_dir.resolve()
+
+    @property
+    def assets_path(self) -> pathlib.Path:
+        """Private path to store uploaded assets."""
+        return self._assets_private_dir.resolve()
 
     @property
     def api_key(self) -> Optional[str]:
