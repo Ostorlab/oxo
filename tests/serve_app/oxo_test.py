@@ -831,7 +831,22 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test stopScan mutation when scan is running should stop scan."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
 
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
     mocker.patch(
         "docker.DockerClient.services", return_value=services_model.ServiceCollection()
     )
