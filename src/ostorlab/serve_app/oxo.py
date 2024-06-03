@@ -314,6 +314,72 @@ class StopScanMutation(graphene.Mutation):
             return StopScanMutation(scan=scan)
 
 
+class PublishAgentGroupMutation(graphene.Mutation):
+    """Create agent group."""
+
+    class Arguments:
+        agent_group = types.AgentGroupCreateInputType(required=True)
+
+    agent_group = graphene.Field(types.AgentGroupType)
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        agent_group: types.AgentGroupCreateInputType,
+    ) -> "PublishAgentGroupMutation":
+        """Create agent group.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            agent_group (types.AgentGroupCreateInputType): Agent group to create.
+
+        Returns:
+            PublishAgentGroupMutation: Publish agent group mutation.
+        """
+
+        group = models.AgentGroup.create(
+            name=agent_group.name,
+            description=agent_group.description,
+            agents=agent_group.agents,
+        )
+        return PublishAgentGroupMutation(agent_group=group)
+
+
+class DeleteAgentGroupMutation(graphene.Mutation):
+    """Delete agent group mutation."""
+
+    class Arguments:
+        agent_group_id = graphene.Int(required=True)
+
+    result = graphene.Boolean()
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        agent_group_id: int,
+    ) -> "DeleteAgentGroupMutation":
+        """Delete agent group mutation.
+
+        Args:
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            agent_group_id (int): Agent group id.
+
+        Returns:
+            DeleteAgentGroupMutation: Delete agent group mutation.
+        """
+        with models.Database() as session:
+            agent_group_query = session.query(models.AgentGroup).filter_by(
+                id=agent_group_id
+            )
+            if agent_group_query.count() == 0:
+                raise graphql.GraphQLError("AgentGroup not found.")
+            agent_group_query.delete()
+            session.commit()
+            return DeleteAgentGroupMutation(result=True)
+
+
 class RunScanMutation(graphene.Mutation):
     class Arguments:
         scan = types.OxoAgentScanInputType(required=True)
@@ -503,8 +569,14 @@ class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(
         description="Delete a scan & all its information."
     )
+    delete_agent_group = DeleteAgentGroupMutation.Field(
+        description="Delete agent group."
+    )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
     stop_scan = StopScanMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
+    )
+    publish_agent_group = PublishAgentGroupMutation.Field(
+        description="Create agent group"
     )
     run_scan = RunScanMutation.Field(description="Run scan")
