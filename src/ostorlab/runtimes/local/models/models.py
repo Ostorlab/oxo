@@ -47,7 +47,9 @@ class Database:
 
     def __init__(self):
         """Constructs the database engine."""
-        self._db_engine = sqlalchemy.create_engine(ENGINE_URL)
+        self._db_engine = sqlalchemy.create_engine(
+            ENGINE_URL, connect_args={"check_same_thread": False}
+        )
         self._db_session = None
         self._alembic_ini_path = (
             pathlib.Path(__file__).parent.absolute() / "alembic.ini"
