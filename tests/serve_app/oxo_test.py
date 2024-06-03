@@ -828,11 +828,11 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
 def testCreateAsset_androidStore_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
-    """Ensure the android store asset is created successfully through the createAsset API."""
+    """Ensure the android store asset is created successfully through the createAssets API."""
     del clean_db
     query = """
         mutation createAndroidStore($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on AndroidStoreAssetType {
                         id
@@ -862,7 +862,7 @@ def testCreateAsset_androidStore_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAsset"]["assets"][0]
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["packageName"] == "a.b.c"
     assert asset_data["applicationName"] == "fake_app"
@@ -877,11 +877,11 @@ def testCreateAsset_androidStore_createsNewAsset(
 def testCreateAsset_iOSStore_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
-    """Ensure the ios store asset is created successfully through the createAsset API."""
+    """Ensure the ios store asset is created successfully through the createAssets API."""
     del clean_db
     query = """
         mutation createiOSStore($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on IOSStoreAssetType {
                         id
@@ -915,7 +915,7 @@ def testCreateAsset_iOSStore_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAsset"]["assets"][0]
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["bundleId"] == "a.b.c"
     assert asset_data["applicationName"] == "fake_app"
@@ -928,11 +928,11 @@ def testCreateAsset_iOSStore_createsNewAsset(
 def testCreateAsset_url_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
-    """Ensure the url asset & its links are created successfully through the createAsset API."""
+    """Ensure the url asset & its links are created successfully through the createAssets API."""
     del clean_db
     query = """
         mutation createUrl($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on UrlAssetType {
                         id
@@ -963,7 +963,7 @@ def testCreateAsset_url_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAsset"]["assets"][0]
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["links"] == [
         "https://www.example.com",
@@ -980,11 +980,11 @@ def testCreateAsset_url_createsNewAsset(
 def testCreateAsset_network_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
-    """Ensure the network asset & its ips are created successfully through the createAsset API."""
+    """Ensure the network asset & its ips are created successfully through the createAssets API."""
     del clean_db
     query = """
         mutation createNetwork($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on NetworkAssetType {
                         id
@@ -1012,7 +1012,7 @@ def testCreateAsset_network_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAsset"]["assets"][0]
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["networks"] == ["8.8.8.8/24", "42.42.42.42"]
     with models.Database() as session:
@@ -1026,11 +1026,11 @@ def testCreateAsset_network_createsNewAsset(
 def testCreateAsset_androidFile_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
-    """Ensure the android file is created successfully through the createAsset API."""
+    """Ensure the android file is created successfully through the createAssets API."""
     del clean_db
     query = """
         mutation createAndroidFile($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on AndroidFileAssetType {
                         id
@@ -1068,7 +1068,7 @@ def testCreateAsset_androidFile_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAsset"]["assets"][0]
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["packageName"] == "a.b.c"
     assert ".ostorlab/uploads/android_" in asset_data["path"]
@@ -1084,11 +1084,11 @@ def testCreateAsset_androidFile_createsNewAsset(
 def testCreateAsset_iOSFile_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
-    """Ensure the iOS file is created successfully through the createAsset API."""
+    """Ensure the iOS file is created successfully through the createAssets API."""
     del clean_db
     query = """
         mutation createAndroidFile($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on IOSFileAssetType {
                         id
@@ -1126,7 +1126,7 @@ def testCreateAsset_iOSFile_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAsset"]["assets"][0]
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["bundleId"] == "a.b.c"
     assert ".ostorlab/uploads/ios_" in asset_data["path"]
@@ -1142,8 +1142,8 @@ def testCreateAsset_whenMultipleAssets_shouldCreateAll(
     """Ensure the create asset mutation creates all the provided assets assuming, they are independently valid."""
     del clean_db
     query = """
-        mutation createAsset($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+        mutation createAssets($assets: [AssetInputType]!) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on AndroidStoreAssetType {
                         id
@@ -1184,7 +1184,7 @@ def testCreateAsset_whenMultipleAssets_shouldCreateAll(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    assets_data = resp.get_json()["data"]["createAsset"]["assets"]
+    assets_data = resp.get_json()["data"]["createAssets"]["assets"]
     assert assets_data[0]["id"] is not None
     assert assets_data[0]["applicationName"] == "fake_app"
     assert assets_data[0]["packageName"] == "a.b.c"
@@ -1208,8 +1208,8 @@ def testCreateAsset_whenMultipleTargetsForSameAsset_shouldReturnError(
     """Ensure the create asset mutation returns an error message when provided with multiple assets."""
     del clean_db
     query = """
-        mutation createAsset($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+        mutation createAssets($assets: [AssetInputType]!) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on AndroidStoreAssetType {
                         id
@@ -1261,8 +1261,8 @@ def testCreateAsset_whenNoAsset_shouldReturnError(
     """Ensure the create asset mutation returns an error message when not asset is provided."""
     del clean_db
     query = """
-        mutation createAsset($assets: [AssetInputType]!) {
-            createAsset(assets: $assets) {
+        mutation createAssets($assets: [AssetInputType]!) {
+            createAssets(assets: $assets) {
                 assets {
                     ... on AndroidStoreAssetType {
                         id

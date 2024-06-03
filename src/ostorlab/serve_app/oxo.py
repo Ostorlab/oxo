@@ -269,7 +269,7 @@ class DeleteScanMutation(graphene.Mutation):
             return DeleteScanMutation(result=True)
 
 
-class CreateAssetMutation(graphene.Mutation):
+class CreateAssetsMutation(graphene.Mutation):
     """Create asset mutation."""
 
     class Arguments:
@@ -286,7 +286,7 @@ class CreateAssetMutation(graphene.Mutation):
         errors = []
         config_manager = configuration_manager.ConfigurationManager()
         for asset in assets:
-            error_message = CreateAssetMutation._validate(asset)
+            error_message = CreateAssetsMutation._validate(asset)
             if error_message is not None:
                 errors.append(error_message)
                 continue
@@ -299,7 +299,7 @@ class CreateAssetMutation(graphene.Mutation):
             if asset.android_file is not None:
                 content = asset.android_file.file.read()
                 android_file_path = (
-                    config_manager.assets_path / f"android_{str(uuid.uuid4())}"
+                    config_manager.upload_path / f"android_{str(uuid.uuid4())}"
                 )
                 android_file_path.write_bytes(content)
                 new_asset = models.AndroidFile.create(
@@ -315,7 +315,7 @@ class CreateAssetMutation(graphene.Mutation):
                 created_assets.append(new_asset)
             if asset.ios_file is not None:
                 content = asset.ios_file.file.read()
-                ios_file_path = config_manager.assets_path / f"ios_{str(uuid.uuid4())}"
+                ios_file_path = config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
                 ios_file_path.write_bytes(content)
                 new_asset = models.IosFile.create(
                     bundle_id=asset.ios_file.bundle_id,
@@ -332,7 +332,7 @@ class CreateAssetMutation(graphene.Mutation):
             error_messages = "\n".join(errors)
             raise graphql.GraphQLError(f"Invalid assets: {error_messages}")
 
-        return CreateAssetMutation(assets=created_assets)
+        return CreateAssetsMutation(assets=created_assets)
 
     @staticmethod
     def _validate(asset: types.AssetInputType) -> Optional[str]:
@@ -351,7 +351,7 @@ class CreateAssetMutation(graphene.Mutation):
         if asset.network is not None:
             assets.append(asset.network)
 
-        if len(assets) <= 0:
+        if len(assets) == 0:
             return f"Asset {asset} input is missing target."
         elif len(assets) >= 2:
             return f"Single target input must be defined for asset {asset}."
@@ -464,7 +464,7 @@ class Mutations(graphene.ObjectType):
         description="Delete agent group."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
-    create_asset = CreateAssetMutation.Field(description="Create an asset.")
+    create_assets = CreateAssetsMutation.Field(description="Create an asset.")
     stop_scan = StopScanMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
     )
