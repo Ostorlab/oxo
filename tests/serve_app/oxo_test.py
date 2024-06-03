@@ -47,7 +47,7 @@ def testImportScanMutation_always_shouldImportScan(
             "/graphql", data=data, content_type="multipart/form-data"
         )
 
-        assert response.status_code == 200, response.content
+        assert response.status_code == 200, response.get_json()
         response_json = response.get_json()
         nbr_scans_after_import = session.query(models.Scan).count()
         assert (

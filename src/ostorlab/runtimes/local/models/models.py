@@ -30,7 +30,15 @@ OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
-metadata = sqlalchemy.MetaData()
+convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+metadata = sqlalchemy.MetaData(naming_convention=convention)
 Base = declarative.declarative_base(metadata=metadata)
 
 
@@ -131,6 +139,8 @@ class Scan(Base):
     agent_group_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id")
     )
+    asset_id = sqlalchemy.Column(sqlalchemy.ForeignKey("asset.id"))
+    asset_instance = orm.relationship("Asset", back_populates="scans")
 
     @staticmethod
     def create(
@@ -548,3 +558,206 @@ class APIKey(Base):
             session.commit()
             api_key = APIKey.create()
             return api_key
+
+
+class Asset(Base):
+    __tablename__ = "asset"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    type = sqlalchemy.Column(sqlalchemy.String(50))
+    __mapper_args__ = {
+        "polymorphic_identity": "asset",
+        "polymorphic_on": type,
+    }
+    scans = orm.relationship("Scan", back_populates="asset_instance")
+
+
+class AndroidFile(Asset):
+    __tablename__ = "android_file"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    package_name = sqlalchemy.Column(sqlalchemy.String(255))
+    path = sqlalchemy.Column(sqlalchemy.String(1024))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "android_file",
+    }
+
+    @staticmethod
+    def create(package_name: str = "", path: str = ""):
+        """Persist the android file information in the database.
+
+        Args:
+            package_name: The application identifier.
+            path: Local/Remote path of the APK/AAB.
+
+        Returns:
+            android file object.
+        """
+        with Database() as session:
+            asset = AndroidFile(
+                package_name=package_name,
+                path=path,
+            )
+            session.add(asset)
+            session.commit()
+            return asset
+
+
+class AndroidStore(Asset):
+    __tablename__ = "android_store"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    package_name = sqlalchemy.Column(sqlalchemy.String(255))
+    application_name = sqlalchemy.Column(sqlalchemy.String(255))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "android_store",
+    }
+
+    @staticmethod
+    def create(package_name: str = "", application_name: str = ""):
+        """Persist the android store information in the database.
+
+        Args:
+            package_name: The application identifier.
+            application_name: The application name as shown in the store.
+
+        Returns:
+            android store object.
+        """
+        with Database() as session:
+            asset = AndroidStore(
+                package_name=package_name,
+                application_name=application_name,
+            )
+            session.add(asset)
+            session.commit()
+            return asset
+
+
+class IosFile(Asset):
+    __tablename__ = "ios_file"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    bundle_id = sqlalchemy.Column(sqlalchemy.String(255))
+    path = sqlalchemy.Column(sqlalchemy.String(1024))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "ios_file",
+    }
+
+    @staticmethod
+    def create(bundle_id: str = "", path: str = ""):
+        """Persist the iOS file information in the database.
+
+        Args:
+            bundle_id: The application identifier.
+            path: Local/Remote path of the IPA.
+
+        Returns:
+            iOS file object.
+        """
+        with Database() as session:
+            asset = IosFile(
+                bundle_id=bundle_id,
+                path=path,
+            )
+            session.add(asset)
+            session.commit()
+            return asset
+
+
+class IosStore(Asset):
+    __tablename__ = "ios_store"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    bundle_id = sqlalchemy.Column(sqlalchemy.String(255))
+    application_name = sqlalchemy.Column(sqlalchemy.String(255))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "ios_store",
+    }
+
+    @staticmethod
+    def create(bundle_id: str = "", application_name: str = ""):
+        """Persist the iOS store information in the database.
+
+        Args:
+            bundle_id: The application identifier.
+            application_name: The application name as shown in the store.
+
+        Returns:
+            iOS store object.
+        """
+        with Database() as session:
+            asset = IosStore(
+                bundle_id=bundle_id,
+                application_name=application_name,
+            )
+            session.add(asset)
+            session.commit()
+            return asset
+
+
+class Url(Asset):
+    __tablename__ = "urls"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    links = sqlalchemy.Column(sqlalchemy.String(1024))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "urls",
+    }
+
+    @staticmethod
+    def create(links: List[str]):
+        """Persist the URL information in the database.
+
+        Args:
+            links: list of the target URLs.
+
+        Returns:
+            Url object.
+        """
+        with Database() as session:
+            asset = Url(
+                links=json.dumps(links),
+            )
+            session.add(asset)
+            session.commit()
+            return asset
+
+
+class Network(Asset):
+    __tablename__ = "network"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    networks = sqlalchemy.Column(sqlalchemy.String(1024))
+
+    __mapper_args__ = {
+        "polymorphic_identity": "network",
+    }
+
+    @staticmethod
+    def create(networks: List[str]):
+        """Persist the Network information in the database.
+
+        Args:
+            networks: list of the target IP/range addresses.
+
+        Returns:
+            Network object.
+        """
+        with Database() as session:
+            asset = Network(
+                networks=json.dumps(networks),
+            )
+            session.add(asset)
+            session.commit()
+            return asset
