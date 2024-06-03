@@ -47,41 +47,14 @@ class OxoReferenceType(graphene.ObjectType):
     url = graphene.String()
 
 
-class OxoKnowledgeBaseVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
+class OxoKnowledgeBaseVulnerabilityType(graphene.ObjectType):
     """SQLAlchemy object type for a knowledge base vulnerability."""
 
     references = graphene.List(OxoReferenceType)
-
-    class Meta:
-        """Meta class for the knowledge base vulnerability object type."""
-
-        model = models.Vulnerability
-        only_fields = (
-            "title",
-            "short_description",
-            "description",
-            "recommendation",
-        )
-
-    def resolve_references(
-        self: models.Vulnerability, info: graphql_base.ResolveInfo
-    ) -> List[OxoReferenceType]:
-        """Resolve references query.
-
-        Args:
-            self: The vulnerability object.
-            info: GraphQL resolve info.
-
-        Returns:
-            List of references.
-        """
-        with models.Database() as session:
-            references = session.query(models.Reference).filter(
-                models.Reference.vulnerability_id == self.id
-            )
-            return [
-                OxoReferenceType(title=ref.title, url=ref.url) for ref in references
-            ]
+    title = graphene.String()
+    short_description = graphene.String()
+    description = graphene.String()
+    recommendation = graphene.String()
 
 
 class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -128,13 +101,18 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             OxoKnowledgeBaseVulnerabilityType: The knowledge base vulnerability.
         """
-        return OxoKnowledgeBaseVulnerabilityType(
-            title=self.title,
-            short_description=self.short_description,
-            description=self.description,
-            recommendation=self.recommendation,
-            references=self.references,
-        )
+        with models.Database() as session:
+            references = session.query(models.Reference).filter(
+                models.Reference.vulnerability_id == self.id
+            ).all()
+
+            return OxoKnowledgeBaseVulnerabilityType(
+                title=self.title,
+                short_description=self.short_description,
+                description=self.description,
+                recommendation=self.recommendation,
+                references=[OxoReferenceType(title=ref.title, url=ref.url) for ref in references],
+            )
 
 
 class OxoVulnerabilitiesType(graphene.ObjectType):
@@ -158,6 +136,48 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         number_elements=graphene.Int(required=False),
         description="List of vulnerabilities.",
     )
+
+    def resolve_vulnerabilities(
+        self: models.Scan,
+        info: graphql_base.ResolveInfo,
+        detail_titles: Optional[List[str]] = None,
+        page: Optional[int] = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
+    ) -> OxoVulnerabilitiesType:
+        """Resolve vulnerabilities query.
+
+        Args:
+            self: The scan object.
+            info: GraphQL resolve info.
+            detail_titles: List of detail titles. Defaults to None.
+            page: Page number. Defaults to None.
+            number_elements: Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
+
+        Returns:
+            OxoVulnerabilitiesType: List of vulnerabilities.
+        """
+        if number_elements <= 0:
+            return OxoVulnerabilitiesType(vulnerabilities=[])
+
+        vulnerabilities = self.vulnerabilities.vulnerabilities.order_by("id")
+
+        if detail_titles is not None and len(detail_titles) > 0:
+            vulnerabilities = vulnerabilities.filter(
+                models.Vulnerability.title.in_(detail_titles)
+            )
+
+        if page is not None and number_elements > 0:
+            p = common.Paginator(vulnerabilities, number_elements)
+            page = p.get_page(page)
+            page_info = common.PageInfo(
+                count=p.count,
+                num_pages=p.num_pages,
+                has_next=page.has_next(),
+                has_previous=page.has_previous(),
+            )
+            return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
+        else:
+            return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
 
 class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
@@ -262,6 +282,8 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         self: models.Scan,
         info: graphql_base.ResolveInfo,
         detail_title: Optional[str] = None,
+        page: Optional[int] = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
         """Resolve knowledge base vulnerabilities query.
 
@@ -341,9 +363,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 cvss_dict[vuln.title].append(vuln.cvss_v3_vector)
 
             for kb in kbs:
-                vulnerabilities = vulnerabilities.filter(
-                    models.Vulnerability.title == kb.title
-                )
+                vulnerabilities = vulnerabilities.filter(models.Vulnerability.title == kb.title)
                 highest_risk_rating = max(
                     kb_dict[kb.title], key=lambda risk: RISK_RATINGS_ORDER[risk.name]
                 )
@@ -361,6 +381,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     )
                 else:
                     highest_cvss_v3_vector = kb.cvss_v3_vector or None
+                references = session.query(models.Reference).filter(
+                    models.Reference.vulnerability_id == vulnerabilities.first().id
+                ).all()
                 aggregated_kb.append(
                     OxoAggregatedKnowledgeBaseVulnerabilityType(
                         highest_risk_rating=highest_risk_rating,
@@ -368,7 +391,16 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                         highest_cvss_v3_base_score=common.compute_cvss_v3_base_score(
                             highest_cvss_v3_vector
                         ),
-                        kb=kb,
+                        kb=OxoKnowledgeBaseVulnerabilityType(
+                            title=kb.title,
+                            short_description=kb.short_description,
+                            description=kb.description,
+                            recommendation=kb.recommendation,
+                            references=[
+                                OxoReferenceType(title=ref.title, url=ref.url)
+                                for ref in references
+                            ],
+                        ),
                         vulnerabilities=OxoVulnerabilitiesType(
                             vulnerabilities=vulnerabilities
                         ),
