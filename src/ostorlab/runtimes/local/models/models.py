@@ -6,8 +6,8 @@ import json
 import logging
 import pathlib
 import uuid
-from typing import Any, Dict, List, Optional
 import types
+from typing import Any, Dict, List, Optional
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -24,10 +24,8 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import risk_rating as utils_rik_rating
 
-
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
 OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
-
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -381,7 +379,7 @@ class AgentArgument(Base):
     name = sqlalchemy.Column(sqlalchemy.String(255))
     type = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
-    value = sqlalchemy.Column(sqlalchemy.Text)
+    value = sqlalchemy.Column(sqlalchemy.LargeBinary)
 
     agent_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("agent.id"))
 
@@ -391,7 +389,7 @@ class AgentArgument(Base):
         name: str,
         type: str,
         description: Optional[str] = None,
-        value: Optional[str] = None,
+        value: Optional[bytes] = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
@@ -431,12 +429,13 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(name: str, description: str) -> "AgentGroup":
+    def create(name: str, description: str, agents: Any) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
-            key: Agent group key.
+            name: Agent group name.
             description: Agent group description.
+            agents: List of agents.
         Returns:
             AgentGroup object.
         """
@@ -445,6 +444,19 @@ class AgentGroup(Base):
             description=description,
             created_time=datetime.datetime.now(),
         )
+
+        for agent in agents:
+            new_agent = Agent.create(agent.key)
+            agent_group.agents.append(new_agent)
+            for argument in agent.args:
+                AgentArgument.create(
+                    agent_id=new_agent.id,
+                    name=argument.name,
+                    type=argument.type,
+                    description=argument.description,
+                    value=argument.value,
+                )
+
         with Database() as session:
             session.add(agent_group)
             session.commit()

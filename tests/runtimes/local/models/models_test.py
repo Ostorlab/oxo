@@ -200,7 +200,7 @@ def testModelsAgentArgument_always_createsAgentArgument(
         name="test",
         type="test",
         description="test",
-        value="test",
+        value=b"test",
     )
 
     with models.Database() as session:
@@ -208,7 +208,7 @@ def testModelsAgentArgument_always_createsAgentArgument(
         assert session.query(models.AgentArgument).all()[0].name == "test"
         assert session.query(models.AgentArgument).all()[0].type == "test"
         assert session.query(models.AgentArgument).all()[0].description == "test"
-        assert session.query(models.AgentArgument).all()[0].value == "test"
+        assert session.query(models.AgentArgument).all()[0].value == b"test"
         assert (
             session.query(models.AgentArgument).all()[0].agent_id == create_agent_db.id
         )
@@ -219,9 +219,12 @@ def testModelsAgentGroup_always_createsAgentGroup(
 ) -> None:
     """Test Agent Group save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.AgentGroup.create("test", "test")
 
     with models.Database() as session:
+        ag = models.AgentGroup(name="test", description="test")
+        session.add(ag)
+        session.commit()
+
         assert session.query(models.AgentGroup).count() == 1
         assert session.query(models.AgentGroup).all()[0].name == "test"
         assert session.query(models.AgentGroup).all()[0].description == "test"
@@ -232,11 +235,18 @@ def testModelsAgentGroupMapping_always_createsAgentGroupMapping(
 ) -> None:
     """Test Agent Group Mapping save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    agent = models.Agent.create("test")
-    agent_group = models.AgentGroup.create("test", "test")
-    models.AgentGroupMapping.create(agent_id=agent.id, agent_group_id=agent_group.id)
 
     with models.Database() as session:
+        agent = models.Agent(key="test")
+        session.add(agent)
+        session.commit()
+        agent_group = models.AgentGroup(name="test", description="test")
+        session.add(agent_group)
+        session.commit()
+        models.AgentGroupMapping.create(
+            agent_id=agent.id, agent_group_id=agent_group.id
+        )
+
         assert session.query(models.Agent).count() == 1
         assert session.query(models.AgentGroup).count() == 1
         assert session.query(models.AgentGroupMapping).count() == 1

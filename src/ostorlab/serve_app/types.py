@@ -432,6 +432,8 @@ class OxoScansType(graphene.ObjectType):
 class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """Graphene object type for a list of agent arguments."""
 
+    value = common.Bytes(required=False)
+
     class Meta:
         """Meta class for the agent arguments object type."""
 
@@ -441,8 +443,21 @@ class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
             "name",
             "type",
             "description",
-            "value",
         )
+
+    def resolve_value(
+        self: models.AgentArgument, info: graphql_base.ResolveInfo
+    ) -> bytes:
+        """Resolve agent argument value query.
+
+        Args:
+            self (models.AgentArgument): The agent argument object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            common.Bytes: The value of the agent argument.
+        """
+        return self.value
 
 
 class AgentArgumentsType(graphene.ObjectType):
@@ -516,7 +531,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             str: The key of the agent group.
         """
-        return f"agentgroup/{self.name}"
+        return f"agentgroup//{self.name}"
 
     def resolve_agents(
         self: models.AgentGroup, info: graphql_base.ResolveInfo
@@ -541,3 +556,27 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
 class AgentGroupsType(graphene.ObjectType):
     agent_groups = graphene.List(AgentGroupType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
+
+
+class AgentArgumentInputType(graphene.InputObjectType):
+    """Input object type for an agent argument."""
+
+    name = graphene.String(required=True)
+    type = graphene.String(required=True)
+    description = graphene.String(required=False)
+    value = common.Bytes(required=False)
+
+
+class AgentGroupAgentCreateInputType(graphene.InputObjectType):
+    """Input object type for creating an agent group agent."""
+
+    key = graphene.String(required=True)
+    args = graphene.List(AgentArgumentInputType)
+
+
+class AgentGroupCreateInputType(graphene.InputObjectType):
+    """Input object type for creating an agent group."""
+
+    name = graphene.String(required=True)
+    description = graphene.String(required=True)
+    agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
