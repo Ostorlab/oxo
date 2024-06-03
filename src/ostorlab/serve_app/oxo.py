@@ -13,6 +13,7 @@ from ostorlab.serve_app import common
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
 from ostorlab.serve_app import app
+from ostorlab.runtimes.local import runtime as local_runtime
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -341,9 +342,42 @@ class CreateAssetMutation(graphene.Mutation):
             raise graphql.GraphQLError("Single asset input must be defined.")
 
 
+class StopScanMutation(graphene.Mutation):
+    """Stop scan mutation."""
+
+    class Arguments:
+        scan_id = graphene.Int(required=True)
+
+    scan = graphene.Field(types.OxoScanType)
+
+    def mutate(root, info: graphql_base.ResolveInfo, scan_id: int):
+        """Stop the desired scan.
+
+        Args:
+            info: `graphql_base.ResolveInfo` instance.
+            scan_id: The scan ID.
+
+        Raises:
+            graphql.GraphQLError in case the scan does not exist or the scan id is invalid.
+
+        Returns:
+            The stopped scan.
+
+        """
+        with models.Database() as session:
+            scan = session.query(models.Scan).get(scan_id)
+            if scan is None:
+                raise graphql.GraphQLError("Scan not found.")
+            local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
+            return StopScanMutation(scan=scan)
+
+
 class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(
         description="Delete a scan & all its information."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
     create_asset = CreateAssetMutation.Field(description="Create an asset.")
+    stop_scan = StopScanMutation.Field(
+        description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
+    )
