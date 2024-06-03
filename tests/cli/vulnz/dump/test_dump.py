@@ -37,6 +37,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
             "metadata": [{"type": "CODE_LOCATION", "value": "dir/file.js:41"}],
         },
         scan_id=create_scan_db.id,
+        references=[],
     )
     models.Vulnerability.create(
         title="OtherVuln",
@@ -48,6 +49,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
         cvss_v3_vector="5:6:7",
         dna="121312",
         scan_id=create_scan_db.id,
+        references=[],
     )
     output_file = pathlib.Path(tmpdir) / "output.jsonl"
 
@@ -420,6 +422,7 @@ def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(
         cvss_v3_vector="5:6:7",
         dna="121312",
         scan_id=create_scan_db.id,
+        references=[],
     )
 
     output_file = pathlib.Path(tmpdir) / "output.jsonl"
