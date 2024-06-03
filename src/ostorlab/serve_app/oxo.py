@@ -292,7 +292,10 @@ class StopScanMutation(graphene.Mutation):
             scan = session.query(models.Scan).get(scan_id)
             if scan is None:
                 raise graphql.GraphQLError("Scan not found.")
-            local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
+            try:
+                local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
+            except Exception as e:
+                raise e
             return StopScanMutation(scan=scan)
 
 
