@@ -3,7 +3,6 @@
 import io
 import json
 
-import pytest
 from docker.models import services as services_model
 import ubjson
 from flask import testing
@@ -824,7 +823,6 @@ def testQueryMultipleScans_whenApiKeyIsInvalid_returnUnauthorized(
     assert response.get_json()["error"] == "Unauthorized"
 
 
-@pytest.mark.skip
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
     authenticated_flask_client: testing.FlaskClient,
     in_progress_web_scan: models.Scan,
