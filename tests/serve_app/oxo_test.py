@@ -891,6 +891,73 @@ scan{
     assert response_json["errors"][0]["message"] == "Scan not found."
 
 
+def testQueryVulnerabilitiesOfKb_withPagination_shouldReturnPageInfo(
+    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+) -> None:
+    """Test the kb vulnerabilities query with pagination, should return the correct pageInfo."""
+
+    with models.Database() as session:
+        kb_vulnerabilities = (
+            session.query(models.Vulnerability)
+            .filter(models.Vulnerability.id.in_([1, 2]))
+            .all()
+        )
+        assert kb_vulnerabilities is not None
+
+    query = """query Scans($scanIds: [Int!], $scanPage: Int, $scanElements: Int, $vulnPage: Int, $vulnElements: Int) {
+        scans(scanIds: $scanIds, page: $scanPage, numberElements: $scanElements) {
+            pageInfo {
+                count
+                numPages
+                hasNext
+                hasPrevious
+            }
+            scans {
+                id
+                title
+                kbVulnerabilities {
+                    highestRiskRating
+                    vulnerabilities (page: $vulnPage, numberElements: $vulnElements){
+                         pageInfo {
+                            count
+                            numPages
+                            hasNext
+                            hasPrevious
+                        }
+                        vulnerabilities {
+                            id
+                        }
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "scanPage": 1,
+                "scanElements": 1,
+                "vulnPage": 2,
+                "vulnElements": 1,
+            },
+        },
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["scans"]["scans"][0]["kbVulnerabilities"][0][
+        "vulnerabilities"
+    ]["pageInfo"] == {
+        "count": 3,
+        "hasNext": True,
+        "hasPrevious": True,
+        "numPages": 3,
+    }
+
+
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     authenticated_flask_client: testing.FlaskClient,
 ) -> None:
