@@ -102,16 +102,20 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
             OxoKnowledgeBaseVulnerabilityType: The knowledge base vulnerability.
         """
         with models.Database() as session:
-            references = session.query(models.Reference).filter(
-                models.Reference.vulnerability_id == self.id
-            ).all()
+            references = (
+                session.query(models.Reference)
+                .filter(models.Reference.vulnerability_id == self.id)
+                .all()
+            )
 
             return OxoKnowledgeBaseVulnerabilityType(
                 title=self.title,
                 short_description=self.short_description,
                 description=self.description,
                 recommendation=self.recommendation,
-                references=[OxoReferenceType(title=ref.title, url=ref.url) for ref in references],
+                references=[
+                    OxoReferenceType(title=ref.title, url=ref.url) for ref in references
+                ],
             )
 
 
@@ -337,7 +341,6 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             vulnerabilities = session.query(models.Vulnerability).filter(
                 models.Vulnerability.scan_id == scan.id
             )
-
             if detail_title is not None:
                 vulnerabilities = vulnerabilities.filter(
                     models.Vulnerability.title == detail_title
@@ -363,7 +366,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 cvss_dict[vuln.title].append(vuln.cvss_v3_vector)
 
             for kb in kbs:
-                vulnerabilities = vulnerabilities.filter(models.Vulnerability.title == kb.title)
+                kb_vulnerabilities = vulnerabilities.filter(
+                    models.Vulnerability.title == kb.title
+                )
                 highest_risk_rating = max(
                     kb_dict[kb.title], key=lambda risk: RISK_RATINGS_ORDER[risk.name]
                 )
@@ -381,9 +386,14 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     )
                 else:
                     highest_cvss_v3_vector = kb.cvss_v3_vector or None
-                references = session.query(models.Reference).filter(
-                    models.Reference.vulnerability_id == vulnerabilities.first().id
-                ).all()
+                references = (
+                    session.query(models.Reference)
+                    .filter(
+                        models.Reference.vulnerability_id
+                        == kb_vulnerabilities.first().id
+                    )
+                    .all()
+                )
                 aggregated_kb.append(
                     OxoAggregatedKnowledgeBaseVulnerabilityType(
                         highest_risk_rating=highest_risk_rating,
@@ -402,7 +412,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                             ],
                         ),
                         vulnerabilities=OxoVulnerabilitiesType(
-                            vulnerabilities=vulnerabilities
+                            vulnerabilities=kb_vulnerabilities
                         ),
                     )
                 )
