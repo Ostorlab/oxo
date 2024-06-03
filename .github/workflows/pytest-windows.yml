@@ -3,7 +3,7 @@
 #  - Run pytest for each of the supported Python versions ["3.8", "3.9", "3.10"]. 
 # Running pytest with -m "no docker" to disable test that require a docker installation.
 
-name: Pytest.
+name: Pytest-Windows
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
     branches: [ "*" ]
 
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   build:
