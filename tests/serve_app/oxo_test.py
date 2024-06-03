@@ -4,7 +4,6 @@ import io
 import json
 import pathlib
 
-import pytest
 from docker.models import services as services_model
 import ubjson
 from flask import testing
@@ -1392,7 +1391,6 @@ def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
     assert asset_data["scans"][0]["title"] == "iOS Scan"
 
 
-@pytest.mark.skip
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
     authenticated_flask_client: testing.FlaskClient,
     in_progress_web_scan: models.Scan,
