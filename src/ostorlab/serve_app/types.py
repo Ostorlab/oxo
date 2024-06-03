@@ -163,7 +163,9 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         if number_elements <= 0:
             return OxoVulnerabilitiesType(vulnerabilities=[])
 
-        vulnerabilities = self.vulnerabilities.vulnerabilities.order_by("id")
+        vulnerabilities = self.vulnerabilities.vulnerabilities.order_by(
+            models.Vulnerability.id
+        )
 
         if detail_titles is not None and len(detail_titles) > 0:
             vulnerabilities = vulnerabilities.filter(
