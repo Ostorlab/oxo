@@ -302,12 +302,12 @@ def testAssetModels_whenCreateNetwork_assetCreated(
 ) -> None:
     """Ensure we correctly persist the network information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Network.create(ips=["8.8.8.8", "42.42.42.42"])
+    models.Network.create(networks=["8.8.8.8/24", "42.42.42.42"])
 
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
-        ips = json.loads(session.query(models.Network).all()[0].ips)
-        assert ips == ["8.8.8.8", "42.42.42.42"]
+        ips = json.loads(session.query(models.Network).all()[0].networks)
+        assert ips == ["8.8.8.8/24", "42.42.42.42"]
 
 
 def testAssetModels_whenCreateUrl_assetCreated(

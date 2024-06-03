@@ -1,8 +1,8 @@
 """create assets models
 
-Revision ID: 8bbe2ccafb11
-Revises: cff0aef2c0f7
-Create Date: 2024-05-30 14:03:20.664739
+Revision ID: 736027d2cc2f
+Revises: 23afcfd1d789
+Create Date: 2024-06-03 10:33:26.311585
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "8bbe2ccafb11"
-down_revision = "cff0aef2c0f7"
+revision = "736027d2cc2f"
+down_revision = "23afcfd1d789"
 branch_labels = None
 depends_on = None
 
@@ -68,7 +68,7 @@ def upgrade() -> None:
     op.create_table(
         "network",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("ips", sa.String(length=1024), nullable=True),
+        sa.Column("networks", sa.String(length=1024), nullable=True),
         sa.ForeignKeyConstraint(["id"], ["asset.id"], name=op.f("fk_network_id_asset")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_network")),
     )
@@ -79,9 +79,6 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["id"], ["asset.id"], name=op.f("fk_urls_id_asset")),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_urls")),
     )
-    with op.batch_alter_table("api_key", schema=None) as batch_op:
-        batch_op.create_unique_constraint(batch_op.f("uq_api_key_key"), ["key"])
-
     with op.batch_alter_table("scan", schema=None) as batch_op:
         batch_op.add_column(sa.Column("asset_id", sa.Integer(), nullable=True))
         batch_op.create_foreign_key(
@@ -98,9 +95,6 @@ def downgrade() -> None:
             batch_op.f("fk_scan_asset_id_asset"), type_="foreignkey"
         )
         batch_op.drop_column("asset_id")
-
-    with op.batch_alter_table("api_key", schema=None) as batch_op:
-        batch_op.drop_constraint(batch_op.f("uq_api_key_key"), type_="unique")
 
     op.drop_table("urls")
     op.drop_table("network")

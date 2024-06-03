@@ -574,7 +574,7 @@ class AndroidFile(Asset):
         """Persist the android file information in the database.
 
         Args:
-            bundle_id: The application identifier.
+            package_name: The application identifier.
             path: Local/Remote path of the APK/AAB.
 
         Returns:
@@ -724,25 +724,25 @@ class Network(Asset):
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    ips = sqlalchemy.Column(sqlalchemy.String(1024))
+    networks = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "network",
     }
 
     @staticmethod
-    def create(ips: List[str]):
+    def create(networks: List[str]):
         """Persist the Network information in the database.
 
         Args:
-            ips: list of the target IP addresses.
+            networks: list of the target IP/range addresses.
 
         Returns:
             Network object.
         """
         with Database() as session:
             asset = Network(
-                ips=json.dumps(ips),
+                networks=json.dumps(networks),
             )
             session.add(asset)
             session.commit()
