@@ -9,6 +9,7 @@ from typing import Optional, Union
 
 import cvss
 import graphene
+from graphql.language import ast
 from graphene.types import scalars
 
 
@@ -72,7 +73,7 @@ class Bytes(scalars.Scalar):
     parse_value = coerce_bytes
 
     @staticmethod
-    def parse_literal(ast):
+    def parse_literal(asst: ast.Value) -> Optional[int]:
         """Parse a literal value."""
         raise NotImplementedError("ast is not supported")
 

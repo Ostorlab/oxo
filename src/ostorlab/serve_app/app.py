@@ -54,7 +54,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
 
         return ubjson.loadb(request.data)
 
-    def dispatch_request(self):
+    def dispatch_request(self) -> flask.Response:
         try:
             request_method = flask.request.method.lower()
             data = self.parse_body()
