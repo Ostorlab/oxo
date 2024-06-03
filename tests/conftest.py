@@ -817,10 +817,10 @@ def agent_groups(clean_db: None) -> List[models.AgentGroup]:
         session.commit()
 
         arg1 = models.AgentArgument(
-            agent_id=agent1.id, name="arg1", type="number", value="42"
+            agent_id=agent1.id, name="arg1", type="number", value=b"42"
         )
         arg2 = models.AgentArgument(
-            agent_id=agent2.id, name="arg2", type="string", value="hello"
+            agent_id=agent2.id, name="arg2", type="string", value=b"hello"
         )
         session.add(arg1)
         session.add(arg2)
@@ -850,3 +850,17 @@ def agent_groups(clean_db: None) -> List[models.AgentGroup]:
             agent_group_id=agent_group2.id, agent_id=agent1.id
         )
         return [agent_group1, agent_group2]
+
+
+@pytest.fixture
+def agent_group() -> models.AgentGroup:
+    """Create dummy agent group."""
+    with models.Database() as session:
+        agent_group = models.AgentGroup(
+            name="Agent Group 1",
+            description="Agent Group 1 description",
+            created_time=datetime.datetime.now(),
+        )
+        session.add(agent_group)
+        session.commit()
+        return agent_group

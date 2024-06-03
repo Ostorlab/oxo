@@ -4,10 +4,13 @@ import collections
 import inspect
 from functools import cached_property
 from math import ceil
-from typing import Optional
+import struct
+from typing import Optional, Union
 
 import cvss
 import graphene
+from graphql.language import ast
+from graphene.types import scalars
 
 
 class PageInfo(graphene.ObjectType):
@@ -38,6 +41,57 @@ class RiskRatingEnum(graphene.Enum):
     SECURE = "Secure"
     IMPORTANT = "Important"
     INFO = "Info"
+
+
+class Bytes(scalars.Scalar):
+    """
+    The `Bytes` scalar type represents binary data in a bytes format.
+    """
+
+    @staticmethod
+    def coerce_bytes(value: Union[str, bytes, memoryview, list]) -> bytes:
+        """Coerce a value to bytes.
+
+        Args:
+            value (str | bytes | memoryview | list): Value to coerce.
+
+        Returns:
+            bytes: Coerced value.
+        """
+        if isinstance(value, bytes):
+            return value
+        elif isinstance(value, memoryview):
+            return value.tobytes()
+        elif isinstance(value, str):
+            return Bytes._rawbytes(value)
+        elif isinstance(value, list):
+            return bytes(value)
+        else:
+            raise NotImplementedError(f"Bytes scalar coerce error from {type(value)}")
+
+    serialize = coerce_bytes
+    parse_value = coerce_bytes
+
+    @staticmethod
+    def parse_literal(asst: ast.Value) -> Optional[int]:
+        """Parse a literal value."""
+        raise NotImplementedError("ast is not supported")
+
+    @staticmethod
+    def _rawbytes(s: str) -> bytes:
+        """Convert a string to raw bytes without encoding"""
+        outlist = []
+        for cp in s:
+            num = ord(cp)
+            if num <= 255:
+                outlist.append(struct.pack("B", num))
+            elif num < 65535:
+                outlist.append(struct.pack(">H", num))
+            else:
+                b = (num & 0xFF0000) >> 16
+                H = num & 0xFFFF
+                outlist.append(struct.pack(">bH", b, H))
+        return b"".join(outlist)
 
 
 def compute_cvss_v3_base_score(vector: Optional[str]) -> Optional[float]:
