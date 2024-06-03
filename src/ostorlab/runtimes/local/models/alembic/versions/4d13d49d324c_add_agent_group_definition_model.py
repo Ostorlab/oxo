@@ -39,7 +39,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=255), nullable=True),
         sa.Column("type", sa.String(length=255), nullable=True),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("value", sa.Text(), nullable=True),
+        sa.Column("value", sa.LargeBinary(), nullable=True),
         sa.Column("agent_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["agent_id"],
