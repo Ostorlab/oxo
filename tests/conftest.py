@@ -983,7 +983,7 @@ def agent_group_inject_asset() -> models.AgentGroup:
 @pytest.fixture
 def network_asset() -> models.Asset:
     """Create a network asset."""
-    asset = models.Network.create(ips=["8.8.8.8", "8.8.4.4"])
+    asset = models.Network.create(networks=["8.8.8.8", "8.8.4.4"])
     return asset
 
 

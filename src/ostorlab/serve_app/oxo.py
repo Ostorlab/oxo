@@ -506,7 +506,7 @@ class RunScanMutation(graphene.Mutation):
                         ios_store_asset.IOSStore(bundle_id=asset.bundle_id)
                     )
                 elif asset.type == "network":
-                    ips = json.loads(asset.ips)
+                    ips = json.loads(asset.networks)
                     for ip in ips:
                         ip_network = ipaddress.ip_network(ip, strict=False)
                         if ip_network.version == 4:
