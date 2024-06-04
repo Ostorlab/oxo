@@ -2,11 +2,13 @@
 
 import collections
 import enum
+import json
 from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
+from graphene_file_upload import scalars
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
@@ -186,6 +188,111 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
             return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
 
+class AssetScansMixin:
+    scans = graphene.List(
+        lambda: OxoScanType, last_only=graphene.Boolean(required=False)
+    )
+
+    def resolve_scans(self, info):
+        with models.Database() as session:
+            scans = session.query(models.Scan).filter(models.Scan.asset_id == self.id)
+
+        return scans
+
+
+class AndroidStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    class Meta:
+        model = models.AndroidStore
+        fields = ("id", "package_name", "application_name")
+
+
+class AndroidStoreAssetInputType(graphene.InputObjectType):
+    package_name = graphene.String()
+    application_name = graphene.String()
+
+
+class IOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    class Meta:
+        model = models.IosStore
+        fields = ("id", "bundle_id", "application_name")
+
+
+class IOSStoreAssetInputType(graphene.InputObjectType):
+    bundle_id = graphene.String()
+    application_name = graphene.String()
+
+
+class AndroidFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    class Meta:
+        model = models.AndroidFile
+        fields = ("id", "package_name", "path")
+
+
+class AndroidFileAssetInputType(graphene.InputObjectType):
+    file = scalars.Upload()
+    package_name = graphene.String()
+
+
+class IOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    class Meta:
+        model = models.IosFile
+        fields = ("id", "bundle_id", "path")
+
+
+class IOSFileAssetInputType(graphene.InputObjectType):
+    file = scalars.Upload()
+    bundle_id = graphene.String()
+
+
+class UrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    links = graphene.List(graphene.String, required=False)
+
+    class Meta:
+        model = models.Url
+        fields = ("id",)
+
+    def resolve_links(self, info):
+        try:
+            return json.loads(self.links)
+        except json.JSONDecodeError:
+            return []
+
+
+class UrlAssetInputType(graphene.InputObjectType):
+    links = graphene.List(graphene.String)
+
+
+class NetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    networks = graphene.List(graphene.String, required=False)
+
+    class Meta:
+        model = models.Network
+        fields = ("id",)
+
+    def resolve_networks(self, info):
+        try:
+            return json.loads(self.networks)
+        except json.JSONDecodeError:
+            return []
+
+
+class NetworkAssetInputType(graphene.InputObjectType):
+    networks = graphene.List(graphene.String)
+
+
+class AssetType(graphene.Union):
+    class Meta:
+        model = models.Asset
+        types = (
+            AndroidFileAssetType,
+            IOSFileAssetType,
+            AndroidStoreAssetType,
+            IOSStoreAssetType,
+            UrlAssetType,
+            NetworkAssetType,
+        )
+
+
 class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for a scan."""
 
@@ -204,6 +311,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     )
     message_status = graphene.String()
     progress = graphene.String()
+    asset_instance = graphene.Field(AssetType)
 
     class Meta:
         """Meta class for the scan object type."""
@@ -229,6 +337,13 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
 
         return self.progress.name
+
+    def resolve_asset_instance(
+        self,
+        info: graphql_base.ResolveInfo,
+    ):
+        """Resolve asset information of a scan."""
+        return self.asset_instance
 
     def resolve_vulnerabilities(
         self: models.Scan,
@@ -556,6 +671,15 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
 class AgentGroupsType(graphene.ObjectType):
     agent_groups = graphene.List(AgentGroupType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
+
+
+class AssetInputType(graphene.InputObjectType):
+    android_file = AndroidFileAssetInputType()
+    ios_file = IOSFileAssetInputType()
+    android_store = AndroidStoreAssetInputType()
+    ios_store = IOSStoreAssetInputType()
+    url = UrlAssetInputType()
+    network = NetworkAssetInputType()
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
