@@ -867,48 +867,6 @@ def agent_group() -> models.AgentGroup:
 
 
 @pytest.fixture
-def agent_group2(clean_db: None) -> models.AgentGroup:
-    """Create dummy agent groups."""
-    with models.Database() as session:
-        agent1 = models.Agent(
-            key="agent/ostorlab/agent1",
-        )
-        agent2 = models.Agent(
-            key="agent/ostorlab/agent2",
-        )
-        session.add(agent1)
-        session.add(agent2)
-        session.commit()
-
-        arg1 = models.AgentArgument(
-            agent_id=agent1.id, name="arg1", type="number", value="42"
-        )
-        arg2 = models.AgentArgument(
-            agent_id=agent2.id, name="arg2", type="string", value="hello"
-        )
-        session.add(arg1)
-        session.add(arg2)
-        session.commit()
-
-        agent_group = models.AgentGroup(
-            name="Agent Group 1",
-            description="Agent Group 1",
-            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
-        )
-        session.add(agent_group)
-        session.commit()
-
-        models.AgentGroupMapping.create(
-            agent_group_id=agent_group.id, agent_id=agent1.id
-        )
-        models.AgentGroupMapping.create(
-            agent_group_id=agent_group.id, agent_id=agent2.id
-        )
-
-        return agent_group
-
-
-@pytest.fixture
 def agent_group_nmap() -> models.AgentGroup:
     """Create dummy agent groups."""
     with models.Database() as session:
