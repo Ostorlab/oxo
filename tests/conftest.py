@@ -946,6 +946,21 @@ def network_asset() -> models.Asset:
 
 
 @pytest.fixture
+def scan() -> models.Scan:
+    """Create dummy network scan."""
+    with models.Database() as session:
+        scan = models.Scan(
+            title="Scan 1",
+            asset="Any",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan)
+        session.commit()
+        return scan
+
+
+@pytest.fixture
 def url_asset() -> models.Asset:
     """Create a Url asset."""
     asset = models.Url.create(

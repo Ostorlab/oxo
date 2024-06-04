@@ -1084,256 +1084,367 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_nmap: models.AgentGroup,
     network_asset: models.Asset,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Test importScan mutation."""
-    with models.Database() as session:
-        nbr_scans_before_run = session.query(models.Scan).count()
-        query = """
-            mutation RunScan($scan: OxoAgentScanInputType!) {
-                runScan(
-                    scan: $scan
-                ) {
-                    scan {
-                        id
-                        title
-                    }
+    """Test RunScanMutation for Network asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
                 }
             }
-        """
-        variables = {
-            "scan": {
-                "title": "Test Scan Network Asset",
-                "assetIds": [network_asset.id],
-                "agentGroupId": agent_group_nmap.id,
-            },
         }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Network Asset",
+            "assetIds": [network_asset.id],
+            "agentGroupId": agent_group_nmap.id,
+        },
+    }
 
-        response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": variables}
-        )
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
 
-        assert response.status_code == 200, response.get_json()
-        response_json = response.get_json()
-        nbr_scans_after_run = session.query(models.Scan).count()
-        assert nbr_scans_after_run == nbr_scans_before_run + 1
-        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
-        assert (
-            response_json["data"]["runScan"]["scan"]["title"]
-            == "Test Scan Network Asset"
-        )
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
+    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Network Asset"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
+    assert len(args["assets"]) == 2
+    assert args["assets"][0].host == "8.8.8.8"
+    assert args["assets"][0].host == "8.8.4.4"
 
 
 def testRunScanMutation_whenUrl_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_nmap: models.AgentGroup,
     url_asset: models.Url,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Test importScan mutation for Url asset."""
-    with models.Database() as session:
-        nbr_scans_before_run = session.query(models.Scan).count()
-        query = """
-            mutation RunScan($scan: OxoAgentScanInputType!) {
-                runScan(
-                    scan: $scan
-                ) {
-                    scan {
-                        id
-                        title
-                    }
+    """Test RunScanMutation for Url asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
                 }
             }
-        """
-        variables = {
-            "scan": {
-                "title": "Test Scan Url Asset",
-                "assetIds": [url_asset.id],
-                "agentGroupId": agent_group_nmap.id,
-            },
         }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Url Asset",
+            "assetIds": [url_asset.id],
+            "agentGroupId": agent_group_nmap.id,
+        },
+    }
 
-        response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": variables}
-        )
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
 
-        assert response.status_code == 200, response.get_json()
-        response_json = response.get_json()
-        nbr_scans_after_run = session.query(models.Scan).count()
-        assert nbr_scans_after_run == nbr_scans_before_run + 1
-        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
-        assert (
-            response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Url Asset"
-        )
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
+    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Url Asset"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
+    assert len(args["assets"]) == 2
+    assert args["assets"][0].url == "https://google.com"
+    assert args["assets"][0].method == "GET"
+    assert args["assets"][1].url == "https://tesla.com"
+    assert args["assets"][1].method == "GET"
 
 
 def testRunScanMutation_whenAndroidFile_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_trufflehog: models.AgentGroup,
     android_file_asset: models.AndroidFile,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Test importScan mutation for AndroidFile asset."""
-    with models.Database() as session:
-        nbr_scans_before_run = session.query(models.Scan).count()
-        query = """
-            mutation RunScan($scan: OxoAgentScanInputType!) {
-                runScan(
-                    scan: $scan
-                ) {
-                    scan {
-                        id
-                        title
-                    }
+    """Test RunScanMutation for AndroidFile asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
                 }
             }
-        """
-        variables = {
-            "scan": {
-                "title": "Test Scan Android File",
-                "assetIds": [android_file_asset.id],
-                "agentGroupId": agent_group_trufflehog.id,
-            },
         }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Android File",
+            "assetIds": [android_file_asset.id],
+            "agentGroupId": agent_group_trufflehog.id,
+        },
+    }
 
-        response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": variables}
-        )
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
 
-        assert response.status_code == 200, response.get_json()
-        response_json = response.get_json()
-        nbr_scans_after_run = session.query(models.Scan).count()
-        assert nbr_scans_after_run == nbr_scans_before_run + 1
-        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
-        assert (
-            response_json["data"]["runScan"]["scan"]["title"]
-            == "Test Scan Android File"
-        )
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
+    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Android File"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/trufflehog"
+    assert len(args["assets"]) == 1
+    assert "test.apk" in args["assets"][0].path
 
 
 def testRunScanMutation_whenIosFile_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_trufflehog: models.AgentGroup,
     ios_file_asset: models.IosFile,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Test importScan mutation for IosFile asset."""
-    with models.Database() as session:
-        nbr_scans_before_run = session.query(models.Scan).count()
-        query = """
-            mutation RunScan($scan: OxoAgentScanInputType!) {
-                runScan(
-                    scan: $scan
-                ) {
-                    scan {
-                        id
-                        title
-                    }
+    """Test RunScanMutation for IosFile asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
                 }
             }
-        """
-        variables = {
-            "scan": {
-                "title": "Test Scan Ios File",
-                "assetIds": [ios_file_asset.id],
-                "agentGroupId": agent_group_trufflehog.id,
-            },
         }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Ios File",
+            "assetIds": [ios_file_asset.id],
+            "agentGroupId": agent_group_trufflehog.id,
+        },
+    }
 
-        response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": variables}
-        )
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
 
-        assert response.status_code == 200, response.get_json()
-        response_json = response.get_json()
-        nbr_scans_after_run = session.query(models.Scan).count()
-        assert nbr_scans_after_run == nbr_scans_before_run + 1
-        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
-        assert response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Ios File"
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
+    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Ios File"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/trufflehog"
+    assert len(args["assets"]) == 1
+    assert "test.ipa" in args["assets"][0].path
 
 
 def testRunScanMutation_whenAndroidStore_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_inject_asset: models.AgentGroup,
     android_store: models.AndroidStore,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Test importScan mutation for AndroidStore asset."""
-    with models.Database() as session:
-        nbr_scans_before_run = session.query(models.Scan).count()
-        query = """
-            mutation RunScan($scan: OxoAgentScanInputType!) {
-                runScan(
-                    scan: $scan
-                ) {
-                    scan {
-                        id
-                        title
-                    }
+    """Test RunScanMutation for AndroidStore asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
                 }
             }
-        """
-        variables = {
-            "scan": {
-                "title": "Test Scan Android Store",
-                "assetIds": [android_store.id],
-                "agentGroupId": agent_group_inject_asset.id,
-            },
         }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Android Store",
+            "assetIds": [android_store.id],
+            "agentGroupId": agent_group_inject_asset.id,
+        },
+    }
 
-        response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": variables}
-        )
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
 
-        assert response.status_code == 200, response.get_json()
-        response_json = response.get_json()
-        nbr_scans_after_run = session.query(models.Scan).count()
-        assert nbr_scans_after_run == nbr_scans_before_run + 1
-        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
-        assert (
-            response_json["data"]["runScan"]["scan"]["title"]
-            == "Test Scan Android Store"
-        )
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
+    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Android Store"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"
+    assert len(args["assets"]) == 1
+    assert "com.example.android" in args["assets"][0].package_name
 
 
 def testRunScanMutation_whenIosStore_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_inject_asset: models.AgentGroup,
     ios_store: models.IosStore,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Test importScan mutation for IosStore asset."""
-    with models.Database() as session:
-        nbr_scans_before_run = session.query(models.Scan).count()
-        query = """
-            mutation RunScan($scan: OxoAgentScanInputType!) {
-                runScan(
-                    scan: $scan
-                ) {
-                    scan {
-                        id
-                        title
-                    }
+    """Test RunScanMutation for IosStore asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
                 }
             }
-        """
-        variables = {
-            "scan": {
-                "title": "Test Scan Ios Store",
-                "assetIds": [ios_store.id],
-                "agentGroupId": agent_group_inject_asset.id,
-            },
         }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Ios Store",
+            "assetIds": [ios_store.id],
+            "agentGroupId": agent_group_inject_asset.id,
+        },
+    }
 
-        response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": variables}
-        )
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
 
-        assert response.status_code == 200, response.get_json()
-        response_json = response.get_json()
-        nbr_scans_after_run = session.query(models.Scan).count()
-        assert nbr_scans_after_run == nbr_scans_before_run + 1
-        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
-        assert (
-            response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Ios Store"
-        )
+    assert response.status_code == 200, response.get_json()
+    response_json = response.get_json()
+    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
+    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Ios Store"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"
+    assert len(args["assets"]) == 1
+    assert "com.example.ios" in args["assets"][0].bundle_id
