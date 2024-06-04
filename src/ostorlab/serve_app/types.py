@@ -200,51 +200,55 @@ class AssetScansMixin:
         return scans
 
 
-class AndroidStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoAndroidStoreAssetType(
+    graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
+):
     class Meta:
         model = models.AndroidStore
         fields = ("id", "package_name", "application_name")
 
 
-class AndroidStoreAssetInputType(graphene.InputObjectType):
+class OxoAndroidStoreAssetInputType(graphene.InputObjectType):
     package_name = graphene.String()
     application_name = graphene.String()
 
 
-class IOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
     class Meta:
         model = models.IosStore
         fields = ("id", "bundle_id", "application_name")
 
 
-class IOSStoreAssetInputType(graphene.InputObjectType):
+class OxoIOSStoreAssetInputType(graphene.InputObjectType):
     bundle_id = graphene.String()
     application_name = graphene.String()
 
 
-class AndroidFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoAndroidFileAssetType(
+    graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
+):
     class Meta:
         model = models.AndroidFile
         fields = ("id", "package_name", "path")
 
 
-class AndroidFileAssetInputType(graphene.InputObjectType):
+class OxoAndroidFileAssetInputType(graphene.InputObjectType):
     file = scalars.Upload()
     package_name = graphene.String()
 
 
-class IOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
     class Meta:
         model = models.IosFile
         fields = ("id", "bundle_id", "path")
 
 
-class IOSFileAssetInputType(graphene.InputObjectType):
+class OxoIOSFileAssetInputType(graphene.InputObjectType):
     file = scalars.Upload()
     bundle_id = graphene.String()
 
 
-class UrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
     links = graphene.List(graphene.String, required=False)
 
     class Meta:
@@ -258,11 +262,11 @@ class UrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
             return []
 
 
-class UrlAssetInputType(graphene.InputObjectType):
+class OxoUrlAssetInputType(graphene.InputObjectType):
     links = graphene.List(graphene.String)
 
 
-class NetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
     networks = graphene.List(graphene.String, required=False)
 
     class Meta:
@@ -276,20 +280,20 @@ class NetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
             return []
 
 
-class NetworkAssetInputType(graphene.InputObjectType):
+class OxoNetworkAssetInputType(graphene.InputObjectType):
     networks = graphene.List(graphene.String)
 
 
-class AssetType(graphene.Union):
+class OxoAssetType(graphene.Union):
     class Meta:
         model = models.Asset
         types = (
-            AndroidFileAssetType,
-            IOSFileAssetType,
-            AndroidStoreAssetType,
-            IOSStoreAssetType,
-            UrlAssetType,
-            NetworkAssetType,
+            OxoAndroidFileAssetType,
+            OxoIOSFileAssetType,
+            OxoAndroidStoreAssetType,
+            OxoIOSStoreAssetType,
+            OxoUrlAssetType,
+            OxoNetworkAssetType,
         )
 
 
@@ -311,7 +315,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     )
     message_status = graphene.String()
     progress = graphene.String()
-    asset_instance = graphene.Field(AssetType)
+    asset_instance = graphene.Field(OxoAssetType)
 
     class Meta:
         """Meta class for the scan object type."""
@@ -673,13 +677,13 @@ class AgentGroupsType(graphene.ObjectType):
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
-class AssetInputType(graphene.InputObjectType):
-    android_file = AndroidFileAssetInputType()
-    ios_file = IOSFileAssetInputType()
-    android_store = AndroidStoreAssetInputType()
-    ios_store = IOSStoreAssetInputType()
-    url = UrlAssetInputType()
-    network = NetworkAssetInputType()
+class OxoAssetInputType(graphene.InputObjectType):
+    android_file = OxoAndroidFileAssetInputType()
+    ios_file = OxoIOSFileAssetInputType()
+    android_store = OxoAndroidStoreAssetInputType()
+    ios_store = OxoIOSStoreAssetInputType()
+    url = OxoUrlAssetInputType()
+    network = OxoNetworkAssetInputType()
 
 
 class AgentArgumentInputType(graphene.InputObjectType):

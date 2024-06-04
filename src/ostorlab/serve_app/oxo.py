@@ -290,13 +290,13 @@ class CreateAssetsMutation(graphene.Mutation):
     """Create asset mutation."""
 
     class Arguments:
-        assets = graphene.List(types.AssetInputType, required=True)
+        assets = graphene.List(types.OxoAssetInputType, required=True)
 
-    assets = graphene.List(types.AssetType)
+    assets = graphene.List(types.OxoAssetType)
 
     @staticmethod
     def mutate(
-        root, info: graphql_base.ResolveInfo, assets: List[types.AssetInputType]
+        root, info: graphql_base.ResolveInfo, assets: List[types.OxoAssetInputType]
     ):
         """Create asset mutation."""
         created_assets = []
@@ -352,7 +352,7 @@ class CreateAssetsMutation(graphene.Mutation):
         return CreateAssetsMutation(assets=created_assets)
 
     @staticmethod
-    def _validate(asset: types.AssetInputType) -> Optional[str]:
+    def _validate(asset: types.OxoAssetInputType) -> Optional[str]:
         """Validate asset API input & return corresponding error message."""
         assets = []
         if asset.android_store is not None:
