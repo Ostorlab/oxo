@@ -7,7 +7,10 @@ import click
 
 from ostorlab.assets import domain_name
 from ostorlab.cli.scan.run import run
+from ostorlab import exceptions
+from ostorlab.cli import console as cli_console
 
+console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
@@ -21,8 +24,11 @@ def domain_name_cli(ctx: click.core.Context, names: List[str]) -> None:
     for d in names:
         assets.append(domain_name.DomainName(name=d))
     logger.debug("scanning assets %s", [str(asset) for asset in assets])
-    runtime.scan(
-        title=ctx.obj["title"],
-        agent_group_definition=ctx.obj["agent_group_definition"],
-        assets=assets,
-    )
+    try:
+        runtime.scan(
+            title=ctx.obj["title"],
+            agent_group_definition=ctx.obj["agent_group_definition"],
+            assets=assets,
+        )
+    except exceptions.OstorlabError as e:
+        console.error(f"Error running scan: {e}")

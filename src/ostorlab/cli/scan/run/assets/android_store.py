@@ -8,6 +8,7 @@ import click
 from ostorlab.cli.scan.run import run
 from ostorlab.cli import console as cli_console
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab import exceptions
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -30,8 +31,11 @@ def android_store(
         raise click.exceptions.Exit(2)
 
     logger.debug("scanning assets %s", [str(asset) for asset in assets])
-    runtime.scan(
-        title=ctx.obj["title"],
-        agent_group_definition=ctx.obj["agent_group_definition"],
-        assets=assets,
-    )
+    try:
+        runtime.scan(
+            title=ctx.obj["title"],
+            agent_group_definition=ctx.obj["agent_group_definition"],
+            assets=assets,
+        )
+    except exceptions.OstorlabError as e:
+        console.error(f"Error running scan: {e}")

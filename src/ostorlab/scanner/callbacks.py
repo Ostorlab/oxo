@@ -26,6 +26,7 @@ from ostorlab.assets import agent as agent_asset
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.scanner import scanner_conf
 from ostorlab.agent.message import proto_dict
+from ostorlab import exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -180,11 +181,15 @@ def start_scan(
             docker_client=docker_client,
         )
 
-        runtime_instance.scan(
-            agent_group_definition=agent_group_definition,
-            assets=assets,
-            title=None,
-        )
+        try:
+            runtime_instance.scan(
+                agent_group_definition=agent_group_definition,
+                assets=assets,
+                title=None,
+            )
+        except exceptions.OstorlabError as e:
+            logger.error(f"Error running scan: {e}")
+
         return runtime_instance.name
     else:
         logger.error(

@@ -8,6 +8,7 @@ import click
 from ostorlab.assets import link as link_asset
 from ostorlab.cli.scan.run import run
 from ostorlab.cli import console as cli_console
+from ostorlab import exceptions
 
 
 logger = logging.getLogger(__name__)
@@ -29,8 +30,11 @@ def link(ctx: click.core.Context, url: List[str], method: List[str]) -> None:
         asset = link_asset.Link(url=u, method=m)
         assets.append(asset)
     logger.debug("scanning assets %s", asset)
-    runtime.scan(
-        title=ctx.obj["title"],
-        agent_group_definition=ctx.obj["agent_group_definition"],
-        assets=assets,
-    )
+    try:
+        runtime.scan(
+            title=ctx.obj["title"],
+            agent_group_definition=ctx.obj["agent_group_definition"],
+            assets=assets,
+        )
+    except exceptions.OstorlabError as e:
+        console.error(f"Error running scan: {e}")

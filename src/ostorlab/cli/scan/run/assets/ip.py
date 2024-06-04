@@ -11,6 +11,7 @@ from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
+from ostorlab import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +46,15 @@ def ip_cli(ctx: click.core.Context, ips: List[str]) -> None:
                 console.error(f"Invalid Ip address {ip}")
 
         logger.debug("scanning assets %s", assets)
-        runtime.scan(
-            title=ctx.obj["title"],
-            agent_group_definition=ctx.obj["agent_group_definition"],
-            assets=assets,
-        )
+        try:
+            runtime.scan(
+                title=ctx.obj["title"],
+                agent_group_definition=ctx.obj["agent_group_definition"],
+                assets=assets,
+            )
+        except exceptions.OstorlabError as e:
+            console.error(f"Error running scan: {e}")
+
     except ValueError as e:
         console.error(f"{e}")
         raise click.Abort()

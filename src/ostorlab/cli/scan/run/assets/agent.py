@@ -7,7 +7,10 @@ import click
 
 from ostorlab.assets import agent as agent_asset
 from ostorlab.cli.scan.run import run
+from ostorlab import exceptions
+from ostorlab.cli import console as cli_console
 
+console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
@@ -40,8 +43,11 @@ def agent(
         yaml_file_location=yaml_file_location,
     )
     logger.debug("scanning asset %s", asset)
-    runtime.scan(
-        title=ctx.obj["title"],
-        agent_group_definition=ctx.obj["agent_group_definition"],
-        assets=[asset],
-    )
+    try:
+        runtime.scan(
+            title=ctx.obj["title"],
+            agent_group_definition=ctx.obj["agent_group_definition"],
+            assets=[asset],
+        )
+    except exceptions.OstorlabError as e:
+        console.error(f"Error running scan: {e}")

@@ -178,7 +178,7 @@ def run(
                     assets=asset_group.targets if asset_group is not None else None,
                 )
             except exceptions.OstorlabError as e:
-                logger.error(f"Error running scan: {e}")
+                console.error(f"Error running scan: {e}")
     else:
         raise click.ClickException(
             "The runtime does not support the provided agent list or group definition."
