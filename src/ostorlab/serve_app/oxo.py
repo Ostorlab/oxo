@@ -3,6 +3,7 @@
 import ipaddress
 import json
 import pathlib
+import uuid
 from typing import Optional, List
 
 import graphene
@@ -16,6 +17,7 @@ from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.utils import defintions as utils_definitions
 from ostorlab.runtimes.local import runtime
+from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
 from ostorlab.serve_app import import_utils
@@ -29,6 +31,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
+
 
 
 DEFAULT_NUMBER_ELEMENTS = 15
@@ -284,6 +287,96 @@ class DeleteScanMutation(graphene.Mutation):
             return DeleteScanMutation(result=True)
 
 
+class CreateAssetsMutation(graphene.Mutation):
+    """Create asset mutation."""
+
+    class Arguments:
+        assets = graphene.List(types.AssetInputType, required=True)
+
+    assets = graphene.List(types.AssetType)
+
+    @staticmethod
+    def mutate(
+        root, info: graphql_base.ResolveInfo, assets: List[types.AssetInputType]
+    ):
+        """Create asset mutation."""
+        created_assets = []
+        errors = []
+        config_manager = configuration_manager.ConfigurationManager()
+        for asset in assets:
+            error_message = CreateAssetsMutation._validate(asset)
+            if error_message is not None:
+                errors.append(error_message)
+                continue
+            if asset.android_store is not None:
+                new_asset = models.AndroidStore.create(
+                    package_name=asset.android_store.package_name,
+                    application_name=asset.android_store.application_name,
+                )
+                created_assets.append(new_asset)
+            if asset.android_file is not None:
+                content = asset.android_file.file.read()
+                android_file_path = (
+                    config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                )
+                android_file_path.write_bytes(content)
+                new_asset = models.AndroidFile.create(
+                    package_name=asset.android_file.package_name,
+                    path=str(android_file_path),
+                )
+                created_assets.append(new_asset)
+            if asset.ios_store is not None:
+                new_asset = models.IosStore.create(
+                    bundle_id=asset.ios_store.bundle_id,
+                    application_name=asset.ios_store.application_name,
+                )
+                created_assets.append(new_asset)
+            if asset.ios_file is not None:
+                content = asset.ios_file.file.read()
+                ios_file_path = config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
+                ios_file_path.write_bytes(content)
+                new_asset = models.IosFile.create(
+                    bundle_id=asset.ios_file.bundle_id,
+                    path=str(ios_file_path),
+                )
+                created_assets.append(new_asset)
+            if asset.url is not None:
+                new_asset = models.Url.create(links=asset.url.links)
+                created_assets.append(new_asset)
+            if asset.network is not None:
+                new_asset = models.Network.create(networks=asset.network.networks)
+                created_assets.append(new_asset)
+        if len(errors) > 0:
+            error_messages = "\n".join(errors)
+            raise graphql.GraphQLError(f"Invalid assets: {error_messages}")
+
+        return CreateAssetsMutation(assets=created_assets)
+
+    @staticmethod
+    def _validate(asset: types.AssetInputType) -> Optional[str]:
+        """Validate asset API input & return corresponding error message."""
+        assets = []
+        if asset.android_store is not None:
+            assets.append(asset.android_store)
+        if asset.android_file is not None:
+            assets.append(asset.android_file)
+        if asset.ios_store is not None:
+            assets.append(asset.ios_store)
+        if asset.ios_file is not None:
+            assets.append(asset.ios_file)
+        if asset.url is not None:
+            assets.append(asset.url)
+        if asset.network is not None:
+            assets.append(asset.network)
+
+        if len(assets) == 0:
+            return f"Asset {asset} input is missing target."
+        elif len(assets) >= 2:
+            return f"Single target input must be defined for asset {asset}."
+        else:
+            return None
+
+
 class StopScanMutation(graphene.Mutation):
     """Stop scan mutation."""
 
@@ -292,6 +385,7 @@ class StopScanMutation(graphene.Mutation):
 
     scan = graphene.Field(types.OxoScanType)
 
+    @staticmethod
     def mutate(root, info: graphql_base.ResolveInfo, scan_id: int):
         """Stop the desired scan.
 
@@ -571,6 +665,7 @@ class Mutations(graphene.ObjectType):
         description="Delete agent group."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
+    create_assets = CreateAssetsMutation.Field(description="Create an asset.")
     stop_scan = StopScanMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
     )
