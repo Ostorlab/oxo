@@ -831,10 +831,10 @@ def testCreateAsset_androidStore_createsNewAsset(
     """Ensure the android store asset is created successfully through the createAssets API."""
     del clean_db
     query = """
-        mutation createAndroidStore($assets: [AssetInputType]!) {
+        mutation createAndroidStore($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on AndroidStoreAssetType {
+                    ... on OxoAndroidStoreAssetType {
                         id
                         packageName
                         applicationName
@@ -880,10 +880,10 @@ def testCreateAsset_iOSStore_createsNewAsset(
     """Ensure the ios store asset is created successfully through the createAssets API."""
     del clean_db
     query = """
-        mutation createiOSStore($assets: [AssetInputType]!) {
+        mutation createiOSStore($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on IOSStoreAssetType {
+                    ... on OxoIOSStoreAssetType {
                         id
                         bundleId
                         applicationName
@@ -931,10 +931,10 @@ def testCreateAsset_url_createsNewAsset(
     """Ensure the url asset & its links are created successfully through the createAssets API."""
     del clean_db
     query = """
-        mutation createUrl($assets: [AssetInputType]!) {
+        mutation createUrl($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on UrlAssetType {
+                    ... on OxoUrlAssetType {
                         id
                         links
                     }
@@ -983,10 +983,10 @@ def testCreateAsset_network_createsNewAsset(
     """Ensure the network asset & its ips are created successfully through the createAssets API."""
     del clean_db
     query = """
-        mutation createNetwork($assets: [AssetInputType]!) {
+        mutation createNetwork($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on NetworkAssetType {
+                    ... on OxoNetworkAssetType {
                         id
                         networks
                     }
@@ -1029,10 +1029,10 @@ def testCreateAsset_androidFile_createsNewAsset(
     """Ensure the android file is created successfully through the createAssets API."""
     del clean_db
     query = """
-        mutation createAndroidFile($assets: [AssetInputType]!) {
+        mutation createAndroidFile($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on AndroidFileAssetType {
+                    ... on OxoAndroidFileAssetType {
                         id
                         packageName
                         path
@@ -1096,10 +1096,10 @@ def testCreateAsset_iOSFile_createsNewAsset(
     """Ensure the iOS file is created successfully through the createAssets API."""
     del clean_db
     query = """
-        mutation createAndroidFile($assets: [AssetInputType]!) {
+        mutation createAndroidFile($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on IOSFileAssetType {
+                    ... on OxoIOSFileAssetType {
                         id
                         bundleId
                         path
@@ -1162,15 +1162,15 @@ def testCreateAsset_whenMultipleAssets_shouldCreateAll(
     """Ensure the create asset mutation creates all the provided assets assuming, they are independently valid."""
     del clean_db
     query = """
-        mutation createAssets($assets: [AssetInputType]!) {
+        mutation createAssets($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on AndroidStoreAssetType {
+                    ... on OxoAndroidStoreAssetType {
                         id
                         packageName
                         applicationName
                     }
-                    ... on IOSStoreAssetType {
+                    ... on OxoIOSStoreAssetType {
                         id
                         bundleId
                         applicationName
@@ -1228,15 +1228,15 @@ def testCreateAsset_whenMultipleTargetsForSameAsset_shouldReturnError(
     """Ensure the create asset mutation returns an error message when provided with multiple assets."""
     del clean_db
     query = """
-        mutation createAssets($assets: [AssetInputType]!) {
+        mutation createAssets($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on AndroidStoreAssetType {
+                    ... on OxoAndroidStoreAssetType {
                         id
                         packageName
                         applicationName
                     }
-                    ... on IOSStoreAssetType {
+                    ... on OxoIOSStoreAssetType {
                         id
                         bundleId
                         applicationName
@@ -1281,10 +1281,10 @@ def testCreateAsset_whenNoAsset_shouldReturnError(
     """Ensure the create asset mutation returns an error message when not asset is provided."""
     del clean_db
     query = """
-        mutation createAssets($assets: [AssetInputType]!) {
+        mutation createAssets($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on AndroidStoreAssetType {
+                    ... on OxoAndroidStoreAssetType {
                         id
                         packageName
                         applicationName
@@ -1339,7 +1339,7 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
                     progress
                     createdTime
                     assetInstance {
-                        ... on AndroidStoreAssetType {
+                        ... on OxoAndroidStoreAssetType {
                             id
                             packageName
                             applicationName
@@ -1386,7 +1386,7 @@ def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
                 scans {
                     id
                     assetInstance {
-                        ... on AndroidStoreAssetType {
+                        ... on OxoAndroidStoreAssetType {
                             id
                             packageName
                             applicationName
