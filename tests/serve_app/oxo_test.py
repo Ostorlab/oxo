@@ -1071,7 +1071,10 @@ def testCreateAsset_androidFile_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["packageName"] == "a.b.c"
-    assert ".ostorlab/uploads/android_" in asset_data["path"]
+    if sys.platform == "win32":
+        assert "\\.ostorlab\\uploads\\android_" in asset_data["path"]
+    else:
+        assert ".ostorlab/uploads/android_" in asset_data["path"]
     with models.Database() as session:
         assert session.query(models.AndroidFile).count() == 1
         assert session.query(models.AndroidFile).all()[0].package_name == "a.b.c"
@@ -1135,7 +1138,10 @@ def testCreateAsset_iOSFile_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["bundleId"] == "a.b.c"
-    assert ".ostorlab/uploads/ios_" in asset_data["path"]
+    if sys.platform == "win32":
+        assert "\\.ostorlab\\uploads\\ios_" in asset_data["path"]
+    else:
+        assert ".ostorlab/uploads/ios_" in asset_data["path"]
     with models.Database() as session:
         assert session.query(models.IosFile).count() == 1
         assert session.query(models.IosFile).all()[0].bundle_id == "a.b.c"
