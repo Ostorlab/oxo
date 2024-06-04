@@ -383,7 +383,6 @@ class DeleteAgentGroupMutation(graphene.Mutation):
 class RunScanMutation(graphene.Mutation):
     class Arguments:
         scan = types.OxoAgentScanInputType(required=True)
-        install = graphene.Boolean(required=False, default_value=False)
 
     scan = graphene.Field(types.OxoScanType)
 
@@ -392,14 +391,12 @@ class RunScanMutation(graphene.Mutation):
         root,
         info: graphql_base.ResolveInfo,
         scan: types.OxoAgentScanInputType,
-        install: Optional[bool] = False,
     ) -> "RunScanMutation":
         """Run scan mutation.
 
         Args:
             info: `graphql_base.ResolveInfo` instance.
             scan: The scan information.
-            install: Whether to install the agents or not.
 
         Raises:
             graphql.GraphQLError in case of an error.
@@ -451,6 +448,7 @@ class RunScanMutation(graphene.Mutation):
                     for agent in agent_group.agents
                 ],
             )
+
             try:
                 can_run_scan = runtime_instance.can_run(
                     agent_group_definition=agent_group
@@ -459,6 +457,7 @@ class RunScanMutation(graphene.Mutation):
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"
                 )
+
             scan_assets = []
             for asset in assets:
                 if asset.type == "android_file":
@@ -538,18 +537,17 @@ class RunScanMutation(graphene.Mutation):
                     raise graphql.GraphQLError("Unsupported asset type.")
 
             if can_run_scan is True:
-                if install is True:
-                    try:
-                        runtime_instance.install()
-                        for ag in agent_group.agents:
-                            try:
-                                install_agent.install(ag.key, ag.version)
-                            except agent_fetcher.AgentDetailsNotFound:
-                                graphql.GraphQLError(
-                                    f"Agent {ag.key} not found on the store."
-                                )
-                    except httpx.HTTPError as e:
-                        raise graphql.GraphQLError(f"Could not install the agents: {e}")
+                try:
+                    runtime_instance.install()
+                    for ag in agent_group.agents:
+                        try:
+                            install_agent.install(ag.key, ag.version)
+                        except agent_fetcher.AgentDetailsNotFound:
+                            graphql.GraphQLError(
+                                f"Agent {ag.key} not found on the store."
+                            )
+                except httpx.HTTPError as e:
+                    raise graphql.GraphQLError(f"Could not install the agents: {e}")
 
                 try:
                     scan = runtime_instance.scan(

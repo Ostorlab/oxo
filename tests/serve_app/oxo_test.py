@@ -1089,10 +1089,9 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+            mutation RunScan($scan: OxoAgentScanInputType!) {
                 runScan(
                     scan: $scan
-                    install: $install
                 ) {
                     scan {
                         id
@@ -1107,7 +1106,6 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
                 "assetIds": [network_asset.id],
                 "agentGroupId": agent_group_nmap.id,
             },
-            "install": True,
         }
 
         response = authenticated_flask_client.post(
@@ -1119,7 +1117,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
         nbr_scans_after_run = session.query(models.Scan).count()
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
         assert (
             response_json["data"]["runScan"]["scan"]["title"]
             == "Test Scan Network Asset"
@@ -1135,10 +1133,9 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+            mutation RunScan($scan: OxoAgentScanInputType!) {
                 runScan(
                     scan: $scan
-                    install: $install
                 ) {
                     scan {
                         id
@@ -1153,7 +1150,6 @@ def testRunScanMutation_whenUrl_shouldRunScan(
                 "assetIds": [url_asset.id],
                 "agentGroupId": agent_group_nmap.id,
             },
-            "install": True,
         }
 
         response = authenticated_flask_client.post(
@@ -1165,7 +1161,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
         nbr_scans_after_run = session.query(models.Scan).count()
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
         assert (
             response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Url Asset"
         )
@@ -1180,10 +1176,9 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+            mutation RunScan($scan: OxoAgentScanInputType!) {
                 runScan(
                     scan: $scan
-                    install: $install
                 ) {
                     scan {
                         id
@@ -1198,7 +1193,6 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
                 "assetIds": [android_file_asset.id],
                 "agentGroupId": agent_group_trufflehog.id,
             },
-            "install": True,
         }
 
         response = authenticated_flask_client.post(
@@ -1210,7 +1204,7 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
         nbr_scans_after_run = session.query(models.Scan).count()
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
         assert (
             response_json["data"]["runScan"]["scan"]["title"]
             == "Test Scan Android File"
@@ -1226,10 +1220,9 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+            mutation RunScan($scan: OxoAgentScanInputType!) {
                 runScan(
                     scan: $scan
-                    install: $install
                 ) {
                     scan {
                         id
@@ -1244,7 +1237,6 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
                 "assetIds": [ios_file_asset.id],
                 "agentGroupId": agent_group_trufflehog.id,
             },
-            "install": True,
         }
 
         response = authenticated_flask_client.post(
@@ -1256,7 +1248,7 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
         nbr_scans_after_run = session.query(models.Scan).count()
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
         assert response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Ios File"
 
 
@@ -1269,10 +1261,9 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+            mutation RunScan($scan: OxoAgentScanInputType!) {
                 runScan(
                     scan: $scan
-                    install: $install
                 ) {
                     scan {
                         id
@@ -1287,7 +1278,6 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
                 "assetIds": [android_store.id],
                 "agentGroupId": agent_group_inject_asset.id,
             },
-            "install": True,
         }
 
         response = authenticated_flask_client.post(
@@ -1299,7 +1289,7 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
         nbr_scans_after_run = session.query(models.Scan).count()
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
         assert (
             response_json["data"]["runScan"]["scan"]["title"]
             == "Test Scan Android Store"
@@ -1315,10 +1305,9 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     with models.Database() as session:
         nbr_scans_before_run = session.query(models.Scan).count()
         query = """
-            mutation RunScan($scan: OxoAgentScanInputType!, $install: Boolean!) {
+            mutation RunScan($scan: OxoAgentScanInputType!) {
                 runScan(
                     scan: $scan
-                    install: $install
                 ) {
                     scan {
                         id
@@ -1333,7 +1322,6 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
                 "assetIds": [ios_store.id],
                 "agentGroupId": agent_group_inject_asset.id,
             },
-            "install": True,
         }
 
         response = authenticated_flask_client.post(
@@ -1345,7 +1333,7 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
         nbr_scans_after_run = session.query(models.Scan).count()
         assert nbr_scans_after_run == nbr_scans_before_run + 1
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert response_json["data"]["runScan"]["scan"]["id"] == last_scan.id
+        assert int(response_json["data"]["runScan"]["scan"]["id"]) == last_scan.id
         assert (
             response_json["data"]["runScan"]["scan"]["title"] == "Test Scan Ios Store"
         )

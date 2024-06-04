@@ -175,7 +175,7 @@ class LocalRuntime(runtime.Runtime):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: Optional[List[base_asset.Asset]],
-    ) -> Optional[str]:
+    ) -> Optional[models.Scan]:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -187,7 +187,7 @@ class LocalRuntime(runtime.Runtime):
             assets: the target asset to scan.
 
         Returns:
-            str: message indicating the scan status.
+            The scan object.
         """
         try:
             console.info("Creating scan entry")
