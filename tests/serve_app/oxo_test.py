@@ -3,6 +3,7 @@
 import io
 import json
 import pathlib
+import sys
 
 from docker.models import services as services_model
 import ubjson
@@ -1074,10 +1075,16 @@ def testCreateAsset_androidFile_createsNewAsset(
     with models.Database() as session:
         assert session.query(models.AndroidFile).count() == 1
         assert session.query(models.AndroidFile).all()[0].package_name == "a.b.c"
-        assert (
-            ".ostorlab/uploads/android_"
-            in session.query(models.AndroidFile).all()[0].path
-        )
+        if sys.platform == "win32":
+            assert (
+                "\\.ostorlab\\uploads\\android_"
+                in session.query(models.AndroidFile).all()[0].path
+            )
+        else:
+            assert (
+                ".ostorlab/uploads/android_"
+                in session.query(models.AndroidFile).all()[0].path
+            )
 
 
 def testCreateAsset_iOSFile_createsNewAsset(
@@ -1132,7 +1139,15 @@ def testCreateAsset_iOSFile_createsNewAsset(
     with models.Database() as session:
         assert session.query(models.IosFile).count() == 1
         assert session.query(models.IosFile).all()[0].bundle_id == "a.b.c"
-        assert ".ostorlab/uploads/ios_" in session.query(models.IosFile).all()[0].path
+        if sys.platform == "win32":
+            assert (
+                "\\.ostorlab\\uploads\\ios_"
+                in session.query(models.IosFile).all()[0].path
+            )
+        else:
+            assert (
+                ".ostorlab/uploads/ios_" in session.query(models.IosFile).all()[0].path
+            )
 
 
 def testCreateAsset_whenMultipleAssets_shouldCreateAll(
@@ -1499,9 +1514,7 @@ def testQueryVulnerabilitiesOfKb_withPagination_shouldReturnPageInfo(
                 kbVulnerabilities {
                     highestRiskRating
                     vulnerabilities (page: $vulnPage, numberElements: $vulnElements){
-                         pageInfo {Pages
-                            hasNext
-                      
+                         pageInfo {
                             count
                             numPages
                             hasNext
