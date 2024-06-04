@@ -17,7 +17,7 @@ AUTHORIZATION_HEADER = "X-API-KEY"
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
     """Create a Flask app with the specified path."""
     app = flask.Flask(__name__)
-    flask_cors.CORS(app)
+    flask_cors.CORS(app, resources={r"/graphql": {"origins": "*"}})
     app.add_url_rule(
         path,
         view_func=CustomUBJSONFileUploadGraphQLView.as_view(
@@ -29,6 +29,10 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
     def authenticate() -> Optional[tuple[flask.Response, int]]:
         """Authenticate the request."""
         api_key = flask.request.headers.get(AUTHORIZATION_HEADER)
+        if flask.request.method == "OPTIONS":
+            # CORS requires sending an initial OPTIONS that should return 200 OK.
+            return None
+
         if api_key is None or models.APIKey.is_valid(api_key) is False:
             return flask.jsonify({"error": "Unauthorized"}), 401
         else:
