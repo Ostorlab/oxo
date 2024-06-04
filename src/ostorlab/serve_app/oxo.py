@@ -33,7 +33,6 @@ from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
 
 
-
 DEFAULT_NUMBER_ELEMENTS = 15
 
 
