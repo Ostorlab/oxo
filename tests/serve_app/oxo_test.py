@@ -1728,7 +1728,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
     assert len(args["assets"]) == 2
     assert args["assets"][0].host == "8.8.8.8"
-    assert args["assets"][0].host == "8.8.4.4"
+    assert args["assets"][1].host == "8.8.4.4"
 
 
 def testRunScanMutation_whenUrl_shouldRunScan(
