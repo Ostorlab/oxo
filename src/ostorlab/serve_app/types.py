@@ -207,6 +207,32 @@ class OxoAndroidStoreAssetType(
         model = models.AndroidStore
         fields = ("id", "package_name", "application_name")
 
+    def resolve_package_name(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve package name of the android store asset."""
+        with models.Database() as session:
+            return (
+                session.query(models.AndroidStore)
+                .filter_by(id=self.id)
+                .first()
+                .package_name
+            )
+
+    def resolve_path(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve application name of the android store asset."""
+        with models.Database() as session:
+            return (
+                session.query(models.AndroidStore)
+                .filter_by(id=self.id)
+                .first()
+                .application_name
+            )
+
 
 class OxoAndroidStoreAssetInputType(graphene.InputObjectType):
     package_name = graphene.String()
@@ -217,6 +243,29 @@ class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansM
     class Meta:
         model = models.IosStore
         fields = ("id", "bundle_id", "application_name")
+
+    def resolve_bundle_id(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve bundle id of the iOS store asset."""
+        with models.Database() as session:
+            return (
+                session.query(models.IosStore).filter_by(id=self.id).first().bundle_id
+            )
+
+    def resolve_application_name(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve application name of the iOS store asset."""
+        with models.Database() as session:
+            return (
+                session.query(models.IosStore)
+                .filter_by(id=self.id)
+                .first()
+                .application_name
+            )
 
 
 class OxoIOSStoreAssetInputType(graphene.InputObjectType):
@@ -231,6 +280,27 @@ class OxoAndroidFileAssetType(
         model = models.AndroidFile
         fields = ("id", "package_name", "path")
 
+    def resolve_package_name(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve package name of the android file asset."""
+        with models.Database() as session:
+            return (
+                session.query(models.AndroidFile)
+                .filter_by(id=self.id)
+                .first()
+                .package_name
+            )
+
+    def resolve_path(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve path of the android file asset."""
+        with models.Database() as session:
+            return session.query(models.AndroidFile).filter_by(id=self.id).first().path
+
 
 class OxoAndroidFileAssetInputType(graphene.InputObjectType):
     file = scalars.Upload()
@@ -241,6 +311,22 @@ class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
     class Meta:
         model = models.IosFile
         fields = ("id", "bundle_id", "path")
+
+    def resolve_bundle_id(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve bundle id of the iOS file asset."""
+        with models.Database() as session:
+            return session.query(models.IosFile).filter_by(id=self.id).first().bundle_id
+
+    def resolve_path(
+        self,
+        info: graphql_base.ResolveInfo,
+    ) -> str:
+        """Resolve path of the iOS file asset."""
+        with models.Database() as session:
+            return session.query(models.IosFile).filter_by(id=self.id).first().path
 
 
 class OxoIOSFileAssetInputType(graphene.InputObjectType):
@@ -257,7 +343,10 @@ class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin)
 
     def resolve_links(self, info):
         try:
-            return json.loads(self.links)
+            with models.Database() as session:
+                return json.loads(
+                    session.query(models.Url).filter_by(id=self.id).first().links
+                )
         except json.JSONDecodeError:
             return []
 
@@ -275,7 +364,10 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
 
     def resolve_networks(self, info):
         try:
-            return json.loads(self.networks)
+            with models.Database() as session:
+                return json.loads(
+                    session.query(models.Network).filter_by(id=self.id).first().networks
+                )
         except json.JSONDecodeError:
             return []
 
@@ -347,9 +439,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         info: graphql_base.ResolveInfo,
     ):
         """Resolve asset information of a scan."""
-        with models.Database() as session:
-            scan = session.query(models.Scan).filter_by(id=self.id).first()
-            return scan.asset_instance
+        with models.Database():
+            # scan = session.query(models.Scan).filter_by(id=self.id).first()
+            return self.asset_instance
 
     def resolve_vulnerabilities(
         self: models.Scan,
