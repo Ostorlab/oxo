@@ -31,7 +31,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
-
+from ostorlab.assets import asset as ostorlab_asset
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -480,46 +480,24 @@ class RunScanMutation(graphene.Mutation):
     scan = graphene.Field(types.OxoScanType)
 
     @staticmethod
-    def mutate(
-        root,
-        info: graphql_base.ResolveInfo,
-        scan: types.OxoAgentScanInputType,
-    ) -> "RunScanMutation":
-        """Run scan mutation.
+    def _prepare_agent_group(agent_group_id: int) -> definitions.AgentGroupDefinition:
+        """Prepare agent group.
 
         Args:
-            info: `graphql_base.ResolveInfo` instance.
-            scan: The scan information.
-
-        Raises:
-            graphql.GraphQLError in case of an error.
+            agent_group_id: The agent group id.
 
         Returns:
-            The scan information.
+            The agent group.
         """
-
         with models.Database() as session:
             agent_group = (
-                session.query(models.AgentGroup)
-                .filter_by(id=scan.agent_group_id)
-                .first()
-            )
-            assets = (
-                session.query(models.Asset)
-                .filter(models.Asset.id.in_(scan.asset_ids))
-                .all()
+                session.query(models.AgentGroup).filter_by(id=agent_group_id).first()
             )
 
             if agent_group is None:
                 raise graphql.GraphQLError("Agent group not found.")
 
-            if assets is None or len(assets) == 0:
-                raise graphql.GraphQLError("Assets not found.")
-
-            runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
-            runtime_instance.follow = []
-
-            agent_group = definitions.AgentGroupDefinition(
+            agent_group_instance = definitions.AgentGroupDefinition(
                 name=agent_group.name,
                 description=agent_group.description,
                 agents=[
@@ -541,15 +519,26 @@ class RunScanMutation(graphene.Mutation):
                     for agent in agent_group.agents
                 ],
             )
+            return agent_group_instance
 
-            try:
-                can_run_scan = runtime_instance.can_run(
-                    agent_group_definition=agent_group
-                )
-            except exceptions.OstorlabError as e:
-                raise graphql.GraphQLError(
-                    f"Runtime encountered an error to run scan: {e}"
-                )
+    @staticmethod
+    def _prepare_assets(asset_ids: List[int]) -> List[ostorlab_asset.Asset]:
+        """Prepare assets.
+
+        Args:
+            asset_ids: The asset ids.
+
+        Returns:
+            The assets.
+        """
+
+        with models.Database() as session:
+            assets = (
+                session.query(models.Asset).filter(models.Asset.id.in_(asset_ids)).all()
+            )
+
+            if assets is None or len(assets) == 0:
+                raise graphql.GraphQLError("Assets not found.")
 
             scan_assets = []
             for asset in assets:
@@ -629,31 +618,74 @@ class RunScanMutation(graphene.Mutation):
                 else:
                     raise graphql.GraphQLError("Unsupported asset type.")
 
-            if can_run_scan is True:
-                try:
-                    runtime_instance.install()
-                    for ag in agent_group.agents:
-                        try:
-                            install_agent.install(ag.key, ag.version)
-                        except agent_fetcher.AgentDetailsNotFound:
-                            graphql.GraphQLError(
-                                f"Agent {ag.key} not found on the store."
-                            )
-                except httpx.HTTPError as e:
-                    raise graphql.GraphQLError(f"Could not install the agents: {e}")
+            return scan_assets
 
-                try:
-                    scan = runtime_instance.scan(
-                        title=scan.title,
-                        agent_group_definition=agent_group,
-                        assets=scan_assets,
-                    )
-                except exceptions.OstorlabError as e:
-                    raise graphql.GraphQLError(
-                        f"Runtime encountered an error to run scan: {e}"
-                    )
+    @staticmethod
+    def _install_agents(
+        agent_group: definitions.AgentGroupDefinition,
+        runtime_instance: local_runtime.LocalRuntime,
+    ) -> None:
+        """Install agents.
 
-                return RunScanMutation(scan=scan)
+        Args:
+            agent_group: The agent group.
+            runtime_instance: The runtime instance.
+        """
+
+        try:
+            runtime_instance.install()
+            for ag in agent_group.agents:
+                try:
+                    install_agent.install(ag.key, ag.version)
+                except agent_fetcher.AgentDetailsNotFound:
+                    graphql.GraphQLError(f"Agent {ag.key} not found on the store.")
+        except httpx.HTTPError as e:
+            raise graphql.GraphQLError(f"Could not install the agents: {e}")
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        scan: types.OxoAgentScanInputType,
+    ) -> "RunScanMutation":
+        """Run scan mutation.
+
+        Args:
+            info: `graphql_base.ResolveInfo` instance.
+            scan: The scan information.
+
+        Raises:
+            graphql.GraphQLError in case of an error.
+
+        Returns:
+            The scan information.
+        """
+
+        agent_group = RunScanMutation._prepare_agent_group(scan.agent_group_id)
+        scan_assets = RunScanMutation._prepare_assets(scan.asset_ids)
+
+        runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
+        runtime_instance.follow = []
+
+        try:
+            can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
+        except exceptions.OstorlabError as e:
+            raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
+
+        if can_run_scan is True:
+            RunScanMutation._install_agents(agent_group, runtime_instance)
+            try:
+                scan = runtime_instance.scan(
+                    title=scan.title,
+                    agent_group_definition=agent_group,
+                    assets=scan_assets,
+                )
+            except exceptions.OstorlabError as e:
+                raise graphql.GraphQLError(
+                    f"Runtime encountered an error to run scan: {e}"
+                )
+
+            return RunScanMutation(scan=scan)
 
 
 class Mutations(graphene.ObjectType):

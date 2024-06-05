@@ -2037,3 +2037,69 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"
     assert len(args["assets"]) == 1
     assert "com.example.ios" in args["assets"][0].bundle_id
+
+
+def testRunScanMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
+    authenticated_flask_client: testing.FlaskClient,
+    android_store: models.AndroidStore,
+) -> None:
+    """Ensure the run scan mutation returns an error message when the agent group does not exist."""
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
+                }
+            }
+        }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Android Store",
+            "assetIds": [android_store.id],
+            "agentGroupId": 999,
+        },
+    }
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["errors"][0]["message"] == "Agent group not found."
+
+
+def testRunScanMutation_whenAssetDoesNotExist_returnErrorMessage(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_inject_asset: models.AgentGroup,
+) -> None:
+    """Ensure the run scan mutation returns an error message when the asset does not exist."""
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
+                }
+            }
+        }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Android Store",
+            "assetIds": [999],
+            "agentGroupId": agent_group_inject_asset.id,
+        },
+    }
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["errors"][0]["message"] == "Assets not found."
