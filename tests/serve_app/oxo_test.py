@@ -2,15 +2,22 @@
 
 import io
 import json
+import os
 import pathlib
 import sys
+from typing import Dict, Any
 
 from docker.models import services as services_model
+import pytest
+import httpx
 import ubjson
 from flask import testing
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app.schema import schema as oxo_schema
+
+RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
 
 
 def testImportScanMutation_always_shouldImportScan(
@@ -1667,3 +1674,360 @@ def testDeleteAgentGroupMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
 
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["errors"][0]["message"] == "AgentGroup not found."
+
+
+def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
+    """Introspect the oxo endpoint on RE, and fetch desired definitions."""
+    with httpx.Client(verify=True) as client:
+        response = client.post(
+            RE_OXO_ENDPOINT,
+            data={"query": query},
+            timeout=10,
+            headers={"X-Api-Key": f"{os.environ.get('RE_OXO_API_KEY', "")}"},
+        )
+        return response.json()["data"]
+
+
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
+def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
+    """Ensure the `ENUMs` in the OxO Schema & RE_OxO schema are similar."""
+    introspect_enums_query = """
+    {
+        __schema {
+            types {
+                name
+                kind
+                enumValues {
+                    name
+                }
+            }
+        }
+    }    
+    """
+    oxo_schema_dict = oxo_schema.introspect()["__schema"]
+    re_oxo_schema_dict = _get_re_oxo_schema(introspect_enums_query)
+    re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
+    re_oxo_enums = {}
+    for type_definition in re_oxo_types:
+        if (
+            type_definition["kind"] != "ENUM"
+            or type_definition["name"].startswith("__") is True
+        ):
+            continue
+        re_oxo_enums[type_definition["name"]] = {
+            enum_value["name"] for enum_value in type_definition["enumValues"]
+        }
+
+    oxo_types = oxo_schema_dict["types"]
+    oxo_enums = {}
+    for type_definition in oxo_types:
+        if (
+            type_definition["kind"] != "ENUM"
+            or type_definition["name"].startswith("__") is True
+        ):
+            continue
+        oxo_enums[type_definition["name"]] = {
+            enum_value["name"] for enum_value in type_definition["enumValues"]
+        }
+
+    for enum, enum_values in re_oxo_enums.items():
+        assert enum in oxo_enums
+        assert enum_values == oxo_enums[enum]
+
+
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
+def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
+    """Ensure the `InputObjects` in the OxO Schema & RE_OxO schema are similar."""
+    introspect_inputs_query = """
+    {
+        __schema {
+            types {
+                name
+                kind
+                inputFields {
+                    name
+                    type {
+                        name
+                        kind
+                        ofType {
+                            kind
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    }
+    """
+    oxo_schema_dict = oxo_schema.introspect()["__schema"]
+    re_oxo_schema_dict = _get_re_oxo_schema(introspect_inputs_query)
+    re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
+    re_oxo_inputs = {}
+    for type_definition in re_oxo_types:
+        if type_definition["kind"] != "INPUT_OBJECT":
+            continue
+        input_object_types = {}
+        for input_object in type_definition["inputFields"]:
+            if input_object["type"]["ofType"] is not None:
+                input_object["name"] = input_object["type"]["ofType"]
+            else:
+                input_object["name"] = {
+                    "name": input_object["type"]["name"],
+                    "kind": input_object["type"]["kind"],
+                }
+        re_oxo_inputs[type_definition["name"]] = input_object_types
+
+    oxo_types = oxo_schema_dict["types"]
+    oxo_inputs = {}
+    for type_definition in oxo_types:
+        if type_definition["kind"] != "INPUT_OBJECT":
+            continue
+        input_object_types = {}
+        for input_object in type_definition["inputFields"]:
+            if input_object["type"]["ofType"] is not None:
+                input_object["name"] = input_object["type"]["ofType"]
+            else:
+                input_object["name"] = {
+                    "name": input_object["type"]["name"],
+                    "kind": input_object["type"]["kind"],
+                }
+        oxo_inputs[type_definition["name"]] = input_object_types
+
+    for input_object_name, input_fields in re_oxo_inputs.items():
+        assert input_object_name in oxo_inputs
+        for input_field_name, input_field_type in input_fields.items():
+            assert input_field_name in oxo_inputs[input_object_name]
+            assert input_field_type == oxo_inputs[input_object_name][input_field_name]
+
+
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
+def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
+    """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
+    introspect_enums_query = """
+    {
+        __schema {
+            types {
+                name
+                kind
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                        ofType {
+                            name
+                            kind
+                        }
+                    }
+                    args {
+                        name
+                        type {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                                ofType {
+                                    name
+                                    kind
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    """
+    oxo_schema_dict = oxo_schema.introspect()["__schema"]
+    re_oxo_schema_dict = _get_re_oxo_schema(introspect_enums_query)
+    re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
+
+    re_oxo_mutation_fields = [
+        type_def
+        for type_def in re_oxo_types
+        if type_def["kind"] == "OBJECT" and type_def["name"] == "Mutations"
+    ][0]["fields"]
+    re_oxo_mutations = {
+        mutation["name"]: mutation for mutation in re_oxo_mutation_fields
+    }
+
+    oxo_types = oxo_schema_dict["types"]
+    oxo_mutations_fields = [
+        type_def
+        for type_def in oxo_types
+        if type_def["kind"] == "OBJECT" and type_def["name"] == "Mutations"
+    ][0]["fields"]
+    oxo_mutations = {mutation["name"]: mutation for mutation in oxo_mutations_fields}
+
+    for mutation_name, mutation_fields in re_oxo_mutations.items():
+        assert mutation_name in oxo_mutations
+        assert mutation_fields["type"] == oxo_mutations[mutation_name]["type"]
+        re_oxo_mutation_args = {}
+        for arg in mutation_fields["args"]:
+            if arg["type"]["ofType"] is not None:
+                re_oxo_mutation_args[arg["name"]] = arg["type"]["ofType"]
+            else:
+                re_oxo_mutation_args[arg["name"]] = {
+                    "name": arg["type"]["name"],
+                    "kind": arg["type"]["kind"],
+                }
+
+        oxo_mutation_args = {}
+        for arg in oxo_mutations[mutation_name]["args"]:
+            if arg["type"]["ofType"] is not None:
+                oxo_mutation_args[arg["name"]] = arg["type"]["ofType"]
+            else:
+                oxo_mutation_args[arg["name"]] = {
+                    "name": arg["type"]["name"],
+                    "kind": arg["type"]["kind"],
+                }
+
+        for arg_name, arg_type in re_oxo_mutation_args.items():
+            assert arg_name in oxo_mutation_args
+            assert arg_type == oxo_mutation_args[arg_name]
+
+
+def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
+    """Ensure the `Queries` in the OxO Schema & RE_OxO schema are similar."""
+    introspect_enums_query = """
+    {
+        __schema {
+            types {
+                name
+                kind
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                        ofType {
+                            name
+                            kind
+                        }
+                    }
+                    args {
+                        name
+                        type {
+                            kind
+                            name
+                            ofType {
+                                kind
+                                name
+                                ofType {
+                                    name
+                                    kind
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    """
+    oxo_schema_dict = oxo_schema.introspect()["__schema"]
+    re_oxo_schema_dict = _get_re_oxo_schema(introspect_enums_query)
+    re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
+    re_oxo_query_fields = [
+        t for t in re_oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
+    ][0]["fields"]
+    re_oxo_queries = {query["name"]: query for query in re_oxo_query_fields}
+    oxo_types = oxo_schema_dict["types"]
+    oxo_query_fields = [
+        t for t in oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
+    ][0]["fields"]
+    oxo_queries = {query["name"]: query for query in oxo_query_fields}
+
+    for query_name, queriy_fields in re_oxo_queries.items():
+        assert query_name in oxo_queries
+        assert queriy_fields["type"] == oxo_queries[query_name]["type"]
+        re_oxo_query_args = {}
+        for arg in queriy_fields["args"]:
+            if arg["type"]["ofType"] is not None:
+                re_oxo_query_args[arg["name"]] = arg["type"]["ofType"]
+            else:
+                re_oxo_query_args[arg["name"]] = {
+                    "name": arg["type"]["name"],
+                    "kind": arg["type"]["kind"],
+                }
+
+        oxo_query_args = {}
+        for arg in oxo_queries[query_name]["args"]:
+            if arg["type"]["ofType"] is not None:
+                oxo_query_args[arg["name"]] = arg["type"]["ofType"]
+            else:
+                oxo_query_args[arg["name"]] = {
+                    "name": arg["type"]["name"],
+                    "kind": arg["type"]["kind"],
+                }
+
+        for arg_name, arg_type in re_oxo_query_args.items():
+            assert arg_name in oxo_query_args
+            assert arg_type == oxo_query_args[arg_name]
+
+
+def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
+    """Ensure the `UNION` types in the OxO Schema & RE_OxO schema are similar."""
+    introspect_enums_query = """
+    {
+        __schema {
+            types {
+                name
+                kind
+                possibleTypes {
+                    kind
+                    name
+                    ofType {
+                        kind
+                        name
+                    }
+                }
+            }
+        }
+    }    
+    """
+    oxo_schema_dict = oxo_schema.introspect()["__schema"]
+    re_oxo_schema_dict = _get_re_oxo_schema(introspect_enums_query)
+    re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
+
+    re_oxo_unions = {}
+    for type_definition in re_oxo_types:
+        if type_definition["kind"] != "UNION":
+            continue
+        possible_types = {}
+        for possible_type in type_definition["possibleTypes"]:
+            field_types = {}
+            if possible_type["ofType"] is not None:
+                field_types[possible_type["name"]] = possible_type["ofType"]
+            else:
+                field_types[possible_type["name"]] = {
+                    "name": possible_type["name"],
+                    "kind": possible_type["kind"],
+                }
+            possible_types[possible_type["name"]] = field_types
+        re_oxo_unions[type_definition["name"]] = possible_types
+
+    oxo_unions = {}
+    oxo_types = oxo_schema_dict["types"]
+    for type_definition in oxo_types:
+        if type_definition["kind"] != "UNION":
+            continue
+        possible_types = {}
+        for possible_type in type_definition["possibleTypes"]:
+            field_types = {}
+            if possible_type["ofType"] is not None:
+                field_types[possible_type["name"]] = possible_type["ofType"]
+            else:
+                field_types[possible_type["name"]] = {
+                    "name": possible_type["name"],
+                    "kind": possible_type["kind"],
+                }
+            possible_types[possible_type["name"]] = field_types
+        oxo_unions[type_definition["name"]] = possible_types
+
+    for union_name, union_possible_types in re_oxo_unions.items():
+        assert union_name in oxo_unions
+        for possible_type_name, possible_type_fields in union_possible_types.items():
+            assert possible_type_name in oxo_unions[union_name]
+            assert possible_type_fields == oxo_unions[union_name][possible_type_name]
