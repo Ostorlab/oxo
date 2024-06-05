@@ -347,7 +347,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         info: graphql_base.ResolveInfo,
     ):
         """Resolve asset information of a scan."""
-        return self.asset_instance
+        with models.Database() as session:
+            scan = session.query(models.Scan).filter_by(id=self.id).first()
+            return scan.asset_instance
 
     def resolve_vulnerabilities(
         self: models.Scan,
