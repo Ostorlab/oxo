@@ -12,6 +12,7 @@ from graphene_file_upload import scalars
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
+from ostorlab.utils import risk_rating as utils_rik_rating
 
 DEFAULT_NUMBER_ELEMENTS = 15
 RISK_RATINGS_ORDER = {
@@ -59,11 +60,18 @@ class OxoKnowledgeBaseVulnerabilityType(graphene.ObjectType):
     recommendation = graphene.String()
 
 
+OxoRiskRatingEnum = graphene.Enum(
+    "OxoRiskRating",
+    [(risk.name.upper(), i) for i, risk in enumerate(utils_rik_rating.RiskRating)],
+)
+
+
 class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for a vulnerability."""
 
     detail = graphene.Field(OxoKnowledgeBaseVulnerabilityType, required=False)
     cvss_v3_base_score = graphene.Float(required=False)
+    risk_rating = graphene.Field(OxoRiskRatingEnum, required=False)
 
     class Meta:
         """Meta class for the vulnerability object type."""
@@ -119,6 +127,15 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     OxoReferenceType(title=ref.title, url=ref.url) for ref in references
                 ],
             )
+
+    def resolve_risk_rating(
+        self: models.Vulnerability, info: graphql_base.ResolveInfo
+    ) -> OxoRiskRatingEnum:
+        """Resolve risk rating of vulnerability"""
+        try:
+            return OxoRiskRatingEnum[self.risk_rating.name]
+        except KeyError:
+            return None
 
 
 class OxoVulnerabilitiesType(graphene.ObjectType):
