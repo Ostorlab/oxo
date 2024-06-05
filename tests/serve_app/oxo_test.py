@@ -1683,7 +1683,7 @@ def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
             RE_OXO_ENDPOINT,
             data={"query": query},
             timeout=10,
-            headers={"X-Api-Key": f"{os.environ.get('RE_OXO_API_KEY', "")}"},
+            headers={"X-Api-Key": f"{os.environ.get('RE_OXO_API_KEY', '')}"},
         )
         return response.json()["data"]
 
