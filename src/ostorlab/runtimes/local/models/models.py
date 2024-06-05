@@ -162,7 +162,7 @@ class Scan(Base):
                 title=title,
                 asset=asset,
                 created_time=datetime.datetime.now(),
-                progress=progress.name,
+                progress=progress,
             )
             session.add(scan)
             session.commit()
