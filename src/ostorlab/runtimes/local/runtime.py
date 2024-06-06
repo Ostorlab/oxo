@@ -378,7 +378,7 @@ class LocalRuntime(runtime.Runtime):
                 models.AgentArgument.create(
                     name=arg.name,
                     type=arg.type,
-                    value=arg.value,
+                    value=bytes(arg.value, "utf-8"),
                     description=arg.description,
                     agent_id=created_agent.id,
                 )
