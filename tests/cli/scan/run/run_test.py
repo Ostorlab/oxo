@@ -6,6 +6,7 @@ from pytest_mock import plugin
 import httpx
 import pytest
 from click.testing import CliRunner
+from docker.models import services as services_model
 
 from ostorlab.cli import rootcli
 from ostorlab import exceptions
@@ -566,6 +567,28 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
     should not log any agent.
     """
     runner = CliRunner()
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
 
     runner.invoke(
         rootcli.rootcli,
