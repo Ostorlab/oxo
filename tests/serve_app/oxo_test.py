@@ -90,12 +90,12 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
     scan2 = response.get_json()["data"]["scans"]["scans"][0]
     assert scan1["id"] == "1"
     assert scan1["title"] == scans[0].title
-    assert scan1["asset"] == scans[0].asset
+    assert scan1["asset"] == "IOS file: /path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
-    assert scan2["asset"] == scans[1].asset
+    assert scan2["asset"] == "Android store: com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
 
@@ -141,12 +141,12 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
     scan2 = response.get_json()["data"]["scans"]["scans"][1]
     assert scan1["id"] == "1"
     assert scan1["title"] == scans[0].title
-    assert scan1["asset"] == scans[0].asset
+    assert scan1["asset"] == "IOS file: /path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
-    assert scan2["asset"] == scans[1].asset
+    assert scan2["asset"] == "Android store: com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
 
@@ -180,12 +180,12 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
     scan2 = response.get_json()["data"]["scans"]["scans"][0]
     assert scan1["id"] == "1"
     assert scan1["title"] == scans[0].title
-    assert scan1["asset"] == scans[0].asset
+    assert scan1["asset"] == "IOS file: /path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
-    assert scan2["asset"] == scans[1].asset
+    assert scan2["asset"] == "Android store: com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
 
@@ -1315,16 +1315,14 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
 ) -> None:
     """Ensure we can query the specific asset information (depending on the target type) from the scan."""
     with models.Database() as session:
-        asset = models.AndroidStore.create(
-            package_name="a.b.c", application_name="fake_app"
-        )
-        session.add(asset)
-        session.commit()
         scan = models.Scan(
             title="iOS Scan",
             progress=models.ScanProgress.NOT_STARTED,
-            asset_instance=asset,
-            asset_id=asset.id,
+        )
+        session.add(scan)
+        session.commit()
+        asset = models.AndroidStore(
+            package_name="a.b.c", application_name="fake_app", scan_id=scan.id
         )
         session.add(asset)
         session.commit()
@@ -1338,13 +1336,7 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
                     asset
                     progress
                     createdTime
-                    assetInstance {
-                        ... on OxoAndroidStoreAssetType {
-                            id
-                            packageName
-                            applicationName
-                        }
-                    }
+                    asset
                 }
             }
         }
@@ -1357,26 +1349,22 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
     assert response.status_code == 200, response.get_json()
     scan_data = response.get_json()["data"]["scans"]["scans"][0]
     assert scan_data["title"] == "iOS Scan"
-    assert scan_data["assetInstance"]["packageName"] == asset.package_name
-    assert scan_data["assetInstance"]["applicationName"] == asset.application_name
+    assert scan_data["progress"] == "NOT_STARTED"
+    assert scan_data["asset"] == "Android store: a.b.c"
 
 
-def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
+def testQueryScan_whenAssetIsNetwork_shouldReturnNetworkInformation(
     authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure we can query the specific scan information from its asset."""
     with models.Database() as session:
-        asset = models.AndroidStore.create(
-            package_name="a.b.c", application_name="fake_app"
-        )
-        session.add(asset)
-        session.commit()
         scan = models.Scan(
             title="iOS Scan",
             progress=models.ScanProgress.NOT_STARTED,
-            asset_instance=asset,
-            asset_id=asset.id,
         )
+        session.add(scan)
+        session.commit()
+        asset = models.Network(networks='["8.8.8.8", "8.8.4.4"]', scan_id=scan.id)
         session.add(asset)
         session.commit()
 
@@ -1385,17 +1373,7 @@ def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
             scans(scanIds: $scanIds) {
                 scans {
                     id
-                    assetInstance {
-                        ... on OxoAndroidStoreAssetType {
-                            id
-                            packageName
-                            applicationName
-                            scans {
-                                id
-                                title                                
-                            }
-                        }
-                    }
+                    asset
                 }
             }
         }
@@ -1407,9 +1385,8 @@ def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
     )
 
     assert response.status_code == 200, response.get_json()
-    asset_data = response.get_json()["data"]["scans"]["scans"][0]["assetInstance"]
-    assert asset_data["scans"][0]["id"] == str(scan.id)
-    assert asset_data["scans"][0]["title"] == "iOS Scan"
+    scan_data = response.get_json()["data"]["scans"]["scans"][0]
+    assert scan_data["asset"] == 'Network: ["8.8.8.8", "8.8.4.4"]'
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(

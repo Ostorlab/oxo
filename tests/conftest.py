@@ -627,18 +627,30 @@ def ios_scans(clean_db: None) -> None:
     with models.Database() as session:
         scan1 = models.Scan(
             title="iOS Scan 1 ",
-            asset="iOS",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
         scan2 = models.Scan(
             title="iOS Scan 2",
-            asset="iOS",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
         session.add(scan1)
         session.add(scan2)
+        session.commit()
+        asset1 = models.IosFile(
+            bundle_id="com.example.app",
+            path="/path/to/file",
+            scan_id=scan1.id,
+        )
+        session.add(asset1)
+        session.commit()
+        asset2 = models.AndroidStore(
+            package_name="com.example.app",
+            application_name="Example App",
+            scan_id=scan2.id,
+        )
+        session.add(asset2)
         session.commit()
         vulnerability1 = models.Vulnerability.create(
             title="XSS",

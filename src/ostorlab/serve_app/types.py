@@ -315,7 +315,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     )
     message_status = graphene.String()
     progress = graphene.String()
-    asset_instance = graphene.Field(OxoAssetType)
+    asset = graphene.String()
 
     class Meta:
         """Meta class for the scan object type."""
@@ -342,12 +342,39 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
         return self.progress.name
 
-    def resolve_asset_instance(
-        self,
-        info: graphql_base.ResolveInfo,
-    ):
-        """Resolve asset information of a scan."""
-        return self.asset_instance
+    def resolve_asset(
+        self: models.Scan, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
+        """Resolve asset.
+
+        Args:
+            self: The scan object.
+            info: GraphQL resolve info.
+
+        Returns:
+            Optional[str]: The assets of the scan.
+        """
+        with models.Database() as session:
+            assets = session.query(models.Asset).filter_by(scan_id=self.id).all()
+            assets_list: List[str] = []
+            for asset in assets:
+                if asset.type == "android_store":
+                    assets_list.append(f"Android store: {asset.package_name}")
+                elif asset.type == "ios_store":
+                    assets_list.append(f"IOS store: {asset.bundle_id}")
+                elif asset.type == "android_file":
+                    assets_list.append(f"Android file: {asset.path}")
+                elif asset.type == "ios_file":
+                    assets_list.append(f"IOS file: {asset.path}")
+                elif asset.type == "url":
+                    assets_list.append(f"URL: {asset.links}")
+                elif asset.type == "network":
+                    assets_list.append(f"Network: {asset.networks}")
+
+            if len(assets_list) == 0:
+                return None
+
+            return ", ".join(assets_list)
 
     def resolve_vulnerabilities(
         self: models.Scan,
@@ -360,12 +387,12 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """Resolve vulnerabilities query.
 
         Args:
-            self (models.Scan): The scan object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-            detail_titles (list[str] | None, optional): List of detail titles. Defaults to None.
-            vuln_ids (list[int] | None, optional): List of vulnerability ids. Defaults to None.
-            page (int | None, optional): Page number. Defaults to None.
-            number_elements (int, optional): Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
+            self: The scan object.
+            info: GraphQL resolve info.
+            detail_titles: List of detail titles. Defaults to None.
+            vuln_ids: List of vulnerability ids. Defaults to None.
+            page: Page number. Defaults to None.
+            number_elements: Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
 
         Returns:
             OxoVulnerabilitiesType: List of vulnerabilities.
@@ -413,9 +440,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """Resolve knowledge base vulnerabilities query.
 
         Args:
-            self (models.Scan): The scan object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-            detail_title (str | None, optional): The detail title. Defaults to None.
+            self: The scan object.
+            info: GraphQL resolve info.
+            detail_title: The detail title. Defaults to None.
 
         Returns:
             list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
@@ -452,8 +479,8 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """Build knowledge base vulnerabilities.
 
         Args:
-            scan (models.Scan): The scan object.
-            detail_title (str | None, optional): The detail title. Defaults to None.
+            scan: The scan object.
+            detail_title: The detail title. Defaults to None.
 
         Returns:
             list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
