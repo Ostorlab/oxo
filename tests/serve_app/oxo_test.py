@@ -1700,10 +1700,22 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
             runScan(
                 scan: $scan
             ) {
-                scan {
+        scan {
+            id
+            title
+            progress
+            assets {
+                ... on OxoNetworkAssetType {
                     id
-                    title
+                    type
+                    networks
+                    scans {
+                        id
+                        title
+                    }
                 }
+            }
+        }
             }
         }
     """
@@ -1720,9 +1732,14 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     )
 
     assert response.status_code == 200, response.get_json()
-    response_json = response.get_json()
-    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
-    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == network_asset.id
+    assert res_scan["assets"][0]["type"] == "network"
+    assert res_scan["assets"][0]["networks"] == ["8.8.8.8", "8.8.4.4"]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Network Asset"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
@@ -1765,6 +1782,18 @@ def testRunScanMutation_whenUrl_shouldRunScan(
                 scan {
                     id
                     title
+                    progress
+                    assets {
+                        ... on OxoUrlAssetType {
+                            id
+                            type
+                            links
+                            scans {
+                                id
+                                title
+                            }
+                        }
+                    }                    
                 }
             }
         }
@@ -1782,9 +1811,14 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     )
 
     assert response.status_code == 200, response.get_json()
-    response_json = response.get_json()
-    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
-    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == url_asset.id
+    assert res_scan["assets"][0]["type"] == "urls"
+    assert res_scan["assets"][0]["links"] == ['{"url": "https://google.com", "method": "GET"}', '{"url": "https://tesla.com","method": "GET"}']
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Url Asset"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
@@ -1829,6 +1863,19 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
                 scan {
                     id
                     title
+                    progress
+                    assets {
+                        ... on OxoAndroidFileAssetType {
+                            id
+                            type
+                            path
+                            packageName
+                            scans {
+                                id
+                                title
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1846,9 +1893,14 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     )
 
     assert response.status_code == 200, response.get_json()
-    response_json = response.get_json()
-    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
-    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == android_file_asset.id
+    assert res_scan["assets"][0]["type"] == "android_file"
+    assert "test.apk" in res_scan["assets"][0]["path"]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android File"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/trufflehog"
@@ -1890,6 +1942,19 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
                 scan {
                     id
                     title
+                    progress
+                    assets {
+                        ... on OxoIOSFileAssetType {
+                            id
+                            type
+                            path
+                            bundleId
+                            scans {
+                                id
+                                title
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1907,9 +1972,14 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     )
 
     assert response.status_code == 200, response.get_json()
-    response_json = response.get_json()
-    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
-    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == ios_file_asset.id
+    assert res_scan["assets"][0]["type"] == "ios_file"
+    assert "test.ipa" in res_scan["assets"][0]["path"]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios File"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/trufflehog"
@@ -1951,6 +2021,19 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
                 scan {
                     id
                     title
+                    progress
+                    assets {
+                        ... on OxoAndroidStoreAssetType {
+                            id
+                            type
+                            packageName
+                            applicationName
+                            scans {
+                                id
+                                title
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1968,9 +2051,14 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     )
 
     assert response.status_code == 200, response.get_json()
-    response_json = response.get_json()
-    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
-    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == android_store.id
+    assert res_scan["assets"][0]["type"] == "android_store"
+    assert res_scan["assets"][0]["packageName"] == "com.example.android"
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android Store"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"
@@ -2012,6 +2100,19 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
                 scan {
                     id
                     title
+                    progress
+                    assets {
+                        ... on OxoIOSStoreAssetType {
+                            id
+                            type
+                            bundleId
+                            applicationName
+                            scans {
+                                id
+                                title
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -2029,9 +2130,14 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     )
 
     assert response.status_code == 200, response.get_json()
-    response_json = response.get_json()
-    assert int(response_json["data"]["runScan"]["scan"]["id"]) == scan.id
-    assert response_json["data"]["runScan"]["scan"]["title"] == scan.title
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == ios_store.id
+    assert res_scan["assets"][0]["type"] == "ios_store"
+    assert res_scan["assets"][0]["bundleId"] == "com.example.ios"
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios Store"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"

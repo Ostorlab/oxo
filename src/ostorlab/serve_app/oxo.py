@@ -675,17 +675,30 @@ class RunScanMutation(graphene.Mutation):
         if can_run_scan is True:
             RunScanMutation._install_agents(agent_group, runtime_instance)
             try:
-                scan = runtime_instance.scan(
+                created_scan = runtime_instance.scan(
                     title=scan.title,
                     agent_group_definition=agent_group,
                     assets=scan_assets,
                 )
+
+                with models.Database() as session:
+                    created_scan.agent_group_id = scan.agent_group_id
+                    assets_db = session.query(models.Asset).filter(
+                        models.Asset.id.in_(scan.asset_ids)
+                    )
+
+                    for asset in assets_db:
+                        asset.scan_id = created_scan.id
+
+                    session.commit()
+
+
             except exceptions.OstorlabError as e:
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"
                 )
 
-            return RunScanMutation(scan=scan)
+            return RunScanMutation(scan=created_scan)
 
 
 class Mutations(graphene.ObjectType):
