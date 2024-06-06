@@ -46,4 +46,4 @@ def file_cli(
             assets=assets,
         )
     except exceptions.OstorlabError as e:
-        console.error(f"Error running scan: {e}")
+        console.error(f"An error was encountered while running the scan: {e}")

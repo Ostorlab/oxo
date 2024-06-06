@@ -188,7 +188,7 @@ def start_scan(
                 title=None,
             )
         except exceptions.OstorlabError as e:
-            logger.error(f"Error running scan: {e}")
+            logger.error(f"An error was encountered while running the scan: {e}")
 
         return runtime_instance.name
     else:

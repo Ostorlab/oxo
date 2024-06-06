@@ -53,7 +53,7 @@ def ip_cli(ctx: click.core.Context, ips: List[str]) -> None:
                 assets=assets,
             )
         except exceptions.OstorlabError as e:
-            console.error(f"Error running scan: {e}")
+            console.error(f"An error was encountered while running the scan: {e}")
 
     except ValueError as e:
         console.error(f"{e}")
