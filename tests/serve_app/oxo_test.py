@@ -73,9 +73,17 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
                 scans {
                     id
                     title
-                    asset
                     progress
                     createdTime
+                    assets {
+                            ... on OxoIOSFileAssetType {
+                                path
+                            }
+                            
+                            ... on OxoIOSStoreAssetType {
+                                bundleId
+                            }
+                        }
                 }
             }
         }
@@ -90,12 +98,12 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
     scan2 = response.get_json()["data"]["scans"]["scans"][0]
     assert scan1["id"] == "1"
     assert scan1["title"] == scans[0].title
-    assert scan1["asset"] == "IOS file: /path/to/file"
+    assert scan1["assets"][0]["path"] == "/path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
-    assert scan2["asset"] == "Android store: com.example.app"
+    assert scan2["assets"][0]["bundleId"] == "com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
 
@@ -114,7 +122,15 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
                 scans {
                     id
                     title
-                    asset
+                    assets {
+                            ... on OxoIOSFileAssetType {
+                                path
+                            }
+                            
+                            ... on OxoIOSStoreAssetType {
+                                bundleId
+                            }
+                        }
                     progress
                     createdTime
                 }
@@ -141,12 +157,12 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
     scan2 = response.get_json()["data"]["scans"]["scans"][1]
     assert scan1["id"] == "1"
     assert scan1["title"] == scans[0].title
-    assert scan1["asset"] == "IOS file: /path/to/file"
+    assert scan1["assets"][0]["path"] == "/path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
-    assert scan2["asset"] == "Android store: com.example.app"
+    assert scan2["assets"][0]["bundleId"] == "com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
 
@@ -165,7 +181,15 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
                 scans {
                     id
                     title
-                    asset
+                    assets {
+                            ... on OxoIOSFileAssetType {
+                                path
+                            }
+                            
+                            ... on OxoIOSStoreAssetType {
+                                bundleId
+                            }
+                        }
                     progress
                     createdTime
                 }
@@ -180,12 +204,12 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
     scan2 = response.get_json()["data"]["scans"]["scans"][0]
     assert scan1["id"] == "1"
     assert scan1["title"] == scans[0].title
-    assert scan1["asset"] == "IOS file: /path/to/file"
+    assert scan1["assets"][0]["path"] == "/path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
-    assert scan2["asset"] == "Android store: com.example.app"
+    assert scan2["assets"][0]["bundleId"] == "com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
 
@@ -206,7 +230,15 @@ def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
                 scans {
                     scans {
                         title
-                        asset
+                        assets {
+                            ... on OxoIOSFileAssetType {
+                                path
+                            }
+                            
+                            ... on OxoIOSStoreAssetType {
+                                bundleId
+                            }
+                        }
                         createdTime
                         vulnerabilities {
                             vulnerabilities {
@@ -234,6 +266,10 @@ def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
     ][0]
     assert vulnerability["technicalDetail"] == vulnerabilities[0].technical_detail
     assert vulnerability["detail"]["title"] == vulnerabilities[0].title
+    asset = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
+    assert asset["bundleId"] == "com.example.app"
+    asset = response.get_json()["data"]["scans"]["scans"][1]["assets"][0]
+    assert asset["path"] == "/path/to/file"
 
 
 def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilities(
@@ -252,7 +288,15 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
                 scans {
                     scans {
                         title
-                        asset
+                        assets {
+                            ... on OxoIOSFileAssetType {
+                                path
+                            }
+                            
+                            ... on OxoIOSStoreAssetType {
+                                bundleId
+                            }
+                        }
                         createdTime
                         kbVulnerabilities {
                             kb {
@@ -297,6 +341,10 @@ def testQueryMultipleKBVulnerabilities_always_shouldReturnMultipleKBVulnerabilit
         kb_vulnerability["references"][0]["url"]
         == "https://github.com/isocpp/CppCoreGuidelines/blob/036324/CppCoreGuidelines.md#r10-avoid-malloc-and-free"
     )
+    asset = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
+    assert asset["bundleId"] == "com.example.app"
+    asset = response.get_json()["data"]["scans"]["scans"][1]["assets"][0]
+    assert asset["path"] == "/path/to/file"
 
 
 def testQueryMultipleVulnerabilities_always_returnMaxRiskRating(
@@ -343,7 +391,13 @@ def testQueryScan_whenScanExists_returnScanInfo(
             scan (scanId: $scanId){
                 id
                 title
-                asset
+                assets {
+                ... on OxoAndroidFileAssetType {
+                        id
+                        packageName
+                        path
+                    }
+                }
                 createdTime
                 messageStatus
                 progress
@@ -390,6 +444,11 @@ def testQueryScan_whenScanExists_returnScanInfo(
     assert vulnerabilities[0]["riskRating"] == "LOW"
     assert vulnerabilities[0]["detail"]["title"] == "XSS"
     assert vulnerabilities[0]["detail"]["description"] == "Cross Site Scripting"
+
+    assets = scan_data["assets"]
+    assert len(assets) == 1
+    assert assets[0]["packageName"] == "com.example.app"
+    assert assets[0]["path"] == "/path/to/file"
 
 
 def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
@@ -1333,10 +1392,15 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
                 scans {
                     id
                     title
-                    asset
                     progress
                     createdTime
-                    asset
+                    assets {
+                        ... on OxoAndroidStoreAssetType {
+                            id
+                            packageName
+                            applicationName
+                        }
+                    }
                 }
             }
         }
@@ -1349,31 +1413,29 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
     assert response.status_code == 200, response.get_json()
     scan_data = response.get_json()["data"]["scans"]["scans"][0]
     assert scan_data["title"] == "iOS Scan"
-    assert scan_data["progress"] == "NOT_STARTED"
-    assert scan_data["asset"] == "Android store: a.b.c"
+    assert scan_data["assets"][0]["packageName"] == asset.package_name
+    assert scan_data["assets"][0]["applicationName"] == asset.application_name
 
 
-def testQueryScan_whenAssetIsNetwork_shouldReturnNetworkInformation(
-    authenticated_flask_client: testing.FlaskClient,
+def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
+    authenticated_flask_client: testing.FlaskClient, multiple_assets_scan: models.Scan
 ) -> None:
     """Ensure we can query the specific scan information from its asset."""
-    with models.Database() as session:
-        scan = models.Scan(
-            title="iOS Scan",
-            progress=models.ScanProgress.NOT_STARTED,
-        )
-        session.add(scan)
-        session.commit()
-        asset = models.Network(networks='["8.8.8.8", "8.8.4.4"]', scan_id=scan.id)
-        session.add(asset)
-        session.commit()
-
     query = """
         query Scans($scanIds: [Int!]) {
             scans(scanIds: $scanIds) {
                 scans {
                     id
-                    asset
+                    assets {
+                        ... on OxoNetworkAssetType {
+                            networks
+                        }
+                        
+                        ... on OxoAndroidFileAssetType {
+                            id
+                            path
+                        }
+                    }
                 }
             }
         }
@@ -1381,12 +1443,14 @@ def testQueryScan_whenAssetIsNetwork_shouldReturnNetworkInformation(
 
     response = authenticated_flask_client.post(
         "/graphql",
-        json={"query": query, "variables": {"scanIds": [scan.id]}},
+        json={"query": query, "variables": {"scanIds": [multiple_assets_scan.id]}},
     )
 
     assert response.status_code == 200, response.get_json()
-    scan_data = response.get_json()["data"]["scans"]["scans"][0]
-    assert scan_data["asset"] == 'Network: ["8.8.8.8", "8.8.4.4"]'
+    asset1 = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
+    asset2 = response.get_json()["data"]["scans"]["scans"][0]["assets"][1]
+    assert asset1["path"] == "/path/to/file"
+    assert asset2["networks"] == ["8.8.8.8", "8.8.4.4"]
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(

@@ -207,6 +207,14 @@ class OxoAndroidStoreAssetType(
         model = models.AndroidStore
         fields = ("id", "package_name", "application_name")
 
+    def resolve_package_name(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.AndroidStore).get(self.id).package_name
+
+    def resolve_application_name(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.AndroidStore).get(self.id).application_name
+
 
 class OxoAndroidStoreAssetInputType(graphene.InputObjectType):
     package_name = graphene.String()
@@ -217,6 +225,14 @@ class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansM
     class Meta:
         model = models.IosStore
         fields = ("id", "bundle_id", "application_name")
+
+    def resolve_bundle_id(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.IosStore).get(self.id).bundle_id
+
+    def resolve_application_name(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.IosStore).get(self.id).application_name
 
 
 class OxoIOSStoreAssetInputType(graphene.InputObjectType):
@@ -231,6 +247,14 @@ class OxoAndroidFileAssetType(
         model = models.AndroidFile
         fields = ("id", "package_name", "path")
 
+    def resolve_package_name(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.AndroidFile).get(self.id).package_name
+
+    def resolve_path(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.AndroidFile).get(self.id).path
+
 
 class OxoAndroidFileAssetInputType(graphene.InputObjectType):
     file = scalars.Upload()
@@ -241,6 +265,14 @@ class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
     class Meta:
         model = models.IosFile
         fields = ("id", "bundle_id", "path")
+
+    def resolve_bundle_id(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.IosFile).get(self.id).bundle_id
+
+    def resolve_path(self, info: graphql_base.ResolveInfo):
+        with models.Database() as session:
+            return session.query(models.IosFile).get(self.id).path
 
 
 class OxoIOSFileAssetInputType(graphene.InputObjectType):
@@ -256,10 +288,12 @@ class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin)
         fields = ("id",)
 
     def resolve_links(self, info):
-        try:
-            return json.loads(self.links)
-        except json.JSONDecodeError:
-            return []
+        with models.Database() as session:
+            links = session.query(models.Url).get(self.id).links
+            try:
+                return json.loads(links)
+            except json.JSONDecodeError:
+                return []
 
 
 class OxoUrlAssetInputType(graphene.InputObjectType):
@@ -274,10 +308,12 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
         fields = ("id",)
 
     def resolve_networks(self, info):
-        try:
-            return json.loads(self.networks)
-        except json.JSONDecodeError:
-            return []
+        with models.Database() as session:
+            networks = session.query(models.Network).get(self.id).networks
+            try:
+                return json.loads(networks)
+            except json.JSONDecodeError:
+                return []
 
 
 class OxoNetworkAssetInputType(graphene.InputObjectType):
@@ -315,7 +351,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     )
     message_status = graphene.String()
     progress = graphene.String()
-    asset = graphene.String()
+    assets = graphene.List(OxoAssetType)
 
     class Meta:
         """Meta class for the scan object type."""
@@ -326,7 +362,6 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             "id",
             "title",
             "created_time",
-            "asset",
         )
 
     def resolve_progress(self: models.Scan, info: graphql_base.ResolveInfo) -> str:
@@ -342,39 +377,22 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
         return self.progress.name
 
-    def resolve_asset(
-        self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> Optional[str]:
-        """Resolve asset.
+    def resolve_assets(
+        self,
+        info: graphql_base.ResolveInfo,
+    ):
+        """Resolve asset query.
 
         Args:
-            self: The scan object.
-            info: GraphQL resolve info.
+            self (models.Scan): The scan object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
 
         Returns:
-            Optional[str]: The assets of the scan.
+            List[OxoAssetType]: The asset of the scan.
         """
         with models.Database() as session:
             assets = session.query(models.Asset).filter_by(scan_id=self.id).all()
-            assets_list: List[str] = []
-            for asset in assets:
-                if asset.type == "android_store":
-                    assets_list.append(f"Android store: {asset.package_name}")
-                elif asset.type == "ios_store":
-                    assets_list.append(f"IOS store: {asset.bundle_id}")
-                elif asset.type == "android_file":
-                    assets_list.append(f"Android file: {asset.path}")
-                elif asset.type == "ios_file":
-                    assets_list.append(f"IOS file: {asset.path}")
-                elif asset.type == "url":
-                    assets_list.append(f"URL: {asset.links}")
-                elif asset.type == "network":
-                    assets_list.append(f"Network: {asset.networks}")
-
-            if len(assets_list) == 0:
-                return None
-
-            return ", ".join(assets_list)
+            return assets
 
     def resolve_vulnerabilities(
         self: models.Scan,

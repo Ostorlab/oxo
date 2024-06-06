@@ -645,8 +645,8 @@ def ios_scans(clean_db: None) -> None:
         )
         session.add(asset1)
         session.commit()
-        asset2 = models.AndroidStore(
-            package_name="com.example.app",
+        asset2 = models.IosStore(
+            bundle_id="com.example.app",
             application_name="Example App",
             scan_id=scan2.id,
         )
@@ -756,6 +756,13 @@ def android_scan(clean_db: None) -> None:
             created_time=datetime.datetime.now(),
         )
         session.add(scan)
+        session.commit()
+        asset = models.AndroidFile(
+            package_name="com.example.app",
+            path="/path/to/file",
+            scan_id=scan.id,
+        )
+        session.add(asset)
         session.commit()
         scan_status = models.ScanStatus(
             created_time=datetime.datetime.now(),
@@ -883,3 +890,30 @@ def agent_group() -> models.AgentGroup:
         session.add(agent_group)
         session.commit()
         return agent_group
+
+
+@pytest.fixture
+def multiple_assets_scan() -> models.Scan:
+    """Create dummy scan with multiple assets."""
+    with models.Database() as session:
+        scan = models.Scan(
+            title="Multiple Assets Scan",
+            asset="Multiple Assets",
+            progress=models.ScanProgress.DONE,
+            created_time=datetime.datetime.now(),
+        )
+        session.add(scan)
+        session.commit()
+        asset1 = models.AndroidFile(
+            package_name="com.example.app",
+            path="/path/to/file",
+            scan_id=scan.id,
+        )
+        asset2 = models.Network(
+            networks='["8.8.8.8", "8.8.4.4"]',
+            scan_id=scan.id,
+        )
+        session.add(asset1)
+        session.add(asset2)
+        session.commit()
+        return scan
