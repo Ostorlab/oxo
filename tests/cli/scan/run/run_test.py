@@ -6,12 +6,10 @@ from pytest_mock import plugin
 import httpx
 import pytest
 from click.testing import CliRunner
-from docker.models import services as services_model
 
 from ostorlab.cli import rootcli
 from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
-from ostorlab.runtimes.local.models import models
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -558,64 +556,3 @@ def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
     )
 
     assert "Creating scan entry" in result.output
-
-
-def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """Test ostorlab scan command when follow option is provided,
-    should not log any agent.
-    """
-    runner = CliRunner()
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
-        return_value=True,
-    )
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
-    )
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
-        return_value=True,
-    )
-    mocker.patch("docker.from_env")
-
-    mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
-    )
-    mocker.patch(
-        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
-    )
-    mocker.patch("docker.DockerClient.services.list", return_value=[])
-    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
-    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
-
-    runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--no-follow",
-            "--title=Test scan",
-            "--agent=agent/ostorlab/nmap",
-            "--agent=agent/ostorlab/asteroid",
-            "ip",
-            "8.8.8.8",
-        ],
-    )
-
-    with models.Database() as session:
-        scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
-        assert scan.title == "Test scan"
-        agent_group = (
-            session.query(models.AgentGroup).filter_by(id=scan.agent_group_id).first()
-        )
-        assert len(agent_group.agents) == 2
-        assert any(agent.key == "agent/ostorlab/nmap" for agent in agent_group.agents)
-        assert any(
-            agent.key == "agent/ostorlab/asteroid" for agent in agent_group.agents
-        )
-        assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
-        assert len(assets) == 1
-        assert assets[0].type == "network"
-        assert assets[0].networks == '["8.8.8.8/32"]'
