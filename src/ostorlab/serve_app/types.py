@@ -208,11 +208,11 @@ class OxoAndroidStoreAssetType(
         model = models.AndroidStore
         fields = ("id", "package_name", "application_name")
 
-    def resolve_package_name(self, info: graphql_base.ResolveInfo):
+    def resolve_package_name(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.AndroidStore).get(self.id).package_name
 
-    def resolve_application_name(self, info: graphql_base.ResolveInfo):
+    def resolve_application_name(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.AndroidStore).get(self.id).application_name
 
@@ -227,11 +227,11 @@ class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansM
         model = models.IosStore
         fields = ("id", "bundle_id", "application_name")
 
-    def resolve_bundle_id(self, info: graphql_base.ResolveInfo):
+    def resolve_bundle_id(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.IosStore).get(self.id).bundle_id
 
-    def resolve_application_name(self, info: graphql_base.ResolveInfo):
+    def resolve_application_name(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.IosStore).get(self.id).application_name
 
@@ -248,11 +248,11 @@ class OxoAndroidFileAssetType(
         model = models.AndroidFile
         fields = ("id", "package_name", "path")
 
-    def resolve_package_name(self, info: graphql_base.ResolveInfo):
+    def resolve_package_name(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.AndroidFile).get(self.id).package_name
 
-    def resolve_path(self, info: graphql_base.ResolveInfo):
+    def resolve_path(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.AndroidFile).get(self.id).path
 
@@ -267,11 +267,11 @@ class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
         model = models.IosFile
         fields = ("id", "bundle_id", "path")
 
-    def resolve_bundle_id(self, info: graphql_base.ResolveInfo):
+    def resolve_bundle_id(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.IosFile).get(self.id).bundle_id
 
-    def resolve_path(self, info: graphql_base.ResolveInfo):
+    def resolve_path(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
             return session.query(models.IosFile).get(self.id).path
 
@@ -288,7 +288,7 @@ class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin)
         model = models.Url
         fields = ("id",)
 
-    def resolve_links(self, info):
+    def resolve_links(self, info) -> List[str]:
         with models.Database() as session:
             links = session.query(models.Url).get(self.id).links
             try:
@@ -308,7 +308,7 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
         model = models.Network
         fields = ("id",)
 
-    def resolve_networks(self, info):
+    def resolve_networks(self, info) -> List[str]:
         with models.Database() as session:
             networks = session.query(models.Network).get(self.id).networks
             try:
