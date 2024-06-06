@@ -38,6 +38,16 @@ from ostorlab.runtimes.local.services import redis
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
+from ostorlab.assets import link
+from ostorlab.assets import domain_name
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
+from ostorlab.assets import ip
 
 NETWORK_PREFIX = "ostorlab_local_network"
 
@@ -192,7 +202,12 @@ class LocalRuntime(runtime.Runtime):
             else:
                 assets_str = f'{", ".join([str(asset) for asset in assets])}'
                 # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
-            self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
+            self._scan_db = self._create_scan_db(
+                asset=assets_str[:255],
+                title=title,
+                assets=assets,
+                agent_group_definition=agent_group_definition,
+            )
             console.info("Creating network")
             self._create_network()
             console.info("Starting services")
@@ -297,9 +312,88 @@ class LocalRuntime(runtime.Runtime):
             else:
                 console.info(f"Scan {scan_id} was not found.")
 
-    def _create_scan_db(self, title: str, asset: str):
+    def _create_scan_db(
+        self,
+        title: str,
+        asset: str,
+        assets: Optional[List[base_asset.Asset]],
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> models.Scan:
         """Persist the scan in the database"""
-        return models.Scan.create(title=title, asset=asset)
+        agent_group = self._create_agent_group_db(agent_group_definition)
+
+        scan = models.Scan.create(
+            title=title, asset=asset, agent_group_id=agent_group.id
+        )
+
+        self._create_assets_db(scan, assets)
+
+        return scan
+
+    def _create_assets_db(
+        self, scan: models.Scan, assets: Optional[List[base_asset.Asset]]
+    ) -> None:
+        """Persist the assets in the database."""
+        networks: List[str] = []
+        links = []
+        for asset in assets:
+            if (
+                isinstance(asset, ip.IP)
+                or isinstance(asset, ipv4.IPv4)
+                or isinstance(asset, ipv6.IPv6)
+            ):
+                networks.append(f"{asset.host}/{asset.mask}")
+            elif isinstance(asset, link.Link):
+                links.append(f'{{"url": "{asset.url}", "method": "{asset.method}"}}')
+            elif isinstance(asset, domain_name.DomainName):
+                links.append(asset.name)
+            elif isinstance(asset, ios_ipa.IOSIpa):
+                models.IosFile.create(path=asset.path, scan_id=scan.id)
+            elif isinstance(asset, ios_store.IOSStore):
+                models.IosStore.create(bundle_id=asset.bundle_id, scan_id=scan.id)
+            elif isinstance(asset, android_aab.AndroidAab) or isinstance(
+                asset, android_apk.AndroidApk
+            ):
+                models.AndroidFile.create(path=asset.path, scan_id=scan.id)
+            elif isinstance(asset, android_store.AndroidStore):
+                models.AndroidStore.create(
+                    package_name=asset.package_name, scan_id=scan.id
+                )
+
+        if len(networks) > 0:
+            models.Network.create(networks=networks, scan_id=scan.id)
+
+        if len(links) > 0:
+            models.Url.create(links=links, scan_id=scan.id)
+
+    def _create_agent_group_db(
+        self,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> models.AgentGroup:
+        """Persist the agent group in the database."""
+        agents = []
+        for agent in agent_group_definition.agents:
+            created_agent = models.Agent.create(key=agent.key)
+            for arg in agent.args:
+                models.AgentArgument.create(
+                    name=arg.name,
+                    type=arg.type,
+                    value=arg.value,
+                    description=arg.description,
+                    agent_id=created_agent.id,
+                )
+
+            agents.append(created_agent)
+
+        with models.Database() as session:
+            agent_group = models.AgentGroup(
+                name=agent_group_definition.name,
+                description=agent_group_definition.description,
+                agents=agents,
+            )
+            session.add(agent_group)
+            session.commit()
+            return agent_group
 
     def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
