@@ -38,18 +38,16 @@ from ostorlab.runtimes.local.services import redis
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
-from ostorlab.assets import (
-    ipv4,
-    ipv6,
-    link,
-    domain_name,
-    ios_ipa,
-    ios_store,
-    android_aab,
-    android_apk,
-    android_store,
-    ip,
-)
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
+from ostorlab.assets import link
+from ostorlab.assets import domain_name
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
+from ostorlab.assets import ip
 
 NETWORK_PREFIX = "ostorlab_local_network"
 
