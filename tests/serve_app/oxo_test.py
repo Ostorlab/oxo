@@ -1417,6 +1417,55 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
     assert scan_data["assets"][0]["applicationName"] == asset.application_name
 
 
+def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
+    authenticated_flask_client: testing.FlaskClient,
+) -> None:
+    """Ensure we can query the specific scan information from its asset."""
+    with models.Database() as session:
+        scan = models.Scan(
+            title="iOS Scan",
+            progress=models.ScanProgress.NOT_STARTED,
+        )
+        session.add(scan)
+        session.commit()
+        asset = models.AndroidStore(
+            package_name="a.b.c", application_name="fake_app", scan_id=scan.id
+        )
+        session.add(asset)
+        session.commit()
+
+    query = """
+        query Scans($scanIds: [Int!]) {
+            scans(scanIds: $scanIds) {
+                scans {
+                    id
+                    assets {
+                        ... on OxoAndroidStoreAssetType {
+                            id
+                            packageName
+                            applicationName
+                            scans {
+                                id
+                                title                                
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={"query": query, "variables": {"scanIds": [scan.id]}},
+    )
+
+    assert response.status_code == 200, response.get_json()
+    asset_data = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
+    assert asset_data["scans"][0]["id"] == str(scan.id)
+    assert asset_data["scans"][0]["title"] == "iOS Scan"
+
+
 def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     authenticated_flask_client: testing.FlaskClient, multiple_assets_scan: models.Scan
 ) -> None:

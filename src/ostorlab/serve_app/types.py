@@ -195,9 +195,10 @@ class AssetScansMixin:
 
     def resolve_scans(self, info):
         with models.Database() as session:
-            scans = session.query(models.Scan).filter(models.Scan.asset_id == self.id)
+            asset = session.query(models.Asset).get(self.id)
+            scan = session.query(models.Scan).get(asset.scan_id)
 
-        return scans
+        return [scan]
 
 
 class OxoAndroidStoreAssetType(
