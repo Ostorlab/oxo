@@ -322,33 +322,20 @@ class LocalRuntime(runtime.Runtime):
         agent_group_definition: definitions.AgentGroupDefinition,
     ) -> models.Scan:
         """Persist the scan in the database"""
-        agents = []
-        for agent in agent_group_definition.agents:
-            created_agent = models.Agent.create(key=agent.key)
-            for arg in agent.args:
-                models.AgentArgument.create(
-                    name=arg.name,
-                    type=arg.type,
-                    value=arg.value,
-                    description=arg.description,
-                    agent_id=agent.id,
-                )
-
-            agents.append(created_agent)
-
-        with models.Database() as session:
-            agent_group = models.AgentGroup(
-                name=agent_group_definition.name,
-                description=agent_group_definition.description,
-                agents=agents,
-            )
-            session.add(agent_group)
-            session.commit()
+        agent_group = self._create_agent_group_db(agent_group_definition)
 
         scan = models.Scan.create(
             title=title, asset=asset, agent_group_id=agent_group.id
         )
 
+        self._create_assets_db(scan, assets)
+
+        return scan
+
+    def _create_assets_db(
+        self, scan: models.Scan, assets: Optional[List[base_asset.Asset]]
+    ) -> None:
+        """Persist the assets in the database."""
         networks: List[str] = []
         links = []
         for asset in assets:
@@ -381,7 +368,34 @@ class LocalRuntime(runtime.Runtime):
         if len(links) > 0:
             models.Url.create(links=links, scan_id=scan.id)
 
-        return scan
+    def _create_agent_group_db(
+        self,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> models.AgentGroup:
+        """Persist the agent group in the database."""
+        agents = []
+        for agent in agent_group_definition.agents:
+            created_agent = models.Agent.create(key=agent.key)
+            for arg in agent.args:
+                models.AgentArgument.create(
+                    name=arg.name,
+                    type=arg.type,
+                    value=arg.value,
+                    description=arg.description,
+                    agent_id=created_agent.id,
+                )
+
+            agents.append(created_agent)
+
+        with models.Database() as session:
+            agent_group = models.AgentGroup(
+                name=agent_group_definition.name,
+                description=agent_group_definition.description,
+                agents=agents,
+            )
+            session.add(agent_group)
+            session.commit()
+            return agent_group
 
     def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
