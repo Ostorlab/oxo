@@ -7,7 +7,7 @@ import logging
 import pathlib
 import uuid
 import types
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -399,7 +399,7 @@ class AgentArgument(Base):
         name: str,
         type: str,
         description: Optional[str] = None,
-        value: Optional[bytes] = None,
+        value: Optional[Union[bytes, int, float, str, bool]] = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
@@ -412,17 +412,34 @@ class AgentArgument(Base):
         Returns:
             AgentArgument object.
         """
+        if isinstance(value, bytes):
+            serialized_value = value
+        else:
+            serialized_value = json.dumps(value).encode("utf-8")
+
         agent_argument = AgentArgument(
             agent_id=agent_id,
             name=name,
             type=type,
             description=description,
-            value=value,
+            value=serialized_value,
         )
         with Database() as session:
             session.add(agent_argument)
             session.commit()
             return agent_argument
+
+    def get_value(self) -> Any:
+        """Deserialize the value from the database.
+
+        Returns:
+            The deserialized value.
+        """
+        try:
+            value = json.loads(self.value.decode("utf-8"))
+        except json.JSONDecodeError:
+            value = self.value
+        return value
 
 
 class AgentGroup(Base):

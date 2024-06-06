@@ -708,13 +708,16 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     agent1_args = agent_group1_agents[0]["args"]["args"]
     agent2_args = agent_group1_agents[1]["args"]["args"]
     assert len(agent1_args) == 1
-    assert len(agent2_args) == 1
+    assert len(agent2_args) == 2
     assert agent1_args[0]["name"] == "arg1"
-    assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == b"42"
+    assert agent1_args[0]["type"] == "boolean"
+    assert json.loads(agent1_args[0]["value"]) == False
     assert agent2_args[0]["name"] == "arg2"
-    assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == b"hello"
+    assert agent2_args[0]["type"] == "number"
+    assert json.loads(agent2_args[0]["value"]) == 19
+    assert agent2_args[1]["name"] == "arg3"
+    assert agent2_args[1]["type"] == "string"
+    assert agent2_args[1]["value"] == "Hello"
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(

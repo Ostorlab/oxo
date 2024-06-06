@@ -3,7 +3,7 @@
 import collections
 import enum
 import json
-from typing import Optional, List
+from typing import Optional, List, Any
 
 import graphene
 import graphene_sqlalchemy
@@ -596,11 +596,11 @@ class OxoScansType(graphene.ObjectType):
 
 class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """Graphene object type for a list of agent arguments."""
-
-    value = common.Bytes(required=False)
+    value = common.Bytes()
 
     class Meta:
         """Meta class for the agent arguments object type."""
+
 
         model = models.AgentArgument
         only_fields = (
@@ -612,7 +612,7 @@ class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_value(
         self: models.AgentArgument, info: graphql_base.ResolveInfo
-    ) -> bytes:
+    ) -> Any:
         """Resolve agent argument value query.
 
         Args:
@@ -622,7 +622,7 @@ class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             common.Bytes: The value of the agent argument.
         """
-        return self.value
+        return self.get_value()
 
 
 class AgentArgumentsType(graphene.ObjectType):

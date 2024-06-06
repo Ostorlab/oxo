@@ -842,15 +842,15 @@ def agent_groups(clean_db: None) -> List[models.AgentGroup]:
         session.add(agent2)
         session.commit()
 
-        arg1 = models.AgentArgument(
-            agent_id=agent1.id, name="arg1", type="number", value=b"42"
+        models.AgentArgument.create(
+            agent_id=agent1.id, name="arg1", type="boolean", value=False
         )
-        arg2 = models.AgentArgument(
-            agent_id=agent2.id, name="arg2", type="string", value=b"hello"
+        models.AgentArgument.create(
+            agent_id=agent2.id, name="arg2", type="number", value=19
         )
-        session.add(arg1)
-        session.add(arg2)
-        session.commit()
+        models.AgentArgument.create(
+            agent_id=agent2.id, name="arg3", type="string", value=b"Hello"
+        )
 
         agent_group1 = models.AgentGroup(
             name="Agent Group 1",

@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 from docker.models import services as services_model
 
+from ostorlab.agent import definitions
 from ostorlab.cli import rootcli
 from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
@@ -589,16 +590,38 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
     mocker.patch("docker.DockerClient.services.list", return_value=[])
     mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
     mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_definition",
+        return_value=definitions.AgentDefinition(
+            name="nmap",
+            in_selectors=[
+                "v3.asset.ip.v4",
+                "v3.asset.ip.v6",
+                "v3.asset.domain_name",
+                "v3.asset.link",
+            ],
+            out_selectors=["v3.asset.ip.v4.port.service"],
+            args=[
+                {
+                    "name": "fast_mode",
+                    "description": "Fast mode scans fewer ports than the default mode.",
+                    "type": "boolean",
+                    "value": True,
+                }
+            ],
+        ),
+    )
 
     runner.invoke(
         rootcli.rootcli,
         [
             "scan",
             "run",
-            "--no-follow",
+            "--install",
             "--title=Test scan",
+            "--no-follow",
             "--agent=agent/ostorlab/nmap",
-            "--agent=agent/ostorlab/asteroid",
+            "--arg=fast_mode:false",
             "ip",
             "8.8.8.8",
         ],
@@ -610,12 +633,19 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
         agent_group = (
             session.query(models.AgentGroup).filter_by(id=scan.agent_group_id).first()
         )
-        assert len(agent_group.agents) == 2
+        assert len(agent_group.agents) == 1
         assert any(agent.key == "agent/ostorlab/nmap" for agent in agent_group.agents)
-        assert any(
-            agent.key == "agent/ostorlab/asteroid" for agent in agent_group.agents
-        )
         assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
         assert len(assets) == 1
         assert assets[0].type == "network"
         assert assets[0].networks == '["8.8.8.8/32"]'
+        agent_nmap = agent_group.agents[0]
+        arg = (
+            session.query(models.AgentArgument)
+            .filter_by(agent_id=agent_nmap.id)
+            .first()
+        )
+        assert arg.name == "fast_mode"
+        assert arg.get_value() is False
+        assert arg.type == "boolean"
+
