@@ -692,7 +692,6 @@ class RunScanMutation(graphene.Mutation):
 
                     session.commit()
 
-
             except exceptions.OstorlabError as e:
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"

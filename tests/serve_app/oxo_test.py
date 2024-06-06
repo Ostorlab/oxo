@@ -1908,7 +1908,10 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == url_asset.id
     assert res_scan["assets"][0]["type"] == "urls"
-    assert res_scan["assets"][0]["links"] == ['{"url": "https://google.com", "method": "GET"}', '{"url": "https://tesla.com","method": "GET"}']
+    assert res_scan["assets"][0]["links"] == [
+        '{"url": "https://google.com", "method": "GET"}',
+        '{"url": "https://tesla.com","method": "GET"}',
+    ]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Url Asset"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
