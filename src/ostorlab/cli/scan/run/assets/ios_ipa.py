@@ -11,6 +11,7 @@ import click
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.cli.scan.run import run
 from ostorlab.cli import console as cli_console
+from ostorlab import exceptions
 
 
 console = cli_console.Console()
@@ -45,8 +46,11 @@ def ios_ipa(
             assets.append(ios_ipa_asset.IOSIpa(content_url=u))
 
     logger.debug("scanning assets %s", [str(asset) for asset in assets])
-    runtime.scan(
-        title=ctx.obj["title"],
-        agent_group_definition=ctx.obj["agent_group_definition"],
-        assets=assets,
-    )
+    try:
+        runtime.scan(
+            title=ctx.obj["title"],
+            agent_group_definition=ctx.obj["agent_group_definition"],
+            assets=assets,
+        )
+    except exceptions.OstorlabError as e:
+        console.error(f"An error was encountered while running the scan: {e}")

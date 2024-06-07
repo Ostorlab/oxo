@@ -1,6 +1,5 @@
 """Tests for Models class."""
 
-import datetime
 import json
 
 from pytest_mock import plugin
@@ -398,19 +397,12 @@ def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
 ) -> None:
     """Ensure we correctly persist the scan and its asset & query the asset information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    asset = models.AndroidStore.create(
-        package_name="a.b.c", application_name="Dummy application"
-    )
+    scan = models.Scan.create(title="Scan 42", asset="a.b.c")
     with models.Database() as session:
-        scan = models.Scan(
-            title="Scan 42",
-            asset="a.b.c",
-            created_time=datetime.datetime.now(),
-            progress="NOT_STARTED",
-            asset_id=asset.id,
-            asset_instance=asset,
+        asset = models.AndroidStore(
+            package_name="a.b.c", application_name="Dummy application", scan_id=scan.id
         )
-        session.add(scan)
+        session.add(asset)
         session.commit()
 
     with models.Database() as session:
@@ -418,11 +410,11 @@ def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
         scan = session.query(models.Scan).all()[0]
         assert scan.title == "Scan 42"
         assert scan.progress.name == "NOT_STARTED"
-        asset_instance = scan.asset_instance
-        assert asset_instance.type == "android_store"
-        assert asset_instance.package_name == "a.b.c"
-        assert asset_instance.application_name == "Dummy application"
-        assert len(session.query(models.AndroidStore).all()[0].scans) == 1
+        scan_asset = (
+            session.query(models.AndroidStore).filter_by(scan_id=scan.id).first()
+        )
+        assert scan_asset.package_name == "a.b.c"
+        assert scan_asset.application_name == "Dummy application"
 
 
 def testAssetModels_whenMultipleAssets_shouldHaveUniqueIdsPerTable(
