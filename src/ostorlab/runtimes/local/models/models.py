@@ -586,9 +586,7 @@ class AndroidFile(Asset):
     }
 
     @staticmethod
-    def create(
-        package_name: str = "", path: str = "", scan_id: int = None
-    ) -> "AndroidFile":
+    def create(package_name: str = "", path: str = "") -> "AndroidFile":
         """Persist the android file information in the database.
 
         Args:
@@ -602,7 +600,6 @@ class AndroidFile(Asset):
             asset = AndroidFile(
                 package_name=package_name,
                 path=path,
-                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -622,9 +619,7 @@ class AndroidStore(Asset):
     }
 
     @staticmethod
-    def create(
-        package_name: str = "", application_name: str = "", scan_id: int = None
-    ) -> "AndroidStore":
+    def create(package_name: str = "", application_name: str = "") -> "AndroidStore":
         """Persist the android store information in the database.
 
         Args:
@@ -638,7 +633,6 @@ class AndroidStore(Asset):
             asset = AndroidStore(
                 package_name=package_name,
                 application_name=application_name,
-                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -658,7 +652,7 @@ class IosFile(Asset):
     }
 
     @staticmethod
-    def create(bundle_id: str = "", path: str = "", scan_id: int = None) -> "IosFile":
+    def create(bundle_id: str = "", path: str = "") -> "IosFile":
         """Persist the iOS file information in the database.
 
         Args:
@@ -672,7 +666,6 @@ class IosFile(Asset):
             asset = IosFile(
                 bundle_id=bundle_id,
                 path=path,
-                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -692,9 +685,7 @@ class IosStore(Asset):
     }
 
     @staticmethod
-    def create(
-        bundle_id: str = "", application_name: str = "", scan_id: int = None
-    ) -> "IosStore":
+    def create(bundle_id: str = "", application_name: str = "") -> "IosStore":
         """Persist the iOS store information in the database.
 
         Args:
@@ -708,7 +699,6 @@ class IosStore(Asset):
             asset = IosStore(
                 bundle_id=bundle_id,
                 application_name=application_name,
-                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -727,7 +717,7 @@ class Url(Asset):
     }
 
     @staticmethod
-    def create(links: List[str], scan_id: int = None) -> "Url":
+    def create(links: List[str]) -> "Url":
         """Persist the URL information in the database.
 
         Args:
@@ -739,7 +729,6 @@ class Url(Asset):
         with Database() as session:
             asset = Url(
                 links=json.dumps(links),
-                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -758,7 +747,7 @@ class Network(Asset):
     }
 
     @staticmethod
-    def create(networks: List[str], scan_id: int = None) -> "Network":
+    def create(networks: List[str]) -> "Network":
         """Persist the Network information in the database.
 
         Args:
@@ -770,7 +759,6 @@ class Network(Asset):
         with Database() as session:
             asset = Network(
                 networks=json.dumps(networks),
-                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
