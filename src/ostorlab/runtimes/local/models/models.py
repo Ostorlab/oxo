@@ -144,6 +144,7 @@ class Scan(Base):
     def create(
         asset: str,
         title: str = "",
+        agent_group_id: Optional[int] = None,
         progress: sqlalchemy.Enum(ScanProgress) = ScanProgress.NOT_STARTED,
     ) -> "Scan":
         """Persist the scan in the database.
@@ -160,7 +161,8 @@ class Scan(Base):
                 title=title,
                 asset=asset,
                 created_time=datetime.datetime.now(),
-                progress=progress.name,
+                progress=progress,
+                agent_group_id=agent_group_id,
             )
             session.add(scan)
             session.commit()

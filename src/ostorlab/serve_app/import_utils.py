@@ -66,7 +66,7 @@ def _import_vulnz(scan: models.Scan, archive: zipfile.ZipFile) -> None:
     for vulnerability in vulnerabilities:
         models.Vulnerability.create(
             technical_detail=vulnerability.get("technical_detail"),
-            risk_rating=vulnerability.get("custom_risk_rating").upper(),
+            risk_rating=vulnerability.get("risk_rating").upper(),
             title=vulnerability.get("detail").get("title"),
             short_description=vulnerability.get("detail").get("short_description"),
             description=vulnerability.get("detail").get("description"),

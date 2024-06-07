@@ -754,3 +754,9 @@ class AgentGroupCreateInputType(graphene.InputObjectType):
     name = graphene.String(required=True)
     description = graphene.String(required=True)
     agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
+
+
+class OxoAgentScanInputType(graphene.InputObjectType):
+    title = graphene.String(required=False)
+    asset_ids = graphene.List(graphene.Int, required=True)
+    agent_group_id = graphene.Int(required=True)
