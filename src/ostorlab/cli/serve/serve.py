@@ -1,7 +1,6 @@
 """Module for the ostorlab serve command."""
 
 import click
-import colorama
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
