@@ -1,6 +1,7 @@
 """Module for the ostorlab serve command."""
 
 import click
+import colorama
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
@@ -33,4 +34,7 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
             f"To authenticate, please use the following API key: {api_key.key}"
         )
     flask_app = app.create_app(graphiql=True)
+    print(
+        f"\n\t\t{colorama.Fore.GREEN}Serving on : {colorama.Style.RESET_ALL} http://{host}:{port}/oxo\n"
+    )
     flask_app.run(host=host, port=port)
