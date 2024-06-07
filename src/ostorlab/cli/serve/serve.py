@@ -35,6 +35,6 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
         )
     flask_app = app.create_app(graphiql=True)
     print(
-        f"\n\t\t{colorama.Fore.GREEN}Serving on : {colorama.Style.RESET_ALL} http://{host}:{port}/oxo\n"
+        f"\n\t\t{colorama.Fore.GREEN}Serving on : {colorama.Style.RESET_ALL} http://{host}:{port}/graphql\n"
     )
     flask_app.run(host=host, port=port)
