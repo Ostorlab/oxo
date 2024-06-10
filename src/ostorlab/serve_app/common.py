@@ -2,6 +2,8 @@
 
 import collections
 import inspect
+import io
+import zipfile
 from functools import cached_property
 from math import ceil
 import struct
@@ -208,3 +210,58 @@ class Paginator:
     def _get_page(self, *args, **kwargs) -> Page:
         """Return an instance of a single page."""
         return Page(*args, **kwargs)
+
+
+def is_apk(file_content: bytes) -> bool:
+    """Check if a file is an apk.
+
+    Args:
+        file_content: File to check if it's an apk or not.
+
+    Returns:
+        True if the file is a valid apk file, False otherwise.
+    """
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(file_content)) as o:
+            if "AndroidManifest.xml" in o.namelist():
+                return True
+            return False
+    except zipfile.BadZipFile:
+        return False
+
+
+def is_xapk(file_content: bytes) -> bool:
+    """Check if a file is a xapk bundle.
+
+    Args:
+        file_content: File to check if it's xapk application or not.
+
+    Returns:
+        True if the file is a valid xapk file, False otherwise.
+    """
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(file_content)) as o:
+            return all(file_name.endswith(".apk") for file_name in o.namelist())
+    except zipfile.BadZipFile:
+        return False
+
+
+def is_aab(file_content: bytes) -> bool:
+    """Check if file is an AAB file.
+
+    Args:
+        file_content: File to check if it's an aab or not.
+
+    Returns:
+        True if the file is a valid aab file, False otherwise.
+    """
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(file_content)) as o:
+            if "BundleConfig.pb" in o.namelist():
+                return True
+            return False
+    except zipfile.BadZipFile:
+        return False

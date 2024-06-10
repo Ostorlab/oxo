@@ -1,20 +1,37 @@
 """Oxo GraphQL queries and mutations."""
 
+import ipaddress
+import json
+import pathlib
 import uuid
 from typing import Optional, List
 
 import graphene
 import graphql
+import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
+from ostorlab import exceptions
+from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.utils import defintions as utils_definitions
+from ostorlab.runtimes.local import runtime
 from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
 from ostorlab.runtimes.local import runtime as local_runtime
-
+from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab.assets import android_aab as android_aab_asset
+from ostorlab.assets import ios_ipa as ios_ipa_asset
+from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ipv4 as ipv4_address_asset
+from ostorlab.assets import ipv6 as ipv6_address_asset
+from ostorlab.assets import link as link_asset
+from ostorlab.assets import asset as ostorlab_asset
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -456,6 +473,233 @@ class DeleteAgentGroupMutation(graphene.Mutation):
             return DeleteAgentGroupMutation(result=True)
 
 
+class RunScanMutation(graphene.Mutation):
+    class Arguments:
+        scan = types.OxoAgentScanInputType(required=True)
+
+    scan = graphene.Field(types.OxoScanType)
+
+    @staticmethod
+    def _prepare_agent_group(agent_group_id: int) -> definitions.AgentGroupDefinition:
+        """Prepare agent group.
+
+        Args:
+            agent_group_id: The agent group id.
+
+        Returns:
+            The agent group.
+        """
+        with models.Database() as session:
+            agent_group = (
+                session.query(models.AgentGroup).filter_by(id=agent_group_id).first()
+            )
+
+            if agent_group is None:
+                raise graphql.GraphQLError("Agent group not found.")
+
+            agent_group_instance = definitions.AgentGroupDefinition(
+                name=agent_group.name,
+                description=agent_group.description,
+                agents=[
+                    definitions.AgentSettings(
+                        key=agent.key.split(":")[0],
+                        version=agent.key.split(":")[1] if ":" in agent.key else None,
+                        args=[
+                            utils_definitions.Arg.build(
+                                name=arg.name,
+                                type=arg.type,
+                                value=arg.value,
+                                description=arg.description,
+                            )
+                            for arg in session.query(models.AgentArgument)
+                            .filter_by(agent_id=agent.id)
+                            .all()
+                        ],
+                    )
+                    for agent in agent_group.agents
+                ],
+            )
+            return agent_group_instance
+
+    @staticmethod
+    def _prepare_assets(asset_ids: List[int]) -> List[ostorlab_asset.Asset]:
+        """Prepare assets.
+
+        Args:
+            asset_ids: The asset ids.
+
+        Returns:
+            The assets.
+        """
+
+        with models.Database() as session:
+            assets = (
+                session.query(models.Asset).filter(models.Asset.id.in_(asset_ids)).all()
+            )
+
+            if assets is None or len(assets) == 0:
+                raise graphql.GraphQLError("Assets not found.")
+
+            scan_assets = []
+            for asset in assets:
+                if asset.type == "android_file":
+                    file_path = pathlib.Path(asset.path)
+                    if file_path.exists() is False:
+                        raise graphql.GraphQLError(f"File {asset.path} not found.")
+                    file_bytes = file_path.read_bytes()
+                    if (
+                        common.is_apk(file_bytes) is True
+                        or common.is_xapk(file_bytes) is True
+                    ):
+                        scan_assets.append(
+                            android_apk_asset.AndroidApk(
+                                content=file_bytes, path=asset.path
+                            )
+                        )
+                    elif common.is_aab(file_bytes) is True:
+                        scan_assets.append(
+                            android_aab_asset.AndroidAab(
+                                content=file_bytes, path=asset.path
+                            )
+                        )
+                    else:
+                        raise graphql.GraphQLError(
+                            f"Unsupported file type: {asset.path}"
+                        )
+                elif asset.type == "ios_file":
+                    file_path = pathlib.Path(asset.path)
+                    if file_path.exists() is False:
+                        raise graphql.GraphQLError(f"File {asset.path} not found.")
+
+                    scan_assets.append(
+                        ios_ipa_asset.IOSIpa(
+                            content=file_path.read_bytes(), path=asset.path
+                        )
+                    )
+                elif asset.type == "android_store":
+                    scan_assets.append(
+                        android_store_asset.AndroidStore(
+                            package_name=asset.package_name
+                        )
+                    )
+                elif asset.type == "ios_store":
+                    scan_assets.append(
+                        ios_store_asset.IOSStore(bundle_id=asset.bundle_id)
+                    )
+                elif asset.type == "network":
+                    ips = json.loads(asset.networks)
+                    for ip in ips:
+                        ip_network = ipaddress.ip_network(ip, strict=False)
+                        if ip_network.version == 4:
+                            scan_assets.append(
+                                ipv4_address_asset.IPv4(
+                                    host=ip_network.network_address.exploded,
+                                    mask=str(ip_network.prefixlen),
+                                )
+                            )
+                        elif ip_network.version == 6:
+                            scan_assets.append(
+                                ipv6_address_asset.IPv6(
+                                    host=ip_network.network_address.exploded,
+                                    mask=str(ip_network.prefixlen),
+                                )
+                            )
+                        else:
+                            raise graphql.GraphQLError(f"Invalid IP address {ip}")
+                elif asset.type == "urls":
+                    urls = json.loads(asset.links)
+                    for url in urls:
+                        url = json.loads(url)
+                        scan_assets.append(
+                            link_asset.Link(
+                                url=url.get("url"), method=url.get("method")
+                            )
+                        )
+                else:
+                    raise graphql.GraphQLError("Unsupported asset type.")
+
+            return scan_assets
+
+    @staticmethod
+    def _install_agents(
+        agent_group: definitions.AgentGroupDefinition,
+        runtime_instance: local_runtime.LocalRuntime,
+    ) -> None:
+        """Install agents.
+
+        Args:
+            agent_group: The agent group.
+            runtime_instance: The runtime instance.
+        """
+
+        try:
+            runtime_instance.install()
+            for ag in agent_group.agents:
+                try:
+                    install_agent.install(ag.key, ag.version)
+                except agent_fetcher.AgentDetailsNotFound:
+                    graphql.GraphQLError(f"Agent {ag.key} not found on the store.")
+        except httpx.HTTPError as e:
+            raise graphql.GraphQLError(f"Could not install the agents: {e}")
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        scan: types.OxoAgentScanInputType,
+    ) -> "RunScanMutation":
+        """Run scan mutation.
+
+        Args:
+            info: `graphql_base.ResolveInfo` instance.
+            scan: The scan information.
+
+        Raises:
+            graphql.GraphQLError in case of an error.
+
+        Returns:
+            The scan information.
+        """
+
+        agent_group = RunScanMutation._prepare_agent_group(scan.agent_group_id)
+        scan_assets = RunScanMutation._prepare_assets(scan.asset_ids)
+
+        runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
+        runtime_instance.follow = []
+
+        try:
+            can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
+        except exceptions.OstorlabError as e:
+            raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
+
+        if can_run_scan is True:
+            RunScanMutation._install_agents(agent_group, runtime_instance)
+            try:
+                created_scan = runtime_instance.scan(
+                    title=scan.title,
+                    agent_group_definition=agent_group,
+                    assets=scan_assets,
+                )
+
+                with models.Database() as session:
+                    created_scan.agent_group_id = scan.agent_group_id
+                    assets_db = session.query(models.Asset).filter(
+                        models.Asset.id.in_(scan.asset_ids)
+                    )
+
+                    for asset in assets_db:
+                        asset.scan_id = created_scan.id
+
+                    session.commit()
+
+            except exceptions.OstorlabError as e:
+                raise graphql.GraphQLError(
+                    f"Runtime encountered an error to run scan: {e}"
+                )
+
+            return RunScanMutation(scan=created_scan)
+
+
 class Mutations(graphene.ObjectType):
     delete_scan = DeleteScanMutation.Field(
         description="Delete a scan & all its information."
@@ -471,3 +715,4 @@ class Mutations(graphene.ObjectType):
     publish_agent_group = PublishAgentGroupMutation.Field(
         description="Create agent group"
     )
+    run_scan = RunScanMutation.Field(description="Run scan")
