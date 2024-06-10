@@ -139,13 +139,12 @@ class Scan(Base):
     agent_group_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id")
     )
-    asset_id = sqlalchemy.Column(sqlalchemy.ForeignKey("asset.id"))
-    asset_instance = orm.relationship("Asset", back_populates="scans")
 
     @staticmethod
     def create(
         asset: str,
         title: str = "",
+        agent_group_id: Optional[int] = None,
         progress: sqlalchemy.Enum(ScanProgress) = ScanProgress.NOT_STARTED,
     ) -> "Scan":
         """Persist the scan in the database.
@@ -162,7 +161,8 @@ class Scan(Base):
                 title=title,
                 asset=asset,
                 created_time=datetime.datetime.now(),
-                progress=progress.name,
+                progress=progress,
+                agent_group_id=agent_group_id,
             )
             session.add(scan)
             session.commit()
@@ -568,7 +568,9 @@ class Asset(Base):
         "polymorphic_identity": "asset",
         "polymorphic_on": type,
     }
-    scans = orm.relationship("Scan", back_populates="asset_instance")
+    scan_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("scan.id"), nullable=True
+    )
 
 
 class AndroidFile(Asset):
@@ -584,7 +586,7 @@ class AndroidFile(Asset):
     }
 
     @staticmethod
-    def create(package_name: str = "", path: str = ""):
+    def create(package_name: str = "", path: str = "") -> "AndroidFile":
         """Persist the android file information in the database.
 
         Args:
@@ -617,7 +619,7 @@ class AndroidStore(Asset):
     }
 
     @staticmethod
-    def create(package_name: str = "", application_name: str = ""):
+    def create(package_name: str = "", application_name: str = "") -> "AndroidStore":
         """Persist the android store information in the database.
 
         Args:
@@ -650,7 +652,7 @@ class IosFile(Asset):
     }
 
     @staticmethod
-    def create(bundle_id: str = "", path: str = ""):
+    def create(bundle_id: str = "", path: str = "") -> "IosFile":
         """Persist the iOS file information in the database.
 
         Args:
@@ -683,7 +685,7 @@ class IosStore(Asset):
     }
 
     @staticmethod
-    def create(bundle_id: str = "", application_name: str = ""):
+    def create(bundle_id: str = "", application_name: str = "") -> "IosStore":
         """Persist the iOS store information in the database.
 
         Args:
@@ -715,7 +717,7 @@ class Url(Asset):
     }
 
     @staticmethod
-    def create(links: List[str]):
+    def create(links: List[str]) -> "Url":
         """Persist the URL information in the database.
 
         Args:
@@ -745,7 +747,7 @@ class Network(Asset):
     }
 
     @staticmethod
-    def create(networks: List[str]):
+    def create(networks: List[str]) -> "Network":
         """Persist the Network information in the database.
 
         Args:

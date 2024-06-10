@@ -33,4 +33,5 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
             f"To authenticate, please use the following API key: {api_key.key}"
         )
     flask_app = app.create_app(graphiql=True)
+    console.success(f"Serving API on : http://{host}:{port}/graphql")
     flask_app.run(host=host, port=port)
