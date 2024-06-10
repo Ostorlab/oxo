@@ -37,8 +37,11 @@ def android_store(
             agent_group_definition=ctx.obj["agent_group_definition"],
             assets=assets,
         )
-        runtime.link_agent_group_scan(created_scan, ctx.obj["agent_group_definition"])
-        runtime.link_assets_scan(created_scan.id, assets)
+        if created_scan is not None:
+            runtime.link_agent_group_scan(
+                created_scan, ctx.obj["agent_group_definition"]
+            )
+            runtime.link_assets_scan(created_scan.id, assets)
 
     except exceptions.OstorlabError as e:
         console.error(f"An error was encountered while running the scan: {e}")
