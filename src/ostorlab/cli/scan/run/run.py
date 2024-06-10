@@ -180,6 +180,8 @@ def run(
                     agent_group_definition=ctx.obj["agent_group_definition"],
                     assets=asset_group.targets if asset_group is not None else None,
                 )
+                runtime_instance.link_agent_group_scan(created_scan, agent_group)
+                runtime_instance.link_assets_scan(created_scan.id, asset_group.targets)
 
                 if isinstance(runtime_instance, runtime_local.LocalRuntime) is True:
                     with models.Database() as session:

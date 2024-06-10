@@ -21,6 +21,7 @@ from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.lite_local import agent_runtime
+from ostorlab.runtimes.local.models import models
 from ostorlab.utils import volumes
 
 NETWORK_PREFIX = "ostorlab_lite_local_network"
@@ -391,5 +392,27 @@ class LiteLocalRuntime(runtime.Runtime):
         """Dump vulnerabilities to a file in a specific format.
         Returns:
         None
+        """
+        pass
+
+    def link_agent_group_scan(
+        self,
+        scan: models.Scan,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> None:
+        """Link the agent group to the scan in the database.
+
+        Args:
+            scan: The scan object.
+            agent_group_definition: The agent group definition.
+        """
+        pass
+
+    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+        """Link the assets to the scan in the database.
+
+        Args:
+            scan_id: The scan id.
+            assets: The list of assets.
         """
         pass

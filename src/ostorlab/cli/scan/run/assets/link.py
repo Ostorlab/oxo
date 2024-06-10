@@ -9,8 +9,6 @@ from ostorlab.assets import link as link_asset
 from ostorlab.cli.scan.run import run
 from ostorlab.cli import console as cli_console
 from ostorlab import exceptions
-from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local import runtime as runtime_local
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -37,20 +35,8 @@ def link(ctx: click.core.Context, url: List[str], method: List[str]) -> None:
             agent_group_definition=ctx.obj["agent_group_definition"],
             assets=assets,
         )
-
-        if isinstance(ctx.obj["runtime"], runtime_local.LocalRuntime) is True:
-            with models.Database() as session:
-                agent_group_db = models.AgentGroup.create_from_agent_group_def(
-                    ctx.obj["agent_group_definition"]
-                )
-                created_scan.agent_group_id = agent_group_db.id
-                session.add(created_scan)
-                session.commit()
-
-                if assets is not None:
-                    models.Asset.create_from_assets_def(
-                        scan_id=created_scan.id, assets=assets
-                    )
+        runtime.link_agent_group_scan(created_scan, ctx.obj["agent_group_definition"])
+        runtime.link_assets_scan(created_scan.id, assets)
 
     except exceptions.OstorlabError as e:
         console.error(f"An error was encountered while running the scan: {e}")
