@@ -14,7 +14,10 @@ from ostorlab.runtimes.local.models import models
 
 
 def testImportScanMutation_always_shouldImportScan(
-    authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes, mocker: plugin.MockerFixture, db_engine_path: str
+    authenticated_flask_client: testing.FlaskClient,
+    zip_file_bytes: bytes,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test importScan mutation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -580,9 +583,11 @@ def testScansQuery_withPagination_shouldReturnPageInfo(
 def testVulnerabilitiesQuery_withPagination_shouldReturnPageInfo(
     authenticated_flask_client: testing.FlaskClient,
     android_scan: models.Scan,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test the vulnerabilities query with pagination, should return the correct pageInfo."""
-
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         vulnerabilities = session.query(models.Vulnerability).all()
         assert vulnerabilities is not None
@@ -639,9 +644,13 @@ def testVulnerabilitiesQuery_withPagination_shouldReturnPageInfo(
 
 
 def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
-    authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient,
+    agent_groups: models.AgentGroup,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test query for multiple agent groups."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent_groups = (
             session.query(models.AgentGroup)
@@ -720,9 +729,13 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
-    authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient,
+    agent_groups: models.AgentGroup,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test query for a single agent group."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent_group = session.query(models.AgentGroup).filter_by(id=1).first()
         assert agent_group is not None
@@ -789,9 +802,13 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
 
 
 def testQueryAgentGroupsWithPagination_always_returnPageInfo(
-    authenticated_flask_client: testing.FlaskClient, agent_groups: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient,
+    agent_groups: models.AgentGroup,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test query for agent groups with pagination."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent_groups = session.query(models.AgentGroup).all()
         assert agent_groups is not None
@@ -1372,7 +1389,9 @@ def testCreateAsset_whenNoAsset_shouldReturnError(
 
 
 def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
-    authenticated_flask_client: testing.FlaskClient, mocker: plugin.MockerFixture, db_engine_path: str
+    authenticated_flask_client: testing.FlaskClient,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Ensure we can query the specific asset information (depending on the target type) from the scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -1421,7 +1440,9 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
 
 
 def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
-    authenticated_flask_client: testing.FlaskClient, mocker: plugin.MockerFixture, db_engine_path: str
+    authenticated_flask_client: testing.FlaskClient,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Ensure we can query the specific scan information from its asset."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -1510,6 +1531,7 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
     authenticated_flask_client: testing.FlaskClient,
     in_progress_web_scan: models.Scan,
     mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test stopScan mutation when scan is running should stop scan."""
     mocker.patch(
@@ -1534,7 +1556,7 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
     mocker.patch("docker.DockerClient.services.list", return_value=[])
     mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
     mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
-
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         nbr_scans_before = session.query(models.Scan).count()
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
@@ -1567,8 +1589,13 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
 
 def testStopScanMutation_whenNoScanFound_shouldReturnError(
     authenticated_flask_client: testing.FlaskClient,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+    clean_db: None,
 ) -> None:
     """Test stopScan mutation when scan doesn't exist should return error message."""
+    del clean_db
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
         mutation stopScan($scanId: Int!){
             stopScan(scanId: $scanId){
@@ -1588,10 +1615,13 @@ def testStopScanMutation_whenNoScanFound_shouldReturnError(
 
 
 def testQueryVulnerabilitiesOfKb_withPagination_shouldReturnPageInfo(
-    authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
+    authenticated_flask_client: testing.FlaskClient,
+    android_scan: models.Scan,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test the kb vulnerabilities query with pagination, should return the correct pageInfo."""
-
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         kb_vulnerabilities = (
             session.query(models.Vulnerability)
@@ -1656,9 +1686,11 @@ def testQueryVulnerabilitiesOfKb_withPagination_shouldReturnPageInfo(
 
 def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     authenticated_flask_client: testing.FlaskClient,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Ensure the publish agent group mutation creates an agent group."""
-
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """mutation publishAgentGroup($agentGroup: AgentGroupCreateInputType!) {
                       publishAgentGroup(agentGroup: $agentGroup) {
                         agentGroup {
@@ -1716,9 +1748,13 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
-    authenticated_flask_client: testing.FlaskClient, agent_group: models.AgentGroup
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group: models.AgentGroup,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Ensure the delete agent group mutation deletes the agent group."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         nbr_agent_groups_before_delete = session.query(models.AgentGroup).count()
 
@@ -1745,8 +1781,12 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
 
 def testDeleteAgentGroupMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
     authenticated_flask_client: testing.FlaskClient,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+    clean_db: None,
 ) -> None:
     """Ensure the delete agent group mutation returns an error message when the agent group does not exist."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
         mutation DeleteAgentGroup ($agentGroupId: Int!){
             deleteAgentGroup (agentGroupId: $agentGroupId) {

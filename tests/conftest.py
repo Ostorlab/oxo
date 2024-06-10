@@ -5,7 +5,7 @@ import io
 import pathlib
 import sys
 import time
-from typing import Any, List
+from typing import Any
 
 import docker
 import flask
@@ -624,7 +624,9 @@ def in_progress_web_scan(clean_db: None) -> models.Scan:
 
 
 @pytest.fixture
-def ios_scans(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
+def ios_scans(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Create a dummy ios scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
 
@@ -751,7 +753,9 @@ def clean_db(mocker: plugin.MockerFixture, db_engine_path: str) -> None:
 
 
 @pytest.fixture
-def android_scan(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
+def android_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Create dummy android scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -835,7 +839,9 @@ def android_scan(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: s
 
 
 @pytest.fixture
-def agent_groups(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
+def agent_groups(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Create dummy agent groups."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -886,7 +892,9 @@ def agent_groups(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: s
 
 
 @pytest.fixture
-def agent_group(mocker: plugin.MockerFixture, db_engine_path: str) -> models.AgentGroup:
+def agent_group(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AgentGroup:
     """Create dummy agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -901,7 +909,9 @@ def agent_group(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Age
 
 
 @pytest.fixture
-def multiple_assets_scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
+def multiple_assets_scan(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
     """Create dummy scan with multiple assets."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -929,8 +939,11 @@ def multiple_assets_scan(mocker: plugin.MockerFixture, db_engine_path: str) -> m
 
 
 @pytest.fixture
-def agent_group_nmap() -> models.AgentGroup:
+def agent_group_nmap(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AgentGroup:
     """Create dummy agent groups."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent1 = models.Agent(
             key="agent/ostorlab/nmap",
@@ -953,8 +966,11 @@ def agent_group_nmap() -> models.AgentGroup:
 
 
 @pytest.fixture
-def agent_group_trufflehog() -> models.AgentGroup:
+def agent_group_trufflehog(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AgentGroup:
     """Create dummy agent groups."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent1 = models.Agent(
             key="agent/ostorlab/trufflehog",
@@ -977,8 +993,11 @@ def agent_group_trufflehog() -> models.AgentGroup:
 
 
 @pytest.fixture
-def agent_group_inject_asset() -> models.AgentGroup:
+def agent_group_inject_asset(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AgentGroup:
     """Create dummy agent groups."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent1 = models.Agent(
             key="agent/ostorlab/inject_asset",
@@ -1001,15 +1020,17 @@ def agent_group_inject_asset() -> models.AgentGroup:
 
 
 @pytest.fixture
-def network_asset() -> models.Asset:
+def network_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Network:
     """Create a network asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.Network.create(networks=["8.8.8.8", "8.8.4.4"])
     return asset
 
 
 @pytest.fixture
-def scan() -> models.Scan:
+def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
     """Create dummy network scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="Scan 1",
@@ -1023,8 +1044,9 @@ def scan() -> models.Scan:
 
 
 @pytest.fixture
-def url_asset() -> models.Asset:
+def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Url:
     """Create a Url asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.Url.create(
         links=[
             '{"url": "https://google.com", "method": "GET"}',
@@ -1035,8 +1057,11 @@ def url_asset() -> models.Asset:
 
 
 @pytest.fixture
-def android_file_asset() -> models.Asset:
+def android_file_asset(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AndroidFile:
     """Create an AndroidFile asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.AndroidFile.create(
         package_name="com.example.android",
         path=str(pathlib.Path(__file__).parent / "files" / "test.apk"),
@@ -1045,8 +1070,9 @@ def android_file_asset() -> models.Asset:
 
 
 @pytest.fixture
-def ios_file_asset() -> models.Asset:
+def ios_file_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.IosFile:
     """Create an IosFile asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.IosFile.create(
         bundle_id="com.example.ios",
         path=str(pathlib.Path(__file__).parent / "files" / "test.ipa"),
@@ -1055,8 +1081,11 @@ def ios_file_asset() -> models.Asset:
 
 
 @pytest.fixture
-def android_store() -> models.Asset:
+def android_store(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AndroidStore:
     """Create an AndroidStore asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.AndroidStore.create(
         package_name="com.example.android", application_name="Example Android App"
     )
@@ -1064,8 +1093,9 @@ def android_store() -> models.Asset:
 
 
 @pytest.fixture
-def ios_store() -> models.Asset:
+def ios_store(mocker: plugin.MockerFixture, db_engine_path: str) -> models.IosStore:
     """Create an IosStore asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.IosStore.create(
         bundle_id="com.example.ios", application_name="Example iOS App"
     )
