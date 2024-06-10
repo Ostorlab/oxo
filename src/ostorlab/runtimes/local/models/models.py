@@ -518,7 +518,7 @@ class AgentGroup(Base):
             return agent_group
 
     @staticmethod
-    def create_from_agent_group_def(
+    def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
@@ -651,7 +651,7 @@ class Asset(Base):
     )
 
     @staticmethod
-    def create_from_assets_def(
+    def create_from_assets_definition(
         assets: Optional[List[base_asset.Asset]], scan_id: Optional[int] = None
     ) -> None:
         """Create the assets from the asset definition.

@@ -781,7 +781,7 @@ class LocalRuntime(runtime.Runtime):
             agent_group_definition: The agent group definition.
         """
         with models.Database() as session:
-            agent_group_db = models.AgentGroup.create_from_agent_group_def(
+            agent_group_db = models.AgentGroup.create_from_agent_group_definition(
                 agent_group_definition
             )
             scan.agent_group_id = agent_group_db.id
@@ -798,4 +798,4 @@ class LocalRuntime(runtime.Runtime):
             assets: The list of assets.
         """
         if assets is not None:
-            models.Asset.create_from_assets_def(scan_id=scan_id, assets=assets)
+            models.Asset.create_from_assets_definition(scan_id=scan_id, assets=assets)

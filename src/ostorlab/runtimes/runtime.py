@@ -97,6 +97,7 @@ class Runtime(abc.ABC):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def link_agent_group_scan(
         self,
         scan,
@@ -110,6 +111,7 @@ class Runtime(abc.ABC):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
         """Link the assets to the scan in the database.
 
