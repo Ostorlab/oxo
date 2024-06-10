@@ -188,10 +188,10 @@ def run(
                     session.add(created_scan)
                     session.commit()
 
-                if asset_group is not None:
-                    models.Asset.create_from_assets_def(
-                        created_scan, asset_group.targets
-                    )
+                    if asset_group is not None:
+                        models.Asset.create_from_assets_def(
+                            created_scan, asset_group.targets
+                        )
 
             except exceptions.OstorlabError as e:
                 console.error(f"An error was encountered while running the scan: {e}")

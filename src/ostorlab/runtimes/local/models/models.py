@@ -521,7 +521,11 @@ class AgentGroup(Base):
     def create_from_agent_group_def(
         agent_group_definition: definitions.AgentGroupDefinition,
     ) -> "AgentGroup":
-        """Persist the agent group in the database."""
+        """Create an agent group from an agent group definition.
+
+        Args:
+            agent_group_definition: Agent group definition.
+        """
         agents = []
         for agent in agent_group_definition.agents:
             created_agent = Agent.create(key=agent.key)
@@ -650,7 +654,12 @@ class Asset(Base):
     def create_from_assets_def(
         scan: Scan, assets: Optional[List[base_asset.Asset]]
     ) -> None:
-        """Persist the assets in the database."""
+        """Create the assets from the asset definition.
+
+        Args:
+            scan: The scan object.
+            assets: The list of assets to create.
+        """
         networks: List[str] = []
         links = []
         for asset in assets:

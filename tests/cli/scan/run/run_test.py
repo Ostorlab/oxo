@@ -566,9 +566,7 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
     run_scan_mock: None,
     db_engine_path: str,
 ) -> None:
-    """Test ostorlab scan command when follow option is provided,
-    should not log any agent.
-    """
+    """Ensure that the cli scan is linked to the agent group and asset."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     runner = CliRunner()
     mocker.patch(

@@ -1118,7 +1118,7 @@ def nmap_agent_def() -> agent_definitions.AgentDefinition:
 
 @pytest.fixture
 def run_scan_mock(mocker: plugin.MockerFixture) -> None:
-    """Mock the run_scan function."""
+    """Mock functions required to run a scan."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
