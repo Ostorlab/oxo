@@ -66,6 +66,8 @@ def android_apk(
                 session.commit()
 
                 if assets is not None:
-                    models.Asset.create_from_assets_def(created_scan, assets)
+                    models.Asset.create_from_assets_def(
+                        scan_id=created_scan.id, assets=assets
+                    )
     except exceptions.OstorlabError as e:
         console.error(f"An error was encountered while running the scan: {e}")

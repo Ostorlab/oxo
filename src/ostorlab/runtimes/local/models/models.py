@@ -652,7 +652,7 @@ class Asset(Base):
 
     @staticmethod
     def create_from_assets_def(
-        scan: Scan, assets: Optional[List[base_asset.Asset]]
+        assets: Optional[List[base_asset.Asset]], scan_id: Optional[int] = None
     ) -> None:
         """Create the assets from the asset definition.
 
@@ -661,7 +661,7 @@ class Asset(Base):
             assets: The list of assets to create.
         """
         networks: List[str] = []
-        links = []
+        links: List[str] = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
@@ -672,21 +672,21 @@ class Asset(Base):
             elif isinstance(asset, link.Link):
                 links.append(f'{{"url": "{asset.url}", "method": "{asset.method}"}}')
             elif isinstance(asset, ios_ipa.IOSIpa):
-                IosFile.create(path=asset.path, scan_id=scan.id)
+                IosFile.create(path=asset.path, scan_id=scan_id)
             elif isinstance(asset, ios_store.IOSStore):
-                IosStore.create(bundle_id=asset.bundle_id, scan_id=scan.id)
+                IosStore.create(bundle_id=asset.bundle_id, scan_id=scan_id)
             elif isinstance(asset, android_aab.AndroidAab) or isinstance(
                 asset, android_apk.AndroidApk
             ):
-                AndroidFile.create(path=asset.path, scan_id=scan.id)
+                AndroidFile.create(path=asset.path, scan_id=scan_id)
             elif isinstance(asset, android_store.AndroidStore):
-                AndroidStore.create(package_name=asset.package_name, scan_id=scan.id)
+                AndroidStore.create(package_name=asset.package_name, scan_id=scan_id)
 
         if len(networks) > 0:
-            Network.create(networks=networks, scan_id=scan.id)
+            Network.create(networks=networks, scan_id=scan_id)
 
         if len(links) > 0:
-            Url.create(links=links, scan_id=scan.id)
+            Url.create(links=links, scan_id=scan_id)
 
 
 class AndroidFile(Asset):
@@ -703,7 +703,7 @@ class AndroidFile(Asset):
 
     @staticmethod
     def create(
-        package_name: str = "", path: str = "", scan_id: int = None
+        package_name: str = "", path: str = "", scan_id: Optional[int] = None
     ) -> "AndroidFile":
         """Persist the android file information in the database.
 
@@ -739,7 +739,9 @@ class AndroidStore(Asset):
 
     @staticmethod
     def create(
-        package_name: str = "", application_name: str = "", scan_id: int = None
+        package_name: str = "",
+        application_name: str = "",
+        scan_id: Optional[int] = None,
     ) -> "AndroidStore":
         """Persist the android store information in the database.
 
@@ -774,7 +776,9 @@ class IosFile(Asset):
     }
 
     @staticmethod
-    def create(bundle_id: str = "", path: str = "", scan_id: int = None) -> "IosFile":
+    def create(
+        bundle_id: str = "", path: str = "", scan_id: Optional[int] = None
+    ) -> "IosFile":
         """Persist the iOS file information in the database.
 
         Args:
@@ -809,7 +813,7 @@ class IosStore(Asset):
 
     @staticmethod
     def create(
-        bundle_id: str = "", application_name: str = "", scan_id: int = None
+        bundle_id: str = "", application_name: str = "", scan_id: Optional[int] = None
     ) -> "IosStore":
         """Persist the iOS store information in the database.
 
@@ -843,7 +847,7 @@ class Url(Asset):
     }
 
     @staticmethod
-    def create(links: List[str], scan_id: int = None) -> "Url":
+    def create(links: List[str], scan_id: Optional[int] = None) -> "Url":
         """Persist the URL information in the database.
 
         Args:
@@ -874,7 +878,7 @@ class Network(Asset):
     }
 
     @staticmethod
-    def create(networks: List[str], scan_id: int = None) -> "Network":
+    def create(networks: List[str], scan_id: Optional[int] = None) -> "Network":
         """Persist the Network information in the database.
 
         Args:
