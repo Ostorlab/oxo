@@ -789,7 +789,7 @@ class LocalRuntime(runtime.Runtime):
             session.commit()
 
     def link_assets_scan(
-        self, scan_id: int, assets: Optional[List[base_asset.Asset]]
+        self, scan_id: int, assets: Optional[List[base_asset.Asset]] = None
     ) -> None:
         """Link the assets to the scan in the database.
 
