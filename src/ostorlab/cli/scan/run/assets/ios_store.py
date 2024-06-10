@@ -10,6 +10,7 @@ from ostorlab.cli import console as cli_console
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab import exceptions
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local import runtime as runtime_local
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -37,15 +38,16 @@ def ios_store(ctx: click.core.Context, bundle_id: Optional[Tuple[str]] = ()) -> 
             assets=assets,
         )
 
-        with models.Database() as session:
-            agent_group_db = models.AgentGroup.create_from_agent_group_def(
-                ctx.obj["agent_group_definition"]
-            )
-            created_scan.agent_group_id = agent_group_db.id
-            session.add(created_scan)
-            session.commit()
+        if isinstance(ctx.obj["runtime"], runtime_local.LocalRuntime) is True:
+            with models.Database() as session:
+                agent_group_db = models.AgentGroup.create_from_agent_group_def(
+                    ctx.obj["agent_group_definition"]
+                )
+                created_scan.agent_group_id = agent_group_db.id
+                session.add(created_scan)
+                session.commit()
 
-            if assets is not None:
-                models.Asset.create_from_assets_def(created_scan, assets)
+                if assets is not None:
+                    models.Asset.create_from_assets_def(created_scan, assets)
     except exceptions.OstorlabError as e:
         console.error(f"An error was encountered while running the scan: {e}")
