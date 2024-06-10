@@ -5,9 +5,10 @@ import enum
 import json
 import logging
 import pathlib
+import struct
 import uuid
 import types
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -22,7 +23,18 @@ from alembic.util import exc as alembic_exceptions
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
+from ostorlab.runtimes import definitions
 from ostorlab.utils import risk_rating as utils_rik_rating
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
+from ostorlab.assets import link
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
+from ostorlab.assets import ip
+from ostorlab.assets import asset as base_asset
 
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
 OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
@@ -399,7 +411,7 @@ class AgentArgument(Base):
         name: str,
         type: str,
         description: Optional[str] = None,
-        value: Optional[bytes] = None,
+        value: Optional[Union[bytes, int, float, str, bool, list, dict]] = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
@@ -412,17 +424,50 @@ class AgentArgument(Base):
         Returns:
             AgentArgument object.
         """
+
         agent_argument = AgentArgument(
             agent_id=agent_id,
             name=name,
             type=type,
             description=description,
-            value=value,
+            value=value
+            if isinstance(value, bytes) is True
+            else AgentArgument.to_bytes(type, value),
         )
         with Database() as session:
             session.add(agent_argument)
             session.commit()
             return agent_argument
+
+    @staticmethod
+    def to_bytes(
+        type: str, value: Optional[Union[int, float, str, bool, List, Dict]]
+    ) -> bytes:
+        """Convert the value to bytes."""
+        if type == "string":
+            return value.encode(encoding="utf-8")
+        elif type in ("boolean", "bool"):
+            return (1 if value is True else 0).to_bytes(1, byteorder="big")
+        elif type in ("number", "int", "float"):
+            return struct.pack("d", value)
+        elif type in ("array", "object"):
+            return json.dumps(value).encode(encoding="utf-8")
+        else:
+            raise NotImplementedError(f"Type {type} not supported")
+
+    @staticmethod
+    def from_bytes(type: str, value: bytes) -> Any:
+        """Get the value of the argument."""
+        if type == "string":
+            return value.decode(encoding="utf-8")
+        elif type in ("boolean", "bool"):
+            return bool(int.from_bytes(value, byteorder="big"))
+        elif type in ("number", "int", "float"):
+            return struct.unpack("d", value)[0]
+        elif type in ("array", "object"):
+            return json.loads(value.decode())
+        else:
+            return value
 
 
 class AgentGroup(Base):
@@ -468,6 +513,35 @@ class AgentGroup(Base):
                 )
 
         with Database() as session:
+            session.add(agent_group)
+            session.commit()
+            return agent_group
+
+    @staticmethod
+    def create_from_agent_group_def(
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> "AgentGroup":
+        """Persist the agent group in the database."""
+        agents = []
+        for agent in agent_group_definition.agents:
+            created_agent = Agent.create(key=agent.key)
+            for arg in agent.args:
+                AgentArgument.create(
+                    name=arg.name,
+                    type=arg.type,
+                    value=arg.value,
+                    description=arg.description,
+                    agent_id=created_agent.id,
+                )
+
+            agents.append(created_agent)
+
+        with Database() as session:
+            agent_group = AgentGroup(
+                name=agent_group_definition.name,
+                description=agent_group_definition.description,
+                agents=agents,
+            )
             session.add(agent_group)
             session.commit()
             return agent_group
@@ -572,6 +646,39 @@ class Asset(Base):
         sqlalchemy.Integer, sqlalchemy.ForeignKey("scan.id"), nullable=True
     )
 
+    @staticmethod
+    def create_from_assets_def(
+        scan: Scan, assets: Optional[List[base_asset.Asset]]
+    ) -> None:
+        """Persist the assets in the database."""
+        networks: List[str] = []
+        links = []
+        for asset in assets:
+            if (
+                isinstance(asset, ip.IP)
+                or isinstance(asset, ipv4.IPv4)
+                or isinstance(asset, ipv6.IPv6)
+            ):
+                networks.append(f"{asset.host}/{asset.mask}")
+            elif isinstance(asset, link.Link):
+                links.append(f'{{"url": "{asset.url}", "method": "{asset.method}"}}')
+            elif isinstance(asset, ios_ipa.IOSIpa):
+                IosFile.create(path=asset.path, scan_id=scan.id)
+            elif isinstance(asset, ios_store.IOSStore):
+                IosStore.create(bundle_id=asset.bundle_id, scan_id=scan.id)
+            elif isinstance(asset, android_aab.AndroidAab) or isinstance(
+                asset, android_apk.AndroidApk
+            ):
+                AndroidFile.create(path=asset.path, scan_id=scan.id)
+            elif isinstance(asset, android_store.AndroidStore):
+                AndroidStore.create(package_name=asset.package_name, scan_id=scan.id)
+
+        if len(networks) > 0:
+            Network.create(networks=networks, scan_id=scan.id)
+
+        if len(links) > 0:
+            Url.create(links=links, scan_id=scan.id)
+
 
 class AndroidFile(Asset):
     __tablename__ = "android_file"
@@ -586,7 +693,9 @@ class AndroidFile(Asset):
     }
 
     @staticmethod
-    def create(package_name: str = "", path: str = "") -> "AndroidFile":
+    def create(
+        package_name: str = "", path: str = "", scan_id: int = None
+    ) -> "AndroidFile":
         """Persist the android file information in the database.
 
         Args:
@@ -600,6 +709,7 @@ class AndroidFile(Asset):
             asset = AndroidFile(
                 package_name=package_name,
                 path=path,
+                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -619,7 +729,9 @@ class AndroidStore(Asset):
     }
 
     @staticmethod
-    def create(package_name: str = "", application_name: str = "") -> "AndroidStore":
+    def create(
+        package_name: str = "", application_name: str = "", scan_id: int = None
+    ) -> "AndroidStore":
         """Persist the android store information in the database.
 
         Args:
@@ -633,6 +745,7 @@ class AndroidStore(Asset):
             asset = AndroidStore(
                 package_name=package_name,
                 application_name=application_name,
+                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -652,7 +765,7 @@ class IosFile(Asset):
     }
 
     @staticmethod
-    def create(bundle_id: str = "", path: str = "") -> "IosFile":
+    def create(bundle_id: str = "", path: str = "", scan_id: int = None) -> "IosFile":
         """Persist the iOS file information in the database.
 
         Args:
@@ -666,6 +779,7 @@ class IosFile(Asset):
             asset = IosFile(
                 bundle_id=bundle_id,
                 path=path,
+                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -685,7 +799,9 @@ class IosStore(Asset):
     }
 
     @staticmethod
-    def create(bundle_id: str = "", application_name: str = "") -> "IosStore":
+    def create(
+        bundle_id: str = "", application_name: str = "", scan_id: int = None
+    ) -> "IosStore":
         """Persist the iOS store information in the database.
 
         Args:
@@ -699,6 +815,7 @@ class IosStore(Asset):
             asset = IosStore(
                 bundle_id=bundle_id,
                 application_name=application_name,
+                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -717,7 +834,7 @@ class Url(Asset):
     }
 
     @staticmethod
-    def create(links: List[str]) -> "Url":
+    def create(links: List[str], scan_id: int = None) -> "Url":
         """Persist the URL information in the database.
 
         Args:
@@ -729,6 +846,7 @@ class Url(Asset):
         with Database() as session:
             asset = Url(
                 links=json.dumps(links),
+                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()
@@ -747,7 +865,7 @@ class Network(Asset):
     }
 
     @staticmethod
-    def create(networks: List[str]) -> "Network":
+    def create(networks: List[str], scan_id: int = None) -> "Network":
         """Persist the Network information in the database.
 
         Args:
@@ -759,6 +877,7 @@ class Network(Asset):
         with Database() as session:
             asset = Network(
                 networks=json.dumps(networks),
+                scan_id=scan_id,
             )
             session.add(asset)
             session.commit()

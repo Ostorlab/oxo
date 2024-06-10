@@ -20,7 +20,9 @@ from ostorlab.cli import types
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.runtimes.local.models import models
 from ostorlab.utils import defintions as utils_definitions
+
 
 console = cli_console.Console()
 
@@ -172,11 +174,25 @@ def run(
             )
         if ctx.invoked_subcommand is None:
             try:
-                runtime_instance.scan(
+                created_scan = runtime_instance.scan(
                     title=ctx.obj["title"],
                     agent_group_definition=ctx.obj["agent_group_definition"],
                     assets=asset_group.targets if asset_group is not None else None,
                 )
+
+                with models.Database() as session:
+                    agent_group_db = models.AgentGroup.create_from_agent_group_def(
+                        agent_group
+                    )
+                    created_scan.agent_group_id = agent_group_db.id
+                    session.add(created_scan)
+                    session.commit()
+
+                if asset_group is not None:
+                    models.Asset.create_from_assets_def(
+                        created_scan, asset_group.targets
+                    )
+
             except exceptions.OstorlabError as e:
                 console.error(f"An error was encountered while running the scan: {e}")
     else:

@@ -12,6 +12,7 @@ from ostorlab.assets import ipv6
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 from ostorlab import exceptions
+from ostorlab.runtimes.local.models import models
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +48,23 @@ def ip_cli(ctx: click.core.Context, ips: List[str]) -> None:
 
         logger.debug("scanning assets %s", assets)
         try:
-            runtime.scan(
+            created_scan = runtime.scan(
                 title=ctx.obj["title"],
                 agent_group_definition=ctx.obj["agent_group_definition"],
                 assets=assets,
             )
+
+            with models.Database() as session:
+                agent_group_db = models.AgentGroup.create_from_agent_group_def(
+                    ctx.obj["agent_group_definition"]
+                )
+                created_scan.agent_group_id = agent_group_db.id
+                session.add(created_scan)
+                session.commit()
+
+                if assets is not None:
+                    models.Asset.create_from_assets_def(created_scan, assets)
+
         except exceptions.OstorlabError as e:
             console.error(f"An error was encountered while running the scan: {e}")
 
