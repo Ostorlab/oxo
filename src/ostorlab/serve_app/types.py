@@ -130,7 +130,7 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_risk_rating(
         self: models.Vulnerability, info: graphql_base.ResolveInfo
-    ) -> OxoRiskRatingEnum:
+    ) -> Optional[OxoRiskRatingEnum]:
         """Resolve risk rating of vulnerability"""
         try:
             return OxoRiskRatingEnum[self.risk_rating.name]
