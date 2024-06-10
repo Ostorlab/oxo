@@ -5,7 +5,7 @@ import io
 import pathlib
 import sys
 import time
-from typing import Any
+from typing import Any, List
 
 import docker
 import flask
@@ -841,7 +841,7 @@ def android_scan(
 @pytest.fixture
 def agent_groups(
     clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
+) -> List[models.AgentGroup]:
     """Create dummy agent groups."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
