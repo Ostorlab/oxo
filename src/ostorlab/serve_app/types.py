@@ -334,266 +334,6 @@ class OxoAssetType(graphene.Union):
         )
 
 
-class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """SQLAlchemy object type for a scan."""
-
-    vulnerabilities = graphene.Field(
-        OxoVulnerabilitiesType,
-        page=graphene.Int(required=False),
-        number_elements=graphene.Int(required=False),
-        detail_titles=graphene.List(graphene.String, required=False),
-        vuln_ids=graphene.List(graphene.Int, required=False),
-        description="List of vulnerabilities.",
-    )
-    kb_vulnerabilities = graphene.Field(
-        graphene.List(OxoAggregatedKnowledgeBaseVulnerabilityType),
-        detail_title=graphene.String(required=False),
-        description="List of aggregated knowledge base vulnerabilities.",
-    )
-    message_status = graphene.String()
-    progress = graphene.String()
-    assets = graphene.List(OxoAssetType)
-
-    class Meta:
-        """Meta class for the scan object type."""
-
-        model = models.Scan
-        description = "Scan object."
-        only_fields = (
-            "id",
-            "title",
-            "created_time",
-        )
-
-    def resolve_progress(self: models.Scan, info: graphql_base.ResolveInfo) -> str:
-        """Resolve progress query.
-
-        Args:
-            self (models.Scan): The scan object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-
-        Returns:
-            str: The progress of the scan.
-        """
-
-        return self.progress.name
-
-    def resolve_assets(
-        self,
-        info: graphql_base.ResolveInfo,
-    ):
-        """Resolve asset query.
-
-        Args:
-            self (models.Scan): The scan object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-
-        Returns:
-            List[OxoAssetType]: The asset of the scan.
-        """
-        with models.Database() as session:
-            assets = session.query(models.Asset).filter_by(scan_id=self.id).all()
-            return assets
-
-    def resolve_vulnerabilities(
-        self: models.Scan,
-        info: graphql_base.ResolveInfo,
-        detail_titles: Optional[List[str]] = None,
-        vuln_ids: Optional[List[int]] = None,
-        page: Optional[int] = None,
-        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-    ) -> OxoVulnerabilitiesType:
-        """Resolve vulnerabilities query.
-
-        Args:
-            self: The scan object.
-            info: GraphQL resolve info.
-            detail_titles: List of detail titles. Defaults to None.
-            vuln_ids: List of vulnerability ids. Defaults to None.
-            page: Page number. Defaults to None.
-            number_elements: Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
-
-        Returns:
-            OxoVulnerabilitiesType: List of vulnerabilities.
-        """
-        if number_elements <= 0:
-            return OxoVulnerabilitiesType(vulnerabilities=[])
-
-        with models.Database() as session:
-            vulnerabilities = session.query(models.Vulnerability).filter(
-                models.Vulnerability.scan_id == self.id
-            )
-
-            if vuln_ids is not None and len(vuln_ids) > 0:
-                vulnerabilities = vulnerabilities.filter(
-                    models.Vulnerability.id.in_(vuln_ids)
-                )
-
-            if detail_titles is not None and len(detail_titles) > 0:
-                vulnerabilities = vulnerabilities.filter(
-                    models.Vulnerability.title.in_(detail_titles)
-                )
-
-            vulnerabilities = vulnerabilities.order_by(models.Vulnerability.id)
-
-            if page is not None and number_elements > 0:
-                p = common.Paginator(vulnerabilities, number_elements)
-                page = p.get_page(page)
-                page_info = common.PageInfo(
-                    count=p.count,
-                    num_pages=p.num_pages,
-                    has_next=page.has_next(),
-                    has_previous=page.has_previous(),
-                )
-                return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
-            else:
-                return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
-
-    def resolve_kb_vulnerabilities(
-        self: models.Scan,
-        info: graphql_base.ResolveInfo,
-        detail_title: Optional[str] = None,
-        page: Optional[int] = None,
-        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-    ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
-        """Resolve knowledge base vulnerabilities query.
-
-        Args:
-            self: The scan object.
-            info: GraphQL resolve info.
-            detail_title: The detail title. Defaults to None.
-
-        Returns:
-            list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
-        """
-        aggregated_kb = OxoScanType._build_kb_vulnerabilities(self, detail_title)
-        return aggregated_kb
-
-    def resolve_message_status(
-        self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> str:
-        """Resolve message status query.
-
-        Args:
-            self (models.Scan): The scan object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-
-        Returns:
-            str: The message status of the scan.
-        """
-        with models.Database() as session:
-            scan_statuses = session.query(models.ScanStatus).filter(
-                models.ScanStatus.scan_id == self.id
-            )
-            message_statuses = [
-                s.value for s in scan_statuses if s.key == "message_status"
-            ]
-            if message_statuses is not None and len(message_statuses) > 0:
-                return message_statuses[-1]
-
-    @staticmethod
-    def _build_kb_vulnerabilities(
-        scan: models.Scan, detail_title: Optional[str] = None
-    ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
-        """Build knowledge base vulnerabilities.
-
-        Args:
-            scan: The scan object.
-            detail_title: The detail title. Defaults to None.
-
-        Returns:
-            list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
-        """
-        with models.Database() as session:
-            vulnerabilities = session.query(models.Vulnerability).filter(
-                models.Vulnerability.scan_id == scan.id
-            )
-            if detail_title is not None:
-                vulnerabilities = vulnerabilities.filter(
-                    models.Vulnerability.title == detail_title
-                )
-
-            kbs = vulnerabilities.group_by(
-                models.Vulnerability.title,
-                models.Vulnerability.short_description,
-                models.Vulnerability.recommendation,
-            ).all()
-
-            distinct_vulnz = vulnerabilities.distinct(
-                models.Vulnerability.risk_rating,
-                models.Vulnerability.cvss_v3_vector,
-            ).all()
-
-            kb_dict = collections.defaultdict(list)
-            cvss_dict = collections.defaultdict(list)
-
-            aggregated_kb = []
-            for vuln in distinct_vulnz:
-                kb_dict[vuln.title].append(vuln.risk_rating)
-                cvss_dict[vuln.title].append(vuln.cvss_v3_vector)
-
-            for kb in kbs:
-                kb_vulnerabilities = vulnerabilities.filter(
-                    models.Vulnerability.title == kb.title
-                )
-                highest_risk_rating = max(
-                    kb_dict[kb.title], key=lambda risk: RISK_RATINGS_ORDER[risk.name]
-                )
-                if cvss_dict is not None:
-                    cvss_v3_vectors = [
-                        v
-                        for v in cvss_dict[kb.title]
-                        if v is not None
-                        and common.compute_cvss_v3_base_score(v) is not None
-                    ]
-                if len(cvss_v3_vectors) > 0:
-                    highest_cvss_v3_vector = max(
-                        cvss_v3_vectors,
-                        key=lambda vector: common.compute_cvss_v3_base_score(vector),
-                    )
-                else:
-                    highest_cvss_v3_vector = kb.cvss_v3_vector or None
-                references = (
-                    session.query(models.Reference)
-                    .filter(
-                        models.Reference.vulnerability_id
-                        == kb_vulnerabilities.first().id
-                    )
-                    .distinct(models.Reference.title)
-                ).all()
-                aggregated_kb.append(
-                    OxoAggregatedKnowledgeBaseVulnerabilityType(
-                        highest_risk_rating=highest_risk_rating,
-                        highest_cvss_v3_vector=highest_cvss_v3_vector,
-                        highest_cvss_v3_base_score=common.compute_cvss_v3_base_score(
-                            highest_cvss_v3_vector
-                        ),
-                        kb=OxoKnowledgeBaseVulnerabilityType(
-                            title=kb.title,
-                            short_description=kb.short_description,
-                            description=kb.description,
-                            recommendation=kb.recommendation,
-                            references=[
-                                OxoReferenceType(title=ref.title, url=ref.url)
-                                for ref in references
-                            ],
-                        ),
-                        vulnerabilities=OxoVulnerabilitiesType(
-                            vulnerabilities=kb_vulnerabilities
-                        ),
-                    )
-                )
-
-            return aggregated_kb
-
-
-class OxoScansType(graphene.ObjectType):
-    """Graphene object type for a list of scans."""
-
-    scans = graphene.List(OxoScanType, required=True)
-    page_info = graphene.Field(common.PageInfo, required=False)
-
-
 class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """Graphene object type for a list of agent arguments."""
 
@@ -760,3 +500,272 @@ class OxoAgentScanInputType(graphene.InputObjectType):
     title = graphene.String(required=False)
     asset_ids = graphene.List(graphene.Int, required=True)
     agent_group_id = graphene.Int(required=True)
+
+
+class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for a scan."""
+
+    vulnerabilities = graphene.Field(
+        OxoVulnerabilitiesType,
+        page=graphene.Int(required=False),
+        number_elements=graphene.Int(required=False),
+        detail_titles=graphene.List(graphene.String, required=False),
+        vuln_ids=graphene.List(graphene.Int, required=False),
+        description="List of vulnerabilities.",
+    )
+    kb_vulnerabilities = graphene.Field(
+        graphene.List(OxoAggregatedKnowledgeBaseVulnerabilityType),
+        detail_title=graphene.String(required=False),
+        description="List of aggregated knowledge base vulnerabilities.",
+    )
+    message_status = graphene.String()
+    progress = graphene.String()
+    assets = graphene.List(OxoAssetType)
+    agent_group = graphene.Field(AgentGroupType)
+
+    class Meta:
+        """Meta class for the scan object type."""
+
+        model = models.Scan
+        description = "Scan object."
+        only_fields = (
+            "id",
+            "title",
+            "agent_group_id",
+            "created_time",
+        )
+
+    def resolve_progress(self: models.Scan, info: graphql_base.ResolveInfo) -> str:
+        """Resolve progress query.
+
+        Args:
+            self (models.Scan): The scan object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            str: The progress of the scan.
+        """
+
+        return self.progress.name
+
+    def resolve_assets(
+        self,
+        info: graphql_base.ResolveInfo,
+    ):
+        """Resolve asset query.
+
+        Args:
+            self (models.Scan): The scan object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            List[OxoAssetType]: The asset of the scan.
+        """
+        with models.Database() as session:
+            assets = session.query(models.Asset).filter_by(scan_id=self.id).all()
+            return assets
+
+    def resolve_vulnerabilities(
+        self: models.Scan,
+        info: graphql_base.ResolveInfo,
+        detail_titles: Optional[List[str]] = None,
+        vuln_ids: Optional[List[int]] = None,
+        page: Optional[int] = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
+    ) -> OxoVulnerabilitiesType:
+        """Resolve vulnerabilities query.
+
+        Args:
+            self: The scan object.
+            info: GraphQL resolve info.
+            detail_titles: List of detail titles. Defaults to None.
+            vuln_ids: List of vulnerability ids. Defaults to None.
+            page: Page number. Defaults to None.
+            number_elements: Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
+
+        Returns:
+            OxoVulnerabilitiesType: List of vulnerabilities.
+        """
+        if number_elements <= 0:
+            return OxoVulnerabilitiesType(vulnerabilities=[])
+
+        with models.Database() as session:
+            vulnerabilities = session.query(models.Vulnerability).filter(
+                models.Vulnerability.scan_id == self.id
+            )
+
+            if vuln_ids is not None and len(vuln_ids) > 0:
+                vulnerabilities = vulnerabilities.filter(
+                    models.Vulnerability.id.in_(vuln_ids)
+                )
+
+            if detail_titles is not None and len(detail_titles) > 0:
+                vulnerabilities = vulnerabilities.filter(
+                    models.Vulnerability.title.in_(detail_titles)
+                )
+
+            vulnerabilities = vulnerabilities.order_by(models.Vulnerability.id)
+
+            if page is not None and number_elements > 0:
+                p = common.Paginator(vulnerabilities, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
+            else:
+                return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
+
+    def resolve_kb_vulnerabilities(
+        self: models.Scan,
+        info: graphql_base.ResolveInfo,
+        detail_title: Optional[str] = None,
+        page: Optional[int] = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
+    ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
+        """Resolve knowledge base vulnerabilities query.
+
+        Args:
+            self: The scan object.
+            info: GraphQL resolve info.
+            detail_title: The detail title. Defaults to None.
+
+        Returns:
+            list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
+        """
+        aggregated_kb = OxoScanType._build_kb_vulnerabilities(self, detail_title)
+        return aggregated_kb
+
+    def resolve_message_status(
+        self: models.Scan, info: graphql_base.ResolveInfo
+    ) -> str:
+        """Resolve message status query.
+
+        Args:
+            self (models.Scan): The scan object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            str: The message status of the scan.
+        """
+        with models.Database() as session:
+            scan_statuses = session.query(models.ScanStatus).filter(
+                models.ScanStatus.scan_id == self.id
+            )
+            message_statuses = [
+                s.value for s in scan_statuses if s.key == "message_status"
+            ]
+            if message_statuses is not None and len(message_statuses) > 0:
+                return message_statuses[-1]
+
+    def resolve_agent_group(
+        self: models.Scan, info: graphql_base.ResolveInfo
+    ) -> Optional[AgentGroupType]:
+        with models.Database() as session:
+            if self.agent_group_id is not None:
+                return session.query(models.AgentGroup).get(self.agent_group_id)
+
+    @staticmethod
+    def _build_kb_vulnerabilities(
+        scan: models.Scan, detail_title: Optional[str] = None
+    ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
+        """Build knowledge base vulnerabilities.
+
+        Args:
+            scan: The scan object.
+            detail_title: The detail title. Defaults to None.
+
+        Returns:
+            list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
+        """
+        with models.Database() as session:
+            vulnerabilities = session.query(models.Vulnerability).filter(
+                models.Vulnerability.scan_id == scan.id
+            )
+            if detail_title is not None:
+                vulnerabilities = vulnerabilities.filter(
+                    models.Vulnerability.title == detail_title
+                )
+
+            kbs = vulnerabilities.group_by(
+                models.Vulnerability.title,
+                models.Vulnerability.short_description,
+                models.Vulnerability.recommendation,
+            ).all()
+
+            distinct_vulnz = vulnerabilities.distinct(
+                models.Vulnerability.risk_rating,
+                models.Vulnerability.cvss_v3_vector,
+            ).all()
+
+            kb_dict = collections.defaultdict(list)
+            cvss_dict = collections.defaultdict(list)
+
+            aggregated_kb = []
+            for vuln in distinct_vulnz:
+                kb_dict[vuln.title].append(vuln.risk_rating)
+                cvss_dict[vuln.title].append(vuln.cvss_v3_vector)
+
+            for kb in kbs:
+                kb_vulnerabilities = vulnerabilities.filter(
+                    models.Vulnerability.title == kb.title
+                )
+                highest_risk_rating = max(
+                    kb_dict[kb.title], key=lambda risk: RISK_RATINGS_ORDER[risk.name]
+                )
+                if cvss_dict is not None:
+                    cvss_v3_vectors = [
+                        v
+                        for v in cvss_dict[kb.title]
+                        if v is not None
+                        and common.compute_cvss_v3_base_score(v) is not None
+                    ]
+                if len(cvss_v3_vectors) > 0:
+                    highest_cvss_v3_vector = max(
+                        cvss_v3_vectors,
+                        key=lambda vector: common.compute_cvss_v3_base_score(vector),
+                    )
+                else:
+                    highest_cvss_v3_vector = kb.cvss_v3_vector or None
+                references = (
+                    session.query(models.Reference)
+                    .filter(
+                        models.Reference.vulnerability_id
+                        == kb_vulnerabilities.first().id
+                    )
+                    .distinct(models.Reference.title)
+                ).all()
+                aggregated_kb.append(
+                    OxoAggregatedKnowledgeBaseVulnerabilityType(
+                        highest_risk_rating=highest_risk_rating,
+                        highest_cvss_v3_vector=highest_cvss_v3_vector,
+                        highest_cvss_v3_base_score=common.compute_cvss_v3_base_score(
+                            highest_cvss_v3_vector
+                        ),
+                        kb=OxoKnowledgeBaseVulnerabilityType(
+                            title=kb.title,
+                            short_description=kb.short_description,
+                            description=kb.description,
+                            recommendation=kb.recommendation,
+                            references=[
+                                OxoReferenceType(title=ref.title, url=ref.url)
+                                for ref in references
+                            ],
+                        ),
+                        vulnerabilities=OxoVulnerabilitiesType(
+                            vulnerabilities=kb_vulnerabilities
+                        ),
+                    )
+                )
+
+            return aggregated_kb
+
+
+class OxoScansType(graphene.ObjectType):
+    """Graphene object type for a list of scans."""
+
+    scans = graphene.List(OxoScanType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)

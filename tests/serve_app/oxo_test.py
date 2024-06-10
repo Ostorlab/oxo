@@ -2346,3 +2346,33 @@ def testRunScanMutation_whenAssetDoesNotExist_returnErrorMessage(
 
     assert response.status_code == 200, response.get_json()
     assert response.get_json()["errors"][0]["message"] == "Assets not found."
+
+
+def testQueryScan_always_shouldReturnScanWithAgentGroup(
+    authenticated_flask_client: testing.FlaskClient, scan_with_agent_group: models.Scan
+) -> None:
+    """Test query for scan with agent group."""
+
+    query = """
+        query scan($scanId: Int) {
+  scan(scanId:$scanId) {
+    id
+    agentGroup{
+      id
+      name
+    }
+  }
+}
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={"query": query, "variables": {"scanId": scan_with_agent_group.id}},
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json()["data"]["scan"]["id"] == str(scan_with_agent_group.id)
+    assert response.get_json()["data"]["scan"]["agentGroup"]["id"] == str(
+        scan_with_agent_group.agent_group_id
+    )
+    assert response.get_json()["data"]["scan"]["agentGroup"]["name"] == "Agent Group 1"
