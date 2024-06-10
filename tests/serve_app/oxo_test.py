@@ -14,9 +14,11 @@ from ostorlab.runtimes.local.models import models
 
 
 def testImportScanMutation_always_shouldImportScan(
-    authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes
+    authenticated_flask_client: testing.FlaskClient, zip_file_bytes: bytes, mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
     """Test importScan mutation."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     with models.Database() as session:
         nbr_scans_before_import = session.query(models.Scan).count()
         query = """
@@ -1370,9 +1372,10 @@ def testCreateAsset_whenNoAsset_shouldReturnError(
 
 
 def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
-    authenticated_flask_client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient, mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
     """Ensure we can query the specific asset information (depending on the target type) from the scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="iOS Scan",
@@ -1418,9 +1421,10 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
 
 
 def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
-    authenticated_flask_client: testing.FlaskClient,
+    authenticated_flask_client: testing.FlaskClient, mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
     """Ensure we can query the specific scan information from its asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="iOS Scan",

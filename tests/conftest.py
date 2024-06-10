@@ -14,6 +14,7 @@ import redis
 from docker.models import networks as networks_model
 from flask import testing as flask_testing
 from werkzeug import test as werkzeug_test
+from pytest_mock import plugin
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
@@ -585,8 +586,9 @@ def zip_file_bytes() -> bytes:
 
 
 @pytest.fixture
-def web_scan(clean_db: None) -> None:
+def web_scan(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
     """Create a dummy web scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="Web Scan",
@@ -622,8 +624,10 @@ def in_progress_web_scan(clean_db: None) -> models.Scan:
 
 
 @pytest.fixture
-def ios_scans(clean_db: None) -> None:
+def ios_scans(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
     """Create a dummy ios scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     with models.Database() as session:
         scan1 = models.Scan(
             title="iOS Scan 1 ",
@@ -725,8 +729,9 @@ def authenticated_flask_client(flask_app: flask.Flask) -> flask_testing.FlaskCli
 
 
 @pytest.fixture
-def clean_db(request) -> None:
+def clean_db(mocker: plugin.MockerFixture, db_engine_path: str) -> None:
     """Clean the database."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         session.query(models.Vulnerability).delete()
         session.query(models.Scan).delete()
@@ -746,8 +751,9 @@ def clean_db(request) -> None:
 
 
 @pytest.fixture
-def android_scan(clean_db: None) -> None:
+def android_scan(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
     """Create dummy android scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="Android Scan 1 ",
@@ -829,8 +835,9 @@ def android_scan(clean_db: None) -> None:
 
 
 @pytest.fixture
-def agent_groups(clean_db: None) -> List[models.AgentGroup]:
+def agent_groups(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
     """Create dummy agent groups."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent1 = models.Agent(
             key="agent/ostorlab/agent1",
@@ -879,8 +886,9 @@ def agent_groups(clean_db: None) -> List[models.AgentGroup]:
 
 
 @pytest.fixture
-def agent_group() -> models.AgentGroup:
+def agent_group(mocker: plugin.MockerFixture, db_engine_path: str) -> models.AgentGroup:
     """Create dummy agent group."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         agent_group = models.AgentGroup(
             name="Agent Group 1",
@@ -893,8 +901,9 @@ def agent_group() -> models.AgentGroup:
 
 
 @pytest.fixture
-def multiple_assets_scan() -> models.Scan:
+def multiple_assets_scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
     """Create dummy scan with multiple assets."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="Multiple Assets Scan",
