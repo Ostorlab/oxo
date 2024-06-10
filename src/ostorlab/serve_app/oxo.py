@@ -683,6 +683,8 @@ class RunScanMutation(graphene.Mutation):
 
                 with models.Database() as session:
                     created_scan.agent_group_id = scan.agent_group_id
+                    session.add(created_scan)
+                    session.commit()
                     assets_db = session.query(models.Asset).filter(
                         models.Asset.id.in_(scan.asset_ids)
                     )
