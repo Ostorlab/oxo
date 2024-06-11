@@ -42,6 +42,15 @@ class AgentGroupOrderByEnum(graphene.Enum):
     CreatedTime = enum.auto()
 
 
+class AssetTypeEnum(graphene.Enum):
+    ANDROID_FILE = "android_file"
+    ANDROID_STORE = "android_store"
+    IOS_FILE = "ios_file"
+    IOS_STORE = "ios_store"
+    WEB = "web"
+    NETWORK = "network"
+
+
 class OxoReferenceType(graphene.ObjectType):
     """Graphene object type for a reference."""
 
@@ -667,6 +676,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     key = graphene.String()
     agents = graphene.Field(AgentsType, required=True)
+    asset_types = common.JSONScalar(required=False)
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -708,6 +718,18 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 .agents
             )
             return AgentsType(agents=agents)
+
+    def resolve_asset_types(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> list[str]:
+        """Resolve asset types query.
+        Args:
+            self: The agent group object.
+            info: GraphQL resolve info.
+        Returns:
+            List of asset types.
+        """
+        return self.asset_types
 
 
 class AgentGroupsType(graphene.ObjectType):
@@ -756,6 +778,7 @@ class AgentGroupCreateInputType(graphene.InputObjectType):
     name = graphene.String(required=True)
     description = graphene.String(required=True)
     agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
+    asset_types = graphene.List(AssetTypeEnum, required=False)
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):
