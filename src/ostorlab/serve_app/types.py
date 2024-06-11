@@ -281,7 +281,7 @@ class OxoIOSFileAssetInputType(graphene.InputObjectType):
     bundle_id = graphene.String()
 
 
-class OxoLinkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
     links = common.JSONScalar(required=False)
 
     class Meta:
@@ -321,7 +321,7 @@ class OxoAssetType(graphene.Union):
             OxoIOSFileAssetType,
             OxoAndroidStoreAssetType,
             OxoIOSStoreAssetType,
-            OxoLinkAssetType,
+            OxoUrlAssetType,
             OxoNetworkAssetType,
         )
 
@@ -720,7 +720,7 @@ class OxoIPInputType(graphene.InputObjectType):
     mask = graphene.Int(required=False)
 
 
-class OxoLinkInputType(graphene.InputObjectType):
+class OxoUrlInputType(graphene.InputObjectType):
     url = graphene.String(required=True)
     method = graphene.String(required=False, default_value="GET")
 
@@ -730,7 +730,7 @@ class OxoAssetInputType(graphene.InputObjectType):
     ios_file = OxoIOSFileAssetInputType()
     android_store = OxoAndroidStoreAssetInputType()
     ios_store = OxoIOSStoreAssetInputType()
-    link = graphene.List(OxoLinkInputType)
+    link = graphene.List(OxoUrlInputType)
     ip = graphene.List(OxoIPInputType)
 
 

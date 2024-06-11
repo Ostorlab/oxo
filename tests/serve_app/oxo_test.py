@@ -1012,7 +1012,7 @@ def testCreateAsset_url_createsNewAsset(
         mutation createUrl($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on OxoLinkAssetType {
+                    ... on OxoUrlAssetType {
                         id
                         links
                     }
@@ -1920,7 +1920,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
                     title
                     progress
                     assets {
-                        ... on OxoLinkAssetType {
+                        ... on OxoUrlAssetType {
                             id
                             type
                             links
