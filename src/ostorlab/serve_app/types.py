@@ -41,6 +41,7 @@ class AgentGroupOrderByEnum(graphene.Enum):
     Name = enum.auto()
     CreatedTime = enum.auto()
 
+
 class AssetTypeEnum(graphene.Enum):
     ANDROID_FILE = "android_file"
     ANDROID_STORE = "android_store"
@@ -769,6 +770,7 @@ class AgentGroupAgentCreateInputType(graphene.InputObjectType):
 
     key = graphene.String(required=True)
     args = graphene.List(AgentArgumentInputType)
+
 
 class AgentGroupCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group."""

@@ -223,7 +223,9 @@ def testModelsAgentGroup_always_createsAgentGroup(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
 
     with models.Database() as session:
-        models.AgentGroup.create(name="test", description="test", agents=[], asset_types=["network", "web"])
+        models.AgentGroup.create(
+            name="test", description="test", agents=[], asset_types=["network", "web"]
+        )
 
         assert session.query(models.AgentGroup).count() == 1
         ag = session.query(models.AgentGroup).all()[0]
