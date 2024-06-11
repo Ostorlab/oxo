@@ -1091,15 +1091,12 @@ def testCreateAsset_network_createsNewAsset(
     assert resp.status_code == 200, resp.get_json()
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
-    assert asset_data["networks"] == [
-        {"host": "10.21.11.11", "mask": 30},
-        {"host": "1.2.3.4", "mask": 24},
-    ]
+    assert asset_data["networks"] == ["10.21.11.11/30", "1.2.3.4/24"]
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
         assert json.loads(session.query(models.Network).all()[0].networks) == [
-            {"host": "10.21.11.11", "mask": 30},
-            {"host": "1.2.3.4", "mask": 24},
+            "10.21.11.11/30",
+            "1.2.3.4/24",
         ]
 
 
