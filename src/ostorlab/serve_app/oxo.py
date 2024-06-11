@@ -339,11 +339,11 @@ class CreateAssetsMutation(graphene.Mutation):
                     path=str(ios_file_path),
                 )
                 created_assets.append(new_asset)
-            if asset.url is not None:
-                new_asset = models.Url.create(links=asset.url.links)
+            if asset.link is not None:
+                new_asset = models.Url.create(links=asset.link)
                 created_assets.append(new_asset)
-            if asset.network is not None:
-                new_asset = models.Network.create(networks=asset.network.networks)
+            if asset.ip is not None:
+                new_asset = models.Network.create(networks=asset.ip)
                 created_assets.append(new_asset)
         if len(errors) > 0:
             error_messages = "\n".join(errors)
@@ -363,10 +363,10 @@ class CreateAssetsMutation(graphene.Mutation):
             assets.append(asset.ios_store)
         if asset.ios_file is not None:
             assets.append(asset.ios_file)
-        if asset.url is not None:
-            assets.append(asset.url)
-        if asset.network is not None:
-            assets.append(asset.network)
+        if asset.link is not None:
+            assets.append(asset.link)
+        if asset.ip is not None:
+            assets.append(asset.ip)
 
         if len(assets) == 0:
             return f"Asset {asset} input is missing target."

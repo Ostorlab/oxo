@@ -281,8 +281,8 @@ class OxoIOSFileAssetInputType(graphene.InputObjectType):
     bundle_id = graphene.String()
 
 
-class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    links = graphene.List(graphene.String, required=False)
+class OxoLinkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+    links = common.JSONScalar(required=False)
 
     class Meta:
         model = models.Url
@@ -297,12 +297,8 @@ class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin)
                 return []
 
 
-class OxoUrlAssetInputType(graphene.InputObjectType):
-    links = graphene.List(graphene.String)
-
-
 class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    networks = graphene.List(graphene.String, required=False)
+    networks = common.JSONScalar(required=False)
 
     class Meta:
         model = models.Network
@@ -317,10 +313,6 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
                 return []
 
 
-class OxoNetworkAssetInputType(graphene.InputObjectType):
-    networks = graphene.List(graphene.String)
-
-
 class OxoAssetType(graphene.Union):
     class Meta:
         model = models.Asset
@@ -329,7 +321,7 @@ class OxoAssetType(graphene.Union):
             OxoIOSFileAssetType,
             OxoAndroidStoreAssetType,
             OxoIOSStoreAssetType,
-            OxoUrlAssetType,
+            OxoLinkAssetType,
             OxoNetworkAssetType,
         )
 
@@ -723,13 +715,23 @@ class AgentGroupsType(graphene.ObjectType):
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
+class OxoIPInputType(graphene.InputObjectType):
+    host = graphene.String(required=True)
+    mask = graphene.Int(required=False)
+
+
+class OxoLinkInputType(graphene.InputObjectType):
+    url = graphene.String(required=True)
+    method = graphene.String(required=False, default_value="GET")
+
+
 class OxoAssetInputType(graphene.InputObjectType):
     android_file = OxoAndroidFileAssetInputType()
     ios_file = OxoIOSFileAssetInputType()
     android_store = OxoAndroidStoreAssetInputType()
     ios_store = OxoIOSStoreAssetInputType()
-    url = OxoUrlAssetInputType()
-    network = OxoNetworkAssetInputType()
+    link = graphene.List(OxoLinkInputType)
+    ip = graphene.List(OxoIPInputType)
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
