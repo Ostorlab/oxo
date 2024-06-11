@@ -1045,21 +1045,17 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
 
 @pytest.fixture
 def scan_with_agent_group(
-    mocker: plugin.MockerFixture, db_engine_path: str, agent_group: models.AgentGroup
+    db_engine_path: str,
+    agent_group: models.AgentGroup,
+    clean_db: None,
 ) -> models.Scan:
     """Create dummy scan with agent group."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    with models.Database() as session:
-        scan = models.Scan(
-            title="Scan with agent group",
-            asset="Any",
-            progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
-            agent_group_id=agent_group.id,
-        )
-        session.add(scan)
-        session.commit()
-        return scan
+    return models.Scan.create(
+        title="Scan with agent group",
+        asset="Web",
+        progress=models.ScanProgress.DONE,
+        agent_group_id=agent_group.id,
+    )
 
 
 @pytest.fixture
