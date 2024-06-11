@@ -5,11 +5,12 @@ from ostorlab.cli import rootcli
 
 
 def testServeOxoUi_always_shouldCallHttpServeWithRightParams(
-        mocker: plugin.MockerFixture,
-
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Ensure that the function call http.serve with the right params."""
-    mocked_http_serve = mocker.patch("http.server.HTTPServer.__init__", return_value=None)
+    mocked_http_serve = mocker.patch(
+        "http.server.HTTPServer.__init__", return_value=None
+    )
     mocked_serve_forever = mocker.patch("http.server.HTTPServer.serve_forever")
     runner = testing.CliRunner()
 
