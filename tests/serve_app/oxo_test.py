@@ -1072,10 +1072,12 @@ def testCreateAsset_url_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "link": [
-                            {"url": "https://www.google.com", "method": "GET"},
-                            {"url": "https://www.tesla.com"},
-                        ]
+                        "url": {
+                            "links": [
+                                "https://www.example.com",
+                                "https://www.example2.com",
+                            ],
+                        }
                     }
                 ]
             },
@@ -1086,14 +1088,14 @@ def testCreateAsset_url_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["links"] == [
-        {"method": "GET", "url": "https://www.google.com"},
-        {"method": "GET", "url": "https://www.tesla.com"},
+        "https://www.example.com",
+        "https://www.example2.com",
     ]
     with models.Database() as session:
         assert session.query(models.Url).count() == 1
         assert json.loads(session.query(models.Url).all()[0].links) == [
-            {"method": "GET", "url": "https://www.google.com"},
-            {"method": "GET", "url": "https://www.tesla.com"},
+            "https://www.example.com",
+            "https://www.example2.com",
         ]
 
 
@@ -1122,10 +1124,9 @@ def testCreateAsset_network_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "ip": [
-                            {"host": "10.21.11.11", "mask": 30},
-                            {"host": "1.2.3.4", "mask": 24},
-                        ]
+                        "network": {
+                            "networks": ["8.8.8.8/24", "42.42.42.42"],
+                        }
                     }
                 ]
             },
@@ -1135,12 +1136,12 @@ def testCreateAsset_network_createsNewAsset(
     assert resp.status_code == 200, resp.get_json()
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
-    assert asset_data["networks"] == ["10.21.11.11/30", "1.2.3.4/24"]
+    assert asset_data["networks"] == ["8.8.8.8/24", "42.42.42.42"]
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
         assert json.loads(session.query(models.Network).all()[0].networks) == [
-            "10.21.11.11/30",
-            "1.2.3.4/24",
+            "8.8.8.8/24",
+            "42.42.42.42",
         ]
 
 

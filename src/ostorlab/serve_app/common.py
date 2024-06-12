@@ -8,7 +8,7 @@ import zipfile
 from functools import cached_property
 from math import ceil
 import struct
-from typing import Optional, Union, Any
+from typing import Optional, Union
 
 import cvss
 import graphene
@@ -44,24 +44,6 @@ class RiskRatingEnum(graphene.Enum):
     SECURE = "Secure"
     IMPORTANT = "Important"
     INFO = "Info"
-
-
-class JSONScalar(scalars.Scalar):
-    """
-    Arbitrary JSON Properties for features
-    """
-
-    @staticmethod
-    def serialize(value: dict[str, Any]) -> dict[str, Any]:
-        return value
-
-    @staticmethod
-    def parse_literal(node: ast.Value) -> Optional[dict[str, Any]]:
-        return node.value
-
-    @staticmethod
-    def parse_value(value: dict[str, Any]) -> dict[str, Any]:
-        return value
 
 
 class Bytes(scalars.Scalar):
