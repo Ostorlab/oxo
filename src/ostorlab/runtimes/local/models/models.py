@@ -705,34 +705,110 @@ class IosStore(Asset):
             return asset
 
 
+class Link(Base):
+    __tablename__ = "link"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    url = sqlalchemy.Column(sqlalchemy.String(4096))
+    method = sqlalchemy.Column(sqlalchemy.String(8))
+    url_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("urls.id")
+    )
+
+    @staticmethod
+    def create(url: str, method: str, url_asset_id: int) -> "Link":
+        """Persist the link information in the database.
+
+        Args:
+            url: The target URL.
+            method: The HTTP method.
+            url_asset_id: The URL asset id.
+
+        Returns:
+            Link object.
+        """
+        with Database() as session:
+            link = Link(url=url, method=method, url_asset_id=url_asset_id)
+            session.add(link)
+            session.commit()
+            return link
+
+
 class Url(Asset):
     __tablename__ = "urls"
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    links = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "urls",
     }
 
     @staticmethod
-    def create(links: List[str]) -> "Url":
+    def create(links: List[dict]) -> "Url":
         """Persist the URL information in the database.
 
         Args:
-            links: list of the target URLs.
+            links: list of the target URLs with methods.
 
         Returns:
             Url object.
         """
         with Database() as session:
-            asset = Url(
-                links=json.dumps(links),
-            )
-            session.add(asset)
+            url_instance = Url()
+            session.add(url_instance)
             session.commit()
-            return asset
+
+            link_objects = [
+                Link(
+                    url=link.get("url"),
+                    method=link.get("method", "GET"),
+                    url_asset_id=url_instance.id,
+                )
+                for link in links
+            ]
+            session.add_all(link_objects)
+            session.commit()
+            return url_instance
+
+    @staticmethod
+    def delete(url_id: int) -> None:
+        """Delete the URL information from the database.
+
+        Args:
+            url_id: The URL id.
+        """
+        with Database() as session:
+            session.query(Url).filter_by(id=url_id).delete()
+            session.query(Link).filter_by(url_asset_id=url_id).delete()
+            session.commit()
+
+
+class IP(Base):
+    __tablename__ = "ip"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    host = sqlalchemy.Column(sqlalchemy.String(50))
+    mask = sqlalchemy.Column(sqlalchemy.Integer)
+    network_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("network.id")
+    )
+
+    @staticmethod
+    def create(host: str, mask: int, network_asset_id: int) -> "IP":
+        """Persist the IP information in the database.
+
+        Args:
+            host: The target IP address.
+            mask: The subnet mask.
+            network_id: The network id.
+
+        Returns:
+            IP object.
+        """
+        with Database() as session:
+            ip = IP(host=host, mask=mask, network_asset_id=network_asset_id)
+            session.add(ip)
+            session.commit()
+            return ip
 
 
 class Network(Asset):
@@ -740,14 +816,13 @@ class Network(Asset):
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    networks = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "network",
     }
 
     @staticmethod
-    def create(networks: List[str]) -> "Network":
+    def create(networks: List[dict]) -> "Network":
         """Persist the Network information in the database.
 
         Args:
@@ -757,9 +832,30 @@ class Network(Asset):
             Network object.
         """
         with Database() as session:
-            asset = Network(
-                networks=json.dumps(networks),
-            )
-            session.add(asset)
+            network_instance = Network()
+            session.add(network_instance)
             session.commit()
-            return asset
+
+            network_items = [
+                IP(
+                    host=network["host"],
+                    mask=network["mask"],
+                    network_asset_id=network_instance.id,
+                )
+                for network in networks
+            ]
+            session.add_all(network_items)
+            session.commit()
+            return network_instance
+
+    @staticmethod
+    def delete(network_id: int) -> None:
+        """Delete the Network information from the database.
+
+        Args:
+            network_id: The network id.
+        """
+        with Database() as session:
+            session.query(Network).filter_by(id=network_id).delete()
+            session.query(IP).filter_by(network_asset_id=network_id).delete()
+            session.commit()

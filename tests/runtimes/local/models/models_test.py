@@ -1,7 +1,5 @@
 """Tests for Models class."""
 
-import json
-
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
@@ -311,12 +309,23 @@ def testAssetModels_whenCreateNetwork_assetCreated(
 ) -> None:
     """Ensure we correctly persist the network information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Network.create(networks=["8.8.8.8/24", "42.42.42.42"])
+    models.Network.create(
+        networks=[{"host": "8.8.8.8", "mask": 24}, {"host": "42.42.42.42", "mask": 32}]
+    )
 
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
-        ips = json.loads(session.query(models.Network).all()[0].networks)
-        assert ips == ["8.8.8.8/24", "42.42.42.42"]
+        network_id = session.query(models.Network).all()[0].id
+        ips = (
+            session.query(models.IP)
+            .filter(models.IP.network_asset_id == network_id)
+            .all()
+        )
+        assert len(ips) == 2
+        assert ips[0].host == "8.8.8.8"
+        assert ips[0].mask == 24
+        assert ips[1].host == "42.42.42.42"
+        assert ips[1].mask == 32
 
 
 def testAssetModels_whenCreateUrl_assetCreated(
@@ -324,12 +333,63 @@ def testAssetModels_whenCreateUrl_assetCreated(
 ) -> None:
     """Ensure we correctly persist the list of target URLs information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Url.create(links=["https://example.com", "https://example42.com"])
+    models.Url.create(
+        links=[
+            {"url": "https://example24.com", "method": "POST"},
+            {"url": "https://example42.com"},
+        ]
+    )
 
     with models.Database() as session:
         assert session.query(models.Url).count() == 1
-        links = json.loads(session.query(models.Url).all()[0].links)
-        assert links == ["https://example.com", "https://example42.com"]
+        url_id = session.query(models.Url).all()[0].id
+        links = (
+            session.query(models.Link).filter(models.Link.url_asset_id == url_id).all()
+        )
+        assert len(links) == 2
+        assert links[0].url == "https://example24.com"
+        assert links[0].method == "POST"
+        assert links[1].url == "https://example42.com"
+        assert links[1].method == "GET"
+
+
+def testNetworkModel_whenDeleteNetwork_networkDeletedWithItsIps(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly delete the network and its IPs."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    network = models.Network.create(
+        networks=[{"host": "8.8.8.8", "mask": 24}, {"host": "42.42.42.42", "mask": 32}]
+    )
+    network_id = network.id
+
+    models.Network.delete(network_id)
+
+    with models.Database() as session:
+        assert session.query(models.Network).filter_by(id=network_id).count() == 0
+        assert (
+            session.query(models.IP).filter_by(network_asset_id=network_id).count() == 0
+        )
+
+
+def testUrlModel_whenDeleteUrl_urlDeletedWithItsLinks(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly delete the url and its links."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    url = models.Url.create(
+        links=[
+            {"url": "https://example24.com", "method": "POST"},
+            {"url": "https://example42.com"},
+        ]
+    )
+    url_id = url.id
+
+    models.Url.delete(url_id)
+
+    with models.Database() as session:
+        assert session.query(models.Url).filter_by(id=url_id).count() == 0
+        assert session.query(models.Link).filter_by(url_asset_id=url_id).count() == 0
 
 
 def testAssetModels_whenCreateIosStore_assetCreated(
