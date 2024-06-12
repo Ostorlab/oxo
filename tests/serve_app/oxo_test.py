@@ -957,9 +957,9 @@ def testCreateAsset_androidStore_createsNewAsset(
             createAssets(assets: $assets) {
                 assets {
                     ... on OxoAndroidStoreAssetType {
-                        id
-                        packageName
-                        applicationName
+                            id
+                            applicationName
+                            packageName
                     }
                 }
             }
@@ -973,10 +973,16 @@ def testCreateAsset_androidStore_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "androidStore": {
-                            "applicationName": "fake_app",
-                            "packageName": "a.b.c",
-                        }
+                        "androidStore": [
+                            {
+                                "applicationName": "fake_app1",
+                                "packageName": "a.b.c",
+                            },
+                            {
+                                "applicationName": "fake_app2",
+                                "packageName": "d.e.f",
+                            },
+                        ]
                     }
                 ]
             },
@@ -984,15 +990,23 @@ def testCreateAsset_androidStore_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
-    assert asset_data["id"] is not None
-    assert asset_data["packageName"] == "a.b.c"
-    assert asset_data["applicationName"] == "fake_app"
+    asset1 = resp.get_json()["data"]["createAssets"]["assets"][0]
+    asset2 = resp.get_json()["data"]["createAssets"]["assets"][1]
+    assert asset1["id"] is not None
+    assert asset1["packageName"] == "a.b.c"
+    assert asset1["applicationName"] == "fake_app1"
+    assert asset2["id"] is not None
+    assert asset2["packageName"] == "d.e.f"
+    assert asset2["applicationName"] == "fake_app2"
     with models.Database() as session:
-        assert session.query(models.AndroidStore).count() == 1
+        assert session.query(models.AndroidStore).count() == 2
         assert session.query(models.AndroidStore).all()[0].package_name == "a.b.c"
         assert (
-            session.query(models.AndroidStore).all()[0].application_name == "fake_app"
+            session.query(models.AndroidStore).all()[0].application_name == "fake_app1"
+        )
+        assert session.query(models.AndroidStore).all()[1].package_name == "d.e.f"
+        assert (
+            session.query(models.AndroidStore).all()[1].application_name == "fake_app2"
         )
 
 
@@ -1009,10 +1023,6 @@ def testCreateAsset_iOSStore_createsNewAsset(
                         id
                         bundleId
                         applicationName
-                        scans {
-                            id
-                            title                            
-                        }
                     }
                 }
             }
@@ -1026,10 +1036,16 @@ def testCreateAsset_iOSStore_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "iosStore": {
-                            "applicationName": "fake_app",
-                            "bundleId": "a.b.c",
-                        }
+                        "iosStore": [
+                            {
+                                "applicationName": "fake_app1",
+                                "bundleId": "a.b.c",
+                            },
+                            {
+                                "applicationName": "fake_app2",
+                                "bundleId": "d.e.f",
+                            },
+                        ]
                     }
                 ]
             },
@@ -1037,14 +1053,20 @@ def testCreateAsset_iOSStore_createsNewAsset(
     )
 
     assert resp.status_code == 200, resp.get_json()
-    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
-    assert asset_data["id"] is not None
-    assert asset_data["bundleId"] == "a.b.c"
-    assert asset_data["applicationName"] == "fake_app"
+    asset1 = resp.get_json()["data"]["createAssets"]["assets"][0]
+    asset2 = resp.get_json()["data"]["createAssets"]["assets"][1]
+    assert asset1["id"] is not None
+    assert asset1["bundleId"] == "a.b.c"
+    assert asset1["applicationName"] == "fake_app1"
+    assert asset2["id"] is not None
+    assert asset2["bundleId"] == "d.e.f"
+    assert asset2["applicationName"] == "fake_app2"
     with models.Database() as session:
-        assert session.query(models.IosStore).count() == 1
+        assert session.query(models.IosStore).count() == 2
         assert session.query(models.IosStore).all()[0].bundle_id == "a.b.c"
-        assert session.query(models.IosStore).all()[0].application_name == "fake_app"
+        assert session.query(models.IosStore).all()[0].application_name == "fake_app1"
+        assert session.query(models.IosStore).all()[1].bundle_id == "d.e.f"
+        assert session.query(models.IosStore).all()[1].application_name == "fake_app2"
 
 
 def testCreateAsset_url_createsNewAsset(
@@ -1184,17 +1206,19 @@ def testCreateAsset_androidFile_createsNewAsset(
                 "variables": {
                     "assets": [
                         {
-                            "androidFile": {
-                                "file": None,
-                                "packageName": "a.b.c",
-                            }
+                            "androidFile": [
+                                {
+                                    "file": None,
+                                    "packageName": "a.b.c",
+                                }
+                            ]
                         }
                     ]
                 },
             }
         ),
         "0": apk_path.open("rb"),
-        "map": json.dumps({"0": ["variables.assets.0.androidFile.file"]}),
+        "map": json.dumps({"0": ["variables.assets.0.androidFile.0.file"]}),
     }
 
     resp = authenticated_flask_client.post(
@@ -1251,17 +1275,19 @@ def testCreateAsset_iOSFile_createsNewAsset(
                 "variables": {
                     "assets": [
                         {
-                            "iosFile": {
-                                "file": None,
-                                "bundleId": "a.b.c",
-                            }
+                            "iosFile": [
+                                {
+                                    "file": None,
+                                    "bundleId": "a.b.c",
+                                }
+                            ]
                         }
                     ]
                 },
             }
         ),
         "0": apk_path.open("rb"),
-        "map": json.dumps({"0": ["variables.assets.0.iosFile.file"]}),
+        "map": json.dumps({"0": ["variables.assets.0.iosFile.0.file"]}),
     }
 
     resp = authenticated_flask_client.post(
@@ -1322,16 +1348,20 @@ def testCreateAsset_whenMultipleAssets_shouldCreateAll(
             "variables": {
                 "assets": [
                     {
-                        "androidStore": {
-                            "applicationName": "fake_app",
-                            "packageName": "a.b.c",
-                        }
+                        "androidStore": [
+                            {
+                                "applicationName": "fake_app",
+                                "packageName": "a.b.c",
+                            }
+                        ]
                     },
                     {
-                        "iosStore": {
-                            "applicationName": "fake_app",
-                            "bundleId": "a.b.c",
-                        }
+                        "iosStore": [
+                            {
+                                "applicationName": "fake_app",
+                                "bundleId": "a.b.c",
+                            }
+                        ]
                     },
                 ]
             },
@@ -1388,14 +1418,18 @@ def testCreateAsset_whenMultipleTargetsForSameAsset_shouldReturnError(
             "variables": {
                 "assets": [
                     {
-                        "androidStore": {
-                            "applicationName": "fake_app",
-                            "packageName": "a.b.c",
-                        },
-                        "iosStore": {
-                            "applicationName": "fake_app",
-                            "bundleId": "a.b.c",
-                        },
+                        "androidStore": [
+                            {
+                                "applicationName": "fake_app",
+                                "packageName": "a.b.c",
+                            }
+                        ],
+                        "iosStore": [
+                            {
+                                "applicationName": "fake_app",
+                                "bundleId": "a.b.c",
+                            }
+                        ],
                     }
                 ]
             },
@@ -1494,58 +1528,6 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
     assert scan_data["title"] == "iOS Scan"
     assert scan_data["assets"][0]["packageName"] == asset.package_name
     assert scan_data["assets"][0]["applicationName"] == asset.application_name
-
-
-def testQueryAsset_whenHasScan_shouldReturnScanInformationFromAssetObject(
-    authenticated_flask_client: testing.FlaskClient,
-    mocker: plugin.MockerFixture,
-    db_engine_path: str,
-) -> None:
-    """Ensure we can query the specific scan information from its asset."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    with models.Database() as session:
-        scan = models.Scan(
-            title="iOS Scan",
-            progress=models.ScanProgress.NOT_STARTED,
-        )
-        session.add(scan)
-        session.commit()
-        asset = models.AndroidStore(
-            package_name="a.b.c", application_name="fake_app", scan_id=scan.id
-        )
-        session.add(asset)
-        session.commit()
-
-    query = """
-        query Scans($scanIds: [Int!]) {
-            scans(scanIds: $scanIds) {
-                scans {
-                    id
-                    assets {
-                        ... on OxoAndroidStoreAssetType {
-                            id
-                            packageName
-                            applicationName
-                            scans {
-                                id
-                                title                                
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    """
-
-    response = authenticated_flask_client.post(
-        "/graphql",
-        json={"query": query, "variables": {"scanIds": [scan.id]}},
-    )
-
-    assert response.status_code == 200, response.get_json()
-    asset_data = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
-    assert asset_data["scans"][0]["id"] == str(scan.id)
-    assert asset_data["scans"][0]["title"] == "iOS Scan"
 
 
 def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
@@ -1908,10 +1890,6 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
                         host
                         mask
                     }
-                    scans {
-                        id
-                        title
-                    }
                 }
             }
         }
@@ -1993,10 +1971,6 @@ def testRunScanMutation_whenUrl_shouldRunScan(
                                 url
                                 method
                             }
-                            scans {
-                                id
-                                title
-                            }
                         }
                     }                    
                 }
@@ -2076,10 +2050,6 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
                             id
                             path
                             packageName
-                            scans {
-                                id
-                                title
-                            }
                         }
                     }
                 }
@@ -2153,10 +2123,6 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
                             id
                             path
                             bundleId
-                            scans {
-                                id
-                                title
-                            }
                         }
                     }
                 }
@@ -2230,10 +2196,6 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
                             id
                             packageName
                             applicationName
-                            scans {
-                                id
-                                title
-                            }
                         }
                     }
                 }
@@ -2307,10 +2269,6 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
                             id
                             bundleId
                             applicationName
-                            scans {
-                                id
-                                title
-                            }
                         }
                     }
                 }
