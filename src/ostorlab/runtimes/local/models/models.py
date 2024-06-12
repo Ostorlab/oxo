@@ -660,8 +660,8 @@ class Asset(Base):
             assets: The list of assets to create.
             scan_id: The scan id.
         """
-        networks = []
-        links = []
+        networks: List[Dict[str, Union[str, int]]] = []
+        links: List[Dict[str, str]] = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
