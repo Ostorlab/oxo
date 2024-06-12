@@ -210,22 +210,7 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
             return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
 
-class AssetScansMixin:
-    scans = graphene.List(
-        lambda: OxoScanType, last_only=graphene.Boolean(required=False)
-    )
-
-    def resolve_scans(self, info):
-        with models.Database() as session:
-            asset = session.query(models.Asset).get(self.id)
-            scan = session.query(models.Scan).get(asset.scan_id)
-
-        return [scan]
-
-
-class OxoAndroidStoreAssetType(
-    graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
-):
+class OxoAndroidStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.AndroidStore
         only_fields = ("id", "package_name", "application_name")
@@ -244,7 +229,7 @@ class OxoAndroidStoreAssetInputType(graphene.InputObjectType):
     application_name = graphene.String()
 
 
-class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.IosStore
         only_fields = ("id", "bundle_id", "application_name")
@@ -263,9 +248,7 @@ class OxoIOSStoreAssetInputType(graphene.InputObjectType):
     application_name = graphene.String()
 
 
-class OxoAndroidFileAssetType(
-    graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
-):
+class OxoAndroidFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.AndroidFile
         only_fields = ("id", "package_name", "path")
@@ -284,7 +267,7 @@ class OxoAndroidFileAssetInputType(graphene.InputObjectType):
     package_name = graphene.String()
 
 
-class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.IosFile
         only_fields = ("id", "bundle_id", "path")
@@ -309,7 +292,7 @@ class OxoLinkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         only_fields = ("url", "method")
 
 
-class OxoUrlsAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoUrlsAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     links = graphene.List(OxoLinkAssetType, required=False)
 
     class Meta:
@@ -330,7 +313,7 @@ class OxoIPRangeAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         only_fields = ("host", "mask")
 
 
-class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     networks = graphene.List(OxoIPRangeAssetType, required=False)
 
     class Meta:
@@ -784,10 +767,11 @@ class OxoLinkInputType(graphene.InputObjectType):
 
 
 class OxoAssetInputType(graphene.InputObjectType):
-    android_file = OxoAndroidFileAssetInputType()
-    ios_file = OxoIOSFileAssetInputType()
-    android_store = OxoAndroidStoreAssetInputType()
-    ios_store = OxoIOSStoreAssetInputType()
+    android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
+    android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
+    ios_file = graphene.List(OxoIOSFileAssetInputType)
+    android_store = graphene.List(OxoAndroidStoreAssetInputType)
+    ios_store = graphene.List(OxoIOSStoreAssetInputType)
     link = graphene.List(OxoLinkInputType)
     ip = graphene.List(OxoIPRangeInputType)
 

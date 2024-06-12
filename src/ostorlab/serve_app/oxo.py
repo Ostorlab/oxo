@@ -307,37 +307,55 @@ class CreateAssetsMutation(graphene.Mutation):
                 errors.append(error_message)
                 continue
             if asset.android_store is not None:
-                new_asset = models.AndroidStore.create(
-                    package_name=asset.android_store.package_name,
-                    application_name=asset.android_store.application_name,
-                )
-                created_assets.append(new_asset)
-            if asset.android_file is not None:
-                content = asset.android_file.file.read()
-                android_file_path = (
-                    config_manager.upload_path / f"android_{str(uuid.uuid4())}"
-                )
-                android_file_path.write_bytes(content)
-                new_asset = models.AndroidFile.create(
-                    package_name=asset.android_file.package_name,
-                    path=str(android_file_path),
-                )
-                created_assets.append(new_asset)
+                for asset_android_store in asset.android_store:
+                    new_asset = models.AndroidStore.create(
+                        package_name=asset_android_store.package_name,
+                        application_name=asset_android_store.application_name,
+                    )
+                    created_assets.append(new_asset)
+            if asset.android_apk_file is not None:
+                for asset_android_apk_file in asset.android_apk_file:
+                    content = asset_android_apk_file.file.read()
+                    android_file_path = (
+                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                    )
+                    android_file_path.write_bytes(content)
+                    new_asset = models.AndroidFile.create(
+                        package_name=asset_android_apk_file.package_name,
+                        path=str(android_file_path),
+                    )
+                    created_assets.append(new_asset)
+            if asset.android_aab_file is not None:
+                for asset_android_aab_file in asset.android_aab_file:
+                    content = asset_android_aab_file.file.read()
+                    android_file_path = (
+                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                    )
+                    android_file_path.write_bytes(content)
+                    new_asset = models.AndroidFile.create(
+                        package_name=asset_android_aab_file.package_name,
+                        path=str(android_file_path),
+                    )
+                    created_assets.append(new_asset)
             if asset.ios_store is not None:
-                new_asset = models.IosStore.create(
-                    bundle_id=asset.ios_store.bundle_id,
-                    application_name=asset.ios_store.application_name,
-                )
-                created_assets.append(new_asset)
+                for asset_ios_store in asset.ios_store:
+                    new_asset = models.IosStore.create(
+                        bundle_id=asset_ios_store.bundle_id,
+                        application_name=asset_ios_store.application_name,
+                    )
+                    created_assets.append(new_asset)
             if asset.ios_file is not None:
-                content = asset.ios_file.file.read()
-                ios_file_path = config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
-                ios_file_path.write_bytes(content)
-                new_asset = models.IosFile.create(
-                    bundle_id=asset.ios_file.bundle_id,
-                    path=str(ios_file_path),
-                )
-                created_assets.append(new_asset)
+                for asset_ios_file in asset.ios_file:
+                    content = asset_ios_file.file.read()
+                    ios_file_path = (
+                        config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
+                    )
+                    ios_file_path.write_bytes(content)
+                    new_asset = models.IosFile.create(
+                        bundle_id=asset_ios_file.bundle_id,
+                        path=str(ios_file_path),
+                    )
+                    created_assets.append(new_asset)
             if asset.link is not None:
                 new_asset = models.Urls.create(links=asset.link)
                 created_assets.append(new_asset)
@@ -356,8 +374,10 @@ class CreateAssetsMutation(graphene.Mutation):
         assets = []
         if asset.android_store is not None:
             assets.append(asset.android_store)
-        if asset.android_file is not None:
-            assets.append(asset.android_file)
+        if asset.android_apk_file is not None:
+            assets.append(asset.android_apk_file)
+        if asset.android_aab_file is not None:
+            assets.append(asset.android_aab_file)
         if asset.ios_store is not None:
             assets.append(asset.ios_store)
         if asset.ios_file is not None:
