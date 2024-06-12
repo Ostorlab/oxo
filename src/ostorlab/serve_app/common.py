@@ -3,11 +3,12 @@
 import collections
 import inspect
 import io
+import json
 import zipfile
 from functools import cached_property
 from math import ceil
 import struct
-from typing import Optional, Union, Any
+from typing import Optional, Union
 
 import cvss
 import graphene
@@ -45,35 +46,19 @@ class RiskRatingEnum(graphene.Enum):
     INFO = "Info"
 
 
-class JSONScalar(scalars.Scalar):
-    """
-    Arbitrary JSON Properties for features
-    """
-
-    @staticmethod
-    def serialize(value: dict[str, Any]) -> dict[str, Any]:
-        return value
-
-    @staticmethod
-    def parse_literal(node: ast.Value) -> Optional[dict[str, Any]]:
-        return node.value
-
-    @staticmethod
-    def parse_value(value: dict[str, Any]) -> dict[str, Any]:
-        return value
-
-
 class Bytes(scalars.Scalar):
     """
     The `Bytes` scalar type represents binary data in a bytes format.
     """
 
     @staticmethod
-    def coerce_bytes(value: Union[str, bytes, memoryview, list]) -> bytes:
+    def coerce_bytes(
+        value: Union[str, bytes, memoryview, list, float, int, dict, bool],
+    ) -> bytes:
         """Coerce a value to bytes.
 
         Args:
-            value (str | bytes | memoryview | list): Value to coerce.
+            value: Value to coerce.
 
         Returns:
             bytes: Coerced value.
@@ -85,7 +70,13 @@ class Bytes(scalars.Scalar):
         elif isinstance(value, str):
             return Bytes._rawbytes(value)
         elif isinstance(value, list):
-            return bytes(value)
+            return json.dumps(value).encode(encoding="utf-8")
+        elif isinstance(value, float) or isinstance(value, int):
+            return struct.pack("d", value)
+        elif isinstance(value, dict):
+            return json.dumps(value).encode(encoding="utf-8")
+        elif isinstance(value, bool):
+            return (1 if value is True else 0).to_bytes(1, byteorder="big")
         else:
             raise NotImplementedError(f"Bytes scalar coerce error from {type(value)}")
 
