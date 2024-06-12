@@ -23,7 +23,7 @@ def upgrade() -> None:
         "ip",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("host", sa.String(length=50), nullable=True),
-        sa.Column("mask", sa.Integer(), nullable=True),
+        sa.Column("mask", sa.String(length=50), nullable=True),
         sa.Column("network_asset_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["network_asset_id"],

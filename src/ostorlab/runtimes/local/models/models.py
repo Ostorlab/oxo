@@ -9,6 +9,7 @@ import struct
 import uuid
 import types
 from typing import Any, Dict, List, Optional, Union
+import ipaddress
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -922,14 +923,14 @@ class IPRange(Base):
     __tablename__ = "ip"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     host = sqlalchemy.Column(sqlalchemy.String(50))
-    mask = sqlalchemy.Column(sqlalchemy.Integer)
+    mask = sqlalchemy.Column(sqlalchemy.String(50))
     network_asset_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("network.id")
     )
 
     @staticmethod
     def create(
-        host: str, mask: int, network_asset_id: Optional[int] = None
+        host: str, mask: str, network_asset_id: Optional[int] = None
     ) -> "IPRange":
         """Persist the IP information in the database.
 
@@ -979,7 +980,9 @@ class Network(Asset):
             network_items = [
                 IPRange(
                     host=network.get("host"),
-                    mask=network.get("mask", 32),
+                    mask=network.get(
+                        "mask", str(ipaddress.ip_network(network.get("host")).prefixlen)
+                    ),
                     network_asset_id=network_instance.id,
                 )
                 for network in networks

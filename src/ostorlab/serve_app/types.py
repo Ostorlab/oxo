@@ -775,7 +775,7 @@ class AgentGroupsType(graphene.ObjectType):
 
 class OxoIPRangeInputType(graphene.InputObjectType):
     host = graphene.String(required=True)
-    mask = graphene.Int(required=False, default_value=32)
+    mask = graphene.String(required=False)
 
 
 class OxoLinkInputType(graphene.InputObjectType):

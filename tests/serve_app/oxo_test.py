@@ -1295,7 +1295,7 @@ def testCreateAsset_network_createsNewAsset(
             "query": query,
             "variables": {
                 "assets": [
-                    {"ip": [{"host": "8.8.8.8", "mask": 24}, {"host": "42.42.42.42"}]}
+                    {"ip": [{"host": "8.8.8.8", "mask": "24"}, {"host": "42.42.42.42"}]}
                 ]
             },
         },
@@ -1305,8 +1305,8 @@ def testCreateAsset_network_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["networks"] == [
-        {"host": "8.8.8.8", "mask": 24},
-        {"host": "42.42.42.42", "mask": 32},
+        {"host": "8.8.8.8", "mask": "24"},
+        {"host": "42.42.42.42", "mask": "32"},
     ]
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
@@ -1318,9 +1318,9 @@ def testCreateAsset_network_createsNewAsset(
         )
         assert len(networks) == 2
         assert networks[0].host == "8.8.8.8"
-        assert networks[0].mask == 24
+        assert networks[0].mask == "24"
         assert networks[1].host == "42.42.42.42"
-        assert networks[1].mask == 32
+        assert networks[1].mask == "32"
 
 
 def testCreateAsset_androidFile_createsNewAsset(
@@ -1749,8 +1749,8 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     asset1 = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
     asset2 = response.get_json()["data"]["scans"]["scans"][0]["assets"][1]
     assert asset1["networks"] == [
-        {"host": "8.8.8.8", "mask": 32},
-        {"host": "8.8.4.4", "mask": 32},
+        {"host": "8.8.8.8", "mask": "32"},
+        {"host": "8.8.4.4", "mask": "32"},
     ]
     assert asset2["path"] == "/path/to/file"
 
@@ -2103,8 +2103,8 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == network_asset.id
     assert res_scan["assets"][0]["networks"] == [
-        {"host": "8.8.8.8", "mask": 32},
-        {"host": "8.8.4.4", "mask": 24},
+        {"host": "8.8.8.8", "mask": "32"},
+        {"host": "8.8.4.4", "mask": "24"},
     ]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Network Asset"
