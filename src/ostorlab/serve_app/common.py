@@ -3,6 +3,7 @@
 import collections
 import inspect
 import io
+import json
 import zipfile
 from functools import cached_property
 from math import ceil
@@ -51,11 +52,13 @@ class Bytes(scalars.Scalar):
     """
 
     @staticmethod
-    def coerce_bytes(value: Union[str, bytes, memoryview, list]) -> bytes:
+    def coerce_bytes(
+        value: Union[str, bytes, memoryview, list, float, int, dict, bool],
+    ) -> bytes:
         """Coerce a value to bytes.
 
         Args:
-            value (str | bytes | memoryview | list): Value to coerce.
+            value: Value to coerce.
 
         Returns:
             bytes: Coerced value.
@@ -67,7 +70,13 @@ class Bytes(scalars.Scalar):
         elif isinstance(value, str):
             return Bytes._rawbytes(value)
         elif isinstance(value, list):
-            return bytes(value)
+            return json.dumps(value).encode(encoding="utf-8")
+        elif isinstance(value, float) or isinstance(value, int):
+            return struct.pack("d", value)
+        elif isinstance(value, dict):
+            return json.dumps(value).encode(encoding="utf-8")
+        elif isinstance(value, bool):
+            return (1 if value is True else 0).to_bytes(1, byteorder="big")
         else:
             raise NotImplementedError(f"Bytes scalar coerce error from {type(value)}")
 

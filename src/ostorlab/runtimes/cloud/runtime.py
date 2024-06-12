@@ -656,3 +656,25 @@ class CloudRuntime(runtime.Runtime):
             title, asset_id, agent_group_id
         )
         _ = api_runner.execute(request)
+
+    def link_agent_group_scan(
+        self,
+        scan,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> None:
+        """Link the agent group to the scan in the database.
+
+        Args:
+            scan: The scan object.
+            agent_group_definition: The agent group definition.
+        """
+        pass
+
+    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+        """Link the assets to the scan in the database.
+
+        Args:
+            scan_id: The scan id.
+            assets: The list of assets.
+        """
+        pass

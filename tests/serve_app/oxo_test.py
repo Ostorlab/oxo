@@ -726,13 +726,35 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     agent1_args = agent_group1_agents[0]["args"]["args"]
     agent2_args = agent_group1_agents[1]["args"]["args"]
     assert len(agent1_args) == 1
-    assert len(agent2_args) == 1
+    assert len(agent2_args) == 4
     assert agent1_args[0]["name"] == "arg1"
     assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == b"42"
+    assert (
+        models.AgentArgument.from_bytes(agent1_args[0]["type"], agent1_args[0]["value"])
+        == 42
+    )
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == b"hello"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[0]["type"], agent2_args[0]["value"])
+        == "hello"
+    )
+    assert agent2_args[1]["name"] == "arg3"
+    assert agent2_args[1]["type"] == "array"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[1]["type"], agent2_args[1]["value"]
+    ) == ["hello", "world"]
+    assert agent2_args[2]["name"] == "arg4"
+    assert agent2_args[2]["type"] == "object"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[2]["type"], agent2_args[2]["value"]
+    ) == {"hello": "world"}
+    assert agent2_args[3]["name"] == "arg5"
+    assert agent2_args[3]["type"] == "boolean"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[3]["type"], agent2_args[3]["value"])
+        is False
+    )
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
@@ -799,13 +821,35 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     agent1_args = agent_group_agents[0]["args"]["args"]
     agent2_args = agent_group_agents[1]["args"]["args"]
     assert len(agent1_args) == 1
-    assert len(agent2_args) == 1
+    assert len(agent2_args) == 4
     assert agent1_args[0]["name"] == "arg1"
     assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == b"42"
+    assert (
+        models.AgentArgument.from_bytes(agent1_args[0]["type"], agent1_args[0]["value"])
+        == 42
+    )
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == b"hello"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[0]["type"], agent2_args[0]["value"])
+        == "hello"
+    )
+    assert agent2_args[1]["name"] == "arg3"
+    assert agent2_args[1]["type"] == "array"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[1]["type"], agent2_args[1]["value"]
+    ) == ["hello", "world"]
+    assert agent2_args[2]["name"] == "arg4"
+    assert agent2_args[2]["type"] == "object"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[2]["type"], agent2_args[2]["value"]
+    ) == {"hello": "world"}
+    assert agent2_args[3]["name"] == "arg5"
+    assert agent2_args[3]["type"] == "boolean"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[3]["type"], agent2_args[3]["value"])
+        is False
+    )
 
 
 def testQueryAgentGroupsWithPagination_always_returnPageInfo(
