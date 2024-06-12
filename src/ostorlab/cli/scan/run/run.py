@@ -22,6 +22,7 @@ from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import defintions as utils_definitions
 
+
 console = cli_console.Console()
 
 logger = logging.getLogger(__name__)
@@ -172,11 +173,17 @@ def run(
             )
         if ctx.invoked_subcommand is None:
             try:
-                runtime_instance.scan(
+                created_scan = runtime_instance.scan(
                     title=ctx.obj["title"],
                     agent_group_definition=ctx.obj["agent_group_definition"],
                     assets=asset_group.targets if asset_group is not None else None,
                 )
+                if created_scan is not None:
+                    runtime_instance.link_agent_group_scan(created_scan, agent_group)
+                    runtime_instance.link_assets_scan(
+                        created_scan.id, asset_group.targets
+                    )
+
             except exceptions.OstorlabError as e:
                 console.error(f"An error was encountered while running the scan: {e}")
     else:
