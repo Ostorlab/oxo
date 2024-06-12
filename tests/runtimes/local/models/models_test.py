@@ -368,7 +368,8 @@ def testNetworkModel_whenDeleteNetwork_networkDeletedWithItsIps(
     with models.Database() as session:
         assert session.query(models.Network).filter_by(id=network_id).count() == 0
         assert (
-            session.query(models.IPRange).filter_by(network_asset_id=network_id).count() == 0
+            session.query(models.IPRange).filter_by(network_asset_id=network_id).count()
+            == 0
         )
 
 

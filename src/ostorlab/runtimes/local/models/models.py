@@ -744,7 +744,7 @@ class Urls(Asset):
     }
 
     @staticmethod
-    def create(links: List[dict]) -> "Urls":
+    def create(links: List[dict[str, str]]) -> "Urls":
         """Persist the URL information in the database.
 
         Args:
@@ -822,7 +822,7 @@ class Network(Asset):
     }
 
     @staticmethod
-    def create(networks: List[dict]) -> "Network":
+    def create(networks: List[dict[str, int | str]]) -> "Network":
         """Persist the Network information in the database.
 
         Args:
