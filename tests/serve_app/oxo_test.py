@@ -1180,7 +1180,7 @@ def testCreateAsset_network_createsNewAsset(
         assert networks[1].mask == 32
 
 
-def testCreateAsset_androidFile_createsNewAsset(
+def testCreateAsset_androidApkFile_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
     """Ensure the android file is created successfully through the createAssets API."""
@@ -1219,6 +1219,75 @@ def testCreateAsset_androidFile_createsNewAsset(
         ),
         "0": apk_path.open("rb"),
         "map": json.dumps({"0": ["variables.assets.0.androidApkFile.0.file"]}),
+    }
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        data=data,
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
+    assert asset_data["id"] is not None
+    assert asset_data["packageName"] == "a.b.c"
+    if sys.platform == "win32":
+        assert "\\.ostorlab\\uploads\\android_" in asset_data["path"]
+    else:
+        assert ".ostorlab/uploads/android_" in asset_data["path"]
+    with models.Database() as session:
+        assert session.query(models.AndroidFile).count() == 1
+        assert session.query(models.AndroidFile).all()[0].package_name == "a.b.c"
+        if sys.platform == "win32":
+            assert (
+                "\\.ostorlab\\uploads\\android_"
+                in session.query(models.AndroidFile).all()[0].path
+            )
+        else:
+            assert (
+                ".ostorlab/uploads/android_"
+                in session.query(models.AndroidFile).all()[0].path
+            )
+
+
+def testCreateAsset_androidAabFile_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the android file is created successfully through the createAssets API."""
+    del clean_db
+    query = """
+        mutation createAndroidFile($assets: [OxoAssetInputType]!) {
+            createAssets(assets: $assets) {
+                assets {
+                    ... on OxoAndroidFileAssetType {
+                        id
+                        packageName
+                        path
+                    }
+                }
+            }
+        }
+    """
+    apk_path = pathlib.Path(__file__).parent.parent / "files" / "health.aab"
+    data = {
+        "operations": json.dumps(
+            {
+                "query": query,
+                "variables": {
+                    "assets": [
+                        {
+                            "androidAabFile": [
+                                {
+                                    "file": None,
+                                    "packageName": "a.b.c",
+                                }
+                            ]
+                        }
+                    ]
+                },
+            }
+        ),
+        "0": apk_path.open("rb"),
+        "map": json.dumps({"0": ["variables.assets.0.androidAabFile.0.file"]}),
     }
 
     resp = authenticated_flask_client.post(

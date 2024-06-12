@@ -314,14 +314,26 @@ class CreateAssetsMutation(graphene.Mutation):
                     )
                     created_assets.append(new_asset)
             if asset.android_apk_file is not None:
-                for asset_android_file in asset.android_apk_file:
-                    content = asset_android_file.file.read()
+                for asset_android_apk_file in asset.android_apk_file:
+                    content = asset_android_apk_file.file.read()
                     android_file_path = (
                         config_manager.upload_path / f"android_{str(uuid.uuid4())}"
                     )
                     android_file_path.write_bytes(content)
                     new_asset = models.AndroidFile.create(
-                        package_name=asset_android_file.package_name,
+                        package_name=asset_android_apk_file.package_name,
+                        path=str(android_file_path),
+                    )
+                    created_assets.append(new_asset)
+            if asset.android_aab_file is not None:
+                for asset_android_aab_file in asset.android_aab_file:
+                    content = asset_android_aab_file.file.read()
+                    android_file_path = (
+                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                    )
+                    android_file_path.write_bytes(content)
+                    new_asset = models.AndroidFile.create(
+                        package_name=asset_android_aab_file.package_name,
                         path=str(android_file_path),
                     )
                     created_assets.append(new_asset)
@@ -364,6 +376,8 @@ class CreateAssetsMutation(graphene.Mutation):
             assets.append(asset.android_store)
         if asset.android_apk_file is not None:
             assets.append(asset.android_apk_file)
+        if asset.android_aab_file is not None:
+            assets.append(asset.android_aab_file)
         if asset.ios_store is not None:
             assets.append(asset.ios_store)
         if asset.ios_file is not None:
