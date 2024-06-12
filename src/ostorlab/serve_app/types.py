@@ -664,6 +664,15 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_agent_group(
         self: models.Scan, info: graphql_base.ResolveInfo
     ) -> Optional[AgentGroupType]:
+        """Resolve agent group.
+
+        Args:
+            self: The scan object.
+            info: GraphQL resolve info.
+
+        Returns:
+            str: The message status of the scan.
+        """
         with models.Database() as session:
             if self.agent_group_id is not None:
                 return session.query(models.AgentGroup).get(self.agent_group_id)
