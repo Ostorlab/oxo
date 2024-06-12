@@ -18,14 +18,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: Install SSH key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.WORKFLOW_SSH_KEY }}
-        known_hosts: ${{ secrets.KNOWN_HOSTS }}
     - uses: actions/checkout@v4.1.1
       with:
         submodules: true
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup Node.js
       uses: actions/setup-node@v2
       with:
