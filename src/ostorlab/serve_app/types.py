@@ -148,7 +148,7 @@ class OxoVulnerabilitiesType(graphene.ObjectType):
 class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
     """Graphene object type for an aggregated knowledge base vulnerability."""
 
-    highest_risk_rating = graphene.Field(common.RiskRatingEnum)
+    highest_risk_rating = graphene.Field(OxoRiskRatingEnum)
     highest_cvss_v3_vector = graphene.String()
     highest_cvss_v3_base_score = graphene.Float()
     kb = graphene.Field(OxoKnowledgeBaseVulnerabilityType)
@@ -159,6 +159,12 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         number_elements=graphene.Int(required=False),
         description="List of vulnerabilities.",
     )
+
+    def resolve_highest_risk_rating(self, info) -> Optional[OxoRiskRatingEnum]:
+        try:
+            return OxoRiskRatingEnum[self.highest_risk_rating.name]
+        except KeyError:
+            return None
 
     def resolve_vulnerabilities(
         self: models.Scan,
@@ -685,13 +691,22 @@ class AgentsType(graphene.ObjectType):
     """Graphene object type for a list of agents."""
 
     agents = graphene.List(AgentType, required=True)
+    page_info = graphene.Field(
+        common.PageInfo,
+        required=False,
+    )
 
 
 class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for an agent group."""
 
     key = graphene.String()
-    agents = graphene.Field(AgentsType, required=True)
+    agents = graphene.Field(
+        AgentsType,
+        required=True,
+        page=graphene.Int(required=False),
+        number_elements=graphene.Int(required=False),
+    )
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -716,7 +731,10 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         return f"agentgroup//{self.name}"
 
     def resolve_agents(
-        self: models.AgentGroup, info: graphql_base.ResolveInfo
+        self: models.AgentGroup,
+        info: graphql_base.ResolveInfo,
+        page: int = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> AgentsType:
         """Resolve agents query.
         Args:
@@ -725,6 +743,9 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             AgentsType: List of agents.
         """
+        if number_elements <= 0:
+            return AgentsType(agents=[])
+
         with models.Database() as session:
             agents = (
                 session.query(models.AgentGroup)
@@ -732,7 +753,18 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 .first()
                 .agents
             )
-            return AgentsType(agents=agents)
+            if page is not None and number_elements > 0:
+                p = common.Paginator(agents, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
+            else:
+                return AgentsType(agents=agents)
 
 
 class AgentGroupsType(graphene.ObjectType):
