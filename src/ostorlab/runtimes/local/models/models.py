@@ -710,7 +710,7 @@ class Link(Base):
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     url = sqlalchemy.Column(sqlalchemy.String(4096))
     method = sqlalchemy.Column(sqlalchemy.String(8))
-    url_asset_id = sqlalchemy.Column(
+    urls_asset_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("urls.id")
     )
 
@@ -733,7 +733,7 @@ class Link(Base):
             return link
 
 
-class Url(Asset):
+class Urls(Asset):
     __tablename__ = "urls"
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
@@ -744,7 +744,7 @@ class Url(Asset):
     }
 
     @staticmethod
-    def create(links: List[dict]) -> "Url":
+    def create(links: List[dict]) -> "Urls":
         """Persist the URL information in the database.
 
         Args:
@@ -754,21 +754,21 @@ class Url(Asset):
             Url object.
         """
         with Database() as session:
-            url_instance = Url()
-            session.add(url_instance)
+            urls_instance = Urls()
+            session.add(urls_instance)
             session.commit()
 
             link_objects = [
                 Link(
                     url=link.get("url"),
                     method=link.get("method", "GET"),
-                    url_asset_id=url_instance.id,
+                    urls_asset_id=urls_instance.id,
                 )
                 for link in links
             ]
             session.add_all(link_objects)
             session.commit()
-            return url_instance
+            return urls_instance
 
     @staticmethod
     def delete(url_id: int) -> None:
@@ -778,12 +778,12 @@ class Url(Asset):
             url_id: The URL id.
         """
         with Database() as session:
-            session.query(Url).filter_by(id=url_id).delete()
+            session.query(Urls).filter_by(id=url_id).delete()
             session.query(Link).filter_by(url_asset_id=url_id).delete()
             session.commit()
 
 
-class IP(Base):
+class IPRange(Base):
     __tablename__ = "ip"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     host = sqlalchemy.Column(sqlalchemy.String(50))
@@ -793,19 +793,19 @@ class IP(Base):
     )
 
     @staticmethod
-    def create(host: str, mask: int, network_asset_id: int) -> "IP":
+    def create(host: str, mask: int, network_asset_id: int) -> "IPRange":
         """Persist the IP information in the database.
 
         Args:
             host: The target IP address.
             mask: The subnet mask.
-            network_id: The network id.
+            network_asset_id: The network id.
 
         Returns:
             IP object.
         """
         with Database() as session:
-            ip = IP(host=host, mask=mask, network_asset_id=network_asset_id)
+            ip = IPRange(host=host, mask=mask, network_asset_id=network_asset_id)
             session.add(ip)
             session.commit()
             return ip
@@ -837,7 +837,7 @@ class Network(Asset):
             session.commit()
 
             network_items = [
-                IP(
+                IPRange(
                     host=network["host"],
                     mask=network["mask"],
                     network_asset_id=network_instance.id,
@@ -857,5 +857,5 @@ class Network(Asset):
         """
         with Database() as session:
             session.query(Network).filter_by(id=network_id).delete()
-            session.query(IP).filter_by(network_asset_id=network_id).delete()
+            session.query(IPRange).filter_by(network_asset_id=network_id).delete()
             session.commit()

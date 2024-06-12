@@ -333,7 +333,7 @@ def testAssetModels_whenCreateUrl_assetCreated(
 ) -> None:
     """Ensure we correctly persist the list of target URLs information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Url.create(
+    models.Urls.create(
         links=[
             {"url": "https://example24.com", "method": "POST"},
             {"url": "https://example42.com"},
@@ -341,8 +341,8 @@ def testAssetModels_whenCreateUrl_assetCreated(
     )
 
     with models.Database() as session:
-        assert session.query(models.Url).count() == 1
-        url_id = session.query(models.Url).all()[0].id
+        assert session.query(models.Urls).count() == 1
+        url_id = session.query(models.Urls).all()[0].id
         links = (
             session.query(models.Link).filter(models.Link.url_asset_id == url_id).all()
         )
@@ -368,7 +368,7 @@ def testNetworkModel_whenDeleteNetwork_networkDeletedWithItsIps(
     with models.Database() as session:
         assert session.query(models.Network).filter_by(id=network_id).count() == 0
         assert (
-            session.query(models.IP).filter_by(network_asset_id=network_id).count() == 0
+            session.query(models.IPRange).filter_by(network_asset_id=network_id).count() == 0
         )
 
 
@@ -377,7 +377,7 @@ def testUrlModel_whenDeleteUrl_urlDeletedWithItsLinks(
 ) -> None:
     """Ensure we correctly delete the url and its links."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    url = models.Url.create(
+    url = models.Urls.create(
         links=[
             {"url": "https://example24.com", "method": "POST"},
             {"url": "https://example42.com"},
@@ -385,10 +385,10 @@ def testUrlModel_whenDeleteUrl_urlDeletedWithItsLinks(
     )
     url_id = url.id
 
-    models.Url.delete(url_id)
+    models.Urls.delete(url_id)
 
     with models.Database() as session:
-        assert session.query(models.Url).filter_by(id=url_id).count() == 0
+        assert session.query(models.Urls).filter_by(id=url_id).count() == 0
         assert session.query(models.Link).filter_by(url_asset_id=url_id).count() == 0
 
 
