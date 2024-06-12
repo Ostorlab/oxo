@@ -1206,7 +1206,7 @@ def testCreateAsset_androidFile_createsNewAsset(
                 "variables": {
                     "assets": [
                         {
-                            "androidFile": [
+                            "androidApkFile": [
                                 {
                                     "file": None,
                                     "packageName": "a.b.c",
@@ -1218,7 +1218,7 @@ def testCreateAsset_androidFile_createsNewAsset(
             }
         ),
         "0": apk_path.open("rb"),
-        "map": json.dumps({"0": ["variables.assets.0.androidFile.0.file"]}),
+        "map": json.dumps({"0": ["variables.assets.0.androidApkFile.0.file"]}),
     }
 
     resp = authenticated_flask_client.post(

@@ -313,8 +313,8 @@ class CreateAssetsMutation(graphene.Mutation):
                         application_name=asset_android_store.application_name,
                     )
                     created_assets.append(new_asset)
-            if asset.android_file is not None:
-                for asset_android_file in asset.android_file:
+            if asset.android_apk_file is not None:
+                for asset_android_file in asset.android_apk_file:
                     content = asset_android_file.file.read()
                     android_file_path = (
                         config_manager.upload_path / f"android_{str(uuid.uuid4())}"
@@ -362,8 +362,8 @@ class CreateAssetsMutation(graphene.Mutation):
         assets = []
         if asset.android_store is not None:
             assets.append(asset.android_store)
-        if asset.android_file is not None:
-            assets.append(asset.android_file)
+        if asset.android_apk_file is not None:
+            assets.append(asset.android_apk_file)
         if asset.ios_store is not None:
             assets.append(asset.ios_store)
         if asset.ios_file is not None:

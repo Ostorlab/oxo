@@ -718,7 +718,7 @@ class OxoLinkInputType(graphene.InputObjectType):
 
 
 class OxoAssetInputType(graphene.InputObjectType):
-    android_file = graphene.List(OxoAndroidFileAssetInputType)
+    android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
     ios_file = graphene.List(OxoIOSFileAssetInputType)
     android_store = graphene.List(OxoAndroidStoreAssetInputType)
     ios_store = graphene.List(OxoIOSStoreAssetInputType)
