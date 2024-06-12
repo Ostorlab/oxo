@@ -715,19 +715,19 @@ class Link(Base):
     )
 
     @staticmethod
-    def create(url: str, method: str, url_asset_id: int) -> "Link":
+    def create(url: str, method: str, urls_asset_id: int) -> "Link":
         """Persist the link information in the database.
 
         Args:
             url: The target URL.
             method: The HTTP method.
-            url_asset_id: The URL asset id.
+            urls_asset_id: The URL asset id.
 
         Returns:
             Link object.
         """
         with Database() as session:
-            link = Link(url=url, method=method, url_asset_id=url_asset_id)
+            link = Link(url=url, method=method, urls_asset_id=urls_asset_id)
             session.add(link)
             session.commit()
             return link
@@ -751,7 +751,7 @@ class Urls(Asset):
             links: list of the target URLs with methods.
 
         Returns:
-            Url object.
+            Urls object.
         """
         with Database() as session:
             urls_instance = Urls()
@@ -771,15 +771,15 @@ class Urls(Asset):
             return urls_instance
 
     @staticmethod
-    def delete(url_id: int) -> None:
+    def delete(urls_asset_id: int) -> None:
         """Delete the URL information from the database.
 
         Args:
-            url_id: The URL id.
+            urls_asset_id: The URL id.
         """
         with Database() as session:
-            session.query(Urls).filter_by(id=url_id).delete()
-            session.query(Link).filter_by(url_asset_id=url_id).delete()
+            session.query(Urls).filter_by(id=urls_asset_id).delete()
+            session.query(Link).filter_by(url_asset_id=urls_asset_id).delete()
             session.commit()
 
 

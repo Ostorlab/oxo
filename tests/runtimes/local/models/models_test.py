@@ -317,8 +317,8 @@ def testAssetModels_whenCreateNetwork_assetCreated(
         assert session.query(models.Network).count() == 1
         network_id = session.query(models.Network).all()[0].id
         ips = (
-            session.query(models.IP)
-            .filter(models.IP.network_asset_id == network_id)
+            session.query(models.IPRange)
+            .filter(models.IPRange.network_asset_id == network_id)
             .all()
         )
         assert len(ips) == 2
