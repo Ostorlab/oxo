@@ -955,7 +955,7 @@ class Network(Asset):
 
     @staticmethod
     def create(
-        networks: List[dict[str, int | str]], scan_id: Optional[int] = None
+        networks: List[Dict[str, Union[str, int]]], scan_id: Optional[int] = None
     ) -> "Network":
         """Persist the Network information in the database.
 

@@ -73,12 +73,12 @@ class Query(graphene.ObjectType):
         """Resolve scans query.
 
         Args:
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-            scan_ids (Optional[List[int]], optional): List of scan ids. Defaults to None.
-            page (int | None, optional): Page number. Defaults to None.
-            number_elements (int, optional): Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
-            order_by (Optional[types.OxoScanOrderByEnum], optional): Order by filter. Defaults to None.
-            sort (Optional[common.SortEnum], optional): Sort filter. Defaults to None.
+            info: GraphQL resolve info.
+            scan_ids: List of scan ids. Defaults to None.
+            page: Page number. Defaults to None.
+            number_elements: Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
+            order_by: Order by filter. Defaults to None.
+            sort: Sort filter. Defaults to None.
 
         Returns:
             Optional[types.OxoScansType]: List of scans.
