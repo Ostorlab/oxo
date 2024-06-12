@@ -310,7 +310,10 @@ def testAssetModels_whenCreateNetwork_assetCreated(
     """Ensure we correctly persist the network information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.Network.create(
-        networks=[{"host": "8.8.8.8", "mask": 24}, {"host": "42.42.42.42", "mask": 32}]
+        networks=[
+            {"host": "8.8.8.8", "mask": "24"},
+            {"host": "42.42.42.42", "mask": "32"},
+        ]
     )
 
     with models.Database() as session:
@@ -323,9 +326,9 @@ def testAssetModels_whenCreateNetwork_assetCreated(
         )
         assert len(ips) == 2
         assert ips[0].host == "8.8.8.8"
-        assert ips[0].mask == 24
+        assert ips[0].mask == "24"
         assert ips[1].host == "42.42.42.42"
-        assert ips[1].mask == 32
+        assert ips[1].mask == "32"
 
 
 def testAssetModels_whenCreateUrl_assetCreated(

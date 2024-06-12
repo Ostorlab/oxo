@@ -608,7 +608,7 @@ def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(
         )
         assert len(ips) == 1
         assert ips[0].host == "8.8.8.8"
-        assert ips[0].mask == 32
+        assert ips[0].mask == "32"
         agent_nmap = agent_group.agents[0]
         args = (
             session.query(models.AgentArgument).filter_by(agent_id=agent_nmap.id).all()
