@@ -657,8 +657,8 @@ class Asset(Base):
         """Create the assets from the asset definition.
 
         Args:
-            scan: The scan object.
             assets: The list of assets to create.
+            scan_id: The scan id.
         """
         networks = []
         links = []
@@ -710,6 +710,7 @@ class AndroidFile(Asset):
         Args:
             package_name: The application identifier.
             path: Local/Remote path of the APK/AAB.
+            scan_id: The scan id.
 
         Returns:
             android file object.
@@ -748,6 +749,7 @@ class AndroidStore(Asset):
         Args:
             package_name: The application identifier.
             application_name: The application name as shown in the store.
+            scan_id: The scan id.
 
         Returns:
             android store object.
@@ -784,6 +786,7 @@ class IosFile(Asset):
         Args:
             bundle_id: The application identifier.
             path: Local/Remote path of the IPA.
+            scan_id: The scan id.
 
         Returns:
             iOS file object.
@@ -820,6 +823,7 @@ class IosStore(Asset):
         Args:
             bundle_id: The application identifier.
             application_name: The application name as shown in the store.
+            scan_id: The scan id.
 
         Returns:
             iOS store object.
@@ -879,6 +883,7 @@ class Urls(Asset):
 
         Args:
             links: list of the target URLs with methods.
+            scan_id: The scan id.
 
         Returns:
             Urls object.
@@ -961,6 +966,7 @@ class Network(Asset):
 
         Args:
             networks: list of the target IP/range addresses.
+            scan_id: The scan id.
 
         Returns:
             Network object.
