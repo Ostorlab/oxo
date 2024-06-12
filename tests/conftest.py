@@ -855,15 +855,21 @@ def agent_groups(
         session.add(agent2)
         session.commit()
 
-        arg1 = models.AgentArgument(
-            agent_id=agent1.id, name="arg1", type="number", value=b"42"
+        models.AgentArgument.create(
+            agent_id=agent1.id, name="arg1", type="number", value=42
         )
-        arg2 = models.AgentArgument(
-            agent_id=agent2.id, name="arg2", type="string", value=b"hello"
+        models.AgentArgument.create(
+            agent_id=agent2.id, name="arg2", type="string", value="hello"
         )
-        session.add(arg1)
-        session.add(arg2)
-        session.commit()
+        models.AgentArgument.create(
+            agent_id=agent2.id, name="arg3", type="array", value=["hello", "world"]
+        )
+        models.AgentArgument.create(
+            agent_id=agent2.id, name="arg4", type="object", value={"hello": "world"}
+        )
+        models.AgentArgument.create(
+            agent_id=agent2.id, name="arg5", type="boolean", value=False
+        )
 
         agent_group1 = models.AgentGroup(
             name="Agent Group 1",
@@ -1100,3 +1106,81 @@ def ios_store(mocker: plugin.MockerFixture, db_engine_path: str) -> models.IosSt
         bundle_id="com.example.ios", application_name="Example iOS App"
     )
     return asset
+
+
+@pytest.fixture
+def nmap_agent_def() -> agent_definitions.AgentDefinition:
+    """Create an Nmap agent definition."""
+    return agent_definitions.AgentDefinition(
+        name="nmap",
+        in_selectors=[
+            "v3.asset.ip.v4",
+            "v3.asset.ip.v6",
+            "v3.asset.domain_name",
+            "v3.asset.link",
+        ],
+        out_selectors=["v3.asset.ip.v4.port.service"],
+        args=[
+            {
+                "name": "fast_mode",
+                "description": "Fast mode scans fewer ports than the default mode.",
+                "type": "boolean",
+                "value": True,
+            },
+            {
+                "name": "top_ports",
+                "type": "number",
+                "description": "Top ports to scan.",
+            },
+            {
+                "name": "timing_template",
+                "type": "string",
+                "description": "Template of timing settings (T0, T1, ... T5).",
+                "value": "T3",
+            },
+            {
+                "name": "scripts",
+                "type": "array",
+                "description": "List of scripts to run using Nmap",
+                "value": ["banner"],
+            },
+            {
+                "name": "float_arg",
+                "type": "number",
+                "description": "Float argument.",
+                "value": 3.14,
+            },
+        ],
+    )
+
+
+@pytest.fixture
+def run_scan_mock(mocker: plugin.MockerFixture) -> None:
+    """Mock functions required to run a scan."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_post_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime._check_agents_healthy",
+        return_value=True,
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._inject_assets")
