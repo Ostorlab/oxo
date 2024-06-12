@@ -448,7 +448,7 @@ class AgentArgument(Base):
             return value.encode(encoding="utf-8")
         elif type in ("boolean", "bool"):
             return (1 if value is True else 0).to_bytes(1, byteorder="big")
-        elif type in ("number", "int", "float"):
+        elif type == "number":
             return struct.pack("d", value)
         elif type in ("array", "object"):
             return json.dumps(value).encode(encoding="utf-8")
@@ -462,7 +462,7 @@ class AgentArgument(Base):
             return value.decode(encoding="utf-8")
         elif type in ("boolean", "bool"):
             return bool(int.from_bytes(value, byteorder="big"))
-        elif type in ("number", "int", "float"):
+        elif type == "number":
             return struct.unpack("d", value)[0]
         elif type in ("array", "object"):
             return json.loads(value.decode())
