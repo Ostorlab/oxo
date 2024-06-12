@@ -51,8 +51,6 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-    - name: Checkout code
-      uses: actions/checkout@v4.1.1
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v1
