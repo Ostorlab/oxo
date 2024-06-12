@@ -1696,7 +1696,6 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                         agentGroup {
                             key,
                             name,
-                            assetTypes,
                             agents {
                                 agents {
                                     key,
@@ -1717,7 +1716,6 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
         "agentGroup": {
             "name": "test_agent_group",
             "description": "agent description",
-            "assetTypes": ["ANDROID_FILE", "WEB"],
             "agents": [
                 {
                     "key": "agent_key",
@@ -1736,7 +1734,6 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     ag = ubjson.loadb(response.data)["data"]["publishAgentGroup"]["agentGroup"]
     agent_group_key = ag["key"]
     agent_group_name = ag["name"]
-    asset_types = ag["assetTypes"]
     agent_key = ag["agents"]["agents"][0]["key"]
     arg_name = ag["agents"]["agents"][0]["args"]["args"][0]["name"]
     arg_type = ag["agents"]["agents"][0]["args"]["args"][0]["type"]
@@ -1748,7 +1745,6 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     assert arg_type == "type1"
     assert isinstance(arg_value, bytes) is True
     assert arg_value == b"value1"
-    assert asset_types == ["android_file", "web"]
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(

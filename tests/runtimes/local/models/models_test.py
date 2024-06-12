@@ -223,15 +223,13 @@ def testModelsAgentGroup_always_createsAgentGroup(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
 
     with models.Database() as session:
-        models.AgentGroup.create(
-            name="test", description="test", agents=[], asset_types=["network", "web"]
-        )
+        ag = models.AgentGroup(name="test", description="test")
+        session.add(ag)
+        session.commit()
 
         assert session.query(models.AgentGroup).count() == 1
-        ag = session.query(models.AgentGroup).all()[0]
-        assert ag.name == "test"
-        assert ag.description == "test"
-        assert ag.asset_types == ["network", "web"]
+        assert session.query(models.AgentGroup).all()[0].name == "test"
+        assert session.query(models.AgentGroup).all()[0].description == "test"
 
 
 def testModelsAgentGroupMapping_always_createsAgentGroupMapping(

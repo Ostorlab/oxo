@@ -424,8 +424,8 @@ class PublishAgentGroupMutation(graphene.Mutation):
         """Create agent group.
 
         Args:
-            info: GraphQL resolve info.
-            agent_group: Agent group to create.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            agent_group (types.AgentGroupCreateInputType): Agent group to create.
 
         Returns:
             PublishAgentGroupMutation: Publish agent group mutation.
@@ -435,7 +435,6 @@ class PublishAgentGroupMutation(graphene.Mutation):
             name=agent_group.name,
             description=agent_group.description,
             agents=agent_group.agents,
-            asset_types=agent_group.asset_types,
         )
         return PublishAgentGroupMutation(agent_group=group)
 
