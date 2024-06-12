@@ -7,9 +7,11 @@ import httpx
 import pytest
 from click.testing import CliRunner
 
+from ostorlab.agent import definitions
 from ostorlab.cli import rootcli
 from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
+from ostorlab.runtimes.local.models import models
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -556,3 +558,71 @@ def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
     )
 
     assert "Creating scan entry" in result.output
+
+
+def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
+    mocker: plugin.MockerFixture,
+    nmap_agent_def: definitions.AgentDefinition,
+    run_scan_mock: None,
+    db_engine_path: str,
+) -> None:
+    """Ensure that the cli scan is linked to the agent group and asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runner = CliRunner()
+    mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
+    )
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--install",
+            "--no-follow",
+            "--title=test_scan",
+            "--agent=agent/ostorlab/nmap",
+            "--arg=fast_mode:false",
+            "--arg=top_ports:100",
+            "--arg=timing_template:T4",
+            "--arg=scripts:val1,val2",
+            "--arg=float_arg:3.24",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    with models.Database() as session:
+        scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert scan.title == "test_scan"
+        agent_group = (
+            session.query(models.AgentGroup).filter_by(id=scan.agent_group_id).first()
+        )
+        assert len(agent_group.agents) == 1
+        assert any(agent.key == "agent/ostorlab/nmap" for agent in agent_group.agents)
+        assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
+        assert len(assets) == 1
+        assert assets[0].type == "network"
+        assert assets[0].networks == '["8.8.8.8/32"]'
+        agent_nmap = agent_group.agents[0]
+        args = (
+            session.query(models.AgentArgument).filter_by(agent_id=agent_nmap.id).all()
+        )
+        assert args[0].name == "fast_mode"
+        assert models.AgentArgument.from_bytes(args[0].type, args[0].value) is False
+        assert args[0].type == "boolean"
+        assert args[1].name == "top_ports"
+        assert models.AgentArgument.from_bytes(args[1].type, args[1].value) == 100
+        assert args[1].type == "number"
+        assert args[2].name == "timing_template"
+        assert models.AgentArgument.from_bytes(args[2].type, args[2].value) == "T4"
+        assert args[2].type == "string"
+        assert args[3].name == "scripts"
+        assert models.AgentArgument.from_bytes(args[3].type, args[3].value) == [
+            "val1",
+            "val2",
+        ]
+        assert args[3].type == "array"
+        assert args[4].name == "float_arg"
+        assert models.AgentArgument.from_bytes(args[4].type, args[4].value) == 3.24
+        assert args[4].type == "number"

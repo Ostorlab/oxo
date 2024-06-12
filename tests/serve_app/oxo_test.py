@@ -719,13 +719,35 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     agent1_args = agent_group1_agents[0]["args"]["args"]
     agent2_args = agent_group1_agents[1]["args"]["args"]
     assert len(agent1_args) == 1
-    assert len(agent2_args) == 1
+    assert len(agent2_args) == 4
     assert agent1_args[0]["name"] == "arg1"
     assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == b"42"
+    assert (
+        models.AgentArgument.from_bytes(agent1_args[0]["type"], agent1_args[0]["value"])
+        == 42
+    )
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == b"hello"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[0]["type"], agent2_args[0]["value"])
+        == "hello"
+    )
+    assert agent2_args[1]["name"] == "arg3"
+    assert agent2_args[1]["type"] == "array"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[1]["type"], agent2_args[1]["value"]
+    ) == ["hello", "world"]
+    assert agent2_args[2]["name"] == "arg4"
+    assert agent2_args[2]["type"] == "object"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[2]["type"], agent2_args[2]["value"]
+    ) == {"hello": "world"}
+    assert agent2_args[3]["name"] == "arg5"
+    assert agent2_args[3]["type"] == "boolean"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[3]["type"], agent2_args[3]["value"])
+        is False
+    )
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
@@ -792,13 +814,35 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     agent1_args = agent_group_agents[0]["args"]["args"]
     agent2_args = agent_group_agents[1]["args"]["args"]
     assert len(agent1_args) == 1
-    assert len(agent2_args) == 1
+    assert len(agent2_args) == 4
     assert agent1_args[0]["name"] == "arg1"
     assert agent1_args[0]["type"] == "number"
-    assert agent1_args[0]["value"] == b"42"
+    assert (
+        models.AgentArgument.from_bytes(agent1_args[0]["type"], agent1_args[0]["value"])
+        == 42
+    )
     assert agent2_args[0]["name"] == "arg2"
     assert agent2_args[0]["type"] == "string"
-    assert agent2_args[0]["value"] == b"hello"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[0]["type"], agent2_args[0]["value"])
+        == "hello"
+    )
+    assert agent2_args[1]["name"] == "arg3"
+    assert agent2_args[1]["type"] == "array"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[1]["type"], agent2_args[1]["value"]
+    ) == ["hello", "world"]
+    assert agent2_args[2]["name"] == "arg4"
+    assert agent2_args[2]["type"] == "object"
+    assert models.AgentArgument.from_bytes(
+        agent2_args[2]["type"], agent2_args[2]["value"]
+    ) == {"hello": "world"}
+    assert agent2_args[3]["name"] == "arg5"
+    assert agent2_args[3]["type"] == "boolean"
+    assert (
+        models.AgentArgument.from_bytes(agent2_args[3]["type"], agent2_args[3]["value"])
+        is False
+    )
 
 
 def testQueryAgentGroupsWithPagination_always_returnPageInfo(
@@ -1028,10 +1072,12 @@ def testCreateAsset_url_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "link": [
-                            {"url": "https://www.google.com", "method": "GET"},
-                            {"url": "https://www.tesla.com"},
-                        ]
+                        "url": {
+                            "links": [
+                                "https://www.example.com",
+                                "https://www.example2.com",
+                            ],
+                        }
                     }
                 ]
             },
@@ -1042,14 +1088,14 @@ def testCreateAsset_url_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["links"] == [
-        {"method": "GET", "url": "https://www.google.com"},
-        {"method": "GET", "url": "https://www.tesla.com"},
+        "https://www.example.com",
+        "https://www.example2.com",
     ]
     with models.Database() as session:
         assert session.query(models.Url).count() == 1
         assert json.loads(session.query(models.Url).all()[0].links) == [
-            {"method": "GET", "url": "https://www.google.com"},
-            {"method": "GET", "url": "https://www.tesla.com"},
+            "https://www.example.com",
+            "https://www.example2.com",
         ]
 
 
@@ -1078,10 +1124,9 @@ def testCreateAsset_network_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "ip": [
-                            {"host": "10.21.11.11", "mask": 30},
-                            {"host": "1.2.3.4", "mask": 24},
-                        ]
+                        "network": {
+                            "networks": ["8.8.8.8/24", "42.42.42.42"],
+                        }
                     }
                 ]
             },
@@ -1091,12 +1136,12 @@ def testCreateAsset_network_createsNewAsset(
     assert resp.status_code == 200, resp.get_json()
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
-    assert asset_data["networks"] == ["10.21.11.11/30", "1.2.3.4/24"]
+    assert asset_data["networks"] == ["8.8.8.8/24", "42.42.42.42"]
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
         assert json.loads(session.query(models.Network).all()[0].networks) == [
-            "10.21.11.11/30",
-            "1.2.3.4/24",
+            "8.8.8.8/24",
+            "42.42.42.42",
         ]
 
 

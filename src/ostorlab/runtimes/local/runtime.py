@@ -228,7 +228,6 @@ class LocalRuntime(runtime.Runtime):
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
-            self.stop(self._scan_db.id)
             self._update_scan_progress("ERROR")
             self.stop(str(self._scan_db.id))
             raise AgentNotHealthy(message)
@@ -769,3 +768,34 @@ class LocalRuntime(runtime.Runtime):
         console.success(
             f"{len(vulnerabilities)} Vulnerabilities saved to  : {dumper.output_path}"
         )
+
+    def link_agent_group_scan(
+        self,
+        scan: models.Scan,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> None:
+        """Link the agent group to the scan in the database.
+
+        Args:
+            scan: The scan object.
+            agent_group_definition: The agent group definition.
+        """
+        with models.Database() as session:
+            agent_group_db = models.AgentGroup.create_from_agent_group_definition(
+                agent_group_definition
+            )
+            scan.agent_group_id = agent_group_db.id
+            session.add(scan)
+            session.commit()
+
+    def link_assets_scan(
+        self, scan_id: int, assets: Optional[List[base_asset.Asset]] = None
+    ) -> None:
+        """Link the assets to the scan in the database.
+
+        Args:
+            scan_id: The scan id.
+            assets: The list of assets.
+        """
+        if assets is not None:
+            models.Asset.create_from_assets_definition(scan_id=scan_id, assets=assets)

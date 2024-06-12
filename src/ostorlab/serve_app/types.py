@@ -282,7 +282,7 @@ class OxoIOSFileAssetInputType(graphene.InputObjectType):
 
 
 class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    links = common.JSONScalar(required=False)
+    links = graphene.List(graphene.String, required=False)
 
     class Meta:
         model = models.Url
@@ -297,8 +297,12 @@ class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin)
                 return []
 
 
+class OxoUrlAssetInputType(graphene.InputObjectType):
+    links = graphene.List(graphene.String)
+
+
 class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    networks = common.JSONScalar(required=False)
+    networks = graphene.List(graphene.String, required=False)
 
     class Meta:
         model = models.Network
@@ -311,6 +315,10 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
                 return json.loads(networks)
             except json.JSONDecodeError:
                 return []
+
+
+class OxoNetworkAssetInputType(graphene.InputObjectType):
+    networks = graphene.List(graphene.String)
 
 
 class OxoAssetType(graphene.Union):
@@ -455,23 +463,13 @@ class AgentGroupsType(graphene.ObjectType):
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
-class OxoIPInputType(graphene.InputObjectType):
-    host = graphene.String(required=True)
-    mask = graphene.Int(required=False)
-
-
-class OxoUrlInputType(graphene.InputObjectType):
-    url = graphene.String(required=True)
-    method = graphene.String(required=False, default_value="GET")
-
-
 class OxoAssetInputType(graphene.InputObjectType):
     android_file = OxoAndroidFileAssetInputType()
     ios_file = OxoIOSFileAssetInputType()
     android_store = OxoAndroidStoreAssetInputType()
     ios_store = OxoIOSStoreAssetInputType()
-    link = graphene.List(OxoUrlInputType)
-    ip = graphene.List(OxoIPInputType)
+    url = OxoUrlAssetInputType()
+    network = OxoNetworkAssetInputType()
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
