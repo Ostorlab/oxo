@@ -613,7 +613,7 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
         assert args[0].type == "boolean"
         assert args[1].name == "top_ports"
         assert models.AgentArgument.from_bytes(args[1].type, args[1].value) == 100
-        assert args[1].type == "int"
+        assert args[1].type == "number"
         assert args[2].name == "timing_template"
         assert models.AgentArgument.from_bytes(args[2].type, args[2].value) == "T4"
         assert args[2].type == "string"

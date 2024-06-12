@@ -1129,7 +1129,7 @@ def nmap_agent_def() -> agent_definitions.AgentDefinition:
             },
             {
                 "name": "top_ports",
-                "type": "int",
+                "type": "number",
                 "description": "Top ports to scan.",
             },
             {
