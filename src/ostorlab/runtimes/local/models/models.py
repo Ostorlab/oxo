@@ -433,19 +433,13 @@ class AgentGroup(Base):
     name = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
-    asset_types = sqlalchemy.Column(sqlalchemy.JSON)
 
     agents = orm.relationship(
         "Agent", secondary="agent_group_mapping", back_populates="agent_groups"
     )
 
     @staticmethod
-    def create(
-        name: str,
-        description: str,
-        agents: Any,
-        asset_types: Optional[List[str]] = None,
-    ) -> "AgentGroup":
+    def create(name: str, description: str, agents: Any) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
@@ -459,7 +453,6 @@ class AgentGroup(Base):
             name=name,
             description=description,
             created_time=datetime.datetime.now(),
-            asset_types=asset_types,
         )
 
         for agent in agents:
