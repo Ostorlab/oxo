@@ -344,7 +344,7 @@ def testAssetModels_whenCreateUrl_assetCreated(
         assert session.query(models.Urls).count() == 1
         url_id = session.query(models.Urls).all()[0].id
         links = (
-            session.query(models.Link).filter(models.Link.url_asset_id == url_id).all()
+            session.query(models.Link).filter(models.Link.urls_asset_id == url_id).all()
         )
         assert len(links) == 2
         assert links[0].url == "https://example24.com"
@@ -390,7 +390,7 @@ def testUrlModel_whenDeleteUrl_urlDeletedWithItsLinks(
 
     with models.Database() as session:
         assert session.query(models.Urls).filter_by(id=url_id).count() == 0
-        assert session.query(models.Link).filter_by(url_asset_id=url_id).count() == 0
+        assert session.query(models.Link).filter_by(urls_asset_id=url_id).count() == 0
 
 
 def testAssetModels_whenCreateIosStore_assetCreated(

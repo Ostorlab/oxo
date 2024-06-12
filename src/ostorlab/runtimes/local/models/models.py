@@ -660,17 +660,17 @@ class Asset(Base):
             scan: The scan object.
             assets: The list of assets to create.
         """
-        networks: List[str] = []
-        links: List[str] = []
+        networks = []
+        links = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
                 or isinstance(asset, ipv4.IPv4)
                 or isinstance(asset, ipv6.IPv6)
             ):
-                networks.append(f"{asset.host}/{asset.mask}")
+                networks.append({"host": asset.host, "mask": asset.mask})
             elif isinstance(asset, link.Link):
-                links.append(f'{{"url": "{asset.url}", "method": "{asset.method}"}}')
+                links.append({"url": asset.url, "method": asset.method})
             elif isinstance(asset, ios_ipa.IOSIpa):
                 IosFile.create(path=asset.path, scan_id=scan_id)
             elif isinstance(asset, ios_store.IOSStore):
@@ -686,7 +686,7 @@ class Asset(Base):
             Network.create(networks=networks, scan_id=scan_id)
 
         if len(links) > 0:
-            Url.create(links=links, scan_id=scan_id)
+            Urls.create(links=links, scan_id=scan_id)
 
 
 class AndroidFile(Asset):
@@ -845,7 +845,7 @@ class Link(Base):
     )
 
     @staticmethod
-    def create(url: str, method: str, urls_asset_id: int) -> "Link":
+    def create(url: str, method: str, urls_asset_id: Optional[int] = None) -> "Link":
         """Persist the link information in the database.
 
         Args:
@@ -909,7 +909,7 @@ class Urls(Asset):
         """
         with Database() as session:
             session.query(Urls).filter_by(id=urls_asset_id).delete()
-            session.query(Link).filter_by(url_asset_id=urls_asset_id).delete()
+            session.query(Link).filter_by(urls_asset_id=urls_asset_id).delete()
             session.commit()
 
 
@@ -923,7 +923,9 @@ class IPRange(Base):
     )
 
     @staticmethod
-    def create(host: str, mask: int, network_asset_id: int) -> "IPRange":
+    def create(
+        host: str, mask: int, network_asset_id: Optional[int] = None
+    ) -> "IPRange":
         """Persist the IP information in the database.
 
         Args:
@@ -952,7 +954,9 @@ class Network(Asset):
     }
 
     @staticmethod
-    def create(networks: List[dict[str, int | str]]) -> "Network":
+    def create(
+        networks: List[dict[str, int | str]], scan_id: Optional[int] = None
+    ) -> "Network":
         """Persist the Network information in the database.
 
         Args:
@@ -962,14 +966,14 @@ class Network(Asset):
             Network object.
         """
         with Database() as session:
-            network_instance = Network()
+            network_instance = Network(scan_id=scan_id)
             session.add(network_instance)
             session.commit()
 
             network_items = [
                 IPRange(
-                    host=network["host"],
-                    mask=network["mask"],
+                    host=network.get("host"),
+                    mask=network.get("mask", 32),
                     network_asset_id=network_instance.id,
                 )
                 for network in networks

@@ -1,7 +1,6 @@
 """Oxo GraphQL queries and mutations."""
 
 import ipaddress
-import json
 import pathlib
 import uuid
 from typing import Optional, List
@@ -339,11 +338,11 @@ class CreateAssetsMutation(graphene.Mutation):
                     path=str(ios_file_path),
                 )
                 created_assets.append(new_asset)
-            if asset.url is not None:
-                new_asset = models.Url.create(links=asset.url.links)
+            if asset.link is not None:
+                new_asset = models.Urls.create(links=asset.link)
                 created_assets.append(new_asset)
-            if asset.network is not None:
-                new_asset = models.Network.create(networks=asset.network.networks)
+            if asset.ip is not None:
+                new_asset = models.Network.create(networks=asset.ip)
                 created_assets.append(new_asset)
         if len(errors) > 0:
             error_messages = "\n".join(errors)
@@ -363,10 +362,10 @@ class CreateAssetsMutation(graphene.Mutation):
             assets.append(asset.ios_store)
         if asset.ios_file is not None:
             assets.append(asset.ios_file)
-        if asset.url is not None:
-            assets.append(asset.url)
-        if asset.network is not None:
-            assets.append(asset.network)
+        if asset.link is not None:
+            assets.append(asset.link)
+        if asset.ip is not None:
+            assets.append(asset.ip)
 
         if len(assets) == 0:
             return f"Asset {asset} input is missing target."
@@ -587,33 +586,42 @@ class RunScanMutation(graphene.Mutation):
                         ios_store_asset.IOSStore(bundle_id=asset.bundle_id)
                     )
                 elif asset.type == "network":
-                    ips = json.loads(asset.networks)
+                    ips = (
+                        session.query(models.IPRange)
+                        .filter_by(network_asset_id=asset.id)
+                        .all()
+                    )
                     for ip in ips:
-                        ip_network = ipaddress.ip_network(ip, strict=False)
+                        ip_network = ipaddress.ip_network(ip.host, strict=False)
                         if ip_network.version == 4:
                             scan_assets.append(
                                 ipv4_address_asset.IPv4(
                                     host=ip_network.network_address.exploded,
-                                    mask=str(ip_network.prefixlen),
+                                    mask=str(ip.mask)
+                                    if ip.mask is not None
+                                    else str(ip_network.prefixlen),
                                 )
                             )
                         elif ip_network.version == 6:
                             scan_assets.append(
                                 ipv6_address_asset.IPv6(
                                     host=ip_network.network_address.exploded,
-                                    mask=str(ip_network.prefixlen),
+                                    mask=str(ip.mask)
+                                    if ip.mask is not None
+                                    else str(ip_network.prefixlen),
                                 )
                             )
                         else:
                             raise graphql.GraphQLError(f"Invalid IP address {ip}")
                 elif asset.type == "urls":
-                    urls = json.loads(asset.links)
-                    for url in urls:
-                        url = json.loads(url)
+                    links = (
+                        session.query(models.Link)
+                        .filter_by(urls_asset_id=asset.id)
+                        .all()
+                    )
+                    for link in links:
                         scan_assets.append(
-                            link_asset.Link(
-                                url=url.get("url"), method=url.get("method")
-                            )
+                            link_asset.Link(url=link.url, method=link.method)
                         )
                 else:
                     raise graphql.GraphQLError("Unsupported asset type.")

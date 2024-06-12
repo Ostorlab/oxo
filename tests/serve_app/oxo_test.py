@@ -1056,9 +1056,12 @@ def testCreateAsset_url_createsNewAsset(
         mutation createUrl($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on OxoUrlAssetType {
+                    ... on OxoUrlsAssetType {
                         id
-                        links
+                        links {
+                            url
+                            method
+                        }
                     }
                 }
             }
@@ -1072,12 +1075,10 @@ def testCreateAsset_url_createsNewAsset(
             "variables": {
                 "assets": [
                     {
-                        "url": {
-                            "links": [
-                                "https://www.example.com",
-                                "https://www.example2.com",
-                            ],
-                        }
+                        "link": [
+                            {"url": "https://www.google.com", "method": "GET"},
+                            {"url": "https://www.tesla.com"},
+                        ]
                     }
                 ]
             },
@@ -1088,15 +1089,18 @@ def testCreateAsset_url_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["links"] == [
-        "https://www.example.com",
-        "https://www.example2.com",
+        {"method": "GET", "url": "https://www.google.com"},
+        {"method": "GET", "url": "https://www.tesla.com"},
     ]
     with models.Database() as session:
-        assert session.query(models.Url).count() == 1
-        assert json.loads(session.query(models.Url).all()[0].links) == [
-            "https://www.example.com",
-            "https://www.example2.com",
-        ]
+        assert session.query(models.Urls).count() == 1
+        urls_asset_id = session.query(models.Urls).first().id
+        links = session.query(models.Link).filter_by(urls_asset_id=urls_asset_id).all()
+        assert len(links) == 2
+        assert links[0].url == "https://www.google.com"
+        assert links[0].method == "GET"
+        assert links[1].url == "https://www.tesla.com"
+        assert links[1].method == "GET"
 
 
 def testCreateAsset_network_createsNewAsset(
@@ -1110,7 +1114,10 @@ def testCreateAsset_network_createsNewAsset(
                 assets {
                     ... on OxoNetworkAssetType {
                         id
-                        networks
+                        networks {
+                            host
+                            mask
+                        }
                     }
                 }
             }
@@ -1123,11 +1130,7 @@ def testCreateAsset_network_createsNewAsset(
             "query": query,
             "variables": {
                 "assets": [
-                    {
-                        "network": {
-                            "networks": ["8.8.8.8/24", "42.42.42.42"],
-                        }
-                    }
+                    {"ip": [{"host": "8.8.8.8", "mask": 24}, {"host": "42.42.42.42"}]}
                 ]
             },
         },
@@ -1136,13 +1139,23 @@ def testCreateAsset_network_createsNewAsset(
     assert resp.status_code == 200, resp.get_json()
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
-    assert asset_data["networks"] == ["8.8.8.8/24", "42.42.42.42"]
+    assert asset_data["networks"] == [
+        {"host": "8.8.8.8", "mask": 24},
+        {"host": "42.42.42.42", "mask": 32},
+    ]
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
-        assert json.loads(session.query(models.Network).all()[0].networks) == [
-            "8.8.8.8/24",
-            "42.42.42.42",
-        ]
+        network_asset_id = session.query(models.Network).first().id
+        networks = (
+            session.query(models.IPRange)
+            .filter_by(network_asset_id=network_asset_id)
+            .all()
+        )
+        assert len(networks) == 2
+        assert networks[0].host == "8.8.8.8"
+        assert networks[0].mask == 24
+        assert networks[1].host == "42.42.42.42"
+        assert networks[1].mask == 32
 
 
 def testCreateAsset_androidFile_createsNewAsset(
@@ -1546,7 +1559,10 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
                     id
                     assets {
                         ... on OxoNetworkAssetType {
-                            networks
+                            networks {
+                                host
+                                mask
+                            }
                         }
                         
                         ... on OxoAndroidFileAssetType {
@@ -1567,8 +1583,11 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     assert response.status_code == 200, response.get_json()
     asset1 = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
     asset2 = response.get_json()["data"]["scans"]["scans"][0]["assets"][1]
-    assert asset1["path"] == "/path/to/file"
-    assert asset2["networks"] == ["8.8.8.8", "8.8.4.4"]
+    assert asset1["networks"] == [
+        {"host": "8.8.8.8", "mask": 32},
+        {"host": "8.8.4.4", "mask": 32},
+    ]
+    assert asset2["path"] == "/path/to/file"
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
@@ -1885,8 +1904,10 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
             assets {
                 ... on OxoNetworkAssetType {
                     id
-                    type
-                    networks
+                    networks {
+                        host
+                        mask
+                    }
                     scans {
                         id
                         title
@@ -1916,20 +1937,24 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == network_asset.id
-    assert res_scan["assets"][0]["type"] == "network"
-    assert res_scan["assets"][0]["networks"] == ["8.8.8.8", "8.8.4.4"]
+    assert res_scan["assets"][0]["networks"] == [
+        {"host": "8.8.8.8", "mask": 32},
+        {"host": "8.8.4.4", "mask": 24},
+    ]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Network Asset"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
     assert len(args["assets"]) == 2
     assert args["assets"][0].host == "8.8.8.8"
+    assert args["assets"][0].mask == "32"
     assert args["assets"][1].host == "8.8.4.4"
+    assert args["assets"][1].mask == "24"
 
 
 def testRunScanMutation_whenUrl_shouldRunScan(
     authenticated_flask_client: testing.FlaskClient,
     agent_group_nmap: models.AgentGroup,
-    url_asset: models.Url,
+    url_asset: models.Urls,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -1962,10 +1987,12 @@ def testRunScanMutation_whenUrl_shouldRunScan(
                     title
                     progress
                     assets {
-                        ... on OxoUrlAssetType {
+                        ... on OxoUrlsAssetType {
                             id
-                            type
-                            links
+                            links {
+                                url
+                                method
+                            }
                             scans {
                                 id
                                 title
@@ -1995,10 +2022,9 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == url_asset.id
-    assert res_scan["assets"][0]["type"] == "urls"
     assert res_scan["assets"][0]["links"] == [
-        '{"url": "https://google.com", "method": "GET"}',
-        '{"url": "https://tesla.com","method": "GET"}',
+        {"method": "GET", "url": "https://google.com"},
+        {"method": "GET", "url": "https://tesla.com"},
     ]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Url Asset"
@@ -2048,7 +2074,6 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
                     assets {
                         ... on OxoAndroidFileAssetType {
                             id
-                            type
                             path
                             packageName
                             scans {
@@ -2080,7 +2105,6 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == android_file_asset.id
-    assert res_scan["assets"][0]["type"] == "android_file"
     assert "test.apk" in res_scan["assets"][0]["path"]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android File"
@@ -2127,7 +2151,6 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
                     assets {
                         ... on OxoIOSFileAssetType {
                             id
-                            type
                             path
                             bundleId
                             scans {
@@ -2159,7 +2182,6 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == ios_file_asset.id
-    assert res_scan["assets"][0]["type"] == "ios_file"
     assert "test.ipa" in res_scan["assets"][0]["path"]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios File"
@@ -2206,7 +2228,6 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
                     assets {
                         ... on OxoAndroidStoreAssetType {
                             id
-                            type
                             packageName
                             applicationName
                             scans {
@@ -2238,7 +2259,6 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == android_store.id
-    assert res_scan["assets"][0]["type"] == "android_store"
     assert res_scan["assets"][0]["packageName"] == "com.example.android"
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android Store"
@@ -2285,7 +2305,6 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
                     assets {
                         ... on OxoIOSStoreAssetType {
                             id
-                            type
                             bundleId
                             applicationName
                             scans {
@@ -2317,7 +2336,6 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == ios_store.id
-    assert res_scan["assets"][0]["type"] == "ios_store"
     assert res_scan["assets"][0]["bundleId"] == "com.example.ios"
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios Store"
