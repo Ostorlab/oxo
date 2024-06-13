@@ -618,7 +618,7 @@ class AgentGroup(Base):
         """
         agent_groups = []
         for agent_group_file in agent_groups_path.iterdir():
-            if agent_group_file.is_file() and agent_group_file.suffix == ".yaml":
+            if agent_group_file.is_file() is True and agent_group_file.suffix == ".yaml":
                 with open(agent_group_file, "r") as file:
                     agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
                         file
