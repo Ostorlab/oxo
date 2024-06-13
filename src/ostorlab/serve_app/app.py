@@ -33,7 +33,7 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         return flask.send_from_directory(str(UI_STATIC_FILES_DIRECTORY), "index.html")
 
     @app.route("/<path:file_path>")
-    def serve_static(file_path):
+    def serve_static(file_path: str) -> flask.Response:
         """Serve the static files"""
         return flask.send_from_directory(UI_STATIC_FILES_DIRECTORY, file_path)
 
