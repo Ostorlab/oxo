@@ -1,4 +1,5 @@
 import functools
+import pathlib
 
 from typing import Optional
 
@@ -24,6 +25,8 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
             "graphql", schema=schema, **kwargs
         ),
     )
+
+    models.AgentGroup.create_from_files(pathlib.Path(__file__).parent / "agent_groups")
 
     @app.before_request
     def authenticate() -> Optional[tuple[flask.Response, int]]:

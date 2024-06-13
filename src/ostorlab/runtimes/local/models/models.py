@@ -607,7 +607,7 @@ class AgentGroup(Base):
             return agent_group
 
     @staticmethod
-    def create_from_files(agent_groups_path: str) -> list["AgentGroup"]:
+    def create_from_files(agent_groups_path: pathlib.Path) -> List["AgentGroup"]:
         """Create agent groups from a file.
 
         Args:
@@ -616,9 +616,7 @@ class AgentGroup(Base):
         Returns:
             List of agent groups.
         """
-
         agent_groups = []
-        agent_groups_path = pathlib.Path(agent_groups_path)
         for agent_group_file in agent_groups_path.iterdir():
             if agent_group_file.is_file() and agent_group_file.suffix == ".yaml":
                 with open(agent_group_file, "r") as file:
