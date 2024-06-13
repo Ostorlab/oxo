@@ -528,7 +528,7 @@ class AgentGroup(Base):
 
     @staticmethod
     def create(
-        name: str, description: str, asset_types: List[AssetType], agents: Any
+        name: str, description: str, agents: Any, asset_types: List[AssetTypeEnum] = []
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
