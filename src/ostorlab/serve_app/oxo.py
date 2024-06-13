@@ -53,7 +53,7 @@ class Query(graphene.ObjectType):
     )
 
     agent_groups = graphene.Field(
-        types.AgentGroupsType,
+        types.OxoAgentGroupsType,
         search=graphene.String(required=False),
         page=graphene.Int(required=False),
         number_elements=graphene.Int(required=False),
@@ -153,7 +153,7 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.AgentGroupOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
         agent_group_ids: Optional[List[int]] = None,
-    ) -> types.AgentGroupsType:
+    ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
         Args:
@@ -166,11 +166,11 @@ class Query(graphene.ObjectType):
             agent_group_ids: List of agent group ids.
 
         Returns:
-            types.AgentGroupsType: List of agent groups.
+            types.OxoAgentGroupsType: List of agent groups.
         """
 
         if number_elements <= 0:
-            return types.AgentGroupsType(agent_groups=[])
+            return types.OxoAgentGroupsType(agent_groups=[])
 
         with models.Database() as session:
             agent_groups_query = session.query(models.AgentGroup)
@@ -211,9 +211,9 @@ class Query(graphene.ObjectType):
                     has_next=page.has_next(),
                     has_previous=page.has_previous(),
                 )
-                return types.AgentGroupsType(agent_groups=page, page_info=page_info)
+                return types.OxoAgentGroupsType(agent_groups=page, page_info=page_info)
             else:
-                return types.AgentGroupsType(agent_groups=agent_groups_query)
+                return types.OxoAgentGroupsType(agent_groups=agent_groups_query)
 
 
 class ImportScanMutation(graphene.Mutation):
@@ -411,21 +411,21 @@ class PublishAgentGroupMutation(graphene.Mutation):
     """Create agent group."""
 
     class Arguments:
-        agent_group = types.AgentGroupCreateInputType(required=True)
+        agent_group = types.OxoAgentGroupCreateInputType(required=True)
 
-    agent_group = graphene.Field(types.AgentGroupType)
+    agent_group = graphene.Field(types.OxoAgentGroupType)
 
     @staticmethod
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        agent_group: types.AgentGroupCreateInputType,
+        agent_group: types.OxoAgentGroupCreateInputType,
     ) -> "PublishAgentGroupMutation":
         """Create agent group.
 
         Args:
             info (graphql_base.ResolveInfo): GraphQL resolve info.
-            agent_group (types.AgentGroupCreateInputType): Agent group to create.
+            agent_group (types.OxoAgentGroupCreateInputType): Agent group to create.
 
         Returns:
             PublishAgentGroupMutation: Publish agent group mutation.

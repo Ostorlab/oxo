@@ -357,7 +357,7 @@ class OxoAssetType(graphene.Union):
         )
 
 
-class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+class OxoAgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """Graphene object type for a list of agent arguments."""
 
     value = common.Bytes(required=False)
@@ -388,16 +388,16 @@ class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
         return self.value
 
 
-class AgentArgumentsType(graphene.ObjectType):
+class OxoAgentArgumentsType(graphene.ObjectType):
     """Graphene object type for a list of agent arguments."""
 
-    args = graphene.List(AgentArgumentType, required=True)
+    args = graphene.List(OxoAgentArgumentType, required=True)
 
 
-class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for an agent."""
 
-    args = graphene.Field(AgentArgumentsType, required=True)
+    args = graphene.Field(OxoAgentArgumentsType, required=True)
 
     class Meta:
         """Meta class for the agent object type."""
@@ -410,7 +410,7 @@ class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_args(
         self: models.Agent, info: graphql_base.ResolveInfo
-    ) -> AgentArgumentsType:
+    ) -> OxoAgentArgumentsType:
         """Resolve agent arguments query.
 
         Args:
@@ -424,25 +424,25 @@ class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
             args = session.query(models.AgentArgument).filter(
                 models.AgentArgument.agent_id == self.id
             )
-            return AgentArgumentsType(args=args)
+            return OxoAgentArgumentsType(args=args)
 
 
-class AgentsType(graphene.ObjectType):
+class OxoAgentsType(graphene.ObjectType):
     """Graphene object type for a list of agents."""
 
-    agents = graphene.List(AgentType, required=True)
+    agents = graphene.List(OxoAgentType, required=True)
     page_info = graphene.Field(
         common.PageInfo,
         required=False,
     )
 
 
-class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
+class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for an agent group."""
 
     key = graphene.String()
     agents = graphene.Field(
-        AgentsType,
+        OxoAgentsType,
         required=True,
         page=graphene.Int(required=False),
         number_elements=graphene.Int(required=False),
@@ -475,7 +475,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         info: graphql_base.ResolveInfo,
         page: int = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-    ) -> AgentsType:
+    ) -> OxoAgentsType:
         """Resolve agents query.
         Args:
             self (models.AgentGroup): The agent group object.
@@ -484,7 +484,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             AgentsType: List of agents.
         """
         if number_elements <= 0:
-            return AgentsType(agents=[])
+            return OxoAgentsType(agents=[])
 
         with models.Database() as session:
             agents = (
@@ -504,11 +504,11 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 )
                 return OxoVulnerabilitiesType(agents=page, page_info=page_info)
             else:
-                return AgentsType(agents=agents)
+                return OxoAgentsType(agents=agents)
 
 
-class AgentGroupsType(graphene.ObjectType):
-    agent_groups = graphene.List(AgentGroupType, required=True)
+class OxoAgentGroupsType(graphene.ObjectType):
+    agent_groups = graphene.List(OxoAgentGroupType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
@@ -521,7 +521,7 @@ class OxoAssetInputType(graphene.InputObjectType):
     network = OxoNetworkAssetInputType()
 
 
-class AgentArgumentInputType(graphene.InputObjectType):
+class OxoAgentArgumentInputType(graphene.InputObjectType):
     """Input object type for an agent argument."""
 
     name = graphene.String(required=True)
@@ -530,19 +530,19 @@ class AgentArgumentInputType(graphene.InputObjectType):
     value = common.Bytes(required=False)
 
 
-class AgentGroupAgentCreateInputType(graphene.InputObjectType):
+class OxoAgentGroupAgentCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group agent."""
 
     key = graphene.String(required=True)
-    args = graphene.List(AgentArgumentInputType)
+    args = graphene.List(OxoAgentArgumentInputType)
 
 
-class AgentGroupCreateInputType(graphene.InputObjectType):
+class OxoAgentGroupCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group."""
 
     name = graphene.String(required=True)
     description = graphene.String(required=True)
-    agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
+    agents = graphene.List(OxoAgentGroupAgentCreateInputType, required=True)
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):
@@ -570,7 +570,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     message_status = graphene.String()
     progress = graphene.String()
     assets = graphene.List(OxoAssetType)
-    agent_group = graphene.Field(AgentGroupType)
+    agent_group = graphene.Field(OxoAgentGroupType)
 
     class Meta:
         """Meta class for the scan object type."""
@@ -712,7 +712,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_agent_group(
         self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> Optional[AgentGroupType]:
+    ) -> Optional[OxoAgentGroupType]:
         """Resolve agent group.
 
         Args:

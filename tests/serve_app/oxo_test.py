@@ -1900,7 +1900,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
 ) -> None:
     """Ensure the publish agent group mutation creates an agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    query = """mutation publishAgentGroup($agentGroup: AgentGroupCreateInputType!) {
+    query = """mutation publishAgentGroup($agentGroup: OxoAgentGroupCreateInputType!) {
                       publishAgentGroup(agentGroup: $agentGroup) {
                         agentGroup {
                             key,
