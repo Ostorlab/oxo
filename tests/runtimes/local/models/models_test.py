@@ -503,3 +503,61 @@ def testAssetModels_whenMultipleAssets_shouldHaveUniqueIdsPerTable(
             session.query(models.Asset).all()[1].id
             == session.query(models.IosStore).all()[0].id
         )
+
+
+def testCreateAgentGroupWithAssetTypes_always_createsAgentGroupWithAssetTypes(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test creating an AgentGroup with associated AssetTypes."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        web_asset_type = models.AssetType.create(type=models.AssetTypeEnum.WEB)
+        network_asset_type = models.AssetType.create(type=models.AssetTypeEnum.NETWORK)
+
+        agent_group = models.AgentGroup(
+            name="Test Group", description="Test Description"
+        )
+        agent_group.asset_types.extend([web_asset_type, network_asset_type])
+        session.add(agent_group)
+        session.commit()
+
+        db_agent_group = (
+            session.query(models.AgentGroup).filter_by(name="Test Group").first()
+        )
+        assert db_agent_group is not None
+        assert len(db_agent_group.asset_types) == 2
+        assert models.AssetTypeEnum.WEB in [
+            asset.type for asset in db_agent_group.asset_types
+        ]
+        assert models.AssetTypeEnum.NETWORK in [
+            asset.type for asset in db_agent_group.asset_types
+        ]
+
+
+def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test retrieving AgentGroups based on AssetType."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        web_asset_type = models.AssetType.create(type=models.AssetTypeEnum.WEB)
+        agent_group_1 = models.AgentGroup(
+            name="Group 1", description="Group 1 Description"
+        )
+        agent_group_2 = models.AgentGroup(
+            name="Group 2", description="Group 2 Description"
+        )
+        agent_group_1.asset_types.append(web_asset_type)
+        agent_group_2.asset_types.append(web_asset_type)
+        session.add_all([agent_group_1, agent_group_2])
+        session.commit()
+
+        agent_groups = models.AgentGroup.get_by_asset_type(models.AssetTypeEnum.WEB)
+
+        assert len(agent_groups) == 2
+        assert agent_group_1.name == agent_groups[0].name
+        assert agent_group_1.description == agent_groups[0].description
+        assert agent_group_2.name == agent_groups[1].name
+        assert agent_group_2.description == agent_groups[1].description

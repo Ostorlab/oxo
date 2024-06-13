@@ -789,7 +789,7 @@ class AgentGroupAgentCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group agent."""
 
     key = graphene.String(required=True)
-    args = graphene.List(AgentArgumentInputType)
+    args = graphene.List(AgentArgumentInputType, default_value=[])
 
 
 class AgentGroupCreateInputType(graphene.InputObjectType):
