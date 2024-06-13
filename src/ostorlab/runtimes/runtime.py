@@ -96,3 +96,27 @@ class Runtime(abc.ABC):
         None
         """
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def link_agent_group_scan(
+        self,
+        scan,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> None:
+        """Link the agent group to the scan in the database.
+
+        Args:
+            scan: The scan object.
+            agent_group_definition: The agent group definition.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+        """Link the assets to the scan in the database.
+
+        Args:
+            scan_id: The scan id.
+            assets: The list of assets.
+        """
+        raise NotImplementedError()

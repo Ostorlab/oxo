@@ -12,6 +12,7 @@ from graphene_file_upload import scalars
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
+from ostorlab.utils import risk_rating as utils_rik_rating
 
 DEFAULT_NUMBER_ELEMENTS = 15
 RISK_RATINGS_ORDER = {
@@ -59,11 +60,18 @@ class OxoKnowledgeBaseVulnerabilityType(graphene.ObjectType):
     recommendation = graphene.String()
 
 
+OxoRiskRatingEnum = graphene.Enum(
+    "OxoRiskRating",
+    [(risk.name.upper(), i) for i, risk in enumerate(utils_rik_rating.RiskRating)],
+)
+
+
 class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for a vulnerability."""
 
     detail = graphene.Field(OxoKnowledgeBaseVulnerabilityType, required=False)
     cvss_v3_base_score = graphene.Float(required=False)
+    risk_rating = graphene.Field(OxoRiskRatingEnum, required=False)
 
     class Meta:
         """Meta class for the vulnerability object type."""
@@ -120,6 +128,15 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 ],
             )
 
+    def resolve_risk_rating(
+        self: models.Vulnerability, info: graphql_base.ResolveInfo
+    ) -> Optional[OxoRiskRatingEnum]:
+        """Resolve risk rating of vulnerability"""
+        try:
+            return OxoRiskRatingEnum[self.risk_rating.name]
+        except KeyError:
+            return None
+
 
 class OxoVulnerabilitiesType(graphene.ObjectType):
     """Graphene object type for a list of vulnerabilities."""
@@ -131,7 +148,7 @@ class OxoVulnerabilitiesType(graphene.ObjectType):
 class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
     """Graphene object type for an aggregated knowledge base vulnerability."""
 
-    highest_risk_rating = graphene.Field(common.RiskRatingEnum)
+    highest_risk_rating = graphene.Field(OxoRiskRatingEnum)
     highest_cvss_v3_vector = graphene.String()
     highest_cvss_v3_base_score = graphene.Float()
     kb = graphene.Field(OxoKnowledgeBaseVulnerabilityType)
@@ -142,6 +159,12 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         number_elements=graphene.Int(required=False),
         description="List of vulnerabilities.",
     )
+
+    def resolve_highest_risk_rating(self, info) -> Optional[OxoRiskRatingEnum]:
+        try:
+            return OxoRiskRatingEnum[self.highest_risk_rating.name]
+        except KeyError:
+            return None
 
     def resolve_vulnerabilities(
         self: models.Scan,
@@ -282,7 +305,7 @@ class OxoIOSFileAssetInputType(graphene.InputObjectType):
 
 
 class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    links = common.JSONScalar(required=False)
+    links = graphene.List(graphene.String, required=False)
 
     class Meta:
         model = models.Url
@@ -297,8 +320,12 @@ class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin)
                 return []
 
 
+class OxoUrlAssetInputType(graphene.InputObjectType):
+    links = graphene.List(graphene.String)
+
+
 class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    networks = common.JSONScalar(required=False)
+    networks = graphene.List(graphene.String, required=False)
 
     class Meta:
         model = models.Network
@@ -311,6 +338,10 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMi
                 return json.loads(networks)
             except json.JSONDecodeError:
                 return []
+
+
+class OxoNetworkAssetInputType(graphene.InputObjectType):
+    networks = graphene.List(graphene.String)
 
 
 class OxoAssetType(graphene.Union):
@@ -400,13 +431,22 @@ class AgentsType(graphene.ObjectType):
     """Graphene object type for a list of agents."""
 
     agents = graphene.List(AgentType, required=True)
+    page_info = graphene.Field(
+        common.PageInfo,
+        required=False,
+    )
 
 
 class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for an agent group."""
 
     key = graphene.String()
-    agents = graphene.Field(AgentsType, required=True)
+    agents = graphene.Field(
+        AgentsType,
+        required=True,
+        page=graphene.Int(required=False),
+        number_elements=graphene.Int(required=False),
+    )
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -431,7 +471,10 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         return f"agentgroup//{self.name}"
 
     def resolve_agents(
-        self: models.AgentGroup, info: graphql_base.ResolveInfo
+        self: models.AgentGroup,
+        info: graphql_base.ResolveInfo,
+        page: int = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> AgentsType:
         """Resolve agents query.
         Args:
@@ -440,6 +483,9 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             AgentsType: List of agents.
         """
+        if number_elements <= 0:
+            return AgentsType(agents=[])
+
         with models.Database() as session:
             agents = (
                 session.query(models.AgentGroup)
@@ -447,7 +493,18 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 .first()
                 .agents
             )
-            return AgentsType(agents=agents)
+            if page is not None and number_elements > 0:
+                p = common.Paginator(agents, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
+            else:
+                return AgentsType(agents=agents)
 
 
 class AgentGroupsType(graphene.ObjectType):
@@ -455,23 +512,13 @@ class AgentGroupsType(graphene.ObjectType):
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
-class OxoIPInputType(graphene.InputObjectType):
-    host = graphene.String(required=True)
-    mask = graphene.Int(required=False)
-
-
-class OxoUrlInputType(graphene.InputObjectType):
-    url = graphene.String(required=True)
-    method = graphene.String(required=False, default_value="GET")
-
-
 class OxoAssetInputType(graphene.InputObjectType):
     android_file = OxoAndroidFileAssetInputType()
     ios_file = OxoIOSFileAssetInputType()
     android_store = OxoAndroidStoreAssetInputType()
     ios_store = OxoIOSStoreAssetInputType()
-    link = graphene.List(OxoUrlInputType)
-    ip = graphene.List(OxoIPInputType)
+    url = OxoUrlAssetInputType()
+    network = OxoNetworkAssetInputType()
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
