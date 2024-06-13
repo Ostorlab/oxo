@@ -569,6 +569,7 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
+        asset_types: list[str] = [],
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
 
@@ -595,6 +596,12 @@ class AgentGroup(Base):
                 description=agent_group_definition.description,
                 agents=agents,
             )
+
+            ag_asset_types = []
+            for asset_type in asset_types:
+                ag_asset_types.append(AssetType.create(type=asset_type))
+
+            agent_group.asset_types = ag_asset_types
             session.add(agent_group)
             session.commit()
             return agent_group
@@ -618,8 +625,10 @@ class AgentGroup(Base):
                     agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
                         file
                     )
+                    asset_type = agent_group_file.stem
                     agent_group = AgentGroup.create_from_agent_group_definition(
-                        agent_group_definition
+                        agent_group_definition=agent_group_definition,
+                        asset_types=[asset_type],
                     )
                     agent_groups.append(agent_group)
         return agent_groups

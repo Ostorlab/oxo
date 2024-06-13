@@ -56,6 +56,8 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         assert len(agent_groups) == 4
         assert agent_groups[0].name == "sbom"
         assert agent_groups[0].description == "SBOM scan"
+        assert len(agent_groups[0].asset_types) == 1
+        assert agent_groups[0].asset_types[0].type == "sbom"
         assert len(agent_groups[0].agents) == 1
         assert agent_groups[0].agents[0].key == "agent/ostorlab/osv"
         args = (
@@ -77,6 +79,8 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
             agent_groups[1].description
             == "Agent Group for extensive Web Testing with crawling, fuzzing and known vulnerability discovery."
         )
+        assert len(agent_groups[1].asset_types) == 1
+        assert agent_groups[1].asset_types[0].type == "web"
         assert len(agent_groups[1].agents) == 7
         assert agent_groups[1].agents[0].key == "agent/ostorlab/zap"
         assert agent_groups[1].agents[1].key == "agent/ostorlab/nuclei"
@@ -136,6 +140,11 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
 
         # network
         assert agent_groups[2].name == "network"
+        assert (
+            agent_groups[2].description == "Agent Group for Extensive network scanning."
+        )
+        assert len(agent_groups[2].asset_types) == 1
+        assert agent_groups[2].asset_types[0].type == "network"
         assert len(agent_groups[2].agents) == 6
         assert agent_groups[2].agents[0].key == "agent/ostorlab/nmap"
         assert agent_groups[2].agents[1].key == "agent/ostorlab/asteroid"
@@ -206,6 +215,8 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         # autodiscovery
         assert agent_groups[3].name == "autodiscovery"
         assert agent_groups[3].description == "Enumerate domain scan"
+        assert len(agent_groups[3].asset_types) == 1
+        assert agent_groups[3].asset_types[0].type == "autodiscovery"
         assert len(agent_groups[3].agents) == 7
         assert agent_groups[3].agents[0].key == "agent/ostorlab/subfinder"
         assert agent_groups[3].agents[1].key == "agent/ostorlab/dnsx"
