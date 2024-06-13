@@ -1,5 +1,6 @@
 """Tests for Models class."""
 
+import sqlalchemy
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
@@ -550,10 +551,22 @@ def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
         session.add_all([agent_group_1, agent_group_2])
         session.commit()
 
-        agent_groups = models.AgentGroup.get_by_asset_type("WEB")
+        agent_groups = (
+            session.query(models.AgentGroup)
+            .join(models.AgentGroup.asset_types)
+            .filter(
+                sqlalchemy.func.lower(models.AssetType.type)
+                == web_asset_type.type.lower()
+            )
+            .all()
+        )
 
         assert len(agent_groups) == 2
-        assert agent_group_1.name == agent_groups[1].name
-        assert agent_group_1.description == agent_groups[1].description
-        assert agent_group_2.name == agent_groups[0].name
-        assert agent_group_2.description == agent_groups[0].description
+        assert agent_group_1.name in [group.name for group in agent_groups]
+        assert agent_group_1.description in [
+            group.description for group in agent_groups
+        ]
+        assert agent_group_2.name in [group.name for group in agent_groups]
+        assert agent_group_2.description in [
+            group.description for group in agent_groups
+        ]

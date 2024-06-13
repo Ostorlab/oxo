@@ -896,6 +896,16 @@ def agent_groups(
         models.AgentGroupMapping.create(
             agent_group_id=agent_group2.id, agent_id=agent1.id
         )
+
+        asset_web = models.AssetType.create(type="WEB")
+        asset_android = models.AssetType.create(type="ANDROID")
+        models.AgentGroupAssetType.create(
+            agent_group_id=agent_group1.id, asset_type_id=asset_web.id
+        )
+        models.AgentGroupAssetType.create(
+            agent_group_id=agent_group2.id, asset_type_id=asset_android.id
+        )
+
         return [agent_group1, agent_group2]
 
 
