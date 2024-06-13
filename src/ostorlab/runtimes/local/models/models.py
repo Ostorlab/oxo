@@ -567,24 +567,6 @@ class AgentGroup(Base):
             return agent_group
 
     @staticmethod
-    def get_by_asset_type(asset_type: str) -> List["AgentGroup"]:
-        """Get the agent groups by asset type.
-
-        Args:
-            asset_type: Asset type.
-        Returns:
-            List of agent groups.
-        """
-        with Database() as session:
-            agent_groups = (
-                session.query(AgentGroup)
-                .join(AgentGroup.asset_types)
-                .filter(sqlalchemy.func.lower(AssetType.type) == asset_type.lower())
-                .all()
-            )
-            return agent_groups
-
-    @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
     ) -> "AgentGroup":
