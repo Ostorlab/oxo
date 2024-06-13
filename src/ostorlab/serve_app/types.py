@@ -327,6 +327,25 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
             )
             return [OxoIPRangeAssetType(host=ip.host, mask=ip.mask) for ip in ips]
 
+class OxoDomainNameAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = models.DomainName
+        only_fields = ("name")
+
+class OxoDomainAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    domain_names = graphene.List(OxoDomainNameAssetType, required=False)
+
+    class Meta:
+        model = models.DomainAsset
+        only_fields = ("id",)
+
+    def resolve_domain_names(self, info) -> List[OxoDomainNameAssetType]:
+        with models.Database() as session:
+            domain_names = (
+                session.query(models.DomainName).filter_by(domain_asset_id=self.id).all()
+            )
+            return [OxoDomainNameAssetType(name=domain_name.name) for domain_name in domain_names]
+
 
 class OxoAssetType(graphene.Union):
     class Meta:
@@ -338,6 +357,7 @@ class OxoAssetType(graphene.Union):
             OxoIOSStoreAssetType,
             OxoUrlsAssetType,
             OxoNetworkAssetType,
+            OxoDomainAssetType
         )
 
 
@@ -780,6 +800,9 @@ class OxoLinkInputType(graphene.InputObjectType):
     url = graphene.String(required=True)
     method = graphene.String(required=False, default_value="GET")
 
+class OxoDomainNameInputType(graphene.InputObjectType):
+    name = graphene.String(required=True)
+
 
 class OxoAssetInputType(graphene.InputObjectType):
     android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
@@ -789,6 +812,7 @@ class OxoAssetInputType(graphene.InputObjectType):
     ios_store = graphene.List(OxoIOSStoreAssetInputType)
     link = graphene.List(OxoLinkInputType)
     ip = graphene.List(OxoIPRangeInputType)
+    domain = graphene.List(OxoDomainNameInputType)
 
 
 class AgentArgumentInputType(graphene.InputObjectType):

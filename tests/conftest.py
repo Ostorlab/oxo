@@ -1075,6 +1075,15 @@ def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Urls:
     )
     return asset
 
+@pytest.fixture
+def domain_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.DomainName:
+    """Create a DomainName asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    asset = models.DomainAsset.create(
+        domains=[{"name": "google.com"}, {"name": "tesla.com"}]
+    )
+    return asset
+
 
 @pytest.fixture
 def android_file_asset(

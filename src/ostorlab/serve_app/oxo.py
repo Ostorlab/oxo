@@ -31,6 +31,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import asset as ostorlab_asset
 
 DEFAULT_NUMBER_ELEMENTS = 15
@@ -372,6 +373,9 @@ class CreateAssetsMutation(graphene.Mutation):
             if asset.ip is not None:
                 new_asset = models.Network.create(networks=asset.ip)
                 created_assets.append(new_asset)
+            if asset.domain is not None:
+                new_asset = models.DomainAsset.create(domains=asset.domain)
+                created_assets.append(new_asset)
         if len(errors) > 0:
             error_messages = "\n".join(errors)
             raise graphql.GraphQLError(f"Invalid assets: {error_messages}")
@@ -396,6 +400,8 @@ class CreateAssetsMutation(graphene.Mutation):
             assets.append(asset.link)
         if asset.ip is not None:
             assets.append(asset.ip)
+        if asset.domain is not None:
+            assets.append(asset.domain)
 
         if len(assets) == 0:
             return f"Asset {asset} input is missing target."
@@ -654,6 +660,14 @@ class RunScanMutation(graphene.Mutation):
                         scan_assets.append(
                             link_asset.Link(url=link.url, method=link.method)
                         )
+                elif asset.type == "domain_asset":
+                    domains = (
+                        session.query(models.DomainName)
+                        .filter_by(domain_asset_id=asset.id)
+                        .all()
+                    )
+                    for domain in domains:
+                        scan_assets.append(domain_name_asset.DomainName(name=domain.name))
                 else:
                     raise graphql.GraphQLError("Unsupported asset type.")
 

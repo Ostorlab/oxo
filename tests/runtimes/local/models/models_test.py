@@ -332,6 +332,28 @@ def testAssetModels_whenCreateNetwork_assetCreated(
         assert ips[1].mask == "32"
 
 
+def testAssetModels_whenCreateDomainAsset_assetCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly persist the domain information."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    models.DomainAsset.create(
+        domains=[{"name": "domain1.test.ma"}, {"name": "domain2.test.ma"}]
+    )
+
+    with models.Database() as session:
+        assert session.query(models.DomainAsset).count() == 1
+        domain_id = session.query(models.DomainAsset).all()[0].id
+        domain_names = (
+            session.query(models.DomainName)
+            .filter(models.DomainName.domain_asset_id == domain_id)
+            .all()
+        )
+        assert len(domain_names) == 2
+        assert domain_names[0].name == 'domain1.test.ma'
+        assert domain_names[1].name == 'domain2.test.ma'
+
+
 def testAssetModels_whenCreateUrl_assetCreated(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:

@@ -1421,6 +1421,55 @@ def testCreateAsset_network_createsNewAsset(
         assert networks[1].mask == "32"
 
 
+def testCreateAsset_domain_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the domain asset is created successfully through the createAssets API."""
+    del clean_db
+    query = """
+        mutation createDomain($assets: [OxoAssetInputType]!) {
+            createAssets(assets: $assets) {
+                assets {
+                    ... on OxoDomainAssetType {
+                        id
+                        domainNames {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {
+                "assets": [
+                    {"domain": [{"name": "www.google.com"}, {"name": "www.tesla.com"}]}
+                ]
+            },
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
+    assert asset_data["id"] is not None
+    assert asset_data["domainNames"] == [{'name': 'www.google.com'}, {'name': 'www.tesla.com'}]
+    with models.Database() as session:
+        assert session.query(models.DomainAsset).count() == 1
+        domain_asset_id = session.query(models.DomainAsset).first().id
+        domains = (
+            session.query(models.DomainName)
+            .filter_by(domain_asset_id=domain_asset_id)
+            .all()
+        )
+        assert len(domains) == 2
+        assert domains[0].name == "www.google.com"
+        assert domains[1].name == "www.tesla.com"
+
+
 def testCreateAsset_androidApkFile_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
@@ -2241,6 +2290,81 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     assert args["assets"][0].mask == "32"
     assert args["assets"][1].host == "8.8.4.4"
     assert args["assets"][1].mask == "24"
+
+
+def testRunScanMutation_whenDomainAsset_shouldRunScan(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_nmap: models.AgentGroup,
+    domain_asset: models.DomainAsset,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test RunScanMutation for Domain asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    )
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    title
+                    progress
+                    assets {
+                        ... on OxoDomainAssetType {
+                            id
+                            domainNames {
+                                name
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan Domain Asset",
+            "assetIds": [domain_asset.id],
+            "agentGroupId": agent_group_nmap.id,
+        },
+    }
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert int(res_scan["id"]) == scan.id
+    assert res_scan["title"] == scan.title
+    assert res_scan["progress"] == scan.progress.name
+    assert len(res_scan["assets"]) == 1
+    assert int(res_scan["assets"][0]["id"]) == domain_asset.id
+    assert res_scan["assets"][0]["domainNames"] == [{'name': 'google.com'}, {'name': 'tesla.com'}]
+    args = scan_mock.call_args[1]
+    assert args["title"] == "Test Scan Domain Asset"
+    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
+    assert len(args["assets"]) == 2
+    assert args["assets"][0].name == "google.com"
+    assert args["assets"][1].name == "tesla.com"
 
 
 def testRunScanMutation_whenUrl_shouldRunScan(
