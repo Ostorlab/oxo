@@ -63,13 +63,6 @@ class ScanProgress(enum.Enum):
     ERROR = "error"
 
 
-class AssetTypeEnum(enum.Enum):
-    WEB = "web"
-    NETWORK = "network"
-    SBOM = "sbom"
-    AUTODISCOVERY = "autodiscovery"
-
-
 class Database:
     """Handles all Database instantiation and calls."""
 
@@ -483,16 +476,14 @@ class AssetType(Base):
 
     __tablename__ = "asset_type"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    type = sqlalchemy.Column(
-        sqlalchemy.Enum(AssetTypeEnum), unique=True, nullable=False
-    )
+    type = sqlalchemy.Column(sqlalchemy.String(255))
 
     asset_agent_groups = orm.relationship(
         "AgentGroup", secondary="agent_group_asset_type", back_populates="asset_types"
     )
 
     @staticmethod
-    def create(type: AssetTypeEnum) -> "AssetType":
+    def create(type: str) -> "AssetType":
         """Persist the asset type in the database.
 
         Args:
@@ -528,7 +519,7 @@ class AgentGroup(Base):
 
     @staticmethod
     def create(
-        name: str, description: str, agents: Any, asset_types: List[AssetTypeEnum] = []
+        name: str, description: str, agents: Any, asset_types: List[str] = []
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
@@ -544,11 +535,12 @@ class AgentGroup(Base):
         with Database() as session:
             for asset_type in asset_types:
                 asset_type_model = (
-                    session.query(AssetType).filter_by(type=asset_type).first()
+                    session.query(AssetType)
+                    .filter(sqlalchemy.func.lower(AssetType.type) == asset_type.lower())
+                    .first()
                 )
                 if asset_type_model is None:
-                    asset_type_model = AssetType(type=asset_type)
-                    session.add(asset_type_model)
+                    asset_type_model = AssetType.create(type=asset_type)
                 created_asset_types.append(asset_type_model)
 
             agent_group = AgentGroup(
@@ -575,7 +567,7 @@ class AgentGroup(Base):
             return agent_group
 
     @staticmethod
-    def get_by_asset_type(asset_type: AssetTypeEnum) -> List["AgentGroup"]:
+    def get_by_asset_type(asset_type: str) -> List["AgentGroup"]:
         """Get the agent groups by asset type.
 
         Args:
@@ -587,7 +579,7 @@ class AgentGroup(Base):
             agent_groups = (
                 session.query(AgentGroup)
                 .join(AgentGroup.asset_types)
-                .filter(AssetType.type == asset_type)
+                .filter(sqlalchemy.func.lower(AssetType.type) == asset_type.lower())
                 .all()
             )
             return agent_groups
