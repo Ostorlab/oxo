@@ -599,6 +599,31 @@ class AgentGroup(Base):
             session.commit()
             return agent_group
 
+    @staticmethod
+    def create_from_files(agent_groups_path: str) -> list["AgentGroup"]:
+        """Create agent groups from a file.
+
+        Args:
+            agent_groups_path: Path to the agent groups folder.
+
+        Returns:
+            List of agent groups.
+        """
+
+        agent_groups = []
+        agent_groups_path = pathlib.Path(agent_groups_path)
+        for agent_group_file in agent_groups_path.iterdir():
+            if agent_group_file.is_file() and agent_group_file.suffix == ".yaml":
+                with open(agent_group_file, "r") as file:
+                    agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
+                        file
+                    )
+                    agent_group = AgentGroup.create_from_agent_group_definition(
+                        agent_group_definition
+                    )
+                    agent_groups.append(agent_group)
+        return agent_groups
+
 
 class AgentGroupMapping(Base):
     """The Agent Group Mapping model"""

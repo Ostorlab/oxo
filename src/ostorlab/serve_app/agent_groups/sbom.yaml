@@ -1,0 +1,11 @@
+kind: AgentGroup
+description: SBOM scan
+name: sbom
+agents:
+  - key: agent/ostorlab/osv
+    args:
+      - name: nvd_api_key
+        type: string
+        description: NVD api key.
+        value: ""
+    port_mapping: []

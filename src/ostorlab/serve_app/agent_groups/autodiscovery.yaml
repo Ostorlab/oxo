@@ -1,0 +1,11 @@
+kind: AgentGroup
+description: Enumerate domain scan
+name: autodiscovery
+agents:
+  - key: agent/ostorlab/subfinder
+  - key: agent/ostorlab/dnsx
+  - key: agent/ostorlab/all_tlds
+  - key: agent/ostorlab/amass
+  - key: agent/ostorlab/whois_domain
+  - key: agent/ostorlab/whatweb
+  - key: agent/ostorlab/nmap

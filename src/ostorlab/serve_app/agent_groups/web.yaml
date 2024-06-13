@@ -1,0 +1,23 @@
+kind: AgentGroup
+description: Agent Group for extensive Web Testing with crawling, fuzzing and known vulnerability discovery.
+name: web
+agents:
+  - key: agent/ostorlab/zap
+    args:
+      - name: scan_profile
+        type: string
+        description: "Accepts three values: `baseline` which runs the ZAP spider against
+          the target for (by default) 1 minute followed by an optional ajax
+          spider scan before reporting the results of the passive scanning.
+          `full` which runs the ZAP spider against the target (by default with
+          no time limit) followed by an optional ajax spider scan and then a
+          full active scan before reporting the results and `api` Scan which
+          performs an active scan against APIs defined by OpenAPI, or GraphQL
+          (post 2.9.0) via either a local file or a URL."
+        value: full
+  - key: agent/ostorlab/nuclei
+  - key: agent/ostorlab/asteroid
+  - key: agent/ostorlab/metasploit
+  - key: agent/ostorlab/tsunami
+  - key: agent/ostorlab/semgrep
+  - key: agent/ostorlab/trufflehog
