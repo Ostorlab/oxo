@@ -68,10 +68,6 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         assert len(args) == 1
         assert args[0].name == "nvd_api_key"
         assert args[0].type == "string"
-        assert (
-            models.AgentArgument.from_bytes(type=args[0].type, value=args[0].value)
-            == ""
-        )
 
         # web
         assert agent_groups[1].name == "web"

@@ -26,4 +26,3 @@ agents:
   - key: agent/ostorlab/openvas
   - key: agent/ostorlab/nuclei
   - key: agent/ostorlab/tsunami
-    port_mapping: []

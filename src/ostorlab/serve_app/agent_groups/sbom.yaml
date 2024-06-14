@@ -7,5 +7,3 @@ agents:
       - name: nvd_api_key
         type: string
         description: NVD api key.
-        value: ""
-    port_mapping: []
