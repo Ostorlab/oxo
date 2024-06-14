@@ -712,7 +712,11 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             str: The key of the agent group.
         """
-        return f"agentgroup//{self.name}"
+        return (
+            f"agentgroup//{self.name}"
+            if self.name is not None
+            else f"agentgroup//{self.id}"
+        )
 
     def resolve_agents(
         self: models.AgentGroup,
@@ -789,13 +793,13 @@ class AgentGroupAgentCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group agent."""
 
     key = graphene.String(required=True)
-    args = graphene.List(AgentArgumentInputType)
+    args = graphene.List(AgentArgumentInputType, required=False, default_value=[])
 
 
 class AgentGroupCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group."""
 
-    name = graphene.String(required=True)
+    name = graphene.String(required=False)
     description = graphene.String(required=True)
     agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
 

@@ -2956,3 +2956,59 @@ def testOxoSchemaReOxoSchemas_whenOutputTypes_schemasShouldBeSimilar() -> None:
         for field_name, field_type in fields_types.items():
             assert field_name in oxo_output_types[type_name]
             assert field_type == oxo_output_types[type_name][field_name]
+
+
+def testPublishAgentGroup_withoutNameAndAgentArgs_shouldPersistAgentGroup(
+    authenticated_flask_client: testing.FlaskClient,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Ensure the publish agent group mutation persists the agent group."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    query = """
+        mutation PublishAgentGroup ($agentGroup: AgentGroupCreateInputType!){
+            publishAgentGroup (agentGroup: $agentGroup) {
+                agentGroup {
+                    key
+                    name
+                    description
+                    agents {
+                        agents {
+                            key
+                            args {
+                                args {
+                                    name
+                                    type
+                                    value
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    variables = {
+        "agentGroup": {
+            "description": "agent description",
+            "agents": [
+                {
+                    "key": "agent_key",
+                }
+            ],
+        }
+    }
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    ag = response.get_json()["data"]["publishAgentGroup"]["agentGroup"]
+    assert ag["key"] == "agentgroup//1"
+    assert ag["name"] is None
+    assert ag["description"] == "agent description"
+    assert len(ag["agents"]["agents"]) == 1
+    assert ag["agents"]["agents"][0]["key"] == "agent_key"
+    assert len(ag["agents"]["agents"][0]["args"]["args"]) == 0
