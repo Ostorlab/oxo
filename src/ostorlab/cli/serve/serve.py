@@ -9,6 +9,7 @@ from ostorlab.runtimes.local.models import models
 console = cli_console.Console()
 DEFAULT_SCANNER_NAME = "Local Scanner"
 
+
 @rootcli.command()
 @click.option("--host", default="0.0.0.0", help="The host to run the Flask app on.")
 @click.option("--port", default=3420, help="The port to run the Flask app on.")

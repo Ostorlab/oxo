@@ -32,13 +32,13 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         pathlib.Path(__file__).parent / "agent_groups"
     )
 
-    @app.route('/')
-    @app.route('/<path:file_path>')
+    @app.route("/")
+    @app.route("/<path:file_path>")
     def serve_static(file_path="index.html") -> flask.Response:
         """Serve the static files"""
         full_path = UI_STATIC_FILES_DIRECTORY / file_path
         if os.path.isfile(full_path) is False:
-            file_path = 'index.html'
+            file_path = "index.html"
         return flask.send_from_directory(UI_STATIC_FILES_DIRECTORY, file_path)
 
     return app
