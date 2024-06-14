@@ -728,7 +728,11 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             str: The key of the agent group.
         """
-        return f"agentgroup//{self.name}" if self.name is not None else f"agentgroup//{self.id}"
+        return (
+            f"agentgroup//{self.name}"
+            if self.name is not None
+            else f"agentgroup//{self.id}"
+        )
 
     def resolve_agents(
         self: models.AgentGroup,
