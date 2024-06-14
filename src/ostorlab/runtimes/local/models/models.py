@@ -432,7 +432,7 @@ class AgentArgument(Base):
             type=type,
             description=description,
             value=value
-            if isinstance(value, bytes) is True
+            if isinstance(value, bytes) is True or value is None
             else AgentArgument.to_bytes(type, value),
         )
         with Database() as session:
