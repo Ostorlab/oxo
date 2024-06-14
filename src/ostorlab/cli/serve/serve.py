@@ -7,7 +7,7 @@ from ostorlab.cli.rootcli import rootcli
 from ostorlab.runtimes.local.models import models
 
 console = cli_console.Console()
-
+DEFAULT_SCANNER_NAME = "Local Scanner"
 
 @rootcli.command()
 @click.option("--host", default="0.0.0.0", help="The host to run the Flask app on.")
@@ -31,9 +31,9 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
     flask_app = app.create_app(graphiql=True)
     graphql_endpoint = f"http://{host}:{port}/graphql"
     ui_url = f"http://{host}:{port}/"
-    scanners_url = f"{ui_url}#/scanners/new?endpoint={graphql_endpoint}&key={api_key.key}&name=Local machine"
+    scanners_url = f"{ui_url}scanners/new?endpoint={graphql_endpoint}&key={api_key.key}&name={DEFAULT_SCANNER_NAME}"
+    console.success(f"Quick start: {scanners_url}")
     console.success(f"To authenticate, please use the following API key: {api_key.key}")
     console.success(f"Serving API on : {graphql_endpoint}")
     console.success(f"Serving UI on : {ui_url}")
-    console.success(f"Quick start: {scanners_url}")
     flask_app.run(host=host, port=port)
