@@ -2909,7 +2909,6 @@ def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
             assert input_field_type == oxo_input_types[input_field_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2940,6 +2939,10 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     oxo_mutations = {mutation["name"]: mutation for mutation in oxo_mutations_fields}
 
     for mutation_name, mutation_fields in re_oxo_mutations.items():
+        if mutation_name == "exportScan":
+            # This mutation is explicitly skipped from the check.
+            # TODO(deadly-panda): Evaluate if exporting scans on oxo is a valid usecase.
+            continue
         assert mutation_name in oxo_mutations
 
         assert mutation_fields["type"] == oxo_mutations[mutation_name]["type"]

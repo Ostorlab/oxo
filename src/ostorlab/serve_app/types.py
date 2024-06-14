@@ -808,7 +808,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             return [asset.type for asset in asset_types]
 
 
-class AgentGroupsType(graphene.ObjectType):
+class OxoAgentGroupsType(graphene.ObjectType):
     agent_groups = graphene.List(AgentGroupType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
 
