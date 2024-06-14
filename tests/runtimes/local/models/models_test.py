@@ -350,8 +350,8 @@ def testAssetModels_whenCreateDomainAsset_assetCreated(
             .all()
         )
         assert len(domain_names) == 2
-        assert domain_names[0].name == 'domain1.test.ma'
-        assert domain_names[1].name == 'domain2.test.ma'
+        assert domain_names[0].name == "domain1.test.ma"
+        assert domain_names[1].name == "domain2.test.ma"
 
 
 def testAssetModels_whenCreateUrl_assetCreated(

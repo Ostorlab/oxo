@@ -1430,7 +1430,7 @@ def testCreateAsset_domain_createsNewAsset(
         mutation createDomain($assets: [OxoAssetInputType]!) {
             createAssets(assets: $assets) {
                 assets {
-                    ... on OxoDomainAssetType {
+                    ... on OxoDomainNameAssetsType {
                         id
                         domainNames {
                             name
@@ -1456,7 +1456,10 @@ def testCreateAsset_domain_createsNewAsset(
     assert resp.status_code == 200, resp.get_json()
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
-    assert asset_data["domainNames"] == [{'name': 'www.google.com'}, {'name': 'www.tesla.com'}]
+    assert asset_data["domainNames"] == [
+        {"name": "www.google.com"},
+        {"name": "www.tesla.com"},
+    ]
     with models.Database() as session:
         assert session.query(models.DomainAsset).count() == 1
         domain_asset_id = session.query(models.DomainAsset).first().id
@@ -2298,23 +2301,9 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     domain_asset: models.DomainAsset,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    run_scan_mock2: None,
 ) -> None:
     """Test RunScanMutation for Domain asset."""
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
-        return_value=True,
-    )
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
-    )
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
-        return_value=True
-    )
-    mocker.patch("docker.from_env")
-    mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
-    )
     scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
     )
@@ -2328,7 +2317,7 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
                     title
                     progress
                     assets {
-                        ... on OxoDomainAssetType {
+                        ... on OxoDomainNameAssetsType {
                             id
                             domainNames {
                                 name
@@ -2358,7 +2347,10 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == domain_asset.id
-    assert res_scan["assets"][0]["domainNames"] == [{'name': 'google.com'}, {'name': 'tesla.com'}]
+    assert res_scan["assets"][0]["domainNames"] == [
+        {"name": "google.com"},
+        {"name": "tesla.com"},
+    ]
     args = scan_mock.call_args[1]
     assert args["title"] == "Test Scan Domain Asset"
     assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"

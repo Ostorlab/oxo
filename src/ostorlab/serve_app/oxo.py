@@ -667,7 +667,9 @@ class RunScanMutation(graphene.Mutation):
                         .all()
                     )
                     for domain in domains:
-                        scan_assets.append(domain_name_asset.DomainName(name=domain.name))
+                        scan_assets.append(
+                            domain_name_asset.DomainName(name=domain.name)
+                        )
                 else:
                     raise graphql.GraphQLError("Unsupported asset type.")
 

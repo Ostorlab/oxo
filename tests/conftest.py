@@ -1075,8 +1075,11 @@ def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Urls:
     )
     return asset
 
+
 @pytest.fixture
-def domain_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.DomainName:
+def domain_asset(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.DomainName:
     """Create a DomainName asset."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.DomainAsset.create(
@@ -1207,3 +1210,23 @@ def run_scan_mock(mocker: plugin.MockerFixture) -> None:
         return_value=True,
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._inject_assets")
+
+
+@pytest.fixture
+def run_scan_mock2(mocker: plugin.MockerFixture) -> None:
+    """Mock functions required to run a scan."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
