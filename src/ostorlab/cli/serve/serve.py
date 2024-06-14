@@ -27,6 +27,7 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
         )
     if refresh_api_key is True:
         api_key = models.APIKey.refresh()
+        console.info("API key refreshed")
     else:
         api_key = models.APIKey.get_or_create()
     flask_app = app.create_app(graphiql=True)
