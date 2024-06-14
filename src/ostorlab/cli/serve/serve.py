@@ -25,14 +25,15 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
             f"Please install it using 'pip install ostorlab[serve]'."
         )
     if refresh_api_key is True:
-        new_api_key = models.APIKey.refresh()
-        console.info(f"API key refreshed. The new API key is: {new_api_key.key}")
+        api_key = models.APIKey.refresh()
     else:
         api_key = models.APIKey.get_or_create()
-        console.info(
-            f"To authenticate, please use the following API key: {api_key.key}"
-        )
     flask_app = app.create_app(graphiql=True)
-    console.success(f"Serving UI on : http://{host}:{port}/")
-    console.success(f"Serving API on : http://{host}:{port}/graphql")
+    graphql_endpoint = f"http://{host}:{port}/graphql"
+    ui_url = f"http://{host}:{port}/"
+    scanners_url = f"{ui_url}#/scanners/new?endpoint={graphql_endpoint}&key={api_key.key}&name=Local machine"
+    console.success(f"To authenticate, please use the following API key: {api_key.key}")
+    console.success(f"Serving API on : {graphql_endpoint}")
+    console.success(f"Serving UI on : {ui_url}")
+    console.success(f"Quick start: {scanners_url}")
     flask_app.run(host=host, port=port)

@@ -1,4 +1,5 @@
 import functools
+import os
 import pathlib
 from typing import Optional
 
@@ -27,14 +28,14 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         ),
     )
 
-    @app.route("/")
-    def ui() -> flask.Response:
-        """Serve the Ui folder"""
-        return flask.send_from_directory(str(UI_STATIC_FILES_DIRECTORY), "index.html")
-
-    @app.route("/<path:file_path>")
-    def serve_static(file_path: str) -> flask.Response:
+    @app.route('/')
+    @app.route('/<path:file_path>')
+    def serve_static(file_path="index.html") -> flask.Response:
         """Serve the static files"""
+        full_path = UI_STATIC_FILES_DIRECTORY / file_path
+        if os.path.isfile(full_path) is True:
+            return flask.send_from_directory(UI_STATIC_FILES_DIRECTORY, file_path)
+        file_path = 'index.html'
         return flask.send_from_directory(UI_STATIC_FILES_DIRECTORY, file_path)
 
     return app
