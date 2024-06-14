@@ -562,6 +562,7 @@ def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         web_asset_type = models.AssetType.create(type="WEB")
+        network_asset_type = models.AssetType.create(type="NETWORK")
         agent_group_1 = models.AgentGroup(
             name="Group 1", description="Group 1 Description"
         )
@@ -569,11 +570,11 @@ def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
             name="Group 2", description="Group 2 Description"
         )
         agent_group_1.asset_types.append(web_asset_type)
-        agent_group_2.asset_types.append(web_asset_type)
+        agent_group_2.asset_types.append(network_asset_type)
         session.add_all([agent_group_1, agent_group_2])
         session.commit()
 
-        agent_groups = (
+        agent_groups_web = (
             session.query(models.AgentGroup)
             .join(models.AgentGroup.asset_types)
             .filter(
@@ -582,13 +583,23 @@ def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
             )
             .all()
         )
+        agent_groups_network = (
+            session.query(models.AgentGroup)
+            .join(models.AgentGroup.asset_types)
+            .filter(
+                sqlalchemy.func.lower(models.AssetType.type)
+                == network_asset_type.type.lower()
+            )
+            .all()
+        )
 
-        assert len(agent_groups) == 2
-        assert agent_group_1.name in [group.name for group in agent_groups]
+        assert len(agent_groups_web) == 1
+        assert agent_group_1.name in [group.name for group in agent_groups_web]
         assert agent_group_1.description in [
-            group.description for group in agent_groups
+            group.description for group in agent_groups_web
         ]
-        assert agent_group_2.name in [group.name for group in agent_groups]
+        assert len(agent_groups_network) == 1
+        assert agent_group_2.name in [group.name for group in agent_groups_network]
         assert agent_group_2.description in [
-            group.description for group in agent_groups
+            group.description for group in agent_groups_network
         ]

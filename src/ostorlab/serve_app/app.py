@@ -1,17 +1,20 @@
 import functools
+import pathlib
 
 from typing import Optional
 
 import flask
 import flask_cors
 import graphql_server
-from graphene_file_upload import flask as graphene_upload_flask
 import ubjson
+from graphene_file_upload import flask as graphene_upload_flask
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app.schema import schema
 
 AUTHORIZATION_HEADER = "X-API-KEY"
+
+UI_STATIC_FILES_DIRECTORY = pathlib.Path(__file__).parent.parent / "ui/static_files"
 
 
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
@@ -25,19 +28,19 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         ),
     )
 
-    @app.before_request
-    def authenticate() -> Optional[tuple[flask.Response, int]]:
-        """Authenticate the request."""
-        api_key = flask.request.headers.get(AUTHORIZATION_HEADER)
-        if flask.request.method == "OPTIONS":
-            # CORS requires sending an initial OPTIONS that should return 200 OK.
-            return None
+    models.AgentGroup.create_from_directory(
+        pathlib.Path(__file__).parent / "agent_groups"
+    )
 
-        if api_key is None or models.APIKey.is_valid(api_key) is False:
-            return flask.jsonify({"error": "Unauthorized"}), 401
-        else:
-            # The request is authenticated. Continue.
-            return None
+    @app.route("/")
+    def ui() -> flask.Response:
+        """Serve the Ui folder"""
+        return flask.send_from_directory(str(UI_STATIC_FILES_DIRECTORY), "index.html")
+
+    @app.route("/<path:file_path>")
+    def serve_static(file_path: str) -> flask.Response:
+        """Serve the static files"""
+        return flask.send_from_directory(UI_STATIC_FILES_DIRECTORY, file_path)
 
     return app
 
@@ -58,7 +61,24 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
 
         return ubjson.loadb(request.data)
 
-    def dispatch_request(self) -> flask.Response:
+    @staticmethod
+    def authenticate() -> Optional[tuple[flask.Response, int]]:
+        """Authenticate the request."""
+        if flask.request.method == "OPTIONS":
+            # CORS requires sending an initial OPTIONS that should return 200 OK.
+            return None
+
+        api_key = flask.request.headers.get(AUTHORIZATION_HEADER)
+        if api_key is None or models.APIKey.is_valid(api_key) is False:
+            return flask.jsonify({"error": "Unauthorized"}), 401
+
+        # The request is authenticated. Continue.
+        return None
+
+    def dispatch_request(self) -> Optional[tuple[flask.Response, int]]:
+        auth_response = self.authenticate()
+        if auth_response is not None:
+            return auth_response
         try:
             request_method = flask.request.method.lower()
             data = self.parse_body()
