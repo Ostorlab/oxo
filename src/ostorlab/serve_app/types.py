@@ -2,7 +2,6 @@
 
 import collections
 import enum
-import json
 from typing import Optional, List
 
 import graphene
@@ -211,25 +210,10 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
             return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
 
-class AssetScansMixin:
-    scans = graphene.List(
-        lambda: OxoScanType, last_only=graphene.Boolean(required=False)
-    )
-
-    def resolve_scans(self, info):
-        with models.Database() as session:
-            asset = session.query(models.Asset).get(self.id)
-            scan = session.query(models.Scan).get(asset.scan_id)
-
-        return [scan]
-
-
-class OxoAndroidStoreAssetType(
-    graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
-):
+class OxoAndroidStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.AndroidStore
-        fields = ("id", "package_name", "application_name")
+        only_fields = ("id", "package_name", "application_name")
 
     def resolve_package_name(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
@@ -245,10 +229,10 @@ class OxoAndroidStoreAssetInputType(graphene.InputObjectType):
     application_name = graphene.String()
 
 
-class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.IosStore
-        fields = ("id", "bundle_id", "application_name")
+        only_fields = ("id", "bundle_id", "application_name")
 
     def resolve_bundle_id(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
@@ -264,12 +248,10 @@ class OxoIOSStoreAssetInputType(graphene.InputObjectType):
     application_name = graphene.String()
 
 
-class OxoAndroidFileAssetType(
-    graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin
-):
+class OxoAndroidFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.AndroidFile
-        fields = ("id", "package_name", "path")
+        only_fields = ("id", "package_name", "path")
 
     def resolve_package_name(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
@@ -285,10 +267,10 @@ class OxoAndroidFileAssetInputType(graphene.InputObjectType):
     package_name = graphene.String()
 
 
-class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
+class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
     class Meta:
         model = models.IosFile
-        fields = ("id", "bundle_id", "path")
+        only_fields = ("id", "bundle_id", "path")
 
     def resolve_bundle_id(self, info: graphql_base.ResolveInfo) -> str:
         with models.Database() as session:
@@ -304,44 +286,46 @@ class OxoIOSFileAssetInputType(graphene.InputObjectType):
     bundle_id = graphene.String()
 
 
-class OxoUrlAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    links = graphene.List(graphene.String, required=False)
+class OxoLinkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = models.Link
+        only_fields = ("url", "method")
+
+
+class OxoUrlsAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    links = graphene.List(OxoLinkAssetType, required=False)
 
     class Meta:
-        model = models.Url
-        fields = ("id",)
+        model = models.Urls
+        only_fields = ("id",)
 
-    def resolve_links(self, info) -> List[str]:
+    def resolve_links(self, info) -> List[OxoLinkAssetType]:
         with models.Database() as session:
-            links = session.query(models.Url).get(self.id).links
-            try:
-                return json.loads(links)
-            except json.JSONDecodeError:
-                return []
+            links = session.query(models.Link).filter_by(urls_asset_id=self.id).all()
+            return [
+                OxoLinkAssetType(url=link.url, method=link.method) for link in links
+            ]
 
 
-class OxoUrlAssetInputType(graphene.InputObjectType):
-    links = graphene.List(graphene.String)
+class OxoIPRangeAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = models.IPRange
+        only_fields = ("host", "mask")
 
 
-class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType, AssetScansMixin):
-    networks = graphene.List(graphene.String, required=False)
+class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    networks = graphene.List(OxoIPRangeAssetType, required=False)
 
     class Meta:
         model = models.Network
-        fields = ("id",)
+        only_fields = ("id",)
 
-    def resolve_networks(self, info) -> List[str]:
+    def resolve_networks(self, info) -> List[OxoIPRangeAssetType]:
         with models.Database() as session:
-            networks = session.query(models.Network).get(self.id).networks
-            try:
-                return json.loads(networks)
-            except json.JSONDecodeError:
-                return []
-
-
-class OxoNetworkAssetInputType(graphene.InputObjectType):
-    networks = graphene.List(graphene.String)
+            ips = (
+                session.query(models.IPRange).filter_by(network_asset_id=self.id).all()
+            )
+            return [OxoIPRangeAssetType(host=ip.host, mask=ip.mask) for ip in ips]
 
 
 class OxoAssetType(graphene.Union):
@@ -352,7 +336,7 @@ class OxoAssetType(graphene.Union):
             OxoIOSFileAssetType,
             OxoAndroidStoreAssetType,
             OxoIOSStoreAssetType,
-            OxoUrlAssetType,
+            OxoUrlsAssetType,
             OxoNetworkAssetType,
         )
 
@@ -707,6 +691,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         page=graphene.Int(required=False),
         number_elements=graphene.Int(required=False),
     )
+    asset_types = graphene.List(graphene.String)
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -728,7 +713,11 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             str: The key of the agent group.
         """
-        return f"agentgroup//{self.name}"
+        return (
+            f"agentgroup//{self.name}"
+            if self.name is not None
+            else f"agentgroup//{self.id}"
+        )
 
     def resolve_agents(
         self: models.AgentGroup,
@@ -766,19 +755,44 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             else:
                 return AgentsType(agents=agents)
 
+    def resolve_asset_types(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> List[str]:
+        """Resolve asset types query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            List[str]: The asset types of the agent group.
+        """
+        with models.Database() as session:
+            asset_types = session.query(models.AgentGroup).get(self.id).asset_types
+            return [asset.type for asset in asset_types]
+
 
 class OxoAgentGroupsType(graphene.ObjectType):
     agent_groups = graphene.List(AgentGroupType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
+class OxoIPRangeInputType(graphene.InputObjectType):
+    host = graphene.String(required=True)
+    mask = graphene.String(required=False)
+
+
+class OxoLinkInputType(graphene.InputObjectType):
+    url = graphene.String(required=True)
+    method = graphene.String(required=False, default_value="GET")
+
+
 class OxoAssetInputType(graphene.InputObjectType):
-    android_file = OxoAndroidFileAssetInputType()
-    ios_file = OxoIOSFileAssetInputType()
-    android_store = OxoAndroidStoreAssetInputType()
-    ios_store = OxoIOSStoreAssetInputType()
-    url = OxoUrlAssetInputType()
-    network = OxoNetworkAssetInputType()
+    android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
+    android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
+    ios_file = graphene.List(OxoIOSFileAssetInputType)
+    android_store = graphene.List(OxoAndroidStoreAssetInputType)
+    ios_store = graphene.List(OxoIOSStoreAssetInputType)
+    link = graphene.List(OxoLinkInputType)
+    ip = graphene.List(OxoIPRangeInputType)
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
@@ -794,15 +808,16 @@ class AgentGroupAgentCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group agent."""
 
     key = graphene.String(required=True)
-    args = graphene.List(AgentArgumentInputType)
+    args = graphene.List(AgentArgumentInputType, required=False, default_value=[])
 
 
 class AgentGroupCreateInputType(graphene.InputObjectType):
     """Input object type for creating an agent group."""
 
-    name = graphene.String(required=True)
+    name = graphene.String(required=False)
     description = graphene.String(required=True)
     agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
+    asset_types = graphene.List(graphene.String, required=False, default_value=[])
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):

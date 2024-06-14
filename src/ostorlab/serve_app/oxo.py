@@ -1,7 +1,6 @@
 """Oxo GraphQL queries and mutations."""
 
 import ipaddress
-import json
 import pathlib
 import uuid
 from typing import Optional, List
@@ -9,6 +8,7 @@ from typing import Optional, List
 import graphene
 import graphql
 import httpx
+import sqlalchemy
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
@@ -60,6 +60,7 @@ class Query(graphene.ObjectType):
         order_by=graphene.Argument(types.AgentGroupOrderByEnum, required=False),
         sort=graphene.Argument(common.SortEnum, required=False),
         agent_group_ids=graphene.List(graphene.Int),
+        asset_type=graphene.String(required=False),
     )
 
     def resolve_scans(
@@ -74,12 +75,12 @@ class Query(graphene.ObjectType):
         """Resolve scans query.
 
         Args:
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-            scan_ids (Optional[List[int]], optional): List of scan ids. Defaults to None.
-            page (int | None, optional): Page number. Defaults to None.
-            number_elements (int, optional): Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
-            order_by (Optional[types.OxoScanOrderByEnum], optional): Order by filter. Defaults to None.
-            sort (Optional[common.SortEnum], optional): Sort filter. Defaults to None.
+            info: GraphQL resolve info.
+            scan_ids: List of scan ids. Defaults to None.
+            page: Page number. Defaults to None.
+            number_elements: Number of elements. Defaults to DEFAULT_NUMBER_ELEMENTS.
+            order_by: Order by filter. Defaults to None.
+            sort: Sort filter. Defaults to None.
 
         Returns:
             Optional[types.OxoScansType]: List of scans.
@@ -153,6 +154,7 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.AgentGroupOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
         agent_group_ids: Optional[List[int]] = None,
+        asset_type: Optional[str] = None,
     ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
@@ -183,6 +185,13 @@ class Query(graphene.ObjectType):
             if search is not None:
                 agent_groups_query = agent_groups_query.filter(
                     models.AgentGroup.name.ilike(f"%{search}%")
+                )
+
+            if asset_type is not None:
+                agent_groups_query = agent_groups_query.join(
+                    models.AgentGroup.asset_types
+                ).filter(
+                    sqlalchemy.func.lower(models.AssetType.type) == asset_type.lower()
                 )
 
             order_by_filter = None
@@ -308,42 +317,60 @@ class CreateAssetsMutation(graphene.Mutation):
                 errors.append(error_message)
                 continue
             if asset.android_store is not None:
-                new_asset = models.AndroidStore.create(
-                    package_name=asset.android_store.package_name,
-                    application_name=asset.android_store.application_name,
-                )
-                created_assets.append(new_asset)
-            if asset.android_file is not None:
-                content = asset.android_file.file.read()
-                android_file_path = (
-                    config_manager.upload_path / f"android_{str(uuid.uuid4())}"
-                )
-                android_file_path.write_bytes(content)
-                new_asset = models.AndroidFile.create(
-                    package_name=asset.android_file.package_name,
-                    path=str(android_file_path),
-                )
-                created_assets.append(new_asset)
+                for asset_android_store in asset.android_store:
+                    new_asset = models.AndroidStore.create(
+                        package_name=asset_android_store.package_name,
+                        application_name=asset_android_store.application_name,
+                    )
+                    created_assets.append(new_asset)
+            if asset.android_apk_file is not None:
+                for asset_android_apk_file in asset.android_apk_file:
+                    content = asset_android_apk_file.file.read()
+                    android_file_path = (
+                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                    )
+                    android_file_path.write_bytes(content)
+                    new_asset = models.AndroidFile.create(
+                        package_name=asset_android_apk_file.package_name,
+                        path=str(android_file_path),
+                    )
+                    created_assets.append(new_asset)
+            if asset.android_aab_file is not None:
+                for asset_android_aab_file in asset.android_aab_file:
+                    content = asset_android_aab_file.file.read()
+                    android_file_path = (
+                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                    )
+                    android_file_path.write_bytes(content)
+                    new_asset = models.AndroidFile.create(
+                        package_name=asset_android_aab_file.package_name,
+                        path=str(android_file_path),
+                    )
+                    created_assets.append(new_asset)
             if asset.ios_store is not None:
-                new_asset = models.IosStore.create(
-                    bundle_id=asset.ios_store.bundle_id,
-                    application_name=asset.ios_store.application_name,
-                )
-                created_assets.append(new_asset)
+                for asset_ios_store in asset.ios_store:
+                    new_asset = models.IosStore.create(
+                        bundle_id=asset_ios_store.bundle_id,
+                        application_name=asset_ios_store.application_name,
+                    )
+                    created_assets.append(new_asset)
             if asset.ios_file is not None:
-                content = asset.ios_file.file.read()
-                ios_file_path = config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
-                ios_file_path.write_bytes(content)
-                new_asset = models.IosFile.create(
-                    bundle_id=asset.ios_file.bundle_id,
-                    path=str(ios_file_path),
-                )
+                for asset_ios_file in asset.ios_file:
+                    content = asset_ios_file.file.read()
+                    ios_file_path = (
+                        config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
+                    )
+                    ios_file_path.write_bytes(content)
+                    new_asset = models.IosFile.create(
+                        bundle_id=asset_ios_file.bundle_id,
+                        path=str(ios_file_path),
+                    )
+                    created_assets.append(new_asset)
+            if asset.link is not None:
+                new_asset = models.Urls.create(links=asset.link)
                 created_assets.append(new_asset)
-            if asset.url is not None:
-                new_asset = models.Url.create(links=asset.url.links)
-                created_assets.append(new_asset)
-            if asset.network is not None:
-                new_asset = models.Network.create(networks=asset.network.networks)
+            if asset.ip is not None:
+                new_asset = models.Network.create(networks=asset.ip)
                 created_assets.append(new_asset)
         if len(errors) > 0:
             error_messages = "\n".join(errors)
@@ -357,16 +384,18 @@ class CreateAssetsMutation(graphene.Mutation):
         assets = []
         if asset.android_store is not None:
             assets.append(asset.android_store)
-        if asset.android_file is not None:
-            assets.append(asset.android_file)
+        if asset.android_apk_file is not None:
+            assets.append(asset.android_apk_file)
+        if asset.android_aab_file is not None:
+            assets.append(asset.android_aab_file)
         if asset.ios_store is not None:
             assets.append(asset.ios_store)
         if asset.ios_file is not None:
             assets.append(asset.ios_file)
-        if asset.url is not None:
-            assets.append(asset.url)
-        if asset.network is not None:
-            assets.append(asset.network)
+        if asset.link is not None:
+            assets.append(asset.link)
+        if asset.ip is not None:
+            assets.append(asset.ip)
 
         if len(assets) == 0:
             return f"Asset {asset} input is missing target."
@@ -435,6 +464,7 @@ class PublishAgentGroupMutation(graphene.Mutation):
             name=agent_group.name,
             description=agent_group.description,
             agents=agent_group.agents,
+            asset_types=agent_group.asset_types,
         )
         return PublishAgentGroupMutation(agent_group=group)
 
@@ -587,33 +617,42 @@ class RunScanMutation(graphene.Mutation):
                         ios_store_asset.IOSStore(bundle_id=asset.bundle_id)
                     )
                 elif asset.type == "network":
-                    ips = json.loads(asset.networks)
+                    ips = (
+                        session.query(models.IPRange)
+                        .filter_by(network_asset_id=asset.id)
+                        .all()
+                    )
                     for ip in ips:
-                        ip_network = ipaddress.ip_network(ip, strict=False)
+                        ip_network = ipaddress.ip_network(ip.host, strict=False)
                         if ip_network.version == 4:
                             scan_assets.append(
                                 ipv4_address_asset.IPv4(
                                     host=ip_network.network_address.exploded,
-                                    mask=str(ip_network.prefixlen),
+                                    mask=str(ip.mask)
+                                    if ip.mask is not None
+                                    else str(ip_network.prefixlen),
                                 )
                             )
                         elif ip_network.version == 6:
                             scan_assets.append(
                                 ipv6_address_asset.IPv6(
                                     host=ip_network.network_address.exploded,
-                                    mask=str(ip_network.prefixlen),
+                                    mask=str(ip.mask)
+                                    if ip.mask is not None
+                                    else str(ip_network.prefixlen),
                                 )
                             )
                         else:
                             raise graphql.GraphQLError(f"Invalid IP address {ip}")
                 elif asset.type == "urls":
-                    urls = json.loads(asset.links)
-                    for url in urls:
-                        url = json.loads(url)
+                    links = (
+                        session.query(models.Link)
+                        .filter_by(urls_asset_id=asset.id)
+                        .all()
+                    )
+                    for link in links:
                         scan_assets.append(
-                            link_asset.Link(
-                                url=url.get("url"), method=url.get("method")
-                            )
+                            link_asset.Link(url=link.url, method=link.method)
                         )
                 else:
                     raise graphql.GraphQLError("Unsupported asset type.")
