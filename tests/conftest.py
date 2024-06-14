@@ -925,6 +925,7 @@ def agent_group(
         session.commit()
         return agent_group
 
+
 @pytest.fixture
 def agent_group_multiple_agents(
     clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
@@ -932,7 +933,7 @@ def agent_group_multiple_agents(
     """Create dummy agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
-        agent1 =models.Agent.create(
+        agent1 = models.Agent.create(
             key="agent/ostorlab/agent1",
         )
         agent2 = models.Agent.create(
