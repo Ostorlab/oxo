@@ -341,6 +341,231 @@ class OxoAssetType(graphene.Union):
         )
 
 
+class OxoAgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """Graphene object type for a list of agent arguments."""
+
+    value = common.Bytes(required=False)
+
+    class Meta:
+        """Meta class for the agent arguments object type."""
+
+        model = models.AgentArgument
+        only_fields = (
+            "id",
+            "name",
+            "type",
+            "description",
+        )
+
+    def resolve_value(
+        self: models.AgentArgument, info: graphql_base.ResolveInfo
+    ) -> bytes:
+        """Resolve agent argument value query.
+
+        Args:
+            self (models.AgentArgument): The agent argument object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            common.Bytes: The value of the agent argument.
+        """
+        return self.value
+
+
+class OxoAgentArgumentsType(graphene.ObjectType):
+    """Graphene object type for a list of agent arguments."""
+
+    args = graphene.List(OxoAgentArgumentType, required=True)
+
+
+class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for an agent."""
+
+    args = graphene.Field(OxoAgentArgumentsType, required=True)
+
+    class Meta:
+        """Meta class for the agent object type."""
+
+        model = models.Agent
+        only_fields = (
+            "id",
+            "key",
+        )
+
+    def resolve_args(
+        self: models.Agent, info: graphql_base.ResolveInfo
+    ) -> OxoAgentArgumentsType:
+        """Resolve agent arguments query.
+
+        Args:
+            self (models.Agent): The agent object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+
+        Returns:
+            AgentArgumentsType: List of agent arguments.
+        """
+        with models.Database() as session:
+            args = session.query(models.AgentArgument).filter(
+                models.AgentArgument.agent_id == self.id
+            )
+            return OxoAgentArgumentsType(args=args)
+
+
+class OxoAgentsType(graphene.ObjectType):
+    """Graphene object type for a list of agents."""
+
+    agents = graphene.List(OxoAgentType, required=True)
+    page_info = graphene.Field(
+        common.PageInfo,
+        required=False,
+    )
+
+
+class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    """SQLAlchemy object type for an agent group."""
+
+    key = graphene.String()
+    agents = graphene.Field(
+        OxoAgentsType,
+        required=True,
+        page=graphene.Int(required=False),
+        number_elements=graphene.Int(required=False),
+    )
+    asset_types = graphene.List(graphene.String)
+
+    class Meta:
+        """Meta class for the agent group object type."""
+
+        model = models.AgentGroup
+
+        only_fields = (
+            "id",
+            "name",
+            "description",
+            "created_time",
+        )
+
+    def resolve_key(self: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
+        """Resolve key query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            str: The key of the agent group.
+        """
+        return (
+            f"agentgroup//{self.name}"
+            if self.name is not None
+            else f"agentgroup//{self.id}"
+        )
+
+    def resolve_agents(
+        self: models.AgentGroup,
+        info: graphql_base.ResolveInfo,
+        page: int = None,
+        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
+    ) -> OxoAgentsType:
+        """Resolve agents query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            AgentsType: List of agents.
+        """
+        if number_elements <= 0:
+            return OxoAgentsType(agents=[])
+
+        with models.Database() as session:
+            agents = (
+                session.query(models.AgentGroup)
+                .filter(models.AgentGroup.id == self.id)
+                .first()
+                .agents
+            )
+            if page is not None and number_elements > 0:
+                p = common.Paginator(agents, number_elements)
+                page = p.get_page(page)
+                page_info = common.PageInfo(
+                    count=p.count,
+                    num_pages=p.num_pages,
+                    has_next=page.has_next(),
+                    has_previous=page.has_previous(),
+                )
+                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
+            else:
+                return OxoAgentsType(agents=agents)
+
+    def resolve_asset_types(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> List[str]:
+        """Resolve asset types query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            List[str]: The asset types of the agent group.
+        """
+        with models.Database() as session:
+            asset_types = session.query(models.AgentGroup).get(self.id).asset_types
+            return [asset.type for asset in asset_types]
+
+
+class OxoAgentGroupsType(graphene.ObjectType):
+    agent_groups = graphene.List(OxoAgentGroupType, required=True)
+    page_info = graphene.Field(common.PageInfo, required=False)
+
+
+class OxoIPRangeInputType(graphene.InputObjectType):
+    host = graphene.String(required=True)
+    mask = graphene.String(required=False)
+
+
+class OxoLinkInputType(graphene.InputObjectType):
+    url = graphene.String(required=True)
+    method = graphene.String(required=False, default_value="GET")
+
+
+class OxoAssetInputType(graphene.InputObjectType):
+    android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
+    android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
+    ios_file = graphene.List(OxoIOSFileAssetInputType)
+    android_store = graphene.List(OxoAndroidStoreAssetInputType)
+    ios_store = graphene.List(OxoIOSStoreAssetInputType)
+    link = graphene.List(OxoLinkInputType)
+    ip = graphene.List(OxoIPRangeInputType)
+
+
+class OxoAgentArgumentInputType(graphene.InputObjectType):
+    """Input object type for an agent argument."""
+
+    name = graphene.String(required=True)
+    type = graphene.String(required=True)
+    description = graphene.String(required=False)
+    value = common.Bytes(required=False)
+
+
+class OxoAgentGroupAgentCreateInputType(graphene.InputObjectType):
+    """Input object type for creating an agent group agent."""
+
+    key = graphene.String(required=True)
+    args = graphene.List(OxoAgentArgumentInputType, required=False, default_value=[])
+
+
+class OxoAgentGroupCreateInputType(graphene.InputObjectType):
+    """Input object type for creating an agent group."""
+
+    name = graphene.String(required=False)
+    description = graphene.String(required=True)
+    agents = graphene.List(OxoAgentGroupAgentCreateInputType, required=True)
+    asset_types = graphene.List(graphene.String, required=False, default_value=[])
+
+
+class OxoAgentScanInputType(graphene.InputObjectType):
+    title = graphene.String(required=False)
+    asset_ids = graphene.List(graphene.Int, required=True)
+    agent_group_id = graphene.Int(required=True)
+
+
 class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     """SQLAlchemy object type for a scan."""
 
@@ -617,230 +842,3 @@ class OxoScansType(graphene.ObjectType):
 
     scans = graphene.List(OxoScanType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
-
-
-////////////////////////////
-
-class AgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """Graphene object type for a list of agent arguments."""
-
-    value = common.Bytes(required=False)
-
-    class Meta:
-        """Meta class for the agent arguments object type."""
-
-        model = models.AgentArgument
-        only_fields = (
-            "id",
-            "name",
-            "type",
-            "description",
-        )
-
-    def resolve_value(
-        self: models.AgentArgument, info: graphql_base.ResolveInfo
-    ) -> bytes:
-        """Resolve agent argument value query.
-
-        Args:
-            self (models.AgentArgument): The agent argument object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-
-        Returns:
-            common.Bytes: The value of the agent argument.
-        """
-        return self.value
-
-
-class AgentArgumentsType(graphene.ObjectType):
-    """Graphene object type for a list of agent arguments."""
-
-    args = graphene.List(AgentArgumentType, required=True)
-
-
-class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """SQLAlchemy object type for an agent."""
-
-    args = graphene.Field(AgentArgumentsType, required=True)
-
-    class Meta:
-        """Meta class for the agent object type."""
-
-        model = models.Agent
-        only_fields = (
-            "id",
-            "key",
-        )
-
-    def resolve_args(
-        self: models.Agent, info: graphql_base.ResolveInfo
-    ) -> AgentArgumentsType:
-        """Resolve agent arguments query.
-
-        Args:
-            self (models.Agent): The agent object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-
-        Returns:
-            AgentArgumentsType: List of agent arguments.
-        """
-        with models.Database() as session:
-            args = session.query(models.AgentArgument).filter(
-                models.AgentArgument.agent_id == self.id
-            )
-            return AgentArgumentsType(args=args)
-
-
-class AgentsType(graphene.ObjectType):
-    """Graphene object type for a list of agents."""
-
-    agents = graphene.List(AgentType, required=True)
-    page_info = graphene.Field(
-        common.PageInfo,
-        required=False,
-    )
-
-
-class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
-    """SQLAlchemy object type for an agent group."""
-
-    key = graphene.String()
-    agents = graphene.Field(
-        AgentsType,
-        required=True,
-        page=graphene.Int(required=False),
-        number_elements=graphene.Int(required=False),
-    )
-    asset_types = graphene.List(graphene.String)
-
-    class Meta:
-        """Meta class for the agent group object type."""
-
-        model = models.AgentGroup
-
-        only_fields = (
-            "id",
-            "name",
-            "description",
-            "created_time",
-        )
-
-    def resolve_key(self: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
-        """Resolve key query.
-        Args:
-            self (models.AgentGroup): The agent group object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-        Returns:
-            str: The key of the agent group.
-        """
-        return (
-            f"agentgroup//{self.name}"
-            if self.name is not None
-            else f"agentgroup//{self.id}"
-        )
-
-    def resolve_agents(
-        self: models.AgentGroup,
-        info: graphql_base.ResolveInfo,
-        page: int = None,
-        number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-    ) -> AgentsType:
-        """Resolve agents query.
-        Args:
-            self (models.AgentGroup): The agent group object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-        Returns:
-            AgentsType: List of agents.
-        """
-        if number_elements <= 0:
-            return AgentsType(agents=[])
-
-        with models.Database() as session:
-            agents = (
-                session.query(models.AgentGroup)
-                .filter(models.AgentGroup.id == self.id)
-                .first()
-                .agents
-            )
-            if page is not None and number_elements > 0:
-                p = common.Paginator(agents, number_elements)
-                page = p.get_page(page)
-                page_info = common.PageInfo(
-                    count=p.count,
-                    num_pages=p.num_pages,
-                    has_next=page.has_next(),
-                    has_previous=page.has_previous(),
-                )
-                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
-            else:
-                return AgentsType(agents=agents)
-
-    def resolve_asset_types(
-        self: models.AgentGroup, info: graphql_base.ResolveInfo
-    ) -> List[str]:
-        """Resolve asset types query.
-        Args:
-            self (models.AgentGroup): The agent group object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
-        Returns:
-            List[str]: The asset types of the agent group.
-        """
-        with models.Database() as session:
-            asset_types = session.query(models.AgentGroup).get(self.id).asset_types
-            return [asset.type for asset in asset_types]
-
-
-class AgentGroupsType(graphene.ObjectType):
-    agent_groups = graphene.List(AgentGroupType, required=True)
-    page_info = graphene.Field(common.PageInfo, required=False)
-
-
-class OxoIPRangeInputType(graphene.InputObjectType):
-    host = graphene.String(required=True)
-    mask = graphene.String(required=False)
-
-
-class OxoLinkInputType(graphene.InputObjectType):
-    url = graphene.String(required=True)
-    method = graphene.String(required=False, default_value="GET")
-
-
-class OxoAssetInputType(graphene.InputObjectType):
-    android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
-    android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
-    ios_file = graphene.List(OxoIOSFileAssetInputType)
-    android_store = graphene.List(OxoAndroidStoreAssetInputType)
-    ios_store = graphene.List(OxoIOSStoreAssetInputType)
-    link = graphene.List(OxoLinkInputType)
-    ip = graphene.List(OxoIPRangeInputType)
-
-
-class AgentArgumentInputType(graphene.InputObjectType):
-    """Input object type for an agent argument."""
-
-    name = graphene.String(required=True)
-    type = graphene.String(required=True)
-    description = graphene.String(required=False)
-    value = common.Bytes(required=False)
-
-
-class AgentGroupAgentCreateInputType(graphene.InputObjectType):
-    """Input object type for creating an agent group agent."""
-
-    key = graphene.String(required=True)
-    args = graphene.List(AgentArgumentInputType, required=False, default_value=[])
-
-
-class AgentGroupCreateInputType(graphene.InputObjectType):
-    """Input object type for creating an agent group."""
-
-    name = graphene.String(required=False)
-    description = graphene.String(required=True)
-    agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
-    asset_types = graphene.List(graphene.String, required=False, default_value=[])
-
-
-class OxoAgentScanInputType(graphene.InputObjectType):
-    title = graphene.String(required=False)
-    asset_ids = graphene.List(graphene.Int, required=True)
-    agent_group_id = graphene.Int(required=True)
