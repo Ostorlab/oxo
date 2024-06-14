@@ -2840,6 +2840,7 @@ def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_query_args[arg_name]
 
 
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
     """Ensure the `UNION` types in the OxO Schema & RE_OxO schema are similar."""
 
