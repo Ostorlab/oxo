@@ -14,7 +14,7 @@ from ostorlab.serve_app.schema import schema
 
 AUTHORIZATION_HEADER = "X-API-KEY"
 
-UI_STATIC_FILES_DIRECTORY = pathlib.Path(__file__).parent.parent / "ui/static_files"
+UI_STATIC_FILES_DIRECTORY = pathlib.Path(__file__).parent.parent / "ui/static"
 
 
 def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
