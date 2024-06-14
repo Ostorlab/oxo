@@ -2699,7 +2699,8 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
 
     for mutation_name, mutation_fields in re_oxo_mutations.items():
         if mutation_name == "exportScan":
-            # This mutation is explicitly skipped from the check since it is not a valid usecase for the moment.
+            # This mutation is explicitly skipped from the check.
+            # TODO(deadly-panda): Evaluate if exporting scans on oxo is a valid usecase.
             continue
         assert mutation_name in oxo_mutations
 
