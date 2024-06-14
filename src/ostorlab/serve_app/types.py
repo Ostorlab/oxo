@@ -691,6 +691,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         page=graphene.Int(required=False),
         number_elements=graphene.Int(required=False),
     )
+    asset_types = graphene.List(graphene.String)
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -754,6 +755,20 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             else:
                 return AgentsType(agents=agents)
 
+    def resolve_asset_types(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> List[str]:
+        """Resolve asset types query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            List[str]: The asset types of the agent group.
+        """
+        with models.Database() as session:
+            asset_types = session.query(models.AgentGroup).get(self.id).asset_types
+            return [asset.type for asset in asset_types]
+
 
 class AgentGroupsType(graphene.ObjectType):
     agent_groups = graphene.List(AgentGroupType, required=True)
@@ -802,6 +817,7 @@ class AgentGroupCreateInputType(graphene.InputObjectType):
     name = graphene.String(required=False)
     description = graphene.String(required=True)
     agents = graphene.List(AgentGroupAgentCreateInputType, required=True)
+    asset_types = graphene.List(graphene.String, required=False, default_value=[])
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):

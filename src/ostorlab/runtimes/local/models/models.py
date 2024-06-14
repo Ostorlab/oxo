@@ -432,7 +432,7 @@ class AgentArgument(Base):
             type=type,
             description=description,
             value=value
-            if isinstance(value, bytes) is True
+            if isinstance(value, bytes) is True or value is None
             else AgentArgument.to_bytes(type, value),
         )
         with Database() as session:
@@ -471,6 +471,33 @@ class AgentArgument(Base):
             return value
 
 
+class AssetType(Base):
+    """The Asset Type model"""
+
+    __tablename__ = "asset_type"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    type = sqlalchemy.Column(sqlalchemy.String(255))
+
+    asset_agent_groups = orm.relationship(
+        "AgentGroup", secondary="agent_group_asset_type", back_populates="asset_types"
+    )
+
+    @staticmethod
+    def create(type: str) -> "AssetType":
+        """Persist the asset type in the database.
+
+        Args:
+            type: Asset type.
+        Returns:
+            AssetType object.
+        """
+        asset_type = AssetType(type=type)
+        with Database() as session:
+            session.add(asset_type)
+            session.commit()
+            return asset_type
+
+
 class AgentGroup(Base):
     """The Agent Group model"""
 
@@ -484,38 +511,60 @@ class AgentGroup(Base):
         "Agent", secondary="agent_group_mapping", back_populates="agent_groups"
     )
 
+    asset_types = orm.relationship(
+        "AssetType",
+        secondary="agent_group_asset_type",
+        back_populates="asset_agent_groups",
+    )
+
     @staticmethod
     def create(
-        description: str, agents: Any, name: Optional[str] = None
+        description: str,
+        agents: Any,
+        name: Optional[str] = None,
+        asset_types: List[str] = [],
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
             name: Agent group name.
             description: Agent group description.
+            asset_types: List of asset types.
             agents: List of agents.
         Returns:
             AgentGroup object.
         """
-        agent_group = AgentGroup(
-            name=name,
-            description=description,
-            created_time=datetime.datetime.now(),
-        )
-
-        for agent in agents:
-            new_agent = Agent.create(agent.key)
-            agent_group.agents.append(new_agent)
-            for argument in agent.args:
-                AgentArgument.create(
-                    agent_id=new_agent.id,
-                    name=argument.name,
-                    type=argument.type,
-                    description=argument.description,
-                    value=argument.value,
-                )
-
+        created_asset_types = []
         with Database() as session:
+            for asset_type in asset_types:
+                asset_type_model = (
+                    session.query(AssetType)
+                    .filter(sqlalchemy.func.lower(AssetType.type) == asset_type.lower())
+                    .first()
+                )
+                if asset_type_model is None:
+                    asset_type_model = AssetType.create(type=asset_type)
+                created_asset_types.append(asset_type_model)
+
+            agent_group = AgentGroup(
+                name=name,
+                description=description,
+                created_time=datetime.datetime.now(),
+                asset_types=created_asset_types,
+            )
+
+            for agent in agents:
+                new_agent = Agent.create(agent.key)
+                agent_group.agents.append(new_agent)
+                for argument in agent.args:
+                    AgentArgument.create(
+                        agent_id=new_agent.id,
+                        name=argument.name,
+                        type=argument.type,
+                        description=argument.description,
+                        value=argument.value,
+                    )
+
             session.add(agent_group)
             session.commit()
             return agent_group
@@ -523,6 +572,7 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
+        asset_types: list[str] = [],
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
 
@@ -549,9 +599,43 @@ class AgentGroup(Base):
                 description=agent_group_definition.description,
                 agents=agents,
             )
+
+            ag_asset_types = []
+            for asset_type in asset_types:
+                ag_asset_types.append(AssetType.create(type=asset_type))
+
+            agent_group.asset_types = ag_asset_types
             session.add(agent_group)
             session.commit()
             return agent_group
+
+    @staticmethod
+    def create_from_directory(agent_groups_path: pathlib.Path) -> List["AgentGroup"]:
+        """Create agent groups from a directory.
+
+        Args:
+            agent_groups_path: Path to the agent groups folder.
+
+        Returns:
+            List of agent groups.
+        """
+        agent_groups = []
+        for agent_group_file in agent_groups_path.iterdir():
+            if (
+                agent_group_file.is_file() is True
+                and agent_group_file.suffix == ".yaml"
+            ):
+                with open(agent_group_file, "r") as file:
+                    agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
+                        file
+                    )
+                    asset_type = agent_group_file.stem
+                    agent_group = AgentGroup.create_from_agent_group_definition(
+                        agent_group_definition=agent_group_definition,
+                        asset_types=[asset_type],
+                    )
+                    agent_groups.append(agent_group)
+        return agent_groups
 
 
 class AgentGroupMapping(Base):
@@ -582,6 +666,36 @@ class AgentGroupMapping(Base):
             session.add(agent_group_mapping)
             session.commit()
             return agent_group_mapping
+
+
+class AgentGroupAssetType(Base):
+    """The Agent Group Asset Type model"""
+
+    __tablename__ = "agent_group_asset_type"
+    agent_group_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id"), primary_key=True
+    )
+    asset_type_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset_type.id"), primary_key=True
+    )
+
+    @staticmethod
+    def create(agent_group_id: int, asset_type_id: int) -> "AgentGroupAssetType":
+        """Persist the agent group asset type in the database.
+
+        Args:
+            agent_group_id: Agent group id.
+            asset_type_id: Asset type id.
+        Returns:
+            AgentGroupAssetType object.
+        """
+        agent_group_asset_type = AgentGroupAssetType(
+            agent_group_id=agent_group_id, asset_type_id=asset_type_id
+        )
+        with Database() as session:
+            session.add(agent_group_asset_type)
+            session.commit()
+            return agent_group_asset_type
 
 
 class APIKey(Base):
