@@ -3095,3 +3095,51 @@ def testPublishAgentGroup_withoutNameAndAgentArgs_shouldPersistAgentGroup(
     assert len(ag["agents"]["agents"]) == 1
     assert ag["agents"]["agents"][0]["key"] == "agent_key"
     assert len(ag["agents"]["agents"][0]["args"]["args"]) == 0
+
+
+def testQueryAgentGroup_withAgentPagination_shouldReturnPaginatedListOfAgents(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_multiple_agents: models.AgentGroup,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Ensure the query agent group returns a paginated list of agents."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    query = """
+        query QueryAgentGroup ($agentGroupIds: [Int!], $page: Int, $numberElements: Int){
+            agentGroups (agentGroupIds: $agentGroupIds) {
+            agentGroups {
+                agents (page: $page, numberElements: $numberElements) {
+                    agents {
+                        key
+                    }
+                    pageInfo{
+                      count
+                      numPages
+                      hasNext
+                      hasPrevious
+                    }
+                }
+            }
+            }
+        }
+    """
+    variables = {
+        "agentGroupIds": [agent_group_multiple_agents.id],
+        "page": 1,
+        "numberElements": 2,
+    }
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    agents = response.get_json()["data"]["agentGroups"]["agentGroups"][0]["agents"]
+    assert len(agents["agents"]) == 2
+    assert agents["agents"][0]["key"] == "agent/ostorlab/agent1"
+    assert agents["agents"][1]["key"] == "agent/ostorlab/agent2"
+    assert agents["pageInfo"]["count"] == 3
+    assert agents["pageInfo"]["numPages"] == 2
+    assert agents["pageInfo"]["hasNext"] is True
+    assert agents["pageInfo"]["hasPrevious"] is False

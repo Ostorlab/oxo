@@ -751,7 +751,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     has_next=page.has_next(),
                     has_previous=page.has_previous(),
                 )
-                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
+                return AgentsType(agents=page, page_info=page_info)
             else:
                 return AgentsType(agents=agents)
 
