@@ -484,7 +484,9 @@ class AgentGroup(Base):
     )
 
     @staticmethod
-    def create(name: str, description: str, agents: Any) -> "AgentGroup":
+    def create(
+        description: str, agents: Any, name: Optional[str] = None
+    ) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
