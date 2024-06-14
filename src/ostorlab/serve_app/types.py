@@ -341,7 +341,18 @@ class OxoDomainNameAssetsType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.DomainAsset
         only_fields = ("id",)
 
-    def resolve_domain_names(self, info) -> List[OxoDomainNameAssetType]:
+    def resolve_domain_names(
+        self, info: graphql_base.ResolveInfo
+    ) -> List[OxoDomainNameAssetType]:
+        """Resolve domain names query.
+
+        Args:
+            self: The domain asset object.
+            info: GraphQL resolve info.
+
+        Returns:
+            List of domain names.
+        """
         with models.Database() as session:
             domain_names = (
                 session.query(models.DomainName)
