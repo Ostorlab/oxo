@@ -2959,11 +2959,9 @@ def testPublishAgentGroup_withoutNameAndAgentArgs_shouldPersistAgentGroup(
 
     assert response.status_code == 200, response.get_json()
     ag = response.get_json()["data"]["publishAgentGroup"]["agentGroup"]
-    agent_group_key = ag["key"]
-    agent_group_name = ag["name"]
-    agent_key = ag["agents"]["agents"][0]["key"]
-    agent_args = ag["agents"]["agents"][0]["args"]["args"]
-    assert agent_group_key == "agentgroup//1"
-    assert agent_group_name is None
-    assert agent_key == "agent_key"
-    assert len(agent_args) == 0
+    assert ag["key"] == "agentgroup//1"
+    assert ag["name"] is None
+    assert ag["description"] == "agent description"
+    assert len(ag["agents"]["agents"]) == 1
+    assert ag["agents"]["agents"][0]["key"] == "agent_key"
+    assert len(ag["agents"]["agents"][0]["args"]["args"]) == 0
