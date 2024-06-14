@@ -432,7 +432,7 @@ class AgentArgument(Base):
             type=type,
             description=description,
             value=value
-            if isinstance(value, bytes) is True
+            if isinstance(value, bytes) is True or value is None
             else AgentArgument.to_bytes(type, value),
         )
         with Database() as session:
@@ -569,6 +569,7 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
+        asset_types: list[str] = [],
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
 
@@ -595,9 +596,43 @@ class AgentGroup(Base):
                 description=agent_group_definition.description,
                 agents=agents,
             )
+
+            ag_asset_types = []
+            for asset_type in asset_types:
+                ag_asset_types.append(AssetType.create(type=asset_type))
+
+            agent_group.asset_types = ag_asset_types
             session.add(agent_group)
             session.commit()
             return agent_group
+
+    @staticmethod
+    def create_from_directory(agent_groups_path: pathlib.Path) -> List["AgentGroup"]:
+        """Create agent groups from a directory.
+
+        Args:
+            agent_groups_path: Path to the agent groups folder.
+
+        Returns:
+            List of agent groups.
+        """
+        agent_groups = []
+        for agent_group_file in agent_groups_path.iterdir():
+            if (
+                agent_group_file.is_file() is True
+                and agent_group_file.suffix == ".yaml"
+            ):
+                with open(agent_group_file, "r") as file:
+                    agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
+                        file
+                    )
+                    asset_type = agent_group_file.stem
+                    agent_group = AgentGroup.create_from_agent_group_definition(
+                        agent_group_definition=agent_group_definition,
+                        asset_types=[asset_type],
+                    )
+                    agent_groups.append(agent_group)
+        return agent_groups
 
 
 class AgentGroupMapping(Base):

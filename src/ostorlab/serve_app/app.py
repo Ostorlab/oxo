@@ -1,4 +1,5 @@
 import functools
+import pathlib
 
 from typing import Optional
 
@@ -23,6 +24,10 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         view_func=CustomUBJSONFileUploadGraphQLView.as_view(
             "graphql", schema=schema, **kwargs
         ),
+    )
+
+    models.AgentGroup.create_from_directory(
+        pathlib.Path(__file__).parent / "agent_groups"
     )
 
     @app.before_request
