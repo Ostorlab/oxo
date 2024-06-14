@@ -560,7 +560,7 @@ def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
     assert "Creating scan entry" in result.output
 
 
-def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
+def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(
     mocker: plugin.MockerFixture,
     nmap_agent_def: definitions.AgentDefinition,
     run_scan_mock: None,
@@ -603,7 +603,12 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
         assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
         assert len(assets) == 1
         assert assets[0].type == "network"
-        assert assets[0].networks == '["8.8.8.8/32"]'
+        ips = (
+            session.query(models.IPRange).filter_by(network_asset_id=assets[0].id).all()
+        )
+        assert len(ips) == 1
+        assert ips[0].host == "8.8.8.8"
+        assert ips[0].mask == "32"
         agent_nmap = agent_group.agents[0]
         args = (
             session.query(models.AgentArgument).filter_by(agent_id=agent_nmap.id).all()
@@ -626,3 +631,51 @@ def testOstorlabScanRunCLI_always_shouldLinkAgentGroupAndAssetToScan(
         assert args[4].name == "float_arg"
         assert models.AgentArgument.from_bytes(args[4].type, args[4].value) == 3.24
         assert args[4].type == "number"
+
+
+def testOstorlabScanRunCLI_whenLink_shouldLinkAssetToScan(
+    mocker: plugin.MockerFixture,
+    nmap_agent_def: definitions.AgentDefinition,
+    run_scan_mock: None,
+    db_engine_path: str,
+) -> None:
+    """Ensure that the cli scan is linked to the agent group and asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runner = CliRunner()
+    mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
+    )
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--install",
+            "--no-follow",
+            "--title=test_scan",
+            "--agent=agent/ostorlab/nmap",
+            "link",
+            "--url",
+            "https://ostorlab.co",
+            "--method",
+            "GET",
+        ],
+    )
+
+    with models.Database() as session:
+        scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert scan.title == "test_scan"
+        agent_group = (
+            session.query(models.AgentGroup).filter_by(id=scan.agent_group_id).first()
+        )
+        assert len(agent_group.agents) == 1
+        assert any(agent.key == "agent/ostorlab/nmap" for agent in agent_group.agents)
+        assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
+        assert len(assets) == 1
+        assert assets[0].id is not None
+        assert assets[0].type == "urls"
+        links = session.query(models.Link).filter_by(urls_asset_id=assets[0].id).all()
+        assert len(links) == 1
+        assert links[0].url == "https://ostorlab.co"
+        assert links[0].method == "GET"
