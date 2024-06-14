@@ -9,6 +9,7 @@ import struct
 import uuid
 import types
 from typing import Any, Dict, List, Optional, Union
+import ipaddress
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -431,7 +432,7 @@ class AgentArgument(Base):
             type=type,
             description=description,
             value=value
-            if isinstance(value, bytes) is True
+            if isinstance(value, bytes) is True or value is None
             else AgentArgument.to_bytes(type, value),
         )
         with Database() as session:
@@ -470,6 +471,33 @@ class AgentArgument(Base):
             return value
 
 
+class AssetType(Base):
+    """The Asset Type model"""
+
+    __tablename__ = "asset_type"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    type = sqlalchemy.Column(sqlalchemy.String(255))
+
+    asset_agent_groups = orm.relationship(
+        "AgentGroup", secondary="agent_group_asset_type", back_populates="asset_types"
+    )
+
+    @staticmethod
+    def create(type: str) -> "AssetType":
+        """Persist the asset type in the database.
+
+        Args:
+            type: Asset type.
+        Returns:
+            AssetType object.
+        """
+        asset_type = AssetType(type=type)
+        with Database() as session:
+            session.add(asset_type)
+            session.commit()
+            return asset_type
+
+
 class AgentGroup(Base):
     """The Agent Group model"""
 
@@ -483,38 +511,60 @@ class AgentGroup(Base):
         "Agent", secondary="agent_group_mapping", back_populates="agent_groups"
     )
 
+    asset_types = orm.relationship(
+        "AssetType",
+        secondary="agent_group_asset_type",
+        back_populates="asset_agent_groups",
+    )
+
     @staticmethod
     def create(
-        description: str, agents: Any, name: Optional[str] = None
+        description: str,
+        agents: Any,
+        name: Optional[str] = None,
+        asset_types: List[str] = [],
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
         Args:
             name: Agent group name.
             description: Agent group description.
+            asset_types: List of asset types.
             agents: List of agents.
         Returns:
             AgentGroup object.
         """
-        agent_group = AgentGroup(
-            name=name,
-            description=description,
-            created_time=datetime.datetime.now(),
-        )
-
-        for agent in agents:
-            new_agent = Agent.create(agent.key)
-            agent_group.agents.append(new_agent)
-            for argument in agent.args:
-                AgentArgument.create(
-                    agent_id=new_agent.id,
-                    name=argument.name,
-                    type=argument.type,
-                    description=argument.description,
-                    value=argument.value,
-                )
-
+        created_asset_types = []
         with Database() as session:
+            for asset_type in asset_types:
+                asset_type_model = (
+                    session.query(AssetType)
+                    .filter(sqlalchemy.func.lower(AssetType.type) == asset_type.lower())
+                    .first()
+                )
+                if asset_type_model is None:
+                    asset_type_model = AssetType.create(type=asset_type)
+                created_asset_types.append(asset_type_model)
+
+            agent_group = AgentGroup(
+                name=name,
+                description=description,
+                created_time=datetime.datetime.now(),
+                asset_types=created_asset_types,
+            )
+
+            for agent in agents:
+                new_agent = Agent.create(agent.key)
+                agent_group.agents.append(new_agent)
+                for argument in agent.args:
+                    AgentArgument.create(
+                        agent_id=new_agent.id,
+                        name=argument.name,
+                        type=argument.type,
+                        description=argument.description,
+                        value=argument.value,
+                    )
+
             session.add(agent_group)
             session.commit()
             return agent_group
@@ -522,6 +572,7 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
+        asset_types: list[str] = [],
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
 
@@ -548,9 +599,43 @@ class AgentGroup(Base):
                 description=agent_group_definition.description,
                 agents=agents,
             )
+
+            ag_asset_types = []
+            for asset_type in asset_types:
+                ag_asset_types.append(AssetType.create(type=asset_type))
+
+            agent_group.asset_types = ag_asset_types
             session.add(agent_group)
             session.commit()
             return agent_group
+
+    @staticmethod
+    def create_from_directory(agent_groups_path: pathlib.Path) -> List["AgentGroup"]:
+        """Create agent groups from a directory.
+
+        Args:
+            agent_groups_path: Path to the agent groups folder.
+
+        Returns:
+            List of agent groups.
+        """
+        agent_groups = []
+        for agent_group_file in agent_groups_path.iterdir():
+            if (
+                agent_group_file.is_file() is True
+                and agent_group_file.suffix == ".yaml"
+            ):
+                with open(agent_group_file, "r") as file:
+                    agent_group_definition = definitions.AgentGroupDefinition.from_yaml(
+                        file
+                    )
+                    asset_type = agent_group_file.stem
+                    agent_group = AgentGroup.create_from_agent_group_definition(
+                        agent_group_definition=agent_group_definition,
+                        asset_types=[asset_type],
+                    )
+                    agent_groups.append(agent_group)
+        return agent_groups
 
 
 class AgentGroupMapping(Base):
@@ -581,6 +666,36 @@ class AgentGroupMapping(Base):
             session.add(agent_group_mapping)
             session.commit()
             return agent_group_mapping
+
+
+class AgentGroupAssetType(Base):
+    """The Agent Group Asset Type model"""
+
+    __tablename__ = "agent_group_asset_type"
+    agent_group_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id"), primary_key=True
+    )
+    asset_type_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset_type.id"), primary_key=True
+    )
+
+    @staticmethod
+    def create(agent_group_id: int, asset_type_id: int) -> "AgentGroupAssetType":
+        """Persist the agent group asset type in the database.
+
+        Args:
+            agent_group_id: Agent group id.
+            asset_type_id: Asset type id.
+        Returns:
+            AgentGroupAssetType object.
+        """
+        agent_group_asset_type = AgentGroupAssetType(
+            agent_group_id=agent_group_id, asset_type_id=asset_type_id
+        )
+        with Database() as session:
+            session.add(agent_group_asset_type)
+            session.commit()
+            return agent_group_asset_type
 
 
 class APIKey(Base):
@@ -659,20 +774,20 @@ class Asset(Base):
         """Create the assets from the asset definition.
 
         Args:
-            scan: The scan object.
             assets: The list of assets to create.
+            scan_id: The scan id.
         """
-        networks: List[str] = []
-        links: List[str] = []
+        networks: List[Dict[str, Union[str, int]]] = []
+        links: List[Dict[str, str]] = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
                 or isinstance(asset, ipv4.IPv4)
                 or isinstance(asset, ipv6.IPv6)
             ):
-                networks.append(f"{asset.host}/{asset.mask}")
+                networks.append({"host": asset.host, "mask": asset.mask})
             elif isinstance(asset, link.Link):
-                links.append(f'{{"url": "{asset.url}", "method": "{asset.method}"}}')
+                links.append({"url": asset.url, "method": asset.method})
             elif isinstance(asset, ios_ipa.IOSIpa):
                 IosFile.create(path=asset.path, scan_id=scan_id)
             elif isinstance(asset, ios_store.IOSStore):
@@ -688,7 +803,7 @@ class Asset(Base):
             Network.create(networks=networks, scan_id=scan_id)
 
         if len(links) > 0:
-            Url.create(links=links, scan_id=scan_id)
+            Urls.create(links=links, scan_id=scan_id)
 
 
 class AndroidFile(Asset):
@@ -712,6 +827,7 @@ class AndroidFile(Asset):
         Args:
             package_name: The application identifier.
             path: Local/Remote path of the APK/AAB.
+            scan_id: The scan id.
 
         Returns:
             android file object.
@@ -750,6 +866,7 @@ class AndroidStore(Asset):
         Args:
             package_name: The application identifier.
             application_name: The application name as shown in the store.
+            scan_id: The scan id.
 
         Returns:
             android store object.
@@ -786,6 +903,7 @@ class IosFile(Asset):
         Args:
             bundle_id: The application identifier.
             path: Local/Remote path of the IPA.
+            scan_id: The scan id.
 
         Returns:
             iOS file object.
@@ -822,6 +940,7 @@ class IosStore(Asset):
         Args:
             bundle_id: The application identifier.
             application_name: The application name as shown in the store.
+            scan_id: The scan id.
 
         Returns:
             iOS store object.
@@ -837,35 +956,113 @@ class IosStore(Asset):
             return asset
 
 
-class Url(Asset):
+class Link(Base):
+    __tablename__ = "link"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    url = sqlalchemy.Column(sqlalchemy.String(4096))
+    method = sqlalchemy.Column(sqlalchemy.String(8))
+    urls_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("urls.id")
+    )
+
+    @staticmethod
+    def create(url: str, method: str, urls_asset_id: Optional[int] = None) -> "Link":
+        """Persist the link information in the database.
+
+        Args:
+            url: The target URL.
+            method: The HTTP method.
+            urls_asset_id: The URL asset id.
+
+        Returns:
+            Link object.
+        """
+        with Database() as session:
+            link = Link(url=url, method=method, urls_asset_id=urls_asset_id)
+            session.add(link)
+            session.commit()
+            return link
+
+
+class Urls(Asset):
     __tablename__ = "urls"
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    links = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "urls",
     }
 
     @staticmethod
-    def create(links: List[str], scan_id: Optional[int] = None) -> "Url":
+    def create(links: List[dict[str, str]], scan_id: Optional[int] = None) -> "Urls":
         """Persist the URL information in the database.
 
         Args:
-            links: list of the target URLs.
+            links: list of the target URLs with methods.
+            scan_id: The scan id.
 
         Returns:
-            Url object.
+            Urls object.
         """
         with Database() as session:
-            asset = Url(
-                links=json.dumps(links),
-                scan_id=scan_id,
-            )
-            session.add(asset)
+            urls_instance = Urls(scan_id=scan_id)
+            session.add(urls_instance)
             session.commit()
-            return asset
+
+            link_objects = [
+                Link(
+                    url=link.get("url"),
+                    method=link.get("method", "GET"),
+                    urls_asset_id=urls_instance.id,
+                )
+                for link in links
+            ]
+            session.add_all(link_objects)
+            session.commit()
+            return urls_instance
+
+    @staticmethod
+    def delete(urls_asset_id: int) -> None:
+        """Delete the URL information from the database.
+
+        Args:
+            urls_asset_id: The URL id.
+        """
+        with Database() as session:
+            session.query(Urls).filter_by(id=urls_asset_id).delete()
+            session.query(Link).filter_by(urls_asset_id=urls_asset_id).delete()
+            session.commit()
+
+
+class IPRange(Base):
+    __tablename__ = "ip"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    host = sqlalchemy.Column(sqlalchemy.String(50))
+    mask = sqlalchemy.Column(sqlalchemy.String(50))
+    network_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("network.id")
+    )
+
+    @staticmethod
+    def create(
+        host: str, mask: str, network_asset_id: Optional[int] = None
+    ) -> "IPRange":
+        """Persist the IP information in the database.
+
+        Args:
+            host: The target IP address.
+            mask: The subnet mask.
+            network_asset_id: The network id.
+
+        Returns:
+            IP object.
+        """
+        with Database() as session:
+            ip = IPRange(host=host, mask=mask, network_asset_id=network_asset_id)
+            session.add(ip)
+            session.commit()
+            return ip
 
 
 class Network(Asset):
@@ -873,27 +1070,51 @@ class Network(Asset):
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    networks = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "network",
     }
 
     @staticmethod
-    def create(networks: List[str], scan_id: Optional[int] = None) -> "Network":
+    def create(
+        networks: List[Dict[str, Union[str, int]]], scan_id: Optional[int] = None
+    ) -> "Network":
         """Persist the Network information in the database.
 
         Args:
             networks: list of the target IP/range addresses.
+            scan_id: The scan id.
 
         Returns:
             Network object.
         """
         with Database() as session:
-            asset = Network(
-                networks=json.dumps(networks),
-                scan_id=scan_id,
-            )
-            session.add(asset)
+            network_instance = Network(scan_id=scan_id)
+            session.add(network_instance)
             session.commit()
-            return asset
+
+            network_items = [
+                IPRange(
+                    host=network.get("host"),
+                    mask=network.get(
+                        "mask", str(ipaddress.ip_network(network.get("host")).prefixlen)
+                    ),
+                    network_asset_id=network_instance.id,
+                )
+                for network in networks
+            ]
+            session.add_all(network_items)
+            session.commit()
+            return network_instance
+
+    @staticmethod
+    def delete(network_id: int) -> None:
+        """Delete the Network information from the database.
+
+        Args:
+            network_id: The network id.
+        """
+        with Database() as session:
+            session.query(Network).filter_by(id=network_id).delete()
+            session.query(IPRange).filter_by(network_asset_id=network_id).delete()
+            session.commit()

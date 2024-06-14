@@ -1,7 +1,6 @@
 """Tests for Models class."""
 
-import json
-
+import sqlalchemy
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
@@ -311,12 +310,26 @@ def testAssetModels_whenCreateNetwork_assetCreated(
 ) -> None:
     """Ensure we correctly persist the network information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Network.create(networks=["8.8.8.8/24", "42.42.42.42"])
+    models.Network.create(
+        networks=[
+            {"host": "8.8.8.8", "mask": "24"},
+            {"host": "42.42.42.42", "mask": "32"},
+        ]
+    )
 
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
-        ips = json.loads(session.query(models.Network).all()[0].networks)
-        assert ips == ["8.8.8.8/24", "42.42.42.42"]
+        network_id = session.query(models.Network).all()[0].id
+        ips = (
+            session.query(models.IPRange)
+            .filter(models.IPRange.network_asset_id == network_id)
+            .all()
+        )
+        assert len(ips) == 2
+        assert ips[0].host == "8.8.8.8"
+        assert ips[0].mask == "24"
+        assert ips[1].host == "42.42.42.42"
+        assert ips[1].mask == "32"
 
 
 def testAssetModels_whenCreateUrl_assetCreated(
@@ -324,12 +337,64 @@ def testAssetModels_whenCreateUrl_assetCreated(
 ) -> None:
     """Ensure we correctly persist the list of target URLs information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Url.create(links=["https://example.com", "https://example42.com"])
+    models.Urls.create(
+        links=[
+            {"url": "https://example24.com", "method": "POST"},
+            {"url": "https://example42.com"},
+        ]
+    )
 
     with models.Database() as session:
-        assert session.query(models.Url).count() == 1
-        links = json.loads(session.query(models.Url).all()[0].links)
-        assert links == ["https://example.com", "https://example42.com"]
+        assert session.query(models.Urls).count() == 1
+        url_id = session.query(models.Urls).all()[0].id
+        links = (
+            session.query(models.Link).filter(models.Link.urls_asset_id == url_id).all()
+        )
+        assert len(links) == 2
+        assert links[0].url == "https://example24.com"
+        assert links[0].method == "POST"
+        assert links[1].url == "https://example42.com"
+        assert links[1].method == "GET"
+
+
+def testNetworkModel_whenDeleteNetwork_networkDeletedWithItsIps(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly delete the network and its IPs."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    network = models.Network.create(
+        networks=[{"host": "8.8.8.8", "mask": 24}, {"host": "42.42.42.42", "mask": 32}]
+    )
+    network_id = network.id
+
+    models.Network.delete(network_id)
+
+    with models.Database() as session:
+        assert session.query(models.Network).filter_by(id=network_id).count() == 0
+        assert (
+            session.query(models.IPRange).filter_by(network_asset_id=network_id).count()
+            == 0
+        )
+
+
+def testUrlModel_whenDeleteUrl_urlDeletedWithItsLinks(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure we correctly delete the url and its links."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    url = models.Urls.create(
+        links=[
+            {"url": "https://example24.com", "method": "POST"},
+            {"url": "https://example42.com"},
+        ]
+    )
+    url_id = url.id
+
+    models.Urls.delete(url_id)
+
+    with models.Database() as session:
+        assert session.query(models.Urls).filter_by(id=url_id).count() == 0
+        assert session.query(models.Link).filter_by(urls_asset_id=url_id).count() == 0
 
 
 def testAssetModels_whenCreateIosStore_assetCreated(
@@ -439,3 +504,80 @@ def testAssetModels_whenMultipleAssets_shouldHaveUniqueIdsPerTable(
             session.query(models.Asset).all()[1].id
             == session.query(models.IosStore).all()[0].id
         )
+
+
+def testCreateAgentGroupWithAssetTypes_always_createsAgentGroupWithAssetTypes(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test creating an AgentGroup with associated AssetTypes."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        web_asset_type = models.AssetType.create(type="WEB")
+        network_asset_type = models.AssetType.create(type="NETWORK")
+
+        agent_group = models.AgentGroup(
+            name="Test Group", description="Test Description"
+        )
+        agent_group.asset_types.extend([web_asset_type, network_asset_type])
+        session.add(agent_group)
+        session.commit()
+
+        db_agent_group = (
+            session.query(models.AgentGroup).filter_by(name="Test Group").first()
+        )
+        assert db_agent_group is not None
+        assert len(db_agent_group.asset_types) == 2
+        assert "WEB" in [asset.type for asset in db_agent_group.asset_types]
+        assert "NETWORK" in [asset.type for asset in db_agent_group.asset_types]
+
+
+def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test retrieving AgentGroups based on AssetType."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        web_asset_type = models.AssetType.create(type="WEB")
+        network_asset_type = models.AssetType.create(type="NETWORK")
+        agent_group_1 = models.AgentGroup(
+            name="Group 1", description="Group 1 Description"
+        )
+        agent_group_2 = models.AgentGroup(
+            name="Group 2", description="Group 2 Description"
+        )
+        agent_group_1.asset_types.append(web_asset_type)
+        agent_group_2.asset_types.append(network_asset_type)
+        session.add_all([agent_group_1, agent_group_2])
+        session.commit()
+
+        agent_groups_web = (
+            session.query(models.AgentGroup)
+            .join(models.AgentGroup.asset_types)
+            .filter(
+                sqlalchemy.func.lower(models.AssetType.type)
+                == web_asset_type.type.lower()
+            )
+            .all()
+        )
+        agent_groups_network = (
+            session.query(models.AgentGroup)
+            .join(models.AgentGroup.asset_types)
+            .filter(
+                sqlalchemy.func.lower(models.AssetType.type)
+                == network_asset_type.type.lower()
+            )
+            .all()
+        )
+
+        assert len(agent_groups_web) == 1
+        assert agent_group_1.name in [group.name for group in agent_groups_web]
+        assert agent_group_1.description in [
+            group.description for group in agent_groups_web
+        ]
+        assert len(agent_groups_network) == 1
+        assert agent_group_2.name in [group.name for group in agent_groups_network]
+        assert agent_group_2.description in [
+            group.description for group in agent_groups_network
+        ]
