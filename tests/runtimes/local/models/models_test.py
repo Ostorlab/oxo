@@ -1,5 +1,6 @@
 """Tests for Models class."""
 
+import sqlalchemy
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
@@ -503,3 +504,80 @@ def testAssetModels_whenMultipleAssets_shouldHaveUniqueIdsPerTable(
             session.query(models.Asset).all()[1].id
             == session.query(models.IosStore).all()[0].id
         )
+
+
+def testCreateAgentGroupWithAssetTypes_always_createsAgentGroupWithAssetTypes(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test creating an AgentGroup with associated AssetTypes."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        web_asset_type = models.AssetType.create(type="WEB")
+        network_asset_type = models.AssetType.create(type="NETWORK")
+
+        agent_group = models.AgentGroup(
+            name="Test Group", description="Test Description"
+        )
+        agent_group.asset_types.extend([web_asset_type, network_asset_type])
+        session.add(agent_group)
+        session.commit()
+
+        db_agent_group = (
+            session.query(models.AgentGroup).filter_by(name="Test Group").first()
+        )
+        assert db_agent_group is not None
+        assert len(db_agent_group.asset_types) == 2
+        assert "WEB" in [asset.type for asset in db_agent_group.asset_types]
+        assert "NETWORK" in [asset.type for asset in db_agent_group.asset_types]
+
+
+def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test retrieving AgentGroups based on AssetType."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        web_asset_type = models.AssetType.create(type="WEB")
+        network_asset_type = models.AssetType.create(type="NETWORK")
+        agent_group_1 = models.AgentGroup(
+            name="Group 1", description="Group 1 Description"
+        )
+        agent_group_2 = models.AgentGroup(
+            name="Group 2", description="Group 2 Description"
+        )
+        agent_group_1.asset_types.append(web_asset_type)
+        agent_group_2.asset_types.append(network_asset_type)
+        session.add_all([agent_group_1, agent_group_2])
+        session.commit()
+
+        agent_groups_web = (
+            session.query(models.AgentGroup)
+            .join(models.AgentGroup.asset_types)
+            .filter(
+                sqlalchemy.func.lower(models.AssetType.type)
+                == web_asset_type.type.lower()
+            )
+            .all()
+        )
+        agent_groups_network = (
+            session.query(models.AgentGroup)
+            .join(models.AgentGroup.asset_types)
+            .filter(
+                sqlalchemy.func.lower(models.AssetType.type)
+                == network_asset_type.type.lower()
+            )
+            .all()
+        )
+
+        assert len(agent_groups_web) == 1
+        assert agent_group_1.name in [group.name for group in agent_groups_web]
+        assert agent_group_1.description in [
+            group.description for group in agent_groups_web
+        ]
+        assert len(agent_groups_network) == 1
+        assert agent_group_2.name in [group.name for group in agent_groups_network]
+        assert agent_group_2.description in [
+            group.description for group in agent_groups_network
+        ]

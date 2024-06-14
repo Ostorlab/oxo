@@ -833,6 +833,7 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
                         description
                         createdTime
                         key
+                        assetTypes
                         agents {
                             agents {
                                 id
@@ -870,10 +871,12 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     assert agent_group1["description"] == agent_groups[0].description
     assert agent_group1["key"] == f"agentgroup//{agent_groups[0].name}"
     assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
+    assert agent_group1["assetTypes"] == ["WEB"]
     assert agent_group2["name"] == agent_groups[1].name
     assert agent_group2["description"] == agent_groups[1].description
     assert agent_group2["key"] == f"agentgroup//{agent_groups[1].name}"
     assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
+    assert agent_group2["assetTypes"] == ["ANDROID"]
     agent_group1_agents = agent_group1["agents"]["agents"]
     agent_group2_agents = agent_group2["agents"]["agents"]
     assert len(agent_group1_agents) == 2
@@ -1007,6 +1010,79 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     assert (
         models.AgentArgument.from_bytes(agent2_args[3]["type"], agent2_args[3]["value"])
         is False
+    )
+
+
+def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_groups: models.AgentGroup,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test query for agent group with asset type."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        agent_group = session.query(models.AgentGroup).filter_by(id=1).first()
+        assert agent_group is not None
+
+    query = """
+            query AgentGroup ($agentGroupIds: [Int!], $assetType: String!){
+                agentGroups (agentGroupIds: $agentGroupIds, assetType: $assetType) {
+                    agentGroups {
+                        id
+                        name
+                        description
+                        createdTime
+                        key
+                        assetTypes
+                        agents {
+                            agents {
+                                id
+                                key
+                                args {
+                                    args {
+                                        id
+                                        name
+                                        type
+                                        description
+                                        value
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    """
+    variables = {"agentGroupIds": [1], "assetType": "WEB"}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
+
+    response = authenticated_flask_client.post(
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+    )
+
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    agent_groups_data = ubjson.loadb(response.data)["data"]["agentGroups"][
+        "agentGroups"
+    ]
+    assert len(agent_groups_data) == 1
+    agent_group_data = agent_groups_data[0]
+    assert agent_group_data["name"] == agent_group.name
+    assert agent_group_data["description"] == agent_group.description
+    assert agent_group_data["key"] == f"agentgroup//{agent_group.name}"
+    assert agent_group_data["createdTime"] == agent_group.created_time.isoformat()
+    assert agent_group_data["assetTypes"] == ["WEB"]
+    agent_group_agents = agent_group_data["agents"]["agents"]
+    assert len(agent_group_agents) == 2
+    assert agent_group_agents[0]["key"] == "agent/ostorlab/agent1"
+    assert agent_group_agents[1]["key"] == "agent/ostorlab/agent2"
+    agent_args = agent_group_agents[0]["args"]["args"]
+    assert len(agent_args) == 1
+    assert agent_args[0]["name"] == "arg1"
+    assert agent_args[0]["type"] == "number"
+    assert (
+        models.AgentArgument.from_bytes(agent_args[0]["type"], agent_args[0]["value"])
+        == 42
     )
 
 
@@ -1975,6 +2051,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                         agentGroup {
                             key,
                             name,
+                            assetTypes,
                             agents {
                                 agents {
                                     key,
@@ -2001,6 +2078,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                     "args": [{"name": "arg1", "type": "type1", "value": b"value1"}],
                 }
             ],
+            "assetTypes": ["WEB", "NETWORK"],
         }
     }
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
@@ -2017,6 +2095,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     arg_name = ag["agents"]["agents"][0]["args"]["args"][0]["name"]
     arg_type = ag["agents"]["agents"][0]["args"]["args"][0]["type"]
     arg_value = ag["agents"]["agents"][0]["args"]["args"][0]["value"]
+    asset_types = ag["assetTypes"]
     assert agent_group_key == "agentgroup//test_agent_group"
     assert agent_group_name == "test_agent_group"
     assert agent_key == "agent_key"
@@ -2024,6 +2103,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     assert arg_type == "type1"
     assert isinstance(arg_value, bytes) is True
     assert arg_value == b"value1"
+    assert asset_types == ["WEB", "NETWORK"]
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(

@@ -8,6 +8,7 @@ from typing import Optional, List
 import graphene
 import graphql
 import httpx
+import sqlalchemy
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
@@ -59,6 +60,7 @@ class Query(graphene.ObjectType):
         order_by=graphene.Argument(types.AgentGroupOrderByEnum, required=False),
         sort=graphene.Argument(common.SortEnum, required=False),
         agent_group_ids=graphene.List(graphene.Int),
+        asset_type=graphene.String(required=False),
     )
 
     def resolve_scans(
@@ -152,6 +154,7 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.AgentGroupOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
         agent_group_ids: Optional[List[int]] = None,
+        asset_type: Optional[str] = None,
     ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
@@ -182,6 +185,13 @@ class Query(graphene.ObjectType):
             if search is not None:
                 agent_groups_query = agent_groups_query.filter(
                     models.AgentGroup.name.ilike(f"%{search}%")
+                )
+
+            if asset_type is not None:
+                agent_groups_query = agent_groups_query.join(
+                    models.AgentGroup.asset_types
+                ).filter(
+                    sqlalchemy.func.lower(models.AssetType.type) == asset_type.lower()
                 )
 
             order_by_filter = None
@@ -454,6 +464,7 @@ class PublishAgentGroupMutation(graphene.Mutation):
             name=agent_group.name,
             description=agent_group.description,
             agents=agent_group.agents,
+            asset_types=agent_group.asset_types,
         )
         return PublishAgentGroupMutation(agent_group=group)
 
