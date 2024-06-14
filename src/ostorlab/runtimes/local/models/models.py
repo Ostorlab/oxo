@@ -519,7 +519,7 @@ class AgentGroup(Base):
 
     @staticmethod
     def create(
-        name: str, description: str, agents: Any, asset_types: List[str] = []
+        description: str, agents: Any, name: Optional[str] = None, asset_types: List[str] = []
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
