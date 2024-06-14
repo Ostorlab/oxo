@@ -26,7 +26,9 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         ),
     )
 
-    models.AgentGroup.create_from_files(pathlib.Path(__file__).parent / "agent_groups")
+    models.AgentGroup.create_from_directory(
+        pathlib.Path(__file__).parent / "agent_groups"
+    )
 
     @app.before_request
     def authenticate() -> Optional[tuple[flask.Response, int]]:
