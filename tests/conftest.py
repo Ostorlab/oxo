@@ -747,8 +747,10 @@ def clean_db(mocker: plugin.MockerFixture, db_engine_path: str) -> None:
         session.query(models.AndroidStore).delete()
         session.query(models.IosFile).delete()
         session.query(models.IosStore).delete()
-        session.query(models.Url).delete()
+        session.query(models.Urls).delete()
+        session.query(models.Link).delete()
         session.query(models.Network).delete()
+        session.query(models.IPRange).delete()
         session.commit()
 
 
@@ -934,8 +936,8 @@ def multiple_assets_scan(
             path="/path/to/file",
             scan_id=scan.id,
         )
-        asset2 = models.Network(
-            networks='["8.8.8.8", "8.8.4.4"]',
+        asset2 = models.Network.create(
+            networks=[{"host": "8.8.8.8"}, {"host": "8.8.4.4"}],
             scan_id=scan.id,
         )
         session.add(asset1)
@@ -1029,7 +1031,9 @@ def agent_group_inject_asset(
 def network_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Network:
     """Create a network asset."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    asset = models.Network.create(networks=["8.8.8.8", "8.8.4.4"])
+    asset = models.Network.create(
+        networks=[{"host": "8.8.8.8"}, {"host": "8.8.4.4", "mask": 24}]
+    )
     return asset
 
 
@@ -1050,13 +1054,13 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
 
 
 @pytest.fixture
-def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Url:
+def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Urls:
     """Create a Url asset."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    asset = models.Url.create(
+    asset = models.Urls.create(
         links=[
-            '{"url": "https://google.com", "method": "GET"}',
-            '{"url": "https://tesla.com","method": "GET"}',
+            {"url": "https://google.com", "method": "GET"},
+            {"url": "https://tesla.com", "method": "GET"},
         ]
     )
     return asset

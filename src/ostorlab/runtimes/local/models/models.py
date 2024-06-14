@@ -9,6 +9,7 @@ import struct
 import uuid
 import types
 from typing import Any, Dict, List, Optional, Union
+import ipaddress
 
 import sqlalchemy
 from sqlalchemy import orm
@@ -659,20 +660,20 @@ class Asset(Base):
         """Create the assets from the asset definition.
 
         Args:
-            scan: The scan object.
             assets: The list of assets to create.
+            scan_id: The scan id.
         """
-        networks: List[str] = []
-        links: List[str] = []
+        networks: List[Dict[str, Union[str, int]]] = []
+        links: List[Dict[str, str]] = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
                 or isinstance(asset, ipv4.IPv4)
                 or isinstance(asset, ipv6.IPv6)
             ):
-                networks.append(f"{asset.host}/{asset.mask}")
+                networks.append({"host": asset.host, "mask": asset.mask})
             elif isinstance(asset, link.Link):
-                links.append(f'{{"url": "{asset.url}", "method": "{asset.method}"}}')
+                links.append({"url": asset.url, "method": asset.method})
             elif isinstance(asset, ios_ipa.IOSIpa):
                 IosFile.create(path=asset.path, scan_id=scan_id)
             elif isinstance(asset, ios_store.IOSStore):
@@ -688,7 +689,7 @@ class Asset(Base):
             Network.create(networks=networks, scan_id=scan_id)
 
         if len(links) > 0:
-            Url.create(links=links, scan_id=scan_id)
+            Urls.create(links=links, scan_id=scan_id)
 
 
 class AndroidFile(Asset):
@@ -712,6 +713,7 @@ class AndroidFile(Asset):
         Args:
             package_name: The application identifier.
             path: Local/Remote path of the APK/AAB.
+            scan_id: The scan id.
 
         Returns:
             android file object.
@@ -750,6 +752,7 @@ class AndroidStore(Asset):
         Args:
             package_name: The application identifier.
             application_name: The application name as shown in the store.
+            scan_id: The scan id.
 
         Returns:
             android store object.
@@ -786,6 +789,7 @@ class IosFile(Asset):
         Args:
             bundle_id: The application identifier.
             path: Local/Remote path of the IPA.
+            scan_id: The scan id.
 
         Returns:
             iOS file object.
@@ -822,6 +826,7 @@ class IosStore(Asset):
         Args:
             bundle_id: The application identifier.
             application_name: The application name as shown in the store.
+            scan_id: The scan id.
 
         Returns:
             iOS store object.
@@ -837,35 +842,113 @@ class IosStore(Asset):
             return asset
 
 
-class Url(Asset):
+class Link(Base):
+    __tablename__ = "link"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    url = sqlalchemy.Column(sqlalchemy.String(4096))
+    method = sqlalchemy.Column(sqlalchemy.String(8))
+    urls_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("urls.id")
+    )
+
+    @staticmethod
+    def create(url: str, method: str, urls_asset_id: Optional[int] = None) -> "Link":
+        """Persist the link information in the database.
+
+        Args:
+            url: The target URL.
+            method: The HTTP method.
+            urls_asset_id: The URL asset id.
+
+        Returns:
+            Link object.
+        """
+        with Database() as session:
+            link = Link(url=url, method=method, urls_asset_id=urls_asset_id)
+            session.add(link)
+            session.commit()
+            return link
+
+
+class Urls(Asset):
     __tablename__ = "urls"
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    links = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "urls",
     }
 
     @staticmethod
-    def create(links: List[str], scan_id: Optional[int] = None) -> "Url":
+    def create(links: List[dict[str, str]], scan_id: Optional[int] = None) -> "Urls":
         """Persist the URL information in the database.
 
         Args:
-            links: list of the target URLs.
+            links: list of the target URLs with methods.
+            scan_id: The scan id.
 
         Returns:
-            Url object.
+            Urls object.
         """
         with Database() as session:
-            asset = Url(
-                links=json.dumps(links),
-                scan_id=scan_id,
-            )
-            session.add(asset)
+            urls_instance = Urls(scan_id=scan_id)
+            session.add(urls_instance)
             session.commit()
-            return asset
+
+            link_objects = [
+                Link(
+                    url=link.get("url"),
+                    method=link.get("method", "GET"),
+                    urls_asset_id=urls_instance.id,
+                )
+                for link in links
+            ]
+            session.add_all(link_objects)
+            session.commit()
+            return urls_instance
+
+    @staticmethod
+    def delete(urls_asset_id: int) -> None:
+        """Delete the URL information from the database.
+
+        Args:
+            urls_asset_id: The URL id.
+        """
+        with Database() as session:
+            session.query(Urls).filter_by(id=urls_asset_id).delete()
+            session.query(Link).filter_by(urls_asset_id=urls_asset_id).delete()
+            session.commit()
+
+
+class IPRange(Base):
+    __tablename__ = "ip"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    host = sqlalchemy.Column(sqlalchemy.String(50))
+    mask = sqlalchemy.Column(sqlalchemy.String(50))
+    network_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("network.id")
+    )
+
+    @staticmethod
+    def create(
+        host: str, mask: str, network_asset_id: Optional[int] = None
+    ) -> "IPRange":
+        """Persist the IP information in the database.
+
+        Args:
+            host: The target IP address.
+            mask: The subnet mask.
+            network_asset_id: The network id.
+
+        Returns:
+            IP object.
+        """
+        with Database() as session:
+            ip = IPRange(host=host, mask=mask, network_asset_id=network_asset_id)
+            session.add(ip)
+            session.commit()
+            return ip
 
 
 class Network(Asset):
@@ -873,27 +956,51 @@ class Network(Asset):
     id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
-    networks = sqlalchemy.Column(sqlalchemy.String(1024))
 
     __mapper_args__ = {
         "polymorphic_identity": "network",
     }
 
     @staticmethod
-    def create(networks: List[str], scan_id: Optional[int] = None) -> "Network":
+    def create(
+        networks: List[Dict[str, Union[str, int]]], scan_id: Optional[int] = None
+    ) -> "Network":
         """Persist the Network information in the database.
 
         Args:
             networks: list of the target IP/range addresses.
+            scan_id: The scan id.
 
         Returns:
             Network object.
         """
         with Database() as session:
-            asset = Network(
-                networks=json.dumps(networks),
-                scan_id=scan_id,
-            )
-            session.add(asset)
+            network_instance = Network(scan_id=scan_id)
+            session.add(network_instance)
             session.commit()
-            return asset
+
+            network_items = [
+                IPRange(
+                    host=network.get("host"),
+                    mask=network.get(
+                        "mask", str(ipaddress.ip_network(network.get("host")).prefixlen)
+                    ),
+                    network_asset_id=network_instance.id,
+                )
+                for network in networks
+            ]
+            session.add_all(network_items)
+            session.commit()
+            return network_instance
+
+    @staticmethod
+    def delete(network_id: int) -> None:
+        """Delete the Network information from the database.
+
+        Args:
+            network_id: The network id.
+        """
+        with Database() as session:
+            session.query(Network).filter_by(id=network_id).delete()
+            session.query(IPRange).filter_by(network_asset_id=network_id).delete()
+            session.commit()
