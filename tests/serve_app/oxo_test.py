@@ -833,7 +833,7 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
                         description
                         createdTime
                         key
-                        assetTypes,
+                        assetTypes
                         agents {
                             agents {
                                 id
