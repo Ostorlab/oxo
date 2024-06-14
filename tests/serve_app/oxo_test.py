@@ -2738,7 +2738,9 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_mutation_args[arg_name]
 
 
-@pytest.mark.skip(reason="Asset type needs to be aligned.")
+@pytest.mark.skip(
+    reason="Asset type needs to be aligned (https://github.com/Ostorlab/oxo/pull/713)."
+)
 def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     """Ensure the `Queries` in the OxO Schema & RE_OxO schema are similar."""
 
