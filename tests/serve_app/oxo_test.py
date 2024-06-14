@@ -2968,7 +2968,7 @@ def testPublishAgentGroup_withoutNameAndAgentArgs_shouldPersistAgentGroup(
     """Ensure the publish agent group mutation persists the agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
-        mutation PublishAgentGroup ($agentGroup: AgentGroupCreateInputType!){
+        mutation PublishAgentGroup ($agentGroup: OxoAgentGroupCreateInputType!){
             publishAgentGroup (agentGroup: $agentGroup) {
                 agentGroup {
                     key
