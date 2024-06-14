@@ -28,6 +28,10 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
         ),
     )
 
+    models.AgentGroup.create_from_directory(
+        pathlib.Path(__file__).parent / "agent_groups"
+    )
+
     @app.route('/')
     @app.route('/<path:file_path>')
     def serve_static(file_path="index.html") -> flask.Response:
