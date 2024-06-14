@@ -459,6 +459,9 @@ class AgentArgument(Base):
     @staticmethod
     def from_bytes(type: str, value: bytes) -> Any:
         """Get the value of the argument."""
+        if value is None:
+            return None
+
         if type == "string":
             return value.decode(encoding="utf-8")
         elif type in ("boolean", "bool"):
