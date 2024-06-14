@@ -328,6 +328,43 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
             return [OxoIPRangeAssetType(host=ip.host, mask=ip.mask) for ip in ips]
 
 
+class OxoDomainNameAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = models.DomainName
+        only_fields = "name"
+
+
+class OxoDomainNameAssetsType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    domain_names = graphene.List(OxoDomainNameAssetType, required=False)
+
+    class Meta:
+        model = models.DomainAsset
+        only_fields = ("id",)
+
+    def resolve_domain_names(
+        self, info: graphql_base.ResolveInfo
+    ) -> List[OxoDomainNameAssetType]:
+        """Resolve domain names query.
+
+        Args:
+            self: The domain asset object.
+            info: GraphQL resolve info.
+
+        Returns:
+            List of domain names.
+        """
+        with models.Database() as session:
+            domain_names = (
+                session.query(models.DomainName)
+                .filter_by(domain_asset_id=self.id)
+                .all()
+            )
+            return [
+                OxoDomainNameAssetType(name=domain_name.name)
+                for domain_name in domain_names
+            ]
+
+
 class OxoAssetType(graphene.Union):
     class Meta:
         model = models.Asset
@@ -338,6 +375,7 @@ class OxoAssetType(graphene.Union):
             OxoIOSStoreAssetType,
             OxoUrlsAssetType,
             OxoNetworkAssetType,
+            OxoDomainNameAssetsType,
         )
 
 
@@ -785,6 +823,10 @@ class OxoLinkInputType(graphene.InputObjectType):
     method = graphene.String(required=False, default_value="GET")
 
 
+class OxoDomainNameInputType(graphene.InputObjectType):
+    name = graphene.String(required=True)
+
+
 class OxoAssetInputType(graphene.InputObjectType):
     android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
     android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
@@ -793,6 +835,7 @@ class OxoAssetInputType(graphene.InputObjectType):
     ios_store = graphene.List(OxoIOSStoreAssetInputType)
     link = graphene.List(OxoLinkInputType)
     ip = graphene.List(OxoIPRangeInputType)
+    domain = graphene.List(OxoDomainNameInputType)
 
 
 class AgentArgumentInputType(graphene.InputObjectType):
