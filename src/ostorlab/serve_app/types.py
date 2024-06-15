@@ -709,7 +709,7 @@ class AgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
             return AgentArgumentsType(args=args)
 
 
-class AgentsType(graphene.ObjectType):
+class OxoAgentsType(graphene.ObjectType):
     """Graphene object type for a list of agents."""
 
     agents = graphene.List(AgentType, required=True)
@@ -724,7 +724,7 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     key = graphene.String()
     agents = graphene.Field(
-        AgentsType,
+        OxoAgentsType,
         required=True,
         page=graphene.Int(required=False),
         number_elements=graphene.Int(required=False),
@@ -762,16 +762,16 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         info: graphql_base.ResolveInfo,
         page: int = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-    ) -> AgentsType:
+    ) -> OxoAgentsType:
         """Resolve agents query.
         Args:
-            self (models.AgentGroup): The agent group object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            self: The agent group object.
+            info: GraphQL resolve info.
         Returns:
-            AgentsType: List of agents.
+            List of agents.
         """
         if number_elements <= 0:
-            return AgentsType(agents=[])
+            return OxoAgentsType(agents=[])
 
         with models.Database() as session:
             agents = (
@@ -789,9 +789,9 @@ class AgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     has_next=page.has_next(),
                     has_previous=page.has_previous(),
                 )
-                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
+                return OxoAgentsType(agents=page, page_info=page_info)
             else:
-                return AgentsType(agents=agents)
+                return OxoAgentsType(agents=agents)
 
     def resolve_asset_types(
         self: models.AgentGroup, info: graphql_base.ResolveInfo
