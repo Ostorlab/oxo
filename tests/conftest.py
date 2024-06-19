@@ -927,6 +927,41 @@ def agent_group(
 
 
 @pytest.fixture
+def agent_group_multiple_agents(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.AgentGroup:
+    """Create dummy agent group."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        agent1 = models.Agent.create(
+            key="agent/ostorlab/agent1",
+        )
+        agent2 = models.Agent.create(
+            key="agent/ostorlab/agent2",
+        )
+        agent3 = models.Agent.create(
+            key="agent/ostorlab/agent3",
+        )
+        agent_group = models.AgentGroup(
+            name="Agent Group 1",
+            description="Agent Group 1 description",
+            created_time=datetime.datetime.now(),
+        )
+        session.add(agent_group)
+        session.commit()
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent1.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent2.id
+        )
+        models.AgentGroupMapping.create(
+            agent_group_id=agent_group.id, agent_id=agent3.id
+        )
+        return agent_group
+
+
+@pytest.fixture
 def multiple_assets_scan(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> models.Scan:
@@ -1077,6 +1112,18 @@ def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Urls:
 
 
 @pytest.fixture
+def domain_asset(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.DomainName:
+    """Create a DomainName asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    asset = models.DomainAsset.create(
+        domains=[{"name": "google.com"}, {"name": "tesla.com"}]
+    )
+    return asset
+
+
+@pytest.fixture
 def android_file_asset(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> models.AndroidFile:
@@ -1198,3 +1245,23 @@ def run_scan_mock(mocker: plugin.MockerFixture) -> None:
         return_value=True,
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._inject_assets")
+
+
+@pytest.fixture
+def run_scan_mock2(mocker: plugin.MockerFixture) -> None:
+    """Mock functions required to run a scan."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
