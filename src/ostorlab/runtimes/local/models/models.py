@@ -634,7 +634,6 @@ class AgentGroup(Base):
                             session.query(AgentGroup)
                             .filter_by(
                                 name=agent_group_definition.name,
-                                description=agent_group_definition.description,
                             )
                             .count()
                         )
