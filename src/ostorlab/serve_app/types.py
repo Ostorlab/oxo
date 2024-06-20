@@ -389,7 +389,6 @@ class OxoAgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
         model = models.AgentArgument
         only_fields = (
-            "id",
             "name",
             "type",
             "description",
@@ -425,10 +424,7 @@ class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """Meta class for the agent object type."""
 
         model = models.Agent
-        only_fields = (
-            "id",
-            "key",
-        )
+        only_fields = ("key",)
 
     def resolve_args(
         self: models.Agent, info: graphql_base.ResolveInfo
@@ -604,6 +600,8 @@ class OxoAgentGroupCreateInputType(graphene.InputObjectType):
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):
+    """Input object type for scan"""
+
     title = graphene.String(required=False)
     asset_ids = graphene.List(graphene.Int, required=True)
     agent_group_id = graphene.Int(required=True)

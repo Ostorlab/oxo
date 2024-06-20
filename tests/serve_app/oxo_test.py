@@ -3272,14 +3272,25 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
 
     query = """
         query scan($scanId: Int) {
-  scan(scanId:$scanId) {
-    id
-    agentGroup{
-      id
-      name
-    }
-  }
-}
+          scan(scanId:$scanId) {
+            id
+                agentGroup{
+                  id
+                  name
+                  agents{
+                    agents{
+                      key
+                      args{
+                        args{
+                          name
+                          type
+                        }
+                      }
+                    }
+                  }
+                }
+            }
+        }
     """
 
     response = authenticated_flask_client.post(
@@ -3293,3 +3304,19 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
         scan_with_agent_group.agent_group_id
     )
     assert response.get_json()["data"]["scan"]["agentGroup"]["name"] == "Agent Group 1"
+    agents = response.get_json()["data"]["scan"]["agentGroup"]["agents"]["agents"]
+    assert len(agents) == 2
+    assert agents[0]["key"] == "agent/ostorlab/agent1"
+    assert len(agents[0]["args"]["args"]) == 1
+    assert agents[0]["args"]["args"][0]["name"] == "arg1"
+    assert agents[0]["args"]["args"][0]["type"] == "number"
+    assert agents[1]["key"] == "agent/ostorlab/agent2"
+    assert len(agents[1]["args"]["args"]) == 4
+    assert agents[1]["args"]["args"][0]["name"] == "arg2"
+    assert agents[1]["args"]["args"][0]["type"] == "string"
+    assert agents[1]["args"]["args"][1]["name"] == "arg3"
+    assert agents[1]["args"]["args"][1]["type"] == "array"
+    assert agents[1]["args"]["args"][2]["name"] == "arg4"
+    assert agents[1]["args"]["args"][2]["type"] == "object"
+    assert agents[1]["args"]["args"][3]["name"] == "arg5"
+    assert agents[1]["args"]["args"][3]["type"] == "boolean"

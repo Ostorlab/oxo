@@ -1101,7 +1101,7 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
 @pytest.fixture
 def scan_with_agent_group(
     db_engine_path: str,
-    agent_group: models.AgentGroup,
+    agent_groups: List[models.AgentGroup],
     clean_db: None,
 ) -> models.Scan:
     """Create dummy scan with agent group."""
@@ -1109,7 +1109,7 @@ def scan_with_agent_group(
         title="Scan with agent group",
         asset="Web",
         progress=models.ScanProgress.DONE,
-        agent_group_id=agent_group.id,
+        agent_group_id=agent_groups[0].id,
     )
 
 
