@@ -2812,6 +2812,7 @@ def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
         return response.json()["data"]
 
 
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
     """Ensure the `ENUMs` in the OxO Schema & RE_OxO schema are similar."""
 

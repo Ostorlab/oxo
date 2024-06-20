@@ -529,7 +529,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     has_next=page.has_next(),
                     has_previous=page.has_previous(),
                 )
-                return OxoVulnerabilitiesType(agents=page, page_info=page_info)
+                return OxoAgentsType(agents=page, page_info=page_info)
             else:
                 return OxoAgentsType(agents=agents)
 
@@ -563,6 +563,10 @@ class OxoLinkInputType(graphene.InputObjectType):
     method = graphene.String(required=False, default_value="GET")
 
 
+class OxoDomainNameInputType(graphene.InputObjectType):
+    name = graphene.String(required=True)
+
+
 class OxoAssetInputType(graphene.InputObjectType):
     android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
     android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
@@ -571,6 +575,7 @@ class OxoAssetInputType(graphene.InputObjectType):
     ios_store = graphene.List(OxoIOSStoreAssetInputType)
     link = graphene.List(OxoLinkInputType)
     ip = graphene.List(OxoIPRangeInputType)
+    domain = graphene.List(OxoDomainNameInputType)
 
 
 class OxoAgentArgumentInputType(graphene.InputObjectType):
