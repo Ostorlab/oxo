@@ -836,11 +836,9 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
                         assetTypes
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -941,11 +939,9 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
                         key
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -1037,11 +1033,9 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
                         assetTypes
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -1109,11 +1103,9 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
                         key
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -2098,7 +2090,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
 ) -> None:
     """Ensure the publish agent group mutation creates an agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    query = """mutation publishAgentGroup($agentGroup: AgentGroupCreateInputType!) {
+    query = """mutation publishAgentGroup($agentGroup: OxoAgentGroupCreateInputType!) {
                       publishAgentGroup(agentGroup: $agentGroup) {
                         agentGroup {
                             key,
@@ -2812,6 +2804,7 @@ def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
         return response.json()["data"]
 
 
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
     """Ensure the `ENUMs` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2909,6 +2902,7 @@ def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
             assert input_field_type == oxo_input_types[input_field_name]
 
 
+@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2982,7 +2976,9 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_mutation_args[arg_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
+@pytest.mark.skip(
+    reason="Asset type needs to be aligned (https://github.com/Ostorlab/oxo/pull/713)."
+)
 def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     """Ensure the `Queries` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3165,7 +3161,7 @@ def testPublishAgentGroup_withoutNameAndAgentArgs_shouldPersistAgentGroup(
     """Ensure the publish agent group mutation persists the agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
-        mutation PublishAgentGroup ($agentGroup: AgentGroupCreateInputType!){
+        mutation PublishAgentGroup ($agentGroup: OxoAgentGroupCreateInputType!){
             publishAgentGroup (agentGroup: $agentGroup) {
                 agentGroup {
                     key
@@ -3259,3 +3255,84 @@ def testQueryAgentGroup_withAgentPagination_shouldReturnPaginatedListOfAgents(
     assert agents["pageInfo"]["numPages"] == 2
     assert agents["pageInfo"]["hasNext"] is True
     assert agents["pageInfo"]["hasPrevious"] is False
+
+
+def testQueryScan_always_shouldReturnScanWithAgentGroup(
+    authenticated_flask_client: testing.FlaskClient,
+    scan_with_agent_group: models.Scan,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test query for scan with agent group."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    query = """
+        query scan($scanId: Int) {
+          scan(scanId:$scanId) {
+            id
+                agentGroup{
+                  id
+                  name
+                  agents{
+                    agents{
+                      key
+                      args{
+                        args{
+                          name
+                          type
+                          value
+                        }
+                      }
+                    }
+                  }
+                }
+            }
+        }
+    """
+    variables = {"scanId": scan_with_agent_group.id}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
+
+    response = authenticated_flask_client.post(
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+    )
+
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    data = ubjson.loadb(response.data)["data"]
+    assert data["scan"]["id"] == str(scan_with_agent_group.id)
+    assert data["scan"]["agentGroup"]["id"] == str(scan_with_agent_group.agent_group_id)
+    assert data["scan"]["agentGroup"]["name"] == "Agent Group 1"
+    agents = data["scan"]["agentGroup"]["agents"]["agents"]
+    assert len(agents) == 2
+    assert agents[0]["key"] == "agent/ostorlab/agent1"
+    assert len(agents[0]["args"]["args"]) == 1
+    assert agents[0]["args"]["args"][0]["name"] == "arg1"
+    assert agents[0]["args"]["args"][0]["type"] == "number"
+    arg_value = agents[0]["args"]["args"][0]["value"]
+    arg_type = agents[0]["args"]["args"][0]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == 42.0
+    assert agents[1]["key"] == "agent/ostorlab/agent2"
+    assert len(agents[1]["args"]["args"]) == 4
+    assert agents[1]["args"]["args"][0]["name"] == "arg2"
+    assert agents[1]["args"]["args"][0]["type"] == "string"
+    arg_value = agents[1]["args"]["args"][0]["value"]
+    arg_type = agents[1]["args"]["args"][0]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == "hello"
+    assert agents[1]["args"]["args"][1]["name"] == "arg3"
+    assert agents[1]["args"]["args"][1]["type"] == "array"
+    arg_value = agents[1]["args"]["args"][1]["value"]
+    arg_type = agents[1]["args"]["args"][1]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == [
+        "hello",
+        "world",
+    ]
+    assert agents[1]["args"]["args"][2]["name"] == "arg4"
+    assert agents[1]["args"]["args"][2]["type"] == "object"
+    arg_value = agents[1]["args"]["args"][2]["value"]
+    arg_type = agents[1]["args"]["args"][2]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == {
+        "hello": "world"
+    }
+    assert agents[1]["args"]["args"][3]["name"] == "arg5"
+    assert agents[1]["args"]["args"][3]["type"] == "boolean"
+    arg_value = agents[1]["args"]["args"][3]["value"]
+    arg_type = agents[1]["args"]["args"][3]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) is False

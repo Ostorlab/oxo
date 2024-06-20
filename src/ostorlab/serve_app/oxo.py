@@ -169,7 +169,7 @@ class Query(graphene.ObjectType):
             agent_group_ids: List of agent group ids.
 
         Returns:
-            types.AgentGroupsType: List of agent groups.
+            types.OxoAgentGroupsType: List of agent groups.
         """
 
         if number_elements <= 0:
@@ -446,21 +446,21 @@ class PublishAgentGroupMutation(graphene.Mutation):
     """Create agent group."""
 
     class Arguments:
-        agent_group = types.AgentGroupCreateInputType(required=True)
+        agent_group = types.OxoAgentGroupCreateInputType(required=True)
 
-    agent_group = graphene.Field(types.AgentGroupType)
+    agent_group = graphene.Field(types.OxoAgentGroupType)
 
     @staticmethod
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        agent_group: types.AgentGroupCreateInputType,
+        agent_group: types.OxoAgentGroupCreateInputType,
     ) -> "PublishAgentGroupMutation":
         """Create agent group.
 
         Args:
             info (graphql_base.ResolveInfo): GraphQL resolve info.
-            agent_group (types.AgentGroupCreateInputType): Agent group to create.
+            agent_group (types.OxoAgentGroupCreateInputType): Agent group to create.
 
         Returns:
             PublishAgentGroupMutation: Publish agent group mutation.
@@ -738,6 +738,8 @@ class RunScanMutation(graphene.Mutation):
 
                 with models.Database() as session:
                     created_scan.agent_group_id = scan.agent_group_id
+                    session.add(created_scan)
+                    session.commit()
                     assets_db = session.query(models.Asset).filter(
                         models.Asset.id.in_(scan.asset_ids)
                     )
