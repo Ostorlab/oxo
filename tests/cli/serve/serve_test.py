@@ -45,18 +45,19 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
     """Test the serve command, when starting server, should persist the predefined agent groups."""
 
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    mocker.patch("flask.app.Flask.run")
+    serve_run_mock = mocker.patch("flask.app.Flask.run")
     runner = CliRunner()
 
     runner.invoke(rootcli.rootcli, ["serve"])
 
+    assert serve_run_mock.call_count == 1
     with models.Database() as session:
         agent_groups = (
             session.query(models.AgentGroup).order_by(models.AgentGroup.name).all()
         )
 
         # autodiscovery
-        assert agent_groups[0].name == "autodiscovery"
+        assert agent_groups[0].name == "predefined_oxo_autodiscovery"
         assert agent_groups[0].description == "Enumerate domain scan"
         assert len(agent_groups[0].asset_types) == 1
         assert agent_groups[0].asset_types[0].type == "autodiscovery"
@@ -112,7 +113,7 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         )
 
         # network
-        assert agent_groups[1].name == "network"
+        assert agent_groups[1].name == "predefined_oxo_network"
         assert (
             agent_groups[1].description == "Agent Group for Extensive network scanning."
         )
@@ -187,7 +188,7 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
 
         # sbom
         assert len(agent_groups) == 4
-        assert agent_groups[2].name == "sbom"
+        assert agent_groups[2].name == "predefined_oxo_sbom"
         assert agent_groups[2].description == "SBOM scan"
         assert len(agent_groups[2].asset_types) == 1
         assert agent_groups[2].asset_types[0].type == "sbom"
@@ -203,7 +204,7 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         assert args[0].type == "string"
 
         # web
-        assert agent_groups[3].name == "web"
+        assert agent_groups[3].name == "predefined_oxo_web"
         assert (
             agent_groups[3].description
             == "Agent Group for extensive Web Testing with crawling, fuzzing and known vulnerability discovery."
@@ -266,3 +267,10 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
             .count()
             == 0
         )
+
+        count_agent_groups_before = len(agent_groups)
+
+        runner.invoke(rootcli.rootcli, ["serve"])
+
+        assert serve_run_mock.call_count == 2
+        assert session.query(models.AgentGroup).count() == count_agent_groups_before

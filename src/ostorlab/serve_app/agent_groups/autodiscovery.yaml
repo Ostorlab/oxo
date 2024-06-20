@@ -1,6 +1,6 @@
 kind: AgentGroup
 description: Enumerate domain scan
-name: autodiscovery
+name: predefined_oxo_autodiscovery
 agents:
   - key: agent/ostorlab/subfinder
   - key: agent/ostorlab/dnsx
