@@ -3140,7 +3140,6 @@ def testOxoSchemaReOxoSchemas_whenOutputTypes_schemasShouldBeSimilar() -> None:
     for type_name, fields_types in re_oxo_output_types.items():
         assert type_name in oxo_output_types
         for field_name, field_type in fields_types.items():
-            print(fields_types.items())
             assert field_name in oxo_output_types[type_name]
             assert field_type == oxo_output_types[type_name][field_name]
 
