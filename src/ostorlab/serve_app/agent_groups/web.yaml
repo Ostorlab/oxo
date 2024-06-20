@@ -1,6 +1,6 @@
 kind: AgentGroup
 description: Agent Group for extensive Web Testing with crawling, fuzzing and known vulnerability discovery.
-name: web
+name: predefined_oxo_web
 agents:
   - key: agent/ostorlab/zap
     args:
