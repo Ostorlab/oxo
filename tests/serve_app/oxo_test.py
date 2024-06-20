@@ -12,7 +12,6 @@ import httpx
 import ubjson
 from flask import testing
 from pytest_mock import plugin
-import pytest
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app.schema import schema as oxo_schema
@@ -3097,7 +3096,6 @@ def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
             assert possible_type_fields == oxo_unions[union_name][possible_type_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenOutputTypes_schemasShouldBeSimilar() -> None:
     """Ensure the `return types` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3142,6 +3140,7 @@ def testOxoSchemaReOxoSchemas_whenOutputTypes_schemasShouldBeSimilar() -> None:
     for type_name, fields_types in re_oxo_output_types.items():
         assert type_name in oxo_output_types
         for field_name, field_type in fields_types.items():
+            print(fields_types.items())
             assert field_name in oxo_output_types[type_name]
             assert field_type == oxo_output_types[type_name][field_name]
 
