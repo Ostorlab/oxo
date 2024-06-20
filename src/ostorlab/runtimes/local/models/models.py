@@ -1118,3 +1118,78 @@ class Network(Asset):
             session.query(Network).filter_by(id=network_id).delete()
             session.query(IPRange).filter_by(network_asset_id=network_id).delete()
             session.commit()
+
+
+class DomainName(Base):
+    __tablename__ = "domain_name"
+    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    name = sqlalchemy.Column(sqlalchemy.String(255))
+    domain_asset_id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("domain_asset.id")
+    )
+
+    @staticmethod
+    def create(name: str, domain_asset_id: Optional[int] = None) -> "DomainName":
+        """Persist the domain name information in the database.
+
+        Args:
+            name: The domain name.
+            domain_asset_id: The domain asset id.
+
+        Returns:
+            DomainName object.
+        """
+        with Database() as session:
+            domain_name = DomainName(name=name, domain_asset_id=domain_asset_id)
+            session.add(domain_name)
+            session.commit()
+            return domain_name
+
+
+class DomainAsset(Asset):
+    __tablename__ = "domain_asset"
+    id = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+
+    __mapper_args__ = {
+        "polymorphic_identity": "domain_asset",
+    }
+
+    @staticmethod
+    def create(
+        domains: List[Dict[str, str]], scan_id: Optional[int] = None
+    ) -> "DomainAsset":
+        """Persist the domain asset information in the database.
+
+        Args:
+            domains: list of domain names.
+            scan_id: The scan id.
+
+        Returns:
+            DomainAsset object.
+        """
+        with Database() as session:
+            domain_asset_instance = DomainAsset(scan_id=scan_id)
+            session.add(domain_asset_instance)
+            session.commit()
+
+            for domain in domains:
+                DomainName.create(
+                    name=domain.get("name"), domain_asset_id=domain_asset_instance.id
+                )
+            return domain_asset_instance
+
+    @staticmethod
+    def delete(domain_asset_id: int) -> None:
+        """Delete the domain asset information from the database.
+
+        Args:
+            domain_asset_id: The domain asset id.
+        """
+        with Database() as session:
+            session.query(DomainAsset).filter_by(id=domain_asset_id).delete()
+            session.query(DomainName).filter_by(
+                domain_asset_id=domain_asset_id
+            ).delete()
+            session.commit()

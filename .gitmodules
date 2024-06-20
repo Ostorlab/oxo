@@ -3,3 +3,7 @@
 	url = https://github.com/Ostorlab/KB.git
     branch = master
 
+[submodule "src/oxotitan"]
+	path = src/oxotitan
+	url = https://github.com/ostorlab/oxotitan.git
+	branch = main

@@ -11,16 +11,29 @@ name: Upload Python Package
 on:
   release:
     types: [published]
-
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4.1.1
       with:
         submodules: true
+        token: ${{ secrets.OXOTITAN_GITHUB_KEY }}
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18.0.0'
+    - name: Install Node dependencies
+      run: npm install
+      working-directory: src/oxotitan
+    - name: Generate Nuxt
+      run: npm run generate
+      working-directory: src/oxotitan
+    - name: Create ostorlab ui static folder
+      run: mkdir -p ostorlab/ui/static
+      working-directory: src
+    - name: Copy Nuxt output
+      run: cp -r src/oxotitan/.output/public src/ostorlab/ui/static
     - name: Set up Python
       uses: actions/setup-python@v5.0.0
       with:
@@ -41,29 +54,22 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
-  push_to_store:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to ostorlab store
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.store_user }}
-          password: ${{ secrets.store_password }}
-      - name: truncate current tag
-        run: echo "TAG=$(echo $GITHUB_REF | cut -c12-17)" >> $GITHUB_ENV
-      - name: Build image and push to ostorlab Container Registry
-        uses: docker/build-push-action@v2
-        with:
-          # relative path to the place where source code with Dockerfile is located
-          context: .
-          tags: |
-            ostorlab/oxo:${{env.TAG}}
-            ostorlab/oxo:latest
-          push: true
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Login to ostorlab store
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.store_user }}
+        password: ${{ secrets.store_password }}
+    - name: truncate current tag
+      run: echo "TAG=$(echo $GITHUB_REF | cut -c12-17)" >> $GITHUB_ENV
+    - name: Build image and push to ostorlab Container Registry
+      uses: docker/build-push-action@v2
+      with:
+        # relative path to the place where source code with Dockerfile is located
+        context: .
+        tags: |
+          ostorlab/oxo:${{env.TAG}}
+          ostorlab/oxo:latest
+        push: true
