@@ -2804,7 +2804,6 @@ def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
         return response.json()["data"]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
     """Ensure the `ENUMs` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2848,7 +2847,6 @@ def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
         assert enum_values == oxo_enums[enum]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
     """Ensure the `InputObjects` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2902,7 +2900,6 @@ def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
             assert input_field_type == oxo_input_types[input_field_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2976,9 +2973,6 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_mutation_args[arg_name]
 
 
-@pytest.mark.skip(
-    reason="Asset type needs to be aligned (https://github.com/Ostorlab/oxo/pull/713)."
-)
 def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     """Ensure the `Queries` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3035,7 +3029,6 @@ def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_query_args[arg_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
     """Ensure the `UNION` types in the OxO Schema & RE_OxO schema are similar."""
 
