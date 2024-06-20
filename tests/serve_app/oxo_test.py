@@ -836,11 +836,9 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
                         assetTypes
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -941,11 +939,9 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
                         key
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -1037,11 +1033,9 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
                         assetTypes
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -1109,11 +1103,9 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
                         key
                         agents {
                             agents {
-                                id
                                 key
                                 args {
                                     args {
-                                        id
                                         name
                                         type
                                         description
@@ -3266,10 +3258,13 @@ def testQueryAgentGroup_withAgentPagination_shouldReturnPaginatedListOfAgents(
 
 
 def testQueryScan_always_shouldReturnScanWithAgentGroup(
-    authenticated_flask_client: testing.FlaskClient, scan_with_agent_group: models.Scan
+    authenticated_flask_client: testing.FlaskClient,
+    scan_with_agent_group: models.Scan,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test query for scan with agent group."""
-
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
         query scan($scanId: Int) {
           scan(scanId:$scanId) {
@@ -3284,6 +3279,7 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
                         args{
                           name
                           type
+                          value
                         }
                       }
                     }
@@ -3292,31 +3288,51 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
             }
         }
     """
+    variables = {"scanId": scan_with_agent_group.id}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql",
-        json={"query": query, "variables": {"scanId": scan_with_agent_group.id}},
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
     )
 
-    assert response.status_code == 200, response.get_json()
-    assert response.get_json()["data"]["scan"]["id"] == str(scan_with_agent_group.id)
-    assert response.get_json()["data"]["scan"]["agentGroup"]["id"] == str(
-        scan_with_agent_group.agent_group_id
-    )
-    assert response.get_json()["data"]["scan"]["agentGroup"]["name"] == "Agent Group 1"
-    agents = response.get_json()["data"]["scan"]["agentGroup"]["agents"]["agents"]
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    data = ubjson.loadb(response.data)["data"]
+    assert data["scan"]["id"] == str(scan_with_agent_group.id)
+    assert data["scan"]["agentGroup"]["id"] == str(scan_with_agent_group.agent_group_id)
+    assert data["scan"]["agentGroup"]["name"] == "Agent Group 1"
+    agents = data["scan"]["agentGroup"]["agents"]["agents"]
     assert len(agents) == 2
     assert agents[0]["key"] == "agent/ostorlab/agent1"
     assert len(agents[0]["args"]["args"]) == 1
     assert agents[0]["args"]["args"][0]["name"] == "arg1"
     assert agents[0]["args"]["args"][0]["type"] == "number"
+    arg_value = agents[0]["args"]["args"][0]["value"]
+    arg_type = agents[0]["args"]["args"][0]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == 42.0
     assert agents[1]["key"] == "agent/ostorlab/agent2"
     assert len(agents[1]["args"]["args"]) == 4
     assert agents[1]["args"]["args"][0]["name"] == "arg2"
     assert agents[1]["args"]["args"][0]["type"] == "string"
+    arg_value = agents[1]["args"]["args"][0]["value"]
+    arg_type = agents[1]["args"]["args"][0]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == "hello"
     assert agents[1]["args"]["args"][1]["name"] == "arg3"
     assert agents[1]["args"]["args"][1]["type"] == "array"
+    arg_value = agents[1]["args"]["args"][1]["value"]
+    arg_type = agents[1]["args"]["args"][1]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == [
+        "hello",
+        "world",
+    ]
     assert agents[1]["args"]["args"][2]["name"] == "arg4"
     assert agents[1]["args"]["args"][2]["type"] == "object"
+    arg_value = agents[1]["args"]["args"][2]["value"]
+    arg_type = agents[1]["args"]["args"][2]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) == {
+        "hello": "world"
+    }
     assert agents[1]["args"]["args"][3]["name"] == "arg5"
     assert agents[1]["args"]["args"][3]["type"] == "boolean"
+    arg_value = agents[1]["args"]["args"][3]["value"]
+    arg_type = agents[1]["args"]["args"][3]["type"]
+    assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) is False
