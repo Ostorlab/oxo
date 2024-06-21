@@ -303,4 +303,4 @@ def get_bundle_id(ipa_path: str) -> str:
             raise ValueError("Info.plist not found in the IPA")
 
         # Extract and read the Info.plist file
-        return infoplist["CFBundleIdentifier"]
+        return infoplist.get("CFBundleIdentifier", "")
