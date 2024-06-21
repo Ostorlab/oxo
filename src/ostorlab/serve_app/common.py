@@ -293,13 +293,13 @@ def get_package_name(path: str) -> str:
 
 
 def get_bundle_id(path: str) -> str:
-    """Get the bundle identifier of an iOS file.
+    """Get the bundle identifier of an iOS ipa file.
 
     Args:
-        path: Path to the iOS file.
+        path: Path to the iOS ipa file.
 
     Returns:
-        str: Bundle identifier of the iOS file.
+        str: Bundle identifier of the iOS ipa file.
     """
 
     with zipfile.ZipFile(path, "r") as z:
