@@ -123,7 +123,7 @@ def _import_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
             scan_id=scan_id,
         )
 
-    elif "networks" in asset_dict["type"].lower():
+    elif "network" in asset_dict["type"].lower():
         networks = []
         for network in asset_dict["networks"]:
             ip_network = ipaddress.ip_network(network, strict=False)
