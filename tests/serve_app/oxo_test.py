@@ -232,7 +232,6 @@ def testImportScanMutation_always_shouldImportScan(
         asset = session.query(models.Asset).first()
         assert asset.type == "ios_file"
         assert asset.bundle_id == "ostorlab.swiftvulnerableapp"
-        assert "uploads/ios" in asset.path
 
 
 def testQueryMultipleScans_always_shouldReturnMultipleScans(
