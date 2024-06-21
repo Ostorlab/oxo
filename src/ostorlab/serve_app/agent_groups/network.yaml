@@ -1,6 +1,6 @@
 kind: AgentGroup
 description: Agent Group for Extensive network scanning.
-name: network
+name: predefined_oxo_network
 agents:
   - key: agent/ostorlab/nmap
     args:

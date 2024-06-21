@@ -1,6 +1,6 @@
 kind: AgentGroup
 description: SBOM scan
-name: sbom
+name: predefined_oxo_sbom
 agents:
   - key: agent/ostorlab/osv
     args:
