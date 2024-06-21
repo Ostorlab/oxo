@@ -230,7 +230,7 @@ def testImportScanMutation_always_shouldImportScan(
         assert nbr_scans_after_import == nbr_scans_before_import + 1
         assert session.query(models.Asset).count() == nbr_assets_before_import + 1
         asset = session.query(models.Asset).first()
-        assert asset.type == "ios file"
+        assert asset.type == "ios_file"
         assert asset.bundle_id == "ostorlab.swiftvulnerableapp"
         assert "uploads/ios" in asset.path
 
