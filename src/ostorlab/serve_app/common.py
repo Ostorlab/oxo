@@ -279,13 +279,30 @@ def is_aab(file_content: bytes) -> bool:
 
 
 def get_package_name(path: str) -> str:
-    """Get the package name of an android file."""
+    """Get the package name of an android file.
+
+    Args:
+        path: Path to the android file.
+
+    Returns:
+        str: Package name of the android file.
+    """
+
     apk_info = pyaxmlparser.APK(path)
     return apk_info.get_package()
 
 
-def get_bundle_id(ipa_path: str) -> str:
-    with zipfile.ZipFile(ipa_path, "r") as z:
+def get_bundle_id(path: str) -> str:
+    """Get the bundle identifier of an iOS file.
+
+    Args:
+        path: Path to the iOS file.
+
+    Returns:
+        str: Bundle identifier of the iOS file.
+    """
+
+    with zipfile.ZipFile(path, "r") as z:
         # Locate the Info.plist file within the IPA
         infoplist = None
         for filename in z.namelist():
