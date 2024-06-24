@@ -19,7 +19,7 @@ from ostorlab.utils import defintions as utils_definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common
+from ostorlab.serve_app import common, export_utils
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
 from ostorlab.runtimes.local import runtime as local_runtime
@@ -256,6 +256,41 @@ class ImportScanMutation(graphene.Mutation):
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
             import_utils.import_scan(session, file.read(), scan)
             return ImportScanMutation(message="Scan imported successfully")
+
+
+class ExportScanMutation(graphene.Mutation):
+    """Export scan mutation."""
+
+    class Arguments:
+        scan_id = graphene.Int(required=True)
+        export_ide = graphene.Boolean(required=False)
+
+    message = graphene.String()
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        scan_id: int,
+        export_ide: Optional[bool] = False,
+    ) -> "ExportScanMutation":
+        """Export scan mutation.
+
+        Args:
+            info: GraphQL resolve info.
+            scan_id: Scan id.
+            export_ide: Export to IDE. Defaults to False.
+
+        Returns:
+            ExportScanMutation: Export scan mutation.
+        """
+        with models.Database() as session:
+            scan = session.query(models.Scan).filter_by(id=scan_id).first()
+            if scan is None:
+                raise graphql.GraphQLError("Scan not found.")
+
+            export_utils.export_scan(scan, export_ide)
+            return ExportScanMutation(message="Scan exported successfully")
 
 
 class DeleteScanMutation(graphene.Mutation):
@@ -765,6 +800,7 @@ class Mutations(graphene.ObjectType):
         description="Delete agent group."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
+    export_scan = ExportScanMutation.Field(description="Export scan to file.")
     create_assets = CreateAssetsMutation.Field(description="Create an asset.")
     stop_scan = StopScanMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."

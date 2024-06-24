@@ -3336,3 +3336,30 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
     arg_value = agents[1]["args"]["args"][3]["value"]
     arg_type = agents[1]["args"]["args"][3]["type"]
     assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) is False
+
+
+def testOxoExportScan_alaways_shouldExportScan(
+    authenticated_flask_client: testing.FlaskClient,
+    android_store_scan: models.Scan,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test export scan to csv api call."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    query = """
+        mutation ExportScan($scanId: Int!) {
+            exportScan(scanId: $scanId) {
+                message
+            }
+        }
+    """
+    variables = {"scanId": android_store_scan.id}
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+    assert response.status_code == 200, response.get_json()
+    assert (
+        response.get_json()["data"]["exportScan"]["message"]
+        == "Scan exported successfully"
+    )
