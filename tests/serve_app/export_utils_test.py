@@ -17,6 +17,7 @@ def testExportScan_whenNetworkScan_shouldExportScan(
 ) -> None:
     """Test exporting a network scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     exported_bytes = export_utils.export_scan(scan=network_scan)
 
     fd = io.BytesIO(exported_bytes)
@@ -48,6 +49,7 @@ def testExportScan_whenWebScan_shouldExportScan(
 ) -> None:
     """Test exporting a web scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     exported_bytes = export_utils.export_scan(scan=web_scan)
 
     fd = io.BytesIO(exported_bytes)
@@ -79,6 +81,7 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
 ) -> None:
     """Test exporting an Android file scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     exported_bytes = export_utils.export_scan(scan=android_file_scan)
 
     fd = io.BytesIO(exported_bytes)
@@ -111,6 +114,7 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
 ) -> None:
     """Test exporting an iOS file scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     exported_bytes = export_utils.export_scan(scan=ios_file_scan)
 
     fd = io.BytesIO(exported_bytes)
@@ -143,6 +147,7 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
 ) -> None:
     """Test exporting an Android store scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     exported_bytes = export_utils.export_scan(scan=android_store_scan)
 
     fd = io.BytesIO(exported_bytes)
@@ -175,6 +180,7 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
 ) -> None:
     """Test exporting an iOS scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
     exported_bytes = export_utils.export_scan(scan=ios_store_scan)
 
     fd = io.BytesIO(exported_bytes)

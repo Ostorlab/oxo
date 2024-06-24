@@ -3358,6 +3358,7 @@ def testOxoExportScan_alaways_shouldExportScan(
     response = authenticated_flask_client.post(
         "/graphql", json={"query": query, "variables": variables}
     )
+
     assert response.status_code == 200, response.get_json()
     assert (
         response.get_json()["data"]["exportScan"]["message"]
