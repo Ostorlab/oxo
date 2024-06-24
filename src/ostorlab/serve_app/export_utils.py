@@ -74,27 +74,18 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
                 "tags": None,
                 "type": asset_type.lower(),
             }
-            if asset.type == "android_file":
+            if asset.type == "android_file" or asset.type == "ios_file":
                 if asset.path is not None:
-                    android_file_asset_path = pathlib.Path(asset.path)
-                    if android_file_asset_path.exists() is False:
-                        raise ValueError(f"Android File {asset.path} not found.")
-                    try:
-                        archive.writestr(
-                            MOBILE_APP, android_file_asset_path.read_bytes()
+                    file_asset_path = pathlib.Path(asset.path)
+                    if file_asset_path.exists() is False:
+                        raise ValueError(
+                            f"{asset_type.capitalize()} File {asset.path} not found."
                         )
+                    try:
+                        archive.writestr(MOBILE_APP, file_asset_path.read_bytes())
                     except Exception:
                         pass
 
-            elif asset.type == "ios_file":
-                if asset.path is not None:
-                    ios_file_asset_path = pathlib.Path(asset.path)
-                    if ios_file_asset_path.exists() is False:
-                        raise ValueError(f"IOS File {asset.path} not found.")
-                    try:
-                        archive.writestr(MOBILE_APP, ios_file_asset_path.read_bytes())
-                    except Exception:
-                        pass
             elif asset.type == "android_store":
                 asset_dict["package_name"] = asset.package_name
                 asset_dict["application_name"] = asset.application_name
