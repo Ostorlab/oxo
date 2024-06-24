@@ -1924,11 +1924,11 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     assert response.status_code == 200, response.get_json()
     asset1 = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
     asset2 = response.get_json()["data"]["scans"]["scans"][0]["assets"][1]
-    assert asset1["networks"] == [
+    assert "test.apk" in asset1["path"]
+    assert asset2["networks"] == [
         {"host": "8.8.8.8", "mask": "32"},
         {"host": "8.8.4.4", "mask": "32"},
     ]
-    assert asset2["path"] == "/path/to/file"
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
@@ -3369,3 +3369,61 @@ def testOxoExportScan_alaways_shouldExportScan(
         response.get_json()["data"]["exportScan"]["message"]
         == "Scan exported successfully"
     )
+
+
+def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipleAssets(
+    authenticated_flask_client: testing.FlaskClient,
+    multiple_assets_scan_bytes: bytes,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test importScan mutation for a scan with multiple assets."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    with models.Database() as session:
+        nbr_scans_before_import = session.query(models.Scan).count()
+        nbr_assets_before_import = session.query(models.Asset).count()
+        query = """
+            mutation ImportScan($scanId: Int, $file: Upload!) {
+                importScan(scanId: $scanId, file: $file) {
+                    message
+                }
+            }
+        """
+        file_name = "imported_zip_file.zip"
+        data = {
+            "operations": json.dumps(
+                {
+                    "query": query,
+                    "variables": {
+                        "file": None,
+                        "scanId": 20,
+                    },
+                }
+            ),
+            "map": json.dumps(
+                {
+                    "file": ["variables.file"],
+                }
+            ),
+        }
+        data["file"] = (io.BytesIO(multiple_assets_scan_bytes), file_name)
+
+        response = authenticated_flask_client.post(
+            "/graphql", data=data, content_type="multipart/form-data"
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_import = session.query(models.Scan).count()
+        assert (
+            response_json["data"]["importScan"]["message"]
+            == "Scan imported successfully"
+        )
+        assert nbr_scans_after_import == nbr_scans_before_import + 1
+        assert session.query(models.Asset).count() == nbr_assets_before_import + 2
+        assets = session.query(models.Asset).all()
+        assert assets[0].type == "ios_file"
+        assert assets[0].bundle_id == "ostorlab.swiftvulnerableapp"
+        assert assets[1].type == "android_store"
+        assert assets[1].package_name == "co.banano.natriumwallet"

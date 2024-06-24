@@ -12,7 +12,6 @@ from ostorlab.serve_app import common
 SCAN_JSON = "scan.json"
 ASSET_JSON = "asset.json"
 VULNERABILITY_JSON = "vulnerability.json"
-MOBILE_APP = "mobile.app"
 
 RISK_RATINGS_ORDER = {
     common.RiskRatingEnum.CRITICAL.name: 8,
@@ -76,23 +75,27 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
             }
             if asset.type == "android_file":
                 if asset.path is not None:
+                    mobile_app = pathlib.Path(asset.path).name
+                    asset_dict["path"] = mobile_app
                     android_file_asset_path = pathlib.Path(asset.path)
                     if android_file_asset_path.exists() is False:
                         raise ValueError(f"Android File {asset.path} not found.")
                     try:
                         archive.writestr(
-                            MOBILE_APP, android_file_asset_path.read_bytes()
+                            mobile_app, android_file_asset_path.read_bytes()
                         )
                     except Exception:
                         pass
 
             elif asset.type == "ios_file":
                 if asset.path is not None:
+                    mobile_app = pathlib.Path(asset.path).name
+                    asset_dict["path"] = mobile_app
                     ios_file_asset_path = pathlib.Path(asset.path)
                     if ios_file_asset_path.exists() is False:
                         raise ValueError(f"IOS File {asset.path} not found.")
                     try:
-                        archive.writestr(MOBILE_APP, ios_file_asset_path.read_bytes())
+                        archive.writestr(mobile_app, ios_file_asset_path.read_bytes())
                     except Exception:
                         pass
             elif asset.type == "android_store":

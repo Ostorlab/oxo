@@ -978,7 +978,7 @@ def agent_group_multiple_agents(
 
 @pytest.fixture
 def multiple_assets_scan(
-    mocker: plugin.MockerFixture, db_engine_path: str
+    mocker: plugin.MockerFixture, db_engine_path: str, clean_db: None
 ) -> models.Scan:
     """Create dummy scan with multiple assets."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -991,18 +991,20 @@ def multiple_assets_scan(
         )
         session.add(scan)
         session.commit()
-        asset1 = models.AndroidFile(
+        models.AndroidFile.create(
             package_name="com.example.app",
-            path="/path/to/file",
+            path=str(pathlib.Path(__file__).parent / "files" / "test.apk"),
             scan_id=scan.id,
         )
-        asset2 = models.Network.create(
+        models.Network.create(
             networks=[{"host": "8.8.8.8"}, {"host": "8.8.4.4"}],
             scan_id=scan.id,
         )
-        session.add(asset1)
-        session.add(asset2)
-        session.commit()
+        models.ScanStatus.create(
+            scan_id=scan.id,
+            key="progress",
+            value="in_progress",
+        )
         return scan
 
 
@@ -1504,3 +1506,10 @@ def android_store_scan(
         value="in_progress",
     )
     return scan
+
+
+@pytest.fixture
+def multiple_assets_scan_bytes() -> bytes:
+    """Returns a dummy zip file."""
+    zip_path = pathlib.Path(__file__).parent / "files" / "multiple_assets_scan.zip"
+    return zip_path.read_bytes()
