@@ -64,14 +64,10 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
             return None
         assets_data = []
         for asset in assets:
-            asset_type = (
-                asset.type.replace("_", " ").lower()
-                if "_" in asset.type
-                else asset.type
-            )
+            asset_type = asset.type.replace("_", " ").lower()
             asset_dict = {
                 "tags": None,
-                "type": asset_type.lower(),
+                "type": asset_type,
             }
             if asset.type == "android_file" or asset.type == "ios_file":
                 if asset.path is not None:
