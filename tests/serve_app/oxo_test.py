@@ -861,7 +861,9 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -964,7 +966,9 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -1058,7 +1062,9 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -1141,7 +1147,7 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
     response = authenticated_flask_client.post(
         "/graphql",
         data=ubjson_data,
-        headers={"Content-Type": "application/ubjson"},
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -2134,7 +2140,9 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -3298,7 +3306,9 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -3363,13 +3373,15 @@ def testOxoExportScan_alaways_shouldExportScan(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
     file_data = ubjson.loadb(response.data)["data"]["exportScan"]["content"]
     with models.Database() as session:
-        import_utils.import_scan(session=session, file_data=file_data)
+        import_utils.import_scan(file_data=file_data)
         assert session.query(models.Scan).count() == 2
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
         assert last_scan.title == "Android Store Scan"
