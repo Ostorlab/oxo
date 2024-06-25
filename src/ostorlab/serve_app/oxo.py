@@ -254,7 +254,7 @@ class ImportScanMutation(graphene.Mutation):
         """
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
-            import_utils.import_scan(session, file.read(), scan)
+            import_utils.import_scan(file.read(), scan)
             return ImportScanMutation(message="Scan imported successfully")
 
 

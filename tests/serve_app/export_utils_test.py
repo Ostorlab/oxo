@@ -22,9 +22,7 @@ def testExportScan_whenNetworkScan_shouldExportScan(
 
     fd = io.BytesIO(exported_bytes)
     with models.Database() as session:
-        import_utils.import_scan(
-            append_to_scan=network_scan, session=session, file_data=fd.read()
-        )
+        import_utils.import_scan(append_to_scan=network_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Network Scan"
         assert scan.asset == "Network"
@@ -55,9 +53,7 @@ def testExportScan_whenWebScan_shouldExportScan(
 
     fd = io.BytesIO(exported_bytes)
     with models.Database() as session:
-        import_utils.import_scan(
-            append_to_scan=web_scan, session=session, file_data=fd.read()
-        )
+        import_utils.import_scan(append_to_scan=web_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Web Scan"
         assert scan.asset == "Web"
@@ -88,9 +84,7 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
 
     fd = io.BytesIO(exported_bytes)
     with models.Database() as session:
-        import_utils.import_scan(
-            append_to_scan=android_file_scan, session=session, file_data=fd.read()
-        )
+        import_utils.import_scan(append_to_scan=android_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Android File Scan"
         assert scan.asset == "Android file"
@@ -122,9 +116,7 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
 
     fd = io.BytesIO(exported_bytes)
     with models.Database() as session:
-        import_utils.import_scan(
-            append_to_scan=ios_file_scan, session=session, file_data=fd.read()
-        )
+        import_utils.import_scan(append_to_scan=ios_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS File Scan"
         assert scan.asset == "IOS file"
@@ -156,9 +148,7 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
 
     fd = io.BytesIO(exported_bytes)
     with models.Database() as session:
-        import_utils.import_scan(
-            append_to_scan=android_store_scan, session=session, file_data=fd.read()
-        )
+        import_utils.import_scan(append_to_scan=android_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Android Store Scan"
         assert scan.asset == "Android store"
@@ -190,9 +180,7 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
 
     fd = io.BytesIO(exported_bytes)
     with models.Database() as session:
-        import_utils.import_scan(
-            append_to_scan=ios_store_scan, session=session, file_data=fd.read()
-        )
+        import_utils.import_scan(append_to_scan=ios_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS Store Scan"
         assert scan.asset == "IOS store"
@@ -209,3 +197,36 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert ios_store_scan.progress == models.ScanProgress.IN_PROGRESS
+
+
+def testExportScan_whenMultipleAssets_shouldExportScan(
+    multiple_assets_scan: models.Scan,
+    db_engine_path: str,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test exporting a scan with multiple assets."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    exported_bytes = export_utils.export_scan(scan=multiple_assets_scan)
+
+    fd = io.BytesIO(exported_bytes)
+    with models.Database() as session:
+        import_utils.import_scan(
+            append_to_scan=multiple_assets_scan, file_data=fd.read()
+        )
+        scan = session.query(models.Scan).first()
+        assert scan.title == "Multiple Assets Scan"
+        assert scan.asset == "Android File, Network(s): 8.8.8.8/32, 8.8.4.4/32"
+        assert scan.progress == models.ScanProgress.IN_PROGRESS
+        vulnerabilities = (
+            session.query(models.Vulnerability)
+            .filter(models.Vulnerability.scan_id == scan.id)
+            .all()
+        )
+        assert len(vulnerabilities) == 0
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 4
+        assert any(asset.type == "android_file" for asset in assets)
+        assert any(asset.type == "network" for asset in assets)

@@ -107,7 +107,10 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
             )
 
             content_type = "application/json"
-            if flask.request.mimetype == "application/ubjson":
+            if any(
+                "application/ubjson" in mimetype
+                for mimetype in flask.request.accept_mimetypes
+            ):
                 result, status_code = graphql_server.encode_execution_results(
                     execution_results,
                     is_batch=isinstance(data, list),

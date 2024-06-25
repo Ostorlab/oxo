@@ -12,7 +12,6 @@ from ostorlab.serve_app import common
 SCAN_JSON = "scan.json"
 ASSET_JSON = "asset.json"
 VULNERABILITY_JSON = "vulnerability.json"
-MOBILE_APP = "mobile.app"
 
 RISK_RATINGS_ORDER = {
     common.RiskRatingEnum.CRITICAL.name: 8,
@@ -72,13 +71,15 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
             }
             if asset.type == "android_file" or asset.type == "ios_file":
                 if asset.path is not None:
+                    mobile_app = pathlib.Path(asset.path).name
+                    asset_dict["path"] = mobile_app
                     file_asset_path = pathlib.Path(asset.path)
                     if file_asset_path.exists() is False:
                         raise ValueError(
                             f"{asset_type.capitalize()} File {asset.path} not found."
                         )
                     try:
-                        archive.writestr(MOBILE_APP, file_asset_path.read_bytes())
+                        archive.writestr(mobile_app, file_asset_path.read_bytes())
                     except Exception:
                         pass
 
@@ -143,7 +144,7 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         )
         if len(scan_statuses) == 0:
             scan_statuses = [
-                models.ScanStatus(
+                models.ScanStatus.create(
                     key="progress", value=scan.progress.name.lower(), scan_id=scan.id
                 )
             ]
