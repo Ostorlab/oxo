@@ -572,7 +572,6 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             agents = agent_group.agents
             for agent in agents:
                 agent_definition = {
-                    "kind": "Agent",
                     "key": agent.key,
                     "args": [],
                 }
