@@ -141,6 +141,12 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             .filter(models.ScanStatus.scan_id == scan.id)
             .all()
         )
+        if len(scan_statuses) == 0:
+            scan_statuses = [
+                models.ScanStatus(
+                    key="progress", value=scan.progress.name.lower(), scan_id=scan.id
+                )
+            ]
         for status in scan_statuses:
             scan_dict["status"].append(
                 {

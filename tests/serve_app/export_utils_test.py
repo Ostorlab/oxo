@@ -39,6 +39,7 @@ def testExportScan_whenNetworkScan_shouldExportScan(
             vuln.title == "XSS" and vuln.risk_rating == risk_rating.RiskRating.HIGH
             for vuln in vulnerabilities
         )
+        assert network_scan.progress == models.ScanProgress.IN_PROGRESS
 
 
 def testExportScan_whenWebScan_shouldExportScan(
@@ -71,6 +72,7 @@ def testExportScan_whenWebScan_shouldExportScan(
             vuln.title == "XSS" and vuln.risk_rating == risk_rating.RiskRating.HIGH
             for vuln in vulnerabilities
         )
+        assert web_scan.progress == models.ScanProgress.DONE
 
 
 def testExportScan_whenAndroidFileScan_shouldExportScan(
@@ -104,6 +106,7 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
             and vuln.risk_rating == risk_rating.RiskRating.MEDIUM
             for vuln in vulnerabilities
         )
+        assert android_file_scan.progress == models.ScanProgress.IN_PROGRESS
 
 
 def testExportScan_whenIOSFileScan_shouldExportScan(
@@ -137,6 +140,7 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
             and vuln.risk_rating == risk_rating.RiskRating.MEDIUM
             for vuln in vulnerabilities
         )
+        assert ios_file_scan.progress == models.ScanProgress.IN_PROGRESS
 
 
 def testExportScan_whenAndroidStoreScan_shouldExportScan(
@@ -170,6 +174,7 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
             and vuln.risk_rating == risk_rating.RiskRating.MEDIUM
             for vuln in vulnerabilities
         )
+        assert android_store_scan.progress == models.ScanProgress.IN_PROGRESS
 
 
 def testExportScan_whenIOSStoreScan_shouldExportScan(
@@ -203,3 +208,4 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
             and vuln.risk_rating == risk_rating.RiskRating.MEDIUM
             for vuln in vulnerabilities
         )
+        assert ios_store_scan.progress == models.ScanProgress.IN_PROGRESS
