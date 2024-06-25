@@ -144,7 +144,7 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         )
         if len(scan_statuses) == 0:
             scan_statuses = [
-                models.ScanStatus(
+                models.ScanStatus.create(
                     key="progress", value=scan.progress.name.lower(), scan_id=scan.id
                 )
             ]
