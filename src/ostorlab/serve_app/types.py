@@ -2,12 +2,14 @@
 
 import collections
 import enum
+import io
 from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
 from graphene_file_upload import scalars
+import ruamel
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
@@ -25,6 +27,7 @@ RISK_RATINGS_ORDER = {
     common.RiskRatingEnum.IMPORTANT.name: 1,
     common.RiskRatingEnum.INFO.name: 0,
 }
+YAML_WIDTH = 100000000
 
 
 class OxoScanOrderByEnum(graphene.Enum):
@@ -466,6 +469,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         number_elements=graphene.Int(required=False),
     )
     asset_types = graphene.List(graphene.String)
+    yaml_source = graphene.String()
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -542,6 +546,58 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         with models.Database() as session:
             asset_types = session.query(models.AgentGroup).get(self.id).asset_types
             return [asset.type for asset in asset_types]
+
+    def resolve_yaml_source(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> str:
+        """Resolve yaml source query.
+        Args:
+            self: The agent group object.
+            info: GraphQL resolve info.
+        Returns:
+            The yaml source of the agent group.
+        """
+        yaml = ruamel.yaml.YAML(typ="safe")
+        yaml.width = YAML_WIDTH
+        agent_group_definition = {"kind": "AgentGroup", "agents": []}
+
+        if self.name is not None:
+            agent_group_definition["name"] = self.name
+
+        if self.description is not None:
+            agent_group_definition["description"] = self.description
+
+        with models.Database() as session:
+            agent_group = session.query(models.AgentGroup).get(self.id)
+            agents = agent_group.agents
+            for agent in agents:
+                agent_definition = {
+                    "key": agent.key,
+                    "args": [],
+                }
+
+                args = (
+                    session.query(models.AgentArgument)
+                    .filter_by(agent_id=agent.id)
+                    .all()
+                )
+                for arg in args:
+                    value = models.AgentArgument.from_bytes(arg.type, arg.value)
+                    arg_dict = {
+                        "name": arg.name,
+                        "type": arg.type,
+                        "description": arg.description,
+                    }
+                    if value is not None:
+                        arg_dict["value"] = value
+                    agent_definition["args"].append(arg_dict)
+
+                agent_group_definition["agents"].append(agent_definition)
+
+        string_yaml_io = io.StringIO()
+        yaml.dump(agent_group_definition, string_yaml_io)
+        agent_group_definition_yaml = string_yaml_io.getvalue()
+        return agent_group_definition_yaml
 
 
 class OxoAgentGroupsType(graphene.ObjectType):

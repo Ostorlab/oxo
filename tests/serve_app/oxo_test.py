@@ -840,6 +840,7 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
                         createdTime
                         key
                         assetTypes
+                        yamlSource
                         agents {
                             agents {
                                 key
@@ -922,6 +923,12 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
         models.AgentArgument.from_bytes(agent2_args[3]["type"], agent2_args[3]["value"])
         is False
     )
+    yaml_source_ag1 = agent_group1["yamlSource"]
+    yaml_source_ag2 = agent_group2["yamlSource"]
+    assert "kind: AgentGroup" in yaml_source_ag1
+    assert "name: Agent Group 1" in yaml_source_ag1
+    assert "kind: AgentGroup" in yaml_source_ag2
+    assert "name: Agent Group 2" in yaml_source_ag2
 
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
