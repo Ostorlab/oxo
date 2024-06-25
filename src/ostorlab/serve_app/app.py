@@ -1,5 +1,4 @@
 import functools
-import json
 import os
 import pathlib
 from typing import Optional
@@ -59,10 +58,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
     def ubjson_decode(self, request: flask.Request):
         """Decode UBJSON request data."""
 
-        try:
-            return json.loads(request.data)
-        except json.JSONDecodeError:
-            return ubjson.loadb(request.data)
+        return ubjson.loadb(request.data)
 
     @staticmethod
     def authenticate() -> Optional[tuple[flask.Response, int]]:
@@ -111,7 +107,10 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
             )
 
             content_type = "application/json"
-            if flask.request.mimetype == "application/ubjson":
+            if any(
+                "application/ubjson" in mimetype
+                for mimetype in flask.request.accept_mimetypes
+            ):
                 result, status_code = graphql_server.encode_execution_results(
                     execution_results,
                     is_batch=isinstance(data, list),
