@@ -27,6 +27,7 @@ RISK_RATINGS_ORDER = {
     common.RiskRatingEnum.IMPORTANT.name: 1,
     common.RiskRatingEnum.INFO.name: 0,
 }
+YAML_WIDTH = 100000000
 
 
 class OxoScanOrderByEnum(graphene.Enum):
@@ -557,7 +558,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             str: The yaml source of the agent group.
         """
         yaml = ruamel.yaml.YAML(typ="safe")
-        yaml.width = 100000000
+        yaml.width = YAML_WIDTH
         agent_group_definition = {"kind": "AgentGroup", "agents": []}
 
         if self.name is not None:
