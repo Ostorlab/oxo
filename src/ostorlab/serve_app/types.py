@@ -552,10 +552,10 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     ) -> str:
         """Resolve yaml source query.
         Args:
-            self (models.AgentGroup): The agent group object.
-            info (graphql_base.ResolveInfo): GraphQL resolve info.
+            self: The agent group object.
+            info: GraphQL resolve info.
         Returns:
-            str: The yaml source of the agent group.
+            The yaml source of the agent group.
         """
         yaml = ruamel.yaml.YAML(typ="safe")
         yaml.width = YAML_WIDTH
