@@ -317,11 +317,11 @@ def get_bundle_id(path: str) -> str:
                 infoplist = plistlib.loads(content)
 
         if infoplist is None:
-            raise ValueError("Info.plist not found in the IPA")
+            return ""
 
         # Extract and read the Info.plist file
         bundle_id = infoplist.get("CFBundleIdentifier")
         if bundle_id is None:
-            raise ValueError("BundleIdentifier not found in Info.plist")
+            return ""
 
         return bundle_id
