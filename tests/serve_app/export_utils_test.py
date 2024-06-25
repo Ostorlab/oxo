@@ -25,7 +25,7 @@ def testExportScan_whenNetworkScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=network_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Network Scan"
-        assert scan.asset == "Network"
+        assert scan.asset == "Network(s): 8.8.8.8/32, 8.8.4.4/32"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -56,7 +56,7 @@ def testExportScan_whenWebScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=web_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Web Scan"
-        assert scan.asset == "Web"
+        assert scan.asset == "Url(s): https://example.com, https://example.com"
         assert scan.progress == models.ScanProgress.DONE
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -87,7 +87,7 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=android_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Android File Scan"
-        assert scan.asset == "Android file"
+        assert scan.asset == "Android File"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -119,7 +119,7 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=ios_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS File Scan"
-        assert scan.asset == "IOS file"
+        assert scan.asset == "IOS File"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -151,7 +151,7 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=android_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Android Store Scan"
-        assert scan.asset == "Android store"
+        assert scan.asset == "Android Store: Example App"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -183,7 +183,7 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=ios_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS Store Scan"
-        assert scan.asset == "IOS store"
+        assert scan.asset == "IOS Store: Example App"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
