@@ -265,7 +265,7 @@ class ExportScanMutation(graphene.Mutation):
         scan_id = graphene.Int(required=True)
         export_ide = graphene.Boolean(required=False)
 
-    file_bytes = common.Bytes()
+    content = common.Bytes()
 
     @staticmethod
     def mutate(
@@ -289,8 +289,8 @@ class ExportScanMutation(graphene.Mutation):
             if scan is None:
                 raise graphql.GraphQLError("Scan not found.")
 
-            file_bytes = export_utils.export_scan(scan, export_ide)
-            return ExportScanMutation(file_bytes=file_bytes)
+            export_file_content = export_utils.export_scan(scan, export_ide)
+            return ExportScanMutation(content=export_file_content)
 
 
 class DeleteScanMutation(graphene.Mutation):

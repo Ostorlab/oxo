@@ -3350,7 +3350,7 @@ def testOxoExportScan_alaways_shouldExportScan(
     query = """
         mutation ExportScan($scanId: Int!) {
             exportScan(scanId: $scanId) {
-                fileBytes
+                content
             }
         }
     """
@@ -3362,7 +3362,7 @@ def testOxoExportScan_alaways_shouldExportScan(
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
-    file_data = ubjson.loadb(response.data)["data"]["exportScan"]["fileBytes"]
+    file_data = ubjson.loadb(response.data)["data"]["exportScan"]["content"]
     with models.Database() as session:
         import_utils.import_scan(session=session, file_data=file_data)
         assert session.query(models.Scan).count() == 2
