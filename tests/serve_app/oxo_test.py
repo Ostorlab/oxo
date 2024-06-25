@@ -15,6 +15,7 @@ from pytest_mock import plugin
 import pytest
 
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
@@ -3349,18 +3350,22 @@ def testOxoExportScan_alaways_shouldExportScan(
     query = """
         mutation ExportScan($scanId: Int!) {
             exportScan(scanId: $scanId) {
-                message
+                file_bytes
             }
         }
     """
     variables = {"scanId": android_store_scan.id}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": variables}
+        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
     )
 
-    assert response.status_code == 200, response.get_json()
-    assert (
-        response.get_json()["data"]["exportScan"]["message"]
-        == "Scan exported successfully"
-    )
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    file_data = ubjson.loadb(response.data)["data"]["exportScan"]["file_bytes"]
+    with models.Database() as session:
+        import_utils.import_scan(session=session, file_data=file_data)
+        assert session.query(models.Scan).count() == 2
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert last_scan.title == "Android Store Scan"
+        assert last_scan.progress == models.ScanProgress.IN_PROGRESS
