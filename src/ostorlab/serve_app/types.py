@@ -2,12 +2,14 @@
 
 import collections
 import enum
+import io
 from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
 from graphql.execution import base as graphql_base
 from graphene_file_upload import scalars
+import ruamel
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
@@ -466,6 +468,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         number_elements=graphene.Int(required=False),
     )
     asset_types = graphene.List(graphene.String)
+    yaml_source = graphene.String()
 
     class Meta:
         """Meta class for the agent group object type."""
@@ -542,6 +545,56 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         with models.Database() as session:
             asset_types = session.query(models.AgentGroup).get(self.id).asset_types
             return [asset.type for asset in asset_types]
+
+    def resolve_yaml_source(
+        self: models.AgentGroup, info: graphql_base.ResolveInfo
+    ) -> str:
+        """Resolve yaml source query.
+        Args:
+            self (models.AgentGroup): The agent group object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            str: The yaml source of the agent group.
+        """
+        yaml = ruamel.yaml.YAML(typ="safe")
+        yaml.width = 100000000
+        agent_group_definition = {"agents": []}
+
+        with models.Database() as session:
+            agent_group = session.query(models.AgentGroup).get(self.id)
+            agents = agent_group.agents
+            for agent in agents:
+                agent_definition = {
+                    "kind": "Agent",
+                    "key": agent.key,
+                    "args": [],
+                }
+
+                args = session.query(models.AgentArgument).filter_by(agent_id=agent.id).all()
+                for arg in args:
+                    agent_definition["args"].append(
+                        {
+                            "name": arg.name,
+                            "type": arg.type,
+                            "description": arg.description,
+                            "value": models.AgentArgument.from_bytes(arg.type, arg.value),
+                        }
+                    )
+
+                agent_group_definition["agents"].append(agent_definition)
+
+        agent_group_definition["kind"] = "AgentGroup"
+        agent_group_definition["agents"] = agent_group_definition["agents"]
+        if self.name is not None:
+            agent_group_definition["name"] = self.name
+        if self.description is not None:
+            agent_group_definition["description"] = self.description
+
+        string_yaml_io = io.StringIO()
+        yaml.dump(agent_group_definition, string_yaml_io)
+        agent_group_definition_yaml = string_yaml_io.getvalue()
+        return agent_group_definition_yaml
+
 
 
 class OxoAgentGroupsType(graphene.ObjectType):
