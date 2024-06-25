@@ -558,7 +558,13 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
         yaml = ruamel.yaml.YAML(typ="safe")
         yaml.width = 100000000
-        agent_group_definition = {"agents": []}
+        agent_group_definition = {"kind": "AgentGroup", "agents": []}
+
+        if self.name is not None:
+            agent_group_definition["name"] = self.name
+
+        if self.description is not None:
+            agent_group_definition["description"] = self.description
 
         with models.Database() as session:
             agent_group = session.query(models.AgentGroup).get(self.id)
@@ -587,13 +593,6 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     agent_definition["args"].append(arg_dict)
 
                 agent_group_definition["agents"].append(agent_definition)
-
-        agent_group_definition["kind"] = "AgentGroup"
-        agent_group_definition["agents"] = agent_group_definition["agents"]
-        if self.name is not None:
-            agent_group_definition["name"] = self.name
-        if self.description is not None:
-            agent_group_definition["description"] = self.description
 
         string_yaml_io = io.StringIO()
         yaml.dump(agent_group_definition, string_yaml_io)
