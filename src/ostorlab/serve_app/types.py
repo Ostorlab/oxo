@@ -570,16 +570,21 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     "args": [],
                 }
 
-                args = session.query(models.AgentArgument).filter_by(agent_id=agent.id).all()
+                args = (
+                    session.query(models.AgentArgument)
+                    .filter_by(agent_id=agent.id)
+                    .all()
+                )
                 for arg in args:
-                    agent_definition["args"].append(
-                        {
-                            "name": arg.name,
-                            "type": arg.type,
-                            "description": arg.description,
-                            "value": models.AgentArgument.from_bytes(arg.type, arg.value),
-                        }
-                    )
+                    value = models.AgentArgument.from_bytes(arg.type, arg.value)
+                    arg_dict = {
+                        "name": arg.name,
+                        "type": arg.type,
+                        "description": arg.description,
+                    }
+                    if value is not None:
+                        arg_dict["value"] = value
+                    agent_definition["args"].append(arg_dict)
 
                 agent_group_definition["agents"].append(agent_definition)
 
@@ -594,7 +599,6 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         yaml.dump(agent_group_definition, string_yaml_io)
         agent_group_definition_yaml = string_yaml_io.getvalue()
         return agent_group_definition_yaml
-
 
 
 class OxoAgentGroupsType(graphene.ObjectType):
