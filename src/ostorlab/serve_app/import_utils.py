@@ -195,4 +195,6 @@ def _import_asset(
             )
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(
+                f"Asset type {asset_dict['type']} not implemented."
+            )

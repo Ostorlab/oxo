@@ -41,7 +41,7 @@ def export_scan(scan: models.Scan, export_ide: bool = False) -> bytes:
     _export_vulnz(scan.id, archive)
 
     if export_ide is True:
-        raise NotImplementedError()
+        pass
 
     archive.close()
     fd.seek(0)
@@ -70,18 +70,9 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
                 "type": asset_type,
             }
             if asset.type == "android_file" or asset.type == "ios_file":
-                if asset.path is not None:
-                    mobile_app = pathlib.Path(asset.path).name
-                    asset_dict["path"] = mobile_app
-                    file_asset_path = pathlib.Path(asset.path)
-                    if file_asset_path.exists() is False:
-                        raise ValueError(
-                            f"{asset_type.capitalize()} File {asset.path} not found."
-                        )
-                    try:
-                        archive.writestr(mobile_app, file_asset_path.read_bytes())
-                    except Exception:
-                        pass
+                path = _write_mobile_app(asset, archive, asset_type)
+                if path is not None:
+                    asset_dict["path"] = path
 
             elif asset.type == "android_store":
                 asset_dict["package_name"] = asset.package_name
@@ -90,27 +81,10 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
                 asset_dict["package_name"] = asset.bundle_id
                 asset_dict["application_name"] = asset.application_name
             elif asset.type == "network":
-                networks = []
-                ips = (
-                    session.query(models.IPRange)
-                    .filter(models.IPRange.network_asset_id == asset.id)
-                    .all()
-                )
-                for ip in ips:
-                    ip_network = ipaddress.ip_network(ip.host, strict=False)
-                    networks.append(
-                        f"{ip_network.network_address.exploded}/{ip_network.prefixlen}"
-                    )
+                networks = _write_network(asset, archive)
                 asset_dict["networks"] = networks
             elif asset.type == "urls":
-                urls = []
-                links = (
-                    session.query(models.Link)
-                    .filter(models.Link.urls_asset_id == asset.id)
-                    .all()
-                )
-                for link in links:
-                    urls.append(link.url)
+                urls = _write_urls(asset, archive)
                 asset_dict["urls"] = urls
             else:
                 raise NotImplementedError()
@@ -119,6 +93,81 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
 
         assets_data = "\n".join([json.dumps(asset) for asset in assets_data])
         archive.writestr(ASSET_JSON, assets_data)
+
+
+def _write_mobile_app(
+    asset: models.Asset, archive: zipfile.ZipFile, asset_type: str
+) -> str | None:
+    """Write the mobile app to the given archive.
+
+    Args:
+        asset: The asset object.
+        archive: The archive object.
+        asset_type: The asset type.
+
+    Returns:
+        The mobile app name.
+    """
+
+    if asset.path is None:
+        return None
+
+    mobile_app = pathlib.Path(asset.path).name
+    file_asset_path = pathlib.Path(asset.path)
+    if file_asset_path.exists() is False:
+        raise ValueError(f"{asset_type.capitalize()} File {asset.path} not found.")
+    try:
+        archive.writestr(mobile_app, file_asset_path.read_bytes())
+        return mobile_app
+    except Exception:
+        pass
+
+    return None
+
+
+def _write_network(asset: models.Asset, archive: zipfile.ZipFile) -> list[str]:
+    """Write the network details to the given archive.
+
+    Args:
+        asset: The asset object.
+        archive: The archive object.
+
+    Returns:
+        The network details.
+    """
+    with models.Database() as session:
+        networks = []
+        ips = (
+            session.query(models.IPRange)
+            .filter(models.IPRange.network_asset_id == asset.id)
+            .all()
+        )
+        for ip in ips:
+            ip_network = ipaddress.ip_network(ip.host, strict=False)
+            networks.append(
+                f"{ip_network.network_address.exploded}/{ip_network.prefixlen}"
+            )
+        return networks
+
+
+def _write_urls(asset: models.Asset, archive: zipfile.ZipFile) -> list[str]:
+    """Write the URLs to the given archive.
+
+    Args:
+        asset: The asset object.
+        archive: The archive object.
+    """
+    with models.Database() as session:
+        urls = []
+        links = (
+            session.query(models.Link)
+            .filter(models.Link.urls_asset_id == asset.id)
+            .all()
+        )
+        for link in links:
+            urls.append(link.url)
+
+        return urls
 
 
 def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
