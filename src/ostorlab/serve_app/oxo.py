@@ -8,7 +8,6 @@ from typing import Optional, List
 import graphene
 import graphql
 import httpx
-import sqlalchemy
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
@@ -61,7 +60,7 @@ class Query(graphene.ObjectType):
         order_by=graphene.Argument(types.AgentGroupOrderByEnum, required=False),
         sort=graphene.Argument(common.SortEnum, required=False),
         agent_group_ids=graphene.List(graphene.Int),
-        asset_type=graphene.String(required=False),
+        asset_type=graphene.Argument(types.OxoAssetTypeEnum, required=False),
     )
 
     def resolve_scans(
@@ -155,7 +154,7 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.AgentGroupOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
         agent_group_ids: Optional[List[int]] = None,
-        asset_type: Optional[str] = None,
+        asset_type: Optional[types.OxoAssetTypeEnum] = None,
     ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
@@ -189,11 +188,10 @@ class Query(graphene.ObjectType):
                 )
 
             if asset_type is not None:
+                asset_type_enum = types.OxoAssetTypeEnum.get(asset_type.upper())
                 agent_groups_query = agent_groups_query.join(
                     models.AgentGroup.asset_types
-                ).filter(
-                    sqlalchemy.func.lower(models.AssetType.type) == asset_type.lower()
-                )
+                ).filter_by(type=asset_type_enum)
 
             order_by_filter = None
             if order_by == types.AgentGroupOrderByEnum.AgentGroupId:
@@ -465,12 +463,15 @@ class PublishAgentGroupMutation(graphene.Mutation):
         Returns:
             PublishAgentGroupMutation: Publish agent group mutation.
         """
-
+        asset_types = [
+            types.OxoAssetTypeEnum.get(asset_type.upper())
+            for asset_type in agent_group.asset_types
+        ]
         group = models.AgentGroup.create(
             name=agent_group.name,
             description=agent_group.description,
             agents=agent_group.agents,
-            asset_types=agent_group.asset_types,
+            asset_types=asset_types,
         )
         return PublishAgentGroupMutation(agent_group=group)
 

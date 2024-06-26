@@ -39,6 +39,9 @@ class OxoScanOrderByEnum(graphene.Enum):
     Progress = enum.auto()
 
 
+OxoAssetTypeEnum = graphene.Enum.from_enum(models.AssetTypeEnum)
+
+
 class AgentGroupOrderByEnum(graphene.Enum):
     AgentGroupId = enum.auto()
     Name = enum.auto()
@@ -545,7 +548,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
         with models.Database() as session:
             asset_types = session.query(models.AgentGroup).get(self.id).asset_types
-            return [asset.type for asset in asset_types]
+            return [asset.type.name for asset in asset_types]
 
     def resolve_yaml_source(
         self: models.AgentGroup, info: graphql_base.ResolveInfo
@@ -652,7 +655,7 @@ class OxoAgentGroupCreateInputType(graphene.InputObjectType):
     name = graphene.String(required=False)
     description = graphene.String(required=True)
     agents = graphene.List(OxoAgentGroupAgentCreateInputType, required=True)
-    asset_types = graphene.List(graphene.String, required=False, default_value=[])
+    asset_types = graphene.List(OxoAssetTypeEnum, required=False, default_value=[])
 
 
 class OxoAgentScanInputType(graphene.InputObjectType):

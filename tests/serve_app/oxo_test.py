@@ -870,12 +870,12 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     assert agent_group1["description"] == agent_groups[0].description
     assert agent_group1["key"] == f"agentgroup//{agent_groups[0].name}"
     assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
-    assert agent_group1["assetTypes"] == ["WEB"]
+    assert agent_group1["assetTypes"] == ["IP"]
     assert agent_group2["name"] == agent_groups[1].name
     assert agent_group2["description"] == agent_groups[1].description
     assert agent_group2["key"] == f"agentgroup//{agent_groups[1].name}"
     assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
-    assert agent_group2["assetTypes"] == ["ANDROID"]
+    assert agent_group2["assetTypes"] == ["ANDROID_FILE"]
     agent_group1_agents = agent_group1["agents"]["agents"]
     agent_group2_agents = agent_group2["agents"]["agents"]
     assert len(agent_group1_agents) == 2
@@ -1029,7 +1029,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
         assert agent_group is not None
 
     query = """
-            query AgentGroup ($agentGroupIds: [Int!], $assetType: String!){
+            query AgentGroup ($agentGroupIds: [Int!], $assetType: AssetTypeEnum!){
                 agentGroups (agentGroupIds: $agentGroupIds, assetType: $assetType) {
                     agentGroups {
                         id
@@ -1055,7 +1055,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
                 }
             }
     """
-    variables = {"agentGroupIds": [1], "assetType": "WEB"}
+    variables = {"agentGroupIds": [1], "assetType": "IP"}
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
@@ -1072,7 +1072,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
     assert agent_group_data["description"] == agent_group.description
     assert agent_group_data["key"] == f"agentgroup//{agent_group.name}"
     assert agent_group_data["createdTime"] == agent_group.created_time.isoformat()
-    assert agent_group_data["assetTypes"] == ["WEB"]
+    assert agent_group_data["assetTypes"] == ["IP"]
     agent_group_agents = agent_group_data["agents"]["agents"]
     assert len(agent_group_agents) == 2
     assert agent_group_agents[0]["key"] == "agent/ostorlab/agent1"
@@ -2129,13 +2129,15 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                     "args": [{"name": "arg1", "type": "type1", "value": b"value1"}],
                 }
             ],
-            "assetTypes": ["WEB", "NETWORK"],
+            "assetTypes": ["IP", "LINK"],
         }
     }
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -2154,7 +2156,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     assert arg_type == "type1"
     assert isinstance(arg_value, bytes) is True
     assert arg_value == b"value1"
-    assert asset_types == ["WEB", "NETWORK"]
+    assert asset_types == ["IP", "LINK"]
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
