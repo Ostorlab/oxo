@@ -81,10 +81,10 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
                 asset_dict["package_name"] = asset.bundle_id
                 asset_dict["application_name"] = asset.application_name
             elif asset.type == "network":
-                networks = _write_network(asset, archive)
+                networks = _get_network(asset)
                 asset_dict["networks"] = networks
             elif asset.type == "urls":
-                urls = _write_urls(asset, archive)
+                urls = _get_urls(asset)
                 asset_dict["urls"] = urls
             else:
                 raise NotImplementedError()
@@ -125,12 +125,11 @@ def _write_mobile_app(
     return None
 
 
-def _write_network(asset: models.Asset, archive: zipfile.ZipFile) -> list[str]:
-    """Write the network details to the given archive.
+def _get_network(asset: models.Asset) -> list[str]:
+    """Get the network details from the given asset.
 
     Args:
         asset: The asset object.
-        archive: The archive object.
 
     Returns:
         The network details.
@@ -150,12 +149,14 @@ def _write_network(asset: models.Asset, archive: zipfile.ZipFile) -> list[str]:
         return networks
 
 
-def _write_urls(asset: models.Asset, archive: zipfile.ZipFile) -> list[str]:
-    """Write the URLs to the given archive.
+def _get_urls(asset: models.Asset) -> list[str]:
+    """Get the urls from the given asset.
 
     Args:
         asset: The asset object.
-        archive: The archive object.
+
+    Returns:
+        The urls.
     """
     with models.Database() as session:
         urls = []
