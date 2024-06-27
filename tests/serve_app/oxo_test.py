@@ -655,6 +655,9 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         nb_status_before_delete = (
             session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
         )
+        nb_assets_before_delete = (
+            session.query(models.Asset).filter_by(scan_id=android_scan.id).count()
+        )
 
     query = """
         mutation DeleteScan ($scanId: Int!){
@@ -672,6 +675,7 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
     assert nb_scans_before_delete > 0
     assert nb_vulnz_before_delete > 0
     assert nb_status_before_delete > 0
+    assert nb_assets_before_delete > 0
     with models.Database() as session:
         assert session.query(models.Scan).count() == 0
         assert (
@@ -683,6 +687,9 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         assert (
             session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
             == 0
+        )
+        assert (
+            session.query(models.Asset).filter_by(scan_id=android_scan.id).count() == 0
         )
 
 

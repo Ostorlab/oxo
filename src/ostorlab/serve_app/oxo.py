@@ -292,6 +292,7 @@ class DeleteScanMutation(graphene.Mutation):
             scan_query.delete()
             session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
             session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()
+            session.query(models.Asset).filter_by(scan_id=scan_id).delete()
             session.commit()
             return DeleteScanMutation(result=True)
 
