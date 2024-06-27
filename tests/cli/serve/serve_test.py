@@ -56,11 +56,24 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
             session.query(models.AgentGroup).order_by(models.AgentGroup.name).all()
         )
 
+        web_autodiscovery_network_asset_types = [
+            models.AssetTypeEnum.LINK,
+            models.AssetTypeEnum.IP,
+            models.AssetTypeEnum.DOMAIN,
+        ]
         # autodiscovery
         assert agent_groups[0].name == "predefined_oxo_autodiscovery"
         assert agent_groups[0].description == "Enumerate domain scan"
-        assert len(agent_groups[0].asset_types) == 1
-        assert agent_groups[0].asset_types[0].type == "autodiscovery"
+        assert len(agent_groups[0].asset_types) == 3
+        assert (
+            agent_groups[0].asset_types[0].type in web_autodiscovery_network_asset_types
+        )
+        assert (
+            agent_groups[0].asset_types[1].type in web_autodiscovery_network_asset_types
+        )
+        assert (
+            agent_groups[0].asset_types[2].type in web_autodiscovery_network_asset_types
+        )
         assert len(agent_groups[0].agents) == 7
         assert agent_groups[0].agents[0].key == "agent/ostorlab/subfinder"
         assert agent_groups[0].agents[1].key == "agent/ostorlab/dnsx"
@@ -117,8 +130,16 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         assert (
             agent_groups[1].description == "Agent Group for Extensive network scanning."
         )
-        assert len(agent_groups[1].asset_types) == 1
-        assert agent_groups[1].asset_types[0].type == "network"
+        assert len(agent_groups[1].asset_types) == 3
+        assert (
+            agent_groups[1].asset_types[0].type in web_autodiscovery_network_asset_types
+        )
+        assert (
+            agent_groups[1].asset_types[1].type in web_autodiscovery_network_asset_types
+        )
+        assert (
+            agent_groups[1].asset_types[2].type in web_autodiscovery_network_asset_types
+        )
         assert len(agent_groups[1].agents) == 6
         assert agent_groups[1].agents[0].key == "agent/ostorlab/nmap"
         assert agent_groups[1].agents[1].key == "agent/ostorlab/asteroid"
@@ -191,7 +212,7 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
         assert agent_groups[2].name == "predefined_oxo_sbom"
         assert agent_groups[2].description == "SBOM scan"
         assert len(agent_groups[2].asset_types) == 1
-        assert agent_groups[2].asset_types[0].type == "sbom"
+        assert agent_groups[2].asset_types[0].type == models.AssetTypeEnum.FILE
         assert len(agent_groups[2].agents) == 1
         assert agent_groups[2].agents[0].key == "agent/ostorlab/osv"
         args = (
@@ -209,8 +230,16 @@ def testOstorlabServe_whenStarting_shouldPersistPredifinedAgentGroups(
             agent_groups[3].description
             == "Agent Group for extensive Web Testing with crawling, fuzzing and known vulnerability discovery."
         )
-        assert len(agent_groups[3].asset_types) == 1
-        assert agent_groups[3].asset_types[0].type == "web"
+        assert len(agent_groups[3].asset_types) == 3
+        assert (
+            agent_groups[3].asset_types[0].type in web_autodiscovery_network_asset_types
+        )
+        assert (
+            agent_groups[3].asset_types[1].type in web_autodiscovery_network_asset_types
+        )
+        assert (
+            agent_groups[3].asset_types[2].type in web_autodiscovery_network_asset_types
+        )
         assert len(agent_groups[3].agents) == 7
         assert agent_groups[3].agents[0].key == "agent/ostorlab/zap"
         assert agent_groups[3].agents[1].key == "agent/ostorlab/nuclei"
