@@ -305,9 +305,9 @@ class DeleteScanMutation(graphene.Mutation):
         """
 
         assets = session.query(models.Asset).filter_by(scan_id=scan_id).all()
+        session.query(models.Asset).filter_by(scan_id=scan_id).delete()
         for asset in assets:
             asset_type = asset.type
-            session.query(models.Asset).filter_by(scan_id=scan_id).delete()
             if asset_type == "android_file":
                 session.query(models.AndroidFile).filter_by(id=asset.id).delete()
             elif asset_type == "ios_file":
