@@ -88,7 +88,7 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
                 urls = _get_urls(asset)
                 asset_dict["urls"] = urls
             else:
-                raise NotImplementedError()
+                raise NotImplementedError(f"Asset type {asset.type} not implemented.")
 
             assets_data.append(asset_dict)
 
