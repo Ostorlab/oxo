@@ -661,6 +661,9 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         nb_status_before_delete = (
             session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
         )
+        nb_assets_before_delete = (
+            session.query(models.Asset).filter_by(scan_id=android_scan.id).count()
+        )
 
     query = """
         mutation DeleteScan ($scanId: Int!){
@@ -678,6 +681,7 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
     assert nb_scans_before_delete > 0
     assert nb_vulnz_before_delete > 0
     assert nb_status_before_delete > 0
+    assert nb_assets_before_delete > 0
     with models.Database() as session:
         assert session.query(models.Scan).count() == 0
         assert (
@@ -689,6 +693,9 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         assert (
             session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
             == 0
+        )
+        assert (
+            session.query(models.Asset).filter_by(scan_id=android_scan.id).count() == 0
         )
 
 
@@ -878,12 +885,12 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     assert agent_group1["description"] == agent_groups[0].description
     assert agent_group1["key"] == f"agentgroup//{agent_groups[0].name}"
     assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
-    assert agent_group1["assetTypes"] == ["WEB"]
+    assert agent_group1["assetTypes"] == ["IP"]
     assert agent_group2["name"] == agent_groups[1].name
     assert agent_group2["description"] == agent_groups[1].description
     assert agent_group2["key"] == f"agentgroup//{agent_groups[1].name}"
     assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
-    assert agent_group2["assetTypes"] == ["ANDROID"]
+    assert agent_group2["assetTypes"] == ["ANDROID_FILE"]
     agent_group1_agents = agent_group1["agents"]["agents"]
     agent_group2_agents = agent_group2["agents"]["agents"]
     assert len(agent_group1_agents) == 2
@@ -1039,7 +1046,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
         assert agent_group is not None
 
     query = """
-            query AgentGroup ($agentGroupIds: [Int!], $assetType: String!){
+            query AgentGroup ($agentGroupIds: [Int!], $assetType: AssetTypeEnum!){
                 agentGroups (agentGroupIds: $agentGroupIds, assetType: $assetType) {
                     agentGroups {
                         id
@@ -1065,7 +1072,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
                 }
             }
     """
-    variables = {"agentGroupIds": [1], "assetType": "WEB"}
+    variables = {"agentGroupIds": [1], "assetType": "IP"}
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
@@ -1084,7 +1091,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
     assert agent_group_data["description"] == agent_group.description
     assert agent_group_data["key"] == f"agentgroup//{agent_group.name}"
     assert agent_group_data["createdTime"] == agent_group.created_time.isoformat()
-    assert agent_group_data["assetTypes"] == ["WEB"]
+    assert agent_group_data["assetTypes"] == ["IP"]
     agent_group_agents = agent_group_data["agents"]["agents"]
     assert len(agent_group_agents) == 2
     assert agent_group_agents[0]["key"] == "agent/ostorlab/agent1"
@@ -2141,7 +2148,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                     "args": [{"name": "arg1", "type": "type1", "value": b"value1"}],
                 }
             ],
-            "assetTypes": ["WEB", "NETWORK"],
+            "assetTypes": ["IP", "LINK"],
         }
     }
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
@@ -2168,7 +2175,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     assert arg_type == "type1"
     assert isinstance(arg_value, bytes) is True
     assert arg_value == b"value1"
-    assert asset_types == ["WEB", "NETWORK"]
+    assert asset_types == ["IP", "LINK"]
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(

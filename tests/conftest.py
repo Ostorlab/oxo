@@ -912,10 +912,10 @@ def agent_groups(
             agent_group_id=agent_group2.id, agent_id=agent1.id
         )
 
-        asset_web = models.AssetType.create(type="WEB")
-        asset_android = models.AssetType.create(type="ANDROID")
+        asset_ip = models.AssetType.create(type=models.AssetTypeEnum.IP)
+        asset_android = models.AssetType.create(type=models.AssetTypeEnum.ANDROID_FILE)
         models.AgentGroupAssetType.create(
-            agent_group_id=agent_group1.id, asset_type_id=asset_web.id
+            agent_group_id=agent_group1.id, asset_type_id=asset_ip.id
         )
         models.AgentGroupAssetType.create(
             agent_group_id=agent_group2.id, asset_type_id=asset_android.id

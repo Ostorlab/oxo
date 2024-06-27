@@ -64,6 +64,19 @@ class ScanProgress(enum.Enum):
     ERROR = "error"
 
 
+class AssetTypeEnum(enum.Enum):
+    """Enum for the asset types."""
+
+    ANDROID_FILE = "ANDROID_FILE"
+    IOS_FILE = "IOS_FILE"
+    ANDROID_STORE = "ANDROID_STORE"
+    IOS_STORE = "IOS_STORE"
+    LINK = "LINK"
+    IP = "IP"
+    DOMAIN = "DOMAIN"
+    FILE = "FILE"
+
+
 class Database:
     """Handles all Database instantiation and calls."""
 
@@ -480,14 +493,14 @@ class AssetType(Base):
 
     __tablename__ = "asset_type"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    type = sqlalchemy.Column(sqlalchemy.String(255))
+    type = sqlalchemy.Column(sqlalchemy.Enum(AssetTypeEnum))
 
     asset_agent_groups = orm.relationship(
         "AgentGroup", secondary="agent_group_asset_type", back_populates="asset_types"
     )
 
     @staticmethod
-    def create(type: str) -> "AssetType":
+    def create(type: AssetTypeEnum) -> "AssetType":
         """Persist the asset type in the database.
 
         Args:
@@ -526,7 +539,7 @@ class AgentGroup(Base):
         description: str,
         agents: Any,
         name: Optional[str] = None,
-        asset_types: List[str] = [],
+        asset_types: List[AssetTypeEnum] = [],
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
@@ -542,9 +555,7 @@ class AgentGroup(Base):
         with Database() as session:
             for asset_type in asset_types:
                 asset_type_model = (
-                    session.query(AssetType)
-                    .filter(sqlalchemy.func.lower(AssetType.type) == asset_type.lower())
-                    .first()
+                    session.query(AssetType).filter_by(type=asset_type).first()
                 )
                 if asset_type_model is None:
                     asset_type_model = AssetType.create(type=asset_type)
@@ -576,7 +587,7 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
-        asset_types: list[str] = [],
+        asset_types: list[AssetTypeEnum] = [],
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
 
@@ -643,10 +654,21 @@ class AgentGroup(Base):
                         )
                         if count_agent_group > 0:
                             continue
-                        asset_type = agent_group_file.stem
+
+                        file_name = agent_group_file.stem
+                        asset_types = []
+                        if file_name in ["network", "web", "autodiscovery"]:
+                            asset_types = [
+                                AssetTypeEnum.LINK,
+                                AssetTypeEnum.IP,
+                                AssetTypeEnum.DOMAIN,
+                            ]
+                        elif file_name == "sbom":
+                            asset_types = [AssetTypeEnum.FILE]
+
                         agent_group = AgentGroup.create_from_agent_group_definition(
                             agent_group_definition=agent_group_definition,
-                            asset_types=[asset_type],
+                            asset_types=asset_types,
                         )
                         agent_groups.append(agent_group)
             return agent_groups

@@ -1,6 +1,5 @@
 """Tests for Models class."""
 
-import sqlalchemy
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
@@ -534,24 +533,33 @@ def testCreateAgentGroupWithAssetTypes_always_createsAgentGroupWithAssetTypes(
     """Test creating an AgentGroup with associated AssetTypes."""
 
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    with models.Database() as session:
-        web_asset_type = models.AssetType.create(type="WEB")
-        network_asset_type = models.AssetType.create(type="NETWORK")
 
-        agent_group = models.AgentGroup(
-            name="Test Group", description="Test Description"
+    with models.Database() as session:
+        models.AgentGroup.create(
+            name="Test Group",
+            description="Test Description",
+            asset_types=[
+                models.AssetTypeEnum.IP,
+                models.AssetTypeEnum.DOMAIN,
+                models.AssetTypeEnum.LINK,
+            ],
+            agents=[],
         )
-        agent_group.asset_types.extend([web_asset_type, network_asset_type])
-        session.add(agent_group)
-        session.commit()
 
         db_agent_group = (
             session.query(models.AgentGroup).filter_by(name="Test Group").first()
         )
         assert db_agent_group is not None
-        assert len(db_agent_group.asset_types) == 2
-        assert "WEB" in [asset.type for asset in db_agent_group.asset_types]
-        assert "NETWORK" in [asset.type for asset in db_agent_group.asset_types]
+        assert len(db_agent_group.asset_types) == 3
+        assert models.AssetTypeEnum.IP in [
+            asset_type.type for asset_type in db_agent_group.asset_types
+        ]
+        assert models.AssetTypeEnum.DOMAIN in [
+            asset_type.type for asset_type in db_agent_group.asset_types
+        ]
+        assert models.AssetTypeEnum.LINK in [
+            asset_type.type for asset_type in db_agent_group.asset_types
+        ]
 
 
 def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
@@ -561,45 +569,43 @@ def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
 
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
-        web_asset_type = models.AssetType.create(type="WEB")
-        network_asset_type = models.AssetType.create(type="NETWORK")
-        agent_group_1 = models.AgentGroup(
-            name="Group 1", description="Group 1 Description"
+        agent_group_1 = models.AgentGroup.create(
+            name="Group 1",
+            description="Group 1 Description",
+            agents=[],
+            asset_types=[models.AssetTypeEnum.IP, models.AssetTypeEnum.LINK],
         )
-        agent_group_2 = models.AgentGroup(
-            name="Group 2", description="Group 2 Description"
+        agent_group_2 = models.AgentGroup.create(
+            name="Group 2",
+            description="Group 2 Description",
+            agents=[],
+            asset_types=[models.AssetTypeEnum.LINK],
         )
-        agent_group_1.asset_types.append(web_asset_type)
-        agent_group_2.asset_types.append(network_asset_type)
-        session.add_all([agent_group_1, agent_group_2])
-        session.commit()
 
-        agent_groups_web = (
+        agent_groups_ip = (
             session.query(models.AgentGroup)
             .join(models.AgentGroup.asset_types)
-            .filter(
-                sqlalchemy.func.lower(models.AssetType.type)
-                == web_asset_type.type.lower()
-            )
+            .filter_by(type=models.AssetTypeEnum.IP)
             .all()
         )
-        agent_groups_network = (
+        agent_groups_link = (
             session.query(models.AgentGroup)
             .join(models.AgentGroup.asset_types)
-            .filter(
-                sqlalchemy.func.lower(models.AssetType.type)
-                == network_asset_type.type.lower()
-            )
+            .filter_by(type=models.AssetTypeEnum.LINK)
             .all()
         )
 
-        assert len(agent_groups_web) == 1
-        assert agent_group_1.name in [group.name for group in agent_groups_web]
+        assert len(agent_groups_ip) == 1
+        assert agent_group_1.name in [group.name for group in agent_groups_ip]
         assert agent_group_1.description in [
-            group.description for group in agent_groups_web
+            group.description for group in agent_groups_ip
         ]
-        assert len(agent_groups_network) == 1
-        assert agent_group_2.name in [group.name for group in agent_groups_network]
+        assert len(agent_groups_link) == 2
+        assert agent_group_1.name in [group.name for group in agent_groups_link]
+        assert agent_group_2.name in [group.name for group in agent_groups_link]
+        assert agent_group_1.description in [
+            group.description for group in agent_groups_link
+        ]
         assert agent_group_2.description in [
-            group.description for group in agent_groups_network
+            group.description for group in agent_groups_link
         ]
