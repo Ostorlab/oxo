@@ -302,6 +302,7 @@ class DeleteScanMutation(graphene.Mutation):
 
         Args:
             scan_id: The scan ID.
+            session: The database session.
         """
 
         assets = session.query(models.Asset).filter_by(scan_id=scan_id).all()
