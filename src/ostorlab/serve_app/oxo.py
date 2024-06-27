@@ -292,9 +292,43 @@ class DeleteScanMutation(graphene.Mutation):
             scan_query.delete()
             session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
             session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()
-            session.query(models.Asset).filter_by(scan_id=scan_id).delete()
+            DeleteScanMutation._delete_assets(scan_id, session)
             session.commit()
             return DeleteScanMutation(result=True)
+
+    @staticmethod
+    def _delete_assets(scan_id: int, session: models.Database) -> None:
+        """Delete assets.
+
+        Args:
+            scan_id: The scan ID.
+        """
+
+        assets = session.query(models.Asset).filter_by(scan_id=scan_id).all()
+        for asset in assets:
+            asset_type = asset.type
+            session.query(models.Asset).filter_by(scan_id=scan_id).delete()
+            if asset_type == "android_file":
+                session.query(models.AndroidFile).filter_by(id=asset.id).delete()
+            elif asset_type == "ios_file":
+                session.query(models.IosFile).filter_by(id=asset.id).delete()
+            elif asset_type == "android_store":
+                session.query(models.AndroidStore).filter_by(id=asset.id).delete()
+            elif asset_type == "ios_store":
+                session.query(models.IosStore).filter_by(id=asset.id).delete()
+            elif asset_type == "network":
+                session.query(models.Network).filter_by(id=asset.id).delete()
+                session.query(models.IPRange).filter_by(
+                    network_asset_id=asset.id
+                ).delete()
+            elif asset_type == "urls":
+                session.query(models.Urls).filter_by(id=asset.id).delete()
+                session.query(models.Link).filter_by(urls_asset_id=asset.id).delete()
+            elif asset_type == "domain_asset":
+                session.query(models.DomainAsset).filter_by(id=asset.id).delete()
+                session.query(models.DomainName).filter_by(
+                    domain_asset_id=asset.id
+                ).delete()
 
 
 class CreateAssetsMutation(graphene.Mutation):
