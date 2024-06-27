@@ -586,7 +586,9 @@ def zip_file_bytes() -> bytes:
 
 
 @pytest.fixture
-def web_scan(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) -> None:
+def web_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
     """Create a dummy web scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -612,6 +614,19 @@ def web_scan(clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str) 
         )
         session.add(vulnerability)
         session.commit()
+        models.Urls.create(
+            scan_id=scan.id,
+            links=[
+                {"url": "https://example.com", "method": "GET"},
+                {"url": "https://example.com", "method": "POST"},
+            ],
+        )
+        models.ScanStatus.create(
+            scan_id=scan.id,
+            key="progress",
+            value="done",
+        )
+        return scan
 
 
 @pytest.fixture
@@ -963,7 +978,7 @@ def agent_group_multiple_agents(
 
 @pytest.fixture
 def multiple_assets_scan(
-    mocker: plugin.MockerFixture, db_engine_path: str
+    mocker: plugin.MockerFixture, db_engine_path: str, clean_db: None
 ) -> models.Scan:
     """Create dummy scan with multiple assets."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
@@ -976,18 +991,20 @@ def multiple_assets_scan(
         )
         session.add(scan)
         session.commit()
-        asset1 = models.AndroidFile(
+        models.AndroidFile.create(
             package_name="com.example.app",
-            path="/path/to/file",
+            path=str(pathlib.Path(__file__).parent / "files" / "test.apk"),
             scan_id=scan.id,
         )
-        asset2 = models.Network.create(
+        models.Network.create(
             networks=[{"host": "8.8.8.8"}, {"host": "8.8.4.4"}],
             scan_id=scan.id,
         )
-        session.add(asset1)
-        session.add(asset2)
-        session.commit()
+        models.ScanStatus.create(
+            scan_id=scan.id,
+            key="progress",
+            value="in_progress",
+        )
         return scan
 
 
@@ -1280,3 +1297,219 @@ def run_scan_mock2(mocker: plugin.MockerFixture) -> None:
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+
+
+@pytest.fixture
+def network_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    """Create a dummy web scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="Network Scan",
+        asset="Network",
+        progress=models.ScanProgress.IN_PROGRESS,
+    )
+    models.Vulnerability.create(
+        title="XSS",
+        short_description="Cross Site Scripting",
+        description="Cross Site Scripting",
+        recommendation="Sanitize data",
+        technical_detail="a=$input",
+        risk_rating=risk_rating.RiskRating.HIGH.name,
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={},
+        scan_id=scan.id,
+        references=[
+            {
+                "title": "ref",
+                "url": "https://url.of.ref",
+            }
+        ],
+    )
+    models.Network.create(
+        scan_id=scan.id,
+        networks=[{"host": "8.8.8.8"}, {"host": "8.8.4.4", "mask": 24}],
+    )
+    models.ScanStatus.create(
+        scan_id=scan.id,
+        key="progress",
+        value="in_progress",
+    )
+    return scan
+
+
+@pytest.fixture
+def android_file_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    """Create a dummy android file scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="Android File Scan",
+        asset="Android file",
+        progress=models.ScanProgress.IN_PROGRESS,
+    )
+    models.Vulnerability.create(
+        title="Insecure File Provider Paths Setting",
+        short_description="Insecure File Provider Paths Setting",
+        description="Insecure File Provider Paths Setting",
+        recommendation="some recommendation",
+        technical_detail="some technical detail",
+        risk_rating=risk_rating.RiskRating.MEDIUM.name,
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={},
+        scan_id=scan.id,
+        references=[
+            {
+                "title": "ref",
+                "url": "https://url.of.ref",
+            }
+        ],
+    )
+    models.AndroidFile.create(
+        package_name="com.example.app",
+        path=str(pathlib.Path(__file__).parent / "files" / "test.apk"),
+        scan_id=scan.id,
+    )
+    models.ScanStatus.create(
+        scan_id=scan.id,
+        key="progress",
+        value="in_progress",
+    )
+    return scan
+
+
+@pytest.fixture
+def ios_file_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    """Create a dummy ios file scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="IOS File Scan",
+        asset="IOS file",
+        progress=models.ScanProgress.IN_PROGRESS,
+    )
+    models.Vulnerability.create(
+        title="Insecure App Transport Security (ATS) Settings",
+        short_description="Insecure App Transport Security (ATS) Settings",
+        description="Insecure App Transport Security (ATS) Settings",
+        recommendation="some recommendation",
+        technical_detail="some technical detail",
+        risk_rating=risk_rating.RiskRating.MEDIUM.name,
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={},
+        scan_id=scan.id,
+        references=[
+            {
+                "title": "ref",
+                "url": "https://url.of.ref",
+            }
+        ],
+    )
+    models.IosFile.create(
+        bundle_id="com.example.app",
+        path=str(pathlib.Path(__file__).parent / "files" / "test.ipa"),
+        scan_id=scan.id,
+    )
+    models.ScanStatus.create(
+        scan_id=scan.id,
+        key="progress",
+        value="in_progress",
+    )
+    return scan
+
+
+@pytest.fixture
+def ios_store_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    """Create a dummy ios store scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="IOS Store Scan",
+        asset="IOS store",
+        progress=models.ScanProgress.IN_PROGRESS,
+    )
+    models.Vulnerability.create(
+        title="Insecure App Transport Security (ATS) Settings",
+        short_description="Insecure App Transport Security (ATS) Settings",
+        description="Insecure App Transport Security (ATS) Settings",
+        recommendation="some recommendation",
+        technical_detail="some technical detail",
+        risk_rating=risk_rating.RiskRating.MEDIUM.name,
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={},
+        scan_id=scan.id,
+        references=[
+            {
+                "title": "ref",
+                "url": "https://url.of.ref",
+            }
+        ],
+    )
+    models.IosStore.create(
+        bundle_id="com.example.app",
+        application_name="Example App",
+        scan_id=scan.id,
+    )
+    models.ScanStatus.create(
+        scan_id=scan.id,
+        key="progress",
+        value="in_progress",
+    )
+    return scan
+
+
+@pytest.fixture
+def android_store_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    """Create a dummy android store scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="Android Store Scan",
+        asset="Android store",
+        progress=models.ScanProgress.IN_PROGRESS,
+    )
+    models.Vulnerability.create(
+        title="Insecure File Provider Paths Setting",
+        short_description="Insecure File Provider Paths Setting",
+        description="Insecure File Provider Paths Setting",
+        recommendation="some recommendation",
+        technical_detail="some technical detail",
+        risk_rating=risk_rating.RiskRating.MEDIUM.name,
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={},
+        scan_id=scan.id,
+        references=[
+            {
+                "title": "ref",
+                "url": "https://url.of.ref",
+            }
+        ],
+    )
+    models.AndroidStore.create(
+        package_name="com.example.app",
+        application_name="Example App",
+        scan_id=scan.id,
+    )
+    models.ScanStatus.create(
+        scan_id=scan.id,
+        key="progress",
+        value="in_progress",
+    )
+    return scan
+
+
+@pytest.fixture
+def multiple_assets_scan_bytes() -> bytes:
+    """Returns a dummy zip file."""
+    zip_path = pathlib.Path(__file__).parent / "files" / "multiple_assets_scan.zip"
+    return zip_path.read_bytes()
