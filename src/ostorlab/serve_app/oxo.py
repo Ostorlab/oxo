@@ -8,7 +8,6 @@ from typing import Optional, List
 import graphene
 import graphql
 import httpx
-import sqlalchemy
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
@@ -19,7 +18,7 @@ from ostorlab.utils import defintions as utils_definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common
+from ostorlab.serve_app import common, export_utils
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
 from ostorlab.runtimes.local import runtime as local_runtime
@@ -61,7 +60,7 @@ class Query(graphene.ObjectType):
         order_by=graphene.Argument(types.AgentGroupOrderByEnum, required=False),
         sort=graphene.Argument(common.SortEnum, required=False),
         agent_group_ids=graphene.List(graphene.Int),
-        asset_type=graphene.String(required=False),
+        asset_type=graphene.Argument(types.OxoAssetTypeEnum, required=False),
     )
 
     def resolve_scans(
@@ -155,7 +154,7 @@ class Query(graphene.ObjectType):
         order_by: Optional[types.AgentGroupOrderByEnum] = None,
         sort: Optional[common.SortEnum] = None,
         agent_group_ids: Optional[List[int]] = None,
-        asset_type: Optional[str] = None,
+        asset_type: Optional[types.OxoAssetTypeEnum] = None,
     ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
@@ -189,11 +188,10 @@ class Query(graphene.ObjectType):
                 )
 
             if asset_type is not None:
+                asset_type_enum = types.OxoAssetTypeEnum.get(asset_type.upper())
                 agent_groups_query = agent_groups_query.join(
                     models.AgentGroup.asset_types
-                ).filter(
-                    sqlalchemy.func.lower(models.AssetType.type) == asset_type.lower()
-                )
+                ).filter_by(type=asset_type_enum)
 
             order_by_filter = None
             if order_by == types.AgentGroupOrderByEnum.AgentGroupId:
@@ -254,8 +252,43 @@ class ImportScanMutation(graphene.Mutation):
         """
         with models.Database() as session:
             scan = session.query(models.Scan).filter_by(id=scan_id).first()
-            import_utils.import_scan(session, file.read(), scan)
+            import_utils.import_scan(file.read(), scan)
             return ImportScanMutation(message="Scan imported successfully")
+
+
+class ExportScanMutation(graphene.Mutation):
+    """Export scan mutation."""
+
+    class Arguments:
+        scan_id = graphene.Int(required=True)
+        export_ide = graphene.Boolean(required=False)
+
+    content = common.Bytes()
+
+    @staticmethod
+    def mutate(
+        root,
+        info: graphql_base.ResolveInfo,
+        scan_id: int,
+        export_ide: Optional[bool] = False,
+    ) -> "ExportScanMutation":
+        """Export scan mutation.
+
+        Args:
+            info: GraphQL resolve info.
+            scan_id: Scan id.
+            export_ide: Export to IDE. Defaults to False.
+
+        Returns:
+            ExportScanMutation: Export scan mutation.
+        """
+        with models.Database() as session:
+            scan = session.query(models.Scan).filter_by(id=scan_id).first()
+            if scan is None:
+                raise graphql.GraphQLError("Scan not found.")
+
+            export_file_content = export_utils.export_scan(scan, export_ide)
+            return ExportScanMutation(content=export_file_content)
 
 
 class DeleteScanMutation(graphene.Mutation):
@@ -292,8 +325,44 @@ class DeleteScanMutation(graphene.Mutation):
             scan_query.delete()
             session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
             session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()
+            DeleteScanMutation._delete_assets(scan_id, session)
             session.commit()
             return DeleteScanMutation(result=True)
+
+    @staticmethod
+    def _delete_assets(scan_id: int, session: models.Database) -> None:
+        """Delete assets.
+
+        Args:
+            scan_id: The scan ID.
+            session: The database session.
+        """
+
+        assets = session.query(models.Asset).filter_by(scan_id=scan_id).all()
+        session.query(models.Asset).filter_by(scan_id=scan_id).delete()
+        for asset in assets:
+            asset_type = asset.type
+            if asset_type == "android_file":
+                session.query(models.AndroidFile).filter_by(id=asset.id).delete()
+            elif asset_type == "ios_file":
+                session.query(models.IosFile).filter_by(id=asset.id).delete()
+            elif asset_type == "android_store":
+                session.query(models.AndroidStore).filter_by(id=asset.id).delete()
+            elif asset_type == "ios_store":
+                session.query(models.IosStore).filter_by(id=asset.id).delete()
+            elif asset_type == "network":
+                session.query(models.Network).filter_by(id=asset.id).delete()
+                session.query(models.IPRange).filter_by(
+                    network_asset_id=asset.id
+                ).delete()
+            elif asset_type == "urls":
+                session.query(models.Urls).filter_by(id=asset.id).delete()
+                session.query(models.Link).filter_by(urls_asset_id=asset.id).delete()
+            elif asset_type == "domain_asset":
+                session.query(models.DomainAsset).filter_by(id=asset.id).delete()
+                session.query(models.DomainName).filter_by(
+                    domain_asset_id=asset.id
+                ).delete()
 
 
 class CreateAssetsMutation(graphene.Mutation):
@@ -465,12 +534,15 @@ class PublishAgentGroupMutation(graphene.Mutation):
         Returns:
             PublishAgentGroupMutation: Publish agent group mutation.
         """
-
+        asset_types = [
+            types.OxoAssetTypeEnum.get(asset_type.upper())
+            for asset_type in agent_group.asset_types
+        ]
         group = models.AgentGroup.create(
             name=agent_group.name,
             description=agent_group.description,
             agents=agent_group.agents,
-            asset_types=agent_group.asset_types,
+            asset_types=asset_types,
         )
         return PublishAgentGroupMutation(agent_group=group)
 
@@ -765,6 +837,7 @@ class Mutations(graphene.ObjectType):
         description="Delete agent group."
     )
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
+    export_scan = ExportScanMutation.Field(description="Export scan to file.")
     create_assets = CreateAssetsMutation.Field(description="Create an asset.")
     stop_scan = StopScanMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."

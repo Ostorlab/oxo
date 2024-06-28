@@ -14,6 +14,7 @@ from flask import testing
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
@@ -188,6 +189,7 @@ def testImportScanMutation_always_shouldImportScan(
 
     with models.Database() as session:
         nbr_scans_before_import = session.query(models.Scan).count()
+        nbr_assets_before_import = session.query(models.Asset).count()
         query = """
             mutation ImportScan($scanId: Int, $file: Upload!) {
                 importScan(scanId: $scanId, file: $file) {
@@ -226,6 +228,10 @@ def testImportScanMutation_always_shouldImportScan(
             == "Scan imported successfully"
         )
         assert nbr_scans_after_import == nbr_scans_before_import + 1
+        assert session.query(models.Asset).count() == nbr_assets_before_import + 1
+        asset = session.query(models.Asset).first()
+        assert asset.type == "ios_file"
+        assert asset.bundle_id == "ostorlab.swiftvulnerableapp"
 
 
 def testQueryMultipleScans_always_shouldReturnMultipleScans(
@@ -654,6 +660,9 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         nb_status_before_delete = (
             session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
         )
+        nb_assets_before_delete = (
+            session.query(models.Asset).filter_by(scan_id=android_scan.id).count()
+        )
 
     query = """
         mutation DeleteScan ($scanId: Int!){
@@ -671,6 +680,7 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
     assert nb_scans_before_delete > 0
     assert nb_vulnz_before_delete > 0
     assert nb_status_before_delete > 0
+    assert nb_assets_before_delete > 0
     with models.Database() as session:
         assert session.query(models.Scan).count() == 0
         assert (
@@ -682,6 +692,9 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         assert (
             session.query(models.ScanStatus).filter_by(scan_id=android_scan.id).count()
             == 0
+        )
+        assert (
+            session.query(models.Asset).filter_by(scan_id=android_scan.id).count() == 0
         )
 
 
@@ -855,7 +868,9 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -869,12 +884,12 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     assert agent_group1["description"] == agent_groups[0].description
     assert agent_group1["key"] == f"agentgroup//{agent_groups[0].name}"
     assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
-    assert agent_group1["assetTypes"] == ["WEB"]
+    assert agent_group1["assetTypes"] == ["IP"]
     assert agent_group2["name"] == agent_groups[1].name
     assert agent_group2["description"] == agent_groups[1].description
     assert agent_group2["key"] == f"agentgroup//{agent_groups[1].name}"
     assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
-    assert agent_group2["assetTypes"] == ["ANDROID"]
+    assert agent_group2["assetTypes"] == ["ANDROID_FILE"]
     agent_group1_agents = agent_group1["agents"]["agents"]
     agent_group2_agents = agent_group2["agents"]["agents"]
     assert len(agent_group1_agents) == 2
@@ -964,7 +979,9 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -1028,7 +1045,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
         assert agent_group is not None
 
     query = """
-            query AgentGroup ($agentGroupIds: [Int!], $assetType: String!){
+            query AgentGroup ($agentGroupIds: [Int!], $assetType: AssetTypeEnum!){
                 agentGroups (agentGroupIds: $agentGroupIds, assetType: $assetType) {
                     agentGroups {
                         id
@@ -1054,11 +1071,13 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
                 }
             }
     """
-    variables = {"agentGroupIds": [1], "assetType": "WEB"}
+    variables = {"agentGroupIds": [1], "assetType": "IP"}
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -1071,7 +1090,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
     assert agent_group_data["description"] == agent_group.description
     assert agent_group_data["key"] == f"agentgroup//{agent_group.name}"
     assert agent_group_data["createdTime"] == agent_group.created_time.isoformat()
-    assert agent_group_data["assetTypes"] == ["WEB"]
+    assert agent_group_data["assetTypes"] == ["IP"]
     agent_group_agents = agent_group_data["agents"]["agents"]
     assert len(agent_group_agents) == 2
     assert agent_group_agents[0]["key"] == "agent/ostorlab/agent1"
@@ -1141,7 +1160,7 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
     response = authenticated_flask_client.post(
         "/graphql",
         data=ubjson_data,
-        headers={"Content-Type": "application/ubjson"},
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -1925,11 +1944,11 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     assert response.status_code == 200, response.get_json()
     asset1 = response.get_json()["data"]["scans"]["scans"][0]["assets"][0]
     asset2 = response.get_json()["data"]["scans"]["scans"][0]["assets"][1]
-    assert asset1["networks"] == [
+    assert "test.apk" in asset1["path"]
+    assert asset2["networks"] == [
         {"host": "8.8.8.8", "mask": "32"},
         {"host": "8.8.4.4", "mask": "32"},
     ]
-    assert asset2["path"] == "/path/to/file"
 
 
 def testStopScanMutation_whenScanIsRunning_shouldStopScan(
@@ -2128,13 +2147,15 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
                     "args": [{"name": "arg1", "type": "type1", "value": b"value1"}],
                 }
             ],
-            "assetTypes": ["WEB", "NETWORK"],
+            "assetTypes": ["IP", "LINK"],
         }
     }
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -2153,7 +2174,7 @@ def testPublishAgentGroupMutation_always_shouldPublishAgentGroup(
     assert arg_type == "type1"
     assert isinstance(arg_value, bytes) is True
     assert arg_value == b"value1"
-    assert asset_types == ["WEB", "NETWORK"]
+    assert asset_types == ["IP", "LINK"]
 
 
 def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
@@ -3290,7 +3311,9 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
     ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
 
     response = authenticated_flask_client.post(
-        "/graphql", data=ubjson_data, headers={"Content-Type": "application/ubjson"}
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
     )
 
     assert response.status_code == 200, ubjson.loadb(response.data)
@@ -3334,3 +3357,95 @@ def testQueryScan_always_shouldReturnScanWithAgentGroup(
     arg_value = agents[1]["args"]["args"][3]["value"]
     arg_type = agents[1]["args"]["args"][3]["type"]
     assert models.AgentArgument.from_bytes(type=arg_type, value=arg_value) is False
+
+
+def testOxoExportScan_alaways_shouldExportScan(
+    authenticated_flask_client: testing.FlaskClient,
+    android_store_scan: models.Scan,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test export scan to csv api call."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    query = """
+        mutation ExportScan($scanId: Int!) {
+            exportScan(scanId: $scanId) {
+                content
+            }
+        }
+    """
+    variables = {"scanId": android_store_scan.id}
+    ubjson_data = ubjson.dumpb({"query": query, "variables": variables})
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        data=ubjson_data,
+        headers={"Content-Type": "application/ubjson", "Accept": "application/ubjson"},
+    )
+
+    assert response.status_code == 200, ubjson.loadb(response.data)
+    file_data = ubjson.loadb(response.data)["data"]["exportScan"]["content"]
+    with models.Database() as session:
+        import_utils.import_scan(file_data=file_data)
+        assert session.query(models.Scan).count() == 2
+        last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert last_scan.title == "Android Store Scan"
+        assert last_scan.progress == models.ScanProgress.IN_PROGRESS
+
+
+def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipleAssets(
+    authenticated_flask_client: testing.FlaskClient,
+    multiple_assets_scan_bytes: bytes,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test importScan mutation for a scan with multiple assets."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    with models.Database() as session:
+        nbr_scans_before_import = session.query(models.Scan).count()
+        nbr_assets_before_import = session.query(models.Asset).count()
+        query = """
+            mutation ImportScan($scanId: Int, $file: Upload!) {
+                importScan(scanId: $scanId, file: $file) {
+                    message
+                }
+            }
+        """
+        file_name = "imported_zip_file.zip"
+        data = {
+            "operations": json.dumps(
+                {
+                    "query": query,
+                    "variables": {
+                        "file": None,
+                        "scanId": 20,
+                    },
+                }
+            ),
+            "map": json.dumps(
+                {
+                    "file": ["variables.file"],
+                }
+            ),
+        }
+        data["file"] = (io.BytesIO(multiple_assets_scan_bytes), file_name)
+
+        response = authenticated_flask_client.post(
+            "/graphql", data=data, content_type="multipart/form-data"
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_import = session.query(models.Scan).count()
+        assert (
+            response_json["data"]["importScan"]["message"]
+            == "Scan imported successfully"
+        )
+        assert nbr_scans_after_import == nbr_scans_before_import + 1
+        assert session.query(models.Asset).count() == nbr_assets_before_import + 2
+        assets = session.query(models.Asset).all()
+        assert assets[0].type == "ios_file"
+        assert assets[0].bundle_id == "ostorlab.swiftvulnerableapp"
+        assert assets[1].type == "android_store"
+        assert assets[1].package_name == "co.banano.natriumwallet"

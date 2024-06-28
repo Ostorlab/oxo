@@ -126,7 +126,7 @@ def testAgentMain_withNonExistingFile_exits(mocker):
 
         SampleAgent.run.assert_not_called()
         SampleAgent.__init__.assert_not_called()
-        assert wrapper_exception.type == SystemExit
+        assert isinstance(wrapper_exception.type, SystemExit) is True
         assert wrapper_exception.value.code == 42
 
 

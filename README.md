@@ -12,8 +12,8 @@ OXO Engine combines specialized tools to work cohesively to find vulnerabilities
 
 * [Documentation](https://oxo.ostorlab.co/docs)
 * [Agents Store](https://oxo.ostorlab.co/store)
-* [CLI Manual](https://oxo.ostorlab.co/docs/cli)
-* [Examples](https://oxo.ostorlab.co/docs/examples)
+* [CLI Manual](https://oxo.ostorlab.co/docs/manual)
+* [Examples](https://oxo.ostorlab.co/tutorials/examples)
 
 ![Main oxo](images/main_oxo_gif.gif)
 
