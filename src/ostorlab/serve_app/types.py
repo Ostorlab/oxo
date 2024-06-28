@@ -562,7 +562,11 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
         yaml = ruamel.yaml.YAML(typ="safe")
         yaml.width = YAML_WIDTH
-        agent_group_definition = {"kind": "AgentGroup", "agents": []}
+        agent_group_definition = collections.OrderedDict(
+            [
+                ("kind", "AgentGroup"),
+            ]
+        )
 
         if self.name is not None:
             agent_group_definition["name"] = self.name
@@ -570,14 +574,15 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         if self.description is not None:
             agent_group_definition["description"] = self.description
 
+        agent_group_definition["agents"] = []
+
         with models.Database() as session:
             agent_group = session.query(models.AgentGroup).get(self.id)
             agents = agent_group.agents
             for agent in agents:
-                agent_definition = {
-                    "key": agent.key,
-                    "args": [],
-                }
+                agent_definition = collections.OrderedDict(
+                    [("key", agent.key), ("args", [])]
+                )
 
                 args = (
                     session.query(models.AgentArgument)
@@ -586,11 +591,13 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 )
                 for arg in args:
                     value = models.AgentArgument.from_bytes(arg.type, arg.value)
-                    arg_dict = {
-                        "name": arg.name,
-                        "type": arg.type,
-                        "description": arg.description,
-                    }
+                    arg_dict = collections.OrderedDict(
+                        [
+                            ("name", arg.name),
+                            ("type", arg.type),
+                            ("description", arg.description),
+                        ]
+                    )
                     if value is not None:
                         arg_dict["value"] = value
                     agent_definition["args"].append(arg_dict)
