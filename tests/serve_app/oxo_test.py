@@ -234,6 +234,62 @@ def testImportScanMutation_always_shouldImportScan(
         assert asset.bundle_id == "ostorlab.swiftvulnerableapp"
 
 
+def testImportScanMutation_whenScanExists_shouldImportScan(
+    authenticated_flask_client: testing.FlaskClient,
+    zip_file_bytes: bytes,
+    mocker: plugin.MockerFixture,
+    db_engine_path: str,
+) -> None:
+    """Test importScan mutation when the scan exists."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    with models.Database() as session:
+        scan = models.Scan.create(title="Test Scan", asset="Test Asset")
+        nbr_scans_before_import = session.query(models.Scan).count()
+        query = """
+            mutation ImportScan($scanId: Int, $file: Upload!) {
+                importScan(scanId: $scanId, file: $file) {
+                    message
+                }
+            }
+        """
+        file_name = "imported_zip_file.zip"
+        data = {
+            "operations": json.dumps(
+                {
+                    "query": query,
+                    "variables": {
+                        "file": None,
+                        "scanId": scan.id,
+                    },
+                }
+            ),
+            "map": json.dumps(
+                {
+                    "file": ["variables.file"],
+                }
+            ),
+        }
+        data["file"] = (io.BytesIO(zip_file_bytes), file_name)
+
+        response = authenticated_flask_client.post(
+            "/graphql", data=data, content_type="multipart/form-data"
+        )
+
+        assert response.status_code == 200, response.get_json()
+        response_json = response.get_json()
+        nbr_scans_after_import = session.query(models.Scan).count()
+        assert (
+            response_json["data"]["importScan"]["message"]
+            == "Scan imported successfully"
+        )
+        assert nbr_scans_after_import == nbr_scans_before_import
+        scan_vulnerabilities = (
+            session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        )
+        assert len(scan_vulnerabilities) == 423
+
+
 def testQueryMultipleScans_always_shouldReturnMultipleScans(
     authenticated_flask_client: testing.FlaskClient, ios_scans: models.Scan
 ) -> None:
