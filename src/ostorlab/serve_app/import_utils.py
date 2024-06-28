@@ -65,6 +65,7 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             if status["key"] == "progress":
                 last_status = status["value"].upper()
         scan.progress = models.ScanProgress[last_status]
+        session.merge(scan)
         session.commit()
 
         _import_asset(scan.id, asset_dicts, archive)
