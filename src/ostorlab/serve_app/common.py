@@ -4,7 +4,6 @@ import collections
 import inspect
 import io
 import json
-import plistlib
 import zipfile
 from functools import cached_property
 from math import ceil
@@ -14,7 +13,6 @@ from typing import Optional, Union
 import cvss
 import graphene
 from graphql.language import ast
-import pyaxmlparser
 from graphene.types import scalars
 
 
@@ -276,52 +274,3 @@ def is_aab(file_content: bytes) -> bool:
             return False
     except zipfile.BadZipFile:
         return False
-
-
-def get_package_name(path: str) -> str:
-    """Get the package name of an android file.
-
-    Args:
-        path: Path to the android file.
-
-    Returns:
-        str: Package name of the android file.
-    """
-
-    apk_info = pyaxmlparser.APK(path)
-    return apk_info.get_package()
-
-
-def get_bundle_id(path: str) -> str:
-    """Get the bundle identifier of an iOS ipa file.
-
-    Args:
-        path: Path to the iOS ipa file.
-
-    Returns:
-        str: Bundle identifier of the iOS ipa file.
-    """
-
-    with zipfile.ZipFile(path, "r") as z:
-        # Locate the Info.plist file within the IPA
-        infoplist = None
-        for filename in z.namelist():
-            dirs = filename.split("/")
-            # payload, Payload and payLoad the three formats can be found
-            if (
-                len(dirs) == 3
-                and dirs[0].lower().strip() == "payload"
-                and dirs[2].lower().strip() == "info.plist"
-            ):
-                content = z.open(filename).read()
-                infoplist = plistlib.loads(content)
-
-        if infoplist is None:
-            return ""
-
-        # Extract and read the Info.plist file
-        bundle_id = infoplist.get("CFBundleIdentifier")
-        if bundle_id is None:
-            return ""
-
-        return bundle_id
