@@ -9,8 +9,7 @@ import zipfile
 from typing import Optional
 
 from ostorlab import configuration_manager
-from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common
+from ostorlab.runtimes.local.models import models, utils
 
 SCAN_JSON = "scan.json"
 ASSET_JSON = "asset.json"
@@ -136,7 +135,7 @@ def _import_asset(
                 )
                 android_file_path.write_bytes(content)
                 models.AndroidFile.create(
-                    package_name=common.get_package_name(str(android_file_path)),
+                    package_name=utils.get_package_name(str(android_file_path)),
                     path=str(android_file_path),
                     scan_id=scan_id,
                 )
@@ -147,7 +146,7 @@ def _import_asset(
                 ios_file_path = config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
                 ios_file_path.write_bytes(content)
                 models.IosFile.create(
-                    bundle_id=common.get_bundle_id(str(ios_file_path)),
+                    bundle_id=utils.get_bundle_id(str(ios_file_path)),
                     path=str(ios_file_path),
                     scan_id=scan_id,
                 )

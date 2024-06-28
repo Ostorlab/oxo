@@ -25,7 +25,7 @@ from alembic.util import exc as alembic_exceptions
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
-from ostorlab.serve_app import common
+from ostorlab.runtimes.local.models import utils
 from ostorlab.utils import risk_rating as utils_rik_rating
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
@@ -828,7 +828,7 @@ class Asset(Base):
                 IosFile.create(
                     path=asset.path,
                     scan_id=scan_id,
-                    bundle_id=common.get_bundle_id(asset.path),
+                    bundle_id=utils.get_bundle_id(asset.path),
                 )
             elif isinstance(asset, ios_store.IOSStore):
                 IosStore.create(bundle_id=asset.bundle_id, scan_id=scan_id)
@@ -838,7 +838,7 @@ class Asset(Base):
                 AndroidFile.create(
                     path=asset.path,
                     scan_id=scan_id,
-                    package_name=common.get_package_name(asset.path),
+                    package_name=utils.get_package_name(asset.path),
                 )
             elif isinstance(asset, android_store.AndroidStore):
                 AndroidStore.create(package_name=asset.package_name, scan_id=scan_id)

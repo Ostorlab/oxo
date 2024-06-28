@@ -1,7 +1,5 @@
 """Unit tests for common.py."""
 
-import pathlib
-
 import pytest
 
 from ostorlab.serve_app import common
@@ -54,21 +52,3 @@ def testPaginator_always_returnTheRightPages(
         assert page.has_next() == (page_number < paginator.num_pages)
         assert page.has_previous() == (page_number > 1)
     assert pages == expected_pages
-
-
-def testGetPackageName_whenApk_returnPackageName() -> None:
-    """Test that the function returns the right package name when the file is an APK."""
-    path = pathlib.Path(__file__).parent.parent / "files/test.apk"
-
-    package_name = common.get_package_name(str(path))
-
-    assert package_name == "com.michelin.agpressurecalculator"
-
-
-def testGetBundleId_whenIpa_returnBundleId() -> None:
-    """Test that the function returns the right bundle id when the file is an IPA."""
-    path = pathlib.Path(__file__).parent.parent / "files/test.ipa"
-
-    bundle_id = common.get_bundle_id(str(path))
-
-    assert bundle_id == "ostorlab.swiftvulnerableapp"
