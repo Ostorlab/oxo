@@ -54,8 +54,8 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             else datetime.datetime.now()
         )
         last_status: Optional[str] = None
-
-        session.add(scan)
+        if scan.id is None:
+            session.add(scan)
 
         for status in sorted(scan_dict["status"], key=lambda s: s["id"]):
             scan_id: int = scan.id
@@ -65,6 +65,7 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             if status["key"] == "progress":
                 last_status = status["value"].upper()
         scan.progress = models.ScanProgress[last_status]
+        session.merge(scan)
         session.commit()
 
         _import_asset(scan.id, asset_dicts, archive)
