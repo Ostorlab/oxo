@@ -12,7 +12,6 @@ import httpx
 import ubjson
 from flask import testing
 from pytest_mock import plugin
-import pytest
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
@@ -2832,7 +2831,6 @@ def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
         return response.json()["data"]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
     """Ensure the `ENUMs` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2876,7 +2874,6 @@ def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
         assert enum_values == oxo_enums[enum]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
     """Ensure the `InputObjects` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2930,7 +2927,6 @@ def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
             assert input_field_type == oxo_input_types[input_field_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2961,10 +2957,6 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     oxo_mutations = {mutation["name"]: mutation for mutation in oxo_mutations_fields}
 
     for mutation_name, mutation_fields in re_oxo_mutations.items():
-        if mutation_name == "exportScan":
-            # This mutation is explicitly skipped from the check.
-            # TODO(deadly-panda): Evaluate if exporting scans on oxo is a valid usecase.
-            continue
         assert mutation_name in oxo_mutations
 
         assert mutation_fields["type"] == oxo_mutations[mutation_name]["type"]
@@ -3004,9 +2996,6 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_mutation_args[arg_name]
 
 
-@pytest.mark.skip(
-    reason="Asset type needs to be aligned (https://github.com/Ostorlab/oxo/pull/713)."
-)
 def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     """Ensure the `Queries` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3063,7 +3052,6 @@ def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_query_args[arg_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
     """Ensure the `UNION` types in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3132,7 +3120,6 @@ def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
             assert possible_type_fields == oxo_unions[union_name][possible_type_name]
 
 
-@pytest.mark.skip(reason="Schema not complete on RE_OXO.")
 def testOxoSchemaReOxoSchemas_whenOutputTypes_schemasShouldBeSimilar() -> None:
     """Ensure the `return types` in the OxO Schema & RE_OxO schema are similar."""
 
