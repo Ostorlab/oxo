@@ -172,7 +172,7 @@ class LocalRuntime(runtime.Runtime):
 
     def prepare_scan(
         self, title: str, assets: Optional[List[base_asset.Asset]]
-    ) -> None:
+    ) -> models.Scan:
         """Prepare scan entry in the database.
 
         Args:
@@ -186,6 +186,7 @@ class LocalRuntime(runtime.Runtime):
         else:
             assets_str = f'{", ".join([str(asset) for asset in assets])}'
         self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
+        return self._scan_db
 
     def scan(
         self,
