@@ -3,6 +3,7 @@
 import ipaddress
 import pathlib
 import uuid
+from concurrent import futures
 from typing import Optional, List
 
 import graphene
@@ -793,7 +794,35 @@ class RunScanMutation(graphene.Mutation):
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
         runtime_instance.follow = []
-        runtime_instance.prepare_scan(assets=scan_assets, title=scan.title)
+        queued_scan = runtime_instance.prepare_scan(
+            assets=scan_assets, title=scan.title
+        )
+
+        executor = futures.ThreadPoolExecutor(max_workers=1)
+        executor.submit(
+            RunScanMutation._run_scan_background,
+            runtime_instance,
+            agent_group,
+            scan,
+            scan_assets,
+        )
+        return RunScanMutation(scan=queued_scan)
+
+    @staticmethod
+    def _run_scan_background(
+        runtime_instance: runtime.LocalRuntime,
+        agent_group: definitions.AgentGroupDefinition,
+        scan: types.OxoAgentScanInputType,
+        scan_assets: List[ostorlab_asset.Asset],
+    ) -> None:
+        """Run scan in background.
+
+        Args:
+            runtime_instance: The runtime instance.
+            agent_group: The agent group.
+            scan: The scan information.
+            scan_assets: The scan assets.
+        """
 
         try:
             can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
@@ -826,8 +855,6 @@ class RunScanMutation(graphene.Mutation):
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"
                 )
-
-            return RunScanMutation(scan=created_scan)
 
 
 class Mutations(graphene.ObjectType):
