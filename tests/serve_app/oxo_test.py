@@ -14,6 +14,7 @@ from flask import testing
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local import runtime
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
 
@@ -2295,8 +2296,12 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     network_asset: models.Asset,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    db_engine_path: str,
 ) -> None:
     """Test RunScanMutation for Network asset."""
+
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    prepare_scan_spy = mocker.spy(runtime.LocalRuntime, "prepare_scan")
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2368,6 +2373,15 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     assert args["assets"][0].mask == "32"
     assert args["assets"][1].host == "8.8.4.4"
     assert args["assets"][1].mask == "24"
+    assert prepare_scan_spy.called is True
+    title = prepare_scan_spy.call_args[1]["title"]
+    assets = prepare_scan_spy.call_args[1]["assets"]
+    assert title == "Test Scan Network Asset"
+    assert len(assets) == 2
+    assert assets[0].host == "8.8.8.8"
+    assert assets[0].mask == "32"
+    assert assets[1].host == "8.8.4.4"
+    assert assets[1].mask == "24"
 
 
 def testRunScanMutation_whenDomainAsset_shouldRunScan(

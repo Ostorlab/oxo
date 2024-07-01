@@ -793,6 +793,7 @@ class RunScanMutation(graphene.Mutation):
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
         runtime_instance.follow = []
+        runtime_instance.prepare_scan(assets=scan_assets, title=scan.title)
 
         try:
             can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
