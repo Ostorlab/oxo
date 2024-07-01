@@ -14,7 +14,6 @@ from flask import testing
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local import runtime
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
 
@@ -2301,7 +2300,6 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     """Test RunScanMutation for Network asset."""
 
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    prepare_scan_spy = mocker.spy(runtime.LocalRuntime, "prepare_scan")
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2317,8 +2315,8 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2365,17 +2363,9 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
         {"host": "8.8.8.8", "mask": "32"},
         {"host": "8.8.4.4", "mask": "24"},
     ]
-    args = scan_mock.call_args[1]
-    assert args["title"] == "Test Scan Network Asset"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
-    assert len(args["assets"]) == 2
-    assert args["assets"][0].host == "8.8.8.8"
-    assert args["assets"][0].mask == "32"
-    assert args["assets"][1].host == "8.8.4.4"
-    assert args["assets"][1].mask == "24"
-    assert prepare_scan_spy.called is True
-    title = prepare_scan_spy.call_args[1]["title"]
-    assets = prepare_scan_spy.call_args[1]["assets"]
+    assert prepare_scan_mock.called is True
+    title = prepare_scan_mock.call_args[1]["title"]
+    assets = prepare_scan_mock.call_args[1]["assets"]
     assert title == "Test Scan Network Asset"
     assert len(assets) == 2
     assert assets[0].host == "8.8.8.8"
@@ -2393,8 +2383,8 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     run_scan_mock2: None,
 ) -> None:
     """Test RunScanMutation for Domain asset."""
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2440,9 +2430,8 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
         {"name": "google.com"},
         {"name": "tesla.com"},
     ]
-    args = scan_mock.call_args[1]
+    args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Domain Asset"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
     assert len(args["assets"]) == 2
     assert args["assets"][0].name == "google.com"
     assert args["assets"][1].name == "tesla.com"
@@ -2471,9 +2460,10 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
+
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
             runScan(
@@ -2519,9 +2509,8 @@ def testRunScanMutation_whenUrl_shouldRunScan(
         {"method": "GET", "url": "https://google.com"},
         {"method": "GET", "url": "https://tesla.com"},
     ]
-    args = scan_mock.call_args[1]
+    args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Url Asset"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/nmap"
     assert len(args["assets"]) == 2
     assert args["assets"][0].url == "https://google.com"
     assert args["assets"][0].method == "GET"
@@ -2552,8 +2541,8 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2595,9 +2584,8 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == android_file_asset.id
     assert "test.apk" in res_scan["assets"][0]["path"]
-    args = scan_mock.call_args[1]
+    args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android File"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/trufflehog"
     assert len(args["assets"]) == 1
     assert "test.apk" in args["assets"][0].path
 
@@ -2625,8 +2613,8 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2668,9 +2656,8 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == ios_file_asset.id
     assert "test.ipa" in res_scan["assets"][0]["path"]
-    args = scan_mock.call_args[1]
+    args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios File"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/trufflehog"
     assert len(args["assets"]) == 1
     assert "test.ipa" in args["assets"][0].path
 
@@ -2698,8 +2685,8 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2741,9 +2728,8 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == android_store.id
     assert res_scan["assets"][0]["packageName"] == "com.example.android"
-    args = scan_mock.call_args[1]
+    args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android Store"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"
     assert len(args["assets"]) == 1
     assert "com.example.android" in args["assets"][0].package_name
 
@@ -2771,8 +2757,8 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan", return_value=scan
+    prepare_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2814,9 +2800,8 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == ios_store.id
     assert res_scan["assets"][0]["bundleId"] == "com.example.ios"
-    args = scan_mock.call_args[1]
+    args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios Store"
-    assert args["agent_group_definition"].agents[0].key == "agent/ostorlab/inject_asset"
     assert len(args["assets"]) == 1
     assert "com.example.ios" in args["assets"][0].bundle_id
 
