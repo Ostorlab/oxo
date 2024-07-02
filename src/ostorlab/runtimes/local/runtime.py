@@ -180,7 +180,6 @@ class LocalRuntime(runtime.Runtime):
             assets: The target asset to scan.
         """
 
-        console.info("Creating scan entry")
         if assets is None:
             assets_str = "N/A"
         else:

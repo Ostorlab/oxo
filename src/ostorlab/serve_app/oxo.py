@@ -2,8 +2,8 @@
 
 import ipaddress
 import pathlib
+import threading
 import uuid
-from concurrent import futures
 from typing import Optional, List
 
 import graphene
@@ -799,14 +799,11 @@ class RunScanMutation(graphene.Mutation):
         )
         RunScanMutation._persist_scan_info(created_scan, scan)
 
-        executor = futures.ThreadPoolExecutor(max_workers=1)
-        executor.submit(
-            RunScanMutation._run_scan_background,
-            runtime_instance,
-            agent_group,
-            scan,
-            scan_assets,
+        thread = threading.Thread(
+            target=RunScanMutation._run_scan_background,
+            args=(runtime_instance, agent_group, scan, scan_assets),
         )
+        thread.start()
         return RunScanMutation(scan=created_scan)
 
     @staticmethod
