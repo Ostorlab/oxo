@@ -170,6 +170,18 @@ class LocalRuntime(runtime.Runtime):
 
         self._docker_client = docker.from_env()
 
+    def prepare_scan(
+        self, title: str, assets: Optional[List[base_asset.Asset]]
+    ) -> models.Scan:
+        """Prepare scan entry in the database.
+
+        Args:
+            title: Scan title.
+            assets: The target asset to scan.
+        """
+        self._scan_db = self._create_scan_db(title=title)
+        return self._scan_db
+
     def scan(
         self,
         title: str,
@@ -190,13 +202,8 @@ class LocalRuntime(runtime.Runtime):
             The scan object.
         """
         try:
-            console.info("Creating scan entry")
-            if assets is None:
-                assets_str = "N/A"
-            else:
-                assets_str = f'{", ".join([str(asset) for asset in assets])}'
-                # TODO(mohsinenar): we need to add support for storing multiple assets and rename this to target.
-            self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
+            if self._scan_db is None:
+                self.prepare_scan(title=title, assets=assets)
             console.info("Creating network")
             self._create_network()
             console.info("Starting services")
@@ -305,9 +312,9 @@ class LocalRuntime(runtime.Runtime):
             else:
                 console.info(f"Scan {scan_id} was not found.")
 
-    def _create_scan_db(self, title: str, asset: str):
+    def _create_scan_db(self, title: str):
         """Persist the scan in the database"""
-        return models.Scan.create(title=title, asset=asset)
+        return models.Scan.create(title=title)
 
     def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
@@ -532,7 +539,6 @@ class LocalRuntime(runtime.Runtime):
             for scan in session.query(models.Scan):
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
-                    asset=scan.asset,
                     created_time=scan.created_time,
                     progress=scan.progress.value,
                 )

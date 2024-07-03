@@ -45,7 +45,6 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             else []
         )
         scan.title = scan_dict.get("title")
-        scan.asset = _get_asset_str(asset_dicts) if len(asset_dicts) > 0 else None
         scan.created_time = (
             datetime.datetime.strptime(
                 scan_dict.get("created_time"), "%Y-%m-%d %H:%M:%S"

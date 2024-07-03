@@ -9,7 +9,7 @@ from ostorlab.utils import risk_rating
 def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
     """Test when database does not exists, scan is populated in a newly created database."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    models.Scan.create(title="test", asset="Asset")
+    models.Scan.create(title="test")
 
     with models.Database() as session:
         assert session.query(models.Scan).count() == 1
@@ -483,7 +483,7 @@ def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
 ) -> None:
     """Ensure we correctly persist the scan and its asset & query the asset information."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    scan = models.Scan.create(title="Scan 42", asset="a.b.c")
+    scan = models.Scan.create(title="Scan 42")
     with models.Database() as session:
         asset = models.AndroidStore(
             package_name="a.b.c", application_name="Dummy application", scan_id=scan.id

@@ -25,7 +25,6 @@ def testExportScan_whenNetworkScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=network_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Network Scan"
-        assert scan.asset == "Network(s): 8.8.8.8/32, 8.8.4.4/32"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -38,6 +37,11 @@ def testExportScan_whenNetworkScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert network_scan.progress == models.ScanProgress.IN_PROGRESS
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 2
+        assert all(asset.type == "network" for asset in assets)
 
 
 def testExportScan_whenWebScan_shouldExportScan(
@@ -56,7 +60,6 @@ def testExportScan_whenWebScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=web_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Web Scan"
-        assert scan.asset == "Url(s): https://example.com, https://example.com"
         assert scan.progress == models.ScanProgress.DONE
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -69,6 +72,11 @@ def testExportScan_whenWebScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert web_scan.progress == models.ScanProgress.DONE
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 2
+        assert all(asset.type == "urls" for asset in assets)
 
 
 def testExportScan_whenAndroidFileScan_shouldExportScan(
@@ -87,7 +95,6 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=android_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Android File Scan"
-        assert scan.asset == "Android File"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -101,6 +108,11 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert android_file_scan.progress == models.ScanProgress.IN_PROGRESS
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 2
+        assert all(asset.type == "android_file" for asset in assets)
 
 
 def testExportScan_whenIOSFileScan_shouldExportScan(
@@ -119,7 +131,6 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=ios_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS File Scan"
-        assert scan.asset == "IOS File"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -133,6 +144,11 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert ios_file_scan.progress == models.ScanProgress.IN_PROGRESS
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 2
+        assert all(asset.type == "ios_file" for asset in assets)
 
 
 def testExportScan_whenAndroidStoreScan_shouldExportScan(
@@ -151,7 +167,6 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=android_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "Android Store Scan"
-        assert scan.asset == "Android Store: Example App"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -165,6 +180,11 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert android_store_scan.progress == models.ScanProgress.IN_PROGRESS
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 2
+        assert all(asset.type == "android_store" for asset in assets)
 
 
 def testExportScan_whenIOSStoreScan_shouldExportScan(
@@ -183,7 +203,6 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
         import_utils.import_scan(append_to_scan=ios_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS Store Scan"
-        assert scan.asset == "IOS Store: Example App"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)
@@ -197,6 +216,11 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
             for vuln in vulnerabilities
         )
         assert ios_store_scan.progress == models.ScanProgress.IN_PROGRESS
+        assets = (
+            session.query(models.Asset).filter(models.Asset.scan_id == scan.id).all()
+        )
+        assert len(assets) == 2
+        assert all(asset.type == "ios_store" for asset in assets)
 
 
 def testExportScan_whenMultipleAssets_shouldExportScan(
@@ -216,7 +240,6 @@ def testExportScan_whenMultipleAssets_shouldExportScan(
         )
         scan = session.query(models.Scan).first()
         assert scan.title == "Multiple Assets Scan"
-        assert scan.asset == "Android File, Network(s): 8.8.8.8/32, 8.8.4.4/32"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         vulnerabilities = (
             session.query(models.Vulnerability)

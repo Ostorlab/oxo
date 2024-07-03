@@ -22,7 +22,6 @@ def testScanRunIOSStore_whenNoOptionsProvided_shouldExitAndShowError(mocker):
 
 def testScanRunIOSStore_whenOptionsProvided_shouldRunCommand(mocker):
     runner = CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     result = runner.invoke(
         rootcli.rootcli,
@@ -36,4 +35,4 @@ def testScanRunIOSStore_whenOptionsProvided_shouldRunCommand(mocker):
         ],
     )
 
-    assert "Creating scan entry" in result.output
+    assert "Creating network" in result.output

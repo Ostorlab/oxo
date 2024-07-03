@@ -2,6 +2,7 @@
 
 import ipaddress
 import pathlib
+import threading
 import uuid
 from typing import Optional, List
 
@@ -793,6 +794,57 @@ class RunScanMutation(graphene.Mutation):
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
         runtime_instance.follow = []
+        created_scan = runtime_instance.prepare_scan(
+            assets=scan_assets, title=scan.title
+        )
+        RunScanMutation._persist_scan_info(created_scan, scan)
+
+        thread = threading.Thread(
+            target=RunScanMutation._run_scan_background,
+            args=(runtime_instance, agent_group, scan, scan_assets),
+        )
+        thread.start()
+        return RunScanMutation(scan=created_scan)
+
+    @staticmethod
+    def _persist_scan_info(
+        created_scan: models.Scan,
+        scan: types.OxoAgentScanInputType,
+    ) -> None:
+        """Persist scan infos related to agent group and assets.
+
+        Args:
+            created_scan: The created scan.
+            scan: The scan information.
+        """
+        with models.Database() as session:
+            created_scan.agent_group_id = scan.agent_group_id
+            session.add(created_scan)
+            session.commit()
+            assets_db = session.query(models.Asset).filter(
+                models.Asset.id.in_(scan.asset_ids)
+            )
+
+            for asset in assets_db:
+                asset.scan_id = created_scan.id
+
+            session.commit()
+
+    @staticmethod
+    def _run_scan_background(
+        runtime_instance: runtime.LocalRuntime,
+        agent_group: definitions.AgentGroupDefinition,
+        scan: types.OxoAgentScanInputType,
+        scan_assets: List[ostorlab_asset.Asset],
+    ) -> None:
+        """Run scan in background.
+
+        Args:
+            runtime_instance: The runtime instance.
+            agent_group: The agent group.
+            scan: The scan information.
+            scan_assets: The scan assets.
+        """
 
         try:
             can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
@@ -802,31 +854,16 @@ class RunScanMutation(graphene.Mutation):
         if can_run_scan is True:
             RunScanMutation._install_agents(agent_group, runtime_instance)
             try:
-                created_scan = runtime_instance.scan(
+                runtime_instance.scan(
                     title=scan.title,
                     agent_group_definition=agent_group,
                     assets=scan_assets,
                 )
 
-                with models.Database() as session:
-                    created_scan.agent_group_id = scan.agent_group_id
-                    session.add(created_scan)
-                    session.commit()
-                    assets_db = session.query(models.Asset).filter(
-                        models.Asset.id.in_(scan.asset_ids)
-                    )
-
-                    for asset in assets_db:
-                        asset.scan_id = created_scan.id
-
-                    session.commit()
-
             except exceptions.OstorlabError as e:
                 raise graphql.GraphQLError(
                     f"Runtime encountered an error to run scan: {e}"
                 )
-
-            return RunScanMutation(scan=created_scan)
 
 
 class Mutations(graphene.ObjectType):

@@ -36,6 +36,7 @@ from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import android_store
 from ostorlab.assets import ip
+from ostorlab.assets import domain_name
 from ostorlab.assets import asset as base_asset
 
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
@@ -160,7 +161,6 @@ class Scan(Base):
     __tablename__ = "scan"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String(255))
-    asset = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
     agent_group_id = sqlalchemy.Column(
@@ -169,7 +169,6 @@ class Scan(Base):
 
     @staticmethod
     def create(
-        asset: str,
         title: str = "",
         agent_group_id: Optional[int] = None,
         progress: sqlalchemy.Enum(ScanProgress) = ScanProgress.NOT_STARTED,
@@ -186,7 +185,6 @@ class Scan(Base):
         with Database() as session:
             scan = Scan(
                 title=title,
-                asset=asset,
                 created_time=datetime.datetime.now(),
                 progress=progress,
                 agent_group_id=agent_group_id,
@@ -815,6 +813,7 @@ class Asset(Base):
         """
         networks: List[Dict[str, Union[str, int]]] = []
         links: List[Dict[str, str]] = []
+        domains: List[Dict[str, str]] = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
@@ -824,6 +823,8 @@ class Asset(Base):
                 networks.append({"host": asset.host, "mask": asset.mask})
             elif isinstance(asset, link.Link):
                 links.append({"url": asset.url, "method": asset.method})
+            elif isinstance(asset, domain_name.DomainName):
+                domains.append({"name": asset.name})
             elif isinstance(asset, ios_ipa.IOSIpa):
                 IosFile.create(
                     path=asset.path,
@@ -848,6 +849,9 @@ class Asset(Base):
 
         if len(links) > 0:
             Urls.create(links=links, scan_id=scan_id)
+
+        if len(domains) > 0:
+            DomainAsset.create(domains=domains, scan_id=scan_id)
 
 
 class AndroidFile(Asset):

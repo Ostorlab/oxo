@@ -594,7 +594,6 @@ def web_scan(
     with models.Database() as session:
         scan = models.Scan(
             title="Web Scan",
-            asset="Web",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
@@ -634,7 +633,7 @@ def in_progress_web_scan(clean_db: None) -> models.Scan:
     """Create a dummy web scan."""
 
     return models.Scan.create(
-        title="Web Scan", asset="Web", progress=models.ScanProgress.IN_PROGRESS
+        title="Web Scan", progress=models.ScanProgress.IN_PROGRESS
     )
 
 
@@ -778,7 +777,6 @@ def android_scan(
     with models.Database() as session:
         scan = models.Scan(
             title="Android Scan 1 ",
-            asset="Android file",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
@@ -985,7 +983,6 @@ def multiple_assets_scan(
     with models.Database() as session:
         scan = models.Scan(
             title="Multiple Assets Scan",
-            asset="Multiple Assets",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
@@ -1106,7 +1103,6 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
     with models.Database() as session:
         scan = models.Scan(
             title="Scan 1",
-            asset="Any",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
         )
@@ -1124,7 +1120,6 @@ def scan_with_agent_group(
     """Create dummy scan with agent group."""
     return models.Scan.create(
         title="Scan with agent group",
-        asset="Web",
         progress=models.ScanProgress.DONE,
         agent_group_id=agent_groups[0].id,
     )
@@ -1307,7 +1302,6 @@ def network_scan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     scan = models.Scan.create(
         title="Network Scan",
-        asset="Network",
         progress=models.ScanProgress.IN_PROGRESS,
     )
     models.Vulnerability.create(
@@ -1348,7 +1342,6 @@ def android_file_scan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     scan = models.Scan.create(
         title="Android File Scan",
-        asset="Android file",
         progress=models.ScanProgress.IN_PROGRESS,
     )
     models.Vulnerability.create(
@@ -1390,7 +1383,6 @@ def ios_file_scan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     scan = models.Scan.create(
         title="IOS File Scan",
-        asset="IOS file",
         progress=models.ScanProgress.IN_PROGRESS,
     )
     models.Vulnerability.create(
@@ -1432,7 +1424,6 @@ def ios_store_scan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     scan = models.Scan.create(
         title="IOS Store Scan",
-        asset="IOS store",
         progress=models.ScanProgress.IN_PROGRESS,
     )
     models.Vulnerability.create(
@@ -1474,7 +1465,6 @@ def android_store_scan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     scan = models.Scan.create(
         title="Android Store Scan",
-        asset="Android store",
         progress=models.ScanProgress.IN_PROGRESS,
     )
     models.Vulnerability.create(
