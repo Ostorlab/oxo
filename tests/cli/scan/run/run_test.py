@@ -557,7 +557,7 @@ def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
         ],
     )
 
-    assert "Creating scan entry" in result.output
+    assert "Creating network" in result.output
 
 
 def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(

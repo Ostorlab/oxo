@@ -36,4 +36,4 @@ def testScanRunIOSStore_whenOptionsProvided_shouldRunCommand(mocker):
         ],
     )
 
-    assert "Creating scan entry" in result.output
+    assert "Creating network" in result.output

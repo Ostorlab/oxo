@@ -16,6 +16,7 @@ class Scan:
     id: str
     created_time: str
     progress: Optional[str]
+    asset: Optional[str] = None
 
 
 class Runtime(abc.ABC):

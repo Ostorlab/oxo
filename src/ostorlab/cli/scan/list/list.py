@@ -40,7 +40,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
             data = [
                 {
                     "id": str(s.id),
-                    "asset": _prepare_asset_str(s.id),
+                    "asset": s.asset or _prepare_asset_str(s.id),
                     "created_time": str(s.created_time),
                     "progress": styles.style_progress(s.progress),
                 }
