@@ -538,7 +538,6 @@ def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test ostorlab scan command when testflight asset is provided."""
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
