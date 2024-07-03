@@ -179,12 +179,7 @@ class LocalRuntime(runtime.Runtime):
             title: Scan title.
             assets: The target asset to scan.
         """
-
-        if assets is None:
-            assets_str = "N/A"
-        else:
-            assets_str = f'{", ".join([str(asset) for asset in assets])}'
-        self._scan_db = self._create_scan_db(asset=assets_str[:255], title=title)
+        self._scan_db = self._create_scan_db(title=title)
         return self._scan_db
 
     def scan(
@@ -317,9 +312,9 @@ class LocalRuntime(runtime.Runtime):
             else:
                 console.info(f"Scan {scan_id} was not found.")
 
-    def _create_scan_db(self, title: str, asset: str):
+    def _create_scan_db(self, title: str):
         """Persist the scan in the database"""
-        return models.Scan.create(title=title, asset=asset)
+        return models.Scan.create(title=title)
 
     def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
@@ -544,7 +539,6 @@ class LocalRuntime(runtime.Runtime):
             for scan in session.query(models.Scan):
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
-                    asset=scan.asset,
                     created_time=scan.created_time,
                     progress=scan.progress.value,
                 )

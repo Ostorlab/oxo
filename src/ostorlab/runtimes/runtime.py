@@ -14,7 +14,6 @@ class Scan:
     """Scan object."""
 
     id: str
-    asset: Optional[str]
     created_time: str
     progress: Optional[str]
 
