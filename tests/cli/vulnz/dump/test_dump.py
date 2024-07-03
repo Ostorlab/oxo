@@ -22,7 +22,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
 
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    create_scan_db = models.Scan.create(title="test", asset="android")
+    create_scan_db = models.Scan.create(title="test")
     vuln_db = models.Vulnerability.create(
         title="MyVuln",
         short_description="Xss",
@@ -340,7 +340,7 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
 
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    create_scan_db = models.Scan.create(title="test", asset="Android")
+    create_scan_db = models.Scan.create(title="test")
     vuln_db = models.Vulnerability.create(
         title="MyVuln",
         short_description="Xss",
@@ -410,7 +410,7 @@ def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(
     """
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    create_scan_db = models.Scan.create(title="test", asset="Android")
+    create_scan_db = models.Scan.create(title="test")
 
     vuln_db = models.Vulnerability.create(
         title="MyVuln",

@@ -244,7 +244,7 @@ def testImportScanMutation_whenScanExists_shouldImportScan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
 
     with models.Database() as session:
-        scan = models.Scan.create(title="Test Scan", asset="Test Asset")
+        scan = models.Scan.create(title="Test Scan")
         nbr_scans_before_import = session.query(models.Scan).count()
         query = """
             mutation ImportScan($scanId: Int, $file: Upload!) {
