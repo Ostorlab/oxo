@@ -202,7 +202,7 @@ class LocalRuntime(runtime.Runtime):
             The scan object.
         """
         try:
-            if hasattr(self, "_scan_db") is False or self._scan_db is None:
+            if self._scan_db is None:
                 self.prepare_scan(title=title, assets=assets)
             console.info("Creating network")
             self._create_network()
