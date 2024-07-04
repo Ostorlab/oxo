@@ -1,6 +1,8 @@
 """Unit tests for the export_utils module."""
 
 import io
+import json
+import zipfile
 
 from pytest_mock import plugin
 
@@ -253,3 +255,19 @@ def testExportScan_whenMultipleAssets_shouldExportScan(
         assert len(assets) == 4
         assert any(asset.type == "android_file" for asset in assets)
         assert any(asset.type == "network" for asset in assets)
+
+
+def testExportScan_whenScanHasNoVulz_exportRiskRatingAsNone(
+    scan: models.Scan,
+    db_engine_path: str,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test exporting a scan with no vulnerabilities."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    exported_bytes = export_utils.export_scan(scan=scan)
+
+    with zipfile.ZipFile(io.BytesIO(exported_bytes), "r") as zip_file:
+        with zip_file.open("scan.json") as scan_file:
+            scan_data = json.load(scan_file)
+            assert scan_data["risk_rating"] is None
