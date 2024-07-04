@@ -267,7 +267,6 @@ def testExportScan_whenScanHasNoVulz_exportRiskRatingAsNone(
 
     exported_bytes = export_utils.export_scan(scan=scan)
 
-    # open as zip file and check the content of scan.json
     with zipfile.ZipFile(io.BytesIO(exported_bytes), "r") as zip_file:
         with zip_file.open("scan.json") as scan_file:
             scan_data = json.load(scan_file)
