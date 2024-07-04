@@ -30,7 +30,7 @@ jobs:
       run: npm run generate
       working-directory: src/oxotitan
     - name: Copy Nuxt output
-      run: cp -r src/oxotitan/.output/public src/ostorlab/ui/static
+      run: cp -r src/oxotitan/.output/public/ src/ostorlab/ui/static/
     - name: Set up Python
       uses: actions/setup-python@v5.0.0
       with:
