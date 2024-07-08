@@ -11,6 +11,7 @@ name: Upload Python Package
 on:
   release:
     types: [published]
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -33,7 +34,9 @@ jobs:
       run: mkdir -p ostorlab/ui/static
       working-directory: src
     - name: Copy Nuxt output
-      run: cp -r src/oxotitan/.output/public/ src/ostorlab/ui/static/
+      run: cp -r src/oxotitan/.output/public/* src/ostorlab/ui/static
+    - name: Delete titan files
+      run: rm -rf src/oxotitan/*
     - name: Set up Python
       uses: actions/setup-python@v5.0.0
       with:
@@ -49,6 +52,11 @@ jobs:
         pip install build
     - name: Build package
       run: python -m build
+    - name: Archive package and upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: package
+        path: dist/*
     - name: Publish package
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
