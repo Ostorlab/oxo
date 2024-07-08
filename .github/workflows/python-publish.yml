@@ -53,19 +53,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install build
     - name: Build package
-      run: python -m build wheel setuptools
+      run: python -m build
     - name: Archive package and upload
       uses: actions/upload-artifact@v4
       with:
-        name: coverage
+        name: package
         path: dist/*
-    - name: Build using setup
-      run: python setup.py sdist bdist_wheel
-    - name: Upload package bdist_wheel
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage
-        path: build/*
 #    - name: Publish package
 #      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
 #      with:
