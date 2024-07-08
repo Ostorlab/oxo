@@ -31,7 +31,9 @@ jobs:
       run: mkdir -p ostorlab/ui/static
       working-directory: src
     - name: Copy Nuxt output
-      run: cp -r src/oxotitan/.output/public src/ostorlab/ui/static
+      run: cp -r src/oxotitan/.output/public/* src/ostorlab/ui/static
+    - name: Delete titan files
+      run: rm -rf src/oxotitan/*
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:

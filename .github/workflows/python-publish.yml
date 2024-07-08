@@ -39,8 +39,6 @@ jobs:
       run: cp -r src/oxotitan/.output/public/* src/ostorlab/ui/static
     - name: Delete titan files
       run: rm -rf src/oxotitan/*
-    - name: Debug Nuxt output
-      run: tree src/ostorlab/ui/static/
     - name: Set up Python
       uses: actions/setup-python@v5.0.0
       with:
