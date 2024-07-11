@@ -8,7 +8,7 @@ import click
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan import scan
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import styles
+from ostorlab.utils import styles, risk_rating
 
 console = cli_console.Console()
 
@@ -34,6 +34,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                 "Asset": "asset",
                 "Created Time": "created_time",
                 "Progress": "progress",
+                "Risk Rating": "risk_rating",
             }
             title = f"Showing {len(scans)} Scans"
 
@@ -43,6 +44,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                     "asset": s.asset or _prepare_asset_str(s.id),
                     "created_time": str(s.created_time),
                     "progress": styles.style_progress(s.progress),
+                    "risk_rating": styles.style_risk(s.risk_rating if s.risk_rating is not None else risk_rating.RiskRating.UNKNOWN.name),
                 }
                 for s in scans
             ]

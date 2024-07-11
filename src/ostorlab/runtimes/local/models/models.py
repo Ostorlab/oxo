@@ -163,6 +163,7 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
+    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(utils_rik_rating.RiskRating))
     agent_group_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id")
     )
@@ -259,6 +260,21 @@ class Vulnerability(Base):
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
         return location_markdwon_value
 
+
+    @staticmethod
+    def _get_scan_risk_rating(scan_vulns: List["Vulnerability"]) -> utils_rik_rating.RiskRating:
+        """Get the risk rating of the scan.
+
+        Args:
+            scan_vulns: List of vulnerabilities of the scan.
+
+        Returns:
+            Risk rating of the scan.
+        """
+        return min(
+            scan_vulns, key=lambda vuln: utils_rik_rating.RATINGS_ORDER[vuln.risk_rating.name]
+        ).risk_rating
+
     @staticmethod
     def create(
         scan_id: int,
@@ -301,7 +317,7 @@ class Vulnerability(Base):
             recommendation=recommendation,
             references=references_md,
             technical_detail=technical_detail,
-            risk_rating=risk_rating,
+            risk_rating=utils_rik_rating.RiskRating[risk_rating.upper()],
             cvss_v3_vector=cvss_v3_vector,
             dna=dna,
             location=vuln_location,
@@ -309,6 +325,13 @@ class Vulnerability(Base):
 
         with Database() as session:
             session.add(vuln)
+            session.commit()
+
+            scan = session.query(Scan).get(scan_id)
+            scan_vulns = session.query(Vulnerability).filter_by(scan_id=scan_id).all()
+
+            scan.risk_rating = Vulnerability._get_scan_risk_rating(scan_vulns)
+            session.merge(scan)
             session.commit()
 
         for reference in references:

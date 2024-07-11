@@ -10,6 +10,7 @@ STYLE_RISK_MAP = {
     "SECURE": "[bold bright_white on green #2D6B32]Secure[/]",
     "INFO": "[bold bright_white on #036CDB]Info[/]",
     "IMPORTANT": "[bold bright_white on #43A047]Important[/]",
+    "UNKNOWN": "[bold bright_white on #AAAA90]Unknown[/]",
 }
 
 

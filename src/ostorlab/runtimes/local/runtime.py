@@ -537,10 +537,22 @@ class LocalRuntime(runtime.Runtime):
         scans = {}
         with models.Database() as session:
             for scan in session.query(models.Scan):
+                if scan.risk_rating is None:
+                    scan = session.query(models.Scan).filter_by(id=scan.id).first()
+                    vulnz = session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+                    scan.risk_rating = min(
+                        [vuln.risk_rating for vuln in vulnz],
+                        key=lambda risk: risk_rating.RATINGS_ORDER.get(risk, 9),
+                        default=None,
+                    )
+                    session.merge(scan)
+                    session.commit()
+
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
                     created_time=scan.created_time,
                     progress=scan.progress.value,
+                    risk_rating=scan.risk_rating.name if scan.risk_rating is not None else None,
                 )
 
         universe_ids = set()

@@ -16,6 +16,7 @@ class RiskRating(enum.Enum):
     SECURE = "Secure"
     IMPORTANT = "Important"
     INFO = "Info"
+    UNKNOWN = "Unknown"
 
     @classmethod
     def has_value(cls, value: str) -> bool:
@@ -36,4 +37,5 @@ RATINGS_ORDER = {
     RiskRating.SECURE.name: 6,
     RiskRating.IMPORTANT.name: 7,
     RiskRating.INFO.name: 8,
+    RiskRating.UNKNOWN.name: 9,
 }
