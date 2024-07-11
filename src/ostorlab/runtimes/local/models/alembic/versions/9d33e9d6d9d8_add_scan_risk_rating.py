@@ -1,8 +1,8 @@
 """Add scan risk rating
 
-Revision ID: d57ba066984e
+Revision ID: 9d33e9d6d9d8
 Revises: cbb2e16e146a
-Create Date: 2024-07-11 16:43:43.929615
+Create Date: 2024-07-11 18:00:34.404270
 
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "d57ba066984e"
+revision = "9d33e9d6d9d8"
 down_revision = "cbb2e16e146a"
 branch_labels = None
 depends_on = None
@@ -33,6 +33,7 @@ def upgrade() -> None:
                     "SECURE",
                     "IMPORTANT",
                     "INFO",
+                    "UNKNOWN",
                     name="riskrating",
                 ),
                 nullable=True,
