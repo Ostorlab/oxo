@@ -44,7 +44,11 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                     "asset": s.asset or _prepare_asset_str(s.id),
                     "created_time": str(s.created_time),
                     "progress": styles.style_progress(s.progress),
-                    "risk_rating": styles.style_risk(s.risk_rating if s.risk_rating is not None else risk_rating.RiskRating.UNKNOWN.name),
+                    "risk_rating": styles.style_risk(
+                        s.risk_rating
+                        if s.risk_rating is not None
+                        else risk_rating.RiskRating.UNKNOWN.name
+                    ),
                 }
                 for s in scans
             ]

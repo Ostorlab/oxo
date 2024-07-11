@@ -260,9 +260,10 @@ class Vulnerability(Base):
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
         return location_markdwon_value
 
-
     @staticmethod
-    def _get_scan_risk_rating(scan_vulns: List["Vulnerability"]) -> utils_rik_rating.RiskRating:
+    def _get_scan_risk_rating(
+        scan_vulns: List["Vulnerability"],
+    ) -> utils_rik_rating.RiskRating:
         """Get the risk rating of the scan.
 
         Args:
@@ -272,7 +273,8 @@ class Vulnerability(Base):
             Risk rating of the scan.
         """
         return min(
-            scan_vulns, key=lambda vuln: utils_rik_rating.RATINGS_ORDER[vuln.risk_rating.name]
+            scan_vulns,
+            key=lambda vuln: utils_rik_rating.RATINGS_ORDER[vuln.risk_rating.name],
         ).risk_rating
 
     @staticmethod

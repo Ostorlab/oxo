@@ -636,7 +636,9 @@ def testWhenNewVulnerabilityReported_always_scanRiskRatingIsUpdated(
         assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).all()[0]
         assert scan.risk_rating == risk_rating.RiskRating.INFO
-        scan_vulnz = session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        scan_vulnz = (
+            session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        )
         assert len(scan_vulnz) == 1
         assert scan_vulnz[0].risk_rating == risk_rating.RiskRating.INFO
 
@@ -666,7 +668,9 @@ def testWhenNewVulnerabilityReported_always_scanRiskRatingIsUpdated(
         assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).all()[0]
         assert scan.risk_rating == risk_rating.RiskRating.CRITICAL
-        scan_vulnz = session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        scan_vulnz = (
+            session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        )
         assert len(scan_vulnz) == 2
         assert any(
             vuln.risk_rating == risk_rating.RiskRating.CRITICAL for vuln in scan_vulnz
