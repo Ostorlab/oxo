@@ -183,7 +183,9 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
     scan_dict = {
         "title": scan.title,
         "created_time": scan.created_time.strftime("%Y-%m-%d %H:%M:%S"),
-        "risk_rating": _compute_risk_rating(scan_id=scan.id),
+        "risk_rating": scan.risk_rating.name.lower()
+        if scan.risk_rating is not None
+        else _compute_risk_rating(scan.id),
         "status": [],
     }
 
