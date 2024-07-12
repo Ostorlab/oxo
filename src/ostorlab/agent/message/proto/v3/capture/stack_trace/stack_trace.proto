@@ -1,0 +1,36 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.capture.stack_trace;
+
+// Arg represents an argument in a stack frame.
+message Arg {
+  optional string name = 1; // The name of the argument.
+  optional bytes value = 2; // The value of the argument.
+  optional string type = 3; // The type of the argument.
+}
+
+// Frame represents a single frame in a stack trace.
+message Frame {
+  optional string file_path = 1; // The file path where the frame is located.
+  optional string function_name = 2; // The function name where the frame is located.
+  optional string class_name = 3; // The class name where the frame is located.
+  optional string package_name = 4; // The package name where the frame is located.
+  optional string return_type = 5; // The return type of the function in the frame.
+  optional uint64 address = 6; // The memory address of the frame.
+  repeated Arg args = 7; // The arguments of the function in the frame.
+}
+
+// Input represents an input to the captured stack trace.
+message Input {
+  optional string name = 1; // The name of the input.
+  optional bytes value = 2; // The value of the input.
+  optional string type = 3; // The type of the input.
+}
+
+// Message represents the captured stack trace message.
+message Message {
+  repeated Frame frames = 1; // The frames in the stack trace.
+  optional string thread_id = 2; // The ID of the thread where the stack trace was captured.
+  optional float time = 3; // The time when the stack trace was captured.
+  repeated Input inputs = 4; // The inputs to the stack trace.
+}
