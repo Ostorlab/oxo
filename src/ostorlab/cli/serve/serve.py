@@ -25,7 +25,7 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
 
         cli = sys.modules["flask.cli"]
         cli.show_server_banner = lambda *x: None
-        # Disable werkzeug log_startup, this can't be done by overriding BaseWSGIServer class because it's used by Flask
+        # Disable werkzeug log_startup, this can't be done by overriding BaseWSGIServer class because it's used by Flask.
         werkzeug.serving.BaseWSGIServer.log_startup = lambda *x: None
     except ImportError as e:
         missing_dependency = e.name
