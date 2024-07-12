@@ -5,5 +5,5 @@ package ostorlab.agent.message.proto.v3.asset.file.api_schema.openapi;
 message Message{
   optional bytes content = 1;
   optional string url = 2;
-  optional string type = 3;
+  optional string schema_type = 3;
  }
