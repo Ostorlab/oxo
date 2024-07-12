@@ -3,6 +3,8 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
+from typing import Union
+
 import click
 
 from ostorlab.cli import console as cli_console
@@ -53,7 +55,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
             console.error("Error fetching scan list.")
 
 
-def _get_risk_rating(risk: str | risk_rating.RiskRating) -> str:
+def _get_risk_rating(risk: Union[risk_rating.RiskRating, str, None]) -> str:
     """Get the risk rating string."""
     if risk is None:
         return "UNKNOWN"
