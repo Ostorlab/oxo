@@ -1,5 +1,7 @@
 """Module for the ostorlab serve command."""
 
+import sys
+
 import click
 
 from ostorlab.cli import console as cli_console
@@ -19,6 +21,12 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
     """Run the Flask serve with the specified host and port."""
     try:
         from ostorlab.serve_app import app
+        import werkzeug
+
+        cli = sys.modules["flask.cli"]
+        cli.show_server_banner = lambda *x: None
+        # Disable werkzeug log_startup, this can't be done by overriding BaseWSGIServer class because it's used by Flask.
+        werkzeug.serving.BaseWSGIServer.log_startup = lambda *x: None
     except ImportError as e:
         missing_dependency = e.name
         raise click.ClickException(
