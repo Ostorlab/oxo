@@ -10,6 +10,7 @@ from typing import Optional
 
 from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models, utils
+from ostorlab.utils import risk_rating
 
 SCAN_JSON = "scan.json"
 ASSET_JSON = "asset.json"
@@ -64,6 +65,11 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             if status["key"] == "progress":
                 last_status = status["value"].upper()
         scan.progress = models.ScanProgress[last_status]
+        scan.risk_rating = (
+            risk_rating.RiskRating[scan_dict.get("risk_rating").upper()]
+            if scan_dict.get("risk_rating") is not None
+            else None
+        )
         session.merge(scan)
         session.commit()
 

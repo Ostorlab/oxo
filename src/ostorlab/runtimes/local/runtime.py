@@ -541,6 +541,7 @@ class LocalRuntime(runtime.Runtime):
                     id=scan.id,
                     created_time=scan.created_time,
                     progress=scan.progress.value,
+                    risk_rating=scan.risk_rating,
                 )
 
         universe_ids = set()

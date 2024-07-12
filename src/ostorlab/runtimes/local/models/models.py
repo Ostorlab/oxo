@@ -163,6 +163,7 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
+    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(utils_rik_rating.RiskRating))
     agent_group_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id")
     )
@@ -301,7 +302,7 @@ class Vulnerability(Base):
             recommendation=recommendation,
             references=references_md,
             technical_detail=technical_detail,
-            risk_rating=risk_rating,
+            risk_rating=utils_rik_rating.RiskRating[risk_rating.upper()],
             cvss_v3_vector=cvss_v3_vector,
             dna=dna,
             location=vuln_location,
@@ -309,6 +310,16 @@ class Vulnerability(Base):
 
         with Database() as session:
             session.add(vuln)
+            session.commit()
+
+            scan = session.query(Scan).get(scan_id)
+            scan_vulns = session.query(Vulnerability).filter_by(scan_id=scan_id).all()
+
+            scan.risk_rating = min(
+                scan_vulns,
+                key=lambda vuln: utils_rik_rating.RATINGS_ORDER[vuln.risk_rating.name],
+            ).risk_rating
+            session.merge(scan)
             session.commit()
 
         for reference in references:

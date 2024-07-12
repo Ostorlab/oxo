@@ -684,6 +684,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     )
     message_status = graphene.String()
     progress = graphene.String()
+    risk_rating = graphene.String()
     assets = graphene.List(OxoAssetType)
     agent_group = graphene.Field(OxoAgentGroupType)
 
@@ -710,6 +711,16 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
 
         return self.progress.name
+
+    def resolve_risk_rating(self: models.Scan, info: graphql_base.ResolveInfo) -> str:
+        """Resolve risk rating query.
+        Args:
+            self (models.Scan): The scan object.
+            info (graphql_base.ResolveInfo): GraphQL resolve info.
+        Returns:
+            str: The risk rating of the scan.
+        """
+        return self.risk_rating.name
 
     def resolve_assets(
         self,

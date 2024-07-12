@@ -34,6 +34,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                 "Asset": "asset",
                 "Created Time": "created_time",
                 "Progress": "progress",
+                "Risk Rating": "risk_rating",
             }
             title = f"Showing {len(scans)} Scans"
 
@@ -43,6 +44,9 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                     "asset": s.asset or _prepare_asset_str(s.id),
                     "created_time": str(s.created_time),
                     "progress": styles.style_progress(s.progress),
+                    "risk_rating": styles.style_risk(
+                        s.risk_rating if s.risk_rating is not None else "UNKNOWN"
+                    ),
                 }
                 for s in scans
             ]

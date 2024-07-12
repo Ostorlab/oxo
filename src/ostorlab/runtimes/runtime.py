@@ -17,6 +17,7 @@ class Scan:
     created_time: str
     progress: Optional[str]
     asset: Optional[str] = None
+    risk_rating: Optional[str] = None
 
 
 class Runtime(abc.ABC):
