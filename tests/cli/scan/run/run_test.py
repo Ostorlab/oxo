@@ -678,3 +678,35 @@ def testOstorlabScanRunCLI_whenLink_shouldLinkAssetToScan(
         assert len(links) == 1
         assert links[0].url == "https://ostorlab.co"
         assert links[0].method == "GET"
+
+
+def testOstorlabScanRunCLI_whenApiSchemaAsset_shouldRunCommand(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan command when API schema asset is provided."""
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        with open("schema.graphql", "w", encoding="utf-8") as f:
+            f.write("query {}")
+            f.seek(0)
+
+        result = runner.invoke(
+            rootcli.rootcli,
+            [
+                "scan",
+                "--runtime=local",
+                "run",
+                "--agent=agent/ostorlab/api_autodiscovery",
+                "api-schema",
+                "--file",
+                "schema.graphql",
+                "--url",
+                "https://countries.trevorblades.com/graphql",
+            ],
+        )
+
+        assert "Creating network" in result.output
