@@ -24,5 +24,6 @@ __all__ = (
     "link",
     "android_store",
     "ios_store",
+    "ios_testflight",
     "api_schema",
 )
