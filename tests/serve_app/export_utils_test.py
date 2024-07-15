@@ -249,7 +249,7 @@ def testExportScan_whenMultipleAssets_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "Multiple Assets Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
-        assert scan.risk_rating == risk_rating.RiskRating.M
+        assert scan.risk_rating == risk_rating.RiskRating.HIGH
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)

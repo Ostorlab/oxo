@@ -987,6 +987,7 @@ def multiple_assets_scan(
             title="Multiple Assets Scan",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
+            risk_rating=risk_rating.RiskRating.HIGH,
         )
         session.add(scan)
         session.commit()
