@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql;
+package ostorlab.agent.message.proto.v3.asset.file.api_schema;
 
 message AndroidMetadata {
   optional string package_name = 1;
@@ -18,5 +18,5 @@ message Message{
     IOSMetadata ios_metadata = 5;
   }
   optional string endpoint_url = 6;
-  optional string schema_type = 7 [default = "graphql"];
+  optional string schema_type = 7;
  }

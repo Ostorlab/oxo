@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto2',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\nKostorlab/agent/message/proto/v3/asset/file/api_schema/graphql/graphql.proto\x12=ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"\xca\x02\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0b\x63ontent_url\x18\x03 \x01(\t\x12j\n\x10\x61ndroid_metadata\x18\x04 \x01(\x0b\x32N.ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql.AndroidMetadataH\x00\x12\x62\n\x0cios_metadata\x18\x05 \x01(\x0b\x32J.ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql.IOSMetadataH\x00\x12\x14\n\x0c\x65ndpoint_url\x18\x06 \x01(\t\x12\x13\n\x0bschema_type\x18\x07 \x01(\tB\x10\n\x0emetadata_oneof'
+  serialized_pb=b'\nKostorlab/agent/message/proto/v3/asset/file/api_schema/graphql/graphql.proto\x12=ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"\xd3\x02\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0b\x63ontent_url\x18\x03 \x01(\t\x12j\n\x10\x61ndroid_metadata\x18\x04 \x01(\x0b\x32N.ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql.AndroidMetadataH\x00\x12\x62\n\x0cios_metadata\x18\x05 \x01(\x0b\x32J.ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql.IOSMetadataH\x00\x12\x14\n\x0c\x65ndpoint_url\x18\x06 \x01(\t\x12\x1c\n\x0bschema_type\x18\x07 \x01(\t:\x07graphqlB\x10\n\x0emetadata_oneof'
 )
 
 
@@ -142,7 +142,7 @@ _MESSAGE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='schema_type', full_name='ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql.Message.schema_type', index=6,
       number=7, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      has_default_value=True, default_value=b"graphql".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -164,7 +164,7 @@ _MESSAGE = _descriptor.Descriptor(
     fields=[]),
   ],
   serialized_start=218,
-  serialized_end=548,
+  serialized_end=557,
 )
 
 _MESSAGE.fields_by_name['android_metadata'].message_type = _ANDROIDMETADATA

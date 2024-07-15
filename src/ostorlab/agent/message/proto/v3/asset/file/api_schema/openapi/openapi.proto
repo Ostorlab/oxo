@@ -18,5 +18,5 @@ message Message{
     IOSMetadata ios_metadata = 5;
   }
   optional string endpoint_url = 6;
-  optional string schema_type = 7;
+  optional string schema_type = 7 [default = "openapi"];
  }
