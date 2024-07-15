@@ -9,7 +9,7 @@ from ostorlab.cli import rootcli
 def testScanRunApiSchema_whenApiSchemaFileAndUrlAreProvided_callScanWithValidAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Test oxo scan run api-schema command with --file and --file option. Should call scan with valid asset."""
+    """Test oxo scan run api-schema command with --file and --url option. Should call scan with valid asset."""
 
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
