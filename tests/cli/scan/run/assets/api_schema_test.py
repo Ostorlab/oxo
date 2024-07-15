@@ -1,6 +1,6 @@
-"""Tests for scan run file command."""
+"""Tests for scan run api-schema command."""
 
-from click.testing import CliRunner
+from click import testing as click_testing
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
@@ -11,7 +11,7 @@ def testScanRunApiSchema_whenApiSchemaFileAndUrlAreProvided_callScanWithValidAss
 ) -> None:
     """Test oxo scan run api-schema command with --file and --url option. Should call scan with valid asset."""
 
-    runner = CliRunner()
+    runner = click_testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(

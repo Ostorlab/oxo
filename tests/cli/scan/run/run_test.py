@@ -687,7 +687,10 @@ def testOstorlabScanRunCLI_whenApiSchemaAsset_shouldRunCommand(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+
     runner = CliRunner()
+
+    spy_follow = mocker.spy(run, "prepare_agents_to_follow")
 
     with runner.isolated_filesystem():
         with open("schema.graphql", "w", encoding="utf-8") as f:
@@ -698,7 +701,6 @@ def testOstorlabScanRunCLI_whenApiSchemaAsset_shouldRunCommand(
             rootcli.rootcli,
             [
                 "scan",
-                "--runtime=local",
                 "run",
                 "--agent=agent/ostorlab/api_autodiscovery",
                 "api-schema",
@@ -710,3 +712,7 @@ def testOstorlabScanRunCLI_whenApiSchemaAsset_shouldRunCommand(
         )
 
         assert "Creating network" in result.output
+        assert spy_follow.called is True
+        assert spy_follow.call_count == 1
+        assert len(spy_follow.spy_return) == 1
+        assert "agent/ostorlab/api_autodiscovery" in spy_follow.spy_return

@@ -1,4 +1,4 @@
-"""File asset."""
+"""API Schema asset."""
 
 import dataclasses
 from typing import Optional
@@ -13,8 +13,8 @@ class ApiSchema(asset.Asset):
 
     def __init__(
         self,
-        content: Optional[bytes] = None,
-        url: Optional[str] = None,
+        content: bytes,
+        url: str,
         schema_type: Optional[str] = None,
     ):
         self.content = content
