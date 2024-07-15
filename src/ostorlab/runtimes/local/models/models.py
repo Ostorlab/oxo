@@ -26,7 +26,7 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.models import utils
-from ostorlab.utils import risk_rating as utils_rik_rating
+from ostorlab.utils import risk_rating as risk_rating_utilities
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
 from ostorlab.assets import link
@@ -163,7 +163,7 @@ class Scan(Base):
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
-    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(utils_rik_rating.RiskRating))
+    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(risk_rating_utilities.RiskRating))
     agent_group_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id")
     )
@@ -201,7 +201,7 @@ class Vulnerability(Base):
     __tablename__ = "vulnerability"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     technical_detail = sqlalchemy.Column(sqlalchemy.Text)
-    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(utils_rik_rating.RiskRating))
+    risk_rating = sqlalchemy.Column(sqlalchemy.Enum(risk_rating_utilities.RiskRating))
     cvss_v3_vector = sqlalchemy.Column(sqlalchemy.String(1024))
     dna = sqlalchemy.Column(sqlalchemy.String(256))
     title = sqlalchemy.Column(sqlalchemy.String(256))
@@ -302,7 +302,7 @@ class Vulnerability(Base):
             recommendation=recommendation,
             references=references_md,
             technical_detail=technical_detail,
-            risk_rating=utils_rik_rating.RiskRating[risk_rating.upper()],
+            risk_rating=risk_rating_utilities.RiskRating[risk_rating.upper()],
             cvss_v3_vector=cvss_v3_vector,
             dna=dna,
             location=vuln_location,
@@ -317,7 +317,9 @@ class Vulnerability(Base):
 
             scan.risk_rating = min(
                 scan_vulns,
-                key=lambda vuln: utils_rik_rating.RATINGS_ORDER[vuln.risk_rating.name],
+                key=lambda vuln: risk_rating_utilities.RATINGS_ORDER[
+                    vuln.risk_rating.name
+                ],
             ).risk_rating
             session.merge(scan)
             session.commit()
