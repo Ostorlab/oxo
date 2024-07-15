@@ -26,7 +26,14 @@ def api_schema(
     url: str,
     schema_type: Optional[str] = None,
 ) -> None:
-    """Run scan for an API Schema asset."""
+    """Run scan for an API Schema asset.
+
+    Args:
+        ctx: The Click context.
+        file: The schema file.
+        url: The URL that uses the schema.
+        schema_type: Optional type of schema (GraphQL, WSDL, or OpenAPI).
+    """
     runtime = ctx.obj["runtime"]
     assets = [
         api_schema_asset.ApiSchema(
