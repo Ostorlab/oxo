@@ -609,3 +609,72 @@ def testGetAgentGroupsByAssetType_always_retrievesAgentGroupsByAssetType(
         assert agent_group_2.description in [
             group.description for group in agent_groups_link
         ]
+
+
+def testWhenNewVulnerabilityReported_always_scanRiskRatingIsUpdated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test updating the scan risk rating when a new vulnerability is reported."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(title="Test Scan")
+
+    models.Vulnerability.create(
+        title="Info Vuln",
+        short_description="Info",
+        description="Informational vuln",
+        recommendation="None",
+        technical_detail="None",
+        risk_rating="INFO",
+        cvss_v3_vector="0:0:0",
+        dna="121312",
+        location={},
+        scan_id=scan.id,
+        references=[],
+    )
+
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 1
+        scan = session.query(models.Scan).all()[0]
+        assert scan.risk_rating == risk_rating.RiskRating.INFO
+        scan_vulnz = (
+            session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        )
+        assert len(scan_vulnz) == 1
+        assert scan_vulnz[0].risk_rating == risk_rating.RiskRating.INFO
+
+    models.Vulnerability.create(
+        title="Critical Vuln",
+        short_description="XSS",
+        description="Javascript Critical vuln",
+        recommendation="Sanitize data",
+        technical_detail="a=$input",
+        risk_rating="CRITICAL",
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={
+            "link": {"url": "http://test.com"},
+            "metadata": [{"type": "CODE_LOCATION", "value": "some/file.swift:42"}],
+        },
+        scan_id=scan.id,
+        references=[
+            {
+                "title": "C++ Core Guidelines R.10 - Avoid malloc() and free()",
+                "url": "url",
+            }
+        ],
+    )
+
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 1
+        scan = session.query(models.Scan).all()[0]
+        assert scan.risk_rating == risk_rating.RiskRating.CRITICAL
+        scan_vulnz = (
+            session.query(models.Vulnerability).filter_by(scan_id=scan.id).all()
+        )
+        assert len(scan_vulnz) == 2
+        assert any(
+            vuln.risk_rating == risk_rating.RiskRating.CRITICAL for vuln in scan_vulnz
+        )
+        assert any(
+            vuln.risk_rating == risk_rating.RiskRating.INFO for vuln in scan_vulnz
+        )

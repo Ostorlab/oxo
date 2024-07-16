@@ -161,6 +161,7 @@ class CloudRuntime(runtime.Runtime):
                     asset=scan["assetType"],
                     created_time=scan["createdTime"],
                     progress=scan["progress"],
+                    risk_rating=scan["riskRating"],
                 )
                 for scan in scans
             ]

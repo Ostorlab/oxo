@@ -3,12 +3,14 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
+from typing import Union
+
 import click
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan import scan
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import styles
+from ostorlab.utils import styles, risk_rating
 
 console = cli_console.Console()
 
@@ -34,15 +36,16 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
                 "Asset": "asset",
                 "Created Time": "created_time",
                 "Progress": "progress",
+                "Risk Rating": "risk_rating",
             }
             title = f"Showing {len(scans)} Scans"
-
             data = [
                 {
                     "id": str(s.id),
                     "asset": s.asset or _prepare_asset_str(s.id),
                     "created_time": str(s.created_time),
                     "progress": styles.style_progress(s.progress),
+                    "risk_rating": styles.style_risk(_get_risk_rating(s.risk_rating)),
                 }
                 for s in scans
             ]
@@ -50,6 +53,16 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
             console.table(columns=columns, data=data, title=title)
         else:
             console.error("Error fetching scan list.")
+
+
+def _get_risk_rating(risk: Union[risk_rating.RiskRating, str, None]) -> str:
+    """Get the risk rating string."""
+    if risk is None:
+        return "UNKNOWN"
+    elif isinstance(risk, risk_rating.RiskRating):
+        return risk.name
+    else:
+        return risk
 
 
 def _prepare_asset_str(scan_id: int) -> str:
