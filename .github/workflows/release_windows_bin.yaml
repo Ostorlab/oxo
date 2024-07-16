@@ -1,8 +1,6 @@
 on:
   release:
     types: [published]
-
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -34,6 +32,7 @@ jobs:
       run: cp -r src/oxotitan/.output/public/* src/ostorlab/ui/static
     - name: Delete titan files
       run: rm -rf src/oxotitan/*
+      shell: bash
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
