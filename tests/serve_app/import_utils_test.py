@@ -15,6 +15,7 @@ def testImportScan_always_shouldImportScan(
         scan = session.query(models.Scan).all()[-1]
         assert scan.title == "swiftvulnerableapp-v0.7.ipa"
         assert scan.progress == models.ScanProgress.DONE
+        assert scan.risk_rating == risk_rating.RiskRating.HIGH
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)

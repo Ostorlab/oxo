@@ -28,6 +28,7 @@ def testExportScan_whenNetworkScan_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "Network Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
+        assert scan.risk_rating == risk_rating.RiskRating.HIGH
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)
@@ -63,6 +64,7 @@ def testExportScan_whenWebScan_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "Web Scan"
         assert scan.progress == models.ScanProgress.DONE
+        assert scan.risk_rating == risk_rating.RiskRating.HIGH
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)
@@ -98,6 +100,7 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "Android File Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
+        assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)
@@ -134,6 +137,7 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS File Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
+        assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)
@@ -170,6 +174,7 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "Android Store Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
+        assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)
@@ -206,6 +211,7 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "IOS Store Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
+        assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)
@@ -243,6 +249,7 @@ def testExportScan_whenMultipleAssets_shouldExportScan(
         scan = session.query(models.Scan).first()
         assert scan.title == "Multiple Assets Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
+        assert scan.risk_rating == risk_rating.RiskRating.HIGH
         vulnerabilities = (
             session.query(models.Vulnerability)
             .filter(models.Vulnerability.scan_id == scan.id)

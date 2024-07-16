@@ -649,11 +649,13 @@ def ios_scans(
             title="iOS Scan 1 ",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
+            risk_rating=risk_rating.RiskRating.HIGH,
         )
         scan2 = models.Scan(
             title="iOS Scan 2",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
+            risk_rating=risk_rating.RiskRating.MEDIUM,
         )
         session.add(scan1)
         session.add(scan2)
@@ -985,6 +987,7 @@ def multiple_assets_scan(
             title="Multiple Assets Scan",
             progress=models.ScanProgress.DONE,
             created_time=datetime.datetime.now(),
+            risk_rating=risk_rating.RiskRating.HIGH,
         )
         session.add(scan)
         session.commit()

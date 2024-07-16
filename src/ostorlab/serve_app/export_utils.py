@@ -183,7 +183,9 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
     scan_dict = {
         "title": scan.title,
         "created_time": scan.created_time.strftime("%Y-%m-%d %H:%M:%S"),
-        "risk_rating": _compute_risk_rating(scan_id=scan.id),
+        "risk_rating": scan.risk_rating.name.lower()
+        if scan.risk_rating is not None
+        else None,
         "status": [],
     }
 
@@ -248,33 +250,3 @@ def _export_vulnz(scan_id: int, archive: zipfile.ZipFile) -> None:
                 }
             )
         archive.writestr(VULNERABILITY_JSON, json.dumps(vulns_list))
-
-
-def _compute_risk_rating(scan_id: int) -> Optional[str]:
-    """Compute the risk rating for the given scan id.
-
-    Args:
-        scan_id: The scan id.
-    """
-
-    with models.Database() as session:
-        scan = session.query(models.Scan).filter(models.Scan.id == scan_id).first()
-        if scan is None:
-            return None
-
-        vulnerabilities = session.query(models.Vulnerability).filter(
-            models.Vulnerability.scan_id == scan_id
-        )
-        distinct_vulnz = vulnerabilities.distinct(
-            models.Vulnerability.risk_rating,
-        ).all()
-
-        if len(distinct_vulnz) == 0:
-            return None
-
-        vuln_highest_risk = max(
-            distinct_vulnz,
-            key=lambda vuln: RISK_RATINGS_ORDER[vuln.risk_rating.name],
-        )
-        scan_risk_rating = vuln_highest_risk.risk_rating.name.lower()
-        return scan_risk_rating

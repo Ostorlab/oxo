@@ -306,6 +306,7 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
                     title
                     progress
                     createdTime
+                    riskRating
                     assets {
                             ... on OxoIOSFileAssetType {
                                 path
@@ -332,11 +333,13 @@ def testQueryMultipleScans_always_shouldReturnMultipleScans(
     assert scan1["assets"][0]["path"] == "/path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
+    assert scan1["riskRating"] == scans[0].risk_rating.name
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
     assert scan2["assets"][0]["bundleId"] == "com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
+    assert scan2["riskRating"] == scans[1].risk_rating.name
 
 
 def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResults(
@@ -353,6 +356,7 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
                 scans {
                     id
                     title
+                    riskRating
                     assets {
                             ... on OxoIOSFileAssetType {
                                 path
@@ -391,11 +395,13 @@ def testQueryMultipleScans_whenPaginationAndSortAsc_shouldReturnTheCorrectResult
     assert scan1["assets"][0]["path"] == "/path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
+    assert scan1["riskRating"] == scans[0].risk_rating.name
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
     assert scan2["assets"][0]["bundleId"] == "com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
+    assert scan2["riskRating"] == scans[1].risk_rating.name
 
 
 def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
@@ -412,6 +418,7 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
                 scans {
                     id
                     title
+                    riskRating
                     assets {
                             ... on OxoIOSFileAssetType {
                                 path
@@ -438,11 +445,13 @@ def testQueryMultipleScans_whenNoScanIdsSpecified_shouldReturnAllScans(
     assert scan1["assets"][0]["path"] == "/path/to/file"
     assert scan1["progress"] == scans[0].progress.name
     assert scan1["createdTime"] == scans[0].created_time.isoformat()
+    assert scan1["riskRating"] == scans[0].risk_rating.name
     assert scan2["id"] == "2"
     assert scan2["title"] == scans[1].title
     assert scan2["assets"][0]["bundleId"] == "com.example.app"
     assert scan2["progress"] == scans[1].progress.name
     assert scan2["createdTime"] == scans[1].created_time.isoformat()
+    assert scan2["riskRating"] == scans[1].risk_rating.name
 
 
 def testQueryMultipleVulnerabilities_always_shouldReturnMultipleVulnerabilities(
