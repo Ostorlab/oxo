@@ -41,7 +41,7 @@ def api_schema(
         )
     ]
 
-    logger.debug("scanning assets %s", [str(asset) for asset in assets])
+    logger.debug("Scanning assets %s", [str(asset) for asset in assets])
     try:
         runtime.scan(
             title=ctx.obj["title"],
