@@ -17,18 +17,18 @@ class ApiSchema(asset.Asset):
     def __init__(
         self,
         content: bytes,
-        url: str,
+        endpoint_url: str,
         schema_type: Optional[str] = None,
     ):
         self.content = content
-        self.url = url
+        self.endpoint_url = endpoint_url
         self.schema_type = schema_type
 
     def __str__(self) -> str:
         str_representation = CLASS_NAME
         if self.schema_type is not None:
             str_representation = f"{str_representation} ({self.schema_type})"
-        str_representation = f"{str_representation}: {self.url}"
+        str_representation = f"{str_representation}: {self.endpoint_url}"
 
         return str_representation
 

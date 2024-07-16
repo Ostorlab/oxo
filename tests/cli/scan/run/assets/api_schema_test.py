@@ -45,6 +45,6 @@ def testScanRunApiSchema_whenApiSchemaFileAndUrlAreProvided_callScanWithValidAss
             scan_mocked.call_args_list[0].kwargs.get("assets")[0].content == b"query {}"
         )
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].url
+            scan_mocked.call_args_list[0].kwargs.get("assets")[0].endpoint_url
             == "https://rickandmortyapi.com/graphql"
         )

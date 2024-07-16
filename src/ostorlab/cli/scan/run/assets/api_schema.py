@@ -37,7 +37,7 @@ def api_schema(
     runtime = ctx.obj["runtime"]
     assets = [
         api_schema_asset.ApiSchema(
-            content=file.read(), url=url, schema_type=schema_type
+            content=file.read(), endpoint_url=url, schema_type=schema_type
         )
     ]
 
