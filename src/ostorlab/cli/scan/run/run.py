@@ -29,7 +29,7 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 NUMBER_OF_RETRIES = 5
-WAIF_BETWEEN_RETRIES = 5
+WAIT_BETWEEN_RETRIES = 5
 
 
 @scan.group(invoke_without_command=True)
@@ -164,10 +164,7 @@ def run(
             try:
                 install_agents_with_retry(runtime_instance, agent_group)
             except httpx.HTTPError as e:
-                console.error(str(e))
-                raise click.ClickException(
-                    "Retry attempts failed to install the agents."
-                ) from e
+                raise click.ClickException(f"Could not install the agents: {e}")
 
         if arg is not None and len(arg) > 0:
             agent_group.agents = _add_cli_args_to_agent_settings(
@@ -196,19 +193,23 @@ def run(
 
 @tenacity.retry(
     stop=tenacity.stop.stop_after_attempt(NUMBER_OF_RETRIES),
-    wait=tenacity.wait.wait_fixed(WAIF_BETWEEN_RETRIES),
+    wait=tenacity.wait.wait_fixed(WAIT_BETWEEN_RETRIES),
     retry=tenacity.retry_if_exception_type((httpx.HTTPError)),
+    retry_error_callback=lambda retry_state: retry_state.outcome.result(),
 )
 def install_agents_with_retry(
     runtime_instance: runtime.Runtime, agent_group: definitions.AgentGroupDefinition
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
-    runtime_instance.install()
-    for ag in agent_group.agents:
-        try:
-            install_agent.install(ag.key, ag.version)
-        except agent_fetcher.AgentDetailsNotFound:
-            console.warning(f"agent {ag.key} not found on the store")
+    try:
+        runtime_instance.install()
+        for ag in agent_group.agents:
+            try:
+                install_agent.install(ag.key, ag.version)
+            except agent_fetcher.AgentDetailsNotFound:
+                console.warning(f"agent {ag.key} not found on the store")
+    except httpx.HTTPError as e:
+        raise e
 
 
 def prepare_agents_to_follow(
