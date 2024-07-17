@@ -201,7 +201,7 @@ def run(
 )
 def install_agents_with_retry(
     runtime_instance: runtime.Runtime, agent_group: definitions.AgentGroupDefinition
-):
+) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
     for ag in agent_group.agents:
