@@ -199,7 +199,9 @@ def run(
     wait=tenacity.wait.wait_fixed(WAIF_BETWEEN_RETRIES),
     retry=tenacity.retry_if_exception_type((httpx.HTTPError)),
 )
-def install_agents_with_retry(runtime_instance, agent_group):
+def install_agents_with_retry(
+    runtime_instance: runtime.Runtime, agent_group: definitions.AgentGroupDefinition
+):
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
     for ag in agent_group.agents:
