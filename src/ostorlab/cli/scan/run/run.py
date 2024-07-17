@@ -162,7 +162,7 @@ def run(
         ctx.obj["title"] = title
         if install is True:
             try:
-                install_agents_with_retry(runtime_instance, agent_group)
+                _install_agents_with_retry(runtime_instance, agent_group)
             except httpx.HTTPError as e:
                 raise click.ClickException(f"Could not install the agents: {e}")
 
@@ -197,7 +197,7 @@ def run(
     retry=tenacity.retry_if_exception_type((httpx.HTTPError)),
     retry_error_callback=lambda retry_state: retry_state.outcome.result(),
 )
-def install_agents_with_retry(
+def _install_agents_with_retry(
     runtime_instance: runtime.Runtime, agent_group: definitions.AgentGroupDefinition
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
