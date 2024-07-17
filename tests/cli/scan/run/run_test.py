@@ -11,6 +11,7 @@ from ostorlab.agent import definitions
 from ostorlab.cli import rootcli
 from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
+from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.models import models
 
 
@@ -89,7 +90,6 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
             }
         }
     }
-
     agent_group_response = {"data": {"publishAgentGroup": {"agentGroup": {"id": "1"}}}}
     asset_response = {"data": {"createAsset": {"asset": {"id": 1}}}}
     scan_response = {"data": {"createAgentScan": {"scan": {"id": 1}}}}
@@ -101,10 +101,11 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
     api_ubjson_responses = [
         agent_group_response,
     ]
-
     api_requests.side_effect = api_responses
     api_ubjson_requests.side_effect = api_ubjson_responses
     runner = CliRunner()
+    agent_install_local_spy = mocker.spy(runtime.LocalRuntime, "install")
+
     result = runner.invoke(
         rootcli.rootcli,
         [
@@ -122,6 +123,8 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
         "Error: Could not install the agents: No internet connection\n" in result.output
     )
     assert result.exit_code == 1
+    assert agent_install_local_spy.called is True
+    assert agent_install_local_spy.call_count == 5
 
 
 def testRunScanCLI_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
