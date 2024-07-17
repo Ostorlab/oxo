@@ -201,15 +201,12 @@ def _install_agents_with_retry(
     runtime_instance: runtime.Runtime, agent_group: definitions.AgentGroupDefinition
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
-    try:
-        runtime_instance.install()
-        for ag in agent_group.agents:
-            try:
-                install_agent.install(ag.key, ag.version)
-            except agent_fetcher.AgentDetailsNotFound:
-                console.warning(f"agent {ag.key} not found on the store")
-    except httpx.HTTPError as e:
-        raise e
+    runtime_instance.install()
+    for ag in agent_group.agents:
+        try:
+            install_agent.install(ag.key, ag.version)
+        except agent_fetcher.AgentDetailsNotFound:
+            console.warning(f"agent {ag.key} not found on the store")
 
 
 def prepare_agents_to_follow(
