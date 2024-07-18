@@ -707,7 +707,7 @@ def testOstorlabScanRunCLI_whenApiSchemaAsset_shouldRunCommand(
                 "run",
                 "--agent=agent/ostorlab/api_autodiscovery",
                 "api-schema",
-                "--file",
+                "--schema-file",
                 "schema.graphql",
                 "--url",
                 "https://countries.trevorblades.com/graphql",
