@@ -16,28 +16,53 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command(name="api-schema")
-@click.option("--file", type=click.File(mode="rb"), multiple=False, required=True)
-@click.option("--url", multiple=False, required=True)
-@click.option("--schema-type", multiple=False, required=False)
+@click.option("--url", help="The URL to scan.", multiple=False, required=True)
+@click.option(
+    "--schema-file",
+    type=click.File(mode="rb"),
+    help="The file path of the schema.",
+    multiple=False,
+    required=False,
+)
+@click.option(
+    "--schema-url",
+    help="The URL from which to download the schema.",
+    multiple=False,
+    required=False,
+)
+@click.option(
+    "--schema-type",
+    help="The schema type (graphql, wsdl, or openapi).",
+    multiple=False,
+    required=False,
+)
 @click.pass_context
 def api_schema(
     ctx: click.core.Context,
-    file: io.FileIO,
     url: str,
+    schema_file: Optional[io.FileIO] = None,
+    schema_url: Optional[str] = None,
     schema_type: Optional[str] = None,
 ) -> None:
     """Run scan for an API Schema asset.
 
     Args:
         ctx: The Click context.
-        file: The schema file.
-        url: The URL that uses the schema.
-        schema_type: Optional type of schema (GraphQL, WSDL, or OpenAPI).
+        url: The URL to scan.
+        schema_file: The file path of the schema.
+        schema_url: The URL from which to download the schema.
+        schema_type: Optional type of schema (graphql, wsdl, openapi).
     """
+    if schema_file is None and schema_url is None:
+        console.error("You must provide either --schema-file or --schema-url.")
+        raise click.exceptions.Exit(2)
     runtime = ctx.obj["runtime"]
     assets = [
         api_schema_asset.ApiSchema(
-            content=file.read(), endpoint_url=url, schema_type=schema_type
+            content=schema_file.read() if schema_file is not None else None,
+            content_url=schema_url,
+            endpoint_url=url,
+            schema_type=schema_type,
         )
     ]
 
