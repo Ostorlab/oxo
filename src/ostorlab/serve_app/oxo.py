@@ -485,17 +485,17 @@ class StopScanMutation(graphene.Mutation):
     """Stop scan mutation."""
 
     class Arguments:
-        scan_id = graphene.Int(required=True)
+        scan_ids = graphene.List(graphene.Int, required=True)
 
-    scan = graphene.Field(types.OxoScanType)
+    scans = graphene.List(types.OxoScanType)
 
     @staticmethod
-    def mutate(root, info: graphql_base.ResolveInfo, scan_id: int):
+    def mutate(root, info: graphql_base.ResolveInfo, scan_ids: list[int]):
         """Stop the desired scan.
 
         Args:
             info: `graphql_base.ResolveInfo` instance.
-            scan_id: The scan ID.
+            scan_ids: The scan IDs.
 
         Raises:
             graphql.GraphQLError in case the scan does not exist or the scan id is invalid.
@@ -505,11 +505,12 @@ class StopScanMutation(graphene.Mutation):
 
         """
         with models.Database() as session:
-            scan = session.query(models.Scan).get(scan_id)
-            if scan is None:
-                raise graphql.GraphQLError("Scan not found.")
-            local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
-            return StopScanMutation(scan=scan)
+            scans = session.query(models.Scan).filter(models.Scan.id.in_(scan_ids)).all()
+            if len(scans) == 0:
+                raise graphql.GraphQLError("No scan is found.")
+            for scan_id in scan_ids:
+                local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
+            return StopScanMutation(scans=scans)
 
 
 class PublishAgentGroupMutation(graphene.Mutation):
