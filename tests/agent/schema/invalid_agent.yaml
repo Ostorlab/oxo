@@ -1,0 +1,13 @@
+kind: Agent
+name: template_agent
+version: 0.0.1
+description: Agent description.
+in_selectors:
+  - v3.healthcheck.ping
+out_selectors: [ ]
+docker_file_path: Dockerfile
+docker_build_root: .
+args:
+  - name: test
+    type: test
+    description: test

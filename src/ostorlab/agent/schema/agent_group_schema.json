@@ -24,7 +24,13 @@
         "type": {
           "description": "[Required] - Type of the agent argument : respecting the jsonschema types.",
           "type": "string",
-          "maxLength": 2048
+            "enum": [
+                "string",
+                "number",
+                "boolean",
+                "array",
+                "object"
+            ]
         },
         "description": {
           "description": "[Optional] - Description of the agent argument.",
