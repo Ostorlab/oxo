@@ -34,7 +34,7 @@ def _is_docker_image_present(image: str):
 def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
     """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     dummy_def_yaml_file_path = (
-            pathlib.Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
+        pathlib.Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
     )
     runner = testing.CliRunner()
     result = runner.invoke(
@@ -135,11 +135,11 @@ def testAgentBuildCLI_whenImageAlreadyExistsAndForceFlagPassed_buildCompletedAnd
     assert result.exit_code == 0
 
 
-def testAgentBuildCLI_whenAgentDefinitionHasInvalidArgType_failShowErrorMessage():
+def testAgentBuildCLI_whenAgentDefinitionHasInvalidArgType_failShowErrorMessage() -> (
+    None
+):
     """Test oxo agent build CLI command : Case where the agent definition file has an invalid arg type."""
-    invalid_agent_def = (
-            pathlib.Path(__file__).parent / "assets/invalid_agent_def.yaml"
-    )
+    invalid_agent_def = pathlib.Path(__file__).parent / "assets/invalid_agent_def.yaml"
     runner = testing.CliRunner()
 
     result = runner.invoke(
@@ -152,7 +152,9 @@ def testAgentBuildCLI_whenAgentDefinitionHasInvalidArgType_failShowErrorMessage(
         ],
     )
 
-    assert result.output == ('🔺 ERROR: Definition file does not conform to the provided specification: \n'
-                             "Validation did not pass: 'test' is not one of ['string', 'number', "
-                             "'boolean', \n"
-                             "'array', 'object'] for field properties.args.items.properties.type.enum.\n")
+    assert result.output == (
+        "🔺 ERROR: Definition file does not conform to the provided specification: \n"
+        "Validation did not pass: 'test' is not one of ['string', 'number', "
+        "'boolean', \n"
+        "'array', 'object'] for field properties.args.items.properties.type.enum.\n"
+    )
