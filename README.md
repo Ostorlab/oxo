@@ -33,7 +33,7 @@ pip install -U ostorlab
 
 # Getting Started
 
-OXO ships with a store that boasts dozens of agents, from network scanning agents like nmap, openvas, nuclei or
+OXO ships with a store that boasts dozens of agents, from network scanning agents like nmap, nuclei or
 tsunami,
 web scanner like Zap, web fingerprinting tools like Whatweb and Wappalyzer, DNS brute forcing like Subfinder and Dnsx,
 malware file scanning like Virustotal and much more.
@@ -43,13 +43,13 @@ To run any of these tools combined, simply run the following command:
 > OXO CLI is accessible using the `oxo` command.
 
 ```shell
-oxo scan run --install --agent nmap --agent openvas --agent tsunami --agent nuclei ip 8.8.8.8
+oxo scan run --install --agent nmap --agent tsunami --agent nuclei ip 8.8.8.8
 ```
 
 or 
 
 ```shell
-oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/openvas --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
+oxo scan run --install --agent agent/ostorlab/nmap --agent agent/ostorlab/tsunami --agent agent/ostorlab/nuclei ip 8.8.8.8
 ```
 
 
@@ -58,7 +58,6 @@ This command will download and install the following scanning agents:
 * [agent/ostorlab/nmap](https://oxo.ostorlab.co/store/agent/ostorlab/nmap)
 * [agent/ostorlab/tsunami](https://oxo.ostorlab.co/store/agent/ostorlab/tsunami)
 * [agent/ostorlab/nuclei](https://oxo.ostorlab.co/store/agent/ostorlab/nuclei)
-* [agent/ostorlab/openvas](https://oxo.ostorlab.co/store/agent/ostorlab/openvas)
 
 And will scan the target IP address `8.8.8.8`.
 
