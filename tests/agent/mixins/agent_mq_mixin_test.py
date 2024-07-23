@@ -2,8 +2,10 @@
 
 import asyncio
 from unittest import mock
+import concurrent.futures
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.utils import strings
@@ -141,6 +143,25 @@ def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
     )
 
     with pytest.raises(ConnectionResetError):
+        agent.mq_send_message(key="a.1.2", message=b"test message")
+
+    assert mock_send_message.call_count == 6
+
+
+def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that the message is retried when a CancelledError is raised."""
+    mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
+    mock_send_message.side_effect = concurrent.futures.CancelledError
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    with pytest.raises(concurrent.futures.CancelledError):
         agent.mq_send_message(key="a.1.2", message=b"test message")
 
     assert mock_send_message.call_count == 6

@@ -177,8 +177,10 @@ class AgentMQMixin:
             (
                 aio_pika.exceptions.ConnectionClosed,
                 ConnectionResetError,
+                concurrent.futures.CancelledError,
                 aiormq_exceptions.ChannelInvalidStateError,
                 aiormq_exceptions.AMQPConnectionError,
+
             )
         ),
         stop=tenacity.stop_after_attempt(NUMBER_RETRIES),
