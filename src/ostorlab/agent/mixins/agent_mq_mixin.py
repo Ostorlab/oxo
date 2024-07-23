@@ -177,6 +177,7 @@ class AgentMQMixin:
             (
                 aio_pika.exceptions.ConnectionClosed,
                 ConnectionResetError,
+                concurrent.futures.CancelledError,
                 aiormq_exceptions.ChannelInvalidStateError,
                 aiormq_exceptions.AMQPConnectionError,
             )
