@@ -38,14 +38,17 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies.
+    - name: Install UV
       run: |
         python -m pip install --upgrade pip
-        pip install .
-        pip install .[scanner]
-        pip install .[agent]
-        pip install .[serve]
-        pip install pyinstaller
+        python -m pip install uv
+    - name: Install dependencies.
+      run: |
+        uv pip install .
+        uv pip install .[scanner]
+        uv pip install .[agent]
+        uv pip install .[serve]
+        uv pip install pyinstaller
 
     - run: |
         pyinstaller --name oxo_${{ matrix.os }} --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
