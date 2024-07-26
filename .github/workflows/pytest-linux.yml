@@ -39,10 +39,10 @@ jobs:
         python -m pip install uv
     - name: Install dependencies.
       run: |
-        uv pip install .[testing]
-        uv pip install .[scanner]
-        uv pip install .[agent]
-        uv pip install .[serve]
+        python -m uv pip install .[testing]
+        python -m uv pip install .[scanner]
+        python -m uv pip install .[agent]
+        python -m uv pip install .[serve]
         python -m uv pip install -e .
     - name: Running tests with pytest.
       env:
