@@ -1,6 +1,6 @@
 """Tests for CLI agent build command."""
 
-from pathlib import Path
+import pathlib
 
 import docker
 import pytest
@@ -34,7 +34,7 @@ def _is_docker_image_present(image: str):
 def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
     """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     dummy_def_yaml_file_path = (
-        Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
+        pathlib.Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
     )
     runner = testing.CliRunner()
     result = runner.invoke(
@@ -56,7 +56,7 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
 ):
     """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     del image_cleanup
-    dummy_def_yaml_file_path = Path(__file__).parent / "assets/dummydef.yaml"
+    dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
     runner = testing.CliRunner()
     _ = runner.invoke(
         rootcli.rootcli,
@@ -77,7 +77,7 @@ def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_showsMessageAndExi
 ):
     """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     del image_cleanup
-    dummy_def_yaml_file_path = Path(__file__).parent / "assets/dummydef.yaml"
+    dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
     runner = testing.CliRunner()
     _ = runner.invoke(
         rootcli.rootcli,
@@ -110,7 +110,7 @@ def testAgentBuildCLI_whenImageAlreadyExistsAndForceFlagPassed_buildCompletedAnd
     passed. The agent container should be built.
     """
     del image_cleanup
-    dummy_def_yaml_file_path = Path(__file__).parent / "assets/dummydef.yaml"
+    dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
     runner = testing.CliRunner()
     _ = runner.invoke(
         rootcli.rootcli,
@@ -133,3 +133,28 @@ def testAgentBuildCLI_whenImageAlreadyExistsAndForceFlagPassed_buildCompletedAnd
     )
     assert "already exist" not in result.output
     assert result.exit_code == 0
+
+
+def testAgentBuildCLI_whenAgentDefinitionHasInvalidArgType_failShowErrorMessage() -> (
+    None
+):
+    """Test oxo agent build CLI command : Case where the agent definition file has an invalid arg type."""
+    invalid_agent_def = pathlib.Path(__file__).parent / "assets/invalid_agent_def.yaml"
+    runner = testing.CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "agent",
+            "build",
+            f"--file={invalid_agent_def}",
+            "--organization=ostorlab",
+        ],
+    )
+
+    assert result.output == (
+        "🔺 ERROR: Definition file does not conform to the provided specification: \n"
+        "Validation did not pass: 'test' is not one of ['string', 'number', "
+        "'boolean', \n"
+        "'array', 'object'] for field properties.args.items.properties.type.enum.\n"
+    )

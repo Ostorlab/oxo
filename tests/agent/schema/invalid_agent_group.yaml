@@ -1,0 +1,11 @@
+kind: AgentGroup
+description: test.
+name: test
+agents:
+  - key: agent/ostorlab/tsunami
+  - key: agent/ostorlab/nmap
+  - key: agent/ostorlab/nuclei
+    args:
+      - name: test
+        type: test
+        description: test
