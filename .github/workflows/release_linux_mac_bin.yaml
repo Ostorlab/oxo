@@ -44,11 +44,11 @@ jobs:
         python -m pip install uv
     - name: Install dependencies.
       run: |
-        uv pip install .
-        uv pip install .[scanner]
-        uv pip install .[agent]
-        uv pip install .[serve]
-        uv pip install pyinstaller
+        python -m uv pip install .
+        python -m uv pip install .[scanner]
+        python -m uv pip install .[agent]
+        python -m uv pip install .[serve]
+        python -m uv pip install pyinstaller
 
     - run: |
         pyinstaller --name oxo_${{ matrix.os }} --onefile --add-data="./*:." --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
