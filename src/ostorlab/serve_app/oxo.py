@@ -505,7 +505,9 @@ class StopScanMutation(graphene.Mutation):
 
         """
         with models.Database() as session:
-            scans = session.query(models.Scan).filter(models.Scan.id.in_(scan_ids)).all()
+            scans = (
+                session.query(models.Scan).filter(models.Scan.id.in_(scan_ids)).all()
+            )
             if len(scans) == 0:
                 raise graphql.GraphQLError("No scan is found.")
             for scan_id in scan_ids:

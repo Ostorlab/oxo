@@ -2051,25 +2051,24 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
         scan_progress = scan.progress
         query = """
-            mutation stopScan($scanId: Int!){
-                stopScan(scanId: $scanId){
-                    scan{
+            mutation stopScan($scanIds: [Int]!){
+                stopScan(scanIds: $scanIds){
+                    scans{
                         id
                     }
                 }
             }
         """
         response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": {"scanId": str(scan.id)}}
+            "/graphql", json={"query": query, "variables": {"scanIds": [scan.id]}}
         )
-
         assert response.status_code == 200, response.get_json()
         session.refresh(scan)
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
         response_json = response.get_json()
         nbr_scans_after = session.query(models.Scan).count()
         assert response_json["data"] == {
-            "stopScan": {"scan": {"id": str(in_progress_web_scan.id)}}
+            "stopScan": {"scans": [{"id": str(in_progress_web_scan.id)}]}
         }
         assert scan.progress.name == "STOPPED"
         assert scan.progress != scan_progress
@@ -2086,21 +2085,21 @@ def testStopScanMutation_whenNoScanFound_shouldReturnError(
     del clean_db
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
-        mutation stopScan($scanId: Int!){
-            stopScan(scanId: $scanId){
-                scan{
+        mutation stopScan($scanIds: [Int]!){
+            stopScan(scanIds: $scanIds){
+                scans{
                     id
                 }
             }
         }
     """
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": "5"}}
+        "/graphql", json={"query": query, "variables": {"scanIds": ["5"]}}
     )
 
     assert response.status_code == 200, response.get_json()
     response_json = response.get_json()
-    assert response_json["errors"][0]["message"] == "Scan not found."
+    assert response_json["errors"][0]["message"] == "No scan is found."
 
 
 def testQueryVulnerabilitiesOfKb_withPagination_shouldReturnPageInfo(
