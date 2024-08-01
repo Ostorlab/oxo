@@ -11,6 +11,7 @@ from ostorlab.cli.scan.run.assets import link
 from ostorlab.cli.scan.run.assets import android_store
 from ostorlab.cli.scan.run.assets import ios_store
 from ostorlab.cli.scan.run.assets import ios_testflight
+from ostorlab.cli.scan.run.assets import api_schema
 
 __all__ = (
     "agent",
@@ -24,4 +25,5 @@ __all__ = (
     "android_store",
     "ios_store",
     "ios_testflight",
+    "api_schema",
 )

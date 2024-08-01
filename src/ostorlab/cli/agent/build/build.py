@@ -131,7 +131,7 @@ def build(
         )
         raise click.exceptions.Exit(2) from e
     except validator.ValidationError as e:
-        console.error("Definition file does not conform to the provided specification.")
+        console.error(f"Definition file does not conform to the provided specification: {e}")
         raise click.exceptions.Exit(2) from e
 
 
