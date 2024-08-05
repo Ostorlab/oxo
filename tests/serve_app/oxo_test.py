@@ -2016,13 +2016,13 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     ]
 
 
-def testStopScanMutation_whenScanIsRunning_shouldStopScan(
+def testStopScansMutation_whenScanIsRunning_shouldStopScan(
     authenticated_flask_client: testing.FlaskClient,
     in_progress_web_scan: models.Scan,
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
-    """Test stopScan mutation when scan is running should stop scan."""
+    """Test stopScans mutation when scan is running should stop scan."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2051,8 +2051,8 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
         scan_progress = scan.progress
         query = """
-            mutation stopScan($scanIds: [Int]!){
-                stopScan(scanIds: $scanIds){
+            mutation stopScans($scanIds: [Int]!){
+                stopScans(scanIds: $scanIds){
                     scans{
                         id
                     }
@@ -2068,25 +2068,25 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
         response_json = response.get_json()
         nbr_scans_after = session.query(models.Scan).count()
         assert response_json["data"] == {
-            "stopScan": {"scans": [{"id": str(in_progress_web_scan.id)}]}
+            "stopScans": {"scans": [{"id": str(in_progress_web_scan.id)}]}
         }
         assert scan.progress.name == "STOPPED"
         assert scan.progress != scan_progress
         assert nbr_scans_after == nbr_scans_before
 
 
-def testStopScanMutation_whenNoScanFound_shouldReturnError(
+def testStopScansMutation_whenNoScanFound_shouldReturnError(
     authenticated_flask_client: testing.FlaskClient,
     mocker: plugin.MockerFixture,
     db_engine_path: str,
     clean_db: None,
 ) -> None:
-    """Test stopScan mutation when scan doesn't exist should return error message."""
+    """Test stopScans mutation when scan doesn't exist should return error message."""
     del clean_db
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
-        mutation stopScan($scanIds: [Int]!){
-            stopScan(scanIds: $scanIds){
+        mutation stopScans($scanIds: [Int]!){
+            stopScans(scanIds: $scanIds){
                 scans{
                     id
                 }

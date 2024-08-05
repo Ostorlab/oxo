@@ -481,7 +481,7 @@ class CreateAssetsMutation(graphene.Mutation):
             return None
 
 
-class StopScanMutation(graphene.Mutation):
+class StopScansMutation(graphene.Mutation):
     """Stop scan mutation."""
 
     class Arguments:
@@ -512,7 +512,7 @@ class StopScanMutation(graphene.Mutation):
                 raise graphql.GraphQLError("No scan is found.")
             for scan_id in scan_ids:
                 local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
-            return StopScanMutation(scans=scans)
+            return StopScansMutation(scans=scans)
 
 
 class PublishAgentGroupMutation(graphene.Mutation):
@@ -879,7 +879,7 @@ class Mutations(graphene.ObjectType):
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
     export_scan = ExportScanMutation.Field(description="Export scan to file.")
     create_assets = CreateAssetsMutation.Field(description="Create an asset.")
-    stop_scan = StopScanMutation.Field(
+    stop_scans = StopScansMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
     )
     publish_agent_group = PublishAgentGroupMutation.Field(
