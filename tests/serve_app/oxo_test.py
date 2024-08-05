@@ -730,15 +730,15 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
     query = """
-        mutation DeleteScan ($scanId: Int!){
-            deleteScan (scanId: $scanId) {
+        mutation DeleteScan ($scanIds: [Int]!){
+            deleteScan (scanIds: $scanIds) {
                 result
             }
         }
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": android_scan.id}}
+        "/graphql", json={"query": query, "variables": {"scanIds": [android_scan.id]}}
     )
 
     assert response.status_code == 200, response.get_json()
@@ -768,15 +768,15 @@ def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
     query = """
-        mutation DeleteScan ($scanId: Int!){
-            deleteScan (scanId: $scanId) {
+        mutation DeleteScan ($scanIds: [Int]!){
+            deleteScan (scanIds: $scanIds) {
                 result
             }
         }
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": 42}}
+        "/graphql", json={"query": query, "variables": {"scanIdd": [42]}}
     )
 
     assert response.status_code == 200, response.get_json()
