@@ -711,7 +711,7 @@ def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
-def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
+def testDeleteScansMutation_whenScanExist_deleteScanAndVulnz(
     authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the delete scan mutation deletes the scan, its statuses & vulnerabilities."""
@@ -730,8 +730,8 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
     query = """
-        mutation DeleteScan ($scanIds: [Int]!){
-            deleteScan (scanIds: $scanIds) {
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
                 result
             }
         }
@@ -763,13 +763,13 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
 
-def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
+def testDeleteScansMutation_whenScanDoesNotExist_returnErrorMessage(
     authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
     query = """
-        mutation DeleteScan ($scanIds: [Int]!){
-            deleteScan (scanIds: $scanIds) {
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
                 result
             }
         }

@@ -292,7 +292,7 @@ class ExportScanMutation(graphene.Mutation):
             return ExportScanMutation(content=export_file_content)
 
 
-class DeleteScanMutation(graphene.Mutation):
+class DeleteScansMutation(graphene.Mutation):
     """Delete Scan & its information mutation."""
 
     class Arguments:
@@ -305,7 +305,7 @@ class DeleteScanMutation(graphene.Mutation):
         root,
         info: graphql_base.ResolveInfo,
         scan_ids: list[int],
-    ) -> "DeleteScanMutation":
+    ) -> "DeleteScansMutation":
         """Delete a scan & its information.
 
         Args:
@@ -331,9 +331,9 @@ class DeleteScanMutation(graphene.Mutation):
                 scan_query.delete()
                 session.query(models.Vulnerability).filter_by(scan_id=scan.id).delete()
                 session.query(models.ScanStatus).filter_by(scan_id=scan.id).delete()
-                DeleteScanMutation._delete_assets(scan.id, session)
+                DeleteScansMutation._delete_assets(scan.id, session)
                 session.commit()
-            return DeleteScanMutation(result=True)
+            return DeleteScansMutation(result=True)
 
     @staticmethod
     def _delete_assets(scan_id: int, session: models.Database) -> None:
@@ -872,7 +872,7 @@ class RunScanMutation(graphene.Mutation):
 
 
 class Mutations(graphene.ObjectType):
-    delete_scan = DeleteScanMutation.Field(
+    delete_scans = DeleteScansMutation.Field(
         description="Delete a scan & all its information."
     )
     delete_agent_group = DeleteAgentGroupMutation.Field(
