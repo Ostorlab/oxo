@@ -292,11 +292,11 @@ class ExportScanMutation(graphene.Mutation):
             return ExportScanMutation(content=export_file_content)
 
 
-class DeleteScanMutation(graphene.Mutation):
+class DeleteScansMutation(graphene.Mutation):
     """Delete Scan & its information mutation."""
 
     class Arguments:
-        scan_id = graphene.Int(required=True)
+        scan_ids = graphene.List(graphene.Int, required=True)
 
     result = graphene.Boolean()
 
@@ -304,13 +304,13 @@ class DeleteScanMutation(graphene.Mutation):
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        scan_id: int,
-    ) -> "DeleteScanMutation":
+        scan_ids: list[int],
+    ) -> "DeleteScansMutation":
         """Delete a scan & its information.
 
         Args:
             info: `graphql_base.ResolveInfo` instance.
-            scan_id: The scan ID.
+            scan_ids: The scan IDs.
 
         Raises:
             graphql.GraphQLError in case the scan does not exist.
@@ -320,15 +320,20 @@ class DeleteScanMutation(graphene.Mutation):
 
         """
         with models.Database() as session:
-            scan_query = session.query(models.Scan).filter_by(id=scan_id)
-            if scan_query.count() == 0:
-                raise graphql.GraphQLError("Scan not found.")
-            scan_query.delete()
-            session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
-            session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()
-            DeleteScanMutation._delete_assets(scan_id, session)
-            session.commit()
-            return DeleteScanMutation(result=True)
+            scans = (
+                session.query(models.Scan).filter(models.Scan.id.in_(scan_ids)).all()
+            )
+            if len(scans) == 0:
+                raise graphql.GraphQLError("No scan is found.")
+
+            for scan in scans:
+                scan_query = session.query(models.Scan).filter_by(id=scan.id)
+                scan_query.delete()
+                session.query(models.Vulnerability).filter_by(scan_id=scan.id).delete()
+                session.query(models.ScanStatus).filter_by(scan_id=scan.id).delete()
+                DeleteScansMutation._delete_assets(scan.id, session)
+                session.commit()
+            return DeleteScansMutation(result=True)
 
     @staticmethod
     def _delete_assets(scan_id: int, session: models.Database) -> None:
@@ -870,7 +875,7 @@ class RunScanMutation(graphene.Mutation):
 
 
 class Mutations(graphene.ObjectType):
-    delete_scan = DeleteScanMutation.Field(
+    delete_scans = DeleteScansMutation.Field(
         description="Delete a scan & all its information."
     )
     delete_agent_group = DeleteAgentGroupMutation.Field(

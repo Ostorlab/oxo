@@ -711,7 +711,7 @@ def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
-def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
+def testDeleteScansMutation_whenScanExist_deleteScanAndVulnz(
     authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the delete scan mutation deletes the scan, its statuses & vulnerabilities."""
@@ -730,15 +730,15 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
     query = """
-        mutation DeleteScan ($scanId: Int!){
-            deleteScan (scanId: $scanId) {
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
                 result
             }
         }
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": android_scan.id}}
+        "/graphql", json={"query": query, "variables": {"scanIds": [android_scan.id]}}
     )
 
     assert response.status_code == 200, response.get_json()
@@ -763,24 +763,24 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
 
-def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
+def testDeleteScansMutation_whenScanDoesNotExist_returnErrorMessage(
     authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
     query = """
-        mutation DeleteScan ($scanId: Int!){
-            deleteScan (scanId: $scanId) {
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
                 result
             }
         }
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": 42}}
+        "/graphql", json={"query": query, "variables": {"scanIds": [42]}}
     )
 
     assert response.status_code == 200, response.get_json()
-    assert response.get_json()["errors"][0]["message"] == "Scan not found."
+    assert response.get_json()["errors"][0]["message"] == "No scan is found."
 
 
 def testScansQuery_withPagination_shouldReturnPageInfo(
