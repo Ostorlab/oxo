@@ -776,11 +776,11 @@ def testDeleteScansMutation_whenScanDoesNotExist_returnErrorMessage(
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanIdd": [42]}}
+        "/graphql", json={"query": query, "variables": {"scanIds": [42]}}
     )
 
     assert response.status_code == 200, response.get_json()
-    assert response.get_json()["errors"][0]["message"] == "Scan not found."
+    assert response.get_json()["errors"][0]["message"] == "No scan is found."
 
 
 def testScansQuery_withPagination_shouldReturnPageInfo(
