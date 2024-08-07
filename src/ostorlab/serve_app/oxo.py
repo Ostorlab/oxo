@@ -12,27 +12,27 @@ import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
-from ostorlab import exceptions
-from ostorlab.cli import agent_fetcher, install_agent
-from ostorlab.runtimes import definitions
-from ostorlab.utils import defintions as utils_definitions
-from ostorlab.runtimes.local import runtime
 from ostorlab import configuration_manager
-from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common, export_utils
-from ostorlab.serve_app import import_utils
-from ostorlab.serve_app import types
-from ostorlab.runtimes.local import runtime as local_runtime
-from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab import exceptions
 from ostorlab.assets import android_aab as android_aab_asset
-from ostorlab.assets import ios_ipa as ios_ipa_asset
+from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import asset as ostorlab_asset
+from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.assets import domain_name as domain_name_asset
-from ostorlab.assets import asset as ostorlab_asset
+from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime
+from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import common, export_utils
+from ostorlab.serve_app import import_utils
+from ostorlab.serve_app import types
+from ostorlab.utils import defintions as utils_definitions
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -793,6 +793,10 @@ class RunScanMutation(graphene.Mutation):
         scan_assets = RunScanMutation._prepare_assets(scan.asset_ids)
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
+        try:
+            runtime_instance.can_run(agent_group_definition=agent_group)
+        except exceptions.OstorlabError as e:
+            raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
         runtime_instance.follow = []
         created_scan = runtime_instance.prepare_scan(
             assets=scan_assets, title=scan.title
@@ -837,7 +841,7 @@ class RunScanMutation(graphene.Mutation):
         scan: types.OxoAgentScanInputType,
         scan_assets: List[ostorlab_asset.Asset],
     ) -> None:
-        """Run scan in background.
+        """Run scan in the background.
 
         Args:
             runtime_instance: The runtime instance.
@@ -845,25 +849,16 @@ class RunScanMutation(graphene.Mutation):
             scan: The scan information.
             scan_assets: The scan assets.
         """
-
         try:
-            can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
+            RunScanMutation._install_agents(agent_group, runtime_instance)
+            runtime_instance.scan(
+                title=scan.title,
+                agent_group_definition=agent_group,
+                assets=scan_assets,
+            )
+
         except exceptions.OstorlabError as e:
             raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
-
-        if can_run_scan is True:
-            RunScanMutation._install_agents(agent_group, runtime_instance)
-            try:
-                runtime_instance.scan(
-                    title=scan.title,
-                    agent_group_definition=agent_group,
-                    assets=scan_assets,
-                )
-
-            except exceptions.OstorlabError as e:
-                raise graphql.GraphQLError(
-                    f"Runtime encountered an error to run scan: {e}"
-                )
 
 
 class Mutations(graphene.ObjectType):
