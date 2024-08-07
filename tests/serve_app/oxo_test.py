@@ -7,9 +7,9 @@ import pathlib
 import sys
 from typing import Dict, Any
 
-from docker.models import services as services_model
 import httpx
 import ubjson
+from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
 
