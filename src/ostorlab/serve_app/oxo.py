@@ -331,12 +331,12 @@ class DeleteScansMutation(graphene.Mutation):
                 scan_query.delete()
                 session.query(models.Vulnerability).filter_by(scan_id=scan.id).delete()
                 session.query(models.ScanStatus).filter_by(scan_id=scan.id).delete()
-                DeleteScansMutation._delete_assets(scan.id, session)
+                DeleteScansMutation.delete_assets(scan.id, session)
                 session.commit()
             return DeleteScansMutation(result=True)
 
     @staticmethod
-    def _delete_assets(scan_id: int, session: models.Database) -> None:
+    def delete_assets(scan_id: int, session: models.Database) -> None:
         """Delete assets.
 
         Args:
