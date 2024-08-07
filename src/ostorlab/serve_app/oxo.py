@@ -793,10 +793,6 @@ class RunScanMutation(graphene.Mutation):
         scan_assets = RunScanMutation._prepare_assets(scan.asset_ids)
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
-        try:
-            runtime_instance.can_run(agent_group_definition=agent_group)
-        except exceptions.OstorlabError as e:
-            raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
         runtime_instance.follow = []
         created_scan = runtime_instance.prepare_scan(
             assets=scan_assets, title=scan.title
@@ -841,7 +837,7 @@ class RunScanMutation(graphene.Mutation):
         scan: types.OxoAgentScanInputType,
         scan_assets: List[ostorlab_asset.Asset],
     ) -> None:
-        """Run scan in the background.
+        """Run scan in background.
 
         Args:
             runtime_instance: The runtime instance.
@@ -849,16 +845,25 @@ class RunScanMutation(graphene.Mutation):
             scan: The scan information.
             scan_assets: The scan assets.
         """
-        try:
-            RunScanMutation._install_agents(agent_group, runtime_instance)
-            runtime_instance.scan(
-                title=scan.title,
-                agent_group_definition=agent_group,
-                assets=scan_assets,
-            )
 
+        try:
+            can_run_scan = runtime_instance.can_run(agent_group_definition=agent_group)
         except exceptions.OstorlabError as e:
             raise graphql.GraphQLError(f"Runtime encountered an error to run scan: {e}")
+
+        if can_run_scan is True:
+            RunScanMutation._install_agents(agent_group, runtime_instance)
+            try:
+                runtime_instance.scan(
+                    title=scan.title,
+                    agent_group_definition=agent_group,
+                    assets=scan_assets,
+                )
+
+            except exceptions.OstorlabError as e:
+                raise graphql.GraphQLError(
+                    f"Runtime encountered an error to run scan: {e}"
+                )
 
 
 class Mutations(graphene.ObjectType):
