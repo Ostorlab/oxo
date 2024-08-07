@@ -2991,7 +2991,7 @@ def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
             assert input_field_type == oxo_input_types[input_field_name]
 
 
-def _testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
+def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
 
     oxo_schema_dict = oxo_schema.introspect()["__schema"]
