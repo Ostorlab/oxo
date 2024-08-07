@@ -37,6 +37,7 @@ from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 from ostorlab.serve_app import app
+from ostorlab.serve_app import types
 from ostorlab.utils import risk_rating
 
 
@@ -931,10 +932,12 @@ def agent_group(
     """Create dummy agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
-        agent_group = models.AgentGroup(
-            name="Agent Group 1",
-            description="Agent Group 1 description",
-            created_time=datetime.datetime.now(),
+        agent = types.OxoAgentGroupAgentCreateInputType()
+        agent.key = "key"
+        agent.args = []
+        agents = [agent]
+        agent_group = models.AgentGroup.create(
+            name="Agent Group 1", description="Agent Group 1 description", agents=agents
         )
         session.add(agent_group)
         session.commit()

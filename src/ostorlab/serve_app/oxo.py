@@ -585,7 +585,14 @@ class DeleteAgentGroupMutation(graphene.Mutation):
             )
             if agent_group_query.count() == 0:
                 raise graphql.GraphQLError("AgentGroup not found.")
+            mappings = session.query(models.AgentGroupMapping).filter_by(
+                agent_group_id=agent_group_id
+            )
+            if mappings.count() > 0:
+                mappings.delete()
+
             agent_group_query.delete()
+
             session.commit()
             return DeleteAgentGroupMutation(result=True)
 

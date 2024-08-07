@@ -19,7 +19,6 @@ from ostorlab.serve_app.schema import schema as oxo_schema
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
 
-
 INTROSPECT_ENUMS_QUERY = """
     {
         __schema {
@@ -33,7 +32,6 @@ INTROSPECT_ENUMS_QUERY = """
         }
     }    
 """
-
 
 INTROSPECT_INPUTS_QUERY = """
     {
@@ -131,7 +129,6 @@ INTROSPECT_QUERIES_QUERY = """
 }
 """
 
-
 INTROSPECT_UNIONS_QUERY = """
 {
     __schema {
@@ -150,7 +147,6 @@ INTROSPECT_UNIONS_QUERY = """
     }
 }    
 """
-
 
 INTROSPECT_TYPES_QUERY = """
     {
@@ -2251,6 +2247,11 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         nbr_agent_groups_before_delete = session.query(models.AgentGroup).count()
+        nbr_mappings_agent_group_before_delete = (
+            session.query(models.AgentGroupMapping)
+            .filter_by(agent_group_id=agent_group.id)
+            .count()
+        )
 
     query = """
         mutation DeleteAgentGroup ($agentGroupId: Int!){
@@ -2270,6 +2271,12 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
         assert (
             session.query(models.AgentGroup).count()
             == nbr_agent_groups_before_delete - 1
+        )
+        assert (
+            session.query(models.AgentGroupMapping)
+            .filter_by(agent_group_id=agent_group.id)
+            .count()
+            == nbr_mappings_agent_group_before_delete - 1
         )
 
 
