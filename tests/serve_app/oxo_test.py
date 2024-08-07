@@ -7,9 +7,9 @@ import pathlib
 import sys
 from typing import Dict, Any
 
-from docker.models import services as services_model
 import httpx
 import ubjson
+from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
 
@@ -18,7 +18,6 @@ from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
-
 
 INTROSPECT_ENUMS_QUERY = """
     {
@@ -33,7 +32,6 @@ INTROSPECT_ENUMS_QUERY = """
         }
     }    
 """
-
 
 INTROSPECT_INPUTS_QUERY = """
     {
@@ -131,7 +129,6 @@ INTROSPECT_QUERIES_QUERY = """
 }
 """
 
-
 INTROSPECT_UNIONS_QUERY = """
 {
     __schema {
@@ -150,7 +147,6 @@ INTROSPECT_UNIONS_QUERY = """
     }
 }    
 """
-
 
 INTROSPECT_TYPES_QUERY = """
     {
@@ -711,7 +707,7 @@ def testQueryScan_whenScanDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Scan not found."
 
 
-def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
+def testDeleteScansMutation_whenScanExist_deleteScanAndVulnz(
     authenticated_flask_client: testing.FlaskClient, android_scan: models.Scan
 ) -> None:
     """Ensure the delete scan mutation deletes the scan, its statuses & vulnerabilities."""
@@ -730,15 +726,15 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
     query = """
-        mutation DeleteScan ($scanId: Int!){
-            deleteScan (scanId: $scanId) {
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
                 result
             }
         }
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": android_scan.id}}
+        "/graphql", json={"query": query, "variables": {"scanIds": [android_scan.id]}}
     )
 
     assert response.status_code == 200, response.get_json()
@@ -763,24 +759,24 @@ def testDeleteScanMutation_whenScanExist_deleteScanAndVulnz(
         )
 
 
-def testDeleteScanMutation_whenScanDoesNotExist_returnErrorMessage(
+def testDeleteScansMutation_whenScanDoesNotExist_returnErrorMessage(
     authenticated_flask_client: testing.FlaskClient,
 ) -> None:
     """Ensure the delete scan mutation returns an error message when the scan does not exist."""
     query = """
-        mutation DeleteScan ($scanId: Int!){
-            deleteScan (scanId: $scanId) {
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
                 result
             }
         }
     """
 
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": 42}}
+        "/graphql", json={"query": query, "variables": {"scanIds": [42]}}
     )
 
     assert response.status_code == 200, response.get_json()
-    assert response.get_json()["errors"][0]["message"] == "Scan not found."
+    assert response.get_json()["errors"][0]["message"] == "No scan is found."
 
 
 def testScansQuery_withPagination_shouldReturnPageInfo(
@@ -2016,13 +2012,13 @@ def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
     ]
 
 
-def testStopScanMutation_whenScanIsRunning_shouldStopScan(
+def testStopScansMutation_whenScanIsRunning_shouldStopScan(
     authenticated_flask_client: testing.FlaskClient,
     in_progress_web_scan: models.Scan,
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
-    """Test stopScan mutation when scan is running should stop scan."""
+    """Test stopScans mutation when scan is running should stop scan."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2051,56 +2047,55 @@ def testStopScanMutation_whenScanIsRunning_shouldStopScan(
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
         scan_progress = scan.progress
         query = """
-            mutation stopScan($scanId: Int!){
-                stopScan(scanId: $scanId){
-                    scan{
+            mutation stopScans($scanIds: [Int]!){
+                stopScans(scanIds: $scanIds){
+                    scans{
                         id
                     }
                 }
             }
         """
         response = authenticated_flask_client.post(
-            "/graphql", json={"query": query, "variables": {"scanId": str(scan.id)}}
+            "/graphql", json={"query": query, "variables": {"scanIds": [scan.id]}}
         )
-
         assert response.status_code == 200, response.get_json()
         session.refresh(scan)
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
         response_json = response.get_json()
         nbr_scans_after = session.query(models.Scan).count()
         assert response_json["data"] == {
-            "stopScan": {"scan": {"id": str(in_progress_web_scan.id)}}
+            "stopScans": {"scans": [{"id": str(in_progress_web_scan.id)}]}
         }
         assert scan.progress.name == "STOPPED"
         assert scan.progress != scan_progress
         assert nbr_scans_after == nbr_scans_before
 
 
-def testStopScanMutation_whenNoScanFound_shouldReturnError(
+def testStopScansMutation_whenNoScanFound_shouldReturnError(
     authenticated_flask_client: testing.FlaskClient,
     mocker: plugin.MockerFixture,
     db_engine_path: str,
     clean_db: None,
 ) -> None:
-    """Test stopScan mutation when scan doesn't exist should return error message."""
+    """Test stopScans mutation when scan doesn't exist should return error message."""
     del clean_db
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     query = """
-        mutation stopScan($scanId: Int!){
-            stopScan(scanId: $scanId){
-                scan{
+        mutation stopScans($scanIds: [Int]!){
+            stopScans(scanIds: $scanIds){
+                scans{
                     id
                 }
             }
         }
     """
     response = authenticated_flask_client.post(
-        "/graphql", json={"query": query, "variables": {"scanId": "5"}}
+        "/graphql", json={"query": query, "variables": {"scanIds": ["5"]}}
     )
 
     assert response.status_code == 200, response.get_json()
     response_json = response.get_json()
-    assert response_json["errors"][0]["message"] == "Scan not found."
+    assert response_json["errors"][0]["message"] == "No scan is found."
 
 
 def testQueryVulnerabilitiesOfKb_withPagination_shouldReturnPageInfo(
@@ -2252,6 +2247,11 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         nbr_agent_groups_before_delete = session.query(models.AgentGroup).count()
+        nbr_mappings_agent_group_before_delete = (
+            session.query(models.AgentGroupMapping)
+            .filter_by(agent_group_id=agent_group.id)
+            .count()
+        )
 
     query = """
         mutation DeleteAgentGroup ($agentGroupId: Int!){
@@ -2271,6 +2271,12 @@ def testDeleteAgentGroupMutation_whenAgentGroupExist_deleteAgentGroup(
         assert (
             session.query(models.AgentGroup).count()
             == nbr_agent_groups_before_delete - 1
+        )
+        assert (
+            session.query(models.AgentGroupMapping)
+            .filter_by(agent_group_id=agent_group.id)
+            .count()
+            == nbr_mappings_agent_group_before_delete - 1
         )
 
 

@@ -12,27 +12,27 @@ import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
-from ostorlab import exceptions
-from ostorlab.cli import agent_fetcher, install_agent
-from ostorlab.runtimes import definitions
-from ostorlab.utils import defintions as utils_definitions
-from ostorlab.runtimes.local import runtime
 from ostorlab import configuration_manager
-from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common, export_utils
-from ostorlab.serve_app import import_utils
-from ostorlab.serve_app import types
-from ostorlab.runtimes.local import runtime as local_runtime
-from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab import exceptions
 from ostorlab.assets import android_aab as android_aab_asset
-from ostorlab.assets import ios_ipa as ios_ipa_asset
+from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import asset as ostorlab_asset
+from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.assets import domain_name as domain_name_asset
-from ostorlab.assets import asset as ostorlab_asset
+from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime
+from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import common, export_utils
+from ostorlab.serve_app import import_utils
+from ostorlab.serve_app import types
+from ostorlab.utils import defintions as utils_definitions
 
 DEFAULT_NUMBER_ELEMENTS = 15
 
@@ -292,11 +292,11 @@ class ExportScanMutation(graphene.Mutation):
             return ExportScanMutation(content=export_file_content)
 
 
-class DeleteScanMutation(graphene.Mutation):
+class DeleteScansMutation(graphene.Mutation):
     """Delete Scan & its information mutation."""
 
     class Arguments:
-        scan_id = graphene.Int(required=True)
+        scan_ids = graphene.List(graphene.Int, required=True)
 
     result = graphene.Boolean()
 
@@ -304,13 +304,13 @@ class DeleteScanMutation(graphene.Mutation):
     def mutate(
         root,
         info: graphql_base.ResolveInfo,
-        scan_id: int,
-    ) -> "DeleteScanMutation":
+        scan_ids: list[int],
+    ) -> "DeleteScansMutation":
         """Delete a scan & its information.
 
         Args:
             info: `graphql_base.ResolveInfo` instance.
-            scan_id: The scan ID.
+            scan_ids: The scan IDs.
 
         Raises:
             graphql.GraphQLError in case the scan does not exist.
@@ -320,18 +320,23 @@ class DeleteScanMutation(graphene.Mutation):
 
         """
         with models.Database() as session:
-            scan_query = session.query(models.Scan).filter_by(id=scan_id)
-            if scan_query.count() == 0:
-                raise graphql.GraphQLError("Scan not found.")
-            scan_query.delete()
-            session.query(models.Vulnerability).filter_by(scan_id=scan_id).delete()
-            session.query(models.ScanStatus).filter_by(scan_id=scan_id).delete()
-            DeleteScanMutation._delete_assets(scan_id, session)
-            session.commit()
-            return DeleteScanMutation(result=True)
+            scans = (
+                session.query(models.Scan).filter(models.Scan.id.in_(scan_ids)).all()
+            )
+            if len(scans) == 0:
+                raise graphql.GraphQLError("No scan is found.")
+
+            for scan in scans:
+                scan_query = session.query(models.Scan).filter_by(id=scan.id)
+                scan_query.delete()
+                session.query(models.Vulnerability).filter_by(scan_id=scan.id).delete()
+                session.query(models.ScanStatus).filter_by(scan_id=scan.id).delete()
+                DeleteScansMutation.delete_assets(scan.id, session)
+                session.commit()
+            return DeleteScansMutation(result=True)
 
     @staticmethod
-    def _delete_assets(scan_id: int, session: models.Database) -> None:
+    def delete_assets(scan_id: int, session: models.Database) -> None:
         """Delete assets.
 
         Args:
@@ -481,21 +486,21 @@ class CreateAssetsMutation(graphene.Mutation):
             return None
 
 
-class StopScanMutation(graphene.Mutation):
+class StopScansMutation(graphene.Mutation):
     """Stop scan mutation."""
 
     class Arguments:
-        scan_id = graphene.Int(required=True)
+        scan_ids = graphene.List(graphene.Int, required=True)
 
-    scan = graphene.Field(types.OxoScanType)
+    scans = graphene.List(types.OxoScanType)
 
     @staticmethod
-    def mutate(root, info: graphql_base.ResolveInfo, scan_id: int):
+    def mutate(root, info: graphql_base.ResolveInfo, scan_ids: list[int]):
         """Stop the desired scan.
 
         Args:
             info: `graphql_base.ResolveInfo` instance.
-            scan_id: The scan ID.
+            scan_ids: The scan IDs.
 
         Raises:
             graphql.GraphQLError in case the scan does not exist or the scan id is invalid.
@@ -505,11 +510,14 @@ class StopScanMutation(graphene.Mutation):
 
         """
         with models.Database() as session:
-            scan = session.query(models.Scan).get(scan_id)
-            if scan is None:
-                raise graphql.GraphQLError("Scan not found.")
-            local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
-            return StopScanMutation(scan=scan)
+            scans = (
+                session.query(models.Scan).filter(models.Scan.id.in_(scan_ids)).all()
+            )
+            if len(scans) == 0:
+                raise graphql.GraphQLError("No scan is found.")
+            for scan_id in scan_ids:
+                local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
+            return StopScansMutation(scans=scans)
 
 
 class PublishAgentGroupMutation(graphene.Mutation):
@@ -577,7 +585,14 @@ class DeleteAgentGroupMutation(graphene.Mutation):
             )
             if agent_group_query.count() == 0:
                 raise graphql.GraphQLError("AgentGroup not found.")
+            mappings = session.query(models.AgentGroupMapping).filter_by(
+                agent_group_id=agent_group_id
+            )
+            if mappings.count() > 0:
+                mappings.delete()
+
             agent_group_query.delete()
+
             session.commit()
             return DeleteAgentGroupMutation(result=True)
 
@@ -867,7 +882,7 @@ class RunScanMutation(graphene.Mutation):
 
 
 class Mutations(graphene.ObjectType):
-    delete_scan = DeleteScanMutation.Field(
+    delete_scans = DeleteScansMutation.Field(
         description="Delete a scan & all its information."
     )
     delete_agent_group = DeleteAgentGroupMutation.Field(
@@ -876,7 +891,7 @@ class Mutations(graphene.ObjectType):
     import_scan = ImportScanMutation.Field(description="Import scan from file.")
     export_scan = ExportScanMutation.Field(description="Export scan to file.")
     create_assets = CreateAssetsMutation.Field(description="Create an asset.")
-    stop_scan = StopScanMutation.Field(
+    stop_scans = StopScansMutation.Field(
         description="Stops running scan, scan is marked as stopped once the engine has completed cancellation."
     )
     publish_agent_group = PublishAgentGroupMutation.Field(
