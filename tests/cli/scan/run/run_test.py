@@ -719,3 +719,18 @@ def testOstorlabScanRunCLI_whenApiSchemaAsset_shouldRunCommand(
         assert spy_follow.call_count == 1
         assert len(spy_follow.spy_return) == 1
         assert "agent/ostorlab/api_autodiscovery" in spy_follow.spy_return
+
+
+def testScanRunLink_whenNoAsset_DoesNotCrash(mocker: plugin.MockerFixture) -> None:
+    """Test oxo scan run with --no-asset does not crash."""
+
+    runner = CliRunner()
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "run", "--agent=agent1", "--no-asset"]
+    )
+
+    assert result.output == ""
+    assert result.exit_code == 1

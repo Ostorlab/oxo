@@ -180,7 +180,8 @@ def run(
                 if created_scan is not None:
                     runtime_instance.link_agent_group_scan(created_scan, agent_group)
                     runtime_instance.link_assets_scan(
-                        created_scan.id, asset_group.targets
+                        created_scan.id,
+                        asset_group.targets if asset_group is not None else None,
                     )
 
             except exceptions.OstorlabError as e:
