@@ -3,6 +3,7 @@
 from time import sleep
 
 import docker.models.services
+from docker import errors as docker_errors
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local import log_streamer
@@ -15,6 +16,10 @@ def testLogStreamer_whenServiceDoesntExistAnyMore_thenPrintScanCompleted(
     log_strm = log_streamer.LogStream()
     success_mock = mocker.patch("ostorlab.cli.console.Console.success")
     info_mock = mocker.patch("ostorlab.cli.console.Console.info")
+    mocker.patch(
+        "docker.models.services.ServiceCollection.get",
+        side_effect=docker_errors.NotFound(""),
+    )
 
     log_strm.stream(mock_docker_service)
     sleep(1)
