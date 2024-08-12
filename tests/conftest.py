@@ -1509,3 +1509,14 @@ def multiple_assets_scan_bytes() -> bytes:
     """Returns a dummy zip file."""
     zip_path = pathlib.Path(__file__).parent / "files" / "multiple_assets_scan.zip"
     return zip_path.read_bytes()
+
+
+@pytest.fixture
+def control_message(ping_message: agent_message.Message) -> agent_message.Message:
+    return agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY", "agentX", "agentX", "agentX"]},
+            "message": ping_message.raw,
+        },
+    )

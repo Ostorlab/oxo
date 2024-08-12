@@ -939,3 +939,73 @@ def testProcessMessage_whenAgentSettingsInSelectorsSet_shouldUseAgentSettingsInS
     assert "v3.healthcheck.ping" in test_agent.in_selectors
     assert "v3.asset.file.ios.ipa" in test_agent.in_selectors
     assert process_mock.called is True
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Does not run on windows")
+def testAgentAtExist_whenAgentCrash_shouldExecuteAtExistAndExit(
+    mocker: plugin.MockerFixture, control_message: agent_message.Message
+) -> None:
+    """Ensuring the execution of the `at_exit` method in the case of unexpected agent crashes."""
+
+    mocker.patch("ostorlab.utils.system.get_system_info", return_value=None)
+    mp_event = mp.Event()
+
+    class TestAgent(agent.Agent):
+        """Helper class to test Agent at exit implementation."""
+
+        def __init__(
+            self,
+            agent_definition: agent_definitions.AgentDefinition,
+            agent_settings: runtime_definitions.AgentSettings,
+            mp_event: mp.Event,
+        ) -> None:
+            super().__init__(agent_definition, agent_settings)
+            self.mp_event = mp_event
+
+        def process(self, message: agent_message.Message) -> None:
+            del message
+            raise ValueError()
+
+        def at_exit(self) -> None:
+            self.mp_event.set()
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="testing_agent",
+        ).to_raw_proto()
+    )
+
+    def run_agent(
+        agent_definition: agent_definitions.AgentDefinition,
+        agent_settings: runtime_definitions.AgentSettings,
+        message: agent_message.Message,
+        mp_event: mp.Event,
+    ):
+        """method responsible for running the test agent inside a process."""
+        test_agent = TestAgent(
+            agent_definition=agent_definition,
+            agent_settings=agent_settings,
+            mp_event=mp_event,
+        )
+
+        test_agent.process_message(f"v3.healthcheck.ping.{uuid.uuid4()}", message.raw)
+
+    agent_process = mp.Process(
+        target=run_agent,
+        args=(
+            agent_definition,
+            agent_settings,
+            control_message,
+            mp_event,
+        ),
+        daemon=False,
+    )
+    mp_event.clear()
+    agent_process.start()
+    agent_process.join()
+
+    assert mp_event.is_set() is True

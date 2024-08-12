@@ -236,6 +236,7 @@ class AgentMixin(
             system_info = system.get_system_info()
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
+            self.at_exit()
             logger.error("Message: %s", object_message)
             logger.exception("Exception: %s", e)
         finally:
