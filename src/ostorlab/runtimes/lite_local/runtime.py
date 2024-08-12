@@ -27,7 +27,7 @@ from ostorlab.utils import volumes
 NETWORK_PREFIX = "ostorlab_lite_local_network"
 
 logger = logging.getLogger(__name__)
-console = cli_console.Console()
+console = cli_console.Console(logger=logger)
 
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 
