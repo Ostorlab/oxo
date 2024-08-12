@@ -6,6 +6,7 @@ import pathlib
 import sys
 import time
 from typing import Any, List
+from unittest import mock
 
 import docker
 import flask
@@ -1509,3 +1510,12 @@ def multiple_assets_scan_bytes() -> bytes:
     """Returns a dummy zip file."""
     zip_path = pathlib.Path(__file__).parent / "files" / "multiple_assets_scan.zip"
     return zip_path.read_bytes()
+
+
+@pytest.fixture
+def mock_docker_service():
+    service = mock.Mock()
+    service.name = "test_service"
+    service.id = "service_id"
+    service.logs.return_value = iter([b"Test log line\n", b"Another log line\n"])
+    return service
