@@ -60,7 +60,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
     """Test ostorlab scan command with all options and no sub command.
     Should show list of available commands (assets) and exit with error exit_code = 2.
     """
-
+    mocker.patch("time.sleep")
     mocker.patch(
         "ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run", return_value=True
     )
@@ -120,7 +120,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
         ],
     )
     assert (
-        "Error: Could not install the agents: No internet connection\n" in result.output
+        "ERROR: Could not install the agents: No internet connection\n" in result.output
     )
     assert result.exit_code == 1
     assert agent_install_local_spy.called is True

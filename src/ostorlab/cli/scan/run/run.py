@@ -164,7 +164,8 @@ def run(
             try:
                 _install_agents_with_retry(runtime_instance, agent_group)
             except httpx.HTTPError as e:
-                raise click.ClickException(f"Could not install the agents: {e}")
+                console.error(f"Could not install the agents: {e}")
+                raise click.exceptions.Exit(1)
 
         if arg is not None and len(arg) > 0:
             agent_group.agents = _add_cli_args_to_agent_settings(
