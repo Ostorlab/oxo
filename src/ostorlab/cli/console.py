@@ -1,5 +1,6 @@
 """Pretty prints and logs console statements."""
 
+import logging
 from typing import Dict, List
 
 import rich
@@ -17,7 +18,9 @@ class Console:
         "info": "bold blue",
     }
 
-    def __init__(self, theme: Dict[str, str] = None) -> None:
+    def __init__(
+        self, theme: Dict[str, str] = None, logger: logging.Logger = None
+    ) -> None:
         """Initializes the console with text styling.
 
         Args:
@@ -27,6 +30,7 @@ class Console:
             theme = self.THEME
         self._console = rich.console.Console(theme=rich.theme.Theme(theme))
         self._table = rich.table.Table
+        self._logger = logger
 
     def success(self, text: str) -> None:
         """Shows success message.
@@ -45,6 +49,8 @@ class Console:
         self._console.print(
             f":small_red_triangle: [bold]ERROR:[/] {text}", style="error"
         )
+        if self._logger is not None:
+            self._logger.error(text)
 
     def warning(self, text: str) -> None:
         """Shows warning message.
@@ -55,6 +61,8 @@ class Console:
         self._console.print(
             f":small_orange_diamond: [bold]WARNING:[/] {text}", style="warning"
         )
+        if self._logger is not None:
+            self._logger.warning(text)
 
     def info(self, text: str) -> None:
         """Shows general information message.
@@ -63,6 +71,8 @@ class Console:
             text: The general text to show.
         """
         self._console.print(f":small_blue_diamond: {text}")
+        if self._logger is not None:
+            self._logger.info(text)
 
     def status(self, text: str) -> status.Status:
         """Shows loading text.
