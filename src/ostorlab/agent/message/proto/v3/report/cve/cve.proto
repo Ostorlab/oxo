@@ -17,6 +17,7 @@ message CVSS {
     optional CVSSv3 v31 = 1;
     optional CVSSv3 v30 = 2;
     optional CVSSv2 v2 = 3;
+    optional CVSSv4 v40 = 4;
 }
 
 message CVSSv2 {
@@ -82,6 +83,45 @@ message CVSSv3 {
     optional float impact_score = 31;
     optional float exploitability_score = 32;
 }    
+
+message CVSSv4 {
+    optional string version = 1;
+    optional string vector_string = 2;
+    optional float base_score = 3;
+    optional string base_severity = 4;
+    optional string attack_vector = 5;
+    optional string attack_complexity = 6;
+    optional string attack_requirements = 7;
+    optional string privileges_required = 8;
+    optional string user_interaction = 9;
+    optional string vulnerable_system_confidentiality = 10;
+    optional string vulnerable_system_integrity = 11;
+    optional string vulnerable_system_availability = 12;
+    optional string subsequent_system_confidentiality = 13;
+    optional string subsequent_system_integrity = 14;
+    optional string subsequent_system_availability = 15;
+    optional string exploit_maturity = 16;
+    optional string confidentiality_requirements = 17;
+    optional string integrity_requirements = 18;
+    optional string availability_requirements = 19;
+    optional string modified_attack_vector = 20;
+    optional string modified_attack_complexity = 21;
+    optional string modified_attack_requirements = 22;
+    optional string modified_privileges_required = 23;
+    optional string modified_user_interaction = 24;
+    optional string modified_vulnerable_system_confidentiality = 25;
+    optional string modified_vulnerable_system_integrity = 26;
+    optional string modified_vulnerable_system_availability = 27;
+    optional string modified_subsequent_system_confidentiality = 28;
+    optional string modified_subsequent_system_integrity = 29;
+    optional string modified_subsequent_system_availability = 30;
+    optional string safety = 31;
+    optional string automatable = 32;
+    optional string recovery = 33;
+    optional string value_density = 34;
+    optional string vulnerability_response_effort = 35;
+    optional string provider_urgency = 36;
+}
 
 
     
