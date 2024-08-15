@@ -9,9 +9,8 @@ import click
 
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
-from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 
 logger = logging.getLogger(__name__)
 

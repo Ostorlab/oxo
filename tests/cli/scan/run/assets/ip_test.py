@@ -60,7 +60,7 @@ def testScanRunFile_whenPassedArgSupportedByTheAgent_callScanWithValidSettings(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mocker.patch(
-        "ostorlab.cli.agent_fetcher.get_definition",
+        "ostorlab.agent.agent_fetcher.get_definition",
         return_value=nmap_agent_definition,
     )
     scan_mocked = mocker.patch(
@@ -95,7 +95,7 @@ def testScanRunFile_whenPassedArgIsNotSupportedByTheAgent_callScanWithValidSetti
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mocker.patch(
-        "ostorlab.cli.agent_fetcher.get_definition",
+        "ostorlab.agent.agent_fetcher.get_definition",
         return_value=nmap_agent_definition,
     )
     scan_mocked = mocker.patch(
@@ -129,7 +129,7 @@ def testScanRunFile_whenPassedArgIsOfTypeArrayAndSupportedByTheAgent_callScanWit
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mocker.patch(
-        "ostorlab.cli.agent_fetcher.get_definition",
+        "ostorlab.agent.agent_fetcher.get_definition",
         return_value=nmap_agent_definition,
     )
     scan_mocked = mocker.patch(
@@ -174,7 +174,7 @@ def testScanRunIP_whenAgentKeyPassed_callScanWithValidSettings(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mocker.patch(
-        "ostorlab.cli.agent_fetcher.get_definition",
+        "ostorlab.agent.agent_fetcher.get_definition",
         return_value=nmap_agent_definition,
     )
     scan_mocked = mocker.patch(

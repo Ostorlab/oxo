@@ -7,7 +7,7 @@ from typing import Generator
 import docker.models.services
 from docker import errors as docker_errors
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 
 console = cli_console.Console()
 docker_client = docker.from_env()

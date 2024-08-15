@@ -9,8 +9,7 @@ from typing import Optional
 
 import click
 
-from ostorlab import configuration_manager as config_manager
-from ostorlab.cli import console as cli_console
+from ostorlab import configuration_manager as config_manager, console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter

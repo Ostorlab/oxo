@@ -4,8 +4,7 @@ from typing import Dict, Iterator
 
 from rich import progress
 
-from ostorlab.cli import console as cli_console
-
+from ostorlab import console as cli_console
 
 console = cli_console.Console()
 

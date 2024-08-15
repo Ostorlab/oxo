@@ -4,7 +4,7 @@ import sys
 
 import click
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.runtimes.local.models import models
 

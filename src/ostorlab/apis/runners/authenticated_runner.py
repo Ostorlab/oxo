@@ -19,7 +19,7 @@ from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
 from ostorlab.apis.runners import login_runner
 from ostorlab.apis.runners import runner
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 
 AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"
 

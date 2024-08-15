@@ -2,7 +2,7 @@
 
 import os
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.ci_scan.run.ci_logger import logger
 
 console = cli_console.Console()

@@ -7,9 +7,9 @@ import click
 import docker
 import docker.errors
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.agent.install import install_progress
-from ostorlab.cli import agent_fetcher
+from ostorlab.agent import agent_fetcher
 
 logger = logging.getLogger(__name__)
 

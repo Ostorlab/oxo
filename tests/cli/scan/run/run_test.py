@@ -572,7 +572,7 @@ def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     runner = CliRunner()
     mocker.patch(
-        "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
+        "ostorlab.agent.agent_fetcher.get_definition", return_value=nmap_agent_def
     )
 
     runner.invoke(
@@ -645,7 +645,7 @@ def testOstorlabScanRunCLI_whenLink_shouldLinkAssetToScan(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     runner = CliRunner()
     mocker.patch(
-        "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
+        "ostorlab.agent.agent_fetcher.get_definition", return_value=nmap_agent_def
     )
 
     runner.invoke(

@@ -13,9 +13,9 @@ import docker
 import tenacity
 from docker.models import services as docker_models_services
 
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 from ostorlab.assets import asset as base_asset
-from ostorlab.cli import console as cli_console, dumpers
+from ostorlab.cli import dumpers
 from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions

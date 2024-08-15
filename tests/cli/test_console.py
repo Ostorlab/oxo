@@ -1,6 +1,6 @@
 from pytest_mock import plugin
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 
 
 def testConsoleInfo_whenLoggerSet_shouldLogMessages(

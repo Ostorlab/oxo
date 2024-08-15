@@ -22,8 +22,7 @@ from alembic import command as alembic_command
 from alembic.runtime import migration
 from alembic.util import exc as alembic_exceptions
 
-from ostorlab import configuration_manager as config_manager
-from ostorlab.cli import console as cli_console
+from ostorlab import configuration_manager as config_manager, console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.models import utils
 from ostorlab.utils import risk_rating as risk_rating_utils

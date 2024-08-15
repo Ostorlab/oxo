@@ -10,7 +10,7 @@ import ipaddress
 
 
 from ostorlab.agent.schema import loader
-from ostorlab.cli import agent_fetcher
+from ostorlab.agent import agent_fetcher
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import defintions
 from ostorlab.assets import android_apk as android_apk_asset

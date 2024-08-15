@@ -10,7 +10,7 @@ from ostorlab.runtimes import registry
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.cli import install_agent
-from ostorlab.cli import agent_fetcher
+from ostorlab.agent import agent_fetcher
 from ostorlab.assets import asset
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6

@@ -6,9 +6,8 @@ from typing import Tuple, Optional
 import click
 
 from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
 from ostorlab.assets import ios_store as ios_store_asset
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)

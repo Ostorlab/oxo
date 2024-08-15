@@ -1,6 +1,6 @@
 """Logger is in charge of defining the output format based on CI expected output."""
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.ci_scan.run.ci_logger import logger
 
 console = cli_console.Console()

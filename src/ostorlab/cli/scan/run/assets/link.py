@@ -7,8 +7,7 @@ import click
 
 from ostorlab.assets import link as link_asset
 from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()

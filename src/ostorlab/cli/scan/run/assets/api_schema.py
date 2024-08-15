@@ -7,9 +7,8 @@ from typing import Optional
 import click
 
 from ostorlab.assets import api_schema as api_schema_asset
-from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)

@@ -24,7 +24,8 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.cli import install_agent
+from ostorlab.agent import agent_fetcher
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local import runtime as local_runtime

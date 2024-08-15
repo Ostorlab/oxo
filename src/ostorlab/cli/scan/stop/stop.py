@@ -5,7 +5,7 @@ Example of usage:
 
 import click
 from ostorlab.cli.scan import scan
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 
 console = cli_console.Console()
 

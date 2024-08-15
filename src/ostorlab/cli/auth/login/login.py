@@ -6,7 +6,7 @@ import click
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli.auth import auth
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()

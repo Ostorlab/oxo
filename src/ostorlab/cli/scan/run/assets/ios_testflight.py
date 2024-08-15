@@ -5,9 +5,8 @@ import logging
 import click
 
 from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
 from ostorlab.assets import ios_testflight as ios_testflight_asset
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)

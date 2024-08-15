@@ -7,7 +7,7 @@ from typing import Optional
 import click
 import docker
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.agent import agent as agent_cli
 
 console = cli_console.Console()

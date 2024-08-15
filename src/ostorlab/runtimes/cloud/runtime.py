@@ -15,7 +15,7 @@ import markdownify
 import rich
 from rich import markdown, panel
 
-from ostorlab import configuration_manager
+from ostorlab import configuration_manager, console as cli_console
 from ostorlab.apis import agent_details
 from ostorlab.apis import agent_group
 from ostorlab.apis import assets as api_assets
@@ -28,7 +28,6 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import link
-from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime

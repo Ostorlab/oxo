@@ -5,7 +5,7 @@ from typing import Optional
 
 import click
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.vulnz import vulnz
 from ostorlab.runtimes.cloud import runtime as cloud_runtime
 from ostorlab.runtimes.local import runtime as local_runtime

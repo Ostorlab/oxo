@@ -6,11 +6,10 @@ from typing import Dict
 import click
 from rich import markdown
 
-from ostorlab import configuration_manager
+from ostorlab import configuration_manager, console as cli_console
 from ostorlab.apis import agent_search as agent_search_api
 from ostorlab.apis.runners import public_runner, authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
-from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
 
 console = cli_console.Console()

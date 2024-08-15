@@ -12,13 +12,12 @@ import httpx
 import tenacity
 from ruamel.yaml import error
 
-from ostorlab import exceptions
+from ostorlab import exceptions, console as cli_console
 from ostorlab.agent.schema import validator
-from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
 from ostorlab.cli.scan import scan
 from ostorlab.cli import types
-from ostorlab.cli import agent_fetcher
+from ostorlab.agent import agent_fetcher
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import defintions as utils_definitions

@@ -7,7 +7,7 @@ from typing import Union
 
 import click
 
-from ostorlab.cli import console as cli_console
+from ostorlab import console as cli_console
 from ostorlab.cli.scan import scan
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import styles, risk_rating
