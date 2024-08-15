@@ -5,7 +5,8 @@ import logging
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
 from ostorlab.apis import revoke_api_key
-from ostorlab import configuration_manager, console as cli_console
+from ostorlab import configuration_manager
+from ostorlab import console as cli_console
 from ostorlab.cli.auth import auth
 
 logger = logging.getLogger(__name__)

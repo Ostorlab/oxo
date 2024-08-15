@@ -8,7 +8,8 @@ import re
 import docker
 import docker.errors
 
-from ostorlab import configuration_manager, console as cli_console
+from ostorlab import configuration_manager
+from ostorlab import console as cli_console
 from ostorlab.apis import agent_details as agent_details_api
 from ostorlab.apis.runners import public_runner, authenticated_runner
 from ostorlab.apis.runners import runner as base_runner

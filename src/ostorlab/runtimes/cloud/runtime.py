@@ -15,7 +15,8 @@ import markdownify
 import rich
 from rich import markdown, panel
 
-from ostorlab import configuration_manager, console as cli_console
+from ostorlab import configuration_manager
+from ostorlab import console as cli_console
 from ostorlab.apis import agent_details
 from ostorlab.apis import agent_group
 from ostorlab.apis import assets as api_assets

@@ -44,6 +44,8 @@ class LogStream:
         self._threads = []
         self._color_map = {}
         self._active_services = []
+        thread_stop_log = threading.Thread(target=self._check_services, daemon=False)
+        thread_stop_log.start()
 
     def stream(self, service: docker.models.services.Service) -> None:
         """Stream logs of a service without blocking.
@@ -62,9 +64,6 @@ class LogStream:
         self._threads.append(t)
         t.start()
 
-        thread_stop_log = threading.Thread(target=self._check_services, daemon=False)
-        thread_stop_log.start()
-
     def _select_color(self, service):
         """Select color for console output of service."""
         if service.name in self._color_map:
@@ -78,6 +77,9 @@ class LogStream:
     def _check_services(self) -> None:
         """Check if the services are still running."""
         while True:
+            if len(self._threads) == 0:
+                continue
+
             for service_id in list(self._active_services):
                 try:
                     docker_client.services.get(service_id)
