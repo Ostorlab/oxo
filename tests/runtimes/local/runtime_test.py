@@ -1,4 +1,5 @@
 """Unittest for local runtime."""
+
 from time import sleep
 from typing import Any
 
@@ -343,12 +344,10 @@ def testCheckServicesMethod_whenServicesAreStopped_shouldExit(
         return_value="agent_42_docker_image",
         new_callable=mocker.PropertyMock,
     )
-    mocker.patch(
-        "ostorlab.runtimes.local.agent_runtime.AgentRuntime"
-    )
+    mocker.patch("ostorlab.runtimes.local.agent_runtime.AgentRuntime")
     mocker.patch("ostorlab.runtimes.local.services.mq.LocalRabbitMQ.is_service_healthy")
     mocker.patch("ostorlab.runtimes.local.services.redis.LocalRedis.is_service_healthy")
-    exit_mock = mocker.patch('sys.exit')
+    exit_mock = mocker.patch("sys.exit")
     local_runtime_instance = local_runtime.LocalRuntime()
     agent_group_definition = definitions.AgentGroupDefinition(
         agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
@@ -364,11 +363,3 @@ def testCheckServicesMethod_whenServicesAreStopped_shouldExit(
     assert exit_mock.call_count == 1
     exit_with = exit_mock.call_args_list[0][0][0]
     assert exit_with == 0
-
-
-
-
-
-
-
-
