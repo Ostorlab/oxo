@@ -45,7 +45,9 @@ class LogStream:
         self._color_map = {}
         self._active_services = []
         self._stop_event = threading.Event()
-        self._scan_complete_check = threading.Thread(target=self._check_services, daemon=False)
+        self._scan_complete_check = threading.Thread(
+            target=self._check_services, daemon=False
+        )
         self._scan_complete_check.start()
 
     def stream(self, service: docker.models.services.Service) -> None:
