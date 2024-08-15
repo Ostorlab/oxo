@@ -14,8 +14,8 @@ def testLogStreamer_whenServiceDoesntExistAnyMore_thenPrintScanCompleted(
 ) -> None:
     """Test that the log streamer prints a message when the services of scan don't exist anymore."""
     log_strm = log_streamer.LogStream()
-    success_mock = mocker.patch("ostorlab.cli.console.Console.success")
-    info_mock = mocker.patch("ostorlab.cli.console.Console.info")
+    success_mock = mocker.patch("ostorlab.console.Console.success")
+    info_mock = mocker.patch("ostorlab.console.Console.info")
     mocker.patch(
         "docker.models.services.ServiceCollection.get",
         side_effect=docker_errors.NotFound(""),
