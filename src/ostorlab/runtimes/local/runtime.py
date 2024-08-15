@@ -234,10 +234,10 @@ class LocalRuntime(runtime.Runtime):
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
-            scan_complete_check = threading.Thread(
+            scan_complete_thread = threading.Thread(
                 target=self._check_services_running, daemon=False
             )
-            scan_complete_check.start()
+            scan_complete_thread.start()
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
@@ -267,13 +267,13 @@ class LocalRuntime(runtime.Runtime):
 
         stop_event = threading.Event()
         while stop_event.is_set() is False:
-            for service_id in list(self._log_streamer.active_services):
+            for service_id in list(self._log_streamer.services):
                 try:
                     self._docker_client.services.get(service_id)
                 except docker_errors.NotFound:
-                    self._log_streamer.active_services.remove(service_id)
-            if len(self._log_streamer.active_services) == 0:
-                console.success("Scan completed.")
+                    self._log_streamer.services.remove(service_id)
+            if len(self._log_streamer.services) == 0:
+                console.success("Scan done.")
                 stop_event.set()
         sys.exit(0)
 
