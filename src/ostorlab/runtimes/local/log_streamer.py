@@ -48,7 +48,6 @@ class LogStream:
         self._scan_complete_check = threading.Thread(
             target=self._check_services, daemon=False
         )
-        self._scan_complete_check.start()
 
     def stream(self, service: docker.models.services.Service) -> None:
         """Stream logs of a service without blocking.
@@ -66,6 +65,9 @@ class LogStream:
         )
         self._threads.append(t)
         t.start()
+
+        if self._scan_complete_check.is_alive() is False:
+            self._scan_complete_check.start()
 
     def _select_color(self, service):
         """Select color for console output of service."""
