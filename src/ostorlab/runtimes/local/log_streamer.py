@@ -40,6 +40,7 @@ class LogStream:
     def __init__(self):
         self._threads = []
         self._color_map = {}
+        self.active_services = []
 
     def stream(self, service: docker.models.services.Service) -> None:
         """Stream logs of a service without blocking.
@@ -51,8 +52,9 @@ class LogStream:
         """
         color = self._select_color(service)
         logs = service.logs(details=False, follow=True, stdout=True, stderr=True)
+        self.active_services.append(service.id)
         t = threading.Thread(
-            target=_stream_log, args=(logs, service.name, color), daemon=False
+            target=_stream_log, args=(logs, service.name, color), daemon=True
         )
         self._threads.append(t)
         t.start()
