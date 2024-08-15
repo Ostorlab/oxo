@@ -349,6 +349,7 @@ def testCheckServicesMethod_whenServicesAreStopped_shouldExit(
     mocker.patch("ostorlab.runtimes.local.services.redis.LocalRedis.is_service_healthy")
     exit_mock = mocker.patch("sys.exit")
     local_runtime_instance = local_runtime.LocalRuntime()
+    local_runtime_instance.follow = ["service1"]
     agent_group_definition = definitions.AgentGroupDefinition(
         agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
     )
