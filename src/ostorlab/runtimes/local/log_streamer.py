@@ -44,8 +44,9 @@ class LogStream:
         self._threads = []
         self._color_map = {}
         self._active_services = []
-        thread_stop_log = threading.Thread(target=self._check_services, daemon=False)
-        thread_stop_log.start()
+        self._stop_event = threading.Event()
+        self._scan_complete_check = threading.Thread(target=self._check_services, daemon=False)
+        self._scan_complete_check.start()
 
     def stream(self, service: docker.models.services.Service) -> None:
         """Stream logs of a service without blocking.
@@ -76,7 +77,7 @@ class LogStream:
 
     def _check_services(self) -> None:
         """Check if the services are still running."""
-        while True:
+        while self._stop_event.is_set() is False:
             if len(self._threads) == 0:
                 continue
 
@@ -87,4 +88,5 @@ class LogStream:
                     self._active_services.remove(service_id)
             if len(self._active_services) == 0:
                 console.success("Scan completed.")
-                sys.exit(0)
+                self._stop_event.set()
+        sys.exit(0)
