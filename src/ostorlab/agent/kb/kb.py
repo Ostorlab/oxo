@@ -29,6 +29,7 @@ class Entry:
     targeted_by_ransomware: bool = False
     targeted_by_nation_state: bool = False
     cvss_v3_vector: str = ""
+    cvss_v4_vector: str = ""
     category_groups: Optional[list[dict[str, Union[str, list[str]]]]] = None
 
 
@@ -68,6 +69,7 @@ class MetaKB(type):
                 targeted_by_ransomware=meta.get("targeted_by_ransomware", False),
                 targeted_by_nation_state=meta.get("targeted_by_nation_state", False),
                 cvss_v3_vector=meta.get("cvss_v3_vector", ""),
+                cvss_v4_vector=meta.get("cvss_v4_vector", ""),
                 category_groups=category_groups,
             )
 
