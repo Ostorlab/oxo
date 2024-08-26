@@ -45,11 +45,11 @@ async def _start_periodic_persist_state(
 def scanner(
     ctx: click.core.Context, daemon: bool, scanner_id: str, parallel: str
 ) -> None:
-    """Ostorlab scanner enables running custom instances of scanners.
+    """Oxo scanner enables running custom instances of scanners.
     Scanner communicates with NATs to receive start scan messages.\n
     """
     if sys.platform != "linux":
-        console.error("ostorlab scanner sub-command is only supported on Unix systems.")
+        console.error("oxo scanner sub-command is only supported on Unix systems.")
         raise click.exceptions.Exit(2)
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")

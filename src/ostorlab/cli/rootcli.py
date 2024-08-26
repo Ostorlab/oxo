@@ -38,8 +38,8 @@ def rootcli(
     api_key: str = None,
     gcp_logging_credential: Optional[str] = None,
 ) -> None:
-    """Ostorlab is an open-source project to help automate security testing.\n
-    Ostorlab standardizes interoperability between tools in a consistent, scalable, and performant way.
+    """Oxo is an open-source project to help automate security testing.\n
+    Oxo standardizes interoperability between tools in a consistent, scalable, and performant way.
     """
     ctx.obj = {}
     ctx.obj["proxy"] = proxy
