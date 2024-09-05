@@ -547,8 +547,6 @@ class PublishAgentGroupMutation(graphene.Mutation):
             types.OxoAssetTypeEnum.get(asset_type.upper())
             for asset_type in agent_group.asset_types
         ]
-        if len(asset_types) == 0:
-            asset_types = [asset_type.value for asset_type in models.AssetTypeEnum]
         group = models.AgentGroup.create(
             name=agent_group.name,
             description=agent_group.description,
