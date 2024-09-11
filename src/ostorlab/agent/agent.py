@@ -372,10 +372,10 @@ class AgentMixin(
             None
         """
         if (
-            any(
-                out_selector.startswith(selector) for out_selector in self.out_selectors
+            all(
+                selector.startswith(out_selector) for out_selector in self.out_selectors
             )
-            is True
+            is False
         ):
             logger.error("selector not present in list of out selectors")
             # CAUTION: this check is enforced on the client-side only in certain runtimes
