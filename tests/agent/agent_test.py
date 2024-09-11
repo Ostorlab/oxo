@@ -939,3 +939,69 @@ def testProcessMessage_whenAgentSettingsInSelectorsSet_shouldUseAgentSettingsInS
     assert "v3.healthcheck.ping" in test_agent.in_selectors
     assert "v3.asset.file.ios.ipa" in test_agent.in_selectors
     assert process_mock.called is True
+
+
+def testEmit_whenOutSelectorIsNotExact_emitsMessage(
+    agent_run_mock: agent_testing.AgentRunInstance,
+) -> None:
+    """Test emit is adding the agent in the control message."""
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            pass
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="some_name", out_selectors=["v3.report"]
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="some_key",
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+
+    test_agent.emit(
+        "v3.report.vulnerability",
+        {
+            "title": "some_title",
+            "technical_detail": "some_detail",
+            "risk_rating": "MEDIUM",
+        },
+    )
+
+    assert len(agent_run_mock.control_messages) > 0
+    assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
+
+
+def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
+    agent_run_mock: agent_testing.AgentRunInstance,
+) -> None:
+    """Test emit is adding the agent in the control message."""
+
+    class TestAgent(agent.Agent):
+        """Helper class to test OpenTelemetry mixin implementation."""
+
+        def process(self, message: agent_message.Message) -> None:
+            pass
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="some_name", out_selectors=["v3.report.vulnerability.xxx"]
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="some_key",
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+
+    with pytest.raises(agent.NonListedMessageSelectorError):
+        test_agent.emit(
+            "v3.report.vulnerability",
+            {
+                "title": "some_title",
+                "technical_detail": "some_detail",
+                "risk_rating": "MEDIUM",
+            },
+        )

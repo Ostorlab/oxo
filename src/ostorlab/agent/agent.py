@@ -371,7 +371,12 @@ class AgentMixin(
         Returns:
             None
         """
-        if selector not in self.out_selectors:
+        if (
+            any(
+                out_selector.startswith(selector) for out_selector in self.out_selectors
+            )
+            is True
+        ):
             logger.error("selector not present in list of out selectors")
             # CAUTION: this check is enforced on the client-side only in certain runtimes
             raise NonListedMessageSelectorError(
