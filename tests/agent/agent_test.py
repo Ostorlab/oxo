@@ -944,7 +944,7 @@ def testProcessMessage_whenAgentSettingsInSelectorsSet_shouldUseAgentSettingsInS
 def testEmit_whenOutSelectorIsNotExact_emitsMessage(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:
-    """Test emit is adding the agent in the control message."""
+    """Test emit when out-selector is the message parent."""
 
     class TestAgent(agent.Agent):
         """Helper class to test OpenTelemetry mixin implementation."""
@@ -978,7 +978,7 @@ def testEmit_whenOutSelectorIsNotExact_emitsMessage(
 def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:
-    """Test emit is adding the agent in the control message."""
+    """Test emit when out-selector is not the message parent."""
 
     class TestAgent(agent.Agent):
         """Helper class to test OpenTelemetry mixin implementation."""
