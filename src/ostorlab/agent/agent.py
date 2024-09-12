@@ -372,7 +372,7 @@ class AgentMixin(
             None
         """
         if (
-            all(
+            any(
                 selector.startswith(out_selector) for out_selector in self.out_selectors
             )
             is False
