@@ -252,6 +252,7 @@ class CloudRuntime(runtime.Runtime):
         number_elements: int = 10,
         filter_risk_rating: Optional[List[str]] = None,
         search: Optional[str] = None,
+        order_by: Optional[str] = None,
     ) -> None:
         """List vulnz from the cloud using and render them in a table.
 

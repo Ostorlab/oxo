@@ -1509,3 +1509,64 @@ def multiple_assets_scan_bytes() -> bytes:
     """Returns a dummy zip file."""
     zip_path = pathlib.Path(__file__).parent / "files" / "multiple_assets_scan.zip"
     return zip_path.read_bytes()
+
+
+@pytest.fixture
+def scan_multiple_vulnz_different_risk_ratings(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_scan_db = models.Scan.create("test")
+    models.Vulnerability.create(
+        title="vulnerability 1",
+        short_description="vulnerability 1",
+        description="vulnerability 1",
+        recommendation="Consider fixing soon",
+        technical_detail="example=$input",
+        risk_rating="MEDIUM",
+        cvss_v3_vector="5:6:7",
+        dna="12347",
+        location={},
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    models.Vulnerability.create(
+        title="vulnerability 2",
+        short_description="vulnerability 2",
+        description="vulnerability 2",
+        recommendation="Fix immediately",
+        technical_detail="example=$input",
+        risk_rating="HIGH",
+        cvss_v3_vector="5:6:7",
+        dna="12345",
+        location={},
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    models.Vulnerability.create(
+        title="vulnerability 3",
+        short_description="vulnerability 3",
+        description="vulnerability 3",
+        recommendation="Monitor the situation",
+        technical_detail="example=$input",
+        risk_rating="LOW",
+        cvss_v3_vector="5:6:7",
+        dna="12346",
+        location={},
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    models.Vulnerability.create(
+        title="vulnerability 4",
+        short_description="vulnerability 4",
+        description="vulnerability 4",
+        recommendation="Consider fixing soon",
+        technical_detail="example=$input",
+        risk_rating="MEDIUM",
+        cvss_v3_vector="5:6:7",
+        dna="12347",
+        location={},
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    return create_scan_db

@@ -475,3 +475,112 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectRes
         all(word in result_tech_detail.output for word in result_tech_detail_keywords)
         is True
     )
+
+
+def testOstorlabVulnzListCLI_whenListVulnz_showsVulnzOrderedByRiskRatingByDefault(
+    scan_multiple_vulnz_different_risk_ratings: models.Scan,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test oxo vulnz list command orders vulnerabilities by risk rating."""
+    runner = CliRunner()
+    table_mock = mocker.patch("ostorlab.cli.console.Console.table")
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        ["vulnz", "list", "-s", str(scan_multiple_vulnz_different_risk_ratings.id)],
+    )
+
+    assert result.exception is None
+    risk_ratings = [
+        vuln.get("risk_rating") for vuln in table_mock.call_args_list[0][1].get("data")
+    ]
+    assert risk_ratings == [
+        "[bold bright_white on #F55246]High[/]",
+        "[bold bright_white on #FF9800]Medium[/]",
+        "[bold bright_white on #FF9800]Medium[/]",
+        "[bold bright_white on #FDDB45]Low[/]",
+    ]
+
+
+def testOstorlabVulnzListCLI_whenListVulnzOrderByID_showsVulnzOrderedByID(
+    scan_multiple_vulnz_different_risk_ratings: models.Scan,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test oxo vulnz list command orders vulnerabilities by ID."""
+    runner = CliRunner()
+    table_mock = mocker.patch("ostorlab.cli.console.Console.table")
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "list",
+            "-s",
+            str(scan_multiple_vulnz_different_risk_ratings.id),
+            "-o",
+            "id",
+        ],
+    )
+
+    assert result.exception is None
+    ids = [vuln.get("id") for vuln in table_mock.call_args_list[0][1].get("data")]
+    assert ids == ["1", "2", "3", "4"]
+
+
+def testOstorlabVulnzListCLI_whenListVulnzOrderByTitle_showsVulnzOrderedByTitle(
+    scan_multiple_vulnz_different_risk_ratings: models.Scan,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test oxo vulnz list command orders vulnerabilities by Title."""
+    runner = CliRunner()
+    table_mock = mocker.patch("ostorlab.cli.console.Console.table")
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "list",
+            "-s",
+            str(scan_multiple_vulnz_different_risk_ratings.id),
+            "-o",
+            "title",
+        ],
+    )
+
+    assert result.exception is None
+    titles = [vuln.get("title") for vuln in table_mock.call_args_list[0][1].get("data")]
+    assert titles == [
+        "vulnerability 1",
+        "vulnerability 2",
+        "vulnerability 3",
+        "vulnerability 4",
+    ]
+
+
+def testOstorlabVulnzListCLI_whenListVulnzOrderByInvalidOption_showsErrorMessage(
+    scan_multiple_vulnz_different_risk_ratings: models.Scan,
+) -> None:
+    """Test oxo vulnz list command orders vulnerabilities by Title."""
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "vulnz",
+            "list",
+            "-s",
+            str(scan_multiple_vulnz_different_risk_ratings.id),
+            "-o",
+            "invalid",
+        ],
+    )
+
+    assert result.exception is not None
+    assert (
+        result.output.replace("\r\n", "\n")
+        == """Usage: rootcli vulnz list [OPTIONS]
+Try 'rootcli vulnz list --help' for help.
+
+Error: Invalid value for '--order-by' / '-o': 'invalid' is not one of 'risk_rating', 'title', 'id'.
+"""
+    )

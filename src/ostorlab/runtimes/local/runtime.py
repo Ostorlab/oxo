@@ -635,8 +635,9 @@ class LocalRuntime(runtime.Runtime):
     def list_vulnz(
         self,
         scan_id: int,
-        filter_risk_rating: Optional[List[str]],
-        search: Optional[str],
+        filter_risk_rating: Optional[List[str]] = None,
+        search: Optional[str] = None,
+        order_by: str = "risk_rating",
     ) -> None:
         try:
             with models.Database() as session:
@@ -658,7 +659,22 @@ class LocalRuntime(runtime.Runtime):
                         )
                     )
 
-                vulnerabilities = query.order_by(models.Vulnerability.title).all()
+                if order_by == "risk_rating":
+                    case_ordering = case(
+                        [
+                            (models.Vulnerability.risk_rating == rating, order)
+                            for rating, order in risk_rating.RATINGS_ORDER.items()
+                        ],
+                        else_=len(risk_rating.RATINGS_ORDER),
+                    )
+                    vulnerabilities = query.order_by(
+                        case_ordering, models.Vulnerability.title
+                    ).all()
+                elif order_by == "title":
+                    vulnerabilities = query.order_by(models.Vulnerability.title).all()
+                elif order_by == "id":
+                    vulnerabilities = query.order_by(models.Vulnerability.id).all()
+
             vulnz_list = []
             for vulnerability in vulnerabilities:
                 vulnerability_location = vulnerability.location or ""
