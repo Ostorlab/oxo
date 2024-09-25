@@ -1509,3 +1509,76 @@ def multiple_assets_scan_bytes() -> bytes:
     """Returns a dummy zip file."""
     zip_path = pathlib.Path(__file__).parent / "files" / "multiple_assets_scan.zip"
     return zip_path.read_bytes()
+
+
+@pytest.fixture
+def scan_multiple_vulnz_different_risk_ratings(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_scan_db = models.Scan.create("test")
+    models.Vulnerability.create(
+        title="Medium risk vulnerability 1",
+        short_description="Medium risk issue",
+        description="A vulnerability with a medium risk rating",
+        recommendation="Consider fixing soon",
+        technical_detail="example=$input",
+        risk_rating="MEDIUM",
+        cvss_v3_vector="5:6:7",
+        dna="12347",
+        location={
+            "domain_name": {"name": "mediumrisk.com"},
+            "metadata": [{"type": "URL", "value": "https://mediumrisk.com"}],
+        },
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    models.Vulnerability.create(
+        title="High risk vulnerability",
+        short_description="High risk issue",
+        description="A vulnerability with a high risk rating",
+        recommendation="Fix immediately",
+        technical_detail="example=$input",
+        risk_rating="HIGH",
+        cvss_v3_vector="5:6:7",
+        dna="12345",
+        location={
+            "domain_name": {"name": "highrisk.com"},
+            "metadata": [{"type": "URL", "value": "https://highrisk.com"}],
+        },
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    models.Vulnerability.create(
+        title="Low risk vulnerability",
+        short_description="Low risk issue",
+        description="A vulnerability with a low risk rating",
+        recommendation="Monitor the situation",
+        technical_detail="example=$input",
+        risk_rating="LOW",
+        cvss_v3_vector="5:6:7",
+        dna="12346",
+        location={
+            "domain_name": {"name": "lowrisk.com"},
+            "metadata": [{"type": "URL", "value": "https://lowrisk.com"}],
+        },
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    models.Vulnerability.create(
+        title="Medium risk vulnerability 2",
+        short_description="Medium risk issue",
+        description="A vulnerability with a medium risk rating",
+        recommendation="Consider fixing soon",
+        technical_detail="example=$input",
+        risk_rating="MEDIUM",
+        cvss_v3_vector="5:6:7",
+        dna="12347",
+        location={
+            "domain_name": {"name": "mediumrisk.com"},
+            "metadata": [{"type": "URL", "value": "https://mediumrisk.com"}],
+        },
+        scan_id=create_scan_db.id,
+        references=[],
+    )
+    return create_scan_db
