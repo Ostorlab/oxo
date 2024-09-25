@@ -635,8 +635,8 @@ class LocalRuntime(runtime.Runtime):
     def list_vulnz(
         self,
         scan_id: int,
-        filter_risk_rating: Optional[List[str]],
-        search: Optional[str],
+        filter_risk_rating: Optional[List[str]] = None,
+        search: Optional[str] = None,
         order_by: str = "risk_rating",
     ) -> None:
         try:

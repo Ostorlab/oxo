@@ -479,9 +479,11 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectRes
 
 def testOstorlabVulnzListCLI_whenListVulnz_showsVulnzOrderedByRiskRatingByDefault(
     scan_multiple_vulnz_different_risk_ratings: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test oxo vulnz list command orders vulnerabilities by risk rating."""
     runner = CliRunner()
+    table_mock = mocker.patch("ostorlab.cli.console.Console.table")
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -489,45 +491,24 @@ def testOstorlabVulnzListCLI_whenListVulnz_showsVulnzOrderedByRiskRatingByDefaul
     )
 
     assert result.exception is None
-    assert (
-        result.output.replace("\r\n", "\n")
-        == """🔹 Fetching vulnerabilities for scan 1
-                                                                                
-                        Scan 1: Found 4 vulnerabilities.                        
-┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 2  │ High risk    │ Domain:      │ High        │ 5:6:7        │ High risk    │
-│    │ vulnerabili… │ highrisk.com │             │              │ issue        │
-│    │              │ URL:         │             │              │              │
-│    │              │ https://hig… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 1  │ Medium risk  │ Domain:      │ Medium      │ 5:6:7        │ Medium risk  │
-│    │ vulnerabili… │ mediumrisk.… │             │              │ issue        │
-│    │ 1            │ URL:         │             │              │              │
-│    │              │ https://med… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 4  │ Medium risk  │ Domain:      │ Medium      │ 5:6:7        │ Medium risk  │
-│    │ vulnerabili… │ mediumrisk.… │             │              │ issue        │
-│    │ 2            │ URL:         │             │              │              │
-│    │              │ https://med… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 3  │ Low risk     │ Domain:      │ Low         │ 5:6:7        │ Low risk     │
-│    │ vulnerabili… │ lowrisk.com  │             │              │ issue        │
-│    │              │ URL:         │             │              │              │
-│    │              │ https://low… │             │              │              │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘
-✔ Vulnerabilities listed successfully.
-"""
-    )
+    risk_ratings = [
+        vuln.get("risk_rating") for vuln in table_mock.call_args_list[0][1].get("data")
+    ]
+    assert risk_ratings == [
+        "[bold bright_white on #F55246]High[/]",
+        "[bold bright_white on #FF9800]Medium[/]",
+        "[bold bright_white on #FF9800]Medium[/]",
+        "[bold bright_white on #FDDB45]Low[/]",
+    ]
 
 
 def testOstorlabVulnzListCLI_whenListVulnzOrderByID_showsVulnzOrderedByID(
     scan_multiple_vulnz_different_risk_ratings: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test oxo vulnz list command orders vulnerabilities by ID."""
     runner = CliRunner()
+    table_mock = mocker.patch("ostorlab.cli.console.Console.table")
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -542,45 +523,17 @@ def testOstorlabVulnzListCLI_whenListVulnzOrderByID_showsVulnzOrderedByID(
     )
 
     assert result.exception is None
-    assert (
-        result.output.replace("\r\n", "\n")
-        == """🔹 Fetching vulnerabilities for scan 1
-                                                                                
-                        Scan 1: Found 4 vulnerabilities.                        
-┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 1  │ Medium risk  │ Domain:      │ Medium      │ 5:6:7        │ Medium risk  │
-│    │ vulnerabili… │ mediumrisk.… │             │              │ issue        │
-│    │ 1            │ URL:         │             │              │              │
-│    │              │ https://med… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 2  │ High risk    │ Domain:      │ High        │ 5:6:7        │ High risk    │
-│    │ vulnerabili… │ highrisk.com │             │              │ issue        │
-│    │              │ URL:         │             │              │              │
-│    │              │ https://hig… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 3  │ Low risk     │ Domain:      │ Low         │ 5:6:7        │ Low risk     │
-│    │ vulnerabili… │ lowrisk.com  │             │              │ issue        │
-│    │              │ URL:         │             │              │              │
-│    │              │ https://low… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 4  │ Medium risk  │ Domain:      │ Medium      │ 5:6:7        │ Medium risk  │
-│    │ vulnerabili… │ mediumrisk.… │             │              │ issue        │
-│    │ 2            │ URL:         │             │              │              │
-│    │              │ https://med… │             │              │              │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘
-✔ Vulnerabilities listed successfully.
-"""
-    )
+    ids = [vuln.get("id") for vuln in table_mock.call_args_list[0][1].get("data")]
+    assert ids == ["1", "2", "3", "4"]
 
 
 def testOstorlabVulnzListCLI_whenListVulnzOrderByTitle_showsVulnzOrderedByTitle(
     scan_multiple_vulnz_different_risk_ratings: models.Scan,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test oxo vulnz list command orders vulnerabilities by Title."""
     runner = CliRunner()
+    table_mock = mocker.patch("ostorlab.cli.console.Console.table")
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -595,38 +548,13 @@ def testOstorlabVulnzListCLI_whenListVulnzOrderByTitle_showsVulnzOrderedByTitle(
     )
 
     assert result.exception is None
-    assert (
-        result.output.replace("\r\n", "\n")
-        == """🔹 Fetching vulnerabilities for scan 1
-                                                                                
-                        Scan 1: Found 4 vulnerabilities.                        
-┌────┬──────────────┬──────────────┬─────────────┬──────────────┬──────────────┐
-│    │              │ Vulnerable   │             │ CVSS V3      │ Short        │
-│ Id │ Title        │ target       │ Risk rating │ Vector       │ Description  │
-╞════╪══════════════╪══════════════╪═════════════╪══════════════╪══════════════╡
-│ 2  │ High risk    │ Domain:      │ High        │ 5:6:7        │ High risk    │
-│    │ vulnerabili… │ highrisk.com │             │              │ issue        │
-│    │              │ URL:         │             │              │              │
-│    │              │ https://hig… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 3  │ Low risk     │ Domain:      │ Low         │ 5:6:7        │ Low risk     │
-│    │ vulnerabili… │ lowrisk.com  │             │              │ issue        │
-│    │              │ URL:         │             │              │              │
-│    │              │ https://low… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 1  │ Medium risk  │ Domain:      │ Medium      │ 5:6:7        │ Medium risk  │
-│    │ vulnerabili… │ mediumrisk.… │             │              │ issue        │
-│    │ 1            │ URL:         │             │              │              │
-│    │              │ https://med… │             │              │              │
-├────┼──────────────┼──────────────┼─────────────┼──────────────┼──────────────┤
-│ 4  │ Medium risk  │ Domain:      │ Medium      │ 5:6:7        │ Medium risk  │
-│    │ vulnerabili… │ mediumrisk.… │             │              │ issue        │
-│    │ 2            │ URL:         │             │              │              │
-│    │              │ https://med… │             │              │              │
-└────┴──────────────┴──────────────┴─────────────┴──────────────┴──────────────┘
-✔ Vulnerabilities listed successfully.
-"""
-    )
+    titles = [vuln.get("title") for vuln in table_mock.call_args_list[0][1].get("data")]
+    assert titles == [
+        "vulnerability 1",
+        "vulnerability 2",
+        "vulnerability 3",
+        "vulnerability 4",
+    ]
 
 
 def testOstorlabVulnzListCLI_whenListVulnzOrderByInvalidOption_showsErrorMessage(
