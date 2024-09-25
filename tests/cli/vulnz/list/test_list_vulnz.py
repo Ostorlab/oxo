@@ -490,7 +490,7 @@ def testOstorlabVulnzListCLI_whenListVulnz_showsVulnzOrderedByRiskRatingByDefaul
 
     assert result.exception is None
     assert (
-        result.output
+        result.output.replace("\r\n", "\n")
         == """🔹 Fetching vulnerabilities for scan 1
                                                                                 
                         Scan 1: Found 4 vulnerabilities.                        
@@ -543,7 +543,7 @@ def testOstorlabVulnzListCLI_whenListVulnzOrderByID_showsVulnzOrderedByID(
 
     assert result.exception is None
     assert (
-        result.output
+        result.output.replace("\r\n", "\n")
         == """🔹 Fetching vulnerabilities for scan 1
                                                                                 
                         Scan 1: Found 4 vulnerabilities.                        
@@ -596,7 +596,7 @@ def testOstorlabVulnzListCLI_whenListVulnzOrderByTitle_showsVulnzOrderedByTitle(
 
     assert result.exception is None
     assert (
-        result.output
+        result.output.replace("\r\n", "\n")
         == """🔹 Fetching vulnerabilities for scan 1
                                                                                 
                         Scan 1: Found 4 vulnerabilities.                        
@@ -649,7 +649,7 @@ def testOstorlabVulnzListCLI_whenListVulnzOrderByInvalidOption_showsErrorMessage
 
     assert result.exception is not None
     assert (
-        result.output
+        result.output.replace("\r\n", "\n")
         == """Usage: rootcli vulnz list [OPTIONS]
 Try 'rootcli vulnz list --help' for help.
 

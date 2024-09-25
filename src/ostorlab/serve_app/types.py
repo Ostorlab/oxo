@@ -714,7 +714,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_risk_rating(
         self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> str | None:
+    ) -> Optional[str]:
         """Resolve risk rating query.
         Args:
             self (models.Scan): The scan object.
