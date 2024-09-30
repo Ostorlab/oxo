@@ -9,8 +9,14 @@ message AndroidMetadata {
 message IOSMetadata {
   optional string bundle_id = 1;
 }
+
+message Header {
+  optional string name = 1;
+  optional string value = 2;
+}
+
 message Message{
-   optional bytes content = 1;
+  optional bytes content = 1;
   optional string path = 2;
   optional string content_url = 3;
   oneof metadata_oneof {
@@ -19,4 +25,5 @@ message Message{
   }
   optional string endpoint_url = 6;
   optional string schema_type = 7 [default = "graphql"];
- }
+  repeated Header extra_headers = 8;
+}
