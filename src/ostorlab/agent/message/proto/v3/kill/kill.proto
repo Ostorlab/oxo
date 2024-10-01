@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.kill;
+
+message Message {
+   optional string reason = 1;
+}
