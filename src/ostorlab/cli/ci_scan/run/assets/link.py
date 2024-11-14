@@ -3,13 +3,11 @@ This module takes care of preparing a link before calling the create web scan AP
 """
 
 import click
-import io
 import itertools
 
 from typing import List
 
 from ostorlab.cli.ci_scan.run import run
-from ostorlab.cli.ci_scan.run.assets import mobile
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
 from ostorlab.apis.runners import authenticated_runner
