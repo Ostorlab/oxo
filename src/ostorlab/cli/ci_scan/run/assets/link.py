@@ -52,7 +52,7 @@ def _prepare_test_credentials(
 def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
     """Create scan for links."""
     ci_logger = ctx.obj["ci_logger"]
-    if ctx.obj.get("api_key"):
+    if ctx.obj.get("api_key") is not None:
         scan_profile = ctx.obj["scan_profile"]
         title = ctx.obj["title"]
         break_on_risk_rating = ctx.obj["break_on_risk_rating"]
