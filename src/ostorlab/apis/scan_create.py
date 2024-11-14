@@ -115,8 +115,8 @@ class CreateWebScanAPIRequest(request.APIRequest):
         api_schema: Optional[io.FileIO] = None,
         proxy: Optional[str] = None,
         qps: Optional[int] = None,
-        filtered_url_regexes: Optional[[List[str]]] = None,
-        test_credential_ids: Optional[List[int]] = None,
+        filtered_url_regexes: [List[str]] = None,
+        test_credential_ids: List[int] = None,
     ):
         self._title = title
         self._urls = urls
