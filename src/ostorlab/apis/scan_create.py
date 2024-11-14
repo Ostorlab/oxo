@@ -161,7 +161,6 @@ mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sbom
         if self._api_schema is not None:
             var_map[str(len(self._sboms))] = ["variables.apiSchema"]
 
-        print(var_map)
         if len(var_map) > 0:
             data = {
                 "operations": json.dumps(
