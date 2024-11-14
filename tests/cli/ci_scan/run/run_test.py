@@ -405,8 +405,6 @@ def testRunWebScanCLI_withsboms_callApi(
     mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
 
     runner = CliRunner()
-    with open("/tmp/ff.txt", "wb") as f:
-        f.write(b"ssss")
 
     runner.invoke(
         rootcli.rootcli,

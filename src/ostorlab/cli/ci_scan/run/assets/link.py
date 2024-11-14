@@ -51,9 +51,6 @@ def _prepare_test_credentials(
 
 def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
     """Create scan for links."""
-    with open("/tmp/ff.txt", "wb") as f:
-        f.write(b"AAAA")
-
     ci_logger = ctx.obj["ci_logger"]
     if ctx.obj.get("api_key"):
         scan_profile = ctx.obj["scan_profile"]
