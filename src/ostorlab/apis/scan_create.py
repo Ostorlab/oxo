@@ -209,7 +209,7 @@ mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sbom
             The file mapping to create a scan.
         """
         files = {}
-        for idx, _ in enumerate(self._sboms):
+        for idx, sbom_file in enumerate(self._sboms):
             files[str(idx)] = sbom_file
 
         if self._api_schema is not None:
