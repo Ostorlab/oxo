@@ -93,7 +93,7 @@ class ScannerState:
     scan_id: Optional[int]
     cpu_load: float
     memory_load: float
-    total_cpu: int
+    total_cpu: Optional[int]
     total_memory: int
     hostname: str
     ip: str
