@@ -297,9 +297,10 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
             TEST_FILE_PATH,
         ],
     )
-
     assert "Created test credentials" in result.output
     assert "Scan created with id 1." in result.output
+    assert "password='pass'" not in result.output
+    assert "************" in result.output
 
 
 def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(

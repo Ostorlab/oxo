@@ -44,11 +44,11 @@ class MetaKB(type):
         entry_path = paths[0]
         if not (entry_path / META_JSON).exists():
             raise ValueError(f"{entry_path} does not have a mapping.")
-        with (entry_path / META_JSON).open(encoding="utf-8") as f, (
-            entry_path / DESCRIPTION
-        ).open(encoding="utf-8") as d, (entry_path / RECOMMENDATION).open(
-            encoding="utf-8"
-        ) as r:
+        with (
+            (entry_path / META_JSON).open(encoding="utf-8") as f,
+            (entry_path / DESCRIPTION).open(encoding="utf-8") as d,
+            (entry_path / RECOMMENDATION).open(encoding="utf-8") as r,
+        ):
             meta = json.loads(f.read())
             categories = meta.get("categories", {})
             category_groups = [
