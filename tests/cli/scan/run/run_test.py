@@ -391,6 +391,27 @@ def testOstorlabScanRunCLI_whenWrongArgsFormatProvided_showsErrorMessage() -> No
     )
 
 
+def testOstorlabScanRunCLI_whenAgentArgContainsThreeColons_doesNotCrash(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "--arg=proxy:arg_value:http://localhost:3000/",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.output == ""
+
+
 @pytest.mark.parametrize(
     "invalid_agent_key", ["/nmap", "@agent/ostorlab/nmap/", "agent/ostorlab/nmap/"]
 )
