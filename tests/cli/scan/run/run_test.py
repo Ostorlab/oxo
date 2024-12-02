@@ -395,6 +395,7 @@ def testOstorlabScanRunCLI_whenAgentArgContainsThreeColons_doesNotCrash(
     mocker: plugin.MockerFixture,
 ) -> None:
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     runner = CliRunner()
 
     result = runner.invoke(
