@@ -54,7 +54,13 @@ class AgentDefinition:
             mounts=definition.get("mounts", []),
             restart_policy=definition.get("restart_policy", ""),
             mem_limit=definition.get("mem_limit"),
-            open_ports=definition.get("open_ports", []),
+            open_ports=[
+                defintions.PortMapping(
+                    source_port=p.get("src_port"),
+                    destination_port=p.get("dest_port"),
+                )
+                for p in definition.get("open_ports", [])
+            ],
             restrictions=definition.get("restrictions", []),
             version=definition.get("version"),
             description=definition.get("description"),

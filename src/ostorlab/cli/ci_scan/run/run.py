@@ -99,6 +99,34 @@ CI_LOGGER = {
     multiple=True,
     default=[],
 )
+@click.option(
+    "--api-schema",
+    help="Path to api schema file.",
+    type=click.File(mode="rb"),
+    required=False,
+    default=None,
+)
+@click.option(
+    "--filtered-url-regexes",
+    help="List URLs to exclude.",
+    required=False,
+    multiple=True,
+    default=None,
+)
+@click.option(
+    "--proxy",
+    "proxy",
+    help="Proxy to use if defined.",
+    required=False,
+    default=None,
+)
+@click.option(
+    "--qps",
+    "qps",
+    help="Max QPS to use if defined.",
+    required=False,
+    default=None,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -114,6 +142,10 @@ def run(
     test_credentials_name: List[str],
     test_credentials_value: List[str],
     sboms: List[io.FileIO],
+    api_schema: io.FileIO,
+    filtered_url_regexes: List[str],
+    proxy: str,
+    qps: int,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -159,6 +191,10 @@ def run(
         "test_credentials_value": test_credentials_value,
     }
     ctx.obj["sboms"] = sboms
+    ctx.obj["api_schema"] = api_schema
+    ctx.obj["filtered_url_regexes"] = filtered_url_regexes
+    ctx.obj["proxy"] = proxy
+    ctx.obj["qps"] = qps
 
 
 def apply_break_scan_risk_rating(

@@ -42,7 +42,7 @@ class AgentArgType(click.ParamType):
             click.BadParameter: If the argument value cannot be parsed into the expected format.
         """
         try:
-            arg_name, arg_value = arg_value.split(":")
+            arg_name, arg_value = arg_value.split(":", 1)
             return AgentArg(name=arg_name, value=arg_value)
         except ValueError:
             self.fail(

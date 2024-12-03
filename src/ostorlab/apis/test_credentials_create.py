@@ -39,6 +39,9 @@ class TestCredentialLogin(TestCredential):
             }
         }
 
+    def __repr__(self) -> str:
+        return f"login: {self.login}, password: ************, role: {self.role}, url: {self.url}"
+
 
 @dataclasses.dataclass
 class TestCredentialCustom(TestCredential):

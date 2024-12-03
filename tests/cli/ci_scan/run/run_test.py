@@ -297,9 +297,10 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
             TEST_FILE_PATH,
         ],
     )
-
     assert "Created test credentials" in result.output
     assert "Scan created with id 1." in result.output
+    assert "password='pass'" not in result.output
+    assert "************" in result.output
 
 
 def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
@@ -378,6 +379,47 @@ def testRunScanCLI_withsboms_callApi(mocker: plugin.MockerFixture, httpx_mock) -
             TEST_FILE_PATH,
             "android-apk",
             TEST_FILE_PATH,
+        ],
+    )
+
+    assert api_caller_mock.call_count == 2
+
+
+def testRunWebScanCLI_withsboms_callApi(
+    mocker: plugin.MockerFixture, httpx_mock
+) -> None:
+    """Test ostorlab ci_scan with sbom circleci."""
+    scan_create_dict = {"data": {"createWebScan": {"scan": {"id": "1"}}}}
+
+    scan_info_dict = {
+        "data": {
+            "scan": {
+                "progress": "done",
+                "riskRating": "high",
+            }
+        }
+    }
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+
+    runner = CliRunner()
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_web_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=10",
+            "--title=scan1",
+            "link",
+            "--url",
+            "https://test1.com",
         ],
     )
 
