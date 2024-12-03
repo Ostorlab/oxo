@@ -16,6 +16,7 @@ console = cli_console.Console()
 @click.argument("scan_ids", nargs=-1, type=int, required=False)
 @click.option(
     "--all",
+    "-a",
     "stop_all",
     is_flag=True,
     help="Stop all running scans",
@@ -23,7 +24,7 @@ console = cli_console.Console()
 )
 @click.pass_context
 def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> None:
-    """Stop one, multiple scans.\n
+    """Stop one or multiple scans.\n
     Usage:\n
         - ostorlab scan --runtime=local stop 4
         - ostorlab scan --runtime=local stop 4 5 6

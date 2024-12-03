@@ -147,3 +147,31 @@ def testOstorlabScanStopCLI_whenStopAllIsUsedAndNoScansExist_showsWarning(
 
     assert result.exception is None
     assert "No running scans found" in result.output
+
+
+@mock.patch.object(local_runtime.LocalRuntime, "stop")
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanStopCLI_whenStopAllWithShorthandIsUsedAndScansExist_stopsAllScans(
+    mock_list_scans: mock.Mock, mock_scan_stop: mock.Mock, mocker: plugin.MockerFixture
+) -> None:
+    """Test ostorlab scan stop command with --all flag.
+    Should stop all running scans.
+    """
+
+    mock_list_scans.return_value = [
+        mock.Mock(id=101),
+        mock.Mock(id=102),
+        mock.Mock(id=103),
+    ]
+    mock_scan_stop.return_value = None
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(rootcli.rootcli, ["scan", "--runtime=local", "stop", "-a"])
+
+    assert result.exception is None
+    assert "Stopping 3 scan(s)" in result.output
+    assert mock_scan_stop.call_count == 3
+    mock_scan_stop.assert_any_call(scan_id=101)
+    mock_scan_stop.assert_any_call(scan_id=102)
+    mock_scan_stop.assert_any_call(scan_id=103)
