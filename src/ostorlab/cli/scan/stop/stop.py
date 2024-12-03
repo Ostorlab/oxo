@@ -42,6 +42,6 @@ def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> 
     else:
         ids_to_stop = list(scan_ids)
 
-    console.info(f"Stopping {len(ids_to_stop)} scan(s)")
+    console.info(f"Stopping {len(ids_to_stop)} scan(s).")
     for scan_id in ids_to_stop:
         runtime_instance.stop(scan_id=scan_id)
