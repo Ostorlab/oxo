@@ -456,9 +456,10 @@ class AgentMixin(
             logger.error("settings file does not exist")
             sys.exit(2)
 
-        with open(AGENT_DEFINITION_PATH, "r", encoding="utf-8") as f_definition, open(
-            parsed_args.settings, "rb"
-        ) as f_settings:
+        with (
+            open(AGENT_DEFINITION_PATH, "r", encoding="utf-8") as f_definition,
+            open(parsed_args.settings, "rb") as f_settings,
+        ):
             agent_definition = agent_definitions.AgentDefinition.from_yaml(f_definition)
             agent_settings = runtime_definitions.AgentSettings.from_proto(
                 f_settings.read()

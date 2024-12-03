@@ -300,7 +300,7 @@ class LocalRuntime(runtime.Runtime):
             logger.info(
                 "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
             )
-            if service_labels.get("ostorlab.universe") == scan_id:
+            if int(service_labels.get("ostorlab.universe")) == int(scan_id):
                 stopped_services.append(service)
                 service.remove()
 
