@@ -37,7 +37,7 @@ def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> 
         scans_list = runtime_instance.list()
         ids_to_stop = [s.id for s in scans_list]
         if len(ids_to_stop) == 0:
-            console.warning("No running scans found")
+            console.warning("No running scans found.")
             return
     else:
         ids_to_stop = list(scan_ids)
