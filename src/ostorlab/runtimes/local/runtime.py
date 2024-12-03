@@ -311,7 +311,7 @@ class LocalRuntime(runtime.Runtime):
             network_labels = network.attrs["Labels"]
             if (
                 network_labels is not None
-                and network_labels.get("ostorlab.universe") == scan_id
+                and int(network_labels.get("ostorlab.universe")) == scan_id
             ):
                 logger.info("removing network %s", network_labels)
                 stopped_network.append(network)
@@ -320,7 +320,10 @@ class LocalRuntime(runtime.Runtime):
         configs = self._docker_client.configs.list()
         for config in configs:
             config_labels = config.attrs["Spec"]["Labels"]
-            if config_labels.get("ostorlab.universe") == scan_id:
+            if (
+                config_labels.get("ostorlab.universe") is not None
+                and int(config_labels.get("ostorlab.universe")) == scan_id
+            ):
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
                 config.remove()
