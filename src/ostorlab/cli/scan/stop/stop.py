@@ -3,6 +3,8 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
+from typing import Tuple
+
 import click
 from ostorlab.cli.scan import scan
 from ostorlab.cli import console as cli_console
@@ -20,14 +22,14 @@ console = cli_console.Console()
     default=False,
 )
 @click.pass_context
-def stop(ctx: click.core.Context, scan_ids: tuple[int, ...], stop_all: bool) -> None:
-    """Stop one or multiple scans.\n
+def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> None:
+    """Stop one, multiple scans.\n
     Usage:\n
         - ostorlab scan --runtime=local stop 4
         - ostorlab scan --runtime=local stop 4 5 6
         - ostorlab scan --runtime=local stop --all
     """
-    if scan_ids is None and stop_all is None:
+    if len(scan_ids) == 0 and stop_all is False:
         raise click.UsageError("Either provide scan IDs or use --all flag")
 
     runtime_instance = ctx.obj["runtime"]
