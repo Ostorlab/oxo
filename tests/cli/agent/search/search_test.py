@@ -9,7 +9,7 @@ from ostorlab.cli import rootcli
 
 
 def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, httpx_mock):
-    """Test oxo agent search CLI command with Autenticated API returns list of agents."""
+    """Test oxo agent search CLI command with Authenticated API returns list of agents."""
     mock.patch("ostorlab.api.runners.authenticated_runner")
     mocker.patch(
         "ostorlab.configuration_manager.ConfigurationManager.api_key",

@@ -6,7 +6,7 @@ from pytest_mock import plugin
 
 
 from ostorlab.runtimes import definitions
-from ostorlab.utils import defintions as utils_definitions
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.assets import android_apk as android_apk_asset
@@ -374,7 +374,7 @@ kind: targetGroup
 name: master_scan
 assets:
   androidStore:
-      - package_name: "com.ceaser.salad"
+      - package_name: "com.caesar.salad"
       - package_name: "test.this.schema"
   androidApkFile:
       - path: /tests/files/fake_app.apk
@@ -383,7 +383,7 @@ assets:
       - path: /tests/files/fake_app.aab
       - path: /tests/files/fake_app_2.aab
   iosStore:
-      - bundle_id: "com.ceaser.salad"
+      - bundle_id: "com.caesar.salad"
       - bundle_id: "test.this.schema"
   iosFile:
       - path: /files/fake_app.ipa
@@ -417,9 +417,9 @@ assets:
         ),
         ios_ipa_asset.IOSIpa(content=b"content", path="/files/fake_app.ipa"),
         ios_ipa_asset.IOSIpa(content_url="https://cia.sketchy.com/secret_files.ipa"),
-        android_store_asset.AndroidStore(package_name="com.ceaser.salad"),
+        android_store_asset.AndroidStore(package_name="com.caesar.salad"),
         android_store_asset.AndroidStore(package_name="test.this.schema"),
-        ios_store_asset.IOSStore(bundle_id="com.ceaser.salad"),
+        ios_store_asset.IOSStore(bundle_id="com.caesar.salad"),
         ios_store_asset.IOSStore(bundle_id="test.this.schema"),
         ipv4_asset.IPv4(host="10.21.11.11", mask=30),
         ipv4_asset.IPv4(host="0.1.2.1", mask=None),

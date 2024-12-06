@@ -159,7 +159,7 @@ def run(
     ci_logger = CI_LOGGER.get(log_flavor)()
 
     if len(test_credentials_login) != len(test_credentials_password):
-        ci_logger.error("Loging and password credentials are not matching count.")
+        ci_logger.error("Login and password credentials are not matching count.")
         raise click.exceptions.Exit(2)
 
     if len(test_credentials_name) != len(test_credentials_value):

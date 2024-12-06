@@ -14,7 +14,7 @@ RETRY_ATTEMPTS = 10
 WAIT_TIME = 2
 
 # The architecture is checked with a return value that's based on the kernel implementation of the uname(2)
-# system call. So it might be necesarry to handle the same arch with various strings e.g. linux returns x86_64
+# system call. So it might be necessary to handle the same arch with various strings e.g. linux returns x86_64
 # or AMD64 on windows.
 
 

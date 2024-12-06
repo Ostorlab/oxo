@@ -19,7 +19,7 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.testing import agent as agent_testing
-from ostorlab.utils import defintions as utils_definitions
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab.utils import system
 
 logger = logging.getLogger(__name__)

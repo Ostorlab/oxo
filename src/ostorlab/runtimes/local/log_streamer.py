@@ -45,7 +45,7 @@ class LogStream:
     def stream(self, service: docker.models.services.Service) -> None:
         """Stream logs of a service without blocking.
 
-        Implementation spawns a dedicated deamon thread.
+        Implementation spawns a dedicated daemon thread.
 
         Args:
             service: Docker service.

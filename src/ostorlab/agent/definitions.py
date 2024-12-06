@@ -5,7 +5,7 @@ import io
 from typing import List, Optional, Dict, Any
 
 from ostorlab.agent.schema import loader
-from ostorlab.utils import defintions
+from ostorlab.utils import definitions
 
 
 @dataclasses.dataclass
@@ -20,7 +20,7 @@ class AgentDefinition:
     mounts: List[str] = dataclasses.field(default_factory=list)
     restart_policy: str = ""
     mem_limit: int = None
-    open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
+    open_ports: List[definitions.PortMapping] = dataclasses.field(default_factory=list)
     restrictions: List[str] = dataclasses.field(default_factory=list)
     version: Optional[str] = None
     description: Optional[str] = None
@@ -55,7 +55,7 @@ class AgentDefinition:
             restart_policy=definition.get("restart_policy", ""),
             mem_limit=definition.get("mem_limit"),
             open_ports=[
-                defintions.PortMapping(
+                definitions.PortMapping(
                     source_port=p.get("src_port"),
                     destination_port=p.get("dest_port"),
                 )

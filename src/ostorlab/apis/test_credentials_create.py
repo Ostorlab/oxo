@@ -19,7 +19,7 @@ class TestCredential(abc.ABC):
 
 @dataclasses.dataclass
 class TestCredentialLogin(TestCredential):
-    """Loging password test credentials with optional role and url fields."""
+    """Login password test credentials with optional role and url fields."""
 
     login: str
     password: str

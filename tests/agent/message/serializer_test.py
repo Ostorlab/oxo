@@ -6,7 +6,7 @@ from ostorlab.agent.message import serializer
 
 
 def testSerializeRequest_withFileFingerprint_returnsCorrectProtobufMessage():
-    """Test message proper seralization from a dict object to a protobuf based on the selector."""
+    """Test message proper serialization from a dict object to a protobuf based on the selector."""
     serialized = serializer.serialize(
         "v3.fingerprint.file",
         {

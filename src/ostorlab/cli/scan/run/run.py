@@ -21,7 +21,7 @@ from ostorlab.cli import types
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
-from ostorlab.utils import defintions as utils_definitions
+from ostorlab.utils import definitions as utils_definitions
 
 
 console = cli_console.Console()

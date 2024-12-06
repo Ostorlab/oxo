@@ -75,7 +75,7 @@ def search_agents(search: str) -> Dict:
         List of agent matching the search.
 
     Raises:
-        click Exit exception with satus code 2 when API response is invalid.
+        click Exit exception with status code 2 when API response is invalid.
     """
     config_manager = configuration_manager.ConfigurationManager()
 
