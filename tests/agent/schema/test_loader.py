@@ -64,7 +64,7 @@ def testAgentSpecValidation_whenVersionDoesNotRespectSemanticVersionning_raiseVa
 ):
     """Unit test to checks the validity of the Agent json-schema.
     Case where the Agent definition is invalid.
-    The version does not respect the semantic versionning : major.minor.release.
+    The version does not respect the semantic versioning : major.minor.release.
     """
 
     invalid_yaml_data = """

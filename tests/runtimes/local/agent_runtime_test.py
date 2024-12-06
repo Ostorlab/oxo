@@ -6,7 +6,7 @@ import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import agent_runtime
-from ostorlab.utils import defintions as utils_defintions
+from ostorlab.utils import definitions as utils_defintions
 
 
 def container_name_mock(name):

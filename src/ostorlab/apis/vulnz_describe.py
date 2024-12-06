@@ -1,4 +1,4 @@
-"""Lists full details of a single vulnerability or all the vulnerabilities for a specif scan."""
+"""Lists full details of a single vulnerability or all the vulnerabilities for a specific scan."""
 
 import json
 from typing import Dict, Optional

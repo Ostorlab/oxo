@@ -207,7 +207,7 @@ class AgentRuntime:
         """Create a docker configuration of the  agent definition.
 
         Returns:
-            docker configuration reference of the agent defintion configuration.
+            docker configuration reference of the agent definition configuration.
         """
         agent_definition = self._docker_client.images.get(
             self.agent.container_image

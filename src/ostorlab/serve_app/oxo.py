@@ -32,7 +32,7 @@ from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common, export_utils
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import types
-from ostorlab.utils import defintions as utils_definitions
+from ostorlab.utils import definitions as utils_definitions
 
 DEFAULT_NUMBER_ELEMENTS = 15
 

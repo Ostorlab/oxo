@@ -11,7 +11,7 @@ console = cli_console.Console()
 
 
 class AgentInstallProgress(progress.Progress):
-    """Class reponsible for displaying the progress of the agent installation."""
+    """Class responsible for displaying the progress of the agent installation."""
 
     def __init__(self):
         super().__init__(

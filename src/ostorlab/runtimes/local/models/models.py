@@ -93,7 +93,7 @@ class Database:
         self._alembic_cfg = config.Config(str(self._alembic_ini_path))
 
     def __enter__(self) -> orm.Session:
-        """Context manager enter method, resposible for migrating the local database and returning a session object."""
+        """Context manager enter method, responsible for migrating the local database and returning a session object."""
         self._migrate_local_db()
         return self._prepare_db_session()
 

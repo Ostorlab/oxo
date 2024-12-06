@@ -12,7 +12,7 @@ import ipaddress
 from ostorlab.agent.schema import loader
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
-from ostorlab.utils import defintions
+from ostorlab.utils import definitions
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -49,12 +49,12 @@ class AgentSettings:
     bus_exchange_topic: Optional[str] = ""
     bus_management_url: Optional[str] = ""
     bus_vhost: Optional[str] = ""
-    args: List[defintions.Arg] = dataclasses.field(default_factory=list)
+    args: List[definitions.Arg] = dataclasses.field(default_factory=list)
     constraints: Optional[List[str]] = dataclasses.field(default_factory=list)
     mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
     restart_policy: str = ""
     mem_limit: Optional[int] = None
-    open_ports: List[defintions.PortMapping] = dataclasses.field(default_factory=list)
+    open_ports: List[definitions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
     healthcheck_host: str = "0.0.0.0"
     healthcheck_port: int = 5000
@@ -89,7 +89,7 @@ class AgentSettings:
             bus_management_url=instance.bus_management_url,
             bus_vhost=instance.bus_vhost,
             args=[
-                defintions.Arg(name=a.name, type=a.type, value=a.value)
+                definitions.Arg(name=a.name, type=a.type, value=a.value)
                 for a in instance.args
             ],
             constraints=instance.constraints,
@@ -97,7 +97,7 @@ class AgentSettings:
             restart_policy=instance.restart_policy,
             mem_limit=instance.mem_limit,
             open_ports=[
-                defintions.PortMapping(
+                definitions.PortMapping(
                     source_port=p.source_port, destination_port=p.destination_port
                 )
                 for p in instance.open_ports
@@ -205,7 +205,7 @@ class AgentGroupDefinition:
                 key=agent.get("key"),
                 version=agent.get("version"),
                 args=[
-                    defintions.Arg(
+                    definitions.Arg(
                         name=a.get("name"),
                         description=a.get("description"),
                         type=a.get("type"),
@@ -218,7 +218,7 @@ class AgentGroupDefinition:
                 restart_policy=agent.get("restart_policy", ""),
                 mem_limit=agent.get("mem_limit"),
                 open_ports=[
-                    defintions.PortMapping(
+                    definitions.PortMapping(
                         source_port=p.get("src_port"),
                         destination_port=p.get("dest_port"),
                     )
@@ -254,7 +254,7 @@ class AgentGroupDefinition:
             replicas = _process_agent_replicas(agent.replicas)
             agent_args = []
             for arg in agent.args:
-                agent_arg = defintions.Arg.build(
+                agent_arg = definitions.Arg.build(
                     name=arg.name,
                     type=arg.type,
                     value=arg.value,

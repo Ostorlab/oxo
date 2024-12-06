@@ -2,7 +2,7 @@
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state
-from ostorlab.utils import defintions
+from ostorlab.utils import definitions
 
 
 class ScannerStateReporter:
@@ -19,12 +19,12 @@ class ScannerStateReporter:
         self._hostname = hostname
         self._ip = ip
 
-    def _capture_state(self) -> defintions.ScannerState:
+    def _capture_state(self) -> definitions.ScannerState:
         """Capture current scanner state."""
         try:
             import psutil
 
-            state = defintions.ScannerState(
+            state = definitions.ScannerState(
                 scanner_id=self._scanner_id,
                 scan_id=self.scan_id,
                 cpu_load=psutil.cpu_percent(interval=1, percpu=False),
@@ -35,7 +35,7 @@ class ScannerStateReporter:
                 ip=self._ip,
             )
         except ImportError:
-            state = defintions.ScannerState(
+            state = definitions.ScannerState(
                 scanner_id=self._scanner_id,
                 scan_id=self.scan_id,
                 cpu_load=0,
@@ -48,7 +48,7 @@ class ScannerStateReporter:
 
         return state
 
-    def _report_state(self, state: defintions.ScannerState) -> None:
+    def _report_state(self, state: definitions.ScannerState) -> None:
         runner = authenticated_runner.AuthenticatedAPIRunner()
         _ = runner.execute(add_scanner_state.AddScannerStateAPIRequest(state=state))
 

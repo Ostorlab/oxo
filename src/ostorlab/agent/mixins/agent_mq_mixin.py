@@ -1,6 +1,6 @@
 """MQ Mixin.
 
-Defintion of the main methods to publish and consume MQ messages by the agents.
+Definition of the main methods to publish and consume MQ messages by the agents.
 """
 
 import asyncio
@@ -104,7 +104,7 @@ class AgentMQMixin:
         delete_queue_first: bool = False,
     ) -> None:
         """Declare the MQ queue on a given channel.
-        The queue is durable, re-declaring the queue will return the same queue
+        The queue is durable, redeclaring the queue will return the same queue
         Args:
             channel: the MQ channel to use for the queues
             delete_queue_first: Used for testing purposes. To delete pending queues first.

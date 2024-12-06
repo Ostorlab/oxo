@@ -3,7 +3,7 @@
 import io
 
 from ostorlab.agent import definitions
-from ostorlab.utils import defintions as utils_defintions
+from ostorlab.utils import definitions as utils_defintions
 
 
 def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():

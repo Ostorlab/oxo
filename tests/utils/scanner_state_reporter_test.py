@@ -4,7 +4,7 @@ import pytest
 import pytest_mock
 
 from ostorlab.utils import scanner_state_reporter
-from ostorlab.utils.defintions import ScannerState
+from ostorlab.utils.definitions import ScannerState
 
 
 class Memory:

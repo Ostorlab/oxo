@@ -242,7 +242,7 @@ class OpenTelemetryMixin:
     def emit(
         self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
     ) -> None:
-        """Overriden emit method of the agent to add OpenTelemetry traces.
+        """Overridden emit method of the agent to add OpenTelemetry traces.
         Sends a message to all listening agents on the specified selector.
 
         Args:

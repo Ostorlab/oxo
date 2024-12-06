@@ -119,7 +119,7 @@ class AgentPersistMixin:
         mapping: Dict[Union[bytes, str], Union[bytes, str]],
     ) -> bool:
         """Set mapping within hash hash_name. If hash_name does not exist a new hash is created.
-        If key exists, value is overriden.
+        If key exists, value is overridden.
 
         Args:
             hash_name: Name of the hash.
