@@ -312,11 +312,7 @@ class LocalRuntime(runtime.Runtime):
             if network_labels is None:
                 continue
             universe = network_labels.get("ostorlab.universe")
-            if (
-                universe is not None
-                and network_labels is not None
-                and int(universe) == scan_id
-            ):
+            if universe is not None and int(universe) == scan_id:
                 logger.info("removing network %s", network_labels)
                 stopped_network.append(network)
                 network.remove()

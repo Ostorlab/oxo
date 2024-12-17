@@ -375,7 +375,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_RemovesScanServiceWithoutCrash(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
 
-    def docker_services():
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -394,7 +394,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_RemovesScanServiceWithoutCrash(
 
         return [services_model.Service(attrs=service) for service in services]
 
-    def docker_networks():
+    def docker_networks() -> list[networks_model.Network]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -402,12 +402,12 @@ def testRuntimeScanStop_whenUnrelatedNetworks_RemovesScanServiceWithoutCrash(
             {
                 "ID": "0099i5n1y3gycuekvksyqyxav",
                 "CreatedAt": "2021-12-27T13:37:02.795789947Z",
-                "Labels": {"ostorlab.universe": scan.id},
+                "Labels": {},
             },
             {
                 "ID": "0099i5n1y3gycuekvksyqyxav",
                 "CreatedAt": "2021-12-27T13:37:02.795789947Z",
-                "Labels": {},
+                "Labels": {"ostorlab.universe": scan.id},
             },
         ]
 
