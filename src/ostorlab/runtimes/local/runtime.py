@@ -310,12 +310,14 @@ class LocalRuntime(runtime.Runtime):
         for network in networks:
             network_labels = network.attrs["Labels"]
             if network_labels is None:
+                logger.debug("Skipping network with no labels")
                 continue
-            universe = network_labels.get("ostorlab.universe")
-            if universe is not None and int(universe) == scan_id:
-                logger.info("removing network %s", network_labels)
-                stopped_network.append(network)
-                network.remove()
+            if isinstance(network_labels, dict):
+                universe = network_labels.get("ostorlab.universe")
+                if universe is not None and int(universe) == scan_id:
+                    logger.info("removing network %s", network_labels)
+                    stopped_network.append(network)
+                    network.remove()
 
         configs = self._docker_client.configs.list()
         for config in configs:

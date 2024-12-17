@@ -369,7 +369,7 @@ def testCheckServicesMethod_whenServicesAreStopped_shouldExit(
 
 @pytest.mark.docker
 def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
-    mocker, db_engine_path
+    mocker: plugin.MockerFixture, db_engine_path: str
 ):
     """Unittest for the scan stop method when there are networks not related to the scan, the process shouldn't crash"""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
