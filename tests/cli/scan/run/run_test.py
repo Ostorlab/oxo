@@ -573,6 +573,18 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
         == "scan_done_timeout_sec"
     )
     assert mock_start_agent.call_args[1].get("agent").args[0].value == 3600
+    assert any(
+        arg.name == "postscan_done_timeout_sec"
+        and arg.value == 0
+        and arg.type == "number"
+        for arg in mock_start_agent.call_args[1].get("agent").args
+    )
+    assert any(
+        arg.name == "scan_done_timeout_sec"
+        and arg.value == 3600
+        and arg.type == "number"
+        for arg in mock_start_agent.call_args[1].get("agent").args
+    )
 
 
 def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
@@ -604,11 +616,7 @@ def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
 
     assert mock_start_agent.call_count == 2
     assert mock_start_agent.call_args[1].get("agent").key == "agent/ostorlab/tracker"
-    assert (
-        mock_start_agent.call_args[1].get("agent").args[0].name
-        == "scan_done_timeout_sec"
-    )
-    assert mock_start_agent.call_args[1].get("agent").args[0].value == 14400
+    assert len(mock_start_agent.call_args[1].get("agent").args) == 0
 
 
 def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(

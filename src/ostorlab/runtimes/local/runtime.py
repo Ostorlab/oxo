@@ -524,14 +524,19 @@ class LocalRuntime(runtime.Runtime):
         """Start the tracker agent to handle the scan lifecycle."""
         tracker_agent_settings = definitions.AgentSettings(
             key=TRACKER_AGENT_DEFAULT,
-            args=[
-                utils_definitions.Arg(
-                    name="scan_done_timeout_sec",
-                    type="number",
-                    value=self.timeout or TRACKER_AGENT_DEFAULT_TIMEOUT,
-                )
-            ],
         )
+
+        if self.timeout is not None:
+            tracker_agent_settings.args.extend(
+                [
+                    utils_definitions.Arg(
+                        name="scan_done_timeout_sec", type="number", value=self.timeout
+                    ),
+                    utils_definitions.Arg(
+                        name="postscane_done_timeout_sec", type="number", value=0
+                    ),
+                ]
+            )
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
     def _start_persist_vulnz_agent(self):
