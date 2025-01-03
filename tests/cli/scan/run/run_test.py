@@ -620,7 +620,7 @@ def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
         ],
     )
 
-    assert mock_start_agent.call_count == 2
+    assert mock_start_agent.call_count == 1
     assert mock_start_agent.call_args[1].get("agent").key == "agent/ostorlab/tracker"
     assert len(mock_start_agent.call_args[1].get("agent").args) == 0
 
