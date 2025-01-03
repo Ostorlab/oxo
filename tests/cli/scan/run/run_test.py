@@ -539,8 +539,11 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents(
 
 def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
     mocker: plugin.MockerFixture,
+    run_scan_mock2: None,
+    db_engine_path: str,
 ) -> None:
     """Test that timeout parameter is passed to tracker agent."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
@@ -589,8 +592,11 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
 
 def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
     mocker: plugin.MockerFixture,
+    run_scan_mock3: None,
+    db_engine_path: str,
 ) -> None:
     """Test that default timeout is used when no timeout is provided."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
