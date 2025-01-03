@@ -43,6 +43,7 @@ class Runtime(abc.ABC):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: Optional[List[base_asset.Asset]],
+        timeout: Optional[int] = None,
     ) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 

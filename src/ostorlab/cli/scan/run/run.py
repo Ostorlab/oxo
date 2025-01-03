@@ -5,7 +5,7 @@ Example of usage:
 
 import io
 import logging
-from typing import List
+from typing import List, Optional
 
 import click
 import httpx
@@ -89,6 +89,13 @@ WAIT_BETWEEN_RETRIES = 5
     is_flag=True,
     required=False,
 )
+@click.option(
+    "--timeout",
+    "-t",
+    type=int,
+    help="Timeout for the scan in seconds",
+    required=False,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -101,6 +108,7 @@ def run(
     follow: List[str],
     no_follow: bool,
     no_asset: bool,
+    timeout: Optional[int] = None,
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
@@ -177,6 +185,7 @@ def run(
                     title=ctx.obj["title"],
                     agent_group_definition=ctx.obj["agent_group_definition"],
                     assets=asset_group.targets if asset_group is not None else None,
+                    timeout=timeout,
                 )
                 if created_scan is not None:
                     runtime_instance.link_agent_group_scan(created_scan, agent_group)
