@@ -537,6 +537,80 @@ def testOstorlabScanRunCLI_whenFollow_shouldFollowSpecifiedAgents(
     assert "agent/ostorlab_inject_asset" not in spy_follow.spy_return
 
 
+def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that timeout parameter is passed to tracker agent."""
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
+    mock_start_agent = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime._start_agent"
+    )
+    runner = CliRunner()
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "--install",
+            "--agent=agent/ostorlab/nmap",
+            "--timeout=3600",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert mock_start_agent.call_count == 2
+    assert mock_start_agent.call_args[1].get("agent").key == "agent/ostorlab/tracker"
+    assert (
+        mock_start_agent.call_args[1].get("agent").args[0].name
+        == "scan_done_timeout_sec"
+    )
+    assert mock_start_agent.call_args[1].get("agent").args[0].value == 3600
+
+
+def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that default timeout is used when no timeout is provided."""
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
+    mock_start_agent = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime._start_agent"
+    )
+    runner = CliRunner()
+
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "--agent=agent/ostorlab/nmap",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert mock_start_agent.call_count == 2
+    assert mock_start_agent.call_args[1].get("agent").key == "agent/ostorlab/tracker"
+    assert (
+        mock_start_agent.call_args[1].get("agent").args[0].name
+        == "scan_done_timeout_sec"
+    )
+    assert mock_start_agent.call_args[1].get("agent").args[0].value == 14400
+
+
 def testOstorlabScanRunCLI_whenTestflightAsset_shouldRunCOmmand(
     mocker: plugin.MockerFixture,
 ) -> None:

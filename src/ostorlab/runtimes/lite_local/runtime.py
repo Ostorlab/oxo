@@ -169,7 +169,6 @@ class LiteLocalRuntime(runtime.Runtime):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: Optional[List[base_asset.Asset]],
-        timeout: Optional[int] = None,
     ) -> None:
         """Start scan on asset using the provided agent run definition.
 

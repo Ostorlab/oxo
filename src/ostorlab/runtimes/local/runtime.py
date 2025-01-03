@@ -99,14 +99,14 @@ class LocalRuntime(runtime.Runtime):
     """
 
     def __init__(
-            self,
-            *args,
-            scan_id: Optional[str] = None,
-            tracing: Optional[bool] = False,
-            mq_exposed_ports: Optional[Dict[int, int]] = None,
-            gcp_logging_credential: Optional[str] = None,
-            run_default_agents: bool = True,
-            **kwargs,
+        self,
+        *args,
+        scan_id: Optional[str] = None,
+        tracing: Optional[bool] = False,
+        mq_exposed_ports: Optional[Dict[int, int]] = None,
+        gcp_logging_credential: Optional[str] = None,
+        run_default_agents: bool = True,
+        **kwargs,
     ) -> None:
         super().__init__()
         del args, kwargs
@@ -175,7 +175,7 @@ class LocalRuntime(runtime.Runtime):
         self._docker_client = docker.from_env()
 
     def prepare_scan(
-            self, title: str, assets: Optional[List[base_asset.Asset]]
+        self, title: str, assets: Optional[List[base_asset.Asset]]
     ) -> models.Scan:
         """Prepare scan entry in the database.
 
@@ -187,11 +187,10 @@ class LocalRuntime(runtime.Runtime):
         return self._scan_db
 
     def scan(
-            self,
-            title: str,
-            agent_group_definition: definitions.AgentGroupDefinition,
-            assets: Optional[List[base_asset.Asset]],
-            timeout: Optional[int] = TRACKER_AGENT_DEFAULT_TIMEOUT
+        self,
+        title: str,
+        agent_group_definition: definitions.AgentGroupDefinition,
+        assets: Optional[List[base_asset.Asset]],
     ) -> Optional[models.Scan]:
         """Start scan on asset using the provided agent run definition.
 
@@ -224,7 +223,7 @@ class LocalRuntime(runtime.Runtime):
 
             if self._run_default_agents is True:
                 console.info("Starting post-agents")
-                self._start_post_agents(timeout=timeout)
+                self._start_post_agents()
 
             console.info("Checking services are healthy")
             self._check_services_healthy()
@@ -305,7 +304,7 @@ class LocalRuntime(runtime.Runtime):
                 "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
             )
             if service_labels.get("ostorlab.universe") is not None and int(
-                    service_labels.get("ostorlab.universe")
+                service_labels.get("ostorlab.universe")
             ) == int(scan_id):
                 stopped_services.append(service)
                 service.remove()
@@ -327,8 +326,8 @@ class LocalRuntime(runtime.Runtime):
         for config in configs:
             config_labels = config.attrs["Spec"]["Labels"]
             if (
-                    config_labels.get("ostorlab.universe") is not None
-                    and int(config_labels.get("ostorlab.universe")) == scan_id
+                config_labels.get("ostorlab.universe") is not None
+                and config_labels.get("ostorlab.universe") == scan_id
             ):
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
@@ -360,8 +359,8 @@ class LocalRuntime(runtime.Runtime):
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicate."""
         if any(
-                network.name == self.network
-                for network in self._docker_client.networks.list()
+            network.name == self.network
+            for network in self._docker_client.networks.list()
         ):
             logger.warning("network already exists.")
         else:
@@ -419,13 +418,13 @@ class LocalRuntime(runtime.Runtime):
         if self._mq_service is None or self._mq_service.is_service_healthy() is False:
             raise UnhealthyService("MQ service is unhealthy.")
         if (
-                self._redis_service is None
-                or self._redis_service.is_service_healthy() is False
+            self._redis_service is None
+            or self._redis_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Redis service is unhealthy.")
         if self._tracing is True and (
-                self._jaeger_service is None
-                or self._jaeger_service.is_service_healthy() is False
+            self._jaeger_service is None
+            or self._jaeger_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
 
@@ -448,16 +447,16 @@ class LocalRuntime(runtime.Runtime):
         agents that can start sending data at the start of the agent."""
         self._start_persist_vulnz_agent()
 
-    def _start_post_agents(self, timeout: Optional[int] = TRACKER_AGENT_DEFAULT_TIMEOUT):
+    def _start_post_agents(self):
         """Starting post-agents that must exist after other agents. This applies to the tracker
         that needs to monitor other agents."""
-        self._start_tracker_agent(timeout=timeout)
+        self._start_tracker_agent()
 
     def _start_agent(
-            self,
-            agent: definitions.AgentSettings,
-            extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-            extra_mounts: Optional[List[docker.types.Mount]] = None,
+        self,
+        agent: definitions.AgentSettings,
+        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
+        extra_mounts: Optional[List[docker.types.Mount]] = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -495,7 +494,7 @@ class LocalRuntime(runtime.Runtime):
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
-            self, service: docker_models_services.Service, replicas=None
+        self, service: docker_models_services.Service, replicas=None
     ) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
@@ -521,7 +520,7 @@ class LocalRuntime(runtime.Runtime):
             if service.name.startswith("agent_"):
                 yield service
 
-    def _start_tracker_agent(self, timeout: Optional[int] = TRACKER_AGENT_DEFAULT_TIMEOUT):
+    def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
         tracker_agent_settings = definitions.AgentSettings(
             key=TRACKER_AGENT_DEFAULT,
@@ -529,7 +528,7 @@ class LocalRuntime(runtime.Runtime):
                 utils_definitions.Arg(
                     name="scan_done_timeout_sec",
                     type="number",
-                    value=timeout
+                    value=self.timeout or TRACKER_AGENT_DEFAULT_TIMEOUT,
                 )
             ],
         )
@@ -596,13 +595,13 @@ class LocalRuntime(runtime.Runtime):
                     service_labels = s.attrs["Spec"]["Labels"]
                     ostorlab_universe_id = service_labels.get("ostorlab.universe")
                     if (
-                            "ostorlab.universe" in service_labels.keys()
-                            and ostorlab_universe_id not in universe_ids
+                        "ostorlab.universe" in service_labels.keys()
+                        and ostorlab_universe_id not in universe_ids
                     ):
                         universe_ids.add(ostorlab_universe_id)
                         if (
-                                ostorlab_universe_id.isnumeric()
-                                and int(ostorlab_universe_id) not in scans
+                            ostorlab_universe_id.isnumeric()
+                            and int(ostorlab_universe_id) not in scans
                         ):
                             console.warning(
                                 f"Scan {ostorlab_universe_id} has not traced in DB."
@@ -653,11 +652,11 @@ class LocalRuntime(runtime.Runtime):
                 console.warning(f"agent {agent_key} not found on the store")
 
     def list_vulnz(
-            self,
-            scan_id: int,
-            filter_risk_rating: Optional[List[str]] = None,
-            search: Optional[str] = None,
-            order_by: str = "risk_rating",
+        self,
+        scan_id: int,
+        filter_risk_rating: Optional[List[str]] = None,
+        search: Optional[str] = None,
+        order_by: str = "risk_rating",
     ) -> None:
         try:
             with models.Database() as session:
@@ -836,9 +835,9 @@ class LocalRuntime(runtime.Runtime):
         )
 
     def link_agent_group_scan(
-            self,
-            scan: models.Scan,
-            agent_group_definition: definitions.AgentGroupDefinition,
+        self,
+        scan: models.Scan,
+        agent_group_definition: definitions.AgentGroupDefinition,
     ) -> None:
         """Link the agent group to the scan in the database.
 
@@ -855,7 +854,7 @@ class LocalRuntime(runtime.Runtime):
             session.commit()
 
     def link_assets_scan(
-            self, scan_id: int, assets: Optional[List[base_asset.Asset]] = None
+        self, scan_id: int, assets: Optional[List[base_asset.Asset]] = None
     ) -> None:
         """Link the assets to the scan in the database.
 

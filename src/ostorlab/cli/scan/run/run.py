@@ -154,6 +154,8 @@ def run(
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
+    if timeout is not None:
+        runtime_instance.timeout = timeout
 
     # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]
@@ -185,7 +187,6 @@ def run(
                     title=ctx.obj["title"],
                     agent_group_definition=ctx.obj["agent_group_definition"],
                     assets=asset_group.targets if asset_group is not None else None,
-                    timeout=timeout,
                 )
                 if created_scan is not None:
                     runtime_instance.link_agent_group_scan(created_scan, agent_group)
