@@ -22,6 +22,7 @@ from rich import markdown
 from rich import panel
 from sqlalchemy import case
 
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
@@ -49,6 +50,7 @@ console = cli_console.Console()
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
+TRACKER_AGENT_DEFAULT_TIMEOUT = 14400  # 4 hours
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -199,6 +201,7 @@ class LocalRuntime(runtime.Runtime):
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             assets: the target asset to scan.
+            timeout: The timeout in seconds for the tracker agent to wait for all agents to finish.
 
         Returns:
             The scan object.
@@ -324,7 +327,7 @@ class LocalRuntime(runtime.Runtime):
             config_labels = config.attrs["Spec"]["Labels"]
             if (
                 config_labels.get("ostorlab.universe") is not None
-                and int(config_labels.get("ostorlab.universe")) == scan_id
+                and config_labels.get("ostorlab.universe") == scan_id
             ):
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
@@ -519,7 +522,21 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
-        tracker_agent_settings = definitions.AgentSettings(key=TRACKER_AGENT_DEFAULT)
+        tracker_agent_settings = definitions.AgentSettings(
+            key=TRACKER_AGENT_DEFAULT,
+        )
+
+        if self.timeout is not None:
+            tracker_agent_settings.args.extend(
+                [
+                    utils_definitions.Arg(
+                        name="scan_done_timeout_sec", type="number", value=self.timeout
+                    ),
+                    utils_definitions.Arg(
+                        name="postscane_done_timeout_sec", type="number", value=0
+                    ),
+                ]
+            )
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
     def _start_persist_vulnz_agent(self):

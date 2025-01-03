@@ -24,6 +24,7 @@ class Runtime(abc.ABC):
     """Runtime is in charge of preparing the environment to trigger a scan."""
 
     follow: list
+    timeout: Optional[int] = None
 
     @abc.abstractmethod
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
