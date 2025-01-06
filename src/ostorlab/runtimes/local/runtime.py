@@ -50,7 +50,6 @@ console = cli_console.Console()
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
-TRACKER_AGENT_DEFAULT_TIMEOUT = 14400  # 4 hours
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,

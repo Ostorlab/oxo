@@ -1270,6 +1270,7 @@ def run_scan_mock(mocker: plugin.MockerFixture) -> None:
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_post_agents")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_agents")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
     mocker.patch(
