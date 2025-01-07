@@ -531,9 +531,6 @@ class LocalRuntime(runtime.Runtime):
                     utils_definitions.Arg(
                         name="scan_done_timeout_sec", type="number", value=self.timeout
                     ),
-                    utils_definitions.Arg(
-                        name="postscane_done_timeout_sec", type="number", value=0
-                    ),
                 ]
             )
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])

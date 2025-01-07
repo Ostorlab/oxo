@@ -576,24 +576,6 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
         == "scan_done_timeout_sec"
     )
     assert mock_start_agent.call_args[1].get("agent").args[0].value == 3600
-    assert (
-        any(
-            arg.name == "postscane_done_timeout_sec"
-            and arg.value == 0
-            and arg.type == "number"
-            for arg in mock_start_agent.call_args[1].get("agent").args
-        )
-        is True
-    )
-    assert (
-        any(
-            arg.name == "scan_done_timeout_sec"
-            and arg.value == 3600
-            and arg.type == "number"
-            for arg in mock_start_agent.call_args[1].get("agent").args
-        )
-        is True
-    )
 
 
 def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
