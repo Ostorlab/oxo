@@ -5,7 +5,7 @@ Example of usage:
 
 import io
 import logging
-from typing import List
+from typing import List, Optional
 
 import click
 import httpx
@@ -89,6 +89,13 @@ WAIT_BETWEEN_RETRIES = 5
     is_flag=True,
     required=False,
 )
+@click.option(
+    "--timeout",
+    "-t",
+    type=int,
+    help="Timeout for the scan in seconds",
+    required=False,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -101,6 +108,7 @@ def run(
     follow: List[str],
     no_follow: bool,
     no_asset: bool,
+    timeout: Optional[int] = None,
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
@@ -146,6 +154,8 @@ def run(
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
+    if timeout is not None:
+        runtime_instance.timeout = timeout
 
     # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]

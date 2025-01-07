@@ -1270,8 +1270,8 @@ def run_scan_mock(mocker: plugin.MockerFixture) -> None:
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
-    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_agents")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_post_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_agents")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime._check_agents_healthy",
@@ -1298,6 +1298,37 @@ def run_scan_mock2(mocker: plugin.MockerFixture) -> None:
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+
+
+@pytest.fixture
+def run_scan_mock3(mocker: plugin.MockerFixture) -> None:
+    """Mock functions required to run a scan."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_agents")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime._check_agents_healthy",
+        return_value=True,
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._inject_assets")
 
 
 @pytest.fixture
