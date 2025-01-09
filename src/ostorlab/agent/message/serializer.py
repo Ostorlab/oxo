@@ -43,7 +43,7 @@ def _find_package_name(selector: str) -> str:
     matching = [pattern.match(f) for f in files]
     filtered_matching = [m.group(0) for m in matching if m is not None]
     if len(filtered_matching) > 1:
-        raise TooManyMatchingPackageNamesError(f'Found {",".join(filtered_matching)}')
+        raise TooManyMatchingPackageNamesError(f"Found {','.join(filtered_matching)}")
     elif len(filtered_matching) == 0:
         raise NoMatchingPackageNameError()
     else:

@@ -393,7 +393,7 @@ class CloudRuntime(runtime.Runtime):
             "CVSSv3 Vector": "cvss_v3_vector",
             "Short Description": "short_description",
         }
-        title = f'Describing vulnerability {vulnerability["id"]}'
+        title = f"Describing vulnerability {vulnerability['id']}"
         console.table(columns=columns, data=vulnz_list_data, title=title)
         rich.print(
             panel.Panel(
