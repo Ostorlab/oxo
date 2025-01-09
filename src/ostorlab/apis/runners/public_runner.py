@@ -38,7 +38,7 @@ class PublicAPIRunner(runner.APIRunner):
         response = self._sent_request(request)
         if response.status_code != 200:
             raise runner.ResponseError(
-                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}'
+                f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
         data: Dict[str, Any] = response.json()
         errors = data.get("errors")

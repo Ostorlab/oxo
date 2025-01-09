@@ -18,8 +18,7 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
     create_scan_db = models.Scan.create("test")
     vuln_db = models.Vulnerability.create(
         title="Secure TLS certificate validation",
-        short_description="Application performs proper server certificate "
-        "validation",
+        short_description="Application performs proper server certificate validation",
         description="The application performs proper TLS certificate validation.",
         recommendation="The implementation is secure, no recommendation apply.",
         technical_detail="TLS certificate validation was tested dynamically by "

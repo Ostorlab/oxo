@@ -150,7 +150,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                 "Response status code is %s: %s", response.status_code, response.content
             )
             raise runner.ResponseError(
-                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}'
+                f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
         data: Dict[str, Any] = response.json()
         errors = data.get("errors")
@@ -202,7 +202,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                 "Response status code is %s: %s", response.status_code, response.content
             )
             raise runner.ResponseError(
-                f'Response status code is {response.status_code}: {response.content.decode(errors="ignore")}'
+                f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
         data: Dict[str, Any] = json.loads(response.content.decode())
         errors = data.get("errors")

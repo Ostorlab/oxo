@@ -225,7 +225,7 @@ def apply_break_scan_risk_rating(
     else:
         ci_logger.error(
             f"Incorrect risk rating value {break_on_risk_rating}. "
-            f'It should be one of {", ".join(risk_rating.RiskRating.values())}'
+            f"It should be one of {', '.join(risk_rating.RiskRating.values())}"
         )
         raise click.exceptions.Exit(2)
 
