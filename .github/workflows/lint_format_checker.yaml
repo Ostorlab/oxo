@@ -24,3 +24,5 @@ jobs:
           args: format --check
       - name: Running linter.
         uses: astral-sh/ruff-action@v3
+        with:
+          args: check
