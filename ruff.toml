@@ -2,3 +2,4 @@
 extend-exclude = ["*_pb2.py"]
 
 [lint]
+ignore-init-module-imports = true
