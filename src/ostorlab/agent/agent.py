@@ -386,7 +386,7 @@ class AgentMixin(
             logger.error("selector not present in list of out selectors")
             # CAUTION: this check is enforced on the client-side only in certain runtimes
             raise NonListedMessageSelectorError(
-                f'{selector} is not in {"".join(self.out_selectors)}'
+                f"{selector} is not in {''.join(self.out_selectors)}"
             )
 
         logger.debug("call to send message with %s", selector)

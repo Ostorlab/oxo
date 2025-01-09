@@ -236,7 +236,7 @@ class AgentGroupDefinition:
 
         name = agent_group_def.get("name")
         description = agent_group_def.get(
-            "description", f"""Agent group : {','.join(agents_names)}"""
+            "description", f"""Agent group : {",".join(agents_names)}"""
         )
         return cls(agent_settings, name, description)
 

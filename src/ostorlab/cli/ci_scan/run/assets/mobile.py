@@ -71,7 +71,7 @@ def run_mobile_scan(
             if test_credentials:
                 credential_ids = _create_test_credentials(test_credentials, runner)
                 ci_logger.info(
-                    f'Created test credentials {", ".join(str(t) for t in test_credentials)} successfully'
+                    f"Created test credentials {', '.join(str(t) for t in test_credentials)} successfully"
                 )
             else:
                 credential_ids = []
