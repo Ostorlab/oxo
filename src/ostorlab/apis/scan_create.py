@@ -3,9 +3,20 @@
 import enum
 import io
 import json
+import dataclasses
 from typing import Dict, Optional, BinaryIO, List
 
 from . import request
+
+
+@dataclasses.dataclass
+class CiCdParams:
+    """Dataclass holding CI/CD related parameters."""
+
+    source: str
+    repository: Optional[str] = None
+    pr_id: Optional[str] = None
+
 
 SCAN_PROFILES = {
     "fast_scan": "Fast Scan",
@@ -34,6 +45,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         application: BinaryIO,
         test_credential_ids: Optional[List[int]] = None,
         sboms: list[io.FileIO] = None,
+        ci_cd_params: Optional[CiCdParams] = None,
     ):
         self._title = title
         self._asset_type = asset_type
@@ -41,6 +53,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         self._application = application
         self._test_credential_ids = test_credential_ids
         self._sboms = sboms
+        self._ci_cd_params = ci_cd_params or CiCdParams()
 
     @property
     def query(self) -> Optional[str]:
@@ -51,8 +64,8 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         """
 
         return """
-mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int]) {
-  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds) {
+mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $ciCdSource: String, $prId: String, $repository: String) {
+  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, ciCdSource: $ciCdSource, prId: $prId, repository: $repository) {
     scan {
       id
     }
@@ -83,6 +96,9 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "scanProfile": self._scan_profile,
                         "credentialIds": self._test_credential_ids,
                         "sboms": [None for _ in self._sboms],
+                        "ciCdSource": self._ci_cd_params.source,
+                        "repository": self._ci_cd_params.repository,
+                        "prId": self._ci_cd_params.pr_id,
                     },
                 }
             ),

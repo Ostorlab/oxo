@@ -424,3 +424,50 @@ def testRunWebScanCLI_withsboms_callApi(
     )
 
     assert api_caller_mock.call_count == 2
+
+
+def testRunScanCLI_whithSourceGithub_callApi(mocker):
+    """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+
+    scan_info_dict = {
+        "data": {
+            "scan": {
+                "progress": "done",
+                "riskRating": "high",
+            }
+        }
+    }
+
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+
+    runner = CliRunner()
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=10",
+            "--title=scan1",
+            "--log-flavor=github",
+            "--source=github",
+            "--repository=org/repo",
+            "--pr-id=123456",
+            "ios-ipa",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert api_caller_mock.call_count == 2
+    assert api_caller_mock.call_args_list[0].args[0]._ci_cd_params.source == "github"
+    assert (
+        api_caller_mock.call_args_list[0].args[0]._ci_cd_params.repository == "org/repo"
+    )
+    assert api_caller_mock.call_args_list[0].args[0]._ci_cd_params.pr_id == "123456"
