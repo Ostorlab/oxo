@@ -15,7 +15,7 @@ class CiCdParams:
 
     source: str
     repository: Optional[str] = None
-    pr_id: Optional[str] = None
+    pr_number: Optional[str] = None
 
 
 SCAN_PROFILES = {
@@ -53,7 +53,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         self._application = application
         self._test_credential_ids = test_credential_ids
         self._sboms = sboms
-        self._ci_cd_params = ci_cd_params or CiCdParams()
+        self._ci_cd_params = ci_cd_params
 
     @property
     def query(self) -> Optional[str]:
@@ -64,8 +64,8 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         """
 
         return """
-mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $ciCdSource: String, $prId: String, $repository: String) {
-  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, ciCdSource: $ciCdSource, prId: $prId, repository: $repository) {
+mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $scanSource: ScanSourceInputType) {
+  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, scanSource: $scanSource) {
     scan {
       id
     }
@@ -96,9 +96,11 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "scanProfile": self._scan_profile,
                         "credentialIds": self._test_credential_ids,
                         "sboms": [None for _ in self._sboms],
-                        "ciCdSource": self._ci_cd_params.source,
-                        "repository": self._ci_cd_params.repository,
-                        "prId": self._ci_cd_params.pr_id,
+                        "scanSource": {
+                            "source": self._ci_cd_params.source,
+                            "repository": self._ci_cd_params.repository,
+                            "prNumber": self._ci_cd_params.pr_number,
+                        },
                     },
                 }
             ),

@@ -65,7 +65,7 @@ def run_mobile_scan(
         sboms = ctx.obj["sboms"]
         repository = ctx.obj["repository"]
         source = ctx.obj["source"]
-        pr_id = ctx.obj["pr_id"]
+        pr_number = ctx.obj["pr_number"]
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -85,7 +85,7 @@ def run_mobile_scan(
             ci_cd_params = None
             if source is not None:
                 ci_cd_params = scan_create_api.CiCdParams(
-                    source=source, repository=repository, pr_id=pr_id
+                    source=source, repository=repository, pr_number=pr_number
                 )
 
             scan_id = _create_scan(

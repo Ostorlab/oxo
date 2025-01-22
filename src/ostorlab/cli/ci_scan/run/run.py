@@ -140,8 +140,8 @@ CI_LOGGER = {
     default=None,
 )
 @click.option(
-    "--pr-id",
-    help="Pull request ID.",
+    "--pr-number",
+    help="Pull request number.",
     required=False,
     default=None,
 )
@@ -166,7 +166,7 @@ def run(
     qps: int,
     source: Optional[str] = None,
     repository: Optional[str] = None,
-    pr_id: Optional[str] = None,
+    pr_number: Optional[str] = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -218,7 +218,7 @@ def run(
     ctx.obj["qps"] = qps
     ctx.obj["source"] = source
     ctx.obj["repository"] = repository
-    ctx.obj["pr_id"] = pr_id
+    ctx.obj["pr_number"] = pr_number
 
 
 def apply_break_scan_risk_rating(
