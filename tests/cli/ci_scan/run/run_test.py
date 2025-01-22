@@ -426,7 +426,7 @@ def testRunWebScanCLI_withsboms_callApi(
     assert api_caller_mock.call_count == 2
 
 
-def testRunScanCLI_whithSourceGithub_callApi(mocker: plugin.MockerFixture) -> None:
+def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
