@@ -8,7 +8,7 @@ import io
 import multiprocessing
 import click
 import time
-from typing import List
+from typing import List, Optional
 
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
 from ostorlab.apis import scan_create as scan_create_api
@@ -127,6 +127,24 @@ CI_LOGGER = {
     required=False,
     default=None,
 )
+@click.option(
+    "--source",
+    help="CI/CD source.",
+    required=False,
+    default=None,
+)
+@click.option(
+    "--repository",
+    help="Repository name.",
+    required=False,
+    default=None,
+)
+@click.option(
+    "--pr-number",
+    help="Pull request number.",
+    required=False,
+    default=None,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -146,6 +164,9 @@ def run(
     filtered_url_regexes: List[str],
     proxy: str,
     qps: int,
+    source: Optional[str] = None,
+    repository: Optional[str] = None,
+    pr_number: Optional[str] = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -195,6 +216,9 @@ def run(
     ctx.obj["filtered_url_regexes"] = filtered_url_regexes
     ctx.obj["proxy"] = proxy
     ctx.obj["qps"] = qps
+    ctx.obj["source"] = source
+    ctx.obj["repository"] = repository
+    ctx.obj["pr_number"] = pr_number
 
 
 def apply_break_scan_risk_rating(
