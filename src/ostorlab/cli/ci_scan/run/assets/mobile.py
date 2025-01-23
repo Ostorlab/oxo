@@ -84,7 +84,7 @@ def run_mobile_scan(
             )
             ci_cd_params = None
             if source is not None:
-                ci_cd_params = scan_create_api.CiCdParams(
+                ci_cd_params = scan_create_api.ScanSource(
                     source=source, repository=repository, pr_number=pr_number
                 )
 
@@ -126,7 +126,7 @@ def _create_scan(
     credential_ids: List[int],
     runner: authenticated_runner.AuthenticatedAPIRunner,
     sboms: List[io.FileIO],
-    ci_cd_params: Optional[scan_create_api.CiCdParams] = None,
+    ci_cd_params: Optional[scan_create_api.ScanSource] = None,
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(

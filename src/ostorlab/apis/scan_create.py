@@ -10,8 +10,8 @@ from . import request
 
 
 @dataclasses.dataclass
-class CiCdParams:
-    """Dataclass holding CI/CD related parameters."""
+class ScanSource:
+    """Dataclass holding scan source related parameters."""
 
     source: str
     repository: Optional[str] = None
@@ -45,7 +45,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         application: BinaryIO,
         test_credential_ids: Optional[List[int]] = None,
         sboms: list[io.FileIO] = None,
-        ci_cd_params: Optional[CiCdParams] = None,
+        ci_cd_params: Optional[ScanSource] = None,
     ):
         self._title = title
         self._asset_type = asset_type
