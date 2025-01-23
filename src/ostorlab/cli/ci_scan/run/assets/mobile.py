@@ -82,9 +82,9 @@ def run_mobile_scan(
             ci_logger.info(
                 f"creating scan `{title}` with profile `{scan_profile}` for `{asset_type}`"
             )
-            ci_cd_params = None
+            scan_source = None
             if source is not None:
-                ci_cd_params = scan_create_api.ScanSource(
+                scan_source = scan_create_api.ScanSource(
                     source=source, repository=repository, pr_number=pr_number
                 )
 
@@ -96,7 +96,7 @@ def run_mobile_scan(
                 credential_ids,
                 runner,
                 sboms,
-                ci_cd_params,
+                scan_source,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -126,7 +126,7 @@ def _create_scan(
     credential_ids: List[int],
     runner: authenticated_runner.AuthenticatedAPIRunner,
     sboms: List[io.FileIO],
-    ci_cd_params: Optional[scan_create_api.ScanSource] = None,
+    scan_source: Optional[scan_create_api.ScanSource] = None,
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
@@ -136,7 +136,7 @@ def _create_scan(
             application=file,
             test_credential_ids=credential_ids,
             sboms=sboms,
-            ci_cd_params=ci_cd_params,
+            scan_source=scan_source,
         )
     )
     scan_id = scan_result.get("data").get("createMobileScan").get("scan").get("id")

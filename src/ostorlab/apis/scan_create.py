@@ -45,7 +45,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         application: BinaryIO,
         test_credential_ids: Optional[List[int]] = None,
         sboms: list[io.FileIO] = None,
-        ci_cd_params: Optional[ScanSource] = None,
+        scan_source: Optional[ScanSource] = None,
     ):
         self._title = title
         self._asset_type = asset_type
@@ -53,7 +53,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         self._application = application
         self._test_credential_ids = test_credential_ids
         self._sboms = sboms
-        self._ci_cd_params = ci_cd_params
+        self._scan_source = scan_source
 
     @property
     def query(self) -> Optional[str]:
@@ -97,9 +97,15 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "credentialIds": self._test_credential_ids,
                         "sboms": [None for _ in self._sboms],
                         "scanSource": {
-                            "source": self._ci_cd_params.source,
-                            "repository": self._ci_cd_params.repository,
-                            "prNumber": self._ci_cd_params.pr_number,
+                            "source": self._scan_source.source
+                            if self._scan_source is not None
+                            else None,
+                            "repository": self._scan_source.repository
+                            if self._scan_source is not None
+                            else None,
+                            "prNumber": self._scan_source.pr_number
+                            if self._scan_source is not None
+                            else None,
                         },
                     },
                 }

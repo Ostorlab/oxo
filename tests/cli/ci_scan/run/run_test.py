@@ -466,8 +466,8 @@ def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> Non
     )
 
     assert api_caller_mock.call_count == 2
-    assert api_caller_mock.call_args_list[0].args[0]._ci_cd_params.source == "github"
+    assert api_caller_mock.call_args_list[0].args[0]._scan_source.source == "github"
     assert (
-        api_caller_mock.call_args_list[0].args[0]._ci_cd_params.repository == "org/repo"
+        api_caller_mock.call_args_list[0].args[0]._scan_source.repository == "org/repo"
     )
-    assert api_caller_mock.call_args_list[0].args[0]._ci_cd_params.pr_number == "123456"
+    assert api_caller_mock.call_args_list[0].args[0]._scan_source.pr_number == "123456"
