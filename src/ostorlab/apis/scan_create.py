@@ -97,16 +97,10 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "credentialIds": self._test_credential_ids,
                         "sboms": [None for _ in self._sboms],
                         "scanSource": {
-                            "source": self._scan_source.source
-                            if self._scan_source is not None
-                            else None,
-                            "repository": self._scan_source.repository
-                            if self._scan_source is not None
-                            else None,
+                            "source": self._scan_source.source,
+                            "repository": self._scan_source.repository,
                             "prNumber": self._scan_source.pr_number
-                            if self._scan_source is not None
-                            else None,
-                        },
+                        } if self._scan_source is not None else None,
                     },
                 }
             ),
