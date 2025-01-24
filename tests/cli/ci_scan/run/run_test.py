@@ -424,7 +424,7 @@ def testRunWebScanCLI_withsboms_callApi(
     )
 
     assert api_caller_mock.call_count == 2
-    assert api_caller_mock.call_args_list[0].args[0]._scan_source is None
+    assert hasattr(api_caller_mock.call_args_list[0].args[0], "_scan_source") == False
 
 
 def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> None:
