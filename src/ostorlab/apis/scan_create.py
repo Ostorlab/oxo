@@ -99,8 +99,10 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         "scanSource": {
                             "source": self._scan_source.source,
                             "repository": self._scan_source.repository,
-                            "prNumber": self._scan_source.pr_number
-                        } if self._scan_source is not None else None,
+                            "prNumber": self._scan_source.pr_number,
+                        }
+                        if self._scan_source is not None
+                        else None,
                     },
                 }
             ),
