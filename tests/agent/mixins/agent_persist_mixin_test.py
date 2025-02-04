@@ -44,7 +44,7 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
 @pytest.mark.docker
 async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
     mocker, redis_service, clean_redis_data
-):
+) -> None:
     """Test proper storage and access of set API."""
     del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
