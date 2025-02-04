@@ -113,7 +113,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.get(key)
 
-    def exists(self, key: Union[bytes, str]) -> bool:
+    def exists(self, key: bytes | str) -> bool:
         """Helper function that checks if a given key exists in the Redis database.
 
         Args:
