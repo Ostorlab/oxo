@@ -45,7 +45,7 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
 async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
     mocker, redis_service, clean_redis_data
 ) -> None:
-    """Test proper storage and access of set API."""
+    """Test AgentPersistMixin exists method."""
     settings = runtime_definitions.AgentSettings(
         key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
     )
