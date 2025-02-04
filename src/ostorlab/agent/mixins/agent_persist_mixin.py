@@ -113,6 +113,18 @@ class AgentPersistMixin:
         """
         return self._redis_client.get(key)
 
+    def exists(self, key: Union[bytes, str]) -> bool:
+        """Helper function that checks if a given key exists in the Redis database.
+
+        Args:
+            key: The key to check for existence.
+
+        Returns:
+            bool: True if the key exists, False otherwise.
+        """
+
+        return self._redis_client.exists(key) == 1
+
     def hash_add(
         self,
         hash_name: Union[bytes, str],
@@ -123,7 +135,7 @@ class AgentPersistMixin:
 
         Args:
             hash_name: Name of the hash.
-            mapping: Dict of key/value pairs that will be hadded to hash_name
+            mapping: Dict of key/value pairs that will be added to hash_name
 
         Returns:
             True if the key does not exist, False otherwise
