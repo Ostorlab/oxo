@@ -1,6 +1,7 @@
 """Tests for AgentPersistMixin module."""
 
 import ipaddress
+from typing import Generator
 
 import pytest
 from pytest_mock import plugin
@@ -43,7 +44,8 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
-    mocker, redis_service, clean_redis_data
+    redis_service: Generator[None, None, None],
+    clean_redis_data: Generator[local_redis_service.LocalRedis, None, None],
 ) -> None:
     """Test AgentPersistMixin exists method."""
     settings = runtime_definitions.AgentSettings(
