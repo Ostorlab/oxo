@@ -14,10 +14,10 @@ from ostorlab.runtimes import definitions as runtime_definitions
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
-    mocker, redis_service, clean_redis_data
+    redis_service, clean_redis_data
 ):
     """Test proper storage and access of set API."""
-    del mocker, redis_service, clean_redis_data
+    del redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
         key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
     )
@@ -46,7 +46,6 @@ async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
     mocker, redis_service, clean_redis_data
 ) -> None:
     """Test proper storage and access of set API."""
-    del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
         key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
     )
