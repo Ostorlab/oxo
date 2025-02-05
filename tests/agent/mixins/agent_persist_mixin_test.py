@@ -1,6 +1,7 @@
 """Tests for AgentPersistMixin module."""
 
 import ipaddress
+from typing import Generator
 
 import pytest
 from pytest_mock import plugin
@@ -14,10 +15,10 @@ from ostorlab.runtimes import definitions as runtime_definitions
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
-    mocker, redis_service, clean_redis_data
+    redis_service, clean_redis_data
 ):
     """Test proper storage and access of set API."""
-    del mocker, redis_service, clean_redis_data
+    del redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
         key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
     )
@@ -37,6 +38,25 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
     assert mixin.value_type("test") == "set"
     assert mixin.value_type("myKey") == "string"
     assert mixin.value_type("myKey1") == "none"
+
+
+@pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
+async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
+    redis_service: Generator[None, None, None],
+    clean_redis_data: Generator[local_redis_service.LocalRedis, None, None],
+) -> None:
+    """Test AgentPersistMixin exists method."""
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    key = "thekey"
+    assert mixin.exists(key) is False
+    mixin.add(key, b"the_value")
+    assert mixin.exists(key) is True
 
 
 @pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
