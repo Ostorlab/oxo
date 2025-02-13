@@ -11,6 +11,10 @@ from ostorlab.assets import asset
 class IPv4(asset.Asset):
     """IPv4 Address target asset."""
 
+    host: str
+    version: Optional[int] = 4
+    mask: Optional[str] = None
+
     def __init__(
         self, host: str, version: Optional[int] = 4, mask: Optional[str] = None
     ):

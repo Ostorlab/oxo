@@ -11,6 +11,10 @@ from ostorlab.assets import asset
 class AndroidApk(asset.Asset):
     """Android .APK  target asset."""
 
+    content: Optional[bytes] = None
+    path: Optional[str] = None
+    content_url: Optional[str] = None
+
     def __init__(
         self,
         content: Optional[bytes] = None,

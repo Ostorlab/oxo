@@ -10,6 +10,9 @@ from ostorlab.assets import asset
 class Link(asset.Asset):
     """Agent asset."""
 
+    url: str
+    method: str
+
     def __init__(self, url: str, method: str):
         self.url = url
         self.method = method
