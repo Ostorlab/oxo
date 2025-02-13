@@ -407,13 +407,13 @@ assets:
             content=b"content", path="/tests/files/fake_app.aab"
         ),
         android_aab_asset.AndroidAab(
-            content=b"content", path="/tests/files/fake_app_2.apk"
-        ),
-        android_apk_asset.AndroidApk(
-            content=b"content", path="/tests/files/fake_app.aab"
-        ),
-        android_apk_asset.AndroidApk(
             content=b"content", path="/tests/files/fake_app_2.aab"
+        ),
+        android_apk_asset.AndroidApk(
+            content=b"content", path="/tests/files/fake_app.apk"
+        ),
+        android_apk_asset.AndroidApk(
+            content=b"content", path="/tests/files/fake_app_2.apk"
         ),
         ios_ipa_asset.IOSIpa(content=b"content", path="/files/fake_app.ipa"),
         ios_ipa_asset.IOSIpa(content_url="https://cia.sketchy.com/secret_files.ipa"),
