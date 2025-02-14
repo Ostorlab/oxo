@@ -15,16 +15,6 @@ class AndroidApk(asset.Asset):
     path: Optional[str] = None
     content_url: Optional[str] = None
 
-    def __init__(
-        self,
-        content: Optional[bytes] = None,
-        path: Optional[str] = None,
-        content_url: Optional[str] = None,
-    ):
-        self.content = content
-        self.path = path
-        self.content_url = content_url
-
     def __str__(self) -> str:
         str_representation = "Android APK"
         if self.path is not None:

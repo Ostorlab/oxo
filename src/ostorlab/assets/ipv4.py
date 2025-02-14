@@ -15,11 +15,6 @@ class IPv4(asset.Asset):
     version: int = 4
     mask: Optional[str] = None
 
-    def __init__(self, host: str, version: int = 4, mask: Optional[str] = None):
-        self.host = host
-        self.version = version
-        self.mask = mask
-
     def __str__(self) -> str:
         return f"{self.host}/{self.mask}"
 

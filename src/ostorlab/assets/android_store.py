@@ -12,9 +12,6 @@ class AndroidStore(asset.Asset):
 
     package_name: str
 
-    def __init__(self, package_name: str):
-        self.package_name = package_name
-
     def __str__(self) -> str:
         return f"Android Store: ({self.package_name})"
 

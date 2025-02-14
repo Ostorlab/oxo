@@ -13,10 +13,6 @@ class Link(asset.Asset):
     url: str
     method: str
 
-    def __init__(self, url: str, method: str):
-        self.url = url
-        self.method = method
-
     def __str__(self) -> str:
         return f"Link {self.url} with method {self.method}"
 
