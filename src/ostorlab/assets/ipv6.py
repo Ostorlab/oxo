@@ -12,12 +12,10 @@ class IPv6(asset.Asset):
     """IPv6 Address target asset."""
 
     host: str
-    version: Optional[int] = 6
+    version: int = 6
     mask: Optional[str] = None
 
-    def __init__(
-        self, host: str, version: Optional[int] = 6, mask: Optional[str] = None
-    ):
+    def __init__(self, host: str, version: int = 6, mask: Optional[str] = None):
         self.host = host
         self.version = version
         self.mask = mask
