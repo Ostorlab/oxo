@@ -10,8 +10,7 @@ from ostorlab.assets import asset
 class AndroidStore(asset.Asset):
     """Android store package target asset."""
 
-    def __init__(self, package_name: str):
-        self.package_name = package_name
+    package_name: str
 
     def __str__(self) -> str:
         return f"Android Store: ({self.package_name})"

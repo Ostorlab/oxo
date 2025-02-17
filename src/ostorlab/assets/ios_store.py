@@ -10,8 +10,7 @@ from ostorlab.assets import asset
 class IOSStore(asset.Asset):
     """Ios bundle target asset."""
 
-    def __init__(self, bundle_id: str):
-        self.bundle_id = bundle_id
+    bundle_id: str
 
     def __str__(self) -> str:
         return f"iOS Store ({self.bundle_id})"

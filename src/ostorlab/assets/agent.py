@@ -11,19 +11,11 @@ from ostorlab.assets import asset
 class Agent(asset.Asset):
     """Agent asset."""
 
-    def __init__(
-        self,
-        key: str,
-        version: Optional[str] = None,
-        git_location: Optional[str] = None,
-        docker_location: Optional[str] = None,
-        yaml_file_location: Optional[str] = None,
-    ):
-        self.key = key
-        self.version = version
-        self.git_location = git_location
-        self.docker_location = docker_location
-        self.yaml_file_location = yaml_file_location
+    key: str
+    version: Optional[str] = None
+    git_location: Optional[str] = None
+    docker_location: Optional[str] = None
+    yaml_file_location: Optional[str] = None
 
     def __str__(self) -> str:
         if self.version is not None:

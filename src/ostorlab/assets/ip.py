@@ -12,12 +12,13 @@ from ostorlab.assets import asset
 class IP(asset.Asset):
     """IP Address target asset."""
 
-    def __init__(
-        self, host: str, version: Optional[int] = None, mask: Optional[str] = None
-    ):
-        self.host = host
-        self.version = version or ipaddress.ip_address(self.host).version
-        self.mask = mask
+    host: str
+    version: Optional[int] = None
+    mask: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        if self.version is None:
+            self.version = ipaddress.ip_address(self.host).version
 
     def __str__(self) -> str:
         return f"{self.host}/{self.mask}"

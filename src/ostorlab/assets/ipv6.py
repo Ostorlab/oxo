@@ -11,12 +11,9 @@ from ostorlab.assets import asset
 class IPv6(asset.Asset):
     """IPv6 Address target asset."""
 
-    def __init__(
-        self, host: str, version: Optional[int] = 6, mask: Optional[str] = None
-    ):
-        self.host = host
-        self.version = version
-        self.mask = mask
+    host: str
+    version: int = 6
+    mask: Optional[str] = None
 
     def __str__(self) -> str:
         return f"{self.host}/{self.mask}"

@@ -11,15 +11,9 @@ from ostorlab.assets import asset
 class File(asset.Asset):
     """File target asset."""
 
-    def __init__(
-        self,
-        content: Optional[bytes] = None,
-        path: Optional[str] = None,
-        content_url: Optional[str] = None,
-    ):
-        self.content = content
-        self.path = path
-        self.content_url = content_url
+    content: Optional[bytes] = None
+    path: Optional[str] = None
+    content_url: Optional[str] = None
 
     def __str__(self) -> str:
         str_representation = "File"

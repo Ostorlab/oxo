@@ -14,17 +14,10 @@ CLASS_NAME = "API Schema"
 class ApiSchema(asset.Asset):
     """API Schema target asset."""
 
-    def __init__(
-        self,
-        endpoint_url: str,
-        content: Optional[bytes] = None,
-        content_url: Optional[str] = None,
-        schema_type: Optional[str] = None,
-    ):
-        self.content = content
-        self.endpoint_url = endpoint_url
-        self.schema_type = schema_type
-        self.content_url = content_url
+    endpoint_url: str
+    content: Optional[bytes] = None
+    content_url: Optional[str] = None
+    schema_type: Optional[str] = None
 
     def __str__(self) -> str:
         str_representation = CLASS_NAME
