@@ -16,7 +16,7 @@ class IP(asset.Asset):
     version: Optional[int] = None
     mask: Optional[str] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.version is None:
             self.version = ipaddress.ip_address(self.host).version
 
