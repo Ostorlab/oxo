@@ -145,6 +145,12 @@ CI_LOGGER = {
     required=False,
     default=None,
 )
+@click.option(
+    "--branch",
+    help="Branch name.",
+    required=False,
+    default=None,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
