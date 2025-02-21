@@ -167,6 +167,7 @@ def run(
     source: Optional[str] = None,
     repository: Optional[str] = None,
     pr_number: Optional[str] = None,
+    branch: Optional[str] = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -219,6 +220,7 @@ def run(
     ctx.obj["source"] = source
     ctx.obj["repository"] = repository
     ctx.obj["pr_number"] = pr_number
+    ctx.obj["branch"] = branch
 
 
 def apply_break_scan_risk_rating(
