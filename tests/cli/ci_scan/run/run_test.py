@@ -461,6 +461,7 @@ def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> Non
             "--source=github",
             "--repository=org/repo",
             "--pr-number=123456",
+            "--branch=main",
             "ios-ipa",
             TEST_FILE_PATH,
         ],
@@ -472,3 +473,4 @@ def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> Non
         api_caller_mock.call_args_list[0].args[0]._scan_source.repository == "org/repo"
     )
     assert api_caller_mock.call_args_list[0].args[0]._scan_source.pr_number == "123456"
+    assert api_caller_mock.call_args_list[0].args[0]._scan_source.branch == "main"

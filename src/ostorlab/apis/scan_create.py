@@ -16,6 +16,7 @@ class ScanSource:
     source: str
     repository: Optional[str] = None
     pr_number: Optional[str] = None
+    branch: Optional[str] = None
 
 
 SCAN_PROFILES = {
@@ -100,6 +101,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                             "source": self._scan_source.source,
                             "repository": self._scan_source.repository,
                             "prNumber": self._scan_source.pr_number,
+                            "branch": self._scan_source.branch,
                         }
                         if self._scan_source is not None
                         else None,

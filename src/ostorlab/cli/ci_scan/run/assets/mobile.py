@@ -66,6 +66,7 @@ def run_mobile_scan(
         repository = ctx.obj["repository"]
         source = ctx.obj["source"]
         pr_number = ctx.obj["pr_number"]
+        branch = ctx.obj["branch"]
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -85,7 +86,10 @@ def run_mobile_scan(
             scan_source = None
             if source is not None:
                 scan_source = scan_create_api.ScanSource(
-                    source=source, repository=repository, pr_number=pr_number
+                    source=source,
+                    repository=repository,
+                    pr_number=pr_number,
+                    branch=branch,
                 )
 
             scan_id = _create_scan(
