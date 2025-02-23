@@ -1,10 +1,9 @@
 """mock agent implements the required methods to test the agent's behavior without using external components."""
 
+from typing import List, Union
 import dataclasses
 
 import pytest
-
-from typing import List
 
 from ostorlab.agent.message import message as msg
 
@@ -95,7 +94,7 @@ def agent_persist_mock(mocker):
         if key in storage:
             return storage[key]
 
-    def _add(key: str | bytes, value: bytes):
+    def _add(key: Union[str, bytes], value: bytes):
         """Check values are present in the storage dict."""
         if isinstance(value, bytes) is False:
             storage[key] = str(value).encode()
