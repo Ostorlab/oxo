@@ -95,9 +95,15 @@ def agent_persist_mock(mocker):
         if key in storage:
             return storage[key]
 
-    def _add(key, value):
+    def _add(key: str | bytes, value: bytes):
         """Check values are present in the storage dict."""
-        storage[key] = str(value).encode()
+        if isinstance(value, bytes) is False:
+            storage[key] = str(value).encode()
+        storage[key] = value
+
+    def _exists(key: str) -> bool:
+        """Check if thr key is present in the storage dict."""
+        return key in storage
 
     def _hash_add(hash_name, mapping):
         for k, v in mapping.items():
@@ -155,6 +161,10 @@ def agent_persist_mock(mocker):
     mocker.patch(
         "ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.add",
         side_effect=_add,
+    )
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.exists",
+        side_effect=_exists,
     )
     mocker.patch(
         "ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.hash_add",
