@@ -100,7 +100,7 @@ def agent_persist_mock(mocker):
             value = str(value).encode()
         storage[key] = value
 
-    def _exists(key: str) -> bool:
+    def _exists(key: Union[str, bytes]) -> bool:
         """Check if thr key is present in the storage dict."""
         return key in storage
 
