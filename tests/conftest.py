@@ -1601,3 +1601,21 @@ def scan_multiple_vulnz_different_risk_ratings(
         references=[],
     )
     return create_scan_db
+
+
+@pytest.fixture
+def call_trace() -> agent_report_vulnerability_mixin.CallTrace:
+    frame1 = agent_report_vulnerability_mixin.Frame(
+        function_name="test_func1",
+        class_name="TestClass1",
+        package_name="test.package1",
+    )
+    frame2 = agent_report_vulnerability_mixin.Frame(
+        function_name="test_func2",
+        class_name="TestClass2",
+        package_name="test.package2",
+    )
+
+    return agent_report_vulnerability_mixin.CallTrace(
+        frames=[frame1, frame2],
+    )
