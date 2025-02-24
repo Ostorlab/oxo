@@ -62,3 +62,6 @@ def testMockPersistAgent_whensetMethodsAreCalled_stateIsPersistedByMock(
     assert test_agent.set_add("test", "1") is True
     assert test_agent.set_is_member("test", "1") is True
     assert agent_persist_mock == {"test": {"1"}}
+    assert test_agent.exists("akey") is False
+    test_agent.add("akey", b"aval")
+    assert test_agent.exists("akey") is True
