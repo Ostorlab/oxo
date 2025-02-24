@@ -94,7 +94,7 @@ def agent_persist_mock(mocker):
         if key in storage:
             return storage[key]
 
-    def _add(key: Union[str, bytes], value: bytes):
+    def _add(key: Union[str, bytes], value: bytes) -> None:
         """Check values are present in the storage dict."""
         if isinstance(value, bytes) is False:
             value = str(value).encode()
