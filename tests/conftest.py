@@ -1601,3 +1601,27 @@ def scan_multiple_vulnz_different_risk_ratings(
         references=[],
     )
     return create_scan_db
+
+
+@pytest.fixture
+def stack_trace() -> agent_report_vulnerability_mixin.StackTrace:
+    arg = agent_report_vulnerability_mixin.Arg(
+        name="test_arg", value=b"test_value", type="test_type"
+    )
+    frame = agent_report_vulnerability_mixin.Frame(
+        function_name="test_func",
+        class_name="TestClass",
+        package_name="test.package",
+        file_path="/test/path",
+        return_type="void",
+        address=0x1234,
+        args=[arg],
+    )
+    input_instance = agent_report_vulnerability_mixin.Input(
+        name="test_input", value=b"test_value", type="test_type"
+    )
+    stack_trace = agent_report_vulnerability_mixin.StackTrace(
+        frames=[frame], thread_id="123", time=1234567890.123, inputs=[input_instance]
+    )
+
+    return stack_trace
