@@ -46,7 +46,7 @@ class ApiSchema(asset.Asset):
         schema_type = to_str(data.get("schema_type"))
         return cls(
             endpoint_url=cast(str, endpoint_url),
-            content=content, # type: ignore
+            content=content,  # type: ignore
             content_url=cast(str, content_url),
             schema_type=schema_type,
         )
