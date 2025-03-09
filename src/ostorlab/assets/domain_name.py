@@ -15,6 +15,16 @@ class DomainName(asset.Asset):
     def __str__(self) -> str:
         return self.name
 
+    @classmethod
+    def from_dict(cls, data: dict[str, str | bytes]) -> "DomainName":
+        """Constructs an DomainName asset from a dictionary."""
+        name = data.get("name", "")
+        if type(name) is bytes:
+            name = name.decode()
+        if name == "":
+            raise ValueError("name is missing.")
+        return DomainName(name)
+
     @property
     def proto_field(self) -> str:
         return "domain_name"

@@ -18,6 +18,23 @@ class IPv6(asset.Asset):
     def __str__(self) -> str:
         return f"{self.host}/{self.mask}"
 
+    @classmethod
+    def from_dict(cls, data: dict[str, str | bytes]) -> "IPv6":
+        """Constructs an IPv6 asset from a dictionary."""
+
+        def to_str(value: str | bytes | None) -> str | None:
+            if value is None:
+                return None
+            if type(value) is bytes:
+                value = value.decode()
+            return str(value)
+
+        host = to_str(data.get("host", ""))
+        if host == "":
+            raise ValueError("host is missing.")
+        mask = to_str(data.get("mask"))
+        return cls(host=host, mask=mask)
+
     @property
     def proto_field(self) -> str:
         return "ipv6"

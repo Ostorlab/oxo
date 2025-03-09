@@ -27,6 +27,30 @@ class ApiSchema(asset.Asset):
 
         return str_representation
 
+    @classmethod
+    def from_dict(cls, data: dict[str, str | bytes]) -> "ApiSchema":
+        """Constructs an ApiSchema asset from a dictionary."""
+
+        def to_str(value: str | bytes | None) -> str | None:
+            if value is None:
+                return None
+            if type(value) is bytes:
+                value = value.decode()
+            return str(value)
+
+        endpoint_url = to_str(data.get("endpoint_url", ""))
+        if endpoint_url == "":
+            raise ValueError("endpoint_url is missing.")
+        content_url = to_str(data.get("content_url"))
+        content = data.get("content")
+        schema_type = to_str(data.get("schema_type"))
+        return cls(
+            endpoint_url=endpoint_url,
+            content=content,
+            content_url=content_url,
+            schema_type=schema_type,
+        )
+
     @property
     def proto_field(self) -> str:
         return PROTO_FIELD
