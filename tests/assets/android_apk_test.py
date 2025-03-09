@@ -21,3 +21,13 @@ def testAndroidApkAssetFromDict_withBytesValues_returnsExpectedObject():
     apk = android_apk.AndroidApk.from_dict(data)
 
     assert apk == expected_apk
+
+
+def testAndroidApkAssetFromDict_missingOptionalFields_returnsExpectedObject():
+    """Test AndroidApk.from_dict() returns the expected object when optional fields are not provided."""
+    data = {}
+    expected_aab = android_apk.AndroidApk()
+
+    aab = android_apk.AndroidApk.from_dict(data)
+
+    assert aab == expected_aab

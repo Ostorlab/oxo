@@ -49,3 +49,17 @@ def testApiSchemaAssetFromDict_missingEndpointUrl_raisesValueError():
     """Test ApiSchema.from_dict() raises ValueError when endpoint_url is missing."""
     with pytest.raises(ValueError, match="endpoint_url is missing."):
         api_schema.ApiSchema.from_dict({})
+
+
+def testApiSchemaAssetFromDict_missingOptionals_returnsExpectedObject():
+    """Test ApiSchema.from_dict() returns the expected object with bytes values."""
+    data = {
+        "endpoint_url": b"http://example.com/api",
+    }
+    expected_api_schema = api_schema.ApiSchema(
+        endpoint_url="http://example.com/api",
+    )
+
+    api_schema_asset = api_schema.ApiSchema.from_dict(data)
+
+    assert api_schema_asset == expected_api_schema

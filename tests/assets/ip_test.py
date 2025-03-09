@@ -39,3 +39,13 @@ def testIpAssetFromDict_missingHost_raisesValueError():
     """Test IP.from_dict() raises ValueError when host is missing."""
     with pytest.raises(ValueError, match="host is missing."):
         ip.IP.from_dict({})
+
+
+def testIpAssetFromDict_missingOptionals_returnsExpectedObject():
+    """Test IP.from_dict() returns the expected object with string values when optional values are not missing."""
+    data = {"host": "127.0.0.1"}
+    expected_ip = ip.IP(host="127.0.0.1")
+
+    ip_asset = ip.IP.from_dict(data)
+
+    assert ip_asset == expected_ip

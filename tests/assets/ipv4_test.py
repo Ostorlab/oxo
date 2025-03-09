@@ -39,3 +39,13 @@ def testIpv4AssetFromDict_missingHost_raisesValueError():
     """Test IPv4.from_dict() raises ValueError when host is missing."""
     with pytest.raises(ValueError, match="host is missing."):
         ipv4.IPv4.from_dict({})
+
+
+def testIpv4AssetFromDict_missingOptionals_returnsExpectedObject():
+    """Test IPv4.from_dict() returns the expected object with string values."""
+    data = {"host": "127.0.0.1"}
+    expected_ipv4 = ipv4.IPv4(host="127.0.0.1")
+
+    ipv4_asset = ipv4.IPv4.from_dict(data)
+
+    assert ipv4_asset == expected_ipv4

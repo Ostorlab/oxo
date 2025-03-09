@@ -30,3 +30,13 @@ def testFileAssetFromDict_withBytesValues_returnsExpectedObject():
 
     assert file_asset_obj.content == b"test_content"
     assert file_asset_obj.path == "/test/path"
+
+
+def testAndroidAabAssetFromDict_missingOptionalFields_returnsExpectedObject():
+    """Test AndroidAab.from_dict() returns the expected object when optional fields are not provided."""
+    data = {}
+    expected_aab = file_asset.File()
+
+    aab = file_asset.File.from_dict(data)
+
+    assert aab == expected_aab
