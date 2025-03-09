@@ -26,7 +26,7 @@ class Asset(abc.ABC):
         return "asset"
 
 
-def from_dict_factory(selector: str, data: dict[str, any]) -> Asset:
+def from_dict_factory(selector: str, data: dict[str, Any]) -> Asset:
     """Factory to create asset objects from a dictionary."""
     if "v3.asset.file" == selector:
         from ostorlab.assets import file as file_asset

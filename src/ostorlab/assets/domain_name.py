@@ -23,7 +23,7 @@ class DomainName(asset.Asset):
             name = name.decode()
         if name == "":
             raise ValueError("name is missing.")
-        return DomainName(name)
+        return DomainName(name)  # type: ignore
 
     @property
     def proto_field(self) -> str:

@@ -2,7 +2,7 @@
 
 import dataclasses
 import ipaddress
-from typing import Optional
+from typing import Optional, Any
 
 from ostorlab.assets import asset
 
@@ -24,9 +24,7 @@ class IP(asset.Asset):
     def from_dict(cls, data: dict[str, str | bytes]) -> "IP":
         """Constructs an IP asset from a dictionary."""
 
-        def to_str(value: str | bytes | None) -> str | None:
-            if value is None:
-                return None
+        def to_str(value: str | bytes) -> str:
             if type(value) is bytes:
                 value = value.decode()
             return str(value)
@@ -34,10 +32,10 @@ class IP(asset.Asset):
         host = to_str(data.get("host", ""))
         if host == "":
             raise ValueError("host is missing.")
-        version = data.get("version")
+        version: Any = data.get("version")
         if version is not None:
             version = int(version)
-        mask = to_str(data.get("mask"))
+        mask = to_str(data.get("mask", ""))
         return cls(host=host, version=version, mask=mask)
 
     def __str__(self) -> str:

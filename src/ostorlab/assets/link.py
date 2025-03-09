@@ -20,9 +20,7 @@ class Link(asset.Asset):
     def from_dict(cls, data: dict[str, str | bytes]) -> "Link":
         """Constructs a Link asset from a dictionary."""
 
-        def to_str(value: str | bytes | None) -> str | None:
-            if value is None:
-                return None
+        def to_str(value: str | bytes) -> str:
             if type(value) is bytes:
                 value = value.decode()
             return str(value)

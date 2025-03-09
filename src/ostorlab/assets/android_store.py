@@ -23,7 +23,7 @@ class AndroidStore(asset.Asset):
             package_name = package_name.decode()
         if package_name == "":
             raise ValueError("package_name is missing.")
-        return AndroidStore(package_name)
+        return AndroidStore(package_name)  # type: ignore
 
     @property
     def proto_field(self) -> str:

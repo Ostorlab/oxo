@@ -24,7 +24,7 @@ class Agent(asset.Asset):
             return f"Agent {self.key}"
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]):
+    def from_dict(cls, data: dict[str, str | bytes]) -> "Agent":
         """Constructs an Agent asset from a dictionary."""
 
         def to_str(value: str | bytes | None) -> str | None:

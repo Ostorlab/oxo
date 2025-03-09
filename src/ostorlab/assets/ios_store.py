@@ -23,7 +23,7 @@ class IOSStore(asset.Asset):
             bundle_id = bundle_id.decode()
         if bundle_id == "":
             raise ValueError("bundle_id is missing.")
-        return IOSStore(bundle_id)
+        return IOSStore(bundle_id)  # type: ignore
 
     @property
     def proto_field(self) -> str:

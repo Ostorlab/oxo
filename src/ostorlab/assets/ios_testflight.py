@@ -23,7 +23,7 @@ class IOSTestflight(asset.Asset):
             application_url = application_url.decode()
         if application_url == "":
             raise ValueError("package_name is missing.")
-        return IOSTestflight(application_url)
+        return IOSTestflight(application_url)  # type: ignore
 
     @property
     def proto_field(self) -> str:

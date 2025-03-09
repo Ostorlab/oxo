@@ -38,7 +38,7 @@ class IOSIpa(asset.Asset):
         path = to_str(data.get("path"))
         content_url = to_str(data.get("content_url"))
         content = data.get("content")
-        return cls(path=path, content=content, content_url=content_url)
+        return cls(path=path, content=content, content_url=content_url)  # type: ignore
 
     @property
     def proto_field(self) -> str:

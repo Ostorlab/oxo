@@ -1,7 +1,7 @@
 """API Schema asset."""
 
 import dataclasses
-from typing import Optional
+from typing import Optional, cast
 
 from ostorlab.assets import asset
 
@@ -45,9 +45,9 @@ class ApiSchema(asset.Asset):
         content = data.get("content")
         schema_type = to_str(data.get("schema_type"))
         return cls(
-            endpoint_url=endpoint_url,
-            content=content,
-            content_url=content_url,
+            endpoint_url=cast(str, endpoint_url),
+            content=content, # type: ignore
+            content_url=cast(str, content_url),
             schema_type=schema_type,
         )
 
