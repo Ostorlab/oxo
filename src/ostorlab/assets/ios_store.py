@@ -18,7 +18,7 @@ class IOSStore(asset.Asset):
 
     @classmethod
     def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "IOSStore":
-        """Constructs an IOSIpa asset from a dictionary."""
+        """Constructs an IOSStore asset from a dictionary."""
 
         bundle_id = data.get("bundle_id", "")
         if bundle_id == "":

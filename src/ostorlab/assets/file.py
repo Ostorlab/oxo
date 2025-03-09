@@ -26,7 +26,7 @@ class File(asset.Asset):
 
     @classmethod
     def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "File":
-        """Constructs an AndroidApk asset from a dictionary."""
+        """Constructs an File asset from a dictionary."""
 
         args = {}
         path = data.get("path")
