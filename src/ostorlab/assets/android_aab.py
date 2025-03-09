@@ -1,7 +1,7 @@
 """Android .AAB asset."""
 
 import dataclasses
-from typing import Optional
+from typing import Optional, Union, cast
 
 from ostorlab.assets import asset
 
@@ -25,20 +25,22 @@ class AndroidAab(asset.Asset):
         return str_representation
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "AndroidAab":
+    def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "AndroidAab":
         """Constructs an AndroidAab asset from a dictionary."""
 
-        def to_str(value: str | bytes | None) -> str | None:
-            if value is None:
-                return None
-            if type(value) is bytes:
-                value = value.decode()
-            return str(value)
-
-        path = to_str(data.get("path"))
-        content_url = to_str(data.get("content_url"))
+        args = {}
+        path = data.get("path")
+        if path is not None:
+            args["path"] = path.decode() if type(path) is bytes else path
+        content_url = data.get("content_url")
+        if content_url is not None:
+            args["content_url"] = (
+                content_url.decode() if type(content_url) is bytes else content_url
+            )
         content = data.get("content")
-        return cls(path=path, content=content, content_url=content_url)  # type: ignore
+        if content is not None:
+            args["content"] = cast(bytes, content)
+        return cls(**args)  # type: ignore
 
     @property
     def proto_field(self) -> str:

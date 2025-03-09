@@ -1,6 +1,7 @@
 """Domain name asset definition."""
 
 import dataclasses
+from typing import Union
 
 from ostorlab.assets import asset
 
@@ -16,14 +17,12 @@ class DomainName(asset.Asset):
         return self.name
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "DomainName":
+    def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "DomainName":
         """Constructs an DomainName asset from a dictionary."""
         name = data.get("name", "")
-        if type(name) is bytes:
-            name = name.decode()
         if name == "":
             raise ValueError("name is missing.")
-        return DomainName(name)  # type: ignore
+        return DomainName(name.decode() if type(name) is bytes else name)  # type: ignore
 
     @property
     def proto_field(self) -> str:

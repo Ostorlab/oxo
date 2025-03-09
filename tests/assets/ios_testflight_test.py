@@ -31,5 +31,5 @@ def testIosTestflightAssetFromDict_withBytesValues_returnsExpectedObject():
 
 def testIosTestflightAssetFromDict_missingApplicationUrl_raisesValueError():
     """Test IOSTestflight.from_dict() raises ValueError when application_url is missing."""
-    with pytest.raises(ValueError, match="package_name is missing."):
+    with pytest.raises(ValueError, match="application_url is missing."):
         ios_testflight.IOSTestflight.from_dict({})

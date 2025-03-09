@@ -2,7 +2,7 @@
 
 import dataclasses
 import ipaddress
-from typing import Optional, Any
+from typing import Optional, Union
 
 from ostorlab.assets import asset
 
@@ -21,22 +21,20 @@ class IP(asset.Asset):
             self.version = ipaddress.ip_address(self.host).version
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "IP":
+    def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "IP":
         """Constructs an IP asset from a dictionary."""
 
-        def to_str(value: str | bytes) -> str:
-            if type(value) is bytes:
-                value = value.decode()
-            return str(value)
-
-        host = to_str(data.get("host", ""))
+        host = data.get("host", "")
         if host == "":
             raise ValueError("host is missing.")
-        version: Any = data.get("version")
+        args = {"host": host.decode() if type(host) is bytes else host}
+        version = data.get("version")
         if version is not None:
-            version = int(version)
-        mask = to_str(data.get("mask", ""))
-        return cls(host=host, version=version, mask=mask)
+            args["version"] = int(version)  # type: ignore
+        mask = data.get("mask")
+        if mask is not None:
+            args["mask"] = mask.decode() if type(mask) is bytes else mask
+        return cls(**args)  # type: ignore
 
     def __str__(self) -> str:
         return f"{self.host}/{self.mask}"

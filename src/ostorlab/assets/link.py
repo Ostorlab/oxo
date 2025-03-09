@@ -1,6 +1,7 @@
 """Link asset."""
 
 import dataclasses
+from typing import Union
 
 from ostorlab.assets import asset
 
@@ -17,21 +18,19 @@ class Link(asset.Asset):
         return f"Link {self.url} with method {self.method}"
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "Link":
+    def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "Link":
         """Constructs a Link asset from a dictionary."""
 
-        def to_str(value: str | bytes) -> str:
-            if type(value) is bytes:
-                value = value.decode()
-            return str(value)
-
-        url = to_str(data.get("url", ""))
+        url = data.get("url", "")
         if url == "":
             raise ValueError("url is missing.")
-        method = to_str(data.get("method", ""))
+        method = data.get("method", "")
         if method == "":
             raise ValueError("method is missing.")
-        return Link(url=url, method=method)
+        return cls(
+            url=url.decode() if type(url) is bytes else url,  # type: ignore
+            method=method.decode() if type(method) is bytes else method,  # type: ignore
+        )
 
     @property
     def proto_field(self) -> str:

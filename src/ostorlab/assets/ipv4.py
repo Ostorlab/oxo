@@ -1,7 +1,7 @@
 """IPv4 address asset."""
 
 import dataclasses
-from typing import Optional
+from typing import Optional, Union
 
 from ostorlab.assets import asset
 
@@ -19,19 +19,17 @@ class IPv4(asset.Asset):
         return f"{self.host}/{self.mask}"
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "IPv4":
+    def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "IPv4":
         """Constructs an IPv4 asset from a dictionary."""
 
-        def to_str(value: str | bytes) -> str:
-            if type(value) is bytes:
-                value = value.decode()
-            return str(value)
-
-        host = to_str(data.get("host", ""))
+        host = data.get("host", "")
         if host == "":
             raise ValueError("host is missing.")
-        mask = to_str(data.get("mask", ""))
-        return cls(host=host, mask=mask)
+        args = {"host": host.decode() if type(host) is bytes else host, "version": 4}
+        mask = data.get("mask")
+        if mask is not None:
+            args["mask"] = mask.decode() if type(mask) is bytes else mask
+        return cls(**args)  # type: ignore
 
     @property
     def proto_field(self) -> str:

@@ -1,7 +1,7 @@
 """Agent asset."""
 
 import dataclasses
-from typing import Optional
+from typing import Optional, Any
 
 from ostorlab.assets import asset
 
@@ -24,24 +24,28 @@ class Agent(asset.Asset):
             return f"Agent {self.key}"
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "Agent":
+    def from_dict(cls, data: dict[str, Any]) -> "Agent":
         """Constructs an Agent asset from a dictionary."""
 
-        def to_str(value: str | bytes | None) -> str | None:
-            if value is None:
-                return None
+        def to_str(value: Any) -> str:
             if type(value) is bytes:
-                value = value.decode()
-            return str(value)
+                return value.decode()
+            else:
+                return str(value)
 
-        key = to_str(data.get("key"))
+        key = data.get("key")
         if key is None:
-            raise ValueError("key cannot be None.")
-        args = {
-            "version": to_str(data.get("version")),
-            "docker_location": to_str(data.get("docker_location")),
-            "yaml_file_location": to_str(data.get("yaml_file_location")),
-        }
+            raise ValueError("key is missing.")
+        args = {}
+        version = data.get("version")
+        if version is not None:
+            args["version"] = to_str(version)
+        docker_location = data.get("docker_location")
+        if docker_location is not None:
+            args["docker_location"] = to_str(docker_location)
+        yaml_file_location = data.get("yaml_file_location")
+        if yaml_file_location is not None:
+            args["yaml_file_location"] = to_str(yaml_file_location)
         return cls(key, **args)
 
     @property

@@ -1,7 +1,7 @@
 """API Schema asset."""
 
 import dataclasses
-from typing import Optional, cast
+from typing import Optional, Union
 
 from ostorlab.assets import asset
 
@@ -28,28 +28,31 @@ class ApiSchema(asset.Asset):
         return str_representation
 
     @classmethod
-    def from_dict(cls, data: dict[str, str | bytes]) -> "ApiSchema":
+    def from_dict(cls, data: dict[str, Union[str, bytes]]) -> "ApiSchema":
         """Constructs an ApiSchema asset from a dictionary."""
 
-        def to_str(value: str | bytes | None) -> str | None:
-            if value is None:
-                return None
-            if type(value) is bytes:
-                value = value.decode()
-            return str(value)
-
-        endpoint_url = to_str(data.get("endpoint_url", ""))
+        endpoint_url = data.get("endpoint_url", "")
         if endpoint_url == "":
             raise ValueError("endpoint_url is missing.")
-        content_url = to_str(data.get("content_url"))
+        args = {
+            "endpoint_url": endpoint_url.decode()
+            if type(endpoint_url) is bytes
+            else endpoint_url
+        }
         content = data.get("content")
-        schema_type = to_str(data.get("schema_type"))
-        return cls(
-            endpoint_url=cast(str, endpoint_url),
-            content=content,  # type: ignore
-            content_url=cast(str, content_url),
-            schema_type=schema_type,
-        )
+        if content is not None:
+            args["content"] = content
+        content_url = data.get("content_url")
+        if content_url is not None:
+            args["content_url"] = (
+                content_url.decode() if type(content_url) is bytes else content_url
+            )
+        schema_type = data.get("schema_type")
+        if schema_type is not None:
+            args["schema_type"] = (
+                schema_type.decode() if type(schema_type) is bytes else schema_type
+            )
+        return cls(**args)  # type: ignore
 
     @property
     def proto_field(self) -> str:
