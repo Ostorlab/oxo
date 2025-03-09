@@ -11,7 +11,9 @@ def testIosTestflightAssetFromDict_withStringValues_returnsExpectedObject():
     expected_ios_testflight = ios_testflight.IOSTestflight(
         application_url="http://example.com"
     )
+
     ios_testflight_asset = ios_testflight.IOSTestflight.from_dict(data)
+
     assert ios_testflight_asset == expected_ios_testflight
 
 
@@ -21,7 +23,9 @@ def testIosTestflightAssetFromDict_withBytesValues_returnsExpectedObject():
     expected_ios_testflight = ios_testflight.IOSTestflight(
         application_url="http://example.com"
     )
+
     ios_testflight_asset = ios_testflight.IOSTestflight.from_dict(data)
+
     assert ios_testflight_asset == expected_ios_testflight
 
 

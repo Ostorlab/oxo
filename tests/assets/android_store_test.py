@@ -9,7 +9,9 @@ def testAndroidStoreAssetFromDict_withStringValues_returnsExpectedObject():
     """Test AndroidStore.from_dict() returns the expected object."""
     data = {"package_name": "com.test.app"}
     expected_android_store = android_store.AndroidStore(package_name="com.test.app")
+
     android_store_asset = android_store.AndroidStore.from_dict(data)
+
     assert android_store_asset == expected_android_store
 
 
@@ -17,7 +19,9 @@ def testAndroidStoreAssetFromDict_withBytesValues_returnsExpectedObject():
     """Test AndroidStore.from_dict() returns the expected object with bytes values."""
     data = {"package_name": b"com.test.app"}
     expected_android_store = android_store.AndroidStore(package_name="com.test.app")
+
     android_store_asset = android_store.AndroidStore.from_dict(data)
+
     assert android_store_asset == expected_android_store
 
 

@@ -19,7 +19,9 @@ def testLinkAssetFromDict_withStringValues_returnsExpectedObject():
     """Test Link.from_dict() returns the expected object with string values."""
     data = {"url": "http://example.com", "method": "GET"}
     expected_link = link.Link(url="http://example.com", method="GET")
+
     link_asset = link.Link.from_dict(data)
+
     assert link_asset == expected_link
 
 
@@ -27,7 +29,9 @@ def testLinkAssetFromDict_withBytesValues_returnsExpectedObject():
     """Test Link.from_dict() returns the expected object with bytes values."""
     data = {"url": b"http://example.com", "method": b"GET"}
     expected_link = link.Link(url="http://example.com", method="GET")
+
     link_asset = link.Link.from_dict(data)
+
     assert link_asset == expected_link
 
 

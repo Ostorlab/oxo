@@ -19,7 +19,9 @@ def testIpv4AssetFromDict_withStringValues_returnsExpectedObject():
     """Test IPv4.from_dict() returns the expected object with string values."""
     data = {"host": "127.0.0.1", "mask": "32"}
     expected_ipv4 = ipv4.IPv4(host="127.0.0.1", mask="32")
+
     ipv4_asset = ipv4.IPv4.from_dict(data)
+
     assert ipv4_asset == expected_ipv4
 
 
@@ -27,7 +29,9 @@ def testIpv4AssetFromDict_withBytesValues_returnsExpectedObject():
     """Test IPv4.from_dict() returns the expected object with bytes values."""
     data = {"host": b"127.0.0.1", "mask": b"32"}
     expected_ipv4 = ipv4.IPv4(host="127.0.0.1", mask="32")
+
     ipv4_asset = ipv4.IPv4.from_dict(data)
+
     assert ipv4_asset == expected_ipv4
 
 

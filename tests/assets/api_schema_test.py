@@ -19,7 +19,9 @@ def testApiSchemaAssetFromDict_withStringValues_returnsExpectedObject():
         content_url="http://example.com/schema",
         schema_type="openapi",
     )
+
     api_schema_asset = api_schema.ApiSchema.from_dict(data)
+
     assert api_schema_asset == expected_api_schema
 
 
@@ -37,7 +39,9 @@ def testApiSchemaAssetFromDict_withBytesValues_returnsExpectedObject():
         content_url="http://example.com/schema",
         schema_type="openapi",
     )
+
     api_schema_asset = api_schema.ApiSchema.from_dict(data)
+
     assert api_schema_asset == expected_api_schema
 
 
