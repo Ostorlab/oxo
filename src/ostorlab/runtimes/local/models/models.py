@@ -257,7 +257,7 @@ class Vulnerability(Base):
         for metadata_dict in location.get("metadata", []):
             metad_type = metadata_dict.get("type")
             metad_value = metadata_dict.get("value")
-            location_markdwon_value += f"{metad_type.lower()}: {metad_value}  \n"
+            location_markdwon_value += f"{metad_type}: {metad_value}  \n"
         return location_markdwon_value
 
     @staticmethod
