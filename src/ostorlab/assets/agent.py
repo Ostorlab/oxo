@@ -27,26 +27,28 @@ class Agent(asset.Asset):
     def from_dict(cls, data: dict[str, Any]) -> "Agent":
         """Constructs an Agent asset from a dictionary."""
 
-        def to_str(value: Any) -> str:
-            if type(value) is bytes:
-                return value.decode()
-            else:
-                return str(value)
-
         key = data.get("key")
         if key is None:
             raise ValueError("key is missing.")
-        args = {}
+        args = {"key": key.decode() if type(key) is bytes else key}
         version = data.get("version")
         if version is not None:
-            args["version"] = to_str(version)
+            args["version"] = version.decode() if type(version) is bytes else version
         docker_location = data.get("docker_location")
         if docker_location is not None:
-            args["docker_location"] = to_str(docker_location)
+            args["docker_location"] = (
+                docker_location.decode()
+                if type(docker_location) is bytes
+                else docker_location
+            )
         yaml_file_location = data.get("yaml_file_location")
         if yaml_file_location is not None:
-            args["yaml_file_location"] = to_str(yaml_file_location)
-        return cls(key, **args)
+            args["yaml_file_location"] = (
+                yaml_file_location.decode()
+                if type(yaml_file_location) is bytes
+                else yaml_file_location
+            )
+        return cls(**args)
 
     @property
     def proto_field(self) -> str:
