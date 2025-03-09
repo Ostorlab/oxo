@@ -20,7 +20,6 @@ from ostorlab.assets import ip as ip_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.assets.asset import UnknownSelector
 
 
 def testAssetToProto_whenSelectorIsSetAndCorrect_generatesProto():
@@ -200,7 +199,7 @@ def testAssetFromDictFactory_withUnknownSelector_raisesValueError():
     selector = "unknown.selector"
 
     with pytest.raises(
-        UnknownSelector,
+        asset.UnknownSelector,
         match=f"Could not create asset object due to unknown selector: {selector}",
     ):
         asset.from_dict_factory(selector, {})
