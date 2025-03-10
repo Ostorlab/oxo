@@ -71,13 +71,13 @@ def testScanRunIosIpa_whenUrlIsProvided_callsDownloadFile(
     mock_download_file.return_value = b"downloaded content"
     test_url = "https://example.com/test.ipa"
     mocker.patch.object(ios_ipa, "UPLOADS_DIR", tmp_path)
-    
+
     result = runner.invoke(
         rootcli.rootcli,
         ["scan", "run", "--agent=agent1", "ios-ipa", "--url", test_url],
         catch_exceptions=False,
     )
-    
+
     assert result.exit_code == 0
     mock_download_file.assert_called_once()
     assert "Downloading file from" in result.output
@@ -99,12 +99,11 @@ def testScanRunIosIpa_whenDownloadFails_shouldExitWithError(
     mock_download_file.side_effect = exceptions.OstorlabError("Download failed")
     test_url = "https://example.com/test.ipa"
     mocker.patch.object(ios_ipa, "UPLOADS_DIR", tmp_path)
-    
+
     result = runner.invoke(
-        rootcli.rootcli,
-        ["scan", "run", "--agent=agent1", "ios-ipa", "--url", test_url]
+        rootcli.rootcli, ["scan", "run", "--agent=agent1", "ios-ipa", "--url", test_url]
     )
-    
+
     assert result.exit_code == 2
     mock_download_file.assert_called_once()
     assert "Download failed" in result.output
