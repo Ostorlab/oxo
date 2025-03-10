@@ -61,7 +61,7 @@ def testScanRunIosIpa_whenUrlIsProvided_callsDownloadFile(
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
-    test_url = "https://example.com/test.ipa"
+    test_url = "https://example.com/test_1.ipa"
     mock_response = mocker.Mock()
     mock_response.content = b"test content"
     mock_get = mocker.patch("requests.get", return_value=mock_response)
@@ -87,7 +87,7 @@ def testScanRunIosIpa_whenDownloadFails_shouldExitWithError(
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
-    test_url = "https://example.com/test.ipa"
+    test_url = "https://example.com/test_2.ipa"
     mock_get = mocker.patch(
         "requests.get",
         side_effect=requests.exceptions.RequestException("Connection error"),
