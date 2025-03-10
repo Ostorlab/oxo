@@ -1,13 +1,11 @@
 """Tests for scan run ios-ipa command."""
 
 from unittest import mock
-import pathlib
 
 from click.testing import CliRunner
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
-from ostorlab.cli.scan.run.assets import ios_ipa
 from ostorlab import exceptions
 
 
@@ -57,7 +55,6 @@ def testScanRunIosIpa_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowErro
 def testScanRunIosIpa_whenUrlIsProvided_callsDownloadFile(
     mock_download_file: mock.MagicMock,
     mocker: plugin.MockerFixture,
-    tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run ios-ipa command when URL option is provided.
     Should download the file and create an IOSIpa asset with the downloaded content."""
@@ -70,7 +67,6 @@ def testScanRunIosIpa_whenUrlIsProvided_callsDownloadFile(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mock_download_file.return_value = b"downloaded content"
     test_url = "https://example.com/test.ipa"
-    mocker.patch.object(ios_ipa, "UPLOADS_DIR", tmp_path)
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -88,7 +84,6 @@ def testScanRunIosIpa_whenUrlIsProvided_callsDownloadFile(
 def testScanRunIosIpa_whenDownloadFails_shouldExitWithError(
     mock_download_file: mock.MagicMock,
     mocker: plugin.MockerFixture,
-    tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run ios-ipa command when file download fails.
     Should show error and exit with code 2."""
@@ -98,7 +93,6 @@ def testScanRunIosIpa_whenDownloadFails_shouldExitWithError(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mock_download_file.side_effect = exceptions.OstorlabError("Download failed")
     test_url = "https://example.com/test.ipa"
-    mocker.patch.object(ios_ipa, "UPLOADS_DIR", tmp_path)
 
     result = runner.invoke(
         rootcli.rootcli, ["scan", "run", "--agent=agent1", "ios-ipa", "--url", test_url]

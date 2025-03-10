@@ -1,13 +1,11 @@
 """Tests for scan run android-apk command."""
 
-import pathlib
 from unittest import mock
 
 from click.testing import CliRunner
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
-from ostorlab.cli.scan.run.assets import android_apk
 from ostorlab import exceptions
 
 
@@ -57,7 +55,6 @@ def testScanRunAndroidApk_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShow
 def testScanRunAndroidApk_whenUrlIsProvided_callsDownloadFile(
     mock_download_file: mock.MagicMock,
     mocker: plugin.MockerFixture,
-    tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run android-apk command when URL option is provided.
     Should download the file and create an AndroidApk asset with the downloaded content."""
@@ -70,7 +67,6 @@ def testScanRunAndroidApk_whenUrlIsProvided_callsDownloadFile(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mock_download_file.return_value = b"downloaded content"
     test_url = "https://example.com/test.apk"
-    mocker.patch.object(android_apk, "UPLOADS_DIR", tmp_path)
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -86,8 +82,9 @@ def testScanRunAndroidApk_whenUrlIsProvided_callsDownloadFile(
 
 @mock.patch("ostorlab.cli.scan.run.assets.common.download_file")
 def testScanRunAndroidApk_whenDownloadFails_shouldExitWithError(
-    mock_download_file, mocker, tmp_path
-):
+    mock_download_file: mock.MagicMock,
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run android-apk command when file download fails.
     Should show error and exit with code 2."""
 
@@ -97,7 +94,6 @@ def testScanRunAndroidApk_whenDownloadFails_shouldExitWithError(
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     mock_download_file.side_effect = exceptions.OstorlabError("Download failed")
     test_url = "https://example.com/test.apk"
-    mocker.patch.object(android_apk, "UPLOADS_DIR", tmp_path)
 
     result = runner.invoke(
         rootcli.rootcli,
