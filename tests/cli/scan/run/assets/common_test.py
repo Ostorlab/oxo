@@ -1,4 +1,4 @@
-"""Unittest for common utilities for scan run assets."""
+"""Unit tests for common utilities for scan run assets."""
 
 import pathlib
 import hashlib
