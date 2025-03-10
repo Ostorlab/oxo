@@ -1,14 +1,10 @@
 """Tests for scan run android-aab command."""
 
-from unittest import mock
-import requests
-
 from click.testing import CliRunner
 from pytest_mock import plugin
-from ostorlab.cli.scan.run.assets import common
+import requests
 
 from ostorlab.cli import rootcli
-from ostorlab import exceptions
 
 
 def testScanRunAndroidAab_whenNoOptionsProvided_shouldExitAndShowError(mocker):

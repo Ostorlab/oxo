@@ -1,12 +1,10 @@
 """Tests for scan run android-apk command."""
 
-from unittest import mock
-
+import requests
 from click.testing import CliRunner
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
-from ostorlab import exceptions
 
 
 def testScanRunAndroidApk_whenNoOptionsProvided_shouldExitAndShowError(mocker):
@@ -51,9 +49,7 @@ def testScanRunAndroidApk_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShow
     assert result.exit_code == 2
 
 
-@mock.patch("ostorlab.cli.scan.run.assets.common.download_file")
 def testScanRunAndroidApk_whenUrlIsProvided_callsDownloadFile(
-    mock_download_file: mock.MagicMock,
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test oxo scan run android-apk command when URL option is provided.
@@ -65,8 +61,10 @@ def testScanRunAndroidApk_whenUrlIsProvided_callsDownloadFile(
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
-    mock_download_file.return_value = b"downloaded content"
     test_url = "https://example.com/test.apk"
+    mock_response = mocker.Mock()
+    mock_response.content = b"test content"
+    mock_get = mocker.patch("requests.get", return_value=mock_response)
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -75,25 +73,25 @@ def testScanRunAndroidApk_whenUrlIsProvided_callsDownloadFile(
     )
 
     assert result.exit_code == 0
-    mock_download_file.assert_called_once()
+    mock_get.assert_called_once()
     assert "Downloading file from" in result.output
     assert "File downloaded successfully" in result.output
 
 
-@mock.patch("ostorlab.cli.scan.run.assets.common.download_file")
 def testScanRunAndroidApk_whenDownloadFails_shouldExitWithError(
-    mock_download_file: mock.MagicMock,
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test oxo scan run android-apk command when file download fails.
     Should show error and exit with code 2."""
 
     runner = CliRunner()
-    mock_runtime = mock.MagicMock()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime", return_value=mock_runtime)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
-    mock_download_file.side_effect = exceptions.OstorlabError("Download failed")
     test_url = "https://example.com/test.apk"
+    mock_get = mocker.patch(
+        "requests.get",
+        side_effect=requests.exceptions.RequestException("Connection error"),
+    )
 
     result = runner.invoke(
         rootcli.rootcli,
@@ -101,5 +99,5 @@ def testScanRunAndroidApk_whenDownloadFails_shouldExitWithError(
     )
 
     assert result.exit_code == 2
-    mock_download_file.assert_called_once()
-    assert "Download failed" in result.output
+    mock_get.assert_called_once()
+    assert "Failed to download file" in result.output
