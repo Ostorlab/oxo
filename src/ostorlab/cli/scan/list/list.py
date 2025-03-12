@@ -81,18 +81,12 @@ def _prepare_asset_str(scan_id: int) -> str:
                 android_file_asset = (
                     session.query(models.AndroidFile).filter_by(id=asset.id).first()
                 )
-                asset_name = f"Android File: {android_file_asset.path}"
-                if android_file_asset.package_name is not None:
-                    asset_name += f" ({android_file_asset.package_name})"
-                asset_list.append(asset_name)
+                asset_list.append(f"Android File: {android_file_asset.path}")
             elif asset_type == "ios_file":
                 ios_file_asset = (
                     session.query(models.IosFile).filter_by(id=asset.id).first()
                 )
-                asset_name = f"IOS File: {ios_file_asset.path}"
-                if ios_file_asset.bundle_id is not None:
-                    asset_name += f" ({ios_file_asset.bundle_id})"
-                asset_list.append(asset_name)
+                asset_list.append(f"IOS File: {ios_file_asset.path}")
             elif asset_type == "android_store":
                 android_store_asset = (
                     session.query(models.AndroidStore).filter_by(id=asset.id).first()
