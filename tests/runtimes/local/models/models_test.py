@@ -4,7 +4,10 @@ from pytest_mock import plugin
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import risk_rating
-
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
 
 def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
     """Test when database does not exists, scan is populated in a newly created database."""
@@ -678,3 +681,103 @@ def testWhenNewVulnerabilityReported_always_scanRiskRatingIsUpdated(
         assert any(
             vuln.risk_rating == risk_rating.RiskRating.INFO for vuln in scan_vulnz
         )
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithIOSIpaPath_iOSFileCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure iOS IPA file asset is correctly created from path."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch.object(models.utils, "get_bundle_id", return_value="test.bundle.id")
+    ios_ipa_asset = ios_ipa.IOSIpa(path="/path/to/app.ipa")
+
+    models.Asset.create_from_assets_definition([ios_ipa_asset])
+    
+    with models.Database() as session:
+        assets = session.query(models.IosFile).all()
+        assert len(assets) == 1
+        assert assets[0].path == "/path/to/app.ipa"
+        assert assets[0].bundle_id == "test.bundle.id"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithIOSIpaUrl_iOSFileCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure iOS IPA file asset is correctly created from URL."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    ios_ipa_asset = ios_ipa.IOSIpa(content_url="https://example.com/app.ipa")
+
+    models.Asset.create_from_assets_definition([ios_ipa_asset])
+    
+    with models.Database() as session:
+        assets = session.query(models.IosFile).all()
+        assert len(assets) == 1
+        assert assets[0].path == "https://example.com/app.ipa"
+        assert assets[0].bundle_id == "N/A"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidApkPath_androidFileCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure Android APK file asset is correctly created from path."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch.object(models.utils, "get_package_name", return_value="com.test.app")
+    apk_asset = android_apk.AndroidApk(path="/path/to/app.apk")
+
+    models.Asset.create_from_assets_definition([apk_asset])
+    
+    with models.Database() as session:
+        assets = session.query(models.AndroidFile).all()
+        assert len(assets) == 1
+        assert assets[0].path == "/path/to/app.apk"
+        assert assets[0].package_name == "com.test.app"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidApkUrl_androidFileCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure Android APK file asset is correctly created from URL."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    android_apk_mock = mocker.Mock()
+    apk_asset = android_apk.AndroidApk(content_url="https://example.com/app.apk")
+
+    models.Asset.create_from_assets_definition([apk_asset])
+    
+    with models.Database() as session:
+        assets = session.query(models.AndroidFile).all()
+        assert len(assets) == 1
+        assert assets[0].path == "https://example.com/app.apk"
+        assert assets[0].package_name == "N/A"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidAabPath_androidFileCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure Android AAB file asset is correctly created from path."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch.object(models.utils, "get_package_name", return_value="com.test.aab")
+    aab_asset = android_aab.AndroidAab(path="/path/to/app.aab")
+
+    models.Asset.create_from_assets_definition([aab_asset])
+    
+    with models.Database() as session:
+        assets = session.query(models.AndroidFile).all()
+        assert len(assets) == 1
+        assert assets[0].path == "/path/to/app.aab"
+        assert assets[0].package_name == "com.test.aab"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidAabUrl_androidFileCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure Android AAB file asset is correctly created from URL."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    aab_asset = android_aab.AndroidAab(content_url="https://example.com/app.aab")
+    
+    models.Asset.create_from_assets_definition([aab_asset])
+    
+    with models.Database() as session:
+        assets = session.query(models.AndroidFile).all()
+        assert len(assets) == 1
+        assert assets[0].path == "https://example.com/app.aab"
+        assert assets[0].package_name == "N/A"
