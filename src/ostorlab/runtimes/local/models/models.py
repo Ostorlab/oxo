@@ -838,9 +838,11 @@ class Asset(Base):
                 domains.append({"name": asset.name})
             elif isinstance(asset, ios_ipa.IOSIpa):
                 IosFile.create(
-                    path=asset.path,
+                    path=asset.path or asset.content_url,
                     scan_id=scan_id,
-                    bundle_id=utils.get_bundle_id(asset.path),
+                    bundle_id=utils.get_bundle_id(asset.path)
+                    if asset.path is not None
+                    else "N/A",
                 )
             elif isinstance(asset, ios_store.IOSStore):
                 IosStore.create(bundle_id=asset.bundle_id, scan_id=scan_id)
@@ -848,9 +850,11 @@ class Asset(Base):
                 asset, android_apk.AndroidApk
             ):
                 AndroidFile.create(
-                    path=asset.path,
+                    path=asset.path or asset.content_url,
                     scan_id=scan_id,
-                    package_name=utils.get_package_name(asset.path),
+                    package_name=utils.get_package_name(asset.path)
+                    if asset.path is not None
+                    else "N/A",
                 )
             elif isinstance(asset, android_store.AndroidStore):
                 AndroidStore.create(package_name=asset.package_name, scan_id=scan_id)
