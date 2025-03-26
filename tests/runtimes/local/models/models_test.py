@@ -49,6 +49,8 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
         description="Javascript Vuln",
         recommendation="Sanitize data",
         technical_detail="a=$input",
+        exploitation_detail="exploitation",
+        post_exploitation_detail="post exploitation",
         risk_rating="HIGH",
         cvss_v3_vector="5:6:7",
         dna="121312",
