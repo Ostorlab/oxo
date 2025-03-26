@@ -49,6 +49,8 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
         description="Javascript Vuln",
         recommendation="Sanitize data",
         technical_detail="a=$input",
+        exploitation_detail="exploitation",
+        post_exploitation_detail="post exploitation",
         risk_rating="HIGH",
         cvss_v3_vector="5:6:7",
         dna="121312",
@@ -67,6 +69,14 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
         assert (
             "iOS: `some.dummy.bundle`"
             in session.query(models.Vulnerability).all()[0].location
+        )
+        assert (
+            session.query(models.Vulnerability).all()[0].exploitation_detail
+            == "exploitation"
+        )
+        assert (
+            session.query(models.Vulnerability).all()[0].post_exploitation_detail
+            == "post exploitation"
         )
 
 
