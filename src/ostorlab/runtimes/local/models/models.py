@@ -201,6 +201,8 @@ class Vulnerability(Base):
     __tablename__ = "vulnerability"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     technical_detail = sqlalchemy.Column(sqlalchemy.Text)
+    exploitation_detail = sqlalchemy.Column(sqlalchemy.Text)
+    post_exploitation_detail = sqlalchemy.Column(sqlalchemy.Text)
     risk_rating = sqlalchemy.Column(sqlalchemy.Enum(risk_rating_utils.RiskRating))
     cvss_v3_vector = sqlalchemy.Column(sqlalchemy.String(1024))
     dna = sqlalchemy.Column(sqlalchemy.String(256))
@@ -268,6 +270,8 @@ class Vulnerability(Base):
         description: str,
         recommendation: str,
         technical_detail: str,
+        exploitation_detail: str | None,
+        post_exploitation_detail: str | None,
         risk_rating: str,
         cvss_v3_vector: Optional[str] = None,
         dna: Optional[str] = None,
@@ -284,6 +288,8 @@ class Vulnerability(Base):
             cvss_v3_vector: Common vulnerability scoring system value.
             risk_rating: Vulnerability risk rating.
             technical_detail: Technical details to demonstrate the finding.
+            exploitation_detail: Exploitation details of the finding.
+            post_exploitation_detail: Post Exploitation details of the finding.
             description: A generic description of the vulnerability.
             short_description: A short description of the vulnerability.
             recommendation: How to address or avoid the vulnerability
@@ -302,6 +308,8 @@ class Vulnerability(Base):
             recommendation=recommendation,
             references=references_md,
             technical_detail=technical_detail,
+            exploitation_detail=exploitation_detail,
+            post_exploitation_detail=post_exploitation_detail,
             risk_rating=risk_rating_utils.RiskRating[risk_rating.upper()],
             cvss_v3_vector=cvss_v3_vector,
             dna=dna,
