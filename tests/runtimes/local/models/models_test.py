@@ -70,6 +70,14 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
             "iOS: `some.dummy.bundle`"
             in session.query(models.Vulnerability).all()[0].location
         )
+        assert (
+            session.query(models.Vulnerability).all()[0].exploitation_detail
+            == "exploitation"
+        )
+        assert (
+            session.query(models.Vulnerability).all()[0].post_exploitation_detail
+            == "post exploitation"
+        )
 
 
 def testModelsVulnerability_whenAssetIsNotSupported_doNotRaiseError(
