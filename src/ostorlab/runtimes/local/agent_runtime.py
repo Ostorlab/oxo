@@ -343,7 +343,7 @@ class AgentRuntime:
             agent_definition.service_name
             or self.agent.container_image.split(":")[0].replace(".", "")
         )
-        service_name = service_name + "_" + self.runtime_name
+        service_name = f"{service_name}_{self.runtime_name}"
 
         # We apply the random str only if it will not break the max docker service name characters (63)
         if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
