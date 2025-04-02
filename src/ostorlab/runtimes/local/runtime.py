@@ -811,11 +811,6 @@ class LocalRuntime(runtime.Runtime):
                         .all()
                     )
                 for v in vulnerabilities:
-                    print("---------------")
-                    print(v)
-                    print("---------------")
-                    print(v.exploitation_detail)
-                    print("---------------")
                     self._print_vulnerability(v)
                 console.success("Vulnerabilities listed successfully.")
         except sqlalchemy.exc.OperationalError:
