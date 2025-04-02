@@ -432,6 +432,20 @@ class CloudRuntime(runtime.Runtime):
                     title="Technical details",
                 )
             )
+        if vulnerability.get("exploitation_detail") is not None:
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(vulnerability.get("exploitation_detail")),
+                    title="Exploitation details",
+                )
+            )
+        if vulnerability.get("post_exploitation_detail") is not None:
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(vulnerability.get("post_exploitation_detail")),
+                    title="Post Exploitation details",
+                )
+            )
 
     def describe_vuln(
         self,

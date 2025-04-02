@@ -781,6 +781,20 @@ class LocalRuntime(runtime.Runtime):
                 title="Technical details",
             )
         )
+        if vulnerability.exploitation_detail is not None:
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(vulnerability.exploitation_detail),
+                    title="Exploitation details",
+                )
+            )
+        if vulnerability.post_exploitation_detail is not None:
+            rich.print(
+                panel.Panel(
+                    markdown.Markdown(vulnerability.post_exploitation_detail),
+                    title="Post Exploitation details",
+                )
+            )
 
     def describe_vuln(self, scan_id: int, vuln_id: int):
         try:
@@ -797,6 +811,11 @@ class LocalRuntime(runtime.Runtime):
                         .all()
                     )
                 for v in vulnerabilities:
+                    print("---------------")
+                    print(v)
+                    print("---------------")
+                    print(v.exploitation_detail)
+                    print("---------------")
                     self._print_vulnerability(v)
                 console.success("Vulnerabilities listed successfully.")
         except sqlalchemy.exc.OperationalError:
