@@ -436,7 +436,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
 
 def testLocalDescribeVuln_whenVulnHasExploitationAndPostExploitationDetails_printsExploitationAndPostExploitationDetails(
     mocker: mock.MagicMock, db_engine_path: str
-):
+) -> None:
     """Tests describe_vuln method with vulnerability containing exploitation_detail and post_exploitation_detail.
     Should print these details to console.
     """

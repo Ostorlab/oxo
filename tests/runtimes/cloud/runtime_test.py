@@ -121,7 +121,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
 
 def testCloudDescribeVuln_whenVulnHasExploitationAndPostExploitationDetails_printsExploitationAndPostExploitationDetails(
     mocker: mock.MagicMock, httpx_mock: mock.MagicMock
-):
+) -> None:
     """Tests describe_vuln method with vulnerability containing exploitation_detail and post_exploitation_detail.
     Should print these details to console.
     """
