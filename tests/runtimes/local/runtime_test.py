@@ -8,7 +8,6 @@ import pytest
 from docker.models import services as services_model
 from docker.models import networks as networks_model
 from pytest_mock import plugin
-from unittest import mock
 
 import ostorlab
 from ostorlab import exceptions
@@ -16,7 +15,6 @@ from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating as risk_rating_utils
 
 
 @pytest.mark.skip(reason="Missing inject asset agent.")
@@ -432,65 +430,3 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
 
     docker_service_remove.assert_called_once()
     docker_network_remove.assert_called_once()
-
-
-def testLocalDescribeVuln_whenVulnHasExploitationAndPostExploitationDetails_printsExploitationAndPostExploitationDetails(
-    mocker: mock.MagicMock, db_engine_path: str
-) -> None:
-    """Tests describe_vuln method with vulnerability containing exploitation_detail and post_exploitation_detail.
-    Should print these details to console.
-    """
-    mock_console = mock.MagicMock()
-    mock_table = mock.MagicMock()
-    mock_print = mock.MagicMock()
-    mock_success = mock.MagicMock()
-    mock_console.table = mock_table
-    mock_console.print = mock_print
-    mock_console.success = mock_success
-    mocker.patch(
-        "ostorlab.runtimes.local.runtime.cli_console.Console", return_value=mock_console
-    )
-    mocker.patch("ostorlab.runtimes.local.runtime.console", mock_console)
-    mock_rich_print = mocker.patch("ostorlab.runtimes.local.runtime.rich.print")
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    scan = models.Scan.create(title="Test Scan")
-    scan.risk_rating = risk_rating_utils.RiskRating.HIGH
-    mock_vulnerability = mock.MagicMock()
-    mock_vulnerability.id = 123
-    mock_vulnerability.risk_rating.value = "HIGH"
-    mock_vulnerability.cvss_v3_vector = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
-    mock_vulnerability.title = "Test Vulnerability"
-    mock_vulnerability.short_description = "This is a test vulnerability"
-    mock_vulnerability.description = "Detailed description of the vulnerability"
-    mock_vulnerability.recommendation = "How to fix the vulnerability"
-    mock_vulnerability.references = "Reference: https://example.com"
-    mock_vulnerability.technical_detail = "Technical details about the vulnerability"
-    mock_vulnerability.location = "Domain: example.com"
-    mock_vulnerability.exploitation_detail = "How to exploit this vulnerability"
-    mock_vulnerability.post_exploitation_detail = "What to do after exploitation"
-    mock_session = mock.MagicMock()
-    mock_session.query.return_value.get.return_value = mock_vulnerability
-    mock_session.query.return_value.filter_by.return_value.order_by.return_value.all.return_value = [
-        mock_vulnerability
-    ]
-    mock_db_context = mock.MagicMock()
-    mock_db_context.__enter__.return_value = mock_session
-    mocker.patch(
-        "ostorlab.runtimes.local.models.models.Database", return_value=mock_db_context
-    )
-    runtime = local_runtime.LocalRuntime()
-
-    runtime.describe_vuln(scan_id=1, vuln_id=None)
-
-    assert mock_table.call_count == 1
-    assert (
-        mock_rich_print.call_count >= 6
-    )  # At least 6 panels (4 standard + 2 for exploitation details)
-    exploitation_panel_calls = [
-        call
-        for call in mock_rich_print.call_args_list
-        if "Exploitation details" in call[0][0].title
-        or "Post Exploitation details" in call[0][0].title
-    ]
-    assert len(exploitation_panel_calls) == 2
-    assert mock_success.call_count == 1

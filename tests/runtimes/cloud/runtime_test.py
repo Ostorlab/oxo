@@ -2,7 +2,6 @@
 
 import io
 from typing import Dict, List, Optional, Union
-from unittest import mock
 
 from ostorlab.apis import request
 from ostorlab.runtimes import definitions
@@ -117,75 +116,3 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
     assert (
         mock_agent_group.call_args[0][2][0]["args"][3]["value"] == b'["url1", "url2"]'
     )
-
-
-def testCloudDescribeVuln_whenVulnHasExploitationAndPostExploitationDetails_printsExploitationAndPostExploitationDetails(
-    mocker: mock.MagicMock, httpx_mock: mock.MagicMock
-) -> None:
-    """Tests describe_vuln method with vulnerability containing exploitation_detail and post_exploitation_detail.
-    Should print these details to console.
-    """
-    mock_console = mock.MagicMock()
-    mock_table = mock.MagicMock()
-    mock_print = mock.MagicMock()
-    mock_success = mock.MagicMock()
-    mock_console.table = mock_table
-    mock_console.print = mock_print
-    mock_console.success = mock_success
-    mocker.patch(
-        "ostorlab.runtimes.cloud.runtime.cli_console.Console", return_value=mock_console
-    )
-    mocker.patch("ostorlab.runtimes.cloud.runtime.console", mock_console)
-    mock_rich_print = mocker.patch("ostorlab.runtimes.cloud.runtime.rich.print")
-    vulnerability_with_exploitation_details = {
-        "data": {
-            "scan": {
-                "vulnerabilities": {
-                    "vulnerabilities": [
-                        {
-                            "id": "123",
-                            "customRiskRating": "HIGH",
-                            "detail": {
-                                "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-                                "title": "Test Vulnerability",
-                                "shortDescription": "This is a test vulnerability",
-                                "description": "Detailed description of the vulnerability",
-                                "recommendation": "How to fix the vulnerability",
-                                "references": [
-                                    {"title": "Reference", "url": "https://example.com"}
-                                ],
-                            },
-                            "technicalDetail": "Technical details about the vulnerability",
-                            "technicalDetailFormat": "MARKDOWN",
-                            "vulnerabilityLocation": {"asset": {"name": "example.com"}},
-                            "exploitation_detail": "How to exploit this vulnerability",
-                            "post_exploitation_detail": "What to do after exploitation",
-                        }
-                    ],
-                    "pageInfo": {"hasNext": False, "numPages": 1},
-                }
-            }
-        }
-    }
-    httpx_mock.add_response(
-        method="POST",
-        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-        json=vulnerability_with_exploitation_details,
-    )
-    mocker.patch("ostorlab.runtimes.cloud.runtime.click.confirm", return_value=False)
-    runtime = cloud_runtime.CloudRuntime()
-
-    runtime.describe_vuln(scan_id=1, vuln_id=None)
-
-    assert mock_table.call_count == 1
-    assert (
-        mock_rich_print.call_count >= 6
-    )  # At least 6 panels (4 standard + 2 for exploitation details)
-    exploitation_panel_calls = [
-        call
-        for call in mock_rich_print.call_args_list
-        if "Exploitation details" in call[0][0].title
-        or "Post Exploitation details" in call[0][0].title
-    ]
-    assert len(exploitation_panel_calls) == 2
-    assert mock_success.call_count == 1

@@ -149,3 +149,45 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundEr
     )
 
     assert "Vulnerability / scan not Found." in result.output
+
+
+def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
+    mocker, db_engine_path
+):
+    """Test oxo vulnz describe command with Vulnerability that has exploitation and post exploitation details.
+    Should show vulnz details.
+    """
+    runner = CliRunner()
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_scan_db = models.Scan.create("test")
+    vuln_db = models.Vulnerability.create(
+        title="Secure TLS certificate validation",
+        short_description="Application performs proper server certificate validation",
+        description="The application performs proper TLS certificate validation.",
+        recommendation="The implementation is secure, no recommendation apply.",
+        technical_detail="TLS certificate validation was tested dynamically by "
+        "intercepting traffic and presenting an invalid "
+        "certificate. The application refuses to complete TLS "
+        "negotiation when the certificate is not signed by "
+        "valid authority.",
+        risk_rating="HIGH",
+        cvss_v3_vector="5:6:7",
+        dna="121312",
+        location={
+            "android_store": {"package_name": "a.b.c"},
+            "metadata": [{"type": "CODE_LOCATION", "value": "dir/file.js:41"}],
+        },
+        scan_id=create_scan_db.id,
+        references=[],
+        exploitation_detail="Exploitation details",
+        post_exploitation_detail="Post Exploitation details",
+    )
+
+    result = runner.invoke(
+        rootcli.rootcli, ["vulnz", "describe", "-v", str(vuln_db.id)]
+    )
+
+    assert vuln_db.scan_id is not None
+    assert result.exception is None
+    assert "Exploitation details" in result.output
+    assert "Post Exploitation details" in result.output
