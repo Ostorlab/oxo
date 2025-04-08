@@ -191,3 +191,77 @@ def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetai
     assert result.exception is None
     assert "Exploitation details" in result.output
     assert "Post Exploitation details" in result.output
+
+
+def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
+    httpx_mock,
+):
+    """Test oxo vulnz describe command with Vulnerability that has exploitation and post exploitation details.
+    Should show vulnz details."""
+    mock_response = {
+        "data": {
+            "scan": {
+                "isEditable": "true",
+                "vulnerabilities": {
+                    "pageInfo": {
+                        "hasNext": "false",
+                        "hasPrevious": "false",
+                        "count": 3,
+                        "numPages": 1,
+                    },
+                    "vulnerabilities": [
+                        {
+                            "id": "38311495",
+                            "technicalDetail": "<code>malwarebytes.keystone.permission.PERMISSION.CHECK_REQ</code> "
+                            "not declared in <code>permission</code> tag",
+                            "technicalDetailFormat": "HTML",
+                            "customRiskRating": "MEDIUM",
+                            "customCvssV3BaseScore": "null",
+                            "falsePositive": "false",
+                            "detail": {
+                                "title": "Undeclared Permissions",
+                                "shortDescription": "Custom permissions used in <activity> <service> <provider> "
+                                "<receiver> tags, but not declared  in <permission> tag",
+                                "description": "Applications can expose their functionality to other apps by defining ",
+                                "recommendation": "Before applying a permission on any component, make sure it is "
+                                "declared using `<permission>` element.\n\nFor example, an app that "
+                                "wants to control who can start one of its activities could declare ",
+                                "cvssV3Vector": "null",
+                                "references": [
+                                    {
+                                        "title": "Typo in permission name allows to write contacts without user ",
+                                        "url": "https://hackerone.com/reports/440749",
+                                    }
+                                ],
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {"bundleId": "a.b.c"},
+                                "metadata": [
+                                    {
+                                        "metadataType": "FILE_PATH",
+                                        "metadataValue": "line:24,5",
+                                    }
+                                ],
+                            },
+                            "exploitationDetail": "Exploitation Details",
+                            "postExploitationDetail": "Post Exploitation Details",
+                        }
+                    ],
+                },
+            }
+        }
+    }
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=mock_response,
+        status_code=200,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "-scan-id=502152"]
+    )
+
+    assert "Exploitation Details" in result.output
+    assert "Post Exploitation Details" in result.output

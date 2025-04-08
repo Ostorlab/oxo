@@ -432,17 +432,17 @@ class CloudRuntime(runtime.Runtime):
                     title="Technical details",
                 )
             )
-        if vulnerability.get("exploitation_detail") is not None:
+        if vulnerability.get("exploitationDetail") is not None:
             rich.print(
                 panel.Panel(
-                    markdown.Markdown(vulnerability.get("exploitation_detail")),
+                    markdown.Markdown(vulnerability.get("exploitationDetail")),
                     title="Exploitation details",
                 )
             )
-        if vulnerability.get("post_exploitation_detail") is not None:
+        if vulnerability.get("postExploitationDetail") is not None:
             rich.print(
                 panel.Panel(
-                    markdown.Markdown(vulnerability.get("post_exploitation_detail")),
+                    markdown.Markdown(vulnerability.get("postExploitationDetail")),
                     title="Post Exploitation details",
                 )
             )
