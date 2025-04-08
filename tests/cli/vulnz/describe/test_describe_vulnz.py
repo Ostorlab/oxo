@@ -1,5 +1,7 @@
 """Tests for vulnz describe command."""
 
+from unittest import mock
+
 from click.testing import CliRunner
 
 from ostorlab.apis.runners import authenticated_runner
@@ -152,8 +154,8 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundEr
 
 
 def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
-    mocker, db_engine_path
-):
+    mocker: mock.MagicMock, db_engine_path: str
+) -> None:
     """Test oxo vulnz describe command with Vulnerability that has exploitation and post exploitation details.
     Should show vulnz details.
     """
@@ -194,8 +196,8 @@ def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetai
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
-    httpx_mock,
-):
+    httpx_mock: mock.MagicMock,
+) -> None:
     """Test oxo vulnz describe command with Vulnerability that has exploitation and post exploitation details.
     Should show vulnz details."""
     mock_response = {
