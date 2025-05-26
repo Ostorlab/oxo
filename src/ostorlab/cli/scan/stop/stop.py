@@ -36,7 +36,11 @@ def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> 
     runtime_instance = ctx.obj["runtime"]
     if stop_all is True:
         scans_list = runtime_instance.list()
-        ids_to_stop = [s.id for s in scans_list]
+        ids_to_stop = [
+            s.id
+            for s in scans_list
+            if s.progress == "in_progress" or s.progress == "not_started"
+        ]
         if len(ids_to_stop) == 0:
             console.warning("No running scans found.")
             return
