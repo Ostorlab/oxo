@@ -161,7 +161,7 @@ def testOstorlabScanStopCLI_whenStopAllAndScansStatusNotInProgress_dontStop(
     progress_status: str,
 ) -> None:
     """Test ostorlab scan stop command with --all flag.
-    Should not stop scans that are already done.
+    Should not stop scans that are already done, stopped, or in error state.
     """
 
     mock_list_scans.return_value = [
