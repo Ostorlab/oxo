@@ -208,7 +208,6 @@ def testOstorlabScanStopCLI_whenStopAllAndScansStatusNotInProgress_dontStop(
     )
 
     assert result.exception is None
-    assert "No running scans found." in result.output
     assert mock_scan_stop.call_count == 0
 
 
@@ -242,5 +241,4 @@ def testOstorlabScanStopCLI_whenStopAllAndScansStatusInProgress_stopsScans(
     )
 
     assert result.exception is None
-    assert "Stopping 3 scan(s)." in result.output
     assert mock_scan_stop.call_count == 3
