@@ -2,6 +2,7 @@
 
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -99,36 +100,6 @@ def testOstorlabScanStopCLI_whenMultipleScanIdsAreProvided_stopsAllProvidedScans
     mock_scan_stop.assert_any_call(scan_id=3)
 
 
-@mock.patch.object(local_runtime.LocalRuntime, "stop")
-@mock.patch.object(local_runtime.LocalRuntime, "list")
-def testOstorlabScanStopCLI_whenStopAllIsUsedAndScansExist_stopsAllScans(
-    mock_list_scans: mock.Mock, mock_scan_stop: mock.Mock, mocker: plugin.MockerFixture
-) -> None:
-    """Test ostorlab scan stop command with --all flag.
-    Should stop all running scans.
-    """
-
-    mock_list_scans.return_value = [
-        mock.Mock(id=101),
-        mock.Mock(id=102),
-        mock.Mock(id=103),
-    ]
-    mock_scan_stop.return_value = None
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    runner = CliRunner()
-
-    result = runner.invoke(
-        rootcli.rootcli, ["scan", "--runtime=local", "stop", "--all"]
-    )
-
-    assert result.exception is None
-    assert "Stopping 3 scan(s)" in result.output
-    assert mock_scan_stop.call_count == 3
-    mock_scan_stop.assert_any_call(scan_id=101)
-    mock_scan_stop.assert_any_call(scan_id=102)
-    mock_scan_stop.assert_any_call(scan_id=103)
-
-
 @mock.patch.object(local_runtime.LocalRuntime, "list")
 def testOstorlabScanStopCLI_whenStopAllIsUsedAndNoScansExist_showsWarning(
     mock_list_scans: mock.Mock, mocker: plugin.MockerFixture
@@ -159,9 +130,9 @@ def testOstorlabScanStopCLI_whenStopAllWithShorthandIsUsedAndScansExist_stopsAll
     """
 
     mock_list_scans.return_value = [
-        mock.Mock(id=101),
-        mock.Mock(id=102),
-        mock.Mock(id=103),
+        mock.Mock(id=101, progress="in_progress"),
+        mock.Mock(id=102, progress="in_progress"),
+        mock.Mock(id=103, progress="not_started"),
     ]
     mock_scan_stop.return_value = None
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
@@ -175,3 +146,69 @@ def testOstorlabScanStopCLI_whenStopAllWithShorthandIsUsedAndScansExist_stopsAll
     mock_scan_stop.assert_any_call(scan_id=101)
     mock_scan_stop.assert_any_call(scan_id=102)
     mock_scan_stop.assert_any_call(scan_id=103)
+
+
+@pytest.mark.parametrize(
+    "progress_status",
+    ["done", "stopped", "error"],
+)
+@mock.patch.object(local_runtime.LocalRuntime, "stop")
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanStopCLI_whenStopAllAndScansStatusNotInProgress_dontStop(
+    mock_list_scans: mock.Mock,
+    mock_scan_stop: mock.Mock,
+    mocker: plugin.MockerFixture,
+    progress_status: str,
+) -> None:
+    """Test ostorlab scan stop command with --all flag.
+    Should not stop scans that are already done, stopped, or in error state.
+    """
+
+    mock_list_scans.return_value = [
+        mock.Mock(id=101, progress=progress_status),
+        mock.Mock(id=102, progress=progress_status),
+        mock.Mock(id=103, progress=progress_status),
+    ]
+    mock_scan_stop.return_value = None
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "stop", "--all"]
+    )
+
+    assert result.exception is None
+    assert mock_scan_stop.call_count == 0
+
+
+@pytest.mark.parametrize(
+    "progress_status",
+    ["not_started", "in_progress"],
+)
+@mock.patch.object(local_runtime.LocalRuntime, "stop")
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanStopCLI_whenStopAllAndScansStatusInProgress_stopsScans(
+    mock_list_scans: mock.Mock,
+    mock_scan_stop: mock.Mock,
+    mocker: plugin.MockerFixture,
+    progress_status: str,
+) -> None:
+    """Test ostorlab scan stop command with --all flag.
+    Should stop scans that are in progress or not started.
+    """
+
+    mock_list_scans.return_value = [
+        mock.Mock(id=101, progress=progress_status),
+        mock.Mock(id=102, progress=progress_status),
+        mock.Mock(id=103, progress=progress_status),
+    ]
+    mock_scan_stop.return_value = None
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "stop", "--all"]
+    )
+
+    assert result.exception is None
+    assert mock_scan_stop.call_count == 3
