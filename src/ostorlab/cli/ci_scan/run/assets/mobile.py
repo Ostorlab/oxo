@@ -67,6 +67,7 @@ def run_mobile_scan(
         source = ctx.obj["source"]
         pr_number = ctx.obj["pr_number"]
         branch = ctx.obj["branch"]
+        scope_urls_regexes = ctx.obj["scope_urls_regexes"]
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -91,7 +92,10 @@ def run_mobile_scan(
                     pr_number=pr_number,
                     branch=branch,
                 )
-
+            if scope_urls_regexes is not None and len(scope_urls_regexes) > 0:
+                scope_urls_regexes = list(scope_urls_regexes)
+            else:
+                scope_urls_regexes = None
             scan_id = _create_scan(
                 title,
                 scan_profile,
@@ -101,6 +105,7 @@ def run_mobile_scan(
                 runner,
                 sboms,
                 scan_source,
+                scope_urls_regexes,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -131,6 +136,7 @@ def _create_scan(
     runner: authenticated_runner.AuthenticatedAPIRunner,
     sboms: List[io.FileIO],
     scan_source: Optional[scan_create_api.ScanSource] = None,
+    scope_urls_regexes: Optional[List[str]] = None,
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
@@ -141,6 +147,7 @@ def _create_scan(
             test_credential_ids=credential_ids,
             sboms=sboms,
             scan_source=scan_source,
+            scope_urls_regexes=scope_urls_regexes,
         )
     )
     scan_id = scan_result.get("data").get("createMobileScan").get("scan").get("id")

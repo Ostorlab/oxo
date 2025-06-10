@@ -114,6 +114,13 @@ CI_LOGGER = {
     default=None,
 )
 @click.option(
+    "--scope-urls-regexes",
+    help="List of URLs regexes.",
+    required=False,
+    multiple=True,
+    default=None,
+)
+@click.option(
     "--proxy",
     "proxy",
     help="Proxy to use if defined.",
@@ -168,6 +175,7 @@ def run(
     sboms: List[io.FileIO],
     api_schema: io.FileIO,
     filtered_url_regexes: List[str],
+    scope_urls_regexes: List[str],
     proxy: str,
     qps: int,
     source: Optional[str] = None,
@@ -221,6 +229,7 @@ def run(
     ctx.obj["sboms"] = sboms
     ctx.obj["api_schema"] = api_schema
     ctx.obj["filtered_url_regexes"] = filtered_url_regexes
+    ctx.obj["scope_urls_regexes"] = scope_urls_regexes
     ctx.obj["proxy"] = proxy
     ctx.obj["qps"] = qps
     ctx.obj["source"] = source
