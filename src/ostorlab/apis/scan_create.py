@@ -67,8 +67,8 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         """
 
         return """
-mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $scanSource: ScanSourceInputType) {
-  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, scanSource: $scanSource) {
+mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $scanSource: ScanSourceInputType, $scopeUrlsRegexes: [String]) {
+  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, scanSource: $scanSource, scopeUrlsRegexes: $scopeUrlsRegexes) {
     scan {
       id
     }
@@ -104,10 +104,10 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                             "repository": self._scan_source.repository,
                             "prNumber": self._scan_source.pr_number,
                             "branch": self._scan_source.branch,
-                            "scopeUrlsRegexes": self._scope_urls_regexes,
                         }
                         if self._scan_source is not None
                         else None,
+                        "scopeUrlsRegexes": self._scope_urls_regexes,
                     },
                 }
             ),
