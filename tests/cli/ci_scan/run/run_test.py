@@ -427,6 +427,55 @@ def testRunWebScanCLI_withsboms_callApi(
     assert hasattr(api_caller_mock.call_args_list[0].args[0], "_scan_source") is False
 
 
+def testRunWebScanCLI_withScopeUrlsRegexes_passesRegexesToApi(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab ci_scan with LogFlavor circleci."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+
+    scan_info_dict = {
+        "data": {
+            "scan": {
+                "progress": "done",
+                "riskRating": "high",
+            }
+        }
+    }
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+
+    runner = CliRunner()
+    runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=10",
+            "--scope-urls-regexes=^https://example.com/.*$",
+            "--scope-urls-regexes=^https://test.com/.*$",
+            "--title=scan1",
+            "--sbom",
+            TEST_FILE_PATH,
+            "--sbom",
+            TEST_FILE_PATH,
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert api_caller_mock.call_count == 2
+    assert api_caller_mock.call_args_list[0].args[0]._scope_urls_regexes == [
+        "^https://example.com/.*$",
+        "^https://test.com/.*$",
+    ]
+
+
 def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
