@@ -4,7 +4,7 @@ from ostorlab.agent.message import serializer
 from ostorlab.assets import link
 
 
-def testAssetToProto_whenLinkAsset_generatesProto():
+def testAssetToProto_whenLinkAsset_generatesProto() -> None:
     """Test that to_proto generates a valid protobuf message for a simple link."""
     asset = link.Link(url="https://ostorlab.co", method="GET")
     raw = asset.to_proto()
