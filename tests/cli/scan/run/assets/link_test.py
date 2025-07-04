@@ -52,7 +52,7 @@ def testRunScanLink_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
 
 def testRunScanLink_withHeaderAndCookie_ShowSpecifySubCommandError(
     mocker,
-):
+) -> None:
     """Test oxo scan run link with non-supported runtime, should exit with return code 1."""
 
     mocker.patch(
