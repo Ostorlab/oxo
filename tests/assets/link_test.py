@@ -18,7 +18,7 @@ def testAssetToProto_whenLinkAsset_generatesProto() -> None:
     assert len(unraw.cookies) == 0
 
 
-def testAssetToProto_whenLinkAssetWithAllFields_generatesProtoCorrectly():
+def testAssetToProto_whenLinkAssetWithAllFields_generatesProtoCorrectly() -> None:
     """Test that to_proto generates a valid protobuf message with all fields."""
     asset = link.Link(
         url="https://example.com",
