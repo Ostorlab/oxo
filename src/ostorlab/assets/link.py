@@ -22,11 +22,11 @@ class Link(asset.Asset):
 
     def __str__(self) -> str:
         info = f"Link {self.url} with method {self.method}"
-        if self.extra_headers:
+        if self.extra_headers is not None and len(self.extra_headers) > 0:
             info += f", headers: {self.extra_headers}"
-        if self.cookies:
+        if self.cookies is not None and len(self.cookies) > 0:
             info += f", cookies: {self.cookies}"
-        if self.body:
+        if self.body is not None:
             info += f", body: {self.body!r}"
         return info
 
