@@ -3462,6 +3462,7 @@ def testOxoExportScan_alaways_shouldExportScan(
 def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipleAssets(
     authenticated_flask_client: testing.FlaskClient,
     multiple_assets_scan_bytes: bytes,
+    android_store_scan: models.Scan,
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
@@ -3485,7 +3486,7 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
                     "query": query,
                     "variables": {
                         "file": None,
-                        "scanId": 20,
+                        "scanId": android_store_scan.id,
                     },
                 }
             ),
