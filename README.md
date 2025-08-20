@@ -134,6 +134,7 @@ Implementation of popular tools like:
 
 * ~~[semgrep](https://github.com/returntocorp/semgrep) for source code scanning.~~
 * [nbtscan](http://www.unixwiz.net/tools/nbtscan.html): Scans for open NETBIOS nameservers on your target’s network.
+* [Vulert](vulert.com): Vulert secures software by detecting vulnerabilities in open-source dependencies—without accessing your code. It supports Js, PHP, Java, Python, and more
 * [onesixtyone](https://github.com/trailofbits/onesixtyone): Fast scanner to find publicly exposed SNMP services.
 * [Retire.js](http://retirejs.github.io/retire.js/): Scanner detecting the use of JavaScript libraries with known
   vulnerabilities.
