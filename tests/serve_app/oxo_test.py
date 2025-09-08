@@ -3503,9 +3503,6 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
             "/graphql", data=data, content_type="multipart/form-data"
         )
 
-        scans = session.query(models.Scan).all()
-        print([s.id for s in scans])
-
         assert response.status_code == 200, response.get_json()
         response_json = response.get_json()
         nbr_scans_after_import = session.query(models.Scan).count()
