@@ -3472,9 +3472,6 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
     mocker.patch(
         "ostorlab.runtimes.local.runtime.docker.from_env", return_value=MagicMock()
     )
-    mocker.patch("ostorlab.runtimes.local.runtime.DockerClient", new=MagicMock())
-    local_runtime_instance = LocalRuntime()
-    mocker.patch.object(local_runtime_instance, "_docker_client", MagicMock())
 
     with models.Database() as session:
         nbr_scans_before_import = session.query(models.Scan).count()
