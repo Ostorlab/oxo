@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
+from ostorlab.runtimes.local.runtime import LocalRuntime
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
 
@@ -3471,6 +3472,9 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
     mocker.patch(
         "ostorlab.runtimes.local.runtime.docker.from_env", return_value=MagicMock()
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.DockerClient", new=MagicMock())
+    local_runtime_instance = LocalRuntime()
+    mocker.patch.object(local_runtime_instance, "_docker_client", MagicMock())
 
     with models.Database() as session:
         nbr_scans_before_import = session.query(models.Scan).count()
