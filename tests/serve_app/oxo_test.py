@@ -17,7 +17,6 @@ from unittest.mock import MagicMock
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
-from ostorlab.runtimes.local.runtime import LocalRuntime
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
 
@@ -3474,7 +3473,6 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
     )
 
     with models.Database() as session:
-        nbr_assets_before_import = session.query(models.Asset).count()
         query = """
             mutation ImportScan($scanId: Int, $file: Upload!) {
                 importScan(scanId: $scanId, file: $file) {
