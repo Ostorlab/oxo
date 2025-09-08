@@ -3519,7 +3519,12 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
         assert session.query(models.Asset).count() >= 0
         assets = session.query(models.Asset).all()
         assert any(asset.type == "ios_file" for asset in assets)
-        assert any(getattr(asset, "bundle_id", None) == "ostorlab.swiftvulnerableapp" for asset in assets)
+        assert any(
+            getattr(asset, "bundle_id", None) == "ostorlab.swiftvulnerableapp"
+            for asset in assets
+        )
         assert any(asset.type == "android_store" for asset in assets)
-        assert any(getattr(asset, "package_name", None) == "co.banano.natriumwallet" for asset in assets)
-
+        assert any(
+            getattr(asset, "package_name", None) == "co.banano.natriumwallet"
+            for asset in assets
+        )
