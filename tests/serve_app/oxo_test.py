@@ -3471,7 +3471,6 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
     mocker.patch(
         "ostorlab.runtimes.local.runtime.docker.from_env", return_value=MagicMock()
     )
-    mocker.patch("ostorlab.runtimes.local.runtime.DockerClient", new=MagicMock())
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime._docker_client",
         new_callable=MagicMock,
