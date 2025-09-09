@@ -12,7 +12,7 @@ import ubjson
 from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
-from unittest.mock import MagicMock
+from unittest import mock
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
@@ -3469,7 +3469,7 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
     """Test importScan mutation for a scan with multiple assets."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     mocker.patch(
-        "ostorlab.runtimes.local.runtime.docker.from_env", return_value=MagicMock()
+        "ostorlab.runtimes.local.runtime.docker.from_env", return_value=mock.MagicMock()
     )
 
     with models.Database() as session:
