@@ -200,7 +200,6 @@ class LocalRuntime(runtime.Runtime):
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             assets: the target asset to scan.
-            timeout: The timeout in seconds for the tracker agent to wait for all agents to finish.
 
         Returns:
             The scan object.
@@ -524,12 +523,19 @@ class LocalRuntime(runtime.Runtime):
         tracker_agent_settings = definitions.AgentSettings(
             key=TRACKER_AGENT_DEFAULT,
         )
-
         if self.timeout is not None:
             tracker_agent_settings.args.extend(
                 [
                     utils_definitions.Arg(
                         name="scan_done_timeout_sec", type="number", value=self.timeout
+                    ),
+                ]
+            )
+        if self.init_sleep is not None:
+            tracker_agent_settings.args.extend(
+                [
+                    utils_definitions.Arg(
+                        name="init_sleep_seconds", type="number", value=self.init_sleep
                     ),
                 ]
             )

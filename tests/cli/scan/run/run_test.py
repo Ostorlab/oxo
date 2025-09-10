@@ -564,6 +564,7 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
             "--install",
             "--agent=agent/ostorlab/nmap",
             "--timeout=3600",
+            "--init-sleep=1800"
             "ip",
             "8.8.8.8",
         ],
@@ -576,6 +577,11 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
         == "scan_done_timeout_sec"
     )
     assert mock_start_agent.call_args[1].get("agent").args[0].value == 3600
+    assert (
+            mock_start_agent.call_args[1].get("agent").args[1].name
+            == "init_sleep_seconds"
+    )
+    assert mock_start_agent.call_args[1].get("agent").args[0].value == 1800
 
 
 def testScanRunCLI_whenNoTimeoutProvided_usesDefaultTimeout(
