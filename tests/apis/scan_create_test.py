@@ -37,7 +37,8 @@ def testCreateUIPromptsAPIRequest_whenUIPromptsProvided_includesUIPromptsInVaria
     data = api_request.data
     assert "query" in data
     assert "variables" in data
-    assert data["variables"]["uiPrompts"] == ui_prompts
+    variables = json.loads(data["variables"])
+    assert variables["uiPrompts"] == ui_prompts
 
 
 def testCreateUIPromptsAPIRequest_whenCalled_returnsNoFiles() -> None:
