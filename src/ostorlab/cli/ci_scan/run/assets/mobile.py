@@ -3,6 +3,8 @@ This module takes care of preparing the application file and calling the create 
 """
 
 import io
+import json
+
 import click
 import itertools
 
@@ -101,9 +103,8 @@ def run_mobile_scan(
             # Parse UI automation rules from JSON string
             ui_automation_rule_instances = None
             if ui_automation_rules is not None:
+                ci_logger.info(ui_automation_rules)
                 try:
-                    import json
-
                     ui_automation_rule_instances = json.loads(ui_automation_rules)
                 except (json.JSONDecodeError, TypeError):
                     ci_logger.error("Invalid UI automation rules format, ignoring.")
