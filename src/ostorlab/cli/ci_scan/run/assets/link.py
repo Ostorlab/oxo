@@ -2,6 +2,8 @@
 This module takes care of preparing a link before calling the create web scan API.
 """
 
+import json
+
 import click
 import itertools
 
@@ -80,16 +82,13 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
                 f"creating Web scan `{title}` with profile `{scan_profile}`."
             )
 
-            # Parse UI automation rules from JSON string
             ui_automation_rule_instances = None
             if ui_automation_rules is not None:
                 try:
-                    import json
-
                     ui_automation_rule_instances = json.loads(ui_automation_rules)
                 except (json.JSONDecodeError, TypeError):
-                    ci_logger.error("Invalid UI automation rules format, ignoring.")
-                    ui_automation_rule_instances = None
+                    error_message = f"Invalid UI automation rules format: {ui_automation_rules}, ignoring..."
+                    ci_logger.error(error_message)
 
             scan_id = _create_scan(
                 title,

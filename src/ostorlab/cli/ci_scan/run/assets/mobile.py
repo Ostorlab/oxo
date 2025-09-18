@@ -100,7 +100,6 @@ def run_mobile_scan(
             else:
                 scope_urls_regexes = None
 
-            # Parse UI automation rules from JSON string
             ui_automation_rule_instances = None
             if ui_automation_rules is not None:
                 try:
@@ -108,7 +107,6 @@ def run_mobile_scan(
                 except (json.JSONDecodeError, TypeError):
                     error_message = f"Invalid UI automation rules format: {ui_automation_rules}, ignoring..."
                     ci_logger.error(error_message)
-                    ui_automation_rule_instances = None
 
             scan_id = _create_scan(
                 title,
