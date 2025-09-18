@@ -103,7 +103,6 @@ def run_mobile_scan(
             # Parse UI automation rules from JSON string
             ui_automation_rule_instances = None
             if ui_automation_rules is not None:
-                ci_logger.info(ui_automation_rules)
                 try:
                     ui_automation_rule_instances = json.loads(ui_automation_rules)
                 except (json.JSONDecodeError, TypeError):
