@@ -6,7 +6,7 @@ import io
 import click
 import itertools
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis.runners import authenticated_runner
@@ -68,6 +68,7 @@ def run_mobile_scan(
         pr_number = ctx.obj["pr_number"]
         branch = ctx.obj["branch"]
         scope_urls_regexes = ctx.obj["scope_urls_regexes"]
+        ui_automation_rules = ctx.obj.get("ui_automation_rules")
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -96,6 +97,18 @@ def run_mobile_scan(
                 scope_urls_regexes = list(scope_urls_regexes)
             else:
                 scope_urls_regexes = None
+
+            # Parse UI automation rules from JSON string
+            ui_automation_rule_instances = None
+            if ui_automation_rules is not None:
+                try:
+                    import json
+
+                    ui_automation_rule_instances = json.loads(ui_automation_rules)
+                except (json.JSONDecodeError, TypeError):
+                    ci_logger.error("Invalid UI automation rules format, ignoring.")
+                    ui_automation_rule_instances = None
+
             scan_id = _create_scan(
                 title,
                 scan_profile,
@@ -106,6 +119,7 @@ def run_mobile_scan(
                 sboms,
                 scan_source,
                 scope_urls_regexes,
+                ui_automation_rule_instances,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -137,6 +151,7 @@ def _create_scan(
     sboms: List[io.FileIO],
     scan_source: Optional[scan_create_api.ScanSource] = None,
     scope_urls_regexes: Optional[List[str]] = None,
+    ui_automation_rule_instances: Optional[List[Dict]] = None,
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
@@ -148,6 +163,7 @@ def _create_scan(
             sboms=sboms,
             scan_source=scan_source,
             scope_urls_regexes=scope_urls_regexes,
+            ui_automation_rule_instances=ui_automation_rule_instances,
         )
     )
     scan_id = scan_result.get("data").get("createMobileScan").get("scan").get("id")

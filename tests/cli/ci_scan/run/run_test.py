@@ -523,3 +523,97 @@ def testRunScanCLI_withSourceGithub_callApi(mocker: plugin.MockerFixture) -> Non
     )
     assert api_caller_mock.call_args_list[0].args[0]._scan_source.pr_number == "123456"
     assert api_caller_mock.call_args_list[0].args[0]._scan_source.branch == "main"
+
+
+def testRunScanCLI_whenUIAutomationRulesProvided_passesToAPIRequest(mocker):
+    """Test ostorlab ci_scan with UI automation rules passes rules to API request."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        return_value=scan_create_dict,
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--title=scan1",
+            '--ui-automation-rules=[{"rule_id": 1, "args": [{"name": "username", "value": "testuser"}]}]',
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert "Scan created with id" in result.output and "1" in result.output
+    assert api_caller_mock.call_count == 1
+    # Verify UI automation rules were passed to the API request
+    api_request = api_caller_mock.call_args[0][0]
+    assert api_request._ui_automation_rule_instances == [
+        {"rule_id": 1, "args": [{"name": "username", "value": "testuser"}]}
+    ]
+
+
+def testRunScanCLI_whenInvalidUIAutomationRulesProvided_showsWarningAndContinues(
+    mocker,
+):
+    """Test ostorlab ci_scan with invalid UI automation rules shows warning and continues."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        return_value=scan_create_dict,
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--title=scan1",
+            "--ui-automation-rules=invalid-json",
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert "Scan created with id" in result.output and "1" in result.output
+    assert "Invalid UI automation rules format, ignoring." in result.output
+    assert api_caller_mock.call_count == 1
+    # Verify UI automation rules were set to None due to invalid JSON
+    api_request = api_caller_mock.call_args[0][0]
+    assert api_request._ui_automation_rule_instances is None
+
+
+def testRunScanCLI_whenWebScanWithUIAutomationRules_passesToAPIRequest(mocker):
+    """Test ostorlab ci_scan web scan with UI automation rules passes rules to API request."""
+    scan_create_dict = {"data": {"createWebScan": {"scan": {"id": "1"}}}}
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        return_value=scan_create_dict,
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--title=scan1",
+            '--ui-automation-rules=[{"rule_id": 2, "args": [{"name": "password", "value": "testpass"}]}]',
+            "link",
+            "--url=https://example.com",
+        ],
+    )
+
+    assert "Scan created with id" in result.output and "1" in result.output
+    assert api_caller_mock.call_count == 1
+    # Verify UI automation rules were passed to the API request
+    api_request = api_caller_mock.call_args[0][0]
+    assert api_request._ui_automation_rule_instances == [
+        {"rule_id": 2, "args": [{"name": "password", "value": "testpass"}]}
+    ]

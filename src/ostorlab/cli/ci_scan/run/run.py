@@ -158,6 +158,12 @@ CI_LOGGER = {
     required=False,
     default=None,
 )
+@click.option(
+    "--ui-automation-rules",
+    help="JSON string containing UI automation rules for enhanced web app scanning.",
+    required=False,
+    default=None,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -182,6 +188,7 @@ def run(
     repository: Optional[str] = None,
     pr_number: Optional[str] = None,
     branch: Optional[str] = None,
+    ui_automation_rules: Optional[str] = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -236,6 +243,7 @@ def run(
     ctx.obj["repository"] = repository
     ctx.obj["pr_number"] = pr_number
     ctx.obj["branch"] = branch
+    ctx.obj["ui_automation_rules"] = ui_automation_rules
 
 
 def apply_break_scan_risk_rating(

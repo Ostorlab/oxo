@@ -62,6 +62,7 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
         filtered_url_regexes = ctx.obj["filtered_url_regexes"]
         proxy = ctx.obj["proxy"]
         qps = ctx.obj["qps"]
+        ui_automation_rules = ctx.obj.get("ui_automation_rules")
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -78,6 +79,18 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
             ci_logger.info(
                 f"creating Web scan `{title}` with profile `{scan_profile}`."
             )
+
+            # Parse UI automation rules from JSON string
+            ui_automation_rule_instances = None
+            if ui_automation_rules is not None:
+                try:
+                    import json
+
+                    ui_automation_rule_instances = json.loads(ui_automation_rules)
+                except (json.JSONDecodeError, TypeError):
+                    ci_logger.error("Invalid UI automation rules format, ignoring.")
+                    ui_automation_rule_instances = None
+
             scan_id = _create_scan(
                 title,
                 scan_profile,
@@ -89,6 +102,7 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
                 filtered_url_regexes,
                 proxy,
                 qps,
+                ui_automation_rule_instances,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -121,6 +135,7 @@ def _create_scan(
     filtered_url_regexes,
     proxy,
     qps,
+    ui_automation_rule_instances=None,
 ):
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(
@@ -133,6 +148,7 @@ def _create_scan(
             filtered_url_regexes=filtered_url_regexes,
             proxy=proxy,
             qps=qps,
+            ui_automation_rule_instances=ui_automation_rule_instances,
         )
     )
     scan_id = scan_result.get("data").get("createWebScan").get("scan").get("id")
