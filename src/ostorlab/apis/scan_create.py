@@ -16,7 +16,7 @@ class CreateUIPromptsAPIRequest(request.APIRequest):
         self._ui_prompts = ui_prompts
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str:
         """Defines the query to create UI prompts.
 
         Returns:
@@ -34,7 +34,7 @@ mutation CreateUIPrompts($uiPrompts: [UIAutomationRulesInputType]!) {
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Dict[str, Any]:
         """Sets the query and variables to create UI prompts.
 
         Returns:
@@ -42,19 +42,17 @@ mutation CreateUIPrompts($uiPrompts: [UIAutomationRulesInputType]!) {
         """
         return {
             "query": self.query,
-            "variables": {
-                "uiPrompts": self._ui_prompts,
-            },
+            "variables": json.dumps({"uiPrompts": self._ui_prompts}),
         }
 
     @property
-    def files(self) -> Optional[Dict]:
-        """No files needed for UI prompts creation.
+    def is_json(self) -> bool:
+        """Indicates that the request should be sent as JSON.
 
         Returns:
-            None
+            True if the request should be sent as JSON.
         """
-        return None
+        return True
 
 
 @dataclasses.dataclass
