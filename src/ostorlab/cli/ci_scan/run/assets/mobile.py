@@ -107,7 +107,7 @@ def run_mobile_scan(
                 try:
                     ui_automation_rule_instances = json.loads(ui_automation_rules)
                 except (json.JSONDecodeError, TypeError):
-                    ci_logger.error("Invalid UI automation rules format, ignoring.")
+                    ci_logger.error("Invalid UI automation rules format %s, ignoring...", ui_automation_rules)
                     ui_automation_rule_instances = None
 
             scan_id = _create_scan(
