@@ -159,10 +159,11 @@ CI_LOGGER = {
     default=None,
 )
 @click.option(
-    "--ui-automation-rules",
-    help="JSON string containing UI automation rules for enhanced web app scanning.",
+    "--ui-prompts",
+    help="UI prompts to use during the scan.",
     required=False,
-    default=None,
+    multiple=True,
+    default=[],
 )
 @click.pass_context
 def run(
@@ -184,11 +185,11 @@ def run(
     scope_urls_regexes: List[str],
     proxy: str,
     qps: int,
+    ui_prompts: List[str],
     source: Optional[str] = None,
     repository: Optional[str] = None,
     pr_number: Optional[str] = None,
     branch: Optional[str] = None,
-    ui_automation_rules: Optional[str] = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -243,7 +244,7 @@ def run(
     ctx.obj["repository"] = repository
     ctx.obj["pr_number"] = pr_number
     ctx.obj["branch"] = branch
-    ctx.obj["ui_automation_rules"] = ui_automation_rules
+    ctx.obj["ui_prompts"] = ui_prompts
 
 
 def apply_break_scan_risk_rating(

@@ -8,7 +8,7 @@ import json
 import click
 import itertools
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis import scan_create as scan_create_api
@@ -65,7 +65,7 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
         filtered_url_regexes = ctx.obj["filtered_url_regexes"]
         proxy = ctx.obj["proxy"]
         qps = ctx.obj["qps"]
-        ui_automation_rules = ctx.obj.get("ui_automation_rules")
+        ui_prompts = ctx.obj.get("ui_prompts") or []
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -83,26 +83,42 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
                 f"creating Web scan `{title}` with profile `{scan_profile}`."
             )
 
-            ui_automation_rule_instances = None
-            if ui_automation_rules is not None:
+            ui_automation_rule_ids = []
+            if len(ui_prompts) > 0:
+                ui_prompts_json = [{"code": prompt} for prompt in ui_prompts]
                 try:
-                    ui_automation_rule_instances = json.loads(ui_automation_rules)
-                except (json.JSONDecodeError, TypeError):
-                    error_message = f"Invalid UI automation rules format: {ui_automation_rules}, ignoring..."
-                    ci_logger.error(error_message)
+                    ci_logger.info("Creating UI prompts...")
+                    prompts_result = runner.execute(
+                        scan_create_api.CreateUIPromptsAPIRequest(
+                            ui_prompts=ui_prompts_json
+                        )
+                    )
+                    ui_automation_rule_ids = [
+                        prompt["id"]
+                        for prompt in prompts_result["data"]["createUiPrompts"][
+                            "uiPrompts"
+                        ]
+                    ]
+                    ci_logger.info(
+                        f"Created UI prompts with IDs: {ui_automation_rule_ids}"
+                    )
+                except (json.JSONDecodeError, KeyError) as e:
+                    ci_logger.error(
+                        f"Invalid UI prompts format: {e}. Continuing without UI prompts."
+                    )
 
             scan_id = _create_scan(
-                title,
-                scan_profile,
-                url,
-                credential_ids,
-                runner,
-                sboms,
-                api_schema,
-                filtered_url_regexes,
-                proxy,
-                qps,
-                ui_automation_rule_instances,
+                title=title,
+                scan_profile=scan_profile,
+                urls=url,
+                credential_ids=credential_ids,
+                runner=runner,
+                sboms=sboms,
+                api_schema=api_schema,
+                filtered_url_regexes=filtered_url_regexes,
+                proxy=proxy,
+                qps=qps,
+                ui_automation_rule_ids=ui_automation_rule_ids,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -136,7 +152,7 @@ def _create_scan(
     qps: Optional[int] = None,
     filtered_url_regexes: Optional[List[str]] = None,
     test_credential_ids: Optional[List[int]] = None,
-    ui_automation_rule_instances: Optional[List[Dict[str, Any]]] = None,
+    ui_automation_rule_ids: List[int] = (),
 ):
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(
@@ -149,7 +165,7 @@ def _create_scan(
             filtered_url_regexes=filtered_url_regexes,
             proxy=proxy,
             qps=qps,
-            ui_automation_rule_instances=ui_automation_rule_instances,
+            ui_automation_rule_ids=ui_automation_rule_ids,
         )
     )
     scan_id = scan_result.get("data").get("createWebScan").get("scan").get("id")

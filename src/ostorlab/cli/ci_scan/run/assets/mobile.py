@@ -3,14 +3,11 @@ This module takes care of preparing the application file and calling the create 
 """
 
 import io
+import itertools
 import json
+from typing import List, Optional
 
 import click
-import itertools
-
-from typing import List, Optional, Dict
-
-from mypy.literals import Any
 
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis.runners import authenticated_runner
@@ -72,7 +69,7 @@ def run_mobile_scan(
         pr_number = ctx.obj["pr_number"]
         branch = ctx.obj["branch"]
         scope_urls_regexes = ctx.obj["scope_urls_regexes"]
-        ui_automation_rules = ctx.obj.get("ui_automation_rules")
+        ui_prompts = ctx.obj.get("ui_prompts") or []
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -85,6 +82,30 @@ def run_mobile_scan(
                 )
             else:
                 credential_ids = []
+
+            ui_automation_rule_ids = []
+            if len(ui_prompts) > 0:
+                ui_prompts_json = [{"code": prompt} for prompt in ui_prompts]
+                try:
+                    ci_logger.info("Creating UI prompts...")
+                    prompts_result = runner.execute(
+                        scan_create_api.CreateUIPromptsAPIRequest(
+                            ui_prompts=ui_prompts_json
+                        )
+                    )
+                    ui_automation_rule_ids = [
+                        prompt["id"]
+                        for prompt in prompts_result["data"]["createUiPrompts"][
+                            "uiPrompts"
+                        ]
+                    ]
+                    ci_logger.info(
+                        f"Created UI prompts with IDs: {ui_automation_rule_ids}"
+                    )
+                except (json.JSONDecodeError, KeyError) as e:
+                    ci_logger.error(
+                        f"Invalid UI prompts format: {e}. Continuing without UI prompts."
+                    )
 
             ci_logger.info(
                 f"creating scan `{title}` with profile `{scan_profile}` for `{asset_type}`"
@@ -102,25 +123,17 @@ def run_mobile_scan(
             else:
                 scope_urls_regexes = None
 
-            ui_automation_rule_instances = None
-            if ui_automation_rules is not None:
-                try:
-                    ui_automation_rule_instances = json.loads(ui_automation_rules)
-                except (json.JSONDecodeError, TypeError):
-                    error_message = f"Invalid UI automation rules format: {ui_automation_rules}, ignoring..."
-                    ci_logger.error(error_message)
-
             scan_id = _create_scan(
-                title,
-                scan_profile,
-                asset_type,
-                file,
-                credential_ids,
-                runner,
-                sboms,
-                scan_source,
-                scope_urls_regexes,
-                ui_automation_rule_instances,
+                title=title,
+                scan_profile=scan_profile,
+                asset_type=asset_type,
+                file=file,
+                credential_ids=credential_ids,
+                runner=runner,
+                sboms=sboms,
+                scan_source=scan_source,
+                scope_urls_regexes=scope_urls_regexes,
+                ui_automation_rule_ids=ui_automation_rule_ids,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -152,7 +165,7 @@ def _create_scan(
     sboms: List[io.FileIO],
     scan_source: Optional[scan_create_api.ScanSource] = None,
     scope_urls_regexes: Optional[List[str]] = None,
-    ui_automation_rule_instances: Optional[List[Dict[str, Any]]] = None,
+    ui_automation_rule_ids: List[int] = (),
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
@@ -164,7 +177,7 @@ def _create_scan(
             sboms=sboms,
             scan_source=scan_source,
             scope_urls_regexes=scope_urls_regexes,
-            ui_automation_rule_instances=ui_automation_rule_instances,
+            ui_automation_rule_ids=ui_automation_rule_ids,
         )
     )
     scan_id = scan_result.get("data").get("createMobileScan").get("scan").get("id")
