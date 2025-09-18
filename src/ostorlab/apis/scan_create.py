@@ -4,7 +4,7 @@ import enum
 import io
 import json
 import dataclasses
-from typing import Dict, Optional, BinaryIO, List
+from typing import Dict, Optional, BinaryIO, List, Any
 
 from . import request
 
@@ -48,7 +48,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         scope_urls_regexes: Optional[List[str]] = None,
         sboms: list[io.FileIO] = None,
         scan_source: Optional[ScanSource] = None,
-        ui_automation_rule_instances: Optional[List[Dict]] = None,
+        ui_automation_rule_instances: Optional[List[Dict[str, Any]]] = None,
     ):
         self._title = title
         self._asset_type = asset_type
@@ -145,7 +145,7 @@ class CreateWebScanAPIRequest(request.APIRequest):
         qps: Optional[int] = None,
         filtered_url_regexes: Optional[List[str]] = None,
         test_credential_ids: Optional[List[int]] = None,
-        ui_automation_rule_instances: Optional[List[Dict]] = None,
+        ui_automation_rule_instances: Optional[List[Dict[str, Any]]] = None,
     ):
         self._title = title
         self._urls = urls

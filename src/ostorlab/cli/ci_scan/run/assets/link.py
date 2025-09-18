@@ -2,12 +2,13 @@
 This module takes care of preparing a link before calling the create web scan API.
 """
 
+import io
 import json
 
 import click
 import itertools
 
-from typing import List
+from typing import List, Optional, Dict, Any
 
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis import scan_create as scan_create_api
@@ -124,17 +125,18 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
 
 
 def _create_scan(
-    title,
-    scan_profile,
-    urls,
-    credential_ids,
-    runner,
-    sboms,
-    api_schema,
-    filtered_url_regexes,
-    proxy,
-    qps,
-    ui_automation_rule_instances=None,
+    credential_ids: List[int],
+    runner: authenticated_runner.AuthenticatedAPIRunner,
+    title: str,
+    urls: List[str],
+    scan_profile: str,
+    sboms: Optional[list[io.FileIO]] = None,
+    api_schema: Optional[io.FileIO] = None,
+    proxy: Optional[str] = None,
+    qps: Optional[int] = None,
+    filtered_url_regexes: Optional[List[str]] = None,
+    test_credential_ids: Optional[List[int]] = None,
+    ui_automation_rule_instances: Optional[List[Dict[str, Any]]] = None,
 ):
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(

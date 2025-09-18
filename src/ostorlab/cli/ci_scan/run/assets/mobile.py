@@ -10,6 +10,8 @@ import itertools
 
 from typing import List, Optional, Dict
 
+from mypy.literals import Any
+
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
@@ -150,7 +152,7 @@ def _create_scan(
     sboms: List[io.FileIO],
     scan_source: Optional[scan_create_api.ScanSource] = None,
     scope_urls_regexes: Optional[List[str]] = None,
-    ui_automation_rule_instances: Optional[List[Dict]] = None,
+    ui_automation_rule_instances: Optional[List[Dict[str, Any]]] = None,
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
