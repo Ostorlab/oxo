@@ -159,7 +159,8 @@ CI_LOGGER = {
     default=None,
 )
 @click.option(
-    "--ui-prompts",
+    "--ui-prompt",
+    "ui_prompts",
     help="UI prompts to use during the scan.",
     required=False,
     multiple=True,
