@@ -2,10 +2,13 @@
 This module takes care of preparing a link before calling the create web scan API.
 """
 
+import io
+import json
+
 import click
 import itertools
 
-from typing import List
+from typing import List, Optional
 
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis import scan_create as scan_create_api
@@ -62,6 +65,7 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
         filtered_url_regexes = ctx.obj["filtered_url_regexes"]
         proxy = ctx.obj["proxy"]
         qps = ctx.obj["qps"]
+        ui_prompts = ctx.obj.get("ui_prompts") or []
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -78,17 +82,43 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
             ci_logger.info(
                 f"creating Web scan `{title}` with profile `{scan_profile}`."
             )
+
+            ui_automation_rule_ids = []
+            if len(ui_prompts) > 0:
+                ui_prompts_json = [{"code": prompt} for prompt in ui_prompts]
+                try:
+                    ci_logger.info("Creating UI prompts...")
+                    prompts_result = runner.execute(
+                        scan_create_api.CreateUIPromptsAPIRequest(
+                            ui_prompts=ui_prompts_json
+                        )
+                    )
+                    ui_automation_rule_ids = [
+                        prompt["id"]
+                        for prompt in prompts_result["data"]["createUiPrompts"][
+                            "uiPrompts"
+                        ]
+                    ]
+                    ci_logger.info(
+                        f"Created UI prompts with IDs: {ui_automation_rule_ids}"
+                    )
+                except (json.JSONDecodeError, KeyError) as e:
+                    ci_logger.error(
+                        f"Invalid UI prompts format: {e}. Continuing without UI prompts."
+                    )
+
             scan_id = _create_scan(
-                title,
-                scan_profile,
-                url,
-                credential_ids,
-                runner,
-                sboms,
-                api_schema,
-                filtered_url_regexes,
-                proxy,
-                qps,
+                title=title,
+                scan_profile=scan_profile,
+                urls=url,
+                credential_ids=credential_ids,
+                runner=runner,
+                sboms=sboms,
+                api_schema=api_schema,
+                filtered_url_regexes=filtered_url_regexes,
+                proxy=proxy,
+                qps=qps,
+                ui_automation_rule_ids=ui_automation_rule_ids,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -111,16 +141,18 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
 
 
 def _create_scan(
-    title,
-    scan_profile,
-    urls,
-    credential_ids,
-    runner,
-    sboms,
-    api_schema,
-    filtered_url_regexes,
-    proxy,
-    qps,
+    credential_ids: List[int],
+    runner: authenticated_runner.AuthenticatedAPIRunner,
+    title: str,
+    urls: List[str],
+    scan_profile: str,
+    sboms: Optional[list[io.FileIO]] = None,
+    api_schema: Optional[io.FileIO] = None,
+    proxy: Optional[str] = None,
+    qps: Optional[int] = None,
+    filtered_url_regexes: Optional[List[str]] = None,
+    test_credential_ids: Optional[List[int]] = None,
+    ui_automation_rule_ids: List[int] = (),
 ):
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(
@@ -133,6 +165,7 @@ def _create_scan(
             filtered_url_regexes=filtered_url_regexes,
             proxy=proxy,
             qps=qps,
+            ui_automation_rule_ids=ui_automation_rule_ids,
         )
     )
     scan_id = scan_result.get("data").get("createWebScan").get("scan").get("id")

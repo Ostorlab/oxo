@@ -158,6 +158,14 @@ CI_LOGGER = {
     required=False,
     default=None,
 )
+@click.option(
+    "--ui-prompt",
+    "ui_prompts",
+    help="UI prompts to use during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -178,6 +186,7 @@ def run(
     scope_urls_regexes: List[str],
     proxy: str,
     qps: int,
+    ui_prompts: List[str],
     source: Optional[str] = None,
     repository: Optional[str] = None,
     pr_number: Optional[str] = None,
@@ -236,6 +245,7 @@ def run(
     ctx.obj["repository"] = repository
     ctx.obj["pr_number"] = pr_number
     ctx.obj["branch"] = branch
+    ctx.obj["ui_prompts"] = ui_prompts
 
 
 def apply_break_scan_risk_rating(

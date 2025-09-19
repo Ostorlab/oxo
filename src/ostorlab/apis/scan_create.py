@@ -4,9 +4,55 @@ import enum
 import io
 import json
 import dataclasses
-from typing import Dict, Optional, BinaryIO, List
+from typing import Dict, Optional, BinaryIO, List, Any
 
 from . import request
+
+
+class CreateUIPromptsAPIRequest(request.APIRequest):
+    """Create UI prompts API request with get_or_create logic."""
+
+    def __init__(self, ui_prompts: List[Dict[str, Any]]):
+        self._ui_prompts = ui_prompts
+
+    @property
+    def query(self) -> str:
+        """Defines the query to create UI prompts.
+
+        Returns:
+            The query to create UI prompts
+        """
+        return """
+mutation CreateUIPrompts($uiPrompts: [UIAutomationRulesInputType]!) {
+  createUiPrompts(uiPrompts: $uiPrompts) {
+    uiPrompts {
+      id
+      code
+    }
+  }
+}
+        """
+
+    @property
+    def data(self) -> Dict[str, Any]:
+        """Sets the query and variables to create UI prompts.
+
+        Returns:
+            The query and variables to create UI prompts.
+        """
+        return {
+            "query": self.query,
+            "variables": json.dumps({"uiPrompts": self._ui_prompts}),
+        }
+
+    @property
+    def is_json(self) -> bool:
+        """Indicates that the request should be sent as JSON.
+
+        Returns:
+            True if the request should be sent as JSON.
+        """
+        return True
 
 
 @dataclasses.dataclass
@@ -48,6 +94,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         scope_urls_regexes: Optional[List[str]] = None,
         sboms: list[io.FileIO] = None,
         scan_source: Optional[ScanSource] = None,
+        ui_automation_rule_ids: List[int] = (),
     ):
         self._title = title
         self._asset_type = asset_type
@@ -57,6 +104,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         self._scope_urls_regexes = scope_urls_regexes
         self._sboms = sboms
         self._scan_source = scan_source
+        self._ui_automation_rule_ids = ui_automation_rule_ids
 
     @property
     def query(self) -> Optional[str]:
@@ -67,8 +115,8 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         """
 
         return """
-mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $scanSource: ScanSourceInputType, $scopeUrlsRegexes: [String]) {
-  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, scanSource: $scanSource, scopeUrlsRegexes: $scopeUrlsRegexes) {
+mutation MobileScan($title: String!, $assetType: String!, $application: Upload!, $sboms: [Upload!], $scanProfile: String!, $credentialIds: [Int], $scanSource: ScanSourceInputType, $scopeUrlsRegexes: [String], $uiAutomationRuleInstances: [UIAutomationRuleInstanceInputType]) {
+  createMobileScan(title: $title, assetType: $assetType, application: $application, sboms: $sboms, scanProfile: $scanProfile, credentialIds: $credentialIds, scanSource: $scanSource, scopeUrlsRegexes: $scopeUrlsRegexes, uiAutomationRuleInstances: $uiAutomationRuleInstances) {
     scan {
       id
     }
@@ -108,6 +156,13 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
                         if self._scan_source is not None
                         else None,
                         "scopeUrlsRegexes": self._scope_urls_regexes,
+                        "uiAutomationRuleInstances": [
+                            {
+                                "ruleId": rule_id,
+                                "args": [{"name": f"Rule {rule_id}"}],
+                            }
+                            for rule_id in self._ui_automation_rule_ids
+                        ],
                     },
                 }
             ),
@@ -134,14 +189,15 @@ class CreateWebScanAPIRequest(request.APIRequest):
     def __init__(
         self,
         title: str,
-        urls: [List[str]],
+        urls: List[str],
         scan_profile: str,
         sboms: Optional[list[io.FileIO]] = None,
         api_schema: Optional[io.FileIO] = None,
         proxy: Optional[str] = None,
         qps: Optional[int] = None,
-        filtered_url_regexes: [List[str]] = None,
-        test_credential_ids: List[int] = None,
+        filtered_url_regexes: Optional[List[str]] = None,
+        test_credential_ids: Optional[List[int]] = None,
+        ui_automation_rule_ids: List[int] = (),
     ):
         self._title = title
         self._urls = urls
@@ -152,6 +208,7 @@ class CreateWebScanAPIRequest(request.APIRequest):
         self._qps = qps
         self._filtered_url_regexes = filtered_url_regexes
         self._test_credential_ids = test_credential_ids
+        self._ui_automation_rule_ids = ui_automation_rule_ids
 
     @property
     def query(self) -> Optional[str]:
@@ -162,8 +219,8 @@ class CreateWebScanAPIRequest(request.APIRequest):
         """
 
         return """
-mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sboms: [Upload!], $apiSchema: Upload, $proxy: String, $qps: Int, $filteredUrlRegexes: [String], $credentialIds: [Int]) {
-  createWebScan(title: $title, urls: $urls, scanProfile: $scanProfile, sboms: $sboms, apiSchema: $apiSchema, proxy: $proxy, qps: $qps, filteredUrlRegexes: $filteredUrlRegexes, credentialIds: $credentialIds) {
+mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sboms: [Upload!], $apiSchema: Upload, $proxy: String, $qps: Int, $filteredUrlRegexes: [String], $credentialIds: [Int], $uiAutomationRuleInstances: [UIAutomationRuleInstanceInputType]) {
+  createWebScan(title: $title, urls: $urls, scanProfile: $scanProfile, sboms: $sboms, apiSchema: $apiSchema, proxy: $proxy, qps: $qps, filteredUrlRegexes: $filteredUrlRegexes, credentialIds: $credentialIds, uiAutomationRuleInstances: $uiAutomationRuleInstances) {
     scan {
       id
     }
@@ -201,6 +258,13 @@ mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sbom
                             "proxy": self._proxy,
                             "qps": self._qps,
                             "sboms": [None for _ in self._sboms],
+                            "uiAutomationRuleInstances": [
+                                {
+                                    "ruleId": rule_id,
+                                    "args": [{"name": f"Rule {rule_id}"}],
+                                }
+                                for rule_id in self._ui_automation_rule_ids
+                            ],
                         },
                     }
                 ),
@@ -220,6 +284,13 @@ mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sbom
                         "proxy": self._proxy,
                         "qps": self._qps,
                         "sboms": [None for _ in self._sboms],
+                        "uiAutomationRuleInstances": [
+                            {
+                                "ruleId": rule_id,
+                                "args": [{"name": f"Rule {rule_id}"}],
+                            }
+                            for rule_id in self._ui_automation_rule_ids
+                        ],
                     }
                 ),
             }

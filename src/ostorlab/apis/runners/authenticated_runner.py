@@ -163,15 +163,27 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     def _sent_request(
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
     ) -> httpx.Response:
-        """Sends an API request."""
+        """Sends an API request, handling JSON or form encoding."""
+        headers = headers or {}
+
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
-            return client.post(
-                self.endpoint,
-                data=request.data,
-                files=request.files,
-                headers=headers,
-                timeout=runner.REQUEST_TIMEOUT,
-            )
+            if request.is_json is True:
+                headers["Content-Type"] = "application/json"
+                return client.post(
+                    self.endpoint,
+                    files=request.files,
+                    headers=headers,
+                    timeout=runner.REQUEST_TIMEOUT,
+                    json=request.data,
+                )
+            else:
+                return client.post(
+                    self.endpoint,
+                    files=request.files,
+                    headers=headers,
+                    timeout=runner.REQUEST_TIMEOUT,
+                    data=request.data,
+                )
 
     def execute_ubjson_request(self, request: api_request.APIRequest) -> Dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.

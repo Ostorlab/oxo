@@ -27,3 +27,8 @@ class APIRequest(abc.ABC):
     def files(self) -> Optional[Dict]:
         """Files of the API request, containing the binary data."""
         return None
+
+    @property
+    def is_json(self) -> bool:
+        """Indicates if the request should be sent as JSON (default False)."""
+        return False
