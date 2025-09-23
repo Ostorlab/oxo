@@ -70,6 +70,7 @@ def run_mobile_scan(
         branch = ctx.obj["branch"]
         scope_urls_regexes = ctx.obj["scope_urls_regexes"]
         ui_prompts = ctx.obj.get("ui_prompts") or []
+        ui_prompt_ids = ctx.obj.get("ui_prompt_ids") or []
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -83,7 +84,12 @@ def run_mobile_scan(
             else:
                 credential_ids = []
 
-            ui_automation_rule_ids = []
+            ui_automation_rule_ids: List[int] = []
+
+            if len(ui_prompt_ids) > 0:
+                ui_automation_rule_ids.extend(ui_prompt_ids)
+                ci_logger.info(f"Using existing UI prompts with IDs: {ui_prompt_ids}")
+
             if len(ui_prompts) > 0:
                 ui_prompts_json = [{"code": prompt} for prompt in ui_prompts]
                 try:
@@ -93,15 +99,14 @@ def run_mobile_scan(
                             ui_prompts=ui_prompts_json
                         )
                     )
-                    ui_automation_rule_ids = [
-                        prompt["id"]
+                    created_prompt_ids = [
+                        int(prompt["id"])
                         for prompt in prompts_result["data"]["createUiPrompts"][
                             "uiPrompts"
                         ]
                     ]
-                    ci_logger.info(
-                        f"Created UI prompts with IDs: {ui_automation_rule_ids}"
-                    )
+                    ui_automation_rule_ids.extend(created_prompt_ids)
+                    ci_logger.info(f"Created UI prompts with IDs: {created_prompt_ids}")
                 except (json.JSONDecodeError, KeyError) as e:
                     ci_logger.error(
                         f"Invalid UI prompts format: {e}. Continuing without UI prompts."

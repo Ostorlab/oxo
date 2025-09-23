@@ -564,8 +564,8 @@ def testRunScanCLI_withUIPrompts_callsCreateUIPrompts(
 
     assert "Creating UI prompts" in result.output
     assert "Created UI prompts with IDs" in result.output
-    assert "'123'" in result.output
-    assert "'456'" in result.output
+    assert "123" in result.output
+    assert "456" in result.output
     assert "Scan created with id" in result.output
     assert api_caller_mock.call_count == 2
     ui_prompts_call = api_caller_mock.call_args_list[0]
@@ -603,3 +603,85 @@ def testRunScanCLI_withEmptyUIPrompts_skipsUIPromptsCreation(
     assert "Creating UI prompts" not in result.output
     assert "Scan created with id" in result.output
     assert api_caller_mock.call_count == 1
+
+
+def testRunScanCLI_withUIPromptIds_usesExistingPrompts(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab ci_scan with UI prompt IDs uses existing prompts directly."""
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        return_value=scan_create_dict,
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--title=scan1",
+            "--ui-prompt-id=123",
+            "--ui-prompt-id=456",
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert "Using existing UI prompts with IDs" in result.output
+    assert "123" in result.output
+    assert "456" in result.output
+    assert "Creating UI prompts" not in result.output
+    assert "Scan created with id" in result.output
+    assert api_caller_mock.call_count == 1
+
+
+def testRunScanCLI_withBothUIPromptsAndIds_combinesBothTypes(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab ci_scan with both UI prompts and IDs combines both."""
+    ui_prompts_create_dict = {
+        "data": {
+            "createUiPrompts": {
+                "uiPrompts": [
+                    {"id": "789", "code": "New prompt"},
+                ]
+            }
+        }
+    }
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    api_caller_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[ui_prompts_create_dict, scan_create_dict],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--title=scan1",
+            "--ui-prompt-id=123",
+            "--ui-prompt-id=456",
+            "--ui-prompt=New prompt",
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert "Using existing UI prompts with IDs" in result.output
+    assert "123" in result.output
+    assert "456" in result.output
+    assert "Creating UI prompts" in result.output
+    assert "Created UI prompts with IDs" in result.output
+    assert "789" in result.output
+    assert "Scan created with id" in result.output
+    assert api_caller_mock.call_count == 2
