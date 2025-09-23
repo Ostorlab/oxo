@@ -86,12 +86,10 @@ def run_mobile_scan(
 
             ui_automation_rule_ids: List[int] = []
 
-            # Handle existing UI prompt IDs
             if len(ui_prompt_ids) > 0:
                 ui_automation_rule_ids.extend(ui_prompt_ids)
                 ci_logger.info(f"Using existing UI prompts with IDs: {ui_prompt_ids}")
 
-            # Handle new UI prompts that need to be created
             if len(ui_prompts) > 0:
                 ui_prompts_json = [{"code": prompt} for prompt in ui_prompts]
                 try:
