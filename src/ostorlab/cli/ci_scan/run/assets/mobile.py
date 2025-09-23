@@ -84,7 +84,7 @@ def run_mobile_scan(
             else:
                 credential_ids = []
 
-            ui_automation_rule_ids = []
+            ui_automation_rule_ids: List[int] = []
 
             # Handle existing UI prompt IDs
             if len(ui_prompt_ids) > 0:
@@ -102,7 +102,7 @@ def run_mobile_scan(
                         )
                     )
                     created_prompt_ids = [
-                        prompt["id"]
+                        int(prompt["id"])
                         for prompt in prompts_result["data"]["createUiPrompts"][
                             "uiPrompts"
                         ]
