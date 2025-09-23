@@ -69,8 +69,9 @@ def run_mobile_scan(
         pr_number = ctx.obj["pr_number"]
         branch = ctx.obj["branch"]
         scope_urls_regexes = ctx.obj["scope_urls_regexes"]
-        ui_prompts = ctx.obj.get("ui_prompts") or []
         ui_prompt_ids = ctx.obj.get("ui_prompt_ids") or []
+        ui_prompt_names = ctx.obj.get("ui_prompt_names") or []
+        ui_prompt_actions = ctx.obj.get("ui_prompt_actions") or []
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -90,8 +91,11 @@ def run_mobile_scan(
                 ui_automation_rule_ids.extend(ui_prompt_ids)
                 ci_logger.info(f"Using existing UI prompts with IDs: {ui_prompt_ids}")
 
-            if len(ui_prompts) > 0:
-                ui_prompts_json = [{"code": prompt} for prompt in ui_prompts]
+            if len(ui_prompt_names) > 0 and len(ui_prompt_actions) > 0:
+                ui_prompts_json = [
+                    {"name": name, "code": action}
+                    for name, action in zip(ui_prompt_names, ui_prompt_actions)
+                ]
                 try:
                     ci_logger.info("Creating UI prompts...")
                     prompts_result = runner.execute(

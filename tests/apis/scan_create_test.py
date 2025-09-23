@@ -20,7 +20,7 @@ def testCreateUIPromptsAPIRequest_whenUIPromptsProvided_createsCorrectQuery() ->
     assert "mutation CreateUIPrompts" in query
     assert "$uiPrompts: [UIAutomationRulesInputType]!" in query
     assert "createUiPrompts(uiPrompts: $uiPrompts)" in query
-    assert "id" in query and "code" in query
+    assert "id" in query and "code" in query and "name" in query
 
 
 def testCreateUIPromptsAPIRequest_whenUIPromptsProvided_includesUIPromptsInVariables() -> (
@@ -30,6 +30,24 @@ def testCreateUIPromptsAPIRequest_whenUIPromptsProvided_includesUIPromptsInVaria
     ui_prompts = [
         {"code": "Ensure full coverage of the app"},
         {"code": "Ensure login works"},
+    ]
+
+    api_request = scan_create.CreateUIPromptsAPIRequest(ui_prompts=ui_prompts)
+
+    data = api_request.data
+    assert "query" in data
+    assert "variables" in data
+    variables = json.loads(data["variables"])
+    assert variables["uiPrompts"] == ui_prompts
+
+
+def testCreateUIPromptsAPIRequest_whenNamedUIPromptsProvided_includesNamesInVariables() -> (
+    None
+):
+    """Test CreateUIPromptsAPIRequest includes named UI prompts in GraphQL variables."""
+    ui_prompts = [
+        {"name": "Login Test", "code": "click login button"},
+        {"name": "Navigation Test", "code": "navigate through menu"},
     ]
 
     api_request = scan_create.CreateUIPromptsAPIRequest(ui_prompts=ui_prompts)
