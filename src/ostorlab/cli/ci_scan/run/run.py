@@ -159,14 +159,6 @@ CI_LOGGER = {
     default=None,
 )
 @click.option(
-    "--ui-prompt",
-    "ui_prompts",
-    help="UI prompts to use during the scan.",
-    required=False,
-    multiple=True,
-    default=[],
-)
-@click.option(
     "--ui-prompt-id",
     "ui_prompt_ids",
     help="IDs of existing UI prompts to use during the scan.",
@@ -174,6 +166,22 @@ CI_LOGGER = {
     multiple=True,
     default=[],
     type=int,
+)
+@click.option(
+    "--ui-prompt-name",
+    "ui_prompt_names",
+    help="Names for UI prompts to create during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
+)
+@click.option(
+    "--ui-prompt-action",
+    "ui_prompt_actions",
+    help="Actions/scripts for UI prompts to create during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
 )
 @click.pass_context
 def run(
@@ -195,8 +203,9 @@ def run(
     scope_urls_regexes: List[str],
     proxy: str,
     qps: int,
-    ui_prompts: List[str],
     ui_prompt_ids: List[int],
+    ui_prompt_names: List[str],
+    ui_prompt_actions: List[str],
     source: Optional[str] = None,
     repository: Optional[str] = None,
     pr_number: Optional[str] = None,
@@ -219,6 +228,10 @@ def run(
 
     if len(test_credentials_name) != len(test_credentials_value):
         ci_logger.error("Name and value credentials are not matching count.")
+        raise click.exceptions.Exit(2)
+
+    if len(ui_prompt_names) != len(ui_prompt_actions):
+        ci_logger.error("UI prompt names and actions are not matching count.")
         raise click.exceptions.Exit(2)
 
     if not ctx.obj.get("api_key"):
@@ -255,8 +268,9 @@ def run(
     ctx.obj["repository"] = repository
     ctx.obj["pr_number"] = pr_number
     ctx.obj["branch"] = branch
-    ctx.obj["ui_prompts"] = ui_prompts
     ctx.obj["ui_prompt_ids"] = ui_prompt_ids
+    ctx.obj["ui_prompt_names"] = ui_prompt_names
+    ctx.obj["ui_prompt_actions"] = ui_prompt_actions
 
 
 def apply_break_scan_risk_rating(

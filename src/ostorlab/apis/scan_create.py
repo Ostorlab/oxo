@@ -27,6 +27,7 @@ mutation CreateUIPrompts($uiPrompts: [UIAutomationRulesInputType]!) {
   createUiPrompts(uiPrompts: $uiPrompts) {
     uiPrompts {
       id
+      name
       code
     }
   }
