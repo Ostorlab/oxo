@@ -166,6 +166,15 @@ CI_LOGGER = {
     multiple=True,
     default=[],
 )
+@click.option(
+    "--ui-prompt-id",
+    "ui_prompt_ids",
+    help="IDs of existing UI prompts to use during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
+    type=int,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -187,6 +196,7 @@ def run(
     proxy: str,
     qps: int,
     ui_prompts: List[str],
+    ui_prompt_ids: List[int],
     source: Optional[str] = None,
     repository: Optional[str] = None,
     pr_number: Optional[str] = None,
@@ -246,6 +256,7 @@ def run(
     ctx.obj["pr_number"] = pr_number
     ctx.obj["branch"] = branch
     ctx.obj["ui_prompts"] = ui_prompts
+    ctx.obj["ui_prompt_ids"] = ui_prompt_ids
 
 
 def apply_break_scan_risk_rating(
