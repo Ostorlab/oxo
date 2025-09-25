@@ -161,7 +161,8 @@ class AgentSettings:
         instance.replicas = self.replicas
         instance.healthcheck_host = self.healthcheck_host
         instance.healthcheck_port = self.healthcheck_port
-        instance.caps.extend(self.caps)
+        if self.caps is not None:
+            instance.caps.extend(self.caps)
 
         if self.cyclic_processing_limit is not None:
             instance.cyclic_processing_limit = self.cyclic_processing_limit
