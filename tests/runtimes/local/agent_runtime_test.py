@@ -1,6 +1,7 @@
 """Unittest for agent runtime."""
 
 import docker
+import pytest
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
@@ -292,7 +293,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentDefinition_serviceCreat
     assert kwargs["name"] == "custom_service_name"
 
 
-def testCreateAgentService_whenServiceNameProvidedInAgentDefinitionAndTooLong_serviceCreatedWithShortenedServiceName(
+def testCreateAgentService_whenServiceNameProvidedInAgentDefinitionAndTooLong_raiseServiceNameTooLongException(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test creation of the agent service : Case where agent definitions has a service name defined but too long."""
@@ -347,12 +348,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentDefinitionAndTooLong_se
         redis_service=None,
         jaeger_service=None,
     )
-    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+    with pytest.raises(agent_runtime.ServiceNameTooLong):
+        runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
-    kwargs = create_service_mock.call_args.kwargs
-
-    assert kwargs["resources"]["Limits"]["MemoryBytes"] == 700000
-    assert kwargs["mounts"] == ["settings_mount1"]
-    assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 30000
-    assert kwargs["restart_policy"]["Condition"] == "on-failure"
-    assert kwargs["name"] == "c" * 63
+    assert create_service_mock.call_count == 0

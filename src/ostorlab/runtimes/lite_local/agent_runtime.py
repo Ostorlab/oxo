@@ -48,6 +48,10 @@ class MissingAgentDefinitionLabel(Error):
     docker command and not agent build."""
 
 
+class ServiceNameTooLong(Error):
+    """Raised when the agent definition service_name exceeds the maximum allowed length."""
+
+
 def _parse_mount_string_windows(string):
     """Handles parsing mounts on Windows OS."""
     parts = string.split(":")
@@ -352,8 +356,12 @@ class AgentRuntime:
 
         if agent_definition.service_name is not None:
             # If the service name defined in the agent definition is longer than the max allowed service name
-            # we truncate it to avoid docker api error.
-            service_name = agent_definition.service_name[:MAX_SERVICE_NAME_LEN]
+            # we raise an error to avoid silently truncating user provided names.
+            if len(agent_definition.service_name) > MAX_SERVICE_NAME_LEN:
+                raise ServiceNameTooLong(
+                    f'service name "{agent_definition.service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
+                )
+            service_name = agent_definition.service_name
         else:
             service_name = (
                 self.agent.container_image.split(":")[0].replace(".", "")
