@@ -48,6 +48,10 @@ class MissingAgentDefinitionLabel(Error):
     docker command and not agent build."""
 
 
+class ServiceNameTooLong(Error):
+    """Raised when the agent definition service_name exceeds the maximum allowed length."""
+
+
 def _parse_mount_string_windows(string):
     """Handles parsing mounts on Windows OS."""
     parts = string.split(":")
@@ -350,16 +354,23 @@ class AgentRuntime:
         )
         caps = self.agent.caps or agent_definition.caps
 
-        service_name = (
-            agent_definition.service_name
-            or self.agent.container_image.split(":")[0].replace(".", "")
-            + "_"
-            + self.runtime_name
-        )
+        if agent_definition.service_name is not None:
+            if len(agent_definition.service_name) > MAX_SERVICE_NAME_LEN:
+                raise ServiceNameTooLong(
+                    f'service name "{agent_definition.service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
+                )
+            service_name = agent_definition.service_name
+        else:
+            service_name = (
+                self.agent.container_image.split(":")[0].replace(".", "")
+                + "_"
+                + self.runtime_name
+            )
 
-        # We apply the random str only if it will not break the max docker service name characters (63)
-        if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
-            service_name = service_name + "_" + str(random.randrange(0, 9999))
+            # We apply the random str only if it will not break the max docker service name characters (63)
+            # This is to handle the same agent declared multiple times
+            if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
+                service_name = service_name + "_" + str(random.randrange(0, 9999))
 
         env = [
             f"UNIVERSE={self.runtime_name}",
