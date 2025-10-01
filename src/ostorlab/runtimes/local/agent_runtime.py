@@ -344,8 +344,6 @@ class AgentRuntime:
         caps = self.agent.caps or agent_definition.caps or []
 
         if agent_definition.service_name is not None:
-            # If the service name defined in the agent definition is longer than the max allowed service name
-            # we raise an error to avoid silently truncating user provided names.
             if len(agent_definition.service_name) > MAX_SERVICE_NAME_LEN:
                 raise ServiceNameTooLong(
                     f'service name "{agent_definition.service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
