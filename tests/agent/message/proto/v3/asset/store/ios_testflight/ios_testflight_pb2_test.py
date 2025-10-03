@@ -1,4 +1,6 @@
-from ostorlab.agent.message.proto.v3.asset.store.ios_testflight import ios_testflight_pb2
+from ostorlab.agent.message.proto.v3.asset.store.ios_testflight import (
+    ios_testflight_pb2,
+)
 
 
 def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():

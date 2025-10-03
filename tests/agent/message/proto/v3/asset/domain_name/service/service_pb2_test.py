@@ -7,11 +7,11 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     message.port = 80
     message.schema = "http"
     message.state = "open"
-    
+
     serialized = message.SerializeToString()
     deserialized = service_pb2.Message()
     deserialized.ParseFromString(serialized)
-    
+
     assert deserialized.name == "HTTP"
     assert deserialized.port == 80
     assert deserialized.schema == "http"
@@ -20,7 +20,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
 
 def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     message = service_pb2.Message()
-    
+
     assert message.name == ""
     assert message.port == 0
     assert message.schema == ""
@@ -29,11 +29,11 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
 
 def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
     message = service_pb2.Message()
-    
+
     serialized = message.SerializeToString()
     deserialized = service_pb2.Message()
     deserialized.ParseFromString(serialized)
-    
+
     assert deserialized.name == ""
     assert deserialized.port == 0
     assert deserialized.schema == ""

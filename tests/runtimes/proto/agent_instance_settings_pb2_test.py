@@ -1,5 +1,3 @@
-import pytest
-
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 
 
@@ -13,23 +11,23 @@ def testAgentInstanceSettings_whenCreateWithValidData_shouldSerializeAndDeserial
     settings.replicas = 1
     settings.mem_limit = 512000000
     settings.restart_policy = "unless-stopped"
-    
+
     arg = settings.args.add()
     arg.name = "test_arg"
     arg.type = "string"
     arg.value = b"test_value"
-    
+
     port_mapping = settings.open_ports.add()
     port_mapping.source_port = 8080
     port_mapping.destination_port = 8080
-    
+
     settings.constraints.append("cpu=1")
     settings.mounts.append("/tmp:/tmp")
-    
+
     serialized = settings.SerializeToString()
     deserialized_settings = agent_instance_settings_pb2.AgentInstanceSettings()
     deserialized_settings.ParseFromString(serialized)
-    
+
     assert deserialized_settings.key == "test-key"
     assert deserialized_settings.bus_url == "amqp://localhost:5672"
     assert deserialized_settings.bus_exchange_topic == "test_exchange"
@@ -44,7 +42,7 @@ def testAgentInstanceSettings_whenCreateWithValidData_shouldSerializeAndDeserial
 
 def testAgentInstanceSettings_whenCreateEmpty_shouldHaveDefaultValues():
     settings = agent_instance_settings_pb2.AgentInstanceSettings()
-    
+
     assert settings.key == ""
     assert settings.bus_url == ""
     assert settings.bus_exchange_topic == ""
@@ -57,11 +55,11 @@ def testAgentInstanceSettings_whenCreateEmpty_shouldHaveDefaultValues():
 
 def testAgentInstanceSettings_whenSerializeEmpty_shouldDeserializeToEmpty():
     settings = agent_instance_settings_pb2.AgentInstanceSettings()
-    
+
     serialized = settings.SerializeToString()
     deserialized_settings = agent_instance_settings_pb2.AgentInstanceSettings()
     deserialized_settings.ParseFromString(serialized)
-    
+
     assert deserialized_settings.key == ""
     assert deserialized_settings.bus_url == ""
     assert deserialized_settings.bus_exchange_topic == ""
