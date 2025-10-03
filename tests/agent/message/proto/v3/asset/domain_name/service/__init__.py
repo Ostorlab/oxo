@@ -1,0 +1,1 @@
+"""Service proto message tests."""

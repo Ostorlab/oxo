@@ -1,0 +1,1 @@
+"""Domain name proto message tests."""
