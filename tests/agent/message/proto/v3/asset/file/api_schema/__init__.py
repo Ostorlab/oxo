@@ -1,1 +1,0 @@
-"""API Schema proto message tests."""

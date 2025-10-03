@@ -1,1 +1,0 @@
-"""Proto message tests."""

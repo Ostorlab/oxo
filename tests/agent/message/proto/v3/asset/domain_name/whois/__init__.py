@@ -1,1 +1,0 @@
-"""Whois proto message tests."""

@@ -1,1 +1,0 @@
-"""Asset proto message tests."""
