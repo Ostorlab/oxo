@@ -121,9 +121,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
             "127.0.0.1",
         ],
     )
-    assert (
-        "Could not install the agents: No internet connection" in result.output
-    )
+    assert "Could not install the agents: No internet connection" in result.output
     assert result.exit_code == 1
     assert agent_install_local_spy.called is True
     assert agent_install_local_spy.call_count == 5
