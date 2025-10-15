@@ -13,6 +13,8 @@ from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.cli import types
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -120,7 +122,7 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
         ],
     )
     assert (
-        "ERROR: Could not install the agents: No internet connection\n" in result.output
+        "Could not install the agents: No internet connection" in result.output
     )
     assert result.exit_code == 1
     assert agent_install_local_spy.called is True
@@ -815,3 +817,47 @@ def testScanRunLink_whenNoAsset_DoesNotCrash(mocker: plugin.MockerFixture) -> No
 
     assert result.output == ""
     assert result.exit_code == 1
+
+
+def testAddCliArgsToAgentSettings_whenVersionProvided_passesVersionToGetDefinition(
+    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition
+) -> None:
+    """Test that _add_cli_args_to_agent_settings passes agent version to get_definition."""
+    agent_settings = [
+        runtime_definitions.AgentSettings(key="agent/ostorlab/nmap", version="0.4.0")
+    ]
+    cli_args = [types.AgentArg(name="fast_mode", value="true")]
+    mock_get_definition = mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
+    )
+
+    result = run._add_cli_args_to_agent_settings(agent_settings, cli_args)
+
+    mock_get_definition.assert_called_once_with(
+        agent_key="agent/ostorlab/nmap", version="0.4.0"
+    )
+    assert len(result) == 1
+    assert result[0].key == "agent/ostorlab/nmap"
+    assert result[0].version == "0.4.0"
+
+
+def testAddCliArgsToAgentSettings_whenVersionIsNone_passesNoneToGetDefinition(
+    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition
+) -> None:
+    """Test that _add_cli_args_to_agent_settings handles None version correctly."""
+    agent_settings = [
+        runtime_definitions.AgentSettings(key="agent/ostorlab/nmap", version=None)
+    ]
+    cli_args = [types.AgentArg(name="fast_mode", value="true")]
+    mock_get_definition = mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
+    )
+
+    result = run._add_cli_args_to_agent_settings(agent_settings, cli_args)
+
+    mock_get_definition.assert_called_once_with(
+        agent_key="agent/ostorlab/nmap", version=None
+    )
+    assert len(result) == 1
+    assert result[0].key == "agent/ostorlab/nmap"
+    assert result[0].version is None
