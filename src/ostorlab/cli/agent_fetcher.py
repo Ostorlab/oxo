@@ -3,7 +3,6 @@
 import logging
 import io
 from typing import Any, Optional
-import re
 
 import docker
 import docker.errors
@@ -64,11 +63,13 @@ def get_details(agent_key: str) -> dict[str, Any]:
 
 def get_definition(
     agent_key: str,
+    version: Optional[str] = None,
 ) -> agent_definitions.AgentDefinition:
     """Fetch the agent definition.
 
     Args:
          agent_key: key of the agent in agent/org/agentName format.
+         version: Optional version of the agent. If None, uses latest available.
 
     Returns:
         agent_definition: AgentDefinition object containing the agent definition.
@@ -76,7 +77,7 @@ def get_definition(
     Raises:
          AgentDetailsNotFound: If the agent image is not found.
     """
-    image_name = get_container_image(agent_key)
+    image_name = get_container_image(agent_key=agent_key, version=version)
     if image_name is None:
         raise AgentDetailsNotFound(f"Agent {agent_key} not found")
     client = docker.from_env()
@@ -117,7 +118,7 @@ def get_container_image(agent_key: str, version: Optional[str] = None) -> Option
                 except ValueError:
                     logger.warning("Invalid version %s", t_tag[1:])
             elif t_name == image and version is not None:
-                if re.match(version, t_tag[1:]) is not None:
+                if t_tag[1:] == version:
                     try:
                         matching_tag_versions.append(
                             version_definition.Version(t_tag[1:])
