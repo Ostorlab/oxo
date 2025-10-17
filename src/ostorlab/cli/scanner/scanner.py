@@ -48,7 +48,7 @@ def scanner(
     """Oxo scanner enables running custom instances of scanners.
     Scanner communicates with NATs to receive start scan messages.\n
     """
-    if sys.platform != "linux" or sys.platform != "darwin":
+    if sys.platform != "linux" and sys.platform != "darwin":
         console.error("oxo scanner sub-command is only supported on Unix systems.")
         raise click.exceptions.Exit(2)
 
