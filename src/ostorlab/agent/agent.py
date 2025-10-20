@@ -242,8 +242,8 @@ class AgentMixin(
             system_info = system.get_system_info()
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
-            logger.error("Message: %s", object_message)
             logger.exception("Exception: %s", e)
+            logger.error("Message: %s", object_message.selector)
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
