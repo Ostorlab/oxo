@@ -28,6 +28,7 @@ from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.utils import system
+from ostorlab.utils import strings as string_utils
 
 GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
@@ -243,7 +244,11 @@ class AgentMixin(
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
             logger.exception("Exception: %s", e)
-            logger.error("Message: %s", object_message.selector)
+            logger.error(
+                "Message of selector %s: %s",
+                object_message.selector,
+                string_utils.to_string(object_message.data),
+            )
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
