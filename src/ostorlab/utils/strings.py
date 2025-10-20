@@ -39,7 +39,7 @@ def _format_data(data: Any) -> Any:
         return data
 
 
-def to_string(dict_obj: dict[str, Any]) -> str:
+def format_dict(dict_obj: dict[str, Any]) -> str:
     """Format message for logging, filtering out large values."""
     filtered_data = _format_data(dict_obj)
     return json.dumps(filtered_data, indent=2)

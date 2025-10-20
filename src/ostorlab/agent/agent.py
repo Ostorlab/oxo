@@ -247,7 +247,7 @@ class AgentMixin(
             logger.error(
                 "Message of selector %s: %s",
                 object_message.selector,
-                string_utils.to_string(object_message.data),
+                string_utils.format_dict(object_message.data),
             )
         finally:
             self.process_cleanup()
