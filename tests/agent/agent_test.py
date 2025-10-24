@@ -385,15 +385,12 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
     assert (
         isinstance(logger_error.call_args_list[0][0][1], system.SystemLoadInfo) is True
     )
-    assert (
-        isinstance(logger_error.call_args_list[1][0][1], agent_message.Message) is True
-    )
-    assert logger_error.call_args_list[1][0][1].selector == "v3.healthcheck.ping"
-    assert (
-        logger_error.call_args_list[1][0][1].data["body"] == "Hello, can you hear me?"
-    )
-    assert isinstance(logger_error.call_args_list[2][0][1], ValueError) is True
-    assert "some error" in logger_error.call_args_list[2][0][1].args[0]
+    assert "Exception: %s" in logger_error.call_args_list[1][0][0]
+    assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
+    assert "some error" in logger_error.call_args_list[1][0][1].args[0]
+    assert "Message of selector %s: %s" in logger_error.call_args_list[2][0][0]
+    assert logger_error.call_args_list[2][0][1] == "v3.healthcheck.ping"
+    assert "Hello, can you hear me?" in logger_error.call_args_list[2][0][2]
 
 
 def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWithMessageAndNoSystemLoad(
@@ -442,15 +439,12 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
     )
 
     assert logger_error.call_count == 2
-    assert (
-        isinstance(logger_error.call_args_list[0][0][1], agent_message.Message) is True
-    )
-    assert logger_error.call_args_list[0][0][1].selector == "v3.healthcheck.ping"
-    assert (
-        logger_error.call_args_list[0][0][1].data["body"] == "Hello, can you hear me?"
-    )
-    assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
-    assert "some error" in logger_error.call_args_list[1][0][1].args[0]
+    assert "Exception: %s" in logger_error.call_args_list[0][0][0]
+    assert isinstance(logger_error.call_args_list[0][0][1], ValueError) is True
+    assert "some error" in logger_error.call_args_list[0][0][1].args[0]
+    assert "Message of selector %s: %s" in logger_error.call_args_list[1][0][0]
+    assert logger_error.call_args_list[1][0][1] == "v3.healthcheck.ping"
+    assert "Hello, can you hear me?" in logger_error.call_args_list[1][0][2]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Does not run on windows")
