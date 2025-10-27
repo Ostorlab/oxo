@@ -226,6 +226,15 @@ def _install_agents_with_retry(
     runtime_instance.install()
     for ag in agent_group.agents:
         try:
+            if ag.version is None:
+                try:
+                    agent_details = agent_fetcher.get_details(ag.key)
+                    ag.version = agent_details["versions"]["versions"][0]["version"]
+                except agent_fetcher.AgentDetailsNotFound:
+                    logger.warning(
+                        "agent %s not found on the store, skipping version fetch",
+                        ag.key,
+                    )
             install_agent.install(ag.key, ag.version)
         except agent_fetcher.AgentDetailsNotFound:
             console.warning(f"agent {ag.key} not found on the store")
@@ -275,7 +284,9 @@ def _add_cli_args_to_agent_settings(
     """
     for agent_setting in agents_settings:
         try:
-            agent_definition = agent_fetcher.get_definition(agent_setting.key)
+            agent_definition = agent_fetcher.get_definition(
+                agent_key=agent_setting.key, version=agent_setting.version
+            )
         except agent_fetcher.AgentDetailsNotFound:
             console.error(f"Agent {agent_setting.key} not found.")
             raise click.exceptions.Exit(2)
