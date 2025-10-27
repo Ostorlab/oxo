@@ -231,7 +231,7 @@ def _install_agents_with_retry(
                     agent_details = agent_fetcher.get_details(ag.key)
                     ag.version = agent_details["versions"]["versions"][0]["version"]
                 except agent_fetcher.AgentDetailsNotFound:
-                    logger.debug(
+                    logger.warning(
                         "agent %s not found on the store, skipping version fetch",
                         ag.key,
                     )
