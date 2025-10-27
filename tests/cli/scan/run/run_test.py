@@ -832,7 +832,9 @@ agents:
     version: 0.4.0
 """
     )
-    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True)
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
     mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
@@ -857,9 +859,13 @@ agents:
     )
 
     assert mock_get_definition.called
-    calls = [call for call in mock_get_definition.call_args_list if call[1].get('agent_key') == 'agent/ostorlab/nmap']
+    calls = [
+        call
+        for call in mock_get_definition.call_args_list
+        if call[1].get("agent_key") == "agent/ostorlab/nmap"
+    ]
     assert len(calls) > 0
-    assert calls[0][1]['version'] == "0.4.0"
+    assert calls[0][1]["version"] == "0.4.0"
     assert result.exit_code == 0
 
 
@@ -876,7 +882,9 @@ agents:
   - key: agent/ostorlab/nmap
 """
     )
-    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True)
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
     mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
@@ -901,7 +909,11 @@ agents:
     )
 
     assert mock_get_definition.called
-    calls = [call for call in mock_get_definition.call_args_list if call[1].get('agent_key') == 'agent/ostorlab/nmap']
+    calls = [
+        call
+        for call in mock_get_definition.call_args_list
+        if call[1].get("agent_key") == "agent/ostorlab/nmap"
+    ]
     assert len(calls) > 0
-    assert calls[0][1]['version'] is None
+    assert calls[0][1]["version"] is None
     assert result.exit_code == 0
