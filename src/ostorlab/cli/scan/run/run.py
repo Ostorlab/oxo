@@ -227,9 +227,11 @@ def _install_agents_with_retry(
     for ag in agent_group.agents:
         try:
             if ag.version is None:
-                agent_details = agent_fetcher.get_details(ag.key)
-                ag.version = agent_details["versions"]["versions"][0]["version"]
-                logger.debug(f"Updated agent {ag.key} version to {ag.version} from API")
+                try:
+                    agent_details = agent_fetcher.get_details(ag.key)
+                    ag.version = agent_details["versions"]["versions"][0]["version"]
+                except agent_fetcher.AgentDetailsNotFound:
+                    logger.debug("agent %s not found on the store, skipping version fetch", ag.key)
             install_agent.install(ag.key, ag.version)
         except agent_fetcher.AgentDetailsNotFound:
             console.warning(f"agent {ag.key} not found on the store")

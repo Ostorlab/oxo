@@ -817,45 +817,91 @@ def testScanRunLink_whenNoAsset_DoesNotCrash(mocker: plugin.MockerFixture) -> No
     assert result.exit_code == 1
 
 
-def testAddCliArgsToAgentSettings_whenVersionProvided_passesVersionToGetDefinition(
-    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition
+def testRunScan_whenAgentVersionProvidedWithCliArgs_usesSpecificVersion(
+    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition, tmp_path
 ) -> None:
-    """Test that _add_cli_args_to_agent_settings passes agent version to get_definition."""
-    agent_settings = [
-        runtime_definitions.AgentSettings(key="agent/ostorlab/nmap", version="0.4.0")
-    ]
-    cli_args = [types.AgentArg(name="fast_mode", value="true")]
+    """Test that scan run with --arg uses the specific agent version from YAML."""
+    # Create agent group YAML with specific version
+    agent_group_yaml = tmp_path / "agent_group.yaml"
+    agent_group_yaml.write_text(
+        """
+kind: AgentGroup
+description: Test agent group
+agents:
+  - key: agent/ostorlab/nmap
+    version: 0.4.0
+"""
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True)
+    mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
     mock_get_definition = mocker.patch(
         "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
     )
 
-    result = run._add_cli_args_to_agent_settings(agent_settings, cli_args)
-
-    mock_get_definition.assert_called_once_with(
-        agent_key="agent/ostorlab/nmap", version="0.4.0"
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--arg",
+            "fast_mode:true",
+            "ip",
+            "8.8.8.8",
+        ],
     )
-    assert len(result) == 1
-    assert result[0].key == "agent/ostorlab/nmap"
-    assert result[0].version == "0.4.0"
+
+    assert mock_get_definition.called
+    calls = [call for call in mock_get_definition.call_args_list if call[1].get('agent_key') == 'agent/ostorlab/nmap']
+    assert len(calls) > 0
+    assert calls[0][1]['version'] == "0.4.0"
+    assert result.exit_code == 0
 
 
-def testAddCliArgsToAgentSettings_whenVersionIsNone_passesNoneToGetDefinition(
-    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition
+def testRunScan_whenNoVersionProvidedWithCliArgs_passesNoneToGetDefinition(
+    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition, tmp_path
 ) -> None:
-    """Test that _add_cli_args_to_agent_settings handles None version correctly."""
-    agent_settings = [
-        runtime_definitions.AgentSettings(key="agent/ostorlab/nmap", version=None)
-    ]
-    cli_args = [types.AgentArg(name="fast_mode", value="true")]
+    """Test that scan run with --arg passes None version when not specified in YAML."""
+    agent_group_yaml = tmp_path / "agent_group.yaml"
+    agent_group_yaml.write_text(
+        """
+kind: AgentGroup
+description: Test agent group
+agents:
+  - key: agent/ostorlab/nmap
+"""
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True)
+    mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
     mock_get_definition = mocker.patch(
         "ostorlab.cli.agent_fetcher.get_definition", return_value=nmap_agent_def
     )
 
-    result = run._add_cli_args_to_agent_settings(agent_settings, cli_args)
-
-    mock_get_definition.assert_called_once_with(
-        agent_key="agent/ostorlab/nmap", version=None
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--arg",
+            "fast_mode:true",
+            "ip",
+            "8.8.8.8",
+        ],
     )
-    assert len(result) == 1
-    assert result[0].key == "agent/ostorlab/nmap"
-    assert result[0].version is None
+
+    assert mock_get_definition.called
+    calls = [call for call in mock_get_definition.call_args_list if call[1].get('agent_key') == 'agent/ostorlab/nmap']
+    assert len(calls) > 0
+    assert calls[0][1]['version'] is None
+    assert result.exit_code == 0
