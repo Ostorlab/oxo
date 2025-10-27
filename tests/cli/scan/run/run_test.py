@@ -13,8 +13,6 @@ from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.cli import types
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
@@ -835,7 +833,7 @@ agents:
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
     mock_get_definition = mocker.patch(
@@ -885,7 +883,7 @@ agents:
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
-    mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
     mock_get_definition = mocker.patch(

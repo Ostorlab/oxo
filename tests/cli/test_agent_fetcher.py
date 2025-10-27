@@ -24,7 +24,6 @@ def testGetContainerImage_whenVersionNotFound_shouldReturnNone() -> None:
     with mock.patch("ostorlab.cli.agent_fetcher.docker.from_env") as mock_docker:
         mock_client = mock.Mock()
         mock_docker.return_value = mock_client
-
         mock_img = mock.Mock()
         mock_img.tags = ["agent_ostorlab_nmap:v0.2.0"]
         mock_client.images.list.return_value = [mock_img]
@@ -58,11 +57,9 @@ def testGetDefinition_whenVersionParameterProvided_shouldCallGetContainerImageWi
     with mock.patch("ostorlab.cli.agent_fetcher.docker.from_env") as mock_docker:
         mock_client = mock.Mock()
         mock_docker.return_value = mock_client
-
         mock_docker_image = mock.Mock()
         mock_docker_image.labels.get.return_value = "kind: Agent\nname: nmap"
         mock_client.images.get.return_value = mock_docker_image
-
         with mock.patch(
             "ostorlab.agent.definitions.AgentDefinition.from_yaml"
         ) as mock_from_yaml:
@@ -89,11 +86,9 @@ def testGetDefinition_whenNoVersionProvided_shouldCallGetContainerImageWithNone(
     with mock.patch("ostorlab.cli.agent_fetcher.docker.from_env") as mock_docker:
         mock_client = mock.Mock()
         mock_docker.return_value = mock_client
-
         mock_docker_image = mock.Mock()
         mock_docker_image.labels.get.return_value = "kind: Agent\nname: nmap"
         mock_client.images.get.return_value = mock_docker_image
-
         with mock.patch(
             "ostorlab.agent.definitions.AgentDefinition.from_yaml"
         ) as mock_from_yaml:
