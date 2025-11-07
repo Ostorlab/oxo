@@ -9,7 +9,7 @@ from docker import errors
 
 from ostorlab import exceptions
 
-_SUPPORTED_ARCH_TYPES = ["x86_64", "AMD64", "arm64"]
+_SUPPORTED_ARCH_TYPES = ["x86_64", "AMD64", "arm64", "aarch64"]
 RETRY_ATTEMPTS = 10
 WAIT_TIME = 2
 
