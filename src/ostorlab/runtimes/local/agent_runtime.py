@@ -10,6 +10,7 @@ import hashlib
 import io
 import logging
 import random
+import re
 import uuid
 from typing import List, Optional
 
@@ -39,6 +40,39 @@ HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = 30 * SECOND
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
+
+
+def _sanitize_service_name(name: str) -> str:
+    """Sanitize a name to be valid as a DNS name component.
+    
+    Docker service names must be valid DNS names:
+    - Only lowercase letters, numbers, and hyphens
+    - Must start and end with alphanumeric characters
+    - No consecutive hyphens
+    
+    Args:
+        name: The name to sanitize
+        
+    Returns:
+        A DNS-compliant service name
+    """
+    # Convert to lowercase
+    name = name.lower()
+    # Replace slashes, underscores, and dots with hyphens
+    name = re.sub(r'[/_.]+', '-', name)
+    # Remove any characters that aren't alphanumeric or hyphens
+    name = re.sub(r'[^a-z0-9-]', '', name)
+    # Remove consecutive hyphens
+    name = re.sub(r'-+', '-', name)
+    # Remove leading/trailing hyphens
+    name = name.strip('-')
+    # Ensure it starts with alphanumeric (add 'a' if empty or starts with number)
+    if not name or name[0].isdigit():
+        name = 'a' + name
+    # Truncate if too long (leave room for suffix)
+    if len(name) > MAX_SERVICE_NAME_LEN - 10:
+        name = name[:MAX_SERVICE_NAME_LEN - 10]
+    return name
 
 
 class Error(exceptions.OstorlabError):
@@ -350,16 +384,16 @@ class AgentRuntime:
                 )
             service_name = agent_definition.service_name
         else:
-            service_name = (
-                self.agent.container_image.split(":")[0].replace(".", "")
-                + "_"
-                + self.runtime_name
-            )
+            # Extract image name (without tag) and sanitize for DNS compliance
+            image_name = self.agent.container_image.split(":")[0]
+            sanitized_image = _sanitize_service_name(image_name)
+            sanitized_runtime = _sanitize_service_name(self.runtime_name)
+            service_name = f"{sanitized_image}-{sanitized_runtime}"
 
             # We apply the random str only if it will not break the max docker service name characters (63)
             # This is to handle the same agent declared multiple times
             if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
-                service_name = service_name + "_" + str(random.randrange(0, 9999))
+                service_name = service_name + "-" + str(random.randrange(0, 9999))
 
         env = [
             f"UNIVERSE={self.runtime_name}",

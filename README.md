@@ -102,6 +102,85 @@ OXO supports scanning of multiple asset types, below is the list of currently su
 | ios-ipa     | Run scan for iOS .IPA file.                                                        |
 | domain-name | Run scan for Domain Name asset with specifying protocol or port.                   |
 
+# Custom Docker Images
+
+OXO supports using custom Docker images for agents instead of only using images from the OXO store. This allows you to use your own Docker images from Docker Hub, private registries, or any other container registry.
+
+## Configuration
+
+Add the `image` field to your agent group definition YAML file:
+
+```yaml
+kind: AgentGroup
+name: my-custom-scan
+description: "Scan using custom Docker images"
+
+agents:
+  - key: agent/local/govulncheck
+    image: ysaad/govulncheck-agent:v0.1.0
+  - key: agent/local/osv
+    image: ysaad/osv-agent:v0.8.1
+```
+
+## Supported Image Formats
+
+- **Standard tag format**: `registry/image:tag` (e.g., `docker.io/ysaad/agent:v1.0.0`)
+- **Digest format** (recommended): `registry/image@sha256:digest`
+- **Docker Hub**: `image:tag` (docker.io is implied)
+
+## Usage
+
+Run your scan with the agent group definition:
+
+```shell
+oxo scan run -g my-agent-group.yaml --install ip 8.8.8.8
+```
+
+The `--install` flag will automatically pull custom Docker images if they're not present locally.
+
+## Behavior
+
+When `image` is specified:
+- OXO skips the store lookup for that agent
+- Checks if the image exists locally
+- Pulls from registry if not found
+- Uses the custom image for the agent container
+
+When `image` is not specified:
+- OXO uses the default behavior (store lookup)
+
+## Mixed Mode
+
+You can mix store agents and custom image agents in the same group:
+
+```yaml
+agents:
+  # Store agent
+  - key: agent/ostorlab/nmap
+    version: "1.0.0"
+  
+  # Custom image agent
+  - key: agent/local/custom-scanner
+    image: myregistry/scanner:v1.0.0
+```
+
+## Private Registries
+
+For private registries requiring authentication:
+
+```bash
+docker login myregistry.company.com
+```
+
+Docker credentials will be used automatically when pulling images.
+
+## Security Considerations
+
+- Use image digests for reproducible builds
+- Verify images from trusted registries
+- Use private registries for production environments
+- Regularly scan custom images for vulnerabilities
+
 # The Store
 
 OXO lists all agents on a public store where you can search and also publish your own agents.

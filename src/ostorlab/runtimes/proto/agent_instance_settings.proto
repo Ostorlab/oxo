@@ -23,6 +23,8 @@ message AgentInstanceSettings {
   // the agent.
   // Agent Key in the form of agent/<org_name>/<agent_name>.
   optional string key = 1;
+  // Custom Docker image to use instead of the OXO store image.
+  optional string custom_image = 22;
   // Bus settings to exchange message. These are specific to RabbitMQ.
   optional string bus_url = 2;
   optional string bus_exchange_topic = 3;

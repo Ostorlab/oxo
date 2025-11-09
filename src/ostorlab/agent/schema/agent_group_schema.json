@@ -109,6 +109,11 @@
             "description": "[Optional] - Version of the agent, can either be an exact version like 1.2.3 or a regular expression to match against a version range like 1\\..*.",
             "type": "string"
           },
+          "image": {
+            "description": "[Optional] - Custom Docker image to use instead of the OXO store image. Format: registry/image:tag or registry/image@digest. If specified, this takes precedence over the store lookup.",
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._/-]*[a-zA-Z0-9](:[a-zA-Z0-9._-]+|@sha256:[a-fA-F0-9]{64})?$"
+          },
           "replicas": {
             "description": "[Optional] - Count of replicas of the agent instances, default value is 1.",
             "type": "number",
