@@ -86,7 +86,6 @@ class LogStream:
         """Wait for all streams to finish."""
         # The logs generator returned by the docker sdk does not return when the service is removed.
         # So we need to loop and poll each service to stop the stream manually. Thank you Docker.
-        console.info("Waiting for log streams..")
         while len(self._log_streams) > 0:
             for service_id, log_stream in list(self._log_streams.items()):
                 if self._service_exist(service_id) is False:
