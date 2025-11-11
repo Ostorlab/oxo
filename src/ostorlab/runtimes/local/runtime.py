@@ -114,11 +114,12 @@ class LocalRuntime(runtime.Runtime):
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._redis_service: Optional[redis.LocalRedis] = None
         self._jaeger_service: Optional[jaeger.LocalJaeger] = None
-        self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
         self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
+        self._log_streamer: log_streamer.LogStream | None = None
+        self._docker_client: docker.DockerClient | None = None
 
     @property
     def name(self) -> str:
@@ -203,6 +204,7 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             The scan object.
         """
+        self._log_streamer = log_streamer.LogStream(self._docker_client)
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title, assets=assets)
@@ -261,10 +263,7 @@ class LocalRuntime(runtime.Runtime):
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
-        scan_complete_thread = threading.Thread(
-            target=self._log_streamer.wait, daemon=False
-        )
-        scan_complete_thread.start()
+        threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).

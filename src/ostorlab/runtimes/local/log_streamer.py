@@ -1,11 +1,16 @@
 """Stream logs of a service from a thread."""
 
+import logging
 import threading
+import time
 
+import docker.errors
 from docker.models import services as docker_service
 
 from ostorlab.cli import console as cli_console
 
+
+logger = logging.Logger(__name__)
 console = cli_console.Console()
 
 COLOR_POOL = [
@@ -38,7 +43,7 @@ class _ServiceLogStream:
 
     def start(self) -> None:
         """Starts the service log stream, in the background."""
-        self._thread = threading.Thread(target=self._stream)
+        self._thread = threading.Thread(target=self._stream, daemon=True)
         self._thread.start()
 
     def _stream(self) -> None:
@@ -54,24 +59,15 @@ class _ServiceLogStream:
         if self._thread is None:
             raise RuntimeError("Logging stream is not started.")
         self._stop_event.set()
-        self._thread.join()
-
-    def wait(self) -> None:
-        """
-        Wait for the stream to finish.
-        Blocks until either the stream is exhausted or is stopped.
-        """
-        if self._thread is None:
-            raise RuntimeError("Logging stream is not started.")
-        self._thread.join()
 
 
 class LogStream:
     """Docker service log streamer."""
 
-    def __init__(self) -> None:
+    def __init__(self, docker_client: docker.DockerClient) -> None:
         self._color_map: dict[str, str] = {}
         self._log_streams: dict[str, _ServiceLogStream] = {}
+        self._docker_client = docker_client
 
     def stream(self, service: docker_service.Service) -> None:
         """
@@ -81,25 +77,26 @@ class LogStream:
             service: Docker service.
         """
         color = self._select_color(service)
-        name = service.name
+        service_id = service.id
 
-        if name in self._log_streams:
+        if service_id in self._log_streams:
             return
 
         log_streamer = _ServiceLogStream(service, color=color)
-        self._log_streams[service.name] = log_streamer
+        self._log_streams[service_id] = log_streamer
         log_streamer.start()
 
     def wait(self) -> None:
         """Wait for all streams to finish."""
-        for stream in self._log_streams.values():
-            stream.wait()
-
-    def stop(self) -> None:
-        """Stop the logs streams."""
-        for stream in self._log_streams.values():
-            stream.stop()
-            stream.wait()
+        # The logs generator returned by the docker sdk does not return when the service is removed.
+        # So we need to loop and poll each service to stop the stream manually. Thank you Docker.
+        console.info("Waiting for log streams..")
+        while len(self._log_streams) > 0:
+            for service_id, log_stream in list(self._log_streams.items()):
+                if self._service_exist(service_id) is False:
+                    log_stream.stop()
+                    del self._log_streams[service_id]
+            time.sleep(1)
 
     def _select_color(self, service):
         """Select color for console output of service."""
@@ -110,3 +107,11 @@ class LogStream:
             color = COLOR_POOL.pop()
             COLOR_POOL.insert(0, color)
         return color
+
+    def _service_exist(self, service_id) -> bool:
+        try:
+            service = self._docker_client.services.get(service_id)
+            logger.info(service)
+            return True
+        except docker.errors.NotFound:
+            return False
