@@ -1,9 +1,8 @@
 """Stream logs of a service from a thread."""
 
 import threading
-from typing import Generator
 
-import docker.models.services
+from docker.models import services as docker_service
 
 from ostorlab.cli import console as cli_console
 
@@ -26,38 +25,81 @@ COLOR_POOL = [
 ]
 
 
-def _stream_log(
-    log_generator: Generator[bytes, None, None], name: str, color: str
-) -> None:
-    """Collect log from log generator and format them using the console API."""
-    for line in log_generator:
-        console.info(f"[{color} bold]{name}:[/] {line[:-1].decode()}")
+class _ServiceLogStream:
+    """Stream logs from a specific docker service."""
+
+    def __init__(
+        self, service: docker_service.Service, color: str | None = None
+    ) -> None:
+        self._service: docker_service.Service = service
+        self._color: str = color
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        """Starts the service log stream, in the background."""
+        self._thread = threading.Thread(target=self._stream)
+        self._thread.start()
+
+    def _stream(self) -> None:
+        logs = self._service.logs(details=False, follow=True, stdout=True, stderr=True)
+        name = self._service.name
+        for line in logs:
+            if self._stop_event.is_set():
+                break
+            console.info(f"[{self._color} bold]{name}:[/] {line[:-1].decode()}")
+
+    def stop(self) -> None:
+        """Stop the log stream."""
+        if self._thread is None:
+            raise RuntimeError("Logging stream is not started.")
+        self._stop_event.set()
+        self._thread.join()
+
+    def wait(self) -> None:
+        """
+        Wait for the stream to finish.
+        Blocks until either the stream is exhausted or is stopped.
+        """
+        if self._thread is None:
+            raise RuntimeError("Logging stream is not started.")
+        self._thread.join()
 
 
 class LogStream:
     """Docker service log streamer."""
 
-    def __init__(self):
-        self._threads = []
-        self._color_map = {}
-        self.services = []
+    def __init__(self) -> None:
+        self._color_map: dict[str, str] = {}
+        self._log_streams: dict[str, _ServiceLogStream] = {}
 
-    def stream(self, service: docker.models.services.Service) -> None:
-        """Stream logs of a service without blocking.
-
-        Implementation spawns a dedicated daemon thread.
+    def stream(self, service: docker_service.Service) -> None:
+        """
+        Stream logs of a service without blocking.
 
         Args:
             service: Docker service.
         """
         color = self._select_color(service)
-        logs = service.logs(details=False, follow=True, stdout=True, stderr=True)
-        self.services.append(service.id)
-        t = threading.Thread(
-            target=_stream_log, args=(logs, service.name, color), daemon=True
-        )
-        self._threads.append(t)
-        t.start()
+        name = service.name
+
+        if name in self._log_streams:
+            return
+
+        log_streamer = _ServiceLogStream(service, color=color)
+        self._log_streams[service.name] = log_streamer
+        log_streamer.start()
+
+    def wait(self) -> None:
+        """Wait for all streams to finish."""
+        for stream in self._log_streams.values():
+            stream.wait()
+
+    def stop(self) -> None:
+        """Stop the logs streams."""
+        for stream in self._log_streams.values():
+            stream.stop()
+            stream.wait()
 
     def _select_color(self, service):
         """Select color for console output of service."""

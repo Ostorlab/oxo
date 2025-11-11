@@ -235,10 +235,9 @@ class LocalRuntime(runtime.Runtime):
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
-            scan_complete_thread = threading.Thread(
-                target=self._check_services_running, daemon=False
-            )
-            scan_complete_thread.start()
+
+            self._wait_log_streamer()
+
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
@@ -261,22 +260,12 @@ class LocalRuntime(runtime.Runtime):
             self.stop(str(self._scan_db.id))
             raise MissingAgentDefinition(message)
 
-    def _check_services_running(self) -> None:
-        """Check if the services are still running."""
-        if len(self.follow) == 0:
-            return
-
-        stop_event = threading.Event()
-        while stop_event.is_set() is False:
-            for service_id in list(self._log_streamer.services):
-                try:
-                    self._docker_client.services.get(service_id)
-                except docker_errors.NotFound:
-                    self._log_streamer.services.remove(service_id)
-            if len(self._log_streamer.services) == 0:
-                console.success("Scan done.")
-                stop_event.set()
-        sys.exit(0)
+    def _wait_log_streamer(self) -> None:
+        """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
+        scan_complete_thread = threading.Thread(
+            target=self._log_streamer.wait, daemon=False
+        )
+        scan_complete_thread.start()
 
     def stop(self, scan_id: str) -> None:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
