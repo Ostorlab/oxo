@@ -33,9 +33,7 @@ COLOR_POOL = [
 class _ServiceLogStream:
     """Stream logs from a specific docker service."""
 
-    def __init__(
-        self, service: docker_service.Service, color: str | None = None
-    ) -> None:
+    def __init__(self, service: docker_service.Service, color: str) -> None:
         self._service: docker_service.Service = service
         self._color: str = color
         self._stop_event = threading.Event()

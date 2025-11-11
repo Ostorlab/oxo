@@ -118,8 +118,8 @@ class LocalRuntime(runtime.Runtime):
         self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
-        self._log_streamer: log_streamer.LogStream | None = None
-        self._docker_client: docker.DockerClient | None = None
+        self._log_streamer: Optional[log_streamer.LogStream] = None
+        self._docker_client: Optional[docker.DockerClient] = None
 
     @property
     def name(self) -> str:
