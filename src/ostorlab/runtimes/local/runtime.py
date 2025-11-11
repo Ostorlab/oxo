@@ -5,7 +5,6 @@ a local RabbitMQ.
 """
 
 import logging
-import sys
 import threading
 from concurrent import futures
 from typing import Dict, List
