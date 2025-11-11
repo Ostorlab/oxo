@@ -55,6 +55,9 @@ class _ServiceLogStream:
         if self._thread is None:
             raise RuntimeError("Logging stream is not started.")
         self._stop_event.set()
+        # thread may check the stop event late when the thread calling LogStream.wait has already exited
+        # so we join the thread with a timeout.
+        self._thread.join(timeout=1)
 
 
 class LogStream:
