@@ -1,6 +1,5 @@
 """Stream logs of a service from a thread."""
 
-import logging
 import threading
 import time
 
@@ -10,7 +9,6 @@ from docker.models import services as docker_service
 from ostorlab.cli import console as cli_console
 
 
-logger = logging.Logger(__name__)
 console = cli_console.Console()
 
 COLOR_POOL = [
@@ -108,8 +106,7 @@ class LogStream:
 
     def _service_exist(self, service_id) -> bool:
         try:
-            service = self._docker_client.services.get(service_id)
-            logger.info(service)
+            self._docker_client.services.get(service_id)
             return True
         except docker.errors.NotFound:
             return False
