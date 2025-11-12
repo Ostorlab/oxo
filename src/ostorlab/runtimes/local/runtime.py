@@ -296,10 +296,8 @@ class LocalRuntime(runtime.Runtime):
         services = self._docker_client.services.list()
         for service in services:
             service_labels = service.attrs["Spec"]["Labels"]
-            logger.info(
-                "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
-            )
             if service_labels.get("ostorlab.universe") == scan_id:
+                logger.info("Removing service: %s", service.name)
                 stopped_services.append(service)
                 service.remove()
 
