@@ -278,12 +278,13 @@ class LocalRuntime(runtime.Runtime):
                 stop_event.set()
         sys.exit(0)
 
-    def stop(self, scan_id: str) -> None:
+    def stop(self, scan_id: int) -> None:
         """Remove a service belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop.
         """
+        scan_id_str = str(scan_id)
         logger.info("stopping scan id %s", scan_id)
         stopped_services = []
         stopped_network = []
@@ -292,7 +293,7 @@ class LocalRuntime(runtime.Runtime):
         services = self._docker_client.services.list()
         for service in services:
             service_labels = service.attrs["Spec"]["Labels"]
-            if service_labels.get("ostorlab.universe") == scan_id:
+            if service_labels.get("ostorlab.universe") == scan_id_str:
                 logger.info("Removing service: %s", service.name)
                 stopped_services.append(service)
                 service.remove()
@@ -304,7 +305,7 @@ class LocalRuntime(runtime.Runtime):
                 logger.debug("Skipping network with no labels")
                 continue
             if isinstance(network_labels, dict):
-                if network_labels.get("ostorlab.universe") == scan_id:
+                if network_labels.get("ostorlab.universe") == scan_id_str:
                     logger.info("removing network %s", network_labels)
                     stopped_network.append(network)
                     network.remove()
@@ -312,7 +313,7 @@ class LocalRuntime(runtime.Runtime):
         configs = self._docker_client.configs.list()
         for config in configs:
             config_labels = config.attrs["Spec"]["Labels"]
-            if config_labels.get("ostorlab.universe") == scan_id:
+            if config_labels.get("ostorlab.universe") == scan_id_str:
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
                 config.remove()
@@ -321,7 +322,7 @@ class LocalRuntime(runtime.Runtime):
             console.success("All scan components stopped.")
 
         with models.Database() as session:
-            scan = session.query(models.Scan).get(int(scan_id))
+            scan = session.query(models.Scan).get(scan_id)
             if scan is not None:
                 scan.progress = "STOPPED"
                 session.commit()
