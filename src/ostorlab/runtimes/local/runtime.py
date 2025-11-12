@@ -279,16 +279,14 @@ class LocalRuntime(runtime.Runtime):
         sys.exit(0)
 
     def stop(self, scan_id: str) -> None:
-        """Remove a service (scan) belonging to universe with scan_id(Universe Id).
+        """Remove a service belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop.
         """
-        try:
-            int_scan_id = int(scan_id)
-        except ValueError as e:
+        if str.isdigit(scan_id) is False:
             console.error("Scan id must be an integer.")
-            raise click.exceptions.Exit(2) from e
+            raise click.exceptions.Exit(2)
 
         logger.info("stopping scan id %s", scan_id)
         stopped_services = []
@@ -301,9 +299,7 @@ class LocalRuntime(runtime.Runtime):
             logger.info(
                 "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
             )
-            if service_labels.get("ostorlab.universe") is not None and int(
-                service_labels.get("ostorlab.universe")
-            ) == int(scan_id):
+            if service_labels.get("ostorlab.universe") == scan_id:
                 stopped_services.append(service)
                 service.remove()
 
@@ -314,8 +310,7 @@ class LocalRuntime(runtime.Runtime):
                 logger.debug("Skipping network with no labels")
                 continue
             if isinstance(network_labels, dict):
-                universe = network_labels.get("ostorlab.universe")
-                if universe is not None and int(universe) == scan_id:
+                if network_labels.get("ostorlab.universe") == scan_id:
                     logger.info("removing network %s", network_labels)
                     stopped_network.append(network)
                     network.remove()
@@ -323,10 +318,7 @@ class LocalRuntime(runtime.Runtime):
         configs = self._docker_client.configs.list()
         for config in configs:
             config_labels = config.attrs["Spec"]["Labels"]
-            if (
-                config_labels.get("ostorlab.universe") is not None
-                and config_labels.get("ostorlab.universe") == scan_id
-            ):
+            if config_labels.get("ostorlab.universe") == scan_id:
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
                 config.remove()
@@ -335,8 +327,8 @@ class LocalRuntime(runtime.Runtime):
             console.success("All scan components stopped.")
 
         with models.Database() as session:
-            scan = session.query(models.Scan).get(int_scan_id)
-            if scan:
+            scan = session.query(models.Scan).get(int(scan_id))
+            if scan is not None:
                 scan.progress = "STOPPED"
                 session.commit()
                 console.success("Scan stopped successfully.")
