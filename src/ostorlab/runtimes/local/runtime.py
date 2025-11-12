@@ -284,10 +284,6 @@ class LocalRuntime(runtime.Runtime):
         Args:
             scan_id: The id of the scan to stop.
         """
-        if str.isdigit(scan_id) is False:
-            console.error("Scan id must be an integer.")
-            raise click.exceptions.Exit(2)
-
         logger.info("stopping scan id %s", scan_id)
         stopped_services = []
         stopped_network = []
