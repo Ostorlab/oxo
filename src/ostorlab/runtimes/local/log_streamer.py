@@ -53,7 +53,7 @@ class _ServiceLogStream:
     def stop(self) -> None:
         """Stop the log stream."""
         if self._thread is None:
-            raise RuntimeError("Logging stream is not started.")
+            return
         self._stop_event.set()
         # thread may check the stop event late when the thread calling LogStream.wait has already exited
         # so we join the thread with a timeout.
@@ -91,7 +91,7 @@ class LogStream:
         # So we need to loop and poll each service to stop the stream manually. Thank you Docker.
         while len(self._log_streams) > 0:
             for service_id, log_stream in list(self._log_streams.items()):
-                if self._service_exist(service_id) is False:
+                if self._service_exists(service_id) is False:
                     log_stream.stop()
                     del self._log_streams[service_id]
             time.sleep(1)
@@ -106,7 +106,7 @@ class LogStream:
             COLOR_POOL.insert(0, color)
         return color
 
-    def _service_exist(self, service_id) -> bool:
+    def _service_exists(self, service_id) -> bool:
         try:
             self._docker_client.services.get(service_id)
             return True

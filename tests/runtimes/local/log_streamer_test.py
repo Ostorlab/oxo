@@ -88,15 +88,6 @@ def testLogStreamWait_whenServiceIsRemoved_stopsTheStream(
     assert "service_id" not in streamer._log_streams
 
 
-def testServiceLogStreamStop_whenNotStarted_raisesRuntimeError(
-    service_mock: mock.MagicMock,
-) -> None:
-    """Test that stop raises a RuntimeError if the stream is not started."""
-    stream = log_streamer._ServiceLogStream(service_mock, color="red")
-    with pytest.raises(RuntimeError, match="Logging stream is not started."):
-        stream.stop()
-
-
 def testServiceLogStreamStop_whenCalled_setsStopEvent(
     mocker: plugin.MockerFixture, service_mock: mock.MagicMock
 ) -> None:
