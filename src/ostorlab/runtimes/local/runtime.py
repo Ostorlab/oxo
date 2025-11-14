@@ -5,6 +5,7 @@ a local RabbitMQ.
 """
 
 import logging
+import sys
 import threading
 from concurrent import futures
 from typing import Dict, List
@@ -114,12 +115,11 @@ class LocalRuntime(runtime.Runtime):
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._redis_service: Optional[redis.LocalRedis] = None
         self._jaeger_service: Optional[jaeger.LocalJaeger] = None
+        self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
         self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
-        self._log_streamer: Optional[log_streamer.LogStream] = None
-        self._docker_client: Optional[docker.DockerClient] = None
 
     @property
     def name(self) -> str:
@@ -204,7 +204,6 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             The scan object.
         """
-        self._log_streamer = log_streamer.LogStream(self._docker_client)
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title, assets=assets)
@@ -236,9 +235,10 @@ class LocalRuntime(runtime.Runtime):
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
-
-            self._wait_log_streamer()
-
+            scan_complete_thread = threading.Thread(
+                target=self._check_services_running, daemon=False
+            )
+            scan_complete_thread.start()
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
@@ -261,9 +261,22 @@ class LocalRuntime(runtime.Runtime):
             self.stop(str(self._scan_db.id))
             raise MissingAgentDefinition(message)
 
-    def _wait_log_streamer(self) -> None:
-        """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
-        threading.Thread(target=self._log_streamer.wait, daemon=False).start()
+    def _check_services_running(self) -> None:
+        """Check if the services are still running."""
+        if len(self.follow) == 0:
+            return
+
+        stop_event = threading.Event()
+        while stop_event.is_set() is False:
+            for service_id in list(self._log_streamer.services):
+                try:
+                    self._docker_client.services.get(service_id)
+                except docker_errors.NotFound:
+                    self._log_streamer.services.remove(service_id)
+            if len(self._log_streamer.services) == 0:
+                console.success("Scan done.")
+                stop_event.set()
+        sys.exit(0)
 
     def stop(self, scan_id: int) -> None:
         """Remove a service belonging to universe with scan_id (Universe Id).
