@@ -8,6 +8,8 @@ import logging
 from typing import List, Optional
 
 import click
+import docker
+import docker.errors
 import httpx
 import tenacity
 from ruamel.yaml import error
@@ -213,6 +215,34 @@ def run(
         )
 
 
+def _validate_custom_image(image: str) -> None:
+    """Validate that a custom Docker image exists or can be pulled.
+    
+    Args:
+        image: Docker image name (e.g., registry/image:tag)
+        
+    Raises:
+        exceptions.OstorlabError: If image cannot be pulled from registry
+    """
+    docker_client = docker.from_env()
+    
+    # Check if image exists locally
+    try:
+        docker_client.images.get(image)
+        logger.info(f"Custom image {image} found locally")
+        return
+    except docker.errors.ImageNotFound:
+        logger.info(f"Custom image {image} not found locally, attempting to pull")
+    
+    # Try to pull the image
+    try:
+        console.info(f"Pulling custom image {image}...")
+        docker_client.images.pull(image)
+        console.success(f"Successfully pulled custom image {image}")
+    except docker.errors.APIError as e:
+        raise exceptions.OstorlabError(f"Failed to pull custom image {image}: {e}")
+
+
 @tenacity.retry(
     stop=tenacity.stop.stop_after_attempt(NUMBER_OF_RETRIES),
     wait=tenacity.wait.wait_fixed(WAIT_BETWEEN_RETRIES),
@@ -225,6 +255,24 @@ def _install_agents_with_retry(
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
     for ag in agent_group.agents:
+        # Check if custom image is specified
+        if ag.custom_image is not None:
+            logger.info(
+                "Using custom image %s for agent %s, skipping store installation",
+                ag.custom_image,
+                ag.key,
+            )
+            # Validate custom image exists or can be pulled
+            try:
+                _validate_custom_image(ag.custom_image)
+            except exceptions.OstorlabError as e:
+                console.error(
+                    f"Failed to validate custom image {ag.custom_image}: {e}"
+                )
+                raise
+            continue  # Skip store installation
+
+        # Store-based installation
         try:
             if ag.version is None:
                 try:

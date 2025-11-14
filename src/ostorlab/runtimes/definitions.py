@@ -45,6 +45,7 @@ class AgentSettings:
 
     key: str
     version: Optional[str] = None
+    custom_image: Optional[str] = None
     bus_url: Optional[str] = ""
     bus_exchange_topic: Optional[str] = ""
     bus_management_url: Optional[str] = ""
@@ -68,6 +69,10 @@ class AgentSettings:
 
     @property
     def container_image(self):
+        # Check for custom image first
+        if self.custom_image is not None:
+            return self.custom_image
+        # Fallback to store lookup
         return agent_fetcher.get_container_image(self.key, self.version)
 
     @classmethod
@@ -84,6 +89,7 @@ class AgentSettings:
         instance.ParseFromString(proto)
         return cls(
             key=instance.key,
+            custom_image=instance.custom_image if instance.HasField("custom_image") else None,
             bus_url=instance.bus_url,
             bus_exchange_topic=instance.bus_exchange_topic,
             bus_management_url=instance.bus_management_url,
@@ -122,6 +128,8 @@ class AgentSettings:
         """
         instance = agent_instance_settings_pb2.AgentInstanceSettings()
         instance.key = self.key
+        if self.custom_image is not None and hasattr(instance, 'custom_image'):
+            instance.custom_image = self.custom_image
         instance.bus_url = self.bus_url
         instance.bus_exchange_topic = self.bus_exchange_topic
         instance.bus_management_url = self.bus_management_url
@@ -205,6 +213,7 @@ class AgentGroupDefinition:
             agent_def = AgentSettings(
                 key=agent.get("key"),
                 version=agent.get("version"),
+                custom_image=agent.get("image"),
                 args=[
                     definitions.Arg(
                         name=a.get("name"),
@@ -265,6 +274,7 @@ class AgentGroupDefinition:
             agent_def = AgentSettings(
                 key=agent.key,
                 version=agent.version,
+                custom_image=agent.custom_image if hasattr(agent, 'custom_image') else None,
                 args=agent_args,
                 replicas=replicas,
                 caps=agent.caps,

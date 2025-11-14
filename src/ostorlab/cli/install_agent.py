@@ -127,3 +127,35 @@ def install(
         error_message = f"Image of the provided agent : {agent_key} was not found."
         console.error(error_message)
         raise click.exceptions.Exit(2) from e
+
+
+def install_custom_image(
+    image: str,
+    docker_client: Optional[docker.DockerClient] = None,
+) -> None:
+    """Install a custom Docker image.
+    
+    Args:
+        image: Docker image name (e.g., registry/image:tag or registry/image@digest)
+        docker_client: optional instance of the docker client to use.
+        
+    Raises:
+        click.exceptions.Exit: If image cannot be pulled
+    """
+    docker_client = docker_client or docker.from_env()
+    
+    # Check if image exists locally
+    if _is_image_present(docker_client, image):
+        console.info(f"Custom image {image} already exists locally.")
+        return
+    
+    # Pull the image
+    console.info(f"Pulling custom image {image}...")
+    try:
+        for log in _pull_logs(docker_client, image):
+            if "status" in log:
+                logger.debug(f"{log['status']}")
+        console.success(f"Custom image {image} installed successfully.")
+    except docker.errors.APIError as e:
+        console.error(f"Failed to pull custom image {image}: {e}")
+        raise click.exceptions.Exit(2)
