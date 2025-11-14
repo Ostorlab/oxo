@@ -1,5 +1,6 @@
 """Unittest for local runtime."""
 
+from time import sleep
 from typing import Any
 
 import docker
@@ -333,6 +334,37 @@ def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
     scans = local_runtime.LocalRuntime().list()
 
     assert scans is None
+
+
+def testCheckServicesMethod_whenServicesAreStopped_shouldExit(
+    mocker: plugin.MockerFixture, run_scan_mock: None
+) -> None:
+    """Unit test for Check services method when services are stopped"""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    mocker.patch("ostorlab.runtimes.local.agent_runtime.AgentRuntime")
+    mocker.patch("ostorlab.runtimes.local.services.mq.LocalRabbitMQ.is_service_healthy")
+    mocker.patch("ostorlab.runtimes.local.services.redis.LocalRedis.is_service_healthy")
+    exit_mock = mocker.patch("sys.exit")
+    local_runtime_instance = local_runtime.LocalRuntime()
+    local_runtime_instance.follow = ["service1"]
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
+    )
+
+    local_runtime_instance.scan(
+        title="test local",
+        agent_group_definition=agent_group_definition,
+        assets=[android_apk.AndroidApk(content=b"APK")],
+    )
+    sleep(1)
+
+    assert exit_mock.call_count == 1
+    exit_with = exit_mock.call_args_list[0][0][0]
+    assert exit_with == 0
 
 
 @pytest.mark.docker
