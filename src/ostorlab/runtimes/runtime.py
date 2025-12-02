@@ -26,6 +26,7 @@ class Runtime(abc.ABC):
     follow: list
     timeout: Optional[int] = None
     init_sleep: Optional[int] = None
+    has_tracker: bool = True
 
     @abc.abstractmethod
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:

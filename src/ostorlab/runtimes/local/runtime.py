@@ -494,6 +494,9 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
+        if self.has_tracker is False:
+            return
+
         tracker_agent_settings = definitions.AgentSettings(
             key=TRACKER_AGENT_DEFAULT,
         )
