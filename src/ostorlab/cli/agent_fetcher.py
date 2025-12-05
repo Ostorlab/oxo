@@ -112,7 +112,7 @@ def get_container_image(agent_key: str, version: Optional[str] = None) -> Option
             else:
                 t_name = ":".join(splitted_tag[:-1])
                 t_tag = splitted_tag[-1]
-            if t_name == image and version is None:
+            if t_name == image and version in [None, ""]:
                 try:
                     matching_tag_versions.append(version_definition.Version(t_tag[1:]))
                 except ValueError:
