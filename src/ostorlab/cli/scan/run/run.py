@@ -84,6 +84,13 @@ WAIT_BETWEEN_RETRIES = 5
     required=False,
 )
 @click.option(
+    "--no-tracker",
+    help="Start the scan without tracker in charge of handling scan completion tracking.",
+    is_flag=True,
+    default=False,
+    required=False,
+)
+@click.option(
     "--no-asset",
     help="Start the environment without injecting assets",
     is_flag=True,
@@ -113,6 +120,7 @@ def run(
     install: bool,
     follow: List[str],
     no_follow: bool,
+    no_tracker: bool,
     no_asset: bool,
     timeout: Optional[int] = None,
     init_sleep: Optional[int] = None,
@@ -161,6 +169,10 @@ def run(
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
+
+    if no_tracker is True:
+        runtime_instance.has_tracker = False
+
     if timeout is not None:
         runtime_instance.timeout = timeout
 

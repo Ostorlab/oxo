@@ -5,7 +5,6 @@ a local RabbitMQ.
 """
 
 import logging
-import sys
 import threading
 from concurrent import futures
 from typing import Dict, List
@@ -115,11 +114,12 @@ class LocalRuntime(runtime.Runtime):
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
         self._redis_service: Optional[redis.LocalRedis] = None
         self._jaeger_service: Optional[jaeger.LocalJaeger] = None
-        self._log_streamer = log_streamer.LogStream()
         self._scan_db: Optional[models.Scan] = None
         self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
+        self._log_streamer: Optional[log_streamer.LogStream] = None
+        self._docker_client: Optional[docker.DockerClient] = None
 
     @property
     def name(self) -> str:
@@ -204,6 +204,7 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             The scan object.
         """
+        self._log_streamer = log_streamer.LogStream(self._docker_client)
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title, assets=assets)
@@ -235,10 +236,9 @@ class LocalRuntime(runtime.Runtime):
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
-            scan_complete_thread = threading.Thread(
-                target=self._check_services_running, daemon=False
-            )
-            scan_complete_thread.start()
+
+            self._wait_log_streamer()
+
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
@@ -261,35 +261,17 @@ class LocalRuntime(runtime.Runtime):
             self.stop(str(self._scan_db.id))
             raise MissingAgentDefinition(message)
 
-    def _check_services_running(self) -> None:
-        """Check if the services are still running."""
-        if len(self.follow) == 0:
-            return
+    def _wait_log_streamer(self) -> None:
+        """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
+        threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-        stop_event = threading.Event()
-        while stop_event.is_set() is False:
-            for service_id in list(self._log_streamer.services):
-                try:
-                    self._docker_client.services.get(service_id)
-                except docker_errors.NotFound:
-                    self._log_streamer.services.remove(service_id)
-            if len(self._log_streamer.services) == 0:
-                console.success("Scan done.")
-                stop_event.set()
-        sys.exit(0)
-
-    def stop(self, scan_id: str) -> None:
-        """Remove a service (scan) belonging to universe with scan_id(Universe Id).
+    def stop(self, scan_id: int) -> None:
+        """Remove a service belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop.
         """
-        try:
-            int_scan_id = int(scan_id)
-        except ValueError as e:
-            console.error("Scan id must be an integer.")
-            raise click.exceptions.Exit(2) from e
-
+        scan_id_str = str(scan_id)
         logger.info("stopping scan id %s", scan_id)
         stopped_services = []
         stopped_network = []
@@ -298,12 +280,8 @@ class LocalRuntime(runtime.Runtime):
         services = self._docker_client.services.list()
         for service in services:
             service_labels = service.attrs["Spec"]["Labels"]
-            logger.info(
-                "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
-            )
-            if service_labels.get("ostorlab.universe") is not None and int(
-                service_labels.get("ostorlab.universe")
-            ) == int(scan_id):
+            if service_labels.get("ostorlab.universe") == scan_id_str:
+                logger.info("Removing service: %s", service.name)
                 stopped_services.append(service)
                 service.remove()
 
@@ -314,8 +292,7 @@ class LocalRuntime(runtime.Runtime):
                 logger.debug("Skipping network with no labels")
                 continue
             if isinstance(network_labels, dict):
-                universe = network_labels.get("ostorlab.universe")
-                if universe is not None and int(universe) == scan_id:
+                if network_labels.get("ostorlab.universe") == scan_id_str:
                     logger.info("removing network %s", network_labels)
                     stopped_network.append(network)
                     network.remove()
@@ -323,10 +300,7 @@ class LocalRuntime(runtime.Runtime):
         configs = self._docker_client.configs.list()
         for config in configs:
             config_labels = config.attrs["Spec"]["Labels"]
-            if (
-                config_labels.get("ostorlab.universe") is not None
-                and config_labels.get("ostorlab.universe") == scan_id
-            ):
+            if config_labels.get("ostorlab.universe") == scan_id_str:
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
                 config.remove()
@@ -335,8 +309,8 @@ class LocalRuntime(runtime.Runtime):
             console.success("All scan components stopped.")
 
         with models.Database() as session:
-            scan = session.query(models.Scan).get(int_scan_id)
-            if scan:
+            scan = session.query(models.Scan).get(scan_id)
+            if scan is not None:
                 scan.progress = "STOPPED"
                 session.commit()
                 console.success("Scan stopped successfully.")
@@ -520,6 +494,9 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
+        if self.has_tracker is False:
+            return
+
         tracker_agent_settings = definitions.AgentSettings(
             key=TRACKER_AGENT_DEFAULT,
         )
