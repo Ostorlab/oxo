@@ -26,8 +26,11 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.cloud_run import agent_runtime
 from ostorlab.runtimes.local.models.models import Database
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.cloud_run.services import mq
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
+
+NETWORK_PREFIX = "ostorlab_cloud_run_network"
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -114,6 +117,15 @@ class CloudRunRuntime(runtime.Runtime):
         """Runtime name."""
         return "cloud_run"
 
+    @property
+    def network(self) -> str:
+        """Local runtime network name.
+
+        Returns:
+            Local runtime network name.
+        """
+        return f"{NETWORK_PREFIX}_{self.name}"
+
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent group definition.
 
@@ -129,12 +141,16 @@ class CloudRunRuntime(runtime.Runtime):
         """
         # Check GCP configuration
         if not self._gcp_project_id or not self._gcp_region:
-            console.error("GCP project ID and region are required for Cloud Run runtime")
+            console.error(
+                "GCP project ID and region are required for Cloud Run runtime"
+            )
             return False
 
         # Check external services configuration
         if not self._bus_url or not self._redis_url:
-            console.error("External MQ and Redis URLs are required for Cloud Run runtime")
+            console.error(
+                "External MQ and Redis URLs are required for Cloud Run runtime"
+            )
             return False
 
         # Check agents have container images
@@ -164,7 +180,10 @@ class CloudRunRuntime(runtime.Runtime):
         with models.Database() as session:
             try:
                 # Create scan in database
-                scan = models.Scan.create(title=title, asset=assets[0].__class__.__name__ if assets else "unknown")
+                scan = models.Scan.create(
+                    title=title,
+                    asset=assets[0].__class__.__name__ if assets else "unknown",
+                )
                 console.info(f"Created scan with ID: {scan.id}")
 
                 # Start agent deployment
@@ -180,7 +199,16 @@ class CloudRunRuntime(runtime.Runtime):
                 console.error(f"Failed to create scan: {e}")
                 return None
 
-    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: int) -> None:
+    def _start_mq_service(self):
+        """Start a local rabbitmq service."""
+        self._mq_service = mq.CloudRunRabbitMQ(name=self.name, network=self.network)
+        self._mq_service.start()
+        if "mq" in self.follow:
+            self._log_streamer.stream(self._mq_service.service)
+
+    def _start_agents(
+        self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: int
+    ) -> None:
         """Deploy agents to Cloud Run.
 
         Args:
@@ -215,8 +243,7 @@ class CloudRunRuntime(runtime.Runtime):
 
                 # Submit deployment task
                 future = executor.submit(
-                    agent_runtime_instance.deploy_service,
-                    scan_id=scan_id
+                    agent_runtime_instance.deploy_service, scan_id=scan_id
                 )
                 future_to_agent[future] = agent
 
@@ -305,13 +332,16 @@ class CloudRunRuntime(runtime.Runtime):
                 .all()
             )
 
-            return [runtime.Scan(
-                id=str(scan.id),
-                created_time=scan.created_time.isoformat(),
-                progress=scan.progress.value if scan.progress else None,
-                asset=scan.asset,
-                risk_rating=scan.risk_rating.value if scan.risk_rating else None,
-            ) for scan in scans]
+            return [
+                runtime.Scan(
+                    id=str(scan.id),
+                    created_time=scan.created_time.isoformat(),
+                    progress=scan.progress.value if scan.progress else None,
+                    asset=scan.asset,
+                    risk_rating=scan.risk_rating.value if scan.risk_rating else None,
+                )
+                for scan in scans
+            ]
 
     def install(self) -> None:
         """Install necessary components for Cloud Run runtime."""
@@ -329,7 +359,9 @@ class CloudRunRuntime(runtime.Runtime):
             dumper: Vulnerability dumper instance.
         """
         with models.Database() as session:
-            vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).all()
+            vulnerabilities = (
+                session.query(models.Vulnerability).filter_by(scan_id=scan_id).all()
+            )
 
             for vulnerability in vulnerabilities:
                 dumper.dump_vulnerability(

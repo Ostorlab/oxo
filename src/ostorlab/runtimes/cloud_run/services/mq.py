@@ -20,21 +20,19 @@ MQ_IMAGE = "rabbitmq:3.9-management"
 MQ_ADVANCED_CONF_PATH = "/etc/rabbitmq/advanced.config"
 
 
-class LocalRabbitMQ:
+class CloudRunRabbitMQ:
     """RabbitMQ service spawned a docker swarm service."""
 
     def __init__(
         self,
         name: str,
         network: str,
-        exposed_ports: Dict[int, int] = None,
         image: str = MQ_IMAGE,
     ) -> None:
         """Initialize the MQ service parameters.
         Args:
             name: Name of the service.
             network: Network used for the Docker MQ service.
-            exposed_ports: The list of MQ service exposed ports
             image: MQ Docker image
         """
         self._uuid = uuid.uuid4()
@@ -47,7 +45,7 @@ class LocalRabbitMQ:
         # service
         self._mq_service = None
         # exposed_port
-        self._exposed_ports = {5672:5672}
+        self._exposed_ports = {5672: 5672}
 
     @property
     def url(self) -> str:
