@@ -5,6 +5,7 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
 from ostorlab.runtimes.cloud import runtime as cloud_runtime
+from ostorlab.runtimes.cloud_run import runtime as cloudrun_runtime
 
 
 class RuntimeNotFoundError(exceptions.OstorlabError):
@@ -28,5 +29,7 @@ def select_runtime(runtime_type: str, *args, **kwargs) -> runtime.Runtime:
         return lite_local_runtime.LiteLocalRuntime(*args, **kwargs)
     elif runtime_type == "cloud":
         return cloud_runtime.CloudRuntime(*args, **kwargs)
+    elif runtime_type == "cloud_run":
+        return cloudrun_runtime.CloudRunRuntime(*args, **kwargs)
     else:
         raise RuntimeNotFoundError(f"runtime type {runtime_type} not found")

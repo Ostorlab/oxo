@@ -12,13 +12,14 @@ from ostorlab.cli import input_validators
 @rootcli.group()
 @click.option(
     "--runtime",
-    type=click.Choice(["local", "litelocal", "cloud", "hybrid"]),
+    type=click.Choice(["local", "litelocal", "cloud", "hybrid", "cloud_run"]),
     help="""Runtime is in charge of preparing the environment to trigger a scan.\n
                     Specify which runtime to use: \n
                     local: on you local machine\n
                     litelocal: stripped down local runtime\n
                     cloud: on Ostorlab cloud, (requires login)\n
                     hybrid: running partially on Ostorlab cloud and partially on the local machine\n
+                    cloud_run: on Google Cloud Run with external MQ and Redis\n
                    """,
     default="local",
     required=True,
@@ -79,7 +80,21 @@ from ostorlab.cli import input_validators
     hidden=True,
     callback=input_validators.validate_port_binding_input,
 )
-@click.pass_context
+@click.option(
+    "--gcp-project-id",
+    help="GCP Project ID for Cloud Run runtime. This flag is restricted to cloud_run runtime.",
+    required=False,
+)
+@click.option(
+    "--gcp-region",
+    help="GCP Region for Cloud Run runtime. This flag is restricted to cloud_run runtime.",
+    required=False,
+)
+@click.option(
+    "--gcp-service-account",
+    help="GCP Service Account for Cloud Run services. This flag is restricted to cloud_run runtime.",
+    required=False,
+)
 def scan(
     ctx: click.core.Context,
     runtime: str,
@@ -93,6 +108,9 @@ def scan(
     tracing: bool = False,
     tracing_collector_url: Optional[str] = None,
     mq_exposed_ports: Optional[str] = None,
+    gcp_project_id: Optional[str] = None,
+    gcp_region: Optional[str] = None,
+    gcp_service_account: Optional[str] = None,
 ) -> None:
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n
@@ -121,6 +139,9 @@ def scan(
             tracing_collector_url=tracing_collector_url,
             mq_exposed_ports=mq_exposed_ports,
             gcp_logging_credential=ctx.obj.get("gcp_logging_credential"),
+            gcp_project_id=gcp_project_id,
+            gcp_region=gcp_region,
+            gcp_service_account=gcp_service_account,
         )
         ctx.obj["runtime"] = runtime_instance
     except registry.RuntimeNotFoundError as e:
