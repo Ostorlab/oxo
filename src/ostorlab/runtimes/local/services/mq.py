@@ -47,7 +47,7 @@ class LocalRabbitMQ:
         # service
         self._mq_service = None
         # exposed_port
-        self._exposed_ports = exposed_ports
+        self._exposed_ports = {5672:5672}
 
     @property
     def url(self) -> str:
