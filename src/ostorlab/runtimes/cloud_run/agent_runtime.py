@@ -286,7 +286,8 @@ class CloudRunAgentRuntime:
         env_vars = self._build_env(env_pairs)
 
         container = run_v2.Container()
-        container.image = self.agent.container_image
+        # TODO: Hack to make images work. Should be fixed.
+        container.image = f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
         container.command = ["/bin/sh"]
         container.args = ["-c", self._build_startup_script()]
         container.env = env_vars
