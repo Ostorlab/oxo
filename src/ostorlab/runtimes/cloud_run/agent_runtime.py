@@ -1,8 +1,8 @@
 """Cloud Run agent runtime implementation.
 
-Adapts lite_local AgentRuntime behavior to Google Cloud Run Jobs. It injects agent
-settings and definition as in-memory volumes and copies host mounts into Cloud Run
-empty_dir volumes before starting the agent.
+Adapts lite_local AgentRuntime behavior to Google Cloud Run Jobs. It stores agent
+settings, definition, and mounts in a per-job GCS bucket and restores them in the
+job container before starting the agent.
 """
 
 import base64
@@ -12,12 +12,13 @@ import os
 import random
 import tarfile
 import tempfile
+import uuid
 from typing import List, Optional, Tuple
 
 import docker
-from docker import errors as docker_errors
-from google.api_core import exceptions as gcp_exceptions
 from google.cloud import run_v2
+from google.cloud import storage
+from google.cloud.storage import Bucket
 
 from ostorlab import configuration_manager
 from ostorlab import exceptions
@@ -107,14 +108,6 @@ class CloudRunAgentRuntime:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(file)
         return agent_definition, yaml_definition_string
 
-    def replace_variable_mounts(self, mounts: List[str]) -> List[str]:
-        """Replace path variables for the container mounts."""
-        replaced_mounts = []
-        for mount in mounts:
-            for mount_variable, mount_value in MOUNT_VARIABLES.items():
-                mount = mount.replace(mount_variable, mount_value)
-            replaced_mounts.append(mount)
-        return replaced_mounts
 
     def _build_service_name(self, agent_definition: agent_definitions.AgentDefinition) -> str:
         if agent_definition.service_name is not None:
@@ -135,105 +128,65 @@ class CloudRunAgentRuntime:
         service_name = service_name.replace("_", "-")
         return service_name
 
-    def _serialize_settings(self) -> str:
-        agent_instance_settings_proto = self.agent.to_raw_proto()
-        return base64.b64encode(agent_instance_settings_proto).decode()
+    def _serialize_settings_bytes(self) -> bytes:
+        return self.agent.to_raw_proto()
 
-    def _serialize_definition(self, yaml_definition: str) -> str:
-        return base64.b64encode(yaml_definition.encode()).decode()
+    def _serialize_definition_bytes(self, yaml_definition: str) -> bytes:
+        return yaml_definition.encode()
 
-    def _parse_mount(self, mount: str) -> tuple[str, str, Optional[str]]:
-        parts = mount.split(":")
-        if len(parts) < 2:
-            raise docker_errors.InvalidArgument(f'invalid mount format "{mount}"')
-        source = parts[0]
-        target = parts[1]
-        mode = parts[2] if len(parts) >= 3 else None
-        return source, target, mode
+    def _storage_client(self) -> storage.Client:
+        return storage.Client.from_service_account_json(self._gcp_service_account)
 
-    def _encode_mount_payload(self, source: str) -> tuple[str, bool]:
-        if not os.path.exists(source):
-            raise FileNotFoundError(f"mount source {source} does not exist")
-        if os.path.isdir(source):
-            with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=True) as tmp:
-                with tarfile.open(tmp.name, "w:gz") as tar:
-                    tar.add(source, arcname=".")
-                tmp.seek(0)
-                data = tmp.read()
-            return base64.b64encode(data).decode(), True
-        with open(source, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode(), False
+    def _create_bucket(self, client: storage.Client, bucket_prefix: str) -> Bucket:
+        # Bucket names must be globally unique, 3-63 chars, lowercase, start with letter/number.
+        base = bucket_prefix.lower()
+        candidate = f"{base}-{uuid.uuid4().hex[:8]}"
+        bucket = client.create_bucket(candidate, location=self._gcp_region)
+        return bucket
 
-    def _build_mounts(self, mounts: List[str]):
-        volumes: List[run_v2.Volume] = []
-        volume_mounts: List[run_v2.VolumeMount] = []
+    def _upload_blob(self, bucket: Bucket, blob_name: str, data: bytes) -> None:
+        blob = bucket.blob(blob_name)
+        blob.upload_from_string(data)
+
+    def _prepare_artifacts(
+        self,
+        settings_bytes: bytes,
+        definition_bytes: bytes,
+    ) -> str:
+        client = self._storage_client()
+        bucket_prefix = f"ostorlab-{self._gcp_project_id}-{self.runtime_name}"[:50]
+        bucket = self._create_bucket(client, bucket_prefix)
+
+        settings_blob_name = "settings.binproto"
+        definition_blob_name = "ostorlab.yaml"
+
+        self._upload_blob(bucket, settings_blob_name, settings_bytes)
+        self._upload_blob(bucket, definition_blob_name, definition_bytes)
+
+        return bucket.name
+
+
+    def _build_gcs_bucket_volume(self, bucket_name: str) -> tuple[List[run_v2.Volume], List[run_v2.VolumeMount]]:
+        volume = run_v2.Volume(
+            name="gcs-bucket",
+            gcs=run_v2.GCSVolumeSource(bucket=bucket_name),
+        )
+        volume_mount = run_v2.VolumeMount(name="gcs-bucket", mount_path="/tmp")
+        return [volume], [volume_mount]
+
+    def _build_mount_envs(self, mounts: List[str]) -> List[tuple[str, str]]:
         mount_envs = []
-
         for idx, mount in enumerate(mounts):
-            source, target, _ = self._parse_mount(mount)
-            payload_b64, is_dir = self._encode_mount_payload(source)
-            volume_name = f"mount-{idx}"
-            volumes.append(
-                run_v2.Volume(
-                    name=volume_name,
-                    empty_dir=run_v2.EmptyDirVolumeSource(
-                        medium=run_v2.EmptyDirVolumeSource.Medium.MEMORY
-                    ),
-                )
-            )
-            mount_path = target if target.endswith("/") else os.path.dirname(target) or "/"
-            volume_mounts.append(
-                run_v2.VolumeMount(name=volume_name, mount_path=mount_path)
-            )
+            _, target, _ = self._parse_mount(mount)
             mount_envs.append((f"OSTORLAB_MOUNT_{idx}_DST", target))
-            mount_envs.append((f"OSTORLAB_MOUNT_{idx}_CONTENT_B64", payload_b64))
-            mount_envs.append((f"OSTORLAB_MOUNT_{idx}_IS_DIR", "1" if is_dir else "0"))
-        return volumes, volume_mounts, mount_envs
+        return mount_envs
 
     def _build_env(self, extra_envs: List[tuple[str, str]]) -> List[run_v2.EnvVar]:
         envs = [
             ("UNIVERSE", self.runtime_name),
         ]
-        if self._gcp_logging_credential is not None:
-            envs.append(
-                (
-                    "GCP_LOGGING_CREDENTIAL",
-                    base64.b64encode(self._gcp_logging_credential.encode()).decode(),
-                )
-            )
         envs.extend(extra_envs)
         return [run_v2.EnvVar(name=name, value=value) for name, value in envs]
-
-    def _build_startup_script(self) -> str:
-        lines = [
-            "set -e",
-            "mkdir -p /tmp/ostorlab",
-            "echo \"$AGENT_SETTINGS_B64\" | base64 -d > /tmp/ostorlab/settings.binproto",
-            "echo \"$AGENT_DEFINITION_B64\" | base64 -d > /tmp/ostorlab/ostorlab.yaml",
-            "i=0",
-            "while true; do",
-            '  dst_var=\\"OSTORLAB_MOUNT_${i}_DST\\"',
-            '  content_var=\\"OSTORLAB_MOUNT_${i}_CONTENT_B64\\"',
-            '  dir_var=\\"OSTORLAB_MOUNT_${i}_IS_DIR\\"',
-            "  dst=${!dst_var}",
-            "  [ -z \"$dst\" ] && break",
-            "  payload=${!content_var}",
-            "  is_dir=${!dir_var}",
-            "  if [ -n \"$payload\" ]; then",
-            "    if [ \"$is_dir\" = \"1\" ]; then",
-            "      mkdir -p \"$dst\"",
-            "      echo \"$payload\" | base64 -d | tar -xz -C \"$dst\"",
-            "    else",
-            "      mkdir -p \"$(dirname \"$dst\")\"",
-            "      echo \"$payload\" | base64 -d > \"$dst\"",
-            "    fi",
-            "  fi",
-            "  i=$((i+1))",
-            "done",
-            "exec ostorlab agent run",
-        ]
-        return "\n".join(lines)
 
     def deploy_service(self, scan_id: str) -> str:
         """Create and run a Cloud Run Job for the agent.
@@ -259,48 +212,24 @@ class CloudRunAgentRuntime:
         if self.agent.open_ports:
             logger.warning("Cloud Run Jobs do not expose open_ports; ignoring declared ports.")
 
-        mounts = self.replace_variable_mounts(self.agent.mounts or [])
-        volumes, volume_mounts, mount_envs = self._build_mounts(mounts)
+        settings_bytes = self._serialize_settings_bytes()
+        definition_bytes = self._serialize_definition_bytes(yaml_definition_string)
 
-        settings_b64 = self._serialize_settings()
-        definition_b64 = self._serialize_definition(yaml_definition_string)
+        bucket_name = self._prepare_artifacts(settings_bytes, definition_bytes)
 
-        volumes.append(
-            run_v2.Volume(
-                name="settings-volume",
-                empty_dir=run_v2.EmptyDirVolumeSource(
-                    medium=run_v2.EmptyDirVolumeSource.Medium.MEMORY
-                ),
-            )
-        )
-        volume_mounts.append(
-            run_v2.VolumeMount(name="settings-volume", mount_path="/tmp/ostorlab")
-        )
+        volumes, volume_mounts = self._build_gcs_bucket_volume(bucket_name)
 
-        env_pairs = [
-            ("AGENT_SETTINGS_B64", settings_b64),
-            ("AGENT_DEFINITION_B64", definition_b64),
-        ]
-        env_pairs.extend(mount_envs)
-
+        env_pairs = []
         env_vars = self._build_env(env_pairs)
 
         container = run_v2.Container()
         # TODO: Hack to make images work. Should be fixed.
         container.image = f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
-        container.command = ["/bin/sh"]
-        container.args = ["-c", self._build_startup_script()]
         container.env = env_vars
         container.volume_mounts = volume_mounts
-        if self.agent.mem_limit is not None:
-            container.resources = run_v2.ResourceRequirements(
-                limits={"memory": str(self.agent.mem_limit)}
-            )
-
         task_template = run_v2.TaskTemplate()
         task_template.containers = [container]
         task_template.volumes = volumes
-        # task_template.service_account = self._gcp_service_account
         task_template.max_retries = 0
 
         execution_template = run_v2.ExecutionTemplate()
@@ -321,26 +250,11 @@ class CloudRunAgentRuntime:
         parent = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}"
         job_name = f"{parent}/jobs/{job_id}"
 
-        try:
-            self._jobs_client.get_job(name=job_name)
-            logger.info("Job %s already exists; reusing.", job_name)
-        except gcp_exceptions.NotFound:
-            try:
-                self._jobs_client.create_job(
-                    parent=parent,
-                    job=job,
-                    job_id=job_id,
-                )
-                logger.info("Created Cloud Run Job %s", job_name)
-            except gcp_exceptions.AlreadyExists:
-                job_id = job_id + "-" + str(random.randrange(0, 9999))
-                job_name = f"{parent}/jobs/{job_id}"
-                self._jobs_client.create_job(
-                    parent=parent,
-                    job=job,
-                    job_id=job_id,
-                )
-                logger.info("Created Cloud Run Job with suffix %s", job_name)
-
+        self._jobs_client.create_job(
+            parent=parent,
+            job=job,
+            job_id=job_id,
+        )
+        logger.info("Created Cloud Run Job %s", job_name)
         self._jobs_client.run_job(name=job_name)
         return job_name
