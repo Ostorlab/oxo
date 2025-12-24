@@ -1,33 +1,24 @@
 """Cloud Run runtime runs agents on Google Cloud Run.
 
-The Cloud Run runtime deploys agents as Cloud Run services, using external RabbitMQ and Redis services
+The Cloud Run runtime deploys agents as Cloud Run jobs (with executions), using external RabbitMQ and Redis services
 that are accessible over the internet. This allows for scalable agent execution without requiring
 Docker Swarm or local container orchestration.
 """
 
 import logging
-import re
-import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 from concurrent import futures
 
-import click
 import sqlalchemy
-import tenacity
 from google.cloud import run_v2
-from google.api import launch_stage_pb2
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
-from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.cloud_run import agent_runtime
-from ostorlab.runtimes.local.models.models import Database
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating
-from ostorlab.utils import styles
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -103,16 +94,17 @@ class CloudRunRuntime(runtime.Runtime):
         self._gcp_region = gcp_region
         self._gcp_service_account = gcp_service_account
 
-        # Initialize Cloud Run client
-        self._client = run_v2.ServicesClient()
+        # Initialize Cloud Run Jobs clients
+        self._client = run_v2.JobsClient()
+        self._executions_client = run_v2.ExecutionsClient()
 
-        # Track deployed services
+        # Track deployed jobs
         self._deployed_services: List[str] = []
 
     @property
     def name(self) -> str:
-        """Runtime name."""
-        return "cloud_run"
+        """Cloud Run runtime instance name."""
+        return self.scan_id
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent group definition.
@@ -129,12 +121,18 @@ class CloudRunRuntime(runtime.Runtime):
         """
         # Check GCP configuration
         if not self._gcp_project_id or not self._gcp_region:
-            console.error("GCP project ID and region are required for Cloud Run runtime")
+            console.error(
+                "GCP project ID and region are required for Cloud Run runtime"
+            )
             return False
+        # TODO: Missing service account.
 
         # Check external services configuration
+        # TODO: Explicit checks.
         if not self._bus_url or not self._redis_url:
-            console.error("External MQ and Redis URLs are required for Cloud Run runtime")
+            console.error(
+                "External MQ and Redis URLs are required for Cloud Run runtime"
+            )
             return False
 
         # Check agents have container images
@@ -161,10 +159,13 @@ class CloudRunRuntime(runtime.Runtime):
         Returns:
             Scan object if created successfully, None otherwise.
         """
-        with models.Database() as session:
+        with models.Database():
             try:
                 # Create scan in database
-                scan = models.Scan.create(title=title, asset=assets[0].__class__.__name__ if assets else "unknown")
+                scan = models.Scan.create(
+                    title=title,
+                    asset=assets[0].__class__.__name__ if assets else "unknown",
+                )
                 console.info(f"Created scan with ID: {scan.id}")
 
                 # Start agent deployment
@@ -180,7 +181,9 @@ class CloudRunRuntime(runtime.Runtime):
                 console.error(f"Failed to create scan: {e}")
                 return None
 
-    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: int) -> None:
+    def _start_agents(
+        self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: int
+    ) -> None:
         """Deploy agents to Cloud Run.
 
         Args:
@@ -215,8 +218,7 @@ class CloudRunRuntime(runtime.Runtime):
 
                 # Submit deployment task
                 future = executor.submit(
-                    agent_runtime_instance.deploy_service,
-                    scan_id=scan_id
+                    agent_runtime_instance.deploy_service, scan_id=scan_id
                 )
                 future_to_agent[future] = agent
 
@@ -250,38 +252,38 @@ class CloudRunRuntime(runtime.Runtime):
         Args:
             scan_id: The scan ID.
         """
-        console.info(f"Stopping scan {scan_id} and cleaning up Cloud Run services...")
+        console.info(f"Stopping scan {scan_id} and cleaning up Cloud Run jobs...")
 
         with futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_service = {}
+            future_to_job = {}
 
-            # Delete all deployed services for this scan
-            for service_name in self._deployed_services:
-                if str(scan_id) in service_name:
-                    future = executor.submit(self._delete_service, service_name)
-                    future_to_service[future] = service_name
+            # Delete all deployed jobs for this scan
+            for job_name in self._deployed_services:
+                if str(scan_id) in job_name:
+                    future = executor.submit(self._delete_service, job_name)
+                    future_to_job[future] = job_name
 
             # Wait for deletions
-            for future in futures.as_completed(future_to_service):
-                service_name = future_to_service[future]
+            for future in futures.as_completed(future_to_job):
+                job_name = future_to_job[future]
                 try:
                     future.result()
-                    console.info(f"Deleted service {service_name}")
+                    console.info(f"Deleted job {job_name}")
                 except Exception as e:
-                    console.error(f"Failed to delete {service_name}: {e}")
+                    console.error(f"Failed to delete {job_name}: {e}")
 
     def _delete_service(self, service_name: str) -> None:
-        """Delete a Cloud Run service.
+        """Delete a Cloud Run job.
 
         Args:
-            service_name: Name of the service to delete.
+            service_name: Name of the job to delete.
         """
-        service_path = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/services/{service_name}"
+        job_path = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/jobs/{service_name}"
 
         try:
-            self._client.delete_service(name=service_path)
+            self._client.delete_job(name=job_path)
         except Exception as e:
-            logger.error(f"Error deleting service {service_name}: {e}")
+            logger.error(f"Error deleting job {service_name}: {e}")
             raise
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
@@ -294,32 +296,11 @@ class CloudRunRuntime(runtime.Runtime):
         Returns:
             List of scan objects.
         """
-        with models.Database() as session:
-            # Query scans created by this runtime
-            # For now, return all scans - could be filtered by runtime type in future
-            scans = (
-                session.query(models.Scan)
-                .order_by(models.Scan.created_time.desc())
-                .limit(number_elements)
-                .offset((page - 1) * number_elements)
-                .all()
-            )
-
-            return [runtime.Scan(
-                id=str(scan.id),
-                created_time=scan.created_time.isoformat(),
-                progress=scan.progress.value if scan.progress else None,
-                asset=scan.asset,
-                risk_rating=scan.risk_rating.value if scan.risk_rating else None,
-            ) for scan in scans]
+        pass
 
     def install(self) -> None:
         """Install necessary components for Cloud Run runtime."""
-        console.info("Cloud Run runtime does not require local installation.")
-        console.info("Ensure you have:")
-        console.info("  - Google Cloud SDK installed and configured")
-        console.info("  - Proper GCP permissions for Cloud Run")
-        console.info("  - External RabbitMQ and Redis services accessible")
+        pass
 
     def dump_vulnz(self, scan_id: int, dumper: runtime.dumpers.VulnzDumper):
         """Dump vulnerabilities for a scan.
@@ -328,17 +309,7 @@ class CloudRunRuntime(runtime.Runtime):
             scan_id: The scan ID.
             dumper: Vulnerability dumper instance.
         """
-        with models.Database() as session:
-            vulnerabilities = session.query(models.Vulnerability).filter_by(scan_id=scan_id).all()
-
-            for vulnerability in vulnerabilities:
-                dumper.dump_vulnerability(
-                    entry=vulnerability,
-                    risk_rating=vulnerability.risk_rating,
-                    cvss_v3_vector=vulnerability.cvss_v3_vector,
-                    dna=vulnerability.dna,
-                    location=vulnerability.location,
-                )
+        pass
 
     def link_agent_group_scan(
         self,
@@ -351,12 +322,7 @@ class CloudRunRuntime(runtime.Runtime):
             scan: The scan object.
             agent_group_definition: The agent group definition.
         """
-        with models.Database() as session:
-            models.AgentGroup.create(
-                scan_id=scan.id,
-                definition=agent_group_definition,
-            )
-            session.commit()
+        pass
 
     def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
         """Link assets to scan in database.
@@ -365,7 +331,4 @@ class CloudRunRuntime(runtime.Runtime):
             scan_id: The scan ID.
             assets: List of assets to link.
         """
-        with models.Database() as session:
-            for asset in assets:
-                models.Asset.create(scan_id, asset)
-            session.commit()
+        pass
