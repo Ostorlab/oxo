@@ -95,6 +95,7 @@ from ostorlab.cli import input_validators
     help="GCP Service Account for Cloud Run services. This flag is restricted to cloud_run runtime.",
     required=False,
 )
+@click.pass_context
 def scan(
     ctx: click.core.Context,
     runtime: str,
