@@ -1,384 +1,345 @@
-"""Cloud Run agent runtime for deploying agents to Google Cloud Run.
+"""Cloud Run agent runtime implementation.
 
-This module handles creating and managing Cloud Run jobs for Ostorlab agents.
+Adapts lite_local AgentRuntime behavior to Google Cloud Run Jobs. It injects agent
+settings and definition as in-memory volumes and copies host mounts into Cloud Run
+empty_dir volumes before starting the agent.
 """
 
+import base64
+import io
 import logging
-import re
-import uuid
-from typing import Dict, Optional, Any
+import os
+import random
+import tarfile
+import tempfile
+from typing import List, Optional, Tuple
 
+import docker
+from docker import errors as docker_errors
+from google.api_core import exceptions as gcp_exceptions
 from google.cloud import run_v2
-from google.api import launch_stage_pb2
 
+from ostorlab import configuration_manager
+from ostorlab import exceptions
+from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 
 logger = logging.getLogger(__name__)
 
+MOUNT_VARIABLES = {"$CONFIG_HOME": str(configuration_manager.OSTORLAB_PRIVATE_DIR)}
+
+HEALTHCHECK_HOST = "0.0.0.0"
+HEALTHCHECK_PORT = 5000
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
 
 
-class Error(Exception):
-    """Custom error for Cloud Run agent runtime."""
+class Error(exceptions.OstorlabError):
+    """Base Error."""
 
 
-class CloudRunError(Error):
-    """Custom error for Cloud Run agent runtime."""
+class MissingAgentDefinitionLabel(Error):
+    """Agent definition label is missing from the agent image."""
+
+
+class ServiceNameTooLong(Error):
+    """Raised when the agent definition service_name exceeds the maximum allowed length."""
 
 
 class CloudRunAgentRuntime:
-    """Responsible for creating and managing Cloud Run services for agents."""
+    """Cloud Run Agent Runtime that deploys agents as Cloud Run Jobs."""
 
     def __init__(
         self,
         agent_settings: definitions.AgentSettings,
         runtime_name: str,
-        scan_id: int,
+        scan_id: str,
         bus_url: str,
         bus_vhost: str,
         bus_exchange_topic: str,
+        bus_management_url: str,
         redis_url: str,
         gcp_project_id: str,
         gcp_region: str,
         gcp_service_account: Optional[str] = None,
         tracing_collector_url: Optional[str] = None,
+        gcp_logging_credential: Optional[str] = None,
     ) -> None:
-        """Initialize Cloud Run agent runtime.
-
-        Args:
-            agent_settings: Agent settings and configuration.
-            runtime_name: Name of the runtime (cloud_run).
-            scan_id: Scan ID for resource naming.
-            bus_url: RabbitMQ URL.
-            bus_vhost: RabbitMQ virtual host.
-            bus_exchange_topic: RabbitMQ exchange topic.
-            redis_url: Redis URL.
-            gcp_project_id: GCP project ID.
-            gcp_region: GCP region for deployment.
-            gcp_service_account: Service account for Cloud Run.
-            tracing_collector_url: Optional tracing collector URL.
-            bus_ip: RabbitMQ IP address for external access.
-            redis_ip: Redis IP address for external access.
-        """
-        self._agent_settings = agent_settings
-        self._runtime_name = runtime_name
-        self._scan_id = scan_id
-        self._bus_url = bus_url
-        self._bus_vhost = bus_vhost
-        self._bus_exchange_topic = bus_exchange_topic
-        self._redis_url = redis_url
+        self.agent = agent_settings
+        self.runtime_name = runtime_name
+        self.scan_id = scan_id
+        self.bus_url = bus_url
+        self.bus_vhost = bus_vhost
+        self.bus_exchange_topic = bus_exchange_topic
+        self.bus_management_url = bus_management_url
+        self.redis_url = redis_url
         self._gcp_project_id = gcp_project_id
         self._gcp_region = gcp_region
         self._gcp_service_account = gcp_service_account
         self._tracing_collector_url = tracing_collector_url
+        self._gcp_logging_credential = gcp_logging_credential
+        self._jobs_client = run_v2.JobsClient.from_service_account_file(self._gcp_service_account)
+        self.update_agent_settings_for_cloud()
 
-        # Initialize Cloud Run Jobs clients
-        self._client = run_v2.JobsClient()
-        self._executions_client = run_v2.ExecutionsClient()
+    def update_agent_settings_for_cloud(self) -> None:
+        """Update agent settings with Cloud Run runtime values."""
+        self.agent.bus_url = self.bus_url
+        self.agent.bus_exchange_topic = self.bus_exchange_topic
+        self.agent.bus_management_url = self.bus_management_url
+        self.agent.bus_vhost = self.bus_vhost
+        self.agent.healthcheck_host = HEALTHCHECK_HOST
+        self.agent.healthcheck_port = HEALTHCHECK_PORT
+        self.agent.redis_url = self.redis_url
+        self.agent.tracing_collector_url = self._tracing_collector_url
 
-        # Generate job name
-        self._service_name = self._generate_service_name()
-
-    @property
-    def service_name(self) -> str:
-        """Get the generated service name."""
-        return self._service_name
-
-    def _generate_service_name(self) -> str:
-        """Generate a valid Cloud Run service name.
-
-        Cloud Run service names must:
-        - Be 1-63 characters long
-        - Match regex [a-z]([-a-z0-9]*[a-z0-9])?
-        - Contain only lowercase letters, numbers, and hyphens
-
-        Returns:
-            Valid service name.
-        """
-        # Clean agent key to be DNS compliant
-        agent_key_clean = re.sub(r"[^a-z0-9-]", "-", self._agent_settings.key.lower())
-
-        # Create base name
-        base_name = f"ostorlab-{self._scan_id}-{agent_key_clean}"
-
-        # Ensure it starts with a letter
-        if not base_name[0].isalpha():
-            base_name = f"a-{base_name}"
-
-        # Truncate if too long, preserving scan_id
-        if len(base_name) > MAX_SERVICE_NAME_LEN:
-            # Keep scan_id and add hash of agent key
-            prefix = f"ostorlab-{self._scan_id}"
-            remaining_length = MAX_SERVICE_NAME_LEN - len(prefix) - 1
-            if remaining_length > 0:
-                agent_hash = str(uuid.uuid5(uuid.NAMESPACE_DNS, agent_key_clean))[
-                    :remaining_length
-                ]
-                base_name = f"{prefix}-{agent_hash}"
-            else:
-                # Fallback if scan_id is too long
-                base_name = f"ostorlab-scan-{self._scan_id}"[:MAX_SERVICE_NAME_LEN]
-
-        # Ensure it ends with alphanumeric
-        if not base_name[-1].isalnum():
-            base_name = base_name.rstrip("-") + "0"
-            base_name = base_name[:MAX_SERVICE_NAME_LEN]
-
-        return base_name
-
-    def _prepare_environment_variables(self) -> Dict[str, str]:
-        """Prepare environment variables for the Cloud Run service.
-
-        Returns:
-            Dictionary of environment variables.
-        """
-        # Use IP addresses if provided, otherwise fall back to URLs
-        bus_host = self._bus_url
-        redis_host = self._redis_url
-
-        env_vars = {
-            # Bus configuration
-            "UNIVERSE": str(self._scan_id),
-            "MQ_SERVICE_HOST": bus_host,
-            "MQ_VHOST": self._bus_vhost,
-            "MQ_EXCHANGE_TOPIC": self._bus_exchange_topic,
-            # Redis configuration
-            "REDIS_URL": self._redis_url,  # Full URL for backward compatibility
-            "REDIS_HOST": redis_host,  # IP or hostname for direct access
-            # Agent configuration
-            "AGENT_KEY": self._agent_settings.key,
-            "AGENT_ARGS": str(self._agent_settings.args)
-            if self._agent_settings.args
-            else "",
-            "AGENT_HEALTHCHECK_HOST": "0.0.0.0",
-            "AGENT_HEALTHCHECK_PORT": "5000",
-        }
-
-        # Add agent-specific arguments as individual env vars
-        if self._agent_settings.args:
-            for arg_key, arg_value in self._agent_settings.args.items():
-                env_vars[f"AGENT_ARG_{arg_key.upper()}"] = str(arg_value)
-
-        # Add optional configuration
-        if self._tracing_collector_url:
-            env_vars["TRACE_COLLECTOR_URL"] = self._tracing_collector_url
-
-        # Add Redis max connections if configured
-        if self._agent_settings.redis_max_connections is not None:
-            env_vars["REDIS_MAX_CONNECTIONS"] = str(
-                self._agent_settings.redis_max_connections
+    def _load_agent_definition_and_label(
+        self,
+    ) -> Tuple[agent_definitions.AgentDefinition, str]:
+        """Load agent definition and raw YAML string from image label."""
+        docker_client = docker.from_env()
+        docker_image = docker_client.images.get(self.agent.container_image)
+        yaml_definition_string = docker_image.labels.get("agent_definition")
+        if yaml_definition_string is None:
+            raise MissingAgentDefinitionLabel(
+                f"agent definition label is missing from image {docker_image.tags[0]}"
             )
+        with io.StringIO(yaml_definition_string) as file:
+            agent_definition = agent_definitions.AgentDefinition.from_yaml(file)
+        return agent_definition, yaml_definition_string
 
-        return env_vars
+    def replace_variable_mounts(self, mounts: List[str]) -> List[str]:
+        """Replace path variables for the container mounts."""
+        replaced_mounts = []
+        for mount in mounts:
+            for mount_variable, mount_value in MOUNT_VARIABLES.items():
+                mount = mount.replace(mount_variable, mount_value)
+            replaced_mounts.append(mount)
+        return replaced_mounts
 
-    def _get_resource_limits(self) -> Dict[str, Any]:
-        """Get resource limits based on agent configuration.
-
-        Returns:
-            Dictionary with resource configuration.
-        """
-        # Default Cloud Run configuration
-        resources = {
-            "memory": "512Mi",  # Default 512MB
-            "cpu": "1",  # Default 1 CPU
-        }
-
-        # TODO: Parse agent definition for resource requirements
-        # For now, use defaults - could be enhanced to read from agent schema
-
-        return resources
-
-    def _create_job_request(self, scan_id: int) -> run_v2.CreateJobRequest:
-        """Create a Cloud Run job request.
-
-        Args:
-            scan_id: Scan ID for resource labeling.
-
-        Returns:
-            Create job request.
-        """
-        # Prepare environment variables
-        env_vars_dict = self._prepare_environment_variables()
-        env_vars = [
-            run_v2.EnvVar(name=key, value=value) for key, value in env_vars_dict.items()
-        ]
-
-        # Get resource limits
-        resources = self._get_resource_limits()
-
-        # Create container configuration
-        container = run_v2.Container(
-            image=self._agent_settings.container_image,
-            env=env_vars,
-            resources=run_v2.ResourceRequirements(
-                limits={
-                    "memory": resources["memory"],
-                    "cpu": resources["cpu"],
-                }
-            ),
-            ports=[run_v2.ContainerPort(container_port=5000)],
-        )
-
-        # Create job configuration (single instance, manual scaling)
-        job = run_v2.Job(
-            template=run_v2.ExecutionTemplate(
-                template=run_v2.TaskTemplate(
-                    containers=[container],
-                    max_retries=0,
-                    timeout=None,  # No timeout for long-running processes
-                    service_account=self._gcp_service_account or None,
-                ),
-                labels={
-                    "ostorlab-scan-id": str(scan_id),
-                    "ostorlab-agent-key": self._agent_settings.key,
-                    "ostorlab-runtime": self._runtime_name,
-                },
-                annotations={
-                    # Start with 1 instance and keep manual control (no autoscaling bursts)
-                    "run.googleapis.com/launch-stage": launch_stage_pb2.LaunchStage.BETA,
-                    "run.googleapis.com/priority": "DEFAULT",
-                },
-            ),
-            metadata=run_v2.JobMetaData(
-                name=self._service_name,
-                labels={
-                    "ostorlab-managed": "true",
-                    "ostorlab-scan-id": str(scan_id),
-                },
-            ),
-        )
-
-        # Configure manual scaling: 1 task, 1 instance
-        job.template.task_count = 1
-        job.template.parallelism = 1
-
-        # Create the request
-        parent = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}"
-
-        return run_v2.CreateJobRequest(
-            parent=parent,
-            job=job,
-            job_id=self._service_name,
-        )
-
-    def deploy_service(self, scan_id: int) -> str:
-        """Deploy the agent as a Cloud Run job and start one execution.
-
-        Args:
-            scan_id: Scan ID for resource labeling.
-
-        Returns:
-            The deployed job name.
-
-        Raises:
-            CloudRunError: If deployment fails.
-        """
-        logger.info(
-            f"Deploying {self._agent_settings.key} as Cloud Run job {self._service_name}"
-        )
-
-        try:
-            # Create job request
-            request = self._create_job_request(scan_id)
-
-            # Deploy job
-            operation = self._client.create_job(request=request)
-            operation.result(timeout=300)  # 5 minute timeout for creation
-
-            # Start a single execution for the job
-            run_parent = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/jobs/{self._service_name}"
-            run_request = run_v2.RunJobRequest(name=run_parent)
-            run_operation = self._client.run_job(request=run_request)
-            run_operation.result(timeout=300)
-
-            logger.info(f"Successfully deployed and started job {self._service_name}")
-
-            return self._service_name
-
-        except Exception as e:
-            logger.error(f"Failed to deploy job {self._service_name}: {e}")
-            raise CloudRunError(
-                f"Failed to deploy agent {self._agent_settings.key}: {e}"
-            )
-
-    def update_service(self) -> None:
-        """Update the deployed Cloud Run job (environment variables)."""
-        logger.info(f"Updating job {self._service_name}")
-
-        try:
-            job_path = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/jobs/{self._service_name}"
-            job = self._client.get_job(name=job_path)
-
-            env_vars_dict = self._prepare_environment_variables()
-            job.template.template.containers[0].env = [
-                run_v2.EnvVar(name=key, value=value)
-                for key, value in env_vars_dict.items()
-            ]
-
-            request = run_v2.UpdateJobRequest(job=job)
-            operation = self._client.update_job(request=request)
-            operation.result(timeout=300)
-
-            logger.info(f"Successfully updated job {self._service_name}")
-
-        except Exception as e:
-            logger.error(f"Failed to update job {self._service_name}: {e}")
-            raise CloudRunError(f"Failed to update job: {e}")
-
-    def delete_service(self) -> None:
-        """Delete the Cloud Run job."""
-        logger.info(f"Deleting job {self._service_name}")
-
-        try:
-            job_path = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/jobs/{self._service_name}"
-            operation = self._client.delete_job(name=job_path)
-            operation.result(timeout=300)
-            logger.info(f"Successfully deleted job {self._service_name}")
-
-        except Exception as e:
-            logger.error(f"Failed to delete job {self._service_name}: {e}")
-            raise CloudRunError(f"Failed to delete job: {e}")
-
-    def get_service_status(self) -> Dict[str, Any]:
-        """Get the status of the deployed job and its latest execution."""
-        try:
-            job_path = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/jobs/{self._service_name}"
-            job = self._client.get_job(name=job_path)
-
-            execution_info = None
-            if job.latest_created_execution:
-                execution = self._executions_client.get_execution(
-                    name=job.latest_created_execution
+    def _build_service_name(self, agent_definition: agent_definitions.AgentDefinition) -> str:
+        if agent_definition.service_name is not None:
+            if len(agent_definition.service_name) > MAX_SERVICE_NAME_LEN:
+                raise ServiceNameTooLong(
+                    f'service name "{agent_definition.service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
                 )
-                execution_info = {
-                    "name": execution.name,
-                    "state": execution.state,
-                    "conditions": execution.conditions,
-                    "start_time": execution.create_time,
-                    "completion_time": execution.completion_time,
-                }
+            return agent_definition.service_name
 
-            return {
-                "name": job.name,
-                "latest_execution": execution_info,
-                "observed_generation": job.observed_generation,
-            }
+        service_name = (
+            self.agent.container_image.split(":")[0].replace(".", "")
+            + "_"
+            + self.runtime_name
+        )
+        if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
+            service_name = service_name + "_" + str(random.randrange(0, 9999))
 
-        except Exception as e:
-            logger.error(f"Failed to get status for {self._service_name}: {e}")
-            raise CloudRunError(f"Failed to get job status: {e}")
+        service_name = service_name.replace("_", "-")
+        return service_name
 
-    def is_healthy(self) -> bool:
-        """Check if the latest execution of the job succeeded."""
+    def _serialize_settings(self) -> str:
+        agent_instance_settings_proto = self.agent.to_raw_proto()
+        return base64.b64encode(agent_instance_settings_proto).decode()
+
+    def _serialize_definition(self, yaml_definition: str) -> str:
+        return base64.b64encode(yaml_definition.encode()).decode()
+
+    def _parse_mount(self, mount: str) -> tuple[str, str, Optional[str]]:
+        parts = mount.split(":")
+        if len(parts) < 2:
+            raise docker_errors.InvalidArgument(f'invalid mount format "{mount}"')
+        source = parts[0]
+        target = parts[1]
+        mode = parts[2] if len(parts) >= 3 else None
+        return source, target, mode
+
+    def _encode_mount_payload(self, source: str) -> tuple[str, bool]:
+        if not os.path.exists(source):
+            raise FileNotFoundError(f"mount source {source} does not exist")
+        if os.path.isdir(source):
+            with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=True) as tmp:
+                with tarfile.open(tmp.name, "w:gz") as tar:
+                    tar.add(source, arcname=".")
+                tmp.seek(0)
+                data = tmp.read()
+            return base64.b64encode(data).decode(), True
+        with open(source, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode(), False
+
+    def _build_mounts(self, mounts: List[str]):
+        volumes: List[run_v2.Volume] = []
+        volume_mounts: List[run_v2.VolumeMount] = []
+        mount_envs = []
+
+        for idx, mount in enumerate(mounts):
+            source, target, _ = self._parse_mount(mount)
+            payload_b64, is_dir = self._encode_mount_payload(source)
+            volume_name = f"mount-{idx}"
+            volumes.append(
+                run_v2.Volume(
+                    name=volume_name,
+                    empty_dir=run_v2.EmptyDirVolumeSource(
+                        medium=run_v2.EmptyDirVolumeSource.Medium.MEMORY
+                    ),
+                )
+            )
+            mount_path = target if target.endswith("/") else os.path.dirname(target) or "/"
+            volume_mounts.append(
+                run_v2.VolumeMount(name=volume_name, mount_path=mount_path)
+            )
+            mount_envs.append((f"OSTORLAB_MOUNT_{idx}_DST", target))
+            mount_envs.append((f"OSTORLAB_MOUNT_{idx}_CONTENT_B64", payload_b64))
+            mount_envs.append((f"OSTORLAB_MOUNT_{idx}_IS_DIR", "1" if is_dir else "0"))
+        return volumes, volume_mounts, mount_envs
+
+    def _build_env(self, extra_envs: List[tuple[str, str]]) -> List[run_v2.EnvVar]:
+        envs = [
+            ("UNIVERSE", self.runtime_name),
+        ]
+        if self._gcp_logging_credential is not None:
+            envs.append(
+                (
+                    "GCP_LOGGING_CREDENTIAL",
+                    base64.b64encode(self._gcp_logging_credential.encode()).decode(),
+                )
+            )
+        envs.extend(extra_envs)
+        return [run_v2.EnvVar(name=name, value=value) for name, value in envs]
+
+    def _build_startup_script(self) -> str:
+        lines = [
+            "set -e",
+            "mkdir -p /tmp/ostorlab",
+            "echo \"$AGENT_SETTINGS_B64\" | base64 -d > /tmp/ostorlab/settings.binproto",
+            "echo \"$AGENT_DEFINITION_B64\" | base64 -d > /tmp/ostorlab/ostorlab.yaml",
+            "i=0",
+            "while true; do",
+            '  dst_var=\\"OSTORLAB_MOUNT_${i}_DST\\"',
+            '  content_var=\\"OSTORLAB_MOUNT_${i}_CONTENT_B64\\"',
+            '  dir_var=\\"OSTORLAB_MOUNT_${i}_IS_DIR\\"',
+            "  dst=${!dst_var}",
+            "  [ -z \"$dst\" ] && break",
+            "  payload=${!content_var}",
+            "  is_dir=${!dir_var}",
+            "  if [ -n \"$payload\" ]; then",
+            "    if [ \"$is_dir\" = \"1\" ]; then",
+            "      mkdir -p \"$dst\"",
+            "      echo \"$payload\" | base64 -d | tar -xz -C \"$dst\"",
+            "    else",
+            "      mkdir -p \"$(dirname \"$dst\")\"",
+            "      echo \"$payload\" | base64 -d > \"$dst\"",
+            "    fi",
+            "  fi",
+            "  i=$((i+1))",
+            "done",
+            "exec ostorlab agent run",
+        ]
+        return "\n".join(lines)
+
+    def deploy_service(self, scan_id: str) -> str:
+        """Create and run a Cloud Run Job for the agent.
+
+        Args:
+            scan_id: Scan identifier, used for labeling.
+
+        Returns:
+            The Cloud Run Job name.
+        """
+        agent_definition, yaml_definition_string = self._load_agent_definition_and_label()
+
+        # Apply defaults from definition.
+        self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
+        self.agent.mounts = self.agent.mounts or agent_definition.mounts
+        self.agent.constraints = self.agent.constraints or agent_definition.constraints
+        self.agent.mem_limit = self.agent.mem_limit or agent_definition.mem_limit
+        self.agent.restart_policy = (
+            self.agent.restart_policy or agent_definition.restart_policy or "any"
+        )
+        self.agent.caps = self.agent.caps or agent_definition.caps
+
+        if self.agent.open_ports:
+            logger.warning("Cloud Run Jobs do not expose open_ports; ignoring declared ports.")
+
+        mounts = self.replace_variable_mounts(self.agent.mounts or [])
+        volumes, volume_mounts, mount_envs = self._build_mounts(mounts)
+
+        settings_b64 = self._serialize_settings()
+        definition_b64 = self._serialize_definition(yaml_definition_string)
+
+        volumes.append(
+            run_v2.Volume(
+                name="settings-volume",
+                empty_dir=run_v2.EmptyDirVolumeSource(
+                    medium=run_v2.EmptyDirVolumeSource.Medium.MEMORY
+                ),
+            )
+        )
+        volume_mounts.append(
+            run_v2.VolumeMount(name="settings-volume", mount_path="/tmp/ostorlab")
+        )
+
+        env_pairs = [
+            ("AGENT_SETTINGS_B64", settings_b64),
+            ("AGENT_DEFINITION_B64", definition_b64),
+        ]
+        env_pairs.extend(mount_envs)
+
+        env_vars = self._build_env(env_pairs)
+
+        container = run_v2.Container()
+        container.image = self.agent.container_image
+        container.command = ["/bin/sh"]
+        container.args = ["-c", self._build_startup_script()]
+        container.env = env_vars
+        container.volume_mounts = volume_mounts
+        if self.agent.mem_limit is not None:
+            container.resources = run_v2.ResourceRequirements(
+                limits={"memory": str(self.agent.mem_limit)}
+            )
+
+        task_template = run_v2.TaskTemplate()
+        task_template.containers = [container]
+        task_template.volumes = volumes
+        # task_template.service_account = self._gcp_service_account
+        task_template.max_retries = 0
+
+        execution_template = run_v2.ExecutionTemplate()
+        execution_template.template = task_template
+        execution_template.task_count = 1
+        execution_template.parallelism = 1
+
+        job = run_v2.Job()
+        job.template = execution_template
+        # TODO: labels not working.
+        # job.labels = {
+        #     "ostorlab.universe": self.runtime_name,
+        #     "scan_id": scan_id,
+        #     "agent": self.agent.key,
+        # }
+
+        job_id = self._build_service_name(agent_definition)
+        parent = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}"
+        job_name = f"{parent}/jobs/{job_id}"
+
         try:
-            status = self.get_service_status()
-            execution = status.get("latest_execution")
-            if execution is None:
-                return False
+            self._jobs_client.get_job(name=job_name)
+            logger.info("Job %s already exists; reusing.", job_name)
+        except gcp_exceptions.NotFound:
+            try:
+                self._jobs_client.create_job(
+                    parent=parent,
+                    job=job,
+                    job_id=job_id,
+                )
+                logger.info("Created Cloud Run Job %s", job_name)
+            except gcp_exceptions.AlreadyExists:
+                job_id = job_id + "-" + str(random.randrange(0, 9999))
+                job_name = f"{parent}/jobs/{job_id}"
+                self._jobs_client.create_job(
+                    parent=parent,
+                    job=job,
+                    job_id=job_id,
+                )
+                logger.info("Created Cloud Run Job with suffix %s", job_name)
 
-            return execution.get("state") == run_v2.Execution.State.SUCCEEDED
-
-        except Exception as e:
-            logger.error(f"Failed to check health for {self._service_name}: {e}")
-            return False
+        self._jobs_client.run_job(name=job_name)
+        return job_name

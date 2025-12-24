@@ -93,18 +93,13 @@ class CloudRunRuntime(runtime.Runtime):
         self._gcp_project_id = gcp_project_id
         self._gcp_region = gcp_region
         self._gcp_service_account = gcp_service_account
-
-        # Initialize Cloud Run Jobs clients
-        self._client = run_v2.JobsClient()
-        self._executions_client = run_v2.ExecutionsClient()
-
         # Track deployed jobs
         self._deployed_services: List[str] = []
 
     @property
     def name(self) -> str:
         """Cloud Run runtime instance name."""
-        return self.scan_id
+        return self._scan_id
 
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:
         """Checks if the runtime can run the provided agent group definition.
@@ -120,27 +115,6 @@ class CloudRunRuntime(runtime.Runtime):
             True if can run, false otherwise.
         """
         # Check GCP configuration
-        if not self._gcp_project_id or not self._gcp_region:
-            console.error(
-                "GCP project ID and region are required for Cloud Run runtime"
-            )
-            return False
-        # TODO: Missing service account.
-
-        # Check external services configuration
-        # TODO: Explicit checks.
-        if not self._bus_url or not self._redis_url:
-            console.error(
-                "External MQ and Redis URLs are required for Cloud Run runtime"
-            )
-            return False
-
-        # Check agents have container images
-        for agent in agent_group_definition.agents:
-            if not agent.container_image:
-                console.error(f"Agent {agent.key} does not have a container image")
-                return False
-
         return True
 
     def scan(
@@ -159,30 +133,17 @@ class CloudRunRuntime(runtime.Runtime):
         Returns:
             Scan object if created successfully, None otherwise.
         """
-        with models.Database():
-            try:
-                # Create scan in database
-                scan = models.Scan.create(
-                    title=title,
-                    asset=assets[0].__class__.__name__ if assets else "unknown",
-                )
-                console.info(f"Created scan with ID: {scan.id}")
 
-                # Start agent deployment
-                self._start_agents(agent_group_definition, scan.id)
+        # Start agent deployment
+        self._start_agents(agent_group_definition, self._scan_id)
 
-                # Inject assets if provided
-                if assets:
-                    self._inject_assets(assets, scan.id)
+        # Inject assets if provided
+        if assets:
+            self._inject_assets(assets, self._scan_id)
 
-                return scan
-
-            except sqlalchemy.exc.IntegrityError as e:
-                console.error(f"Failed to create scan: {e}")
-                return None
 
     def _start_agents(
-        self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: int
+        self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: str
     ) -> None:
         """Deploy agents to Cloud Run.
 
@@ -208,31 +169,34 @@ class CloudRunRuntime(runtime.Runtime):
                     scan_id=scan_id,
                     bus_url=self._bus_url,
                     bus_vhost=self._bus_vhost,
+                    bus_management_url=self._bus_management_url,
                     bus_exchange_topic=self._bus_exchange_topic,
                     redis_url=self._redis_url,
                     gcp_project_id=self._gcp_project_id,
                     gcp_region=self._gcp_region,
                     gcp_service_account=self._gcp_service_account,
-                    tracing_collector_url=self._tracing_collector_url,
+                    tracing_collector_url=self._tracing_collector_url
                 )
+                service_name = agent_runtime_instance.deploy_service(scan_id=scan_id)
+                self._deployed_services.append(service_name)
 
-                # Submit deployment task
-                future = executor.submit(
-                    agent_runtime_instance.deploy_service, scan_id=scan_id
-                )
-                future_to_agent[future] = agent
+            #     # Submit deployment task
+            #     future = executor.submit(
+            #         agent_runtime_instance.deploy_service, scan_id=scan_id
+            #     )
+            #     future_to_agent[future] = agent
+            #
+            # # Wait for all deployments
+            # for future in futures.as_completed(future_to_agent):
+            #     agent = future_to_agent[future]
+            #     try:
+            #         service_name = future.result()
+            #         console.info(f"Successfully deployed {agent.key} as {service_name}")
+            #         self._deployed_services.append(service_name)
+            #     except Exception as e:
+            #         console.error(f"Failed to deploy {agent.key}: {e}")
 
-            # Wait for all deployments
-            for future in futures.as_completed(future_to_agent):
-                agent = future_to_agent[future]
-                try:
-                    service_name = future.result()
-                    console.info(f"Successfully deployed {agent.key} as {service_name}")
-                    self._deployed_services.append(service_name)
-                except Exception as e:
-                    console.error(f"Failed to deploy {agent.key}: {e}")
-
-    def _inject_assets(self, assets: List[base_asset.Asset], scan_id: int) -> None:
+    def _inject_assets(self, assets: List[base_asset.Asset], scan_id: str) -> None:
         """Inject assets by calling the asset injection agent.
 
         Args:
@@ -252,39 +216,7 @@ class CloudRunRuntime(runtime.Runtime):
         Args:
             scan_id: The scan ID.
         """
-        console.info(f"Stopping scan {scan_id} and cleaning up Cloud Run jobs...")
-
-        with futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_job = {}
-
-            # Delete all deployed jobs for this scan
-            for job_name in self._deployed_services:
-                if str(scan_id) in job_name:
-                    future = executor.submit(self._delete_service, job_name)
-                    future_to_job[future] = job_name
-
-            # Wait for deletions
-            for future in futures.as_completed(future_to_job):
-                job_name = future_to_job[future]
-                try:
-                    future.result()
-                    console.info(f"Deleted job {job_name}")
-                except Exception as e:
-                    console.error(f"Failed to delete {job_name}: {e}")
-
-    def _delete_service(self, service_name: str) -> None:
-        """Delete a Cloud Run job.
-
-        Args:
-            service_name: Name of the job to delete.
-        """
-        job_path = f"projects/{self._gcp_project_id}/locations/{self._gcp_region}/jobs/{service_name}"
-
-        try:
-            self._client.delete_job(name=job_path)
-        except Exception as e:
-            logger.error(f"Error deleting job {service_name}: {e}")
-            raise
+        raise NotImplementedError()
 
     def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
         """Lists scans managed by this runtime.
