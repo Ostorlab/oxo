@@ -265,6 +265,12 @@ class CloudRunAgentRuntime:
         container = run_v2.Container(image=image_uri)
         container.env = env_vars
         container.volume_mounts = volume_mounts
+        container.resources = run_v2.ResourceRequirements(
+            limits={
+                "cpu": "8",
+                "memory": "8Gi",
+            }
+        )
         task_template = run_v2.TaskTemplate()
         task_template.containers = [container]
         task_template.volumes = volumes
@@ -276,12 +282,6 @@ class CloudRunAgentRuntime:
         execution_template.parallelism = (
             self.agent.replicas or 1
         )  # TODO(m0hamed-ait: improve this)
-        execution_template.resources = run_v2.ResourceRequirements(
-            limits={
-                "cpu": "8",
-                "memory": "8Gi",
-            }
-        )
 
         job = run_v2.Job()
         job.template = execution_template
@@ -369,7 +369,12 @@ class CloudRunAgentRuntime:
         )
         container.env = env_vars
         container.volume_mounts = volume_mounts
-
+        container.resources = run_v2.ResourceRequirements(
+            limits={
+                "cpu": "8",
+                "memory": "8Gi",
+            }
+        )
         task_template = run_v2.TaskTemplate()
         task_template.containers = [container]
         task_template.volumes = volumes
@@ -379,12 +384,6 @@ class CloudRunAgentRuntime:
         execution_template.template = task_template
         execution_template.task_count = self.agent.replicas or 1
         execution_template.parallelism = self.agent.replicas or 1
-        execution_template.resources = run_v2.ResourceRequirements(
-            limits={
-                "cpu": "8",
-                "memory": "8Gi",
-            }
-        )
 
         job = run_v2.Job()
         job.template = execution_template
