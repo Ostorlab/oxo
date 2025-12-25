@@ -9,7 +9,6 @@ import io
 import logging
 import random
 import uuid
-from resource import RLIMIT_CPU
 from typing import List, Optional, Tuple
 
 import docker
@@ -257,11 +256,13 @@ class CloudRunAgentRuntime:
         env_pairs = []
         env_vars = self._build_env(env_pairs)
 
-        container = run_v2.Container()
-        # TODO: Hack to make images work. Should be fixed.
-        container.image = (
-            f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
-        )
+        # container = run_v2.Container()
+        # # TODO: Hack to make images work. Should be fixed.
+        # container.image = (
+        #     f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
+        # )
+        image_uri = f"europe-west1-docker.pkg.dev/moonshot-scale/oxo-agents/{self.agent.container_image}"  # TODO (m0hamed-ait): remove this - just for testing with Artifact Registry
+        container = run_v2.Container(image=image_uri)
         container.env = env_vars
         container.volume_mounts = volume_mounts
         task_template = run_v2.TaskTemplate()
@@ -271,15 +272,16 @@ class CloudRunAgentRuntime:
 
         execution_template = run_v2.ExecutionTemplate()
         execution_template.template = task_template
-        execution_template.task_count = 1
-        execution_template.parallelism = 1
+        execution_template.task_count = self.agent.replicas or 1
+        execution_template.parallelism = (
+            self.agent.replicas or 1
+        )  # TODO(m0hamed-ait: improve this)
         execution_template.resources = run_v2.ResourceRequirements(
             limits={
                 "cpu": "8",
                 "memory": "8Gi",
             }
         )
-
 
         job = run_v2.Job()
         job.template = execution_template
@@ -375,15 +377,14 @@ class CloudRunAgentRuntime:
 
         execution_template = run_v2.ExecutionTemplate()
         execution_template.template = task_template
-        execution_template.task_count = 1
-        execution_template.parallelism = 1
+        execution_template.task_count = self.agent.replicas or 1
+        execution_template.parallelism = self.agent.replicas or 1
         execution_template.resources = run_v2.ResourceRequirements(
             limits={
                 "cpu": "8",
                 "memory": "8Gi",
             }
         )
-
 
         job = run_v2.Job()
         job.template = execution_template
