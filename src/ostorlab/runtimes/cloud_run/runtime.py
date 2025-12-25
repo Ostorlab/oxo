@@ -9,8 +9,6 @@ import logging
 from typing import List, Optional
 from concurrent import futures
 
-import sqlalchemy
-from google.cloud import run_v2
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
@@ -141,7 +139,6 @@ class CloudRunRuntime(runtime.Runtime):
         if assets:
             self._inject_assets(assets, self._scan_id)
 
-
     def _start_agents(
         self, agent_group_definition: definitions.AgentGroupDefinition, scan_id: str
     ) -> None:
@@ -153,9 +150,7 @@ class CloudRunRuntime(runtime.Runtime):
         """
         console.info("Deploying agents to Cloud Run...")
 
-        with futures.ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_agent = {}
-
+        with futures.ThreadPoolExecutor(max_workers=10):
             for agent in agent_group_definition.agents:
                 # Skip if no container image
                 if not agent.container_image:
@@ -175,7 +170,7 @@ class CloudRunRuntime(runtime.Runtime):
                     gcp_project_id=self._gcp_project_id,
                     gcp_region=self._gcp_region,
                     gcp_service_account=self._gcp_service_account,
-                    tracing_collector_url=self._tracing_collector_url
+                    tracing_collector_url=self._tracing_collector_url,
                 )
                 service_name = agent_runtime_instance.deploy_service(scan_id=scan_id)
                 self._deployed_services.append(service_name)
@@ -206,8 +201,7 @@ class CloudRunRuntime(runtime.Runtime):
         console.info("Injecting assets...")
 
         inject_asset_agent_settings = definitions.AgentSettings(
-            key=ASSET_INJECTION_AGENT_DEFAULT,
-            restart_policy="none"
+            key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
         )
 
         agent_runtime_instance = agent_runtime.CloudRunAgentRuntime(
@@ -222,12 +216,11 @@ class CloudRunRuntime(runtime.Runtime):
             gcp_project_id=self._gcp_project_id,
             gcp_region=self._gcp_region,
             gcp_service_account=self._gcp_service_account,
-            tracing_collector_url=self._tracing_collector_url
+            tracing_collector_url=self._tracing_collector_url,
         )
-        
+
         service_name = agent_runtime_instance.deploy_service_with_assets(
-            scan_id=scan_id,
-            assets=assets
+            scan_id=scan_id, assets=assets
         )
         console.info(f"Asset injection agent deployed: {service_name}")
 

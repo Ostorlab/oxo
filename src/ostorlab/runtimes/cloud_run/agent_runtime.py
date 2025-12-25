@@ -5,13 +5,9 @@ settings, definition, and mounts in a per-job GCS bucket and restores them in th
 job container before starting the agent.
 """
 
-import base64
 import io
 import logging
-import os
 import random
-import tarfile
-import tempfile
 import uuid
 from typing import List, Optional, Tuple
 
@@ -80,7 +76,9 @@ class CloudRunAgentRuntime:
         self._gcp_service_account = gcp_service_account
         self._tracing_collector_url = tracing_collector_url
         self._gcp_logging_credential = gcp_logging_credential
-        self._jobs_client = run_v2.JobsClient.from_service_account_file(self._gcp_service_account)
+        self._jobs_client = run_v2.JobsClient.from_service_account_file(
+            self._gcp_service_account
+        )
         self.update_agent_settings_for_cloud()
 
     def update_agent_settings_for_cloud(self) -> None:
@@ -109,8 +107,9 @@ class CloudRunAgentRuntime:
             agent_definition = agent_definitions.AgentDefinition.from_yaml(file)
         return agent_definition, yaml_definition_string
 
-
-    def _build_service_name(self, agent_definition: agent_definitions.AgentDefinition) -> str:
+    def _build_service_name(
+        self, agent_definition: agent_definitions.AgentDefinition
+    ) -> str:
         if agent_definition.service_name is not None:
             if len(agent_definition.service_name) > MAX_SERVICE_NAME_LEN:
                 raise ServiceNameTooLong(
@@ -151,55 +150,58 @@ class CloudRunAgentRuntime:
 
     def _prepare_artifacts(
         self,
-        settings_bytes: bytes,
-        definition_bytes: bytes,
+        settings_bytes: bytes | None = None,
+        definition_bytes: bytes | None = None,
         asset_files: Optional[dict[str, bytes]] = None,
     ) -> str:
         """Prepare artifacts by uploading to GCS bucket.
-        
+
         Args:
             settings_bytes: Serialized agent settings (can be empty if in asset_files).
             definition_bytes: Serialized agent definition (can be empty if in asset_files).
             asset_files: Optional dict of asset filenames to their binary content.
-            
+
         Returns:
             Bucket name containing the artifacts.
         """
         client = self._storage_client()
-        bucket_prefix = f"ostorlab-{self._gcp_project_id}-{self.runtime_name}"[:50]
+        bucket_prefix = f"ostorlab-{self._gcp_project_id}-{self.runtime_name}-{random.randrange(0, 9999)}"[
+            :50
+        ]
         bucket = self._create_bucket(client, bucket_prefix)
 
-        settings_blob_name = "settings.binproto"
-        definition_blob_name = "ostorlab.yaml"
+        if settings_bytes is not None and definition_bytes is not None:
+            settings_blob_name = "settings.binproto"
+            definition_blob_name = "ostorlab.yaml"
 
-        self._upload_blob(bucket, settings_blob_name, settings_bytes)
-        self._upload_blob(bucket, definition_blob_name, definition_bytes)
-        
+            self._upload_blob(bucket, settings_blob_name, settings_bytes)
+            self._upload_blob(bucket, definition_blob_name, definition_bytes)
+
         if asset_files:
             for filename, content in asset_files.items():
                 self._upload_blob(bucket, filename, content)
 
         return bucket.name
 
-
     def _build_gcs_bucket_volume(
         self, bucket_name: str, mount_path: str = "/tmp"
     ) -> tuple[List[run_v2.Volume], List[run_v2.VolumeMount]]:
         """Build GCS bucket volume and mount.
-        
+
         Args:
             bucket_name: Name of the GCS bucket.
             mount_path: Path where to mount the bucket in the container.
                        Default is "/tmp" where agents expect config files.
-            
+
         Returns:
             Tuple of volumes and volume mounts.
         """
+        name = f"gcs-bucket-{random.randrange(0, 9999)}"
         volume = run_v2.Volume(
-            name="gcs-bucket",
+            name=name,
             gcs=run_v2.GCSVolumeSource(bucket=bucket_name),
         )
-        volume_mount = run_v2.VolumeMount(name="gcs-bucket", mount_path=mount_path)
+        volume_mount = run_v2.VolumeMount(name=name, mount_path=mount_path)
         return [volume], [volume_mount]
 
     def _build_mount_envs(self, mounts: List[str]) -> List[tuple[str, str]]:
@@ -225,7 +227,9 @@ class CloudRunAgentRuntime:
         Returns:
             The Cloud Run Job name.
         """
-        agent_definition, yaml_definition_string = self._load_agent_definition_and_label()
+        agent_definition, yaml_definition_string = (
+            self._load_agent_definition_and_label()
+        )
 
         # Apply defaults from definition.
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
@@ -238,7 +242,9 @@ class CloudRunAgentRuntime:
         self.agent.caps = self.agent.caps or agent_definition.caps
 
         if self.agent.open_ports:
-            logger.warning("Cloud Run Jobs do not expose open_ports; ignoring declared ports.")
+            logger.warning(
+                "Cloud Run Jobs do not expose open_ports; ignoring declared ports."
+            )
 
         settings_bytes = self._serialize_settings_bytes()
         definition_bytes = self._serialize_definition_bytes(yaml_definition_string)
@@ -252,7 +258,9 @@ class CloudRunAgentRuntime:
 
         container = run_v2.Container()
         # TODO: Hack to make images work. Should be fixed.
-        container.image = f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
+        container.image = (
+            f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
+        )
         container.env = env_vars
         container.volume_mounts = volume_mounts
         task_template = run_v2.TaskTemplate()
@@ -298,8 +306,10 @@ class CloudRunAgentRuntime:
 
         Returns:
             The Cloud Run Job name.
-        """        
-        agent_definition, yaml_definition_string = self._load_agent_definition_and_label()
+        """
+        agent_definition, yaml_definition_string = (
+            self._load_agent_definition_and_label()
+        )
 
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         self.agent.mounts = self.agent.mounts or agent_definition.mounts
@@ -316,26 +326,40 @@ class CloudRunAgentRuntime:
         asset_files = {}
         asset_files["settings.binproto"] = settings_bytes
         asset_files["ostorlab.yaml"] = definition_bytes
-        
+        bucket_name = self._prepare_artifacts(asset_files=asset_files)
+
+        volumes = []
+        volume_mounts = []
+
+        volumes_tmp, volume_mounts_tmp = self._build_gcs_bucket_volume(
+            bucket_name, mount_path="/tmp"
+        )
+        volumes.extend(volumes_tmp)
+        volume_mounts.extend(volume_mounts_tmp)
+
+        asset_files = {}
         for i, asset in enumerate(assets):
             asset_files[f"asset.binproto_{i}"] = asset.to_proto()
             asset_files[f"selector.txt_{i}"] = asset.selector.encode()
 
-        bucket_name = self._prepare_artifacts(
-            settings_bytes=b"", definition_bytes=b"", asset_files=asset_files
+        bucket_name = self._prepare_artifacts(asset_files=asset_files)
+        volumes_asset, volume_mounts_asset = self._build_gcs_bucket_volume(
+            bucket_name, mount_path="/asset"
         )
-
-        volumes, volume_mounts = self._build_gcs_bucket_volume(bucket_name, mount_path="/tmp")
+        volumes.extend(volumes_asset)
+        volume_mounts.extend(volume_mounts_asset)
 
         env_pairs = []
         env_vars = self._build_env(env_pairs)
 
         container = run_v2.Container()
         # TODO: Hack to make images work. Should be fixed.
-        container.image = f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
+        container.image = (
+            f"ostorlab/{self.agent.container_image.replace('ostorlab', '5448')}"
+        )
         container.env = env_vars
         container.volume_mounts = volume_mounts
-        
+
         task_template = run_v2.TaskTemplate()
         task_template.containers = [container]
         task_template.volumes = volumes
