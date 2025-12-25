@@ -197,7 +197,7 @@ class CloudRunRuntime(runtime.Runtime):
             #         console.error(f"Failed to deploy {agent.key}: {e}")
 
     def _inject_assets(self, assets: List[base_asset.Asset], scan_id: str) -> None:
-        """Inject assets by calling the asset injection agent.
+        """Inject assets by deploying the inject_asset agent with assets in GCS.
 
         Args:
             assets: List of assets to inject.
@@ -205,10 +205,31 @@ class CloudRunRuntime(runtime.Runtime):
         """
         console.info("Injecting assets...")
 
-        # For Cloud Run, we'll need to implement a way to trigger the injection
-        # This could be done via a Cloud Function or by deploying a temporary service
-        # For now, we'll log that this needs to be implemented
-        console.info("Asset injection for Cloud Run runtime needs to be implemented")
+        inject_asset_agent_settings = definitions.AgentSettings(
+            key=ASSET_INJECTION_AGENT_DEFAULT,
+            restart_policy="none"
+        )
+
+        agent_runtime_instance = agent_runtime.CloudRunAgentRuntime(
+            agent_settings=inject_asset_agent_settings,
+            runtime_name=self.name,
+            scan_id=scan_id,
+            bus_url=self._bus_url,
+            bus_vhost=self._bus_vhost,
+            bus_management_url=self._bus_management_url,
+            bus_exchange_topic=self._bus_exchange_topic,
+            redis_url=self._redis_url,
+            gcp_project_id=self._gcp_project_id,
+            gcp_region=self._gcp_region,
+            gcp_service_account=self._gcp_service_account,
+            tracing_collector_url=self._tracing_collector_url
+        )
+        
+        service_name = agent_runtime_instance.deploy_service_with_assets(
+            scan_id=scan_id,
+            assets=assets
+        )
+        console.info(f"Asset injection agent deployed: {service_name}")
 
     def stop(self, scan_id: str) -> None:
         """Stops a scan by deleting all deployed Cloud Run services.
