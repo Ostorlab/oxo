@@ -9,6 +9,7 @@ import io
 import logging
 import random
 import uuid
+from resource import RLIMIT_CPU
 from typing import List, Optional, Tuple
 
 import docker
@@ -272,6 +273,13 @@ class CloudRunAgentRuntime:
         execution_template.template = task_template
         execution_template.task_count = 1
         execution_template.parallelism = 1
+        execution_template.resources = run_v2.ResourceRequirements(
+            limits={
+                "cpu": "8",
+                "memory": "8Gi",
+            }
+        )
+
 
         job = run_v2.Job()
         job.template = execution_template
@@ -369,6 +377,13 @@ class CloudRunAgentRuntime:
         execution_template.template = task_template
         execution_template.task_count = 1
         execution_template.parallelism = 1
+        execution_template.resources = run_v2.ResourceRequirements(
+            limits={
+                "cpu": "8",
+                "memory": "8Gi",
+            }
+        )
+
 
         job = run_v2.Job()
         job.template = execution_template
