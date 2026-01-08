@@ -103,7 +103,9 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             self._token = response.json().get("token")
             with console.status("Generating API key"):
                 api_key_response = self.execute(
-                    create_api_key.CreateAPIKeyAPIRequest(self._token_duration)
+                    create_api_key.CreateAPIKeyAPIRequest(
+                        expiry_date=self._token_duration,
+                    )
                 )
                 console.success("API key generated")
 

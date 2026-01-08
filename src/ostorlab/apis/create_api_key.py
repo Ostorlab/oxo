@@ -12,13 +12,17 @@ logger = logging.getLogger(__name__)
 class CreateAPIKeyAPIRequest(request.APIRequest):
     """Handles the creation of an API key."""
 
-    def __init__(self, expiry_date: Optional[datetime.datetime] = None):
+    def __init__(
+        self, expiry_date: Optional[datetime.datetime] = None, role: str = "user"
+    ):
         """Constructs all the necessary attributes for the object.
 
         Args:
            expiry_date: The date when the API key should expire. Defaults to None.
+           role: The role of the API key. Defaults to user.
         """
         self._name = "Ostorlab CLI"
+        self._role = role
         self._expiry_date = expiry_date
 
     @property
@@ -29,8 +33,8 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
             The query to generate an API key
         """
         return """
-         mutation CreateApiKey($name: String!, $expiryDate: DateTime) {
-               createApiKey(name: $name, expiryDate: $expiryDate) {
+         mutation CreateApiKey($name: String!, $role: String!, $expiryDate: DateTime) {
+               createApiKey(name: $name, role: $role, expiryDate: $expiryDate) {
                   apiKey {
                      secretKey
                      apiKey {
@@ -52,7 +56,11 @@ class CreateAPIKeyAPIRequest(request.APIRequest):
         data = {
             "query": self.query,
             "variables": json.dumps(
-                {"name": self._name, "expiryDate": self._expiry_date}
+                {
+                    "name": self._name,
+                    "expiryDate": self._expiry_date,
+                    "role": self._role,
+                }
             ),
         }
         return data
