@@ -28,6 +28,11 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_m
     assert configuration_manager.ConfigurationManager().api_key is None
 
 
+@mock.patch.object(
+    configuration_manager.ConfigurationManager,
+    "authorization_token",
+    new_callable=mock.PropertyMock,
+)
 @mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, "unauthenticate")
 def testOstorlabAuthRevokeCLI_whenInvalidAuthorizationTokenProvided_logsError(
     mock_console, httpx_mock
