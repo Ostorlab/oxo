@@ -55,5 +55,5 @@ def testOstorlabAuthRevokeCLI_whenInvalidAuthorizationTokenProvided_logsError(
     assert result.exception is None
     assert (
         "Error response. The reason could be the authorization token is invalid."
-        in result.output
+        in result.output.replace("\n", "")
     )
