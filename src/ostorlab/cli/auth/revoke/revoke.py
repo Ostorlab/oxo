@@ -4,7 +4,7 @@ import logging
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner
-from ostorlab.apis import revoke_api_key
+from ostorlab.apis import logout as logout_api
 from ostorlab import configuration_manager
 from ostorlab.cli.auth import auth
 from ostorlab.cli import console as cli_console
@@ -15,23 +15,31 @@ console = cli_console.Console()
 
 @auth.auth.command()
 def revoke():
-    """Use this to revoke your API key."""
+    """[Deprecated] Since we don't relay on creating a key when login anymore, it is here for backward-compatibility."""
+    _logout_impl()
 
+
+@auth.auth.command()
+def logout():
+    """Use this to log out."""
+    _logout_impl()
+
+
+def _logout_impl():
     config_manager = configuration_manager.ConfigurationManager()
 
-    try:
-        api_key_id = config_manager.api_key_id
-        api_runner = authenticated_runner.AuthenticatedAPIRunner()
+    authorization_token = config_manager.authorization_token
+    api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
-        with console.status("Revoking API key"):
-            try:
-                api_runner.execute(revoke_api_key.RevokeAPIKeyAPIRequest(api_key_id))
-                api_runner.unauthenticate()
-                config_manager.delete_api_data()
-                console.success("API key revoked")
-            except runner.ResponseError:
-                console.error("Could not revoke your API key.")
-
-    except authenticated_runner.AuthenticationError:
-        api_runner.unauthenticate()
-        console.success("Your API key has already been revoked.")
+    with console.status("Loging out"):
+        try:
+            if authorization_token is not None:
+                api_runner.execute(logout_api.LogoutAPIRequest())
+            api_runner.unauthenticate()
+            config_manager.delete_authorization_token_data()
+            console.success("You successfully log out")
+        except runner.ResponseError:
+            console.error(
+                "Error response. The reason could be the authorization token is invalid."
+            )
+            api_runner.unauthenticate()

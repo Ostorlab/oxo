@@ -38,7 +38,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         self._private_dir.mkdir(parents=True, exist_ok=True)
         self._uploads_dir = private_dir / "uploads"
         self._uploads_dir.mkdir(parents=True, exist_ok=True)
-        self._complete_api_key_path = self._private_dir / "key"
+        self._complete_authorization_token_path = self._private_dir / "token"
         self._api_key: Optional[str] = None
 
     @property
@@ -56,72 +56,61 @@ class ConfigurationManager(metaclass=SingletonMeta):
         """API key their either uses a predefined value, or retrieve the one in the configuration folder."""
         if self._api_key is not None:
             return self._api_key
+
+    @property
+    def authorization_token(self) -> Optional[str]:
+        """retrieve authorization token in the configuration folder."""
+        authorization_token_data = self._get_authorization_token()
+        if authorization_token_data is not None:
+            authorization_token: Optional[str] = authorization_token_data.get(
+                "authorization_token"
+            )
+            return authorization_token
         else:
-            api_data = self._get_api_data()
-            if api_data is not None:
-                secret_key: Optional[str] = api_data.get("secret_key")
-                return secret_key
-            else:
-                return None
+            return None
 
     @api_key.setter
     def api_key(self, key: Optional[str]) -> None:
         """Set API key"""
         self._api_key = key
 
-    @property
-    def api_key_id(self) -> Optional[str]:
-        """API key id from the location in which it is saved."""
-        if self._api_key is not None:
-            return None
-        else:
-            api_data = self._get_api_data()
-            if api_data is not None:
-                return api_data.get("api_key_id")
-            else:
-                return None
-
-    def set_api_data(
-        self, secret_key: str, api_key_id: str, expiry_date: Optional[datetime]
-    ) -> None:
-        """Persists the API data (key, id, expiry date) to a file in the given path.
+    def set_authorization_token(self, authorization_token: str) -> None:
+        """Persists the Authorization token to a file in the given path.
 
         Args:
-            secret_key: The authenticated user's secret key.
-            api_key_id: The authenticated user's generated API key.
-            expiry_date: An optional API expiry date.
+            authorization_token: Token to be used as a request header for to authorize authenticated user.
 
         Returns:
             None
         """
 
-        api_data = {
-            "secret_key": secret_key,
-            "api_key_id": api_key_id,
-            "expiry_date": expiry_date,
-        }
+        authorization_token_data = {"authorization_token": authorization_token}
 
-        with open(self._complete_api_key_path, "w", encoding="utf-8") as file:
-            data = json.dumps(api_data, indent=4)
+        with open(
+            self._complete_authorization_token_path, "w", encoding="utf-8"
+        ) as file:
+            data = json.dumps(authorization_token_data, indent=4)
             file.write(data)
 
-    def _get_api_data(self) -> Optional[Dict[str, str]]:
-        """Gets the API data from the location in which it is saved.
+    def _get_authorization_token(self) -> Optional[Dict[str, str]]:
+        """Gets the authorization token from the location in which it is saved.
 
         Returns:
-            The user's API data if it exists, otherwise returns None.
+            The user's authorization token if it exists, otherwise returns None.
         """
         try:
-            with open(self._complete_api_key_path, "r", encoding="utf-8") as file:
-                api_data: Dict[str, str] = json.loads(file.read())
-                return api_data
+            with open(
+                self._complete_authorization_token_path, "r", encoding="utf-8"
+            ) as file:
+                authorization_token_data: Dict[str, str] = json.loads(file.read())
+                return authorization_token_data
         except FileNotFoundError:
             return None
 
-    def delete_api_data(self) -> None:
+    def delete_authorization_token_data(self) -> None:
         """Deletes the file containing the API data."""
-        self._complete_api_key_path.unlink(missing_ok=True)
+        self._complete_authorization_token_path.unlink(missing_ok=True)
 
     @property
     def is_authenticated(self) -> bool:
-        return self.api_key is not None
+        return self.api_key is not None or self.authorization_token is not None

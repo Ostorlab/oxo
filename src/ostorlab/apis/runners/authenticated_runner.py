@@ -15,7 +15,6 @@ import httpx
 import ubjson
 import json
 
-from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
 from ostorlab.apis.runners import login_runner
 from ostorlab.apis.runners import runner
@@ -62,7 +61,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._password = password
         self._token_duration = token_duration
         self._api_key = api_key or self._configuration_manager.api_key
-        self._token: Optional[str] = None
+        self._token: str | None = self._configuration_manager.authorization_token
         self._otp_token: Optional[str] = None
 
     @property
@@ -101,30 +100,17 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                 raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get("token")
-            with console.status("Generating API key"):
-                api_key_response = self.execute(
-                    create_api_key.CreateAPIKeyAPIRequest(
-                        expiry_date=self._token_duration,
-                    )
-                )
-                console.success("API key generated")
 
-            api_data = api_key_response["data"]["createApiKey"]["apiKey"]
-            secret_key = api_data["secretKey"]
-            api_key_id = api_data["apiKey"]["id"]
-            expiry_date = api_data["apiKey"]["expiryDate"]
-
-            self._api_key = secret_key
-            with console.status("Persisting API key"):
-                self._configuration_manager.set_api_data(
-                    secret_key, api_key_id, expiry_date
+            with console.status("Persisting Authorization Token"):
+                self._configuration_manager.set_authorization_token(
+                    authorization_token=self._token
                 )
-                console.success("API key persisted")
-            self._token = None
+                console.success("Authorization Token persisted")
             console.success(":white_check_mark: Authentication successful")
 
     def unauthenticate(self) -> None:
         self._api_key = None
+        self._token = None
 
     def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.
