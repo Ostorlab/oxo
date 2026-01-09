@@ -2314,7 +2314,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     db_engine_path: str,
 ) -> None:
     """Test RunScanMutation for Network asset."""
-
+    scan.title = "Test Scan Network Asset"
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
@@ -2399,6 +2399,7 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     run_scan_mock2: None,
 ) -> None:
     """Test RunScanMutation for Domain asset."""
+    scan.title = "Test Scan Domain Asset"
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
@@ -2461,6 +2462,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test RunScanMutation for Url asset."""
+    scan.title = "Test Scan Url Asset"
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2542,6 +2544,7 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test RunScanMutation for AndroidFile asset."""
+    scan.title = "Test Scan Android File"
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2614,6 +2617,7 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test RunScanMutation for IosFile asset."""
+    scan.title = "Test Scan Ios File"
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2686,6 +2690,7 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test RunScanMutation for AndroidStore asset."""
+    scan.title = "Test Scan Android Store"
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -2758,6 +2763,7 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test RunScanMutation for IosStore asset."""
+    scan.title = "Test Scan Ios Store"
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
