@@ -2,7 +2,6 @@
 
 import json
 import pathlib
-from datetime import datetime
 from typing import Dict, Optional, Tuple
 
 OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / ".ostorlab"
