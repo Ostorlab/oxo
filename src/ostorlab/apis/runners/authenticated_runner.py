@@ -61,7 +61,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._password = password
         self._token_duration = token_duration
         self._api_key = api_key or self._configuration_manager.api_key
-        self._token: str | None = self._configuration_manager.authorization_token
+        self._token: Optional[str] = self._configuration_manager.authorization_token
         self._otp_token: Optional[str] = None
 
     @property
