@@ -15,17 +15,7 @@ console = cli_console.Console()
 
 @auth.auth.command()
 def revoke():
-    """[Deprecated] Since we don't relay on creating a key when login anymore, it is here for backward-compatibility."""
-    _logout_impl()
-
-
-@auth.auth.command()
-def logout():
     """Use this to log out."""
-    _logout_impl()
-
-
-def _logout_impl():
     config_manager = configuration_manager.ConfigurationManager()
 
     authorization_token = config_manager.authorization_token
