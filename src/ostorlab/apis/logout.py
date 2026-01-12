@@ -2,10 +2,8 @@
 
 Typical usage example:
 
-login_request = logout.LogoutAPIRequest()
+logout_request = logout.LogoutAPIRequest()
 """
-
-from typing import Dict, Optional
 
 from ostorlab.apis import request
 
@@ -14,7 +12,7 @@ class LogoutAPIRequest(request.APIRequest):
     """Makes a request to log out the user."""
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str:
         return """
             mutation Logout {
                 logout {
@@ -24,7 +22,7 @@ class LogoutAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict[str, str]:
         """Gets the user login credentials.
 
         Returns:
