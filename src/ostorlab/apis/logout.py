@@ -2,7 +2,7 @@
 
 Typical usage example:
 
-login_request = logout.LogoutAPIRequest()
+logout_request = logout.LogoutAPIRequest()
 """
 
 from typing import Dict, Optional
