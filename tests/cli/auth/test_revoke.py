@@ -28,24 +28,20 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_m
     assert configuration_manager.ConfigurationManager().api_key is None
 
 
+@mock.patch.object(
+    configuration_manager.ConfigurationManager,
+    "authorization_token",
+    new_callable=mock.PropertyMock,
+)
 @mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, "unauthenticate")
-def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
+def testOstorlabAuthRevokeCLI_whenInvalidAuthorizationTokenProvided_logsError(
     mock_console, httpx_mock
 ):
-    """Test ostorlab auth revoke command with wrong api key id.
+    """Test ostorlab auth logout command with wrong authorization token.
     Should unauthenticate user.
     """
 
-    errors_dict = {
-        "errors": [
-            {
-                "message": "OrganizationAPIKey matching query does not exist.",
-                "locations": [{"line": 3, "column": 16}],
-                "path": ["revokeApiKey"],
-            }
-        ],
-        "data": {"revokeApiKey": None},
-    }
+    errors_dict = {"detail": "Invalid token."}
 
     mock_console.return_value = None
     runner = CliRunner()
@@ -53,8 +49,11 @@ def testOstorlabAuthRevokeCLI_whenInvalidApiKeyIdIsProvided_logsError(
         method="POST",
         url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
         json=errors_dict,
-        status_code=200,
+        status_code=401,
     )
     result = runner.invoke(rootcli.rootcli, ["auth", "revoke"])
     assert result.exception is None
-    assert "ERROR: Could not revoke your API key" in result.output
+    assert (
+        "Error response. The reason could be the authorization token is invalid."
+        in result.output.replace("\n", "")
+    )
