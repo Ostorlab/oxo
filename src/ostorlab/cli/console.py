@@ -1,7 +1,7 @@
 """Pretty prints and logs console statements."""
 
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional, Any
 
 import rich
 from rich import box
@@ -19,7 +19,9 @@ class Console:
     }
 
     def __init__(
-        self, theme: Dict[str, str] = None, logger: logging.Logger = None
+        self,
+        theme: Optional[Dict[str, str]] = None,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         """Initializes the console with text styling.
 
@@ -85,7 +87,9 @@ class Console:
         """
         return self._console.status(f"[info]{text}")
 
-    def table(self, columns: Dict[str, str], data: List[Dict], title: str) -> None:
+    def table(
+        self, columns: Dict[str, str], data: List[Dict[str, Any]], title: str
+    ) -> None:
         """Constructs a table to display a list of items.
 
         Args:
@@ -108,5 +112,5 @@ class Console:
         table.box = box.SQUARE_DOUBLE_HEAD
         self._console.print(table)
 
-    def print(self, data):
+    def print(self, data: Any) -> None:
         self._console.print(data)
