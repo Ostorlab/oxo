@@ -1,7 +1,7 @@
 """Lists full details of a single vulnerability or all the vulnerabilities for a specific scan."""
 
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from ostorlab.apis import request
 
@@ -75,7 +75,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the query to list the vulnz.
 
         Returns:

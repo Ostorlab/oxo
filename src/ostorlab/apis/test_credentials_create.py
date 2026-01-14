@@ -3,7 +3,7 @@
 import abc
 import dataclasses
 import json
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Any
 
 from . import request
 
@@ -92,7 +92,7 @@ mutation TestCredentials($testCredentials: TestCredentialsInput!) {
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the query and variables to create test credentials.
 
         Returns:

@@ -1,6 +1,6 @@
 """Lists the remote scans."""
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import json
 
 from ostorlab.apis import request
@@ -44,7 +44,7 @@ class ScansListAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the query to list the scans.
 
         Returns:

@@ -38,7 +38,7 @@ class TraceExporter:
         # specialized fields for the different collectors.
         self._file: Optional[io.IOBase] = None
 
-    def close(self):
+    def close(self) -> None:
         if self._file is not None:
             self._file.close()
 
@@ -63,14 +63,14 @@ class TraceExporter:
         else:
             raise NotImplementedError(f"Invalid tracer type {scheme}")
 
-    def _get_file_exporter(self, parsed_url):
+    def _get_file_exporter(self, parsed_url: parse.ParseResult) -> sdk_export.SpanExporter:
         file_path = parsed_url.path
         self._file = open(file_path, "w", encoding="utf-8")
         file_exporter = sdk_export.ConsoleSpanExporter(out=self._file)
         logger.info("Configuring file exporter..")
         return file_exporter
 
-    def _get_jaeger_exporter(self, parsed_url):
+    def _get_jaeger_exporter(self, parsed_url: parse.ParseResult) -> sdk_export.SpanExporter:
         netloc = parsed_url.netloc
         hostname, port = netloc.split(":")[0], int(netloc.split(":")[1])
         jaeger_exporter = jaeger.JaegerExporter(
@@ -81,7 +81,7 @@ class TraceExporter:
         logger.info("Configuring jaeger exporter..")
         return jaeger_exporter
 
-    def _get_gcp_exporter(self, parsed_url) -> cloud_trace.CloudTraceSpanExporter:
+    def _get_gcp_exporter(self, parsed_url: parse.ParseResult) -> cloud_trace.CloudTraceSpanExporter:
         """
         Returns a CloudTraceSpan exporter instance.
         The urls should respect the following format:
@@ -110,6 +110,7 @@ class OpenTelemetryMixin:
     """
 
     _tracer: Optional[trace.Tracer] = None
+    _tracing_collector_url: Optional[str]
 
     def __init__(
         self,
@@ -174,7 +175,7 @@ class OpenTelemetryMixin:
         """Ensures persistence of the span details in the file for the case of the file Span exporters."""
         self._span_processor.force_flush()
 
-    def _stringify_bytes_values(self, value: bytes):
+    def _stringify_bytes_values(self, value: bytes) -> str:
         """Method that will be used as a handler to json dump the message dictionary values."""
         if isinstance(value, bytes):
             return value.decode(errors="replace")
