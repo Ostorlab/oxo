@@ -63,14 +63,18 @@ class TraceExporter:
         else:
             raise NotImplementedError(f"Invalid tracer type {scheme}")
 
-    def _get_file_exporter(self, parsed_url: parse.ParseResult) -> sdk_export.SpanExporter:
+    def _get_file_exporter(
+        self, parsed_url: parse.ParseResult
+    ) -> sdk_export.SpanExporter:
         file_path = parsed_url.path
         self._file = open(file_path, "w", encoding="utf-8")
         file_exporter = sdk_export.ConsoleSpanExporter(out=self._file)
         logger.info("Configuring file exporter..")
         return file_exporter
 
-    def _get_jaeger_exporter(self, parsed_url: parse.ParseResult) -> sdk_export.SpanExporter:
+    def _get_jaeger_exporter(
+        self, parsed_url: parse.ParseResult
+    ) -> sdk_export.SpanExporter:
         netloc = parsed_url.netloc
         hostname, port = netloc.split(":")[0], int(netloc.split(":")[1])
         jaeger_exporter = jaeger.JaegerExporter(
@@ -81,7 +85,9 @@ class TraceExporter:
         logger.info("Configuring jaeger exporter..")
         return jaeger_exporter
 
-    def _get_gcp_exporter(self, parsed_url: parse.ParseResult) -> cloud_trace.CloudTraceSpanExporter:
+    def _get_gcp_exporter(
+        self, parsed_url: parse.ParseResult
+    ) -> cloud_trace.CloudTraceSpanExporter:
         """
         Returns a CloudTraceSpan exporter instance.
         The urls should respect the following format:

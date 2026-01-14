@@ -3,7 +3,7 @@
 import abc
 import dataclasses
 import json
-from typing import Dict, Optional, Any, Any
+from typing import Dict, Optional, Any
 
 from . import request
 
