@@ -92,7 +92,7 @@ mutation TestCredentials($testCredentials: TestCredentialsInput!) {
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the query and variables to create test credentials.
 
         Returns:

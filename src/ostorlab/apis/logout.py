@@ -5,7 +5,7 @@ Typical usage example:
 logout_request = logout.LogoutAPIRequest()
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from ostorlab.apis import request
 
@@ -24,7 +24,7 @@ class LogoutAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Gets the user login credentials.
 
         Returns:

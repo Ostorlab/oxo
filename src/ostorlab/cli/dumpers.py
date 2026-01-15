@@ -3,7 +3,7 @@
 import abc
 import csv
 import json
-from typing import List
+from typing import List, Mapping
 
 FIELDNAMES = [
     "id",
@@ -72,4 +72,4 @@ class VulnzCsvDumper(VulnzDumper):
             csv_writer = csv.DictWriter(outfile, fieldnames=FIELDNAMES)
             csv_writer.writeheader()
             for item in data:
-                csv_writer.writerow(item)
+                csv_writer.writerow(item if isinstance(item, Mapping) else vars(item))

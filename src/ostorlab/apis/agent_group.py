@@ -1,10 +1,10 @@
 """Create Agent Group via an API Request."""
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 
 from ostorlab.apis import request
 
-AgentType = Dict[str, Union[str, List]]
+AgentType = Dict[str, Union[str, List[Any]]]
 
 
 class CreateAgentGroupAPIRequest(request.APIRequest):
@@ -36,7 +36,7 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the body of the API request.
 
         Returns:
