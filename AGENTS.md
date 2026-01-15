@@ -58,18 +58,6 @@ mypy src/ostorlab/assets
 pip install -r typing_requirements.txt
 ```
 
-### Running a Single Test
-```bash
-# Run specific test file
-pytest tests/assets/ip_test.py::testAssetToProto_whenIP_generatesProto
-
-# Run with verbose output
-pytest tests/assets/ip_test.py -v
-
-# Run with debug output
-pytest tests/assets/ip_test.py -s
-```
-
 ### Other Commands
 ```bash
 # Build package
@@ -137,7 +125,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 ### Testing
 - Test file location: Mirror source structure under `tests/`
 - Test class naming: Not required, use descriptive functions
-- Test function naming: `test_when_[condition]_[expected_result]`
+- Test function naming: `test[Action]_[conditionCamelCase]_[expectedResultCamelCase]`
 - Use pytest fixtures defined in `tests/conftest.py`
 - Avoid test classes unless necessary for grouping
 - Use pytest markers: `docker`, `nats` (skip in CI with `-m "not docker and not nats"`)
@@ -190,6 +178,3 @@ pip install -e ".[testing,scanner,agent,serve]"
 └── tox.ini                   # Tox configuration
 ```
 
-## Existing Rules Integration
-
-**No existing Cursor or Copilot rules found** - This guide serves as the primary development reference.
