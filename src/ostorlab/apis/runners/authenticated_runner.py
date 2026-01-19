@@ -124,10 +124,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         Returns:
             The API response
         """
-        if self._token is not None:
-            headers = {"Authorization": f"Token {self._token}"}
-        elif self._api_key is not None:
+        if self._api_key is not None:
             headers = {"X-Api-Key": f"{self._api_key}"}
+        elif self._token is not None:
+            headers = {"Authorization": f"Token {self._token}"}
         else:
             headers = None
             console.warning("No authentication credentials were provided.")
@@ -185,10 +185,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         Returns:
             The API response
         """
-        if self._token is not None:
-            headers = {"Authorization": f"Token {self._token}"}
-        elif self._api_key is not None:
+        if self._api_key is not None:
             headers = {"X-Api-Key": f"{self._api_key}"}
+        elif self._token is not None:
+            headers = {"Authorization": f"Token {self._token}"}
         else:
             headers = None
             console.warning("No authentication credentials were provided.")
