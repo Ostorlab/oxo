@@ -31,9 +31,6 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
             agent_settings=agent_settings
         )
 
-        # Start the connection
-        await emitter.start()
-
         # Emit a message
         emitter.emit("v3.report.vulnerability", {
             "title": "XSS Vulnerability Found",
@@ -86,10 +83,10 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
 
     @classmethod
     async def create_and_start(
-            cls,
-            name: str,
-            out_selectors: list[str],
-            agent_settings: runtime_definitions.AgentSettings,
+        cls,
+        name: str,
+        out_selectors: list[str],
+        agent_settings: runtime_definitions.AgentSettings,
     ) -> "MCPMessageHandler":
         """Construct the emitter and connect to MQ immediately."""
         emitter = cls(
@@ -115,7 +112,7 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
         logger.info("MCP message emitter started successfully")
 
     def emit(
-            self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
     ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
@@ -133,7 +130,7 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
         return self.emit_raw(selector, message.raw, message_id=message_id)
 
     def emit_raw(
-            self, selector: str, raw: bytes, message_id: Optional[str] = None
+        self, selector: str, raw: bytes, message_id: Optional[str] = None
     ) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
@@ -148,16 +145,14 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
             None
         """
         if (
-                any(
-                    selector.startswith(out_selector) for out_selector in self.out_selectors
-                )
-                is False
+            any(
+                selector.startswith(out_selector) for out_selector in self.out_selectors
+            )
+            is False
         ):
             logger.error("selector not present in list of out selectors")
             # CAUTION: this check is enforced on the client-side only in certain runtimes
-            raise ValueError(
-                f"{selector} is not in {''.join(self.out_selectors)}"
-            )
+            raise ValueError(f"{selector} is not in {''.join(self.out_selectors)}")
 
         logger.debug("call to send message with %s", selector)
         # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
@@ -168,7 +163,11 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
             routing_key = f"{selector}.{message_id}"
 
         control_message = self._prepare_message(raw)
-        logger.info("Sending message bytes_len=%d to routing_key=%s", len(control_message), routing_key)
+        logger.info(
+            "Sending message bytes_len=%d to routing_key=%s",
+            len(control_message),
+            routing_key,
+        )
 
         try:
             running_loop = asyncio.get_running_loop()
@@ -180,7 +179,9 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
 
         if running_loop is self._loop:
             # Fire-and-forget; avoids deadlock while keeping a sync API.
-            self._loop.create_task(self.async_mq_send_message(routing_key, control_message))
+            self._loop.create_task(
+                self.async_mq_send_message(routing_key, control_message)
+            )
             return
 
         # Running loop in this thread => schedule on the emitter loop and wait here (not the loop thread).
@@ -189,8 +190,6 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
             self._loop,
         )
         future.result()
-
-        print("done call to send_message, here is the control message %s", control_message)
 
     def _prepare_message(self, raw: bytes) -> bytes:
         if self._control_message is not None:
@@ -201,7 +200,6 @@ class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
             "v3.control", {"control": {"agents": agents}, "message": raw}
         )
         return control_message.raw
-
 
     async def close(self) -> None:
         """Close the message queue connection and cleanup resources.
