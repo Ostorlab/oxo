@@ -15,6 +15,7 @@ from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
 
+
 class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
     """MCP Message Emitter for sending messages from MCP servers to RabbitMQ.
 
