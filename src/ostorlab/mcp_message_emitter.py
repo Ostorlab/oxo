@@ -6,7 +6,8 @@ to emit messages to the Ostorlab message bus without requiring full agent functi
 
 import asyncio
 import logging
-from typing import Any, Optional
+import uuid
+from typing import Any, Optional, Dict
 
 from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_mq_mixin
@@ -14,8 +15,7 @@ from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
 
-
-class MCPMessageEmitter(agent_mq_mixin.AgentMQMixin):
+class MCPMessageHandler(agent_mq_mixin.AgentMQMixin):
     """MCP Message Emitter for sending messages from MCP servers to RabbitMQ.
 
     This class provides a lightweight interface for MCP servers to emit messages
@@ -25,7 +25,7 @@ class MCPMessageEmitter(agent_mq_mixin.AgentMQMixin):
     Example:
         ```python
         # Initialize the emitter
-        emitter = MCPMessageEmitter(
+        emitter = MCPMessageHandler(
             name="mcp_vulnerability_scanner",
             out_selectors=["v3.report.vulnerability"],
             agent_settings=agent_settings
@@ -66,10 +66,12 @@ class MCPMessageEmitter(agent_mq_mixin.AgentMQMixin):
             loop: Optional event loop to use. If not provided, the current event loop
                 will be used.
         """
+        self._control_message: Optional[agent_message.Message] = None
+        logger.info("initializing MCP message emitter: %s", name)
         self._emitter_name = name
         self._out_selectors = out_selectors
         self._agent_settings = agent_settings
-        self._loop = loop or asyncio.get_event_loop()
+        self._loop = asyncio.get_event_loop()
         self._started = False
 
         # Initialize the MQ mixin with no input keys since we only send messages
@@ -82,7 +84,23 @@ class MCPMessageEmitter(agent_mq_mixin.AgentMQMixin):
             loop=self._loop,
         )
 
-    async def start(self) -> None:
+    @classmethod
+    async def create_and_start(
+            cls,
+            name: str,
+            out_selectors: list[str],
+            agent_settings: runtime_definitions.AgentSettings,
+    ) -> "MCPMessageHandler":
+        """Construct the emitter and connect to MQ immediately."""
+        emitter = cls(
+            name=name,
+            out_selectors=out_selectors,
+            agent_settings=agent_settings,
+        )
+        await emitter._start()
+        return emitter
+
+    async def _start(self) -> None:
         """Initialize the connection to the message queue.
 
         This method must be called before attempting to emit any messages.
@@ -97,63 +115,93 @@ class MCPMessageEmitter(agent_mq_mixin.AgentMQMixin):
         logger.info("MCP message emitter started successfully")
 
     def emit(
-        self, selector: str, data: dict[str, Any], priority: Optional[int] = None
+            self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
     ) -> None:
-        """Send a message to the specified selector.
+        """Sends a message to all listening agents on the specified selector.
 
         Args:
-            selector: Target selector for the message. Must match one of the allowed
-                out_selectors (or be a sub-selector of an allowed one).
-            data: Message data dictionary to serialize and send. This should conform
-                to the schema expected by agents listening to the selector.
-            priority: Optional message priority (0-255). Higher priority messages
-                are processed first by receiving agents.
-
+            selector: target selector.
+            data: message data to be serialized.
+            message_id: An id that will be added to the tail of the message.
         Raises:
-            ValueError: If selector is not in the allowed out_selectors list or if
-                the emitter has not been started yet.
-            RuntimeError: If there's an error sending the message to the bus.
+            NonListedMessageSelectorError: when selector is not part of listed out selectors.
+
+        Returns:
+            None
         """
-        if not self._started:
+        message = agent_message.Message.from_data(selector, data)
+        return self.emit_raw(selector, message.raw, message_id=message_id)
+
+    def emit_raw(
+            self, selector: str, raw: bytes, message_id: Optional[str] = None
+    ) -> None:
+        """Sends a message to all listening agents on the specified selector with no serialization.
+
+        Args:
+            selector: target selector.
+            raw: raw message to send.
+            message_id: An id that will be added to the tail of the message.
+        Raises:
+            NonListedMessageSelectorError: when selector is not part of listed out selectors.
+
+        Returns:
+            None
+        """
+        if (
+                any(
+                    selector.startswith(out_selector) for out_selector in self.out_selectors
+                )
+                is False
+        ):
+            logger.error("selector not present in list of out selectors")
+            # CAUTION: this check is enforced on the client-side only in certain runtimes
             raise ValueError(
-                "MCP emitter must be started before emitting messages. Call await emitter.start() first."
+                f"{selector} is not in {''.join(self.out_selectors)}"
             )
 
-        # Check if the selector matches any of the allowed out_selectors
-        if not any(
-            selector.startswith(out_selector) for out_selector in self._out_selectors
-        ):
-            raise ValueError(
-                f"Selector '{selector}' not in allowed out_selectors: {self._out_selectors}"
-            )
+        logger.debug("call to send message with %s", selector)
+        # A random unique UUID is added to ensure messages could be resent. Storage master ensures that a message with
+        # the same selector and message body is sent only once to the bus.
+        if message_id is None:
+            routing_key = f"{selector}.{uuid.uuid4()}"
+        else:
+            routing_key = f"{selector}.{message_id}"
+
+        control_message = self._prepare_message(raw)
+        logger.info("Sending message bytes_len=%d to routing_key=%s", len(control_message), routing_key)
 
         try:
-            # Create the message using the Ostorlab message format
-            message = agent_message.Message.from_data(selector, data)
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop in this thread => safe to use the mixin's sync wrapper.
+            self.mq_send_message(routing_key, control_message)
+            logger.debug("done call to send_message")
+            return
 
-            # Wrap in a control message to identify the source
-            control_message = agent_message.Message.from_data(
-                "v3.control",
-                {"control": {"agents": [self._emitter_name]}, "message": message.raw},
-            )
+        if running_loop is self._loop:
+            # Fire-and-forget; avoids deadlock while keeping a sync API.
+            self._loop.create_task(self.async_mq_send_message(routing_key, control_message))
+            return
 
-            # Send the message to the bus
-            self.mq_send_message(
-                selector, control_message.raw, message_priority=priority
-            )
-            logger.debug(
-                "MCP emitter '%s' sent message to selector: %s",
-                self._emitter_name,
-                selector,
-            )
-        except Exception as e:
-            logger.error(
-                "Error emitting message from MCP emitter '%s' to selector '%s': %s",
-                self._emitter_name,
-                selector,
-                e,
-            )
-            raise RuntimeError(f"Failed to emit message: {e}") from e
+        # Running loop in this thread => schedule on the emitter loop and wait here (not the loop thread).
+        future = asyncio.run_coroutine_threadsafe(
+            self.async_mq_send_message(routing_key, control_message),
+            self._loop,
+        )
+        future.result()
+
+        print("done call to send_message, here is the control message %s", control_message)
+
+    def _prepare_message(self, raw: bytes) -> bytes:
+        if self._control_message is not None:
+            agents = [*self._control_message.data["control"]["agents"], self.name]
+        else:
+            agents = [self.name]
+        control_message = agent_message.Message.from_data(
+            "v3.control", {"control": {"agents": agents}, "message": raw}
+        )
+        return control_message.raw
+
 
     async def close(self) -> None:
         """Close the message queue connection and cleanup resources.

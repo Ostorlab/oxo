@@ -24,7 +24,7 @@ def agent_settings():
 @pytest.mark.asyncio
 async def test_mcp_emitter_initialization(agent_settings):
     """Test MCP emitter initialization."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -38,7 +38,7 @@ async def test_mcp_emitter_initialization(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_start(agent_settings):
     """Test MCP emitter start method."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -52,7 +52,7 @@ async def test_mcp_emitter_start(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_emit_without_start(agent_settings):
     """Test that emitting without starting raises an error."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -65,7 +65,7 @@ async def test_mcp_emitter_emit_without_start(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_emit_invalid_selector(agent_settings):
     """Test that emitting to invalid selector raises an error."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -81,7 +81,7 @@ async def test_mcp_emitter_emit_invalid_selector(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_emit_success(agent_settings):
     """Test successful message emission."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -102,7 +102,7 @@ async def test_mcp_emitter_emit_success(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_emit_with_priority(agent_settings):
     """Test message emission with priority."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -126,7 +126,7 @@ async def test_mcp_emitter_emit_with_priority(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_emit_with_subselector(agent_settings):
     """Test that emitting to a subselector of an allowed selector works."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report"],
         agent_settings=agent_settings,
@@ -143,7 +143,7 @@ async def test_mcp_emitter_emit_with_subselector(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_close(agent_settings):
     """Test MCP emitter close method."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -165,7 +165,7 @@ async def test_mcp_emitter_close(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_process_message_not_implemented(agent_settings):
     """Test that process_message raises NotImplementedError."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=["v3.report.vulnerability"],
         agent_settings=agent_settings,
@@ -178,7 +178,7 @@ async def test_mcp_emitter_process_message_not_implemented(agent_settings):
 @pytest.mark.asyncio
 async def test_mcp_emitter_multiple_out_selectors(agent_settings):
     """Test MCP emitter with multiple output selectors."""
-    emitter = mcp_message_emitter.MCPMessageEmitter(
+    emitter = mcp_message_emitter.MCPMessageHandler(
         name="test_emitter",
         out_selectors=[
             "v3.report.vulnerability",
