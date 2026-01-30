@@ -32,7 +32,7 @@ class LocalJaeger:
         self,
         name: str,
         network: str,
-        exposed_ports: Dict[int, int] = None,
+        exposed_ports: Optional[Dict[int, int]] = None,
         image: str = JAEGER_IMAGE,
     ) -> None:
         """Initialize the Jaeger service parameters.
@@ -72,7 +72,7 @@ class LocalJaeger:
         self._create_network()
         self._jaeger_service = self._start_jaeger()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the local Jaeger instance."""
         for service in self._docker_client.services.list():
             universe = service.attrs["Spec"]["Labels"].get("ostorlab.universe")

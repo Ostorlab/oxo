@@ -2,7 +2,7 @@
 
 import abc
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 
 logger = logging.getLogger(__name__)
@@ -19,12 +19,12 @@ class APIRequest(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Body of the API request, containing the query & any additional data."""
         raise NotImplementedError("Missing implementation")
 
     @property
-    def files(self) -> Optional[Dict]:
+    def files(self) -> Optional[Dict[str, Any]]:
         """Files of the API request, containing the binary data."""
         return None
 

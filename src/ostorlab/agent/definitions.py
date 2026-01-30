@@ -19,7 +19,7 @@ class AgentDefinition:
     constraints: List[str] = dataclasses.field(default_factory=list)
     mounts: List[str] = dataclasses.field(default_factory=list)
     restart_policy: str = ""
-    mem_limit: int = None
+    mem_limit: Optional[int] = None
     open_ports: List[definitions.PortMapping] = dataclasses.field(default_factory=list)
     restrictions: List[str] = dataclasses.field(default_factory=list)
     version: Optional[str] = None
@@ -29,8 +29,8 @@ class AgentDefinition:
     durability: str = "published"
     docker_file_path: str = "Dockerfile"
     docker_build_root: str = "."
-    image: str = None
-    service_name: str = None
+    image: Optional[str] = None
+    service_name: Optional[str] = None
     caps: Optional[List[str]] = None
     supported_architectures: Optional[list[str]] = None
 
@@ -46,9 +46,9 @@ class AgentDefinition:
         """
         definition: Dict[str, Any] = loader.load_agent_yaml(file)
         return cls(
-            name=definition.get("name"),
-            in_selectors=definition.get("in_selectors"),
-            out_selectors=definition.get("out_selectors"),
+            name=definition.get("name", ""),
+            in_selectors=definition.get("in_selectors", []),
+            out_selectors=definition.get("out_selectors", []),
             args=definition.get("args", []),
             constraints=definition.get("constraints", []),
             mounts=definition.get("mounts", []),

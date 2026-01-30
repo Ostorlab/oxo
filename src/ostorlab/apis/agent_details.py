@@ -1,7 +1,7 @@
 """Get agent details from the public api."""
 
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 from ostorlab.apis import request
 
@@ -40,7 +40,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the body of the API request, to fetch the specific agent.
 
         Returns:

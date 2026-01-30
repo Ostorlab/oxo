@@ -6,7 +6,7 @@ import logging
 import os
 import pathlib
 import uuid
-from typing import Dict
+from typing import Dict, Optional
 
 import docker
 import tenacity
@@ -27,7 +27,7 @@ class LocalRabbitMQ:
         self,
         name: str,
         network: str,
-        exposed_ports: Dict[int, int] = None,
+        exposed_ports: Optional[Dict[int, int]] = None,
         image: str = MQ_IMAGE,
     ) -> None:
         """Initialize the MQ service parameters.
@@ -55,12 +55,12 @@ class LocalRabbitMQ:
         return f"amqp://guest:guest@{self._mq_host}:5672/"
 
     @property
-    def vhost(self):
+    def vhost(self) -> str:
         """Default vhost."""
         return "/"
 
     @property
-    def service(self):
+    def service(self) -> Optional[services.Service]:
         """The RabbitMQ corresponding docker service."""
         return self._mq_service
 
@@ -74,7 +74,7 @@ class LocalRabbitMQ:
         self._create_network()
         self._mq_service = self._start_mq()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop local Rabiit MQ instance."""
         for service in self._docker_client.services.list():
             universe = service.attrs["Spec"]["Labels"].get("ostorlab.universe")

@@ -1,6 +1,6 @@
 """Stops a remote scan."""
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import json
 
 from ostorlab.apis import request
@@ -30,7 +30,7 @@ class ScanStopAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> Optional[Dict[str, Any]]:
         """Sets the mutation to stop a scan.
 
         Returns:

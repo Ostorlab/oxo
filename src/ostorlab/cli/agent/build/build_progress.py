@@ -1,7 +1,7 @@
 """Docker builder with log progress streaming."""
 import itertools
 import re
-from typing import Generator, Dict
+from typing import Generator, Dict, Any, Optional, Tuple
 
 import docker
 from docker.errors import BuildError
@@ -15,10 +15,10 @@ class BuildProgress(Collection):
 
     model = images.Image
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(client=docker.from_env())
 
-    def build(self, **kwargs) -> Generator[Dict, None, None]:
+    def build(self, **kwargs: Any) -> Generator[Dict[str, Any], None, Optional[Tuple[Any, Any]]]:
         """Build command that copies the initial implementation with log streaming.
 
         Args:
@@ -48,7 +48,7 @@ class BuildProgress(Collection):
             return (self.get(image_id), result_stream)
         raise BuildError(last_event or "Unknown", result_stream)
 
-    def get(self, key):
+    def get(self, key: str) -> Any:
         """
         Gets an image.
 

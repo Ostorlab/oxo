@@ -55,6 +55,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         """API key their either uses a predefined value, or retrieve the one in the configuration folder."""
         if self._api_key is not None:
             return self._api_key
+        return None
 
     @property
     def authorization_token(self) -> Optional[str]:
