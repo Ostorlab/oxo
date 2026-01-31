@@ -480,8 +480,10 @@ class AgentMixin(
                 f_settings.read()
             )
 
+            instance_id = str(uuid.uuid4())
+            os.environ["INSTANCE_ID"] = instance_id
             _setup_logging(
-                instance_id=str(uuid.uuid4()),
+                instance_id=instance_id,
                 hostname=os.getenv("HOSTNAME"),
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
