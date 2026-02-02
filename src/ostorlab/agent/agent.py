@@ -49,7 +49,9 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
     """The processing depth limit is enforced and reached the limit."""
 
 
-def _setup_logging(agent_key: str, agent_version: str, universe: str) -> None:
+def _setup_logging(
+    hostname: str, agent_key: str, agent_version: str, universe: str
+) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
         try:
@@ -66,6 +68,7 @@ def _setup_logging(agent_key: str, agent_version: str, universe: str) -> None:
                     "agent_key": agent_key,
                     "agent_version": agent_version,
                     "universe": universe,
+                    "hostname": hostname,
                 }
             )
         except ImportError:
@@ -477,6 +480,7 @@ class AgentMixin(
             )
 
             _setup_logging(
+                hostname=os.getenv("HOSTNAME"),
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),
