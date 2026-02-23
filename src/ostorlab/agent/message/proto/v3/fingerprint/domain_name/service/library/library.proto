@@ -10,5 +10,4 @@ message Message {
   optional string library_version = 5;
   optional string library_type = 6;
   optional string detail = 7;
-  optional string domain_name = 8;
 }
