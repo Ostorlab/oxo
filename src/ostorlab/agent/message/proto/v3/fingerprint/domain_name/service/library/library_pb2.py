@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nUostorlab/agent/message/proto/v3/fingerprint/domain_name/service/library/library.proto\x12Gostorlab.agent.message.proto.v3.fingerprint.domain_name.service.library\"\x9f\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x14\n\x0clibrary_name\x18\x04 \x01(\t\x12\x17\n\x0flibrary_version\x18\x05 \x01(\t\x12\x14\n\x0clibrary_type\x18\x06 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x07 \x01(\t\x12\x13\n\x0b\x64omain_name\x18\x08 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nUostorlab/agent/message/proto/v3/fingerprint/domain_name/service/library/library.proto\x12Gostorlab.agent.message.proto.v3.fingerprint.domain_name.service.library\"\x8a\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x14\n\x0clibrary_name\x18\x04 \x01(\t\x12\x17\n\x0flibrary_version\x18\x05 \x01(\t\x12\x14\n\x0clibrary_type\x18\x06 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x07 \x01(\t')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.library.library_pb2', globals())
@@ -21,5 +21,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   _MESSAGE._serialized_start=163
-  _MESSAGE._serialized_end=322
+  _MESSAGE._serialized_end=301
 # @@protoc_insertion_point(module_scope)
