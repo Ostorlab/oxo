@@ -68,6 +68,21 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
     assert agentgrp_def.agents == dummy_agents
 
 
+def testAgentGroupDefinitionFromYaml_whenServiceNameProvided_parsedCorrectly():
+    """Test that service_name in YAML is parsed into AgentSettings."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        agents:
+          - key: "agent/ostorlab/crawler"
+            service_name: "crawler_bus"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.agents[0].service_name == "crawler_bus"
+
+
 def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
     """Tests that the generated proto is of type bytes."""
     instance_settings = definitions.AgentSettings(
