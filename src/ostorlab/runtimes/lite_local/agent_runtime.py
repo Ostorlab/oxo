@@ -354,12 +354,13 @@ class AgentRuntime:
         )
         caps = self.agent.caps or agent_definition.caps
 
-        if agent_definition.service_name is not None:
-            if len(agent_definition.service_name) > MAX_SERVICE_NAME_LEN:
+        resolved_service_name = self.agent.service_name or agent_definition.service_name
+        if resolved_service_name is not None:
+            if len(resolved_service_name) > MAX_SERVICE_NAME_LEN:
                 raise ServiceNameTooLong(
-                    f'service name "{agent_definition.service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
+                    f'service name "{resolved_service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
                 )
-            service_name = agent_definition.service_name
+            service_name = resolved_service_name
         else:
             service_name = (
                 self.agent.container_image.split(":")[0].replace(".", "")
