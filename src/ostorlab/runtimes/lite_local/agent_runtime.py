@@ -354,24 +354,28 @@ class AgentRuntime:
         )
         caps = self.agent.caps or agent_definition.caps
 
-        resolved_service_name = self.agent.service_name or agent_definition.service_name
-        if resolved_service_name is not None:
-            if len(resolved_service_name) > MAX_SERVICE_NAME_LEN:
+        explicit_service_name = (
+            self.agent.service_name
+            if self.agent.service_name is not None
+            else agent_definition.service_name
+        )
+        if explicit_service_name is not None:
+            if len(explicit_service_name) > MAX_SERVICE_NAME_LEN:
                 raise ServiceNameTooLong(
-                    f'service name "{resolved_service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
+                    f'service name "{explicit_service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
                 )
-            service_name = resolved_service_name
+            service_name = explicit_service_name
         else:
-            service_name = (
+            base_service_name = (
                 self.agent.container_image.split(":")[0].replace(".", "")
                 + "_"
                 + self.runtime_name
             )
-
-            # We apply the random str only if it will not break the max docker service name characters (63)
-            # This is to handle the same agent declared multiple times
-            if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
-                service_name = service_name + "_" + str(random.randrange(0, 9999))
+            random_suffix = "_" + str(random.randrange(0, 9999))
+            if len(base_service_name) + len(random_suffix) <= MAX_SERVICE_NAME_LEN:
+                service_name = base_service_name + random_suffix
+            else:
+                service_name = base_service_name[:MAX_SERVICE_NAME_LEN]
 
         env = [
             f"UNIVERSE={self.runtime_name}",
