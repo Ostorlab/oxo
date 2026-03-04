@@ -375,7 +375,10 @@ class AgentRuntime:
             if len(base_service_name) + len(random_suffix) <= MAX_SERVICE_NAME_LEN:
                 service_name = base_service_name + random_suffix
             else:
-                service_name = base_service_name[:MAX_SERVICE_NAME_LEN]
+                service_name = (
+                    base_service_name[: MAX_SERVICE_NAME_LEN - len(random_suffix)]
+                    + random_suffix
+                )
 
         env = [
             f"UNIVERSE={self.runtime_name}",
