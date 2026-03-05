@@ -352,3 +352,125 @@ def testCreateAgentService_whenServiceNameProvidedInAgentDefinitionAndTooLong_ra
         runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
     assert create_service_mock.call_count == 0
+
+
+def testCreateAgentService_whenServiceNameProvidedInAgentSettings_overridesAgentDefinitionServiceName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that service_name from AgentSettings (YAML) takes precedence over the image label service_name."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="crawler",
+        service_name="crawler",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+        open_ports=[],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(
+        key="agent/ostorlab/crawler",
+        service_name="crawler_bus",
+        restart_policy="on-failure",
+        constraints=[],
+        mounts=[],
+        open_ports=[],
+    )
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["name"] == "crawler_bus"
+
+
+def testCreateAgentService_whenImageNameTooLongForRandomSuffix_serviceNameTruncatedToFitSuffix(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When the base service name is too long to append a random suffix, the base is truncated so the suffix always fits."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+        open_ports=[],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(lambda name: "a" * 70 + ":latest"),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.random.randrange", return_value=1234
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(
+        key="agent/ostorlab/test",
+        restart_policy="on-failure",
+        constraints=[],
+        mounts=[],
+        open_ports=[],
+    )
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "scanner0",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert len(kwargs["name"]) <= 63
+    assert kwargs["name"].endswith("_1234")

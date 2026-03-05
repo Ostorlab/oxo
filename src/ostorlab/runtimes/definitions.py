@@ -65,6 +65,7 @@ class AgentSettings:
     depth_processing_limit: Optional[int] = None
     accepted_agents: Optional[List[str]] = None
     in_selectors: Optional[List[str]] = dataclasses.field(default_factory=list)
+    service_name: Optional[str] = None
 
     @property
     def container_image(self):
@@ -231,6 +232,7 @@ class AgentGroupDefinition:
                 depth_processing_limit=agent.get("depth_processing_limit"),
                 accepted_agents=agent.get("accepted_agents"),
                 in_selectors=agent.get("in_selectors", []),
+                service_name=agent.get("service_name"),
             )
 
             agent_settings.append(agent_def)
