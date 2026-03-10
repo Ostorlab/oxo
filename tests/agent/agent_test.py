@@ -969,6 +969,56 @@ def testEmit_whenOutSelectorIsNotExact_emitsMessage(
     assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
 
 
+def testAgentMixin_whenAgentServiceNameEnvVarSet_usesItAsQueueName(
+    agent_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When AGENT_SERVICE_NAME env var is set (by the runtime for named instances), the agent
+    must use it as the MQ queue name so each named instance gets its own queue and receives
+    all published messages instead of competing with sibling instances on a shared queue."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    monkeypatch.setenv("AGENT_SERVICE_NAME", "crawler_bus_1")
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="crawler", in_selectors=["v3.asset.link"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/crawler",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+        ),
+    )
+
+    assert test_agent._queue_name == "crawler_bus_1_queue"
+
+
+def testAgentMixin_whenAgentServiceNameEnvVarNotSet_usesAgentDefinitionName(
+    agent_mock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without AGENT_SERVICE_NAME env var the queue name falls back to the agent definition name."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    monkeypatch.delenv("AGENT_SERVICE_NAME", raising=False)
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="crawler", in_selectors=["v3.asset.link"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/crawler",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+        ),
+    )
+
+    assert test_agent._queue_name == "crawler_queue"
+
+
 def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:

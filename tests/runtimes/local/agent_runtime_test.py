@@ -291,6 +291,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentDefinition_serviceCreat
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 30000
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
     assert kwargs["name"] == "custom_service_name"
+    assert "AGENT_SERVICE_NAME=custom_service_name" in kwargs["env"]
 
 
 def testCreateAgentService_whenServiceNameProvidedInAgentDefinitionAndTooLong_raiseServiceNameTooLongException(
@@ -412,6 +413,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentSettings_overridesAgent
 
     kwargs = create_service_mock.call_args.kwargs
     assert kwargs["name"] == "crawler_bus"
+    assert "AGENT_SERVICE_NAME=crawler_bus" in kwargs["env"]
 
 
 def testCreateAgentService_whenImageNameTooLongForRandomSuffix_serviceNameTruncatedToFitSuffix(
