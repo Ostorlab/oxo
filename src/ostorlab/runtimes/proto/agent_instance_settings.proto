@@ -61,4 +61,8 @@ message AgentInstanceSettings {
   repeated string accepted_agents = 20;
   // In selectors used to override the default selectors used by the agent.
   repeated string in_selectors = 21;
+  // Explicit service name for the agent instance. When set, used as the MQ queue name so that
+  // each named instance gets its own queue and receives a full copy of every published message
+  // (fan-out) rather than competing with sibling instances on a shared queue.
+  optional string service_name = 22;
 }
