@@ -383,8 +383,6 @@ class AgentRuntime:
         env = [
             f"UNIVERSE={self.runtime_name}",
         ]
-        if explicit_service_name is not None:
-            env.append(f"AGENT_SERVICE_NAME={explicit_service_name}")
         if self._gcp_logging_credential is not None:
             env.append(
                 f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
