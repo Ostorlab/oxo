@@ -413,7 +413,7 @@ def testAgentInstanceSettingsToRawProto_whenServiceNameIsNotSet_shouldDeserializ
     proto = instance_settings.to_raw_proto()
     parsed_proto = instance_settings.from_proto(proto)
 
-    assert not parsed_proto.service_name
+    assert parsed_proto.service_name is None
 
 
 def testAssetGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAssetGroupDefinition(

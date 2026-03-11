@@ -113,7 +113,7 @@ class AgentSettings:
             depth_processing_limit=instance.depth_processing_limit,
             accepted_agents=instance.accepted_agents,
             in_selectors=instance.in_selectors,
-            service_name=instance.service_name,
+            service_name=instance.service_name or None,
         )
 
     def to_raw_proto(self) -> bytes:
