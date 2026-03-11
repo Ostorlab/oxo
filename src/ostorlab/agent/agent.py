@@ -119,9 +119,12 @@ class AgentMixin(
         self.bus_exchange_topic = agent_settings.bus_exchange_topic
         self.bus_managment_url = agent_settings.bus_management_url
         self.bus_vhost = agent_settings.bus_vhost
+        # Use service_name as the queue name when set so each named instance gets its own queue
+        # and receives a full message fan-out instead of competing on a shared queue.
+        queue_name = agent_settings.service_name or agent_definition.name
         agent_mq_mixin.AgentMQMixin.__init__(
             self,
-            name=agent_definition.name,
+            name=queue_name,
             # Selectors are mapped to queue binding that listen to all
             # sub-routing keys.
             keys=[f"{s}.#" for s in self.in_selectors],

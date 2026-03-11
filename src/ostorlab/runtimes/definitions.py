@@ -113,6 +113,7 @@ class AgentSettings:
             depth_processing_limit=instance.depth_processing_limit,
             accepted_agents=instance.accepted_agents,
             in_selectors=instance.in_selectors,
+            service_name=instance.service_name or None,
         )
 
     def to_raw_proto(self) -> bytes:
@@ -179,6 +180,9 @@ class AgentSettings:
 
         if self.tracing_collector_url is not None:
             instance.tracing_collector_url = self.tracing_collector_url
+
+        if self.service_name is not None:
+            instance.service_name = self.service_name
 
         return instance.SerializeToString()
 

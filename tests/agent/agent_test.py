@@ -969,6 +969,55 @@ def testEmit_whenOutSelectorIsNotExact_emitsMessage(
     assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
 
 
+def testAgentMixin_whenServiceNameInSettings_usesItAsName(
+    agent_mock,
+) -> None:
+    """When service_name is set in AgentSettings, it must be used as the MQ queue name so each
+    named instance gets its own queue and receives all published messages instead of competing
+    with sibling instances on a shared queue."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="test_agent", in_selectors=["v3.asset.link"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/test_agent",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+            service_name="named_instance_1",
+        ),
+    )
+
+    assert test_agent.mq_name == "named_instance_1"
+
+
+def testAgentMixin_whenServiceNameNotInSettings_usesAgentDefinitionNameAsFallback(
+    agent_mock,
+) -> None:
+    """Without service_name in AgentSettings the queue name falls back to the agent definition name."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="test_agent", in_selectors=["v3.asset.link"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/test_agent",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+        ),
+    )
+
+    assert test_agent.mq_name == "test_agent"
+
+
 def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:
