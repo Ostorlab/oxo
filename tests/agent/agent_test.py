@@ -969,7 +969,7 @@ def testEmit_whenOutSelectorIsNotExact_emitsMessage(
     assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
 
 
-def testAgentMixin_whenServiceNameInSettings_usesItAsQueueName(
+def testAgentMixin_whenServiceNameInSettings_usesItAsName(
     agent_mock,
 ) -> None:
     """When service_name is set in AgentSettings, it must be used as the MQ queue name so each
@@ -992,10 +992,10 @@ def testAgentMixin_whenServiceNameInSettings_usesItAsQueueName(
         ),
     )
 
-    assert test_agent._queue_name == "named_instance_1_queue"
+    assert test_agent.mq_name == "named_instance_1"
 
 
-def testAgentMixin_whenServiceNameNotInSettings_usesAgentDefinitionName(
+def testAgentMixin_whenServiceNameNotInSettings_usesAgentDefinitionNameAsFallback(
     agent_mock,
 ) -> None:
     """Without service_name in AgentSettings the queue name falls back to the agent definition name."""
@@ -1015,7 +1015,7 @@ def testAgentMixin_whenServiceNameNotInSettings_usesAgentDefinitionName(
         ),
     )
 
-    assert test_agent._queue_name == "test_agent_queue"
+    assert test_agent.mq_name == "test_agent"
 
 
 def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
