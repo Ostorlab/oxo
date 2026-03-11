@@ -379,6 +379,43 @@ def testAgentInstanceSettingsToRawProto_whenExtendedInSelectorsListIsSet_shouldS
     assert parsed_proto.in_selectors == ["in_selector1", "in_selector2"]
 
 
+def testAgentInstanceSettingsToRawProto_whenServiceNameIsSet_shouldSerialize() -> None:
+    """Unit test to ensure that service_name is correctly serialized and deserialized."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/org/main_agent",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[],
+        service_name="instance_1",
+    )
+
+    proto = instance_settings.to_raw_proto()
+    parsed_proto = instance_settings.from_proto(proto)
+
+    assert parsed_proto.service_name == "instance_1"
+
+
+def testAgentInstanceSettingsToRawProto_whenServiceNameIsNotSet_shouldDeserializeAsNone() -> (
+    None
+):
+    """Unit test to ensure that when service_name is absent, from_proto returns None/empty."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/org/main_agent",
+        bus_url="mq",
+        bus_exchange_topic="topic",
+        bus_management_url="mq_managment",
+        bus_vhost="vhost",
+        args=[],
+    )
+
+    proto = instance_settings.to_raw_proto()
+    parsed_proto = instance_settings.from_proto(proto)
+
+    assert not parsed_proto.service_name
+
+
 def testAssetGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAssetGroupDefinition(
     mocker: plugin.MockerFixture,
 ):
