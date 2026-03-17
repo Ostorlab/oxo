@@ -398,7 +398,12 @@ class AgentRuntime:
             ),
             mounts=mounts,
             healthcheck=self.create_docker_healthchek(),
-            labels={"ostorlab.universe": self.runtime_name},
+            labels={
+                "ostorlab.universe": self.runtime_name,
+                "ostorlab.service_key": explicit_service_name
+                if explicit_service_name is not None
+                else agent_definition.name,
+            },
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
