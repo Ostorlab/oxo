@@ -389,7 +389,7 @@ class AgentRuntime:
             healthcheck=self.create_docker_healthchek(),
             labels={
                 "ostorlab.universe": self.runtime_name,
-                "ostorlab.service_name": explicit_service_name
+                "ostorlab.queue_name": explicit_service_name
                 if explicit_service_name is not None
                 else agent_definition.name,
             },

@@ -463,7 +463,7 @@ def testCreateAgentService_whenNoExplicitServiceName_serviceKeyLabelIsAgentName(
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
     kwargs = create_service_mock.call_args.kwargs
-    assert kwargs["labels"]["ostorlab.service_name"] == "nuclei"
+    assert kwargs["labels"]["ostorlab.queue_name"] == "nuclei"
 
 
 def testCreateAgentService_whenExplicitServiceName_serviceKeyLabelIsServiceName(
@@ -519,7 +519,7 @@ def testCreateAgentService_whenExplicitServiceName_serviceKeyLabelIsServiceName(
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
     kwargs = create_service_mock.call_args.kwargs
-    assert kwargs["labels"]["ostorlab.service_name"] == "crawler_bus"
+    assert kwargs["labels"]["ostorlab.queue_name"] == "crawler_bus"
 
 
 def testCreateAgentService_whenImageNameTooLongForRandomSuffix_serviceNameTruncatedToFitSuffix(
