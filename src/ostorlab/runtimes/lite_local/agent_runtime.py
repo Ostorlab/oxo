@@ -354,17 +354,17 @@ class AgentRuntime:
         )
         caps = self.agent.caps or agent_definition.caps
 
-        explicit_service_name = (
+        service_key = (
             self.agent.service_name
             if self.agent.service_name is not None
             else agent_definition.service_name
         )
-        if explicit_service_name is not None:
-            if len(explicit_service_name) > MAX_SERVICE_NAME_LEN:
+        if service_key is not None:
+            if len(service_key) > MAX_SERVICE_NAME_LEN:
                 raise ServiceNameTooLong(
-                    f'service name "{explicit_service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
+                    f'service name "{service_key}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
                 )
-            service_name = explicit_service_name
+            service_name = service_key
         else:
             base_service_name = (
                 self.agent.container_image.split(":")[0].replace(".", "")
@@ -400,8 +400,8 @@ class AgentRuntime:
             healthcheck=self.create_docker_healthchek(),
             labels={
                 "ostorlab.universe": self.runtime_name,
-                "ostorlab.service_key": explicit_service_name
-                if explicit_service_name is not None
+                "ostorlab.service_name": service_key
+                if service_key is not None
                 else agent_definition.name,
             },
             configs=configs,
