@@ -1,13 +1,13 @@
 import pytest
 import click
-from unittest.mock import MagicMock
+from unittest import mock
 from ostorlab.cli.ci_scan.run.assets import link
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
 
 
 def test_prepare_test_credentials_link_with_single_credential():
     """Test _prepare_test_credentials in link.py with only TOTP."""
-    ctx = MagicMock(spec=click.Context)
+    ctx = mock.MagicMock(spec=click.Context)
     ctx.obj = {
         "test_credentials": {
             "test_credentials_login": [],
