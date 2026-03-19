@@ -352,7 +352,7 @@ def testRunScanCLI_withNewTestCredentials_callsCreateTestCredentials(
             TEST_FILE_PATH,
         ],
     )
- 
+
     assert result.exit_code == 0
     assert "Created test credentials" in result.output
     assert "Scan created with id 1." in result.output

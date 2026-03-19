@@ -265,10 +265,9 @@ def run(
         ci_logger.error("Name and value credentials are not matching count.")
         raise click.exceptions.Exit(2)
 
-    if (
-        len(email_2fa_sender_email_address) != len(email_2fa_email_address)
-        or len(email_2fa_sender_email_address) != len(email_2fa_password)
-    ):
+    if len(email_2fa_sender_email_address) != len(email_2fa_email_address) or len(
+        email_2fa_sender_email_address
+    ) != len(email_2fa_password):
         ci_logger.error("Email 2FA credentials are not matching count.")
         raise click.exceptions.Exit(2)
 

@@ -63,7 +63,9 @@ def _prepare_test_credentials(
     for sender in sms_2fa_sender:
         if sender is not None:
             credentials.append(
-                test_credentials_create_api.TestCredentialSMS2FA(sender_phone_number=sender)
+                test_credentials_create_api.TestCredentialSMS2FA(
+                    sender_phone_number=sender
+                )
             )
 
     for seed in totp_2fa_seed:
