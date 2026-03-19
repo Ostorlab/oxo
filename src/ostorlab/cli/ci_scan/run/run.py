@@ -91,6 +91,36 @@ CI_LOGGER = {
     multiple=True,
 )
 @click.option(
+    "--email-2fa-sender-email-address",
+    help="Email 2FA sender email address.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--email-2fa-email-address",
+    help="Email 2FA email address.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--email-2fa-password",
+    help="Email 2FA password.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--sms-2fa-sender",
+    help="SMS 2FA sender.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--totp-2fa-seed",
+    help="TOTP 2FA seed.",
+    required=False,
+    multiple=True,
+)
+@click.option(
     "--sbom",
     "sboms",
     help="Path to sbom file.",
@@ -197,6 +227,11 @@ def run(
     test_credentials_role: List[str],
     test_credentials_name: List[str],
     test_credentials_value: List[str],
+    email_2fa_sender_email_address: List[str],
+    email_2fa_email_address: List[str],
+    email_2fa_password: List[str],
+    sms_2fa_sender: List[str],
+    totp_2fa_seed: List[str],
     sboms: List[io.FileIO],
     api_schema: io.FileIO,
     filtered_url_regexes: List[str],
@@ -230,6 +265,12 @@ def run(
         ci_logger.error("Name and value credentials are not matching count.")
         raise click.exceptions.Exit(2)
 
+    if len(email_2fa_sender_email_address) != len(email_2fa_email_address) or len(
+        email_2fa_sender_email_address
+    ) != len(email_2fa_password):
+        ci_logger.error("Email 2FA credentials are not matching count.")
+        raise click.exceptions.Exit(2)
+
     if len(ui_prompt_names) != len(ui_prompt_actions):
         ci_logger.error("UI prompt names and actions are not matching count.")
         raise click.exceptions.Exit(2)
@@ -257,6 +298,11 @@ def run(
         "test_credentials_role": test_credentials_role,
         "test_credentials_name": test_credentials_name,
         "test_credentials_value": test_credentials_value,
+        "email_2fa_sender_email_address": email_2fa_sender_email_address,
+        "email_2fa_email_address": email_2fa_email_address,
+        "email_2fa_password": email_2fa_password,
+        "sms_2fa_sender": sms_2fa_sender,
+        "totp_2fa_seed": totp_2fa_seed,
     }
     ctx.obj["sboms"] = sboms
     ctx.obj["api_schema"] = api_schema

@@ -303,6 +303,84 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
     assert "************" in result.output
 
 
+def testRunScanCLI_withNewTestCredentials_callsCreateTestCredentials(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab ci_scan with new 2FA/TOTP test credentials."""
+
+    test_credentials_create_dict = {
+        "data": {"createTestCredentials": {"testCredentials": {"id": "456"}}}
+    }
+
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    scan_info_dict = {
+        "data": {
+            "scan": {
+                "progress": "done",
+                "riskRating": "high",
+            }
+        }
+    }
+    mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[
+            test_credentials_create_dict,
+            test_credentials_create_dict,
+            test_credentials_create_dict,
+            scan_create_dict,
+            scan_info_dict,
+            scan_info_dict,
+        ],
+    )
+    mocker.patch.object(run.run, "SLEEP_CHECKS", 1)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--email-2fa-sender-email-address=sender@ex.com",
+            "--email-2fa-email-address=user@ex.com",
+            "--email-2fa-password=pass",
+            "--sms-2fa-sender=+123",
+            "--totp-2fa-seed=123456",
+            "--scan-profile=full_scan",
+            "--title=scan1",
+            "ios-ipa",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Created test credentials" in result.output
+    assert "Scan created with id 1." in result.output
+
+
+def testRunScanCLI_withInvalidEmail2FAArgs_exitsWithError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab ci_scan with invalid email 2FA args."""
+    runner = CliRunner()
+    # Provide only 2/3 required arguments
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--email-2fa-sender-email-address=sender@ex.com",
+            "--email-2fa-email-address=user@ex.com",
+            "--scan-profile=full_scan",
+            "ios-ipa",
+            TEST_FILE_PATH,
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Email 2FA credentials are not matching count." in result.output
+
+
 def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
     mocker: plugin.MockerFixture,
 ) -> None:

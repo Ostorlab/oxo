@@ -62,6 +62,61 @@ class TestCredentialCustom(TestCredential):
         }
 
 
+@dataclasses.dataclass
+class TestCredentialEmail2FA(TestCredential):
+    """Email 2FA test credentials."""
+
+    sender_email_address: str
+    email_address: str
+    password: str
+
+    def to_variables(self) -> Dict[str, Any]:
+        """Generate query variables."""
+        return {
+            "testCredentials": {
+                "email2FA": {
+                    "senderEmailAddress": self.sender_email_address,
+                    "emailAddress": self.email_address,
+                    "password": self.password,
+                }
+            }
+        }
+
+
+@dataclasses.dataclass
+class TestCredentialSMS2FA(TestCredential):
+    """SMS 2FA test credentials."""
+
+    sender_phone_number: str
+
+    def to_variables(self) -> Dict[str, Any]:
+        """Generate query variables."""
+        return {
+            "testCredentials": {
+                "sms2FA": {
+                    "senderPhoneNumber": self.sender_phone_number,
+                }
+            }
+        }
+
+
+@dataclasses.dataclass
+class TestCredentialTOTP2FA(TestCredential):
+    """TOTP 2FA test credentials."""
+
+    totp_seed: str
+
+    def to_variables(self) -> Dict[str, Any]:
+        """Generate query variables."""
+        return {
+            "testCredentials": {
+                "totp2FA": {
+                    "totpSeed": self.totp_seed,
+                }
+            }
+        }
+
+
 class CreateTestCredentialAPIRequest(request.APIRequest):
     """Create mobile scan API from a file."""
 
@@ -84,6 +139,15 @@ mutation TestCredentials($testCredentials: TestCredentialsInput!) {
         id
       }
       ... on LoginPasswordTestCredentials {
+        id
+      }
+      ... on Email2FATestCredentials {
+        id
+      }
+      ... on Sms2FATestCredentials {
+        id
+      }
+      ... on Totp2FATestCredentials {
         id
       }
     }
