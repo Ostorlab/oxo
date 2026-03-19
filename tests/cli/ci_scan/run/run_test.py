@@ -358,6 +358,29 @@ def testRunScanCLI_withNewTestCredentials_callsCreateTestCredentials(
     assert "Scan created with id 1." in result.output
 
 
+def testRunScanCLI_withInvalidEmail2FAArgs_exitsWithError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab ci_scan with invalid email 2FA args."""
+    runner = CliRunner()
+    # Provide only 2/3 required arguments
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--email-2fa-sender-email-address=sender@ex.com",
+            "--email-2fa-email-address=user@ex.com",
+            "--scan-profile=full_scan",
+            "ios-ipa",
+            TEST_FILE_PATH,
+        ],
+    )
+    assert result.exit_code == 2
+    assert "Email 2FA credentials are not matching count." in result.output
+
+
 def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
     mocker: plugin.MockerFixture,
 ) -> None:
