@@ -1,4 +1,3 @@
-import pytest
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
 
 
