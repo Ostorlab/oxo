@@ -25,6 +25,13 @@ def _prepare_test_credentials(
     test_credentials_role = ctx.obj["test_credentials"]["test_credentials_role"]
     test_credentials_name = ctx.obj["test_credentials"]["test_credentials_name"]
     test_credentials_value = ctx.obj["test_credentials"]["test_credentials_value"]
+    email_2fa_sender_email_address = ctx.obj["test_credentials"][
+        "email_2fa_sender_email_address"
+    ]
+    email_2fa_email_address = ctx.obj["test_credentials"]["email_2fa_email_address"]
+    email_2fa_password = ctx.obj["test_credentials"]["email_2fa_password"]
+    sms_2fa_sender = ctx.obj["test_credentials"]["sms_2fa_sender"]
+    totp_2fa_seed = ctx.obj["test_credentials"]["totp_2fa_seed"]
 
     credentials = []
     for login, password, role, url in itertools.zip_longest(
@@ -33,11 +40,36 @@ def _prepare_test_credentials(
         test_credentials_role,
         test_credentials_url,
     ):
-        credentials.append(
-            test_credentials_create_api.TestCredentialLogin(
-                login=login, password=password, role=role, url=url
+        if login is not None and password is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialLogin(
+                    login=login, password=password, role=role, url=url
+                )
             )
-        )
+
+    for sender, email, password in itertools.zip_longest(
+        email_2fa_sender_email_address, email_2fa_email_address, email_2fa_password
+    ):
+        if sender is not None and email is not None and password is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialEmail2FA(
+                    sender_email_address=sender,
+                    email_address=email,
+                    password=password,
+                )
+            )
+
+    for sender in sms_2fa_sender:
+        if sender is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialSMS2FA(sender_phone_number=sender)
+            )
+
+    for seed in totp_2fa_seed:
+        if seed is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialTOTP2FA(totp_seed=seed)
+            )
 
     if test_credentials_name:
         credentials.append(
