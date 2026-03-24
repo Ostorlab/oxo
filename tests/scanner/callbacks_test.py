@@ -8,6 +8,7 @@ from ostorlab.assets import android_apk
 from ostorlab.assets import android_store
 from ostorlab.assets import domain_name
 from ostorlab.assets import file
+from ostorlab.assets import harmonyos_hap
 from ostorlab.assets import ios_ipa
 from ostorlab.assets import ios_store
 from ostorlab.assets import ipv4
@@ -21,6 +22,7 @@ from ostorlab.scanner.proto.assets import android_store_pb2
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.assets import domain_name_pb2
 from ostorlab.scanner.proto.assets import file_pb2
+from ostorlab.scanner.proto.assets import harmonyos_hap_pb2
 from ostorlab.scanner.proto.assets import ios_store_pb2
 from ostorlab.scanner.proto.assets import ip_pb2
 from ostorlab.scanner.proto.assets import ipa_pb2
@@ -110,6 +112,33 @@ def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
     assert ipa_asset.content == b"dummy_ipa"
     assert ipa_asset.path is None
     assert ipa_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos hap asset."""
+    hap_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        harmonyos_hap=harmonyos_hap_pb2.Message(content=b"dummy_hap"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", hap_start_agent_scan_msg, None, registry_conf)
+
+    hap_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(hap_asset, harmonyos_hap.HarmonyOSHap) is True
+    assert hap_asset.content == b"dummy_hap"
+    assert hap_asset.path is None
+    assert hap_asset.content_url is None
 
 
 def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(

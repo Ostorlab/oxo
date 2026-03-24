@@ -10,6 +10,10 @@ message IOSMetadata {
   optional string bundle_id = 1;
 }
 
+message HarmonyOSMetadata {
+  optional string bundle_id = 1;
+}
+
 message Message {
   optional bytes content = 1;
   optional string path = 2;
@@ -17,5 +21,6 @@ message Message {
   oneof metadata_oneof {
     AndroidMetadata android_metadata = 4;
     IOSMetadata ios_metadata = 5;
+    HarmonyOSMetadata harmonyos_metadata = 6;
   }
 }

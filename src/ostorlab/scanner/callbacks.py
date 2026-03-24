@@ -19,6 +19,7 @@ from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import file
 from ostorlab.assets import ios_ipa
+from ostorlab.assets import harmonyos_hap
 from ostorlab.assets import domain_name
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import ios_store
@@ -84,6 +85,8 @@ def _extract_assets(request: Any) -> list[asset.Asset]:
         assets.append(android_apk.AndroidApk(**asset_value))
     elif asset_type == "aab":
         assets.append(android_aab.AndroidAab(**asset_value))
+    elif asset_type == "harmonyos_hap":
+        assets.append(harmonyos_hap.HarmonyOSHap(**asset_value))
     elif asset_type == "domain_name":
         assets.append(domain_name.DomainName(**asset_value))
     elif asset_type == "agent":
