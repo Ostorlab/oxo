@@ -7,6 +7,7 @@ import click
 import docker
 import docker.errors
 import tenacity
+import datetime
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.install import install_progress
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
 RETRY_ATTEMPTS = 3
-WAIT_TIME = 2
+WAIT_TIME = datetime.timedelta(seconds=2)
 
 
 def _image_name_from_key(agent_key: str) -> str:
@@ -74,7 +75,7 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
 
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(RETRY_ATTEMPTS),
-    wait=tenacity.wait_fixed(WAIT_TIME),
+    wait=tenacity.wait_fixed(WAIT_TIME.total_seconds()),
     retry=tenacity.retry_if_exception_type(
         (docker.errors.APIError, docker.errors.DockerException)
     ),

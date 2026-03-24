@@ -10,6 +10,7 @@ from docker.models import images as images_model
 
 from ostorlab.apis.runners import public_runner
 from ostorlab.cli import rootcli
+from ostorlab.cli import install_agent
 
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
@@ -137,8 +138,6 @@ def testAgentInstallCLI_whenPullFails_retries(mocker, httpx_mock):
     mock_client.api.pull = pull_mock
     mocker.patch("docker.from_env", return_value=mock_client)
 
-    from ostorlab.cli import install_agent
-
     # Patch wait to be fast
     mocker.patch.object(install_agent._do_install.retry, "wait", tenacity.wait_fixed(0))
 
@@ -188,8 +187,6 @@ def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
 
     mock_image = mocker.MagicMock()
     mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
-
-    from ostorlab.cli import install_agent
 
     mocker.patch.object(install_agent._do_install.retry, "wait", tenacity.wait_fixed(0))
 
