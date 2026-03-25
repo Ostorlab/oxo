@@ -9,6 +9,10 @@ from ostorlab.assets import android_store
 from ostorlab.assets import domain_name
 from ostorlab.assets import file
 from ostorlab.assets import harmonyos_hap
+from ostorlab.assets import harmonyos_apk
+from ostorlab.assets import harmonyos_aab
+from ostorlab.assets import harmonyos_rpk
+from ostorlab.assets import harmonyos_app
 from ostorlab.assets import ios_ipa
 from ostorlab.assets import ios_store
 from ostorlab.assets import ipv4
@@ -23,6 +27,10 @@ from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.assets import domain_name_pb2
 from ostorlab.scanner.proto.assets import file_pb2
 from ostorlab.scanner.proto.assets import harmonyos_hap_pb2
+from ostorlab.scanner.proto.assets import harmonyos_apk_pb2
+from ostorlab.scanner.proto.assets import harmonyos_aab_pb2
+from ostorlab.scanner.proto.assets import harmonyos_rpk_pb2
+from ostorlab.scanner.proto.assets import harmonyos_app_pb2
 from ostorlab.scanner.proto.assets import ios_store_pb2
 from ostorlab.scanner.proto.assets import ip_pb2
 from ostorlab.scanner.proto.assets import ipa_pb2
@@ -139,6 +147,114 @@ def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
     assert hap_asset.content == b"dummy_hap"
     assert hap_asset.path is None
     assert hap_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosApkAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos apk asset."""
+    apk_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        harmonyos_apk=harmonyos_apk_pb2.Message(content=b"dummy_hap_apk"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None, registry_conf)
+
+    apk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(apk_asset, harmonyos_apk.HarmonyOSApk) is True
+    assert apk_asset.content == b"dummy_hap_apk"
+    assert apk_asset.path is None
+    assert apk_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosAabAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos aab asset."""
+    aab_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        harmonyos_aab=harmonyos_aab_pb2.Message(content=b"dummy_hap_aab"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None, registry_conf)
+
+    aab_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(aab_asset, harmonyos_aab.HarmonyOSAab) is True
+    assert aab_asset.content == b"dummy_hap_aab"
+    assert aab_asset.path is None
+    assert aab_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosRpkAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos rpk asset."""
+    rpk_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        harmonyos_rpk=harmonyos_rpk_pb2.Message(content=b"dummy_hap_rpk"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", rpk_start_agent_scan_msg, None, registry_conf)
+
+    rpk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(rpk_asset, harmonyos_rpk.HarmonyOSRpk) is True
+    assert rpk_asset.content == b"dummy_hap_rpk"
+    assert rpk_asset.path is None
+    assert rpk_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosAppAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos .app asset."""
+    app_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        harmonyos_app=harmonyos_app_pb2.Message(content=b"dummy_hap_app"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", app_start_agent_scan_msg, None, registry_conf)
+
+    app_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(app_asset, harmonyos_app.HarmonyOSApp) is True
+    assert app_asset.content == b"dummy_hap_app"
+    assert app_asset.path is None
+    assert app_asset.content_url is None
 
 
 def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(

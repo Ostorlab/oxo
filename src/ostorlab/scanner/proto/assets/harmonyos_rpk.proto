@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.scanner.proto.assets.harmonyos_hap;
+package ostorlab.scanner.proto.assets.harmonyos_rpk;
 
 import "ostorlab/scanner/proto/assets/harmonyos_metadata.proto";
 

@@ -11,21 +11,16 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from ostorlab.scanner.proto.assets import harmonyos_metadata_pb2 as ostorlab_dot_scanner_dot_proto_dot_assets_dot_harmonyos__metadata__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n1ostorlab/scanner/proto/assets/harmonyos_hap.proto\x12+ostorlab.scanner.proto.assets.harmonyos_hap\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"&\n\x11HarmonyOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"\xd9\x02\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0b\x63ontent_url\x18\x03 \x01(\t\x12X\n\x10\x61ndroid_metadata\x18\x04 \x01(\x0b\x32<.ostorlab.scanner.proto.assets.harmonyos_hap.AndroidMetadataH\x00\x12P\n\x0cios_metadata\x18\x05 \x01(\x0b\x32\x38.ostorlab.scanner.proto.assets.harmonyos_hap.IOSMetadataH\x00\x12\\\n\x12harmonyos_metadata\x18\x06 \x01(\x0b\x32>.ostorlab.scanner.proto.assets.harmonyos_hap.HarmonyOSMetadataH\x00\x42\x10\n\x0emetadata_oneof')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n1ostorlab/scanner/proto/assets/harmonyos_hap.proto\x12+ostorlab.scanner.proto.assets.harmonyos_hap\x1a\x36ostorlab/scanner/proto/assets/harmonyos_metadata.proto\"\xaf\x02\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0b\x63ontent_url\x18\x03 \x01(\t\x12J\n\x10\x61ndroid_metadata\x18\x04 \x01(\x0b\x32..ostorlab.scanner.proto.assets.AndroidMetadataH\x00\x12\x42\n\x0cios_metadata\x18\x05 \x01(\x0b\x32*.ostorlab.scanner.proto.assets.IOSMetadataH\x00\x12N\n\x12harmonyos_metadata\x18\x06 \x01(\x0b\x32\x30.ostorlab.scanner.proto.assets.HarmonyOSMetadataH\x00\x42\x10\n\x0emetadata_oneof')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.scanner.proto.assets.harmonyos_hap_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _ANDROIDMETADATA._serialized_start=98
-  _ANDROIDMETADATA._serialized_end=137
-  _IOSMETADATA._serialized_start=139
-  _IOSMETADATA._serialized_end=171
-  _HARMONYOSMETADATA._serialized_start=173
-  _HARMONYOSMETADATA._serialized_end=211
-  _MESSAGE._serialized_start=214
-  _MESSAGE._serialized_end=559
+  _MESSAGE._serialized_start=155
+  _MESSAGE._serialized_end=458
 # @@protoc_insertion_point(module_scope)
