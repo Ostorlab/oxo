@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6ostorlab/scanner/proto/assets/harmonyos_metadata.proto\x12\x1dostorlab.scanner.proto.assets\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"&\n\x11HarmonyOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6ostorlab/scanner/proto/assets/harmonyos_metadata.proto\x12\x1dostorlab.scanner.proto.assets\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"(\n\x11HarmonyOSMetadata\x12\x13\n\x0b\x62undle_name\x18\x01 \x01(\t')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.scanner.proto.assets.harmonyos_metadata_pb2', globals())
@@ -25,5 +25,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _IOSMETADATA._serialized_start=130
   _IOSMETADATA._serialized_end=162
   _HARMONYOSMETADATA._serialized_start=164
-  _HARMONYOSMETADATA._serialized_end=202
+  _HARMONYOSMETADATA._serialized_end=204
 # @@protoc_insertion_point(module_scope)

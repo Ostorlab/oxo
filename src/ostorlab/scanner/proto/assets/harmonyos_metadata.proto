@@ -11,5 +11,5 @@ message IOSMetadata {
 }
 
 message HarmonyOSMetadata {
-  optional string bundle_id = 1;
+  optional string bundle_name = 1;
 }
