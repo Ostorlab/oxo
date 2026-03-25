@@ -6,6 +6,8 @@ from typing import Dict, Optional, Generator
 import click
 import docker
 import docker.errors
+import tenacity
+import datetime
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.install import install_progress
@@ -14,6 +16,9 @@ from ostorlab.cli import agent_fetcher
 logger = logging.getLogger(__name__)
 
 console = cli_console.Console()
+
+RETRY_ATTEMPTS = 3
+WAIT_TIME = datetime.timedelta(seconds=2)
 
 
 def _image_name_from_key(agent_key: str) -> str:
@@ -68,6 +73,35 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
         return False
 
 
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(RETRY_ATTEMPTS),
+    wait=tenacity.wait_fixed(WAIT_TIME.total_seconds()),
+    retry=tenacity.retry_if_exception_type(
+        (docker.errors.APIError, docker.errors.DockerException)
+    ),
+    reraise=True,
+)
+def _do_install(
+    docker_client: docker.DockerClient,
+    agent_docker_location: str,
+    tag: str,
+    image_name: str,
+) -> None:
+    """Pull the image and tag it."""
+    console.info(f"Pulling the image {agent_docker_location} from the ostorlab store.")
+    pull_logs_generator = _pull_logs(docker_client, agent_docker_location, tag)
+
+    agent_install_progress = install_progress.AgentInstallProgress()
+    agent_install_progress.display(pull_logs_generator)
+
+    agent_image = _get_image(
+        docker_client=docker_client,
+        repository=agent_docker_location,
+        tag=tag,
+    )
+    agent_image.tag(repository=image_name, tag=tag)
+
+
 def install(
     agent_key: str,
     version: str = "",
@@ -106,24 +140,20 @@ def install(
         if _is_image_present(docker_client, f"{image_name}:v{expected_version}"):
             console.info(f"{agent_key} already exist.")
         else:
-            console.info(
-                f"Pulling the image {agent_docker_location} from the ostorlab store."
-            )
-            pull_logs_generator = _pull_logs(
-                docker_client, agent_docker_location, f"v{expected_version}"
+            _do_install(
+                docker_client,
+                agent_docker_location,
+                f"v{expected_version}",
+                image_name,
             )
 
-            agent_install_progress = install_progress.AgentInstallProgress()
-            agent_install_progress.display(pull_logs_generator)
-
-            agent_image = _get_image(
-                docker_client=docker_client,
-                repository=agent_docker_location,
-                tag=f"v{expected_version}",
-            )
-            agent_image.tag(repository=image_name, tag=f"v{expected_version}")
-
-    except docker.errors.ImageNotFound as e:
-        error_message = f"Image of the provided agent : {agent_key} was not found."
+    except (docker.errors.APIError, docker.errors.DockerException) as e:
+        error_message = f"An error was encountered while downloading the image of the {agent_key} agent."
+        console.error(error_message)
+        raise click.exceptions.Exit(2) from e
+    except Exception as e:
+        error_message = (
+            f"An unexpected error occurred while installing {agent_key}: {e}"
+        )
         console.error(error_message)
         raise click.exceptions.Exit(2) from e
