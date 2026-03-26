@@ -1,7 +1,6 @@
 """Tests for scan run risk command."""
 
 from click.testing import CliRunner
-from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 from ostorlab.assets import risk as risk_asset

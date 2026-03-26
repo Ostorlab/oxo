@@ -1,7 +1,7 @@
 """Risk message asset for injecting risk reports onto the message bus."""
 
 import dataclasses
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 
 from ostorlab.assets import asset
 
@@ -13,17 +13,17 @@ class Risk(asset.Asset):
 
     description: str
     rating: str
-    domain_name: Optional[Dict] = None
-    ipv4: Optional[Dict] = None
-    ipv6: Optional[Dict] = None
-    link: Optional[Dict] = None
-    android_store: Optional[Dict] = None
-    ios_store: Optional[Dict] = None
-    file: Optional[Dict] = None
-    android_aab: Optional[Dict] = None
-    android_apk: Optional[Dict] = None
-    ios_ipa: Optional[Dict] = None
-    api_schema: Optional[Dict] = None
+    domain_name: Optional[Dict[str, Any]] = None
+    ipv4: Optional[Dict[str, Any]] = None
+    ipv6: Optional[Dict[str, Any]] = None
+    link: Optional[Dict[str, Any]] = None
+    android_store: Optional[Dict[str, Any]] = None
+    ios_store: Optional[Dict[str, Any]] = None
+    file: Optional[Dict[str, Any]] = None
+    android_aab: Optional[Dict[str, Any]] = None
+    android_apk: Optional[Dict[str, Any]] = None
+    ios_ipa: Optional[Dict[str, Any]] = None
+    api_schema: Optional[Dict[str, Any]] = None
 
     def __str__(self) -> str:
         return f"Risk({self.rating}: {self.description})"
