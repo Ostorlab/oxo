@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.asset.store.harmonyos_store.developer;
+
+message Message {
+  optional string bundle_name = 1;
+  optional string developer = 2;
+  optional string developer_url = 3;
+  optional string developer_email = 4;
+}

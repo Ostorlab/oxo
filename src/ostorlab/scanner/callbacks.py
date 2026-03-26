@@ -28,6 +28,7 @@ from ostorlab.assets import harmonyos_apk
 from ostorlab.assets import harmonyos_aab
 from ostorlab.assets import harmonyos_rpk
 from ostorlab.assets import harmonyos_app
+from ostorlab.assets import harmonyos_store
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.scanner import scanner_conf
 from ostorlab.agent.message import proto_dict
@@ -83,6 +84,8 @@ def _extract_assets(request: Any) -> list[asset.Asset]:
         assets.append(android_store.AndroidStore(**asset_value))
     elif asset_type == "ios_store":
         assets.append(ios_store.IOSStore(**asset_value))
+    elif asset_type == "harmonyos_store":
+        assets.append(harmonyos_store.HarmonyOSStore(**asset_value))
     elif asset_type == "ipa":
         assets.append(ios_ipa.IOSIpa(**asset_value))
     elif asset_type == "apk":

@@ -13,6 +13,7 @@ from ostorlab.assets import harmonyos_apk
 from ostorlab.assets import harmonyos_aab
 from ostorlab.assets import harmonyos_rpk
 from ostorlab.assets import harmonyos_app
+from ostorlab.assets import harmonyos_store
 from ostorlab.assets import ios_ipa
 from ostorlab.assets import ios_store
 from ostorlab.assets import ipv4
@@ -31,6 +32,7 @@ from ostorlab.scanner.proto.assets import harmonyos_apk_pb2
 from ostorlab.scanner.proto.assets import harmonyos_aab_pb2
 from ostorlab.scanner.proto.assets import harmonyos_rpk_pb2
 from ostorlab.scanner.proto.assets import harmonyos_app_pb2
+from ostorlab.scanner.proto.assets import harmonyos_store_pb2
 from ostorlab.scanner.proto.assets import ios_store_pb2
 from ostorlab.scanner.proto.assets import ip_pb2
 from ostorlab.scanner.proto.assets import ipa_pb2
@@ -309,6 +311,33 @@ def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
     ios_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ios_store_asset, ios_store.IOSStore) is True
     assert ios_store_asset.bundle_id == "a.b.c"
+
+
+def testExtractAssets_whenHarmonyosStoreAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos_store asset."""
+    harmonyos_store_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        harmonyos_store=harmonyos_store_pb2.Message(bundle_name="com.example.harmony"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan(
+        "some_subject", harmonyos_store_start_agent_scan_msg, None, registry_conf
+    )
+
+    store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(store_asset, harmonyos_store.HarmonyOSStore) is True
+    assert store_asset.bundle_name == "com.example.harmony"
 
 
 def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(

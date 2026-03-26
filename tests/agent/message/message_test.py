@@ -66,3 +66,21 @@ def testMessageSerializeDeserialize_Forv3CaptureFilesystem_generatesProperProto(
     assert isinstance(serialized.raw, bytes)
     assert deserialized.data.get("event") == "ACCESS"
     assert deserialized.data.get("filename") == "/etc/hosts"
+
+
+def testMessageSerializeDeserializeHarmonyosHap_whenSelectorIsValid_generatesProperProto():
+    """Test message proper serialization for HarmonyOS HAP asset from a dict object to a protobuf based on the selector."""
+    serialized = message.Message.from_data(
+        "v3.asset.file.harmonyos.hap",
+        {
+            "content": b"hap_content",
+            "path": "/tmp/test.hap",
+        },
+    )
+    deserialized = message.Message.from_raw(
+        "v3.asset.file.harmonyos.hap", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("content") == b"hap_content"
+    assert deserialized.data.get("path") == "/tmp/test.hap"
