@@ -81,7 +81,9 @@ def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(mocke
     assert assets[0].ipv4 == {"host": "8.8.8.8", "mask": "32", "version": 4}
 
 
-def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDomain(mocker):
+def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDomain(
+    mocker,
+):
     """Test oxo scan run risk command with --domain flag populates domain_name field."""
     runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
