@@ -6,13 +6,10 @@ from ostorlab.cli import rootcli
 from ostorlab.assets import risk as risk_asset
 
 
-def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(mocker):
+def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(scan_run_cli_runner):
     """Test oxo scan run risk command with no options.
     Should show error for missing required options."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         ["scan", "run", "--agent=agent1", "risk"],
     )
@@ -21,16 +18,16 @@ def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(mocker):
     assert "Missing option" in result.output
 
 
-def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(mocker):
+def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(
+    scan_run_cli_runner,
+    mocker,
+):
     """Test oxo scan run risk command with severity and description."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
     )
 
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
@@ -51,16 +48,16 @@ def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(
     assert assets[0].description == "Server exposed to internet"
 
 
-def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(mocker):
+def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(
+    scan_run_cli_runner,
+    mocker,
+):
     """Test oxo scan run risk command with --ip flag populates ipv4 field."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
     )
 
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
@@ -82,17 +79,15 @@ def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(mocke
 
 
 def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDomain(
+    scan_run_cli_runner,
     mocker,
 ):
     """Test oxo scan run risk command with --domain flag populates domain_name field."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
     )
 
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
@@ -113,16 +108,16 @@ def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDoma
     assert assets[0].domain_name == {"name": "example.com"}
 
 
-def testScanRunRisk_whenLinkProvided_shouldCallScanWithRiskAssetContainingLink(mocker):
+def testScanRunRisk_whenLinkProvided_shouldCallScanWithRiskAssetContainingLink(
+    scan_run_cli_runner,
+    mocker,
+):
     """Test oxo scan run risk command with --link flag populates link field."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
     )
 
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
@@ -167,18 +162,19 @@ def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(mocker):
     assert result.exit_code == 1
 
 
-def testScanRunRisk_whenDescriptionFileProvided_shouldReadFromFile(mocker, tmp_path):
+def testScanRunRisk_whenDescriptionFileProvided_shouldReadFromFile(
+    scan_run_cli_runner,
+    mocker,
+    tmp_path,
+):
     """Test oxo scan run risk command with --description-file reads description from file."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
     )
     desc_file = tmp_path / "description.txt"
     desc_file.write_text("Detailed risk description from file")
 
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
@@ -197,15 +193,15 @@ def testScanRunRisk_whenDescriptionFileProvided_shouldReadFromFile(mocker, tmp_p
     assert assets[0].description == "Detailed risk description from file"
 
 
-def testScanRunRisk_whenBothDescriptionAndFile_shouldShowError(mocker, tmp_path):
+def testScanRunRisk_whenBothDescriptionAndFile_shouldShowError(
+    scan_run_cli_runner,
+    tmp_path,
+):
     """Test oxo scan run risk with both --description and --description-file shows error."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     desc_file = tmp_path / "description.txt"
     desc_file.write_text("File content")
 
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
@@ -221,13 +217,11 @@ def testScanRunRisk_whenBothDescriptionAndFile_shouldShowError(mocker, tmp_path)
     assert result.exit_code == 2
 
 
-def testScanRunRisk_whenNeitherDescriptionNorFile_shouldShowError(mocker):
+def testScanRunRisk_whenNeitherDescriptionNorFile_shouldShowError(
+    scan_run_cli_runner,
+):
     """Test oxo scan run risk with neither --description nor --description-file shows error."""
-    runner = testing.CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
-
-    result = runner.invoke(
+    result = scan_run_cli_runner.invoke(
         rootcli.rootcli,
         [
             "scan",
