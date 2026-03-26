@@ -1,15 +1,15 @@
 """Tests for scan run risk command."""
 
-from click.testing import CliRunner
+from click import testing
 
 from ostorlab.cli import rootcli
 from ostorlab.assets import risk as risk_asset
 
 
-def testScanRunRisk_whenNoOptionsProvided_showsUsageError(mocker):
+def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(mocker):
     """Test oxo scan run risk command with no options.
     Should show error for missing required options."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     result = runner.invoke(
@@ -21,9 +21,9 @@ def testScanRunRisk_whenNoOptionsProvided_showsUsageError(mocker):
     assert "Missing option" in result.output
 
 
-def testScanRunRisk_whenValidSeverityAndDescription_callsScanWithRiskAsset(mocker):
+def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(mocker):
     """Test oxo scan run risk command with severity and description."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
@@ -51,9 +51,9 @@ def testScanRunRisk_whenValidSeverityAndDescription_callsScanWithRiskAsset(mocke
     assert assets[0].description == "Server exposed to internet"
 
 
-def testScanRunRisk_whenIpProvided_callsScanWithRiskAssetContainingIp(mocker):
+def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(mocker):
     """Test oxo scan run risk command with --ip flag populates ipv4 field."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
@@ -81,9 +81,9 @@ def testScanRunRisk_whenIpProvided_callsScanWithRiskAssetContainingIp(mocker):
     assert assets[0].ipv4 == {"host": "8.8.8.8", "mask": "32", "version": 4}
 
 
-def testScanRunRisk_whenDomainProvided_callsScanWithRiskAssetContainingDomain(mocker):
+def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDomain(mocker):
     """Test oxo scan run risk command with --domain flag populates domain_name field."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
@@ -111,9 +111,9 @@ def testScanRunRisk_whenDomainProvided_callsScanWithRiskAssetContainingDomain(mo
     assert assets[0].domain_name == {"name": "example.com"}
 
 
-def testScanRunRisk_whenLinkProvided_callsScanWithRiskAssetContainingLink(mocker):
+def testScanRunRisk_whenLinkProvided_shouldCallScanWithRiskAssetContainingLink(mocker):
     """Test oxo scan run risk command with --link flag populates link field."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
@@ -141,9 +141,9 @@ def testScanRunRisk_whenLinkProvided_callsScanWithRiskAssetContainingLink(mocker
     assert assets[0].link == {"url": "https://example.com", "method": "GET"}
 
 
-def testScanRunRisk_whenRuntimeCannotRun_exitsWithError(mocker):
+def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(mocker):
     """Test oxo scan run risk when runtime cannot run the agents."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=False
@@ -165,9 +165,9 @@ def testScanRunRisk_whenRuntimeCannotRun_exitsWithError(mocker):
     assert result.exit_code == 1
 
 
-def testScanRunRisk_whenDescriptionFileProvided_readsFromFile(mocker, tmp_path):
+def testScanRunRisk_whenDescriptionFileProvided_shouldReadFromFile(mocker, tmp_path):
     """Test oxo scan run risk command with --description-file reads description from file."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     scan_mocked = mocker.patch(
@@ -195,9 +195,9 @@ def testScanRunRisk_whenDescriptionFileProvided_readsFromFile(mocker, tmp_path):
     assert assets[0].description == "Detailed risk description from file"
 
 
-def testScanRunRisk_whenBothDescriptionAndFile_showsError(mocker, tmp_path):
+def testScanRunRisk_whenBothDescriptionAndFile_shouldShowError(mocker, tmp_path):
     """Test oxo scan run risk with both --description and --description-file shows error."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     desc_file = tmp_path / "description.txt"
@@ -219,9 +219,9 @@ def testScanRunRisk_whenBothDescriptionAndFile_showsError(mocker, tmp_path):
     assert result.exit_code == 2
 
 
-def testScanRunRisk_whenNeitherDescriptionNorFile_showsError(mocker):
+def testScanRunRisk_whenNeitherDescriptionNorFile_shouldShowError(mocker):
     """Test oxo scan run risk with neither --description nor --description-file shows error."""
-    runner = CliRunner()
+    runner = testing.CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
 
@@ -239,7 +239,7 @@ def testScanRunRisk_whenNeitherDescriptionNorFile_showsError(mocker):
     assert result.exit_code == 2
 
 
-def testRiskAsset_serialization_producesValidProtobuf():
+def testRiskAsset_serialization_shouldProduceValidProtobuf():
     """Test that Risk asset serializes to valid protobuf bytes."""
     r = risk_asset.Risk(description="test risk", rating="HIGH")
     proto_bytes = r.to_proto()
@@ -248,7 +248,7 @@ def testRiskAsset_serialization_producesValidProtobuf():
     assert len(proto_bytes) > 0
 
 
-def testRiskAsset_serializationWithIp_producesValidProtobuf():
+def testRiskAsset_serializationWithIp_shouldProduceValidProtobuf():
     """Test that Risk asset with embedded IP serializes correctly."""
     r = risk_asset.Risk(
         description="server exposed",
@@ -261,7 +261,7 @@ def testRiskAsset_serializationWithIp_producesValidProtobuf():
     assert len(proto_bytes) > 0
 
 
-def testRiskAsset_selector_isCorrect():
+def testRiskAsset_selector_shouldBeCorrect():
     """Test that Risk asset has the correct selector."""
     r = risk_asset.Risk(description="test", rating="HIGH")
     assert r.selector == "v3.report.risk"
