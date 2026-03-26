@@ -89,9 +89,7 @@ def risk_cli(
         console.error("Provide either --description or --description-file.")
         raise click.exceptions.Exit(2)
     if description is not None and description_file is not None:
-        console.error(
-            "Provide either --description or --description-file, not both."
-        )
+        console.error("Provide either --description or --description-file, not both.")
         raise click.exceptions.Exit(2)
     if description_file is not None:
         description = description_file.read()
