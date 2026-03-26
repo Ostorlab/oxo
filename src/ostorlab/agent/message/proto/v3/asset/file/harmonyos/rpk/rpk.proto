@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.asset.file.android.aab;
+package ostorlab.agent.message.proto.v3.asset.file.harmonyos.rpk;
 
 message AndroidMetadata {
   optional string package_name = 1;

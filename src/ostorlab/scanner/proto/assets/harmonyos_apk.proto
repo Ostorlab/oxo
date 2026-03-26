@@ -1,18 +1,8 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.asset.file.android.aab;
+package ostorlab.scanner.proto.assets.harmonyos_apk;
 
-message AndroidMetadata {
-  optional string package_name = 1;
-}
-
-message IOSMetadata {
-  optional string bundle_id = 1;
-}
-
-message HarmonyOSMetadata {
-  optional string bundle_name = 1;
-}
+import "ostorlab/scanner/proto/assets/harmonyos_metadata.proto";
 
 message Message {
   optional bytes content = 1;
