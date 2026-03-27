@@ -70,6 +70,18 @@ _RISK_RATINGS = [
     help="URL the risk applies to.",
 )
 @click.option(
+    "--link-method",
+    default="GET",
+    show_default=True,
+    help="HTTP method for the link.",
+)
+@click.option(
+    "--link-header",
+    "link_headers",
+    multiple=True,
+    help="HTTP header in 'Name: Value' format. Can be repeated.",
+)
+@click.option(
     "--android-store",
     required=False,
     default=None,
@@ -83,39 +95,90 @@ _RISK_RATINGS = [
 )
 @click.option(
     "--file",
-    "file_path",
-    type=click.Path(exists=True),
+    "file_asset",
+    type=click.File(mode="rb"),
     required=False,
     default=None,
-    help="File path the risk applies to.",
+    help="File the risk applies to.",
+)
+@click.option(
+    "--file-url",
+    required=False,
+    default=None,
+    help="URL of the file the risk applies to.",
 )
 @click.option(
     "--android-aab",
-    type=click.Path(exists=True),
+    "android_aab_file",
+    type=click.File(mode="rb"),
     required=False,
     default=None,
-    help="Android AAB file path the risk applies to.",
+    help="Android AAB file the risk applies to.",
+)
+@click.option(
+    "--android-aab-url",
+    required=False,
+    default=None,
+    help="URL of the Android AAB the risk applies to.",
 )
 @click.option(
     "--android-apk",
-    type=click.Path(exists=True),
+    "android_apk_file",
+    type=click.File(mode="rb"),
     required=False,
     default=None,
-    help="Android APK file path the risk applies to.",
+    help="Android APK file the risk applies to.",
+)
+@click.option(
+    "--android-apk-url",
+    required=False,
+    default=None,
+    help="URL of the Android APK the risk applies to.",
 )
 @click.option(
     "--ios-ipa",
-    type=click.Path(exists=True),
+    "ios_ipa_file",
+    type=click.File(mode="rb"),
     required=False,
     default=None,
-    help="iOS IPA file path the risk applies to.",
+    help="iOS IPA file the risk applies to.",
 )
 @click.option(
-    "--api-schema",
-    type=click.Path(exists=True),
+    "--ios-ipa-url",
     required=False,
     default=None,
-    help="API schema file path the risk applies to.",
+    help="URL of the iOS IPA the risk applies to.",
+)
+@click.option(
+    "--api-schema-file",
+    type=click.File(mode="rb"),
+    required=False,
+    default=None,
+    help="API schema file the risk applies to.",
+)
+@click.option(
+    "--api-schema-url",
+    required=False,
+    default=None,
+    help="URL of the API schema the risk applies to.",
+)
+@click.option(
+    "--api-schema-endpoint",
+    required=False,
+    default=None,
+    help="API endpoint URL.",
+)
+@click.option(
+    "--api-schema-type",
+    required=False,
+    default=None,
+    help="API schema type (e.g. openapi, graphql, wsdl).",
+)
+@click.option(
+    "--api-schema-header",
+    "api_schema_headers",
+    multiple=True,
+    help="API schema HTTP header in 'Name: Value' format. Can be repeated.",
 )
 @click.pass_context
 def risk_cli(
@@ -126,13 +189,23 @@ def risk_cli(
     ip_addr: Optional[str],
     domain: Optional[str],
     url: Optional[str],
+    link_method: str,
+    link_headers: tuple,
     android_store: Optional[str],
     ios_store: Optional[str],
-    file_path: Optional[str],
-    android_aab: Optional[str],
-    android_apk: Optional[str],
-    ios_ipa: Optional[str],
-    api_schema: Optional[str],
+    file_asset: Optional[io.RawIOBase],
+    file_url: Optional[str],
+    android_aab_file: Optional[io.RawIOBase],
+    android_aab_url: Optional[str],
+    android_apk_file: Optional[io.RawIOBase],
+    android_apk_url: Optional[str],
+    ios_ipa_file: Optional[io.RawIOBase],
+    ios_ipa_url: Optional[str],
+    api_schema_file: Optional[io.RawIOBase],
+    api_schema_url: Optional[str],
+    api_schema_endpoint: Optional[str],
+    api_schema_type: Optional[str],
+    api_schema_headers: tuple,
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
     Example:\n
@@ -147,6 +220,22 @@ def risk_cli(
         raise click.exceptions.Exit(2)
     if description_file is not None:
         description = description_file.read()
+
+    if file_asset is not None and file_url is not None:
+        console.error("Provide either --file or --file-url, not both.")
+        raise click.exceptions.Exit(2)
+    if android_apk_file is not None and android_apk_url is not None:
+        console.error("Provide either --android-apk or --android-apk-url, not both.")
+        raise click.exceptions.Exit(2)
+    if android_aab_file is not None and android_aab_url is not None:
+        console.error("Provide either --android-aab or --android-aab-url, not both.")
+        raise click.exceptions.Exit(2)
+    if ios_ipa_file is not None and ios_ipa_url is not None:
+        console.error("Provide either --ios-ipa or --ios-ipa-url, not both.")
+        raise click.exceptions.Exit(2)
+    if api_schema_file is not None and api_schema_url is not None:
+        console.error("Provide either --api-schema-file or --api-schema-url, not both.")
+        raise click.exceptions.Exit(2)
 
     runtime = ctx.obj["runtime"]
 
@@ -178,7 +267,19 @@ def risk_cli(
         risk_kwargs["domain_name"] = {"name": domain}
 
     if url is not None:
-        risk_kwargs["link"] = {"url": url, "method": "GET"}
+        link_dict: dict = {"url": url, "method": link_method}
+        if link_headers:
+            parsed_headers = []
+            for h in link_headers:
+                if ": " not in h:
+                    console.error(
+                        f"Invalid header format '{h}', expected 'Name: Value'."
+                    )
+                    raise click.exceptions.Exit(2)
+                name, value = h.split(": ", 1)
+                parsed_headers.append({"name": name, "value": value})
+            link_dict["extra_headers"] = parsed_headers
+        risk_kwargs["link"] = link_dict
 
     if android_store is not None:
         risk_kwargs["android_store"] = {"package_name": android_store}
@@ -186,20 +287,62 @@ def risk_cli(
     if ios_store is not None:
         risk_kwargs["ios_store"] = {"bundle_id": ios_store}
 
-    if file_path is not None:
-        risk_kwargs["file"] = {"path": file_path}
+    if file_asset is not None:
+        risk_kwargs["file"] = {"content": file_asset.read(), "path": file_asset.name}
+    elif file_url is not None:
+        risk_kwargs["file"] = {"content_url": file_url}
 
-    if android_aab is not None:
-        risk_kwargs["android_aab"] = {"path": android_aab}
+    if android_aab_file is not None:
+        risk_kwargs["android_aab"] = {
+            "content": android_aab_file.read(),
+            "path": android_aab_file.name,
+        }
+    elif android_aab_url is not None:
+        risk_kwargs["android_aab"] = {"content_url": android_aab_url}
 
-    if android_apk is not None:
-        risk_kwargs["android_apk"] = {"path": android_apk}
+    if android_apk_file is not None:
+        risk_kwargs["android_apk"] = {
+            "content": android_apk_file.read(),
+            "path": android_apk_file.name,
+        }
+    elif android_apk_url is not None:
+        risk_kwargs["android_apk"] = {"content_url": android_apk_url}
 
-    if ios_ipa is not None:
-        risk_kwargs["ios_ipa"] = {"path": ios_ipa}
+    if ios_ipa_file is not None:
+        risk_kwargs["ios_ipa"] = {
+            "content": ios_ipa_file.read(),
+            "path": ios_ipa_file.name,
+        }
+    elif ios_ipa_url is not None:
+        risk_kwargs["ios_ipa"] = {"content_url": ios_ipa_url}
 
-    if api_schema is not None:
-        risk_kwargs["api_schema"] = {"path": api_schema}
+    if (
+        api_schema_file is not None
+        or api_schema_url is not None
+        or api_schema_endpoint is not None
+    ):
+        schema_dict: dict = {}
+        if api_schema_file is not None:
+            schema_dict["content"] = api_schema_file.read()
+            schema_dict["path"] = api_schema_file.name
+        if api_schema_url is not None:
+            schema_dict["content_url"] = api_schema_url
+        if api_schema_endpoint is not None:
+            schema_dict["endpoint_url"] = api_schema_endpoint
+        if api_schema_type is not None:
+            schema_dict["schema_type"] = api_schema_type
+        if api_schema_headers:
+            parsed_schema_headers = []
+            for h in api_schema_headers:
+                if ": " not in h:
+                    console.error(
+                        f"Invalid header format '{h}', expected 'Name: Value'."
+                    )
+                    raise click.exceptions.Exit(2)
+                name, value = h.split(": ", 1)
+                parsed_schema_headers.append({"name": name, "value": value})
+            schema_dict["extra_headers"] = parsed_schema_headers
+        risk_kwargs["api_schema"] = schema_dict
 
     assets = [risk_asset.Risk(**risk_kwargs)]
 
