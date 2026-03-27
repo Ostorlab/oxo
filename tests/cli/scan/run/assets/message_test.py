@@ -1,7 +1,5 @@
 """Tests for scan run message command."""
 
-from click import testing
-
 from ostorlab.assets import message as message_asset
 from ostorlab.cli import rootcli
 
