@@ -312,7 +312,11 @@ def testScanRunRisk_whenIpv6Provided_shouldCallScanWithRiskAssetContainingIpv6(
     assets = scan_mocked.call_args[1].get("assets")
     assert len(assets) == 1
     assert isinstance(assets[0], risk_asset.Risk)
-    assert assets[0].ipv6 == {"host": "2001:0db8:0000:0000:0000:0000:0000:0001", "mask": "128", "version": 6}
+    assert assets[0].ipv6 == {
+        "host": "2001:0db8:0000:0000:0000:0000:0000:0001",
+        "mask": "128",
+        "version": 6,
+    }
 
 
 def testRiskAsset_protoField_shouldBeRisk():

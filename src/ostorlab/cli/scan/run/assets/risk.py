@@ -16,7 +16,17 @@ from ostorlab import exceptions
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
-_RISK_RATINGS = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "POTENTIALLY", "HARDENING", "SECURE", "IMPORTANT", "INFO"]
+_RISK_RATINGS = [
+    "CRITICAL",
+    "HIGH",
+    "MEDIUM",
+    "LOW",
+    "POTENTIALLY",
+    "HARDENING",
+    "SECURE",
+    "IMPORTANT",
+    "INFO",
+]
 
 
 @run.run.command(name="risk")
