@@ -268,7 +268,7 @@ def risk_cli(
 
     if url is not None:
         link_dict: dict = {"url": url, "method": link_method}
-        if link_headers:
+        if len(link_headers) > 0:
             parsed_headers = []
             for h in link_headers:
                 if ": " not in h:
@@ -331,7 +331,7 @@ def risk_cli(
             schema_dict["endpoint_url"] = api_schema_endpoint
         if api_schema_type is not None:
             schema_dict["schema_type"] = api_schema_type
-        if api_schema_headers:
+        if len(api_schema_headers) > 0:
             parsed_schema_headers = []
             for h in api_schema_headers:
                 if ": " not in h:
