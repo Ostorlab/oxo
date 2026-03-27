@@ -25,5 +25,9 @@ class Risk(asset.Asset):
     ios_ipa: Optional[dict[str, Any]] = None
     api_schema: Optional[dict[str, Any]] = None
 
+    @property
+    def proto_field(self) -> str:
+        return "risk"
+
     def __str__(self) -> str:
         return f"Risk({self.rating}: {self.description})"

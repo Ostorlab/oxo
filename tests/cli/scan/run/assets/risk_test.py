@@ -235,6 +235,93 @@ def testScanRunRisk_whenNeitherDescriptionNorFile_shouldShowError(
     assert result.exit_code == 2
 
 
+def testScanRunRisk_whenInvalidSeverityProvided_shouldShowError(scan_run_cli_runner):
+    """Test oxo scan run risk with an invalid --severity value is rejected by click.Choice."""
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=INVALID",
+            "--description=Test",
+        ],
+    )
+
+    assert result.exit_code == 2
+
+
+def testScanRunRisk_whenAndroidApkProvided_shouldCallScanWithRiskAssetContainingAndroidApk(
+    scan_run_cli_runner,
+    mocker,
+    tmp_path,
+):
+    """Test oxo scan run risk command with --android-apk populates android_apk field."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+    apk_file = tmp_path / "app.apk"
+    apk_file.write_bytes(b"apk content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Vulnerable APK",
+            f"--android-apk={apk_file}",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].android_apk == {"path": str(apk_file)}
+
+
+def testScanRunRisk_whenIpv6Provided_shouldCallScanWithRiskAssetContainingIpv6(
+    scan_run_cli_runner,
+    mocker,
+):
+    """Test oxo scan run risk command with --ip IPv6 address populates ipv6 field."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=IPv6 exposure",
+            "--ip=2001:db8::1",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].ipv6 == {"host": "2001:0db8:0000:0000:0000:0000:0000:0001", "mask": "128", "version": 6}
+
+
+def testRiskAsset_protoField_shouldBeRisk():
+    """Test that Risk asset proto_field returns 'risk' for use in vulnerability location."""
+    r = risk_asset.Risk(description="test", rating="HIGH")
+
+    assert r.proto_field == "risk"
+
+
 def testRiskAsset_serialization_shouldProduceValidProtobuf():
     """Test that Risk asset serializes to valid protobuf bytes."""
     r = risk_asset.Risk(description="test risk", rating="HIGH")

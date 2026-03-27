@@ -16,12 +16,15 @@ from ostorlab import exceptions
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
+_RISK_RATINGS = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "POTENTIALLY", "HARDENING", "SECURE", "IMPORTANT", "INFO"]
+
 
 @run.run.command(name="risk")
 @click.option(
     "--severity",
     required=True,
-    help="Risk severity (e.g., HIGH, CRITICAL, MEDIUM, LOW).",
+    type=click.Choice(_RISK_RATINGS, case_sensitive=False),
+    help="Risk severity.",
 )
 @click.option(
     "--description",
@@ -68,6 +71,42 @@ console = cli_console.Console()
     default=None,
     help="iOS bundle ID the risk applies to.",
 )
+@click.option(
+    "--file",
+    "file_path",
+    type=click.Path(exists=True),
+    required=False,
+    default=None,
+    help="File path the risk applies to.",
+)
+@click.option(
+    "--android-aab",
+    type=click.Path(exists=True),
+    required=False,
+    default=None,
+    help="Android AAB file path the risk applies to.",
+)
+@click.option(
+    "--android-apk",
+    type=click.Path(exists=True),
+    required=False,
+    default=None,
+    help="Android APK file path the risk applies to.",
+)
+@click.option(
+    "--ios-ipa",
+    type=click.Path(exists=True),
+    required=False,
+    default=None,
+    help="iOS IPA file path the risk applies to.",
+)
+@click.option(
+    "--api-schema",
+    type=click.Path(exists=True),
+    required=False,
+    default=None,
+    help="API schema file path the risk applies to.",
+)
 @click.pass_context
 def risk_cli(
     ctx: click.core.Context,
@@ -79,6 +118,11 @@ def risk_cli(
     url: Optional[str],
     android_store: Optional[str],
     ios_store: Optional[str],
+    file_path: Optional[str],
+    android_aab: Optional[str],
+    android_apk: Optional[str],
+    ios_ipa: Optional[str],
+    api_schema: Optional[str],
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
     Example:\n
@@ -131,6 +175,21 @@ def risk_cli(
 
     if ios_store is not None:
         risk_kwargs["ios_store"] = {"bundle_id": ios_store}
+
+    if file_path is not None:
+        risk_kwargs["file"] = {"path": file_path}
+
+    if android_aab is not None:
+        risk_kwargs["android_aab"] = {"path": android_aab}
+
+    if android_apk is not None:
+        risk_kwargs["android_apk"] = {"path": android_apk}
+
+    if ios_ipa is not None:
+        risk_kwargs["ios_ipa"] = {"path": ios_ipa}
+
+    if api_schema is not None:
+        risk_kwargs["api_schema"] = {"path": api_schema}
 
     assets = [risk_asset.Risk(**risk_kwargs)]
 
