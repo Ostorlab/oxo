@@ -3,7 +3,7 @@
 import pathlib
 
 from click import testing
-from pytest_mock import MockerFixture
+import pytest_mock
 
 from ostorlab.cli import rootcli
 from ostorlab.assets import risk as risk_asset
@@ -25,7 +25,7 @@ def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(
 
 def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with severity and description."""
     scan_mocked = mocker.patch(
@@ -55,7 +55,7 @@ def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(
 
 def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --ip flag populates ipv4 field."""
     scan_mocked = mocker.patch(
@@ -85,7 +85,7 @@ def testScanRunRisk_whenIpProvided_shouldCallScanWithRiskAssetContainingIp(
 
 def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDomain(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --domain flag populates domain_name field."""
     scan_mocked = mocker.patch(
@@ -115,7 +115,7 @@ def testScanRunRisk_whenDomainProvided_shouldCallScanWithRiskAssetContainingDoma
 
 def testScanRunRisk_whenLinkProvided_shouldCallScanWithRiskAssetContainingLink(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --link flag populates link field."""
     scan_mocked = mocker.patch(
@@ -144,7 +144,7 @@ def testScanRunRisk_whenLinkProvided_shouldCallScanWithRiskAssetContainingLink(
 
 
 def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk when runtime cannot run the agents."""
     runner = testing.CliRunner()
@@ -171,7 +171,7 @@ def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(
 
 def testScanRunRisk_whenDescriptionFileProvided_shouldReadFromFile(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
     tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run risk command with --description-file reads description from file."""
@@ -263,7 +263,7 @@ def testScanRunRisk_whenInvalidSeverityProvided_shouldShowError(
 
 def testScanRunRisk_whenAndroidApkProvided_shouldCallScanWithRiskAssetContainingAndroidApk(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
     tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run risk command with --android-apk populates android_apk field."""
@@ -297,7 +297,7 @@ def testScanRunRisk_whenAndroidApkProvided_shouldCallScanWithRiskAssetContaining
 
 def testScanRunRisk_whenIpv6Provided_shouldCallScanWithRiskAssetContainingIpv6(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --ip IPv6 address populates ipv6 field."""
     scan_mocked = mocker.patch(
@@ -366,7 +366,7 @@ def testRiskAsset_selector_shouldBeCorrect() -> None:
 
 def testScanRunRisk_whenAndroidApkUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --android-apk-url populates android_apk content_url field."""
     scan_mocked = mocker.patch(
@@ -421,7 +421,7 @@ def testScanRunRisk_whenAndroidApkFileAndUrlBothProvided_shouldShowError(
 
 def testScanRunRisk_whenAndroidAabUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --android-aab-url populates android_aab content_url field."""
     scan_mocked = mocker.patch(
@@ -450,7 +450,7 @@ def testScanRunRisk_whenAndroidAabUrlProvided_shouldCallScanWithRiskAssetContain
 
 def testScanRunRisk_whenIosIpaUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --ios-ipa-url populates ios_ipa content_url field."""
     scan_mocked = mocker.patch(
@@ -479,7 +479,7 @@ def testScanRunRisk_whenIosIpaUrlProvided_shouldCallScanWithRiskAssetContainingC
 
 def testScanRunRisk_whenLinkMethodProvided_shouldCallScanWithCorrectMethod(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --link-method overrides default GET."""
     scan_mocked = mocker.patch(
@@ -509,7 +509,7 @@ def testScanRunRisk_whenLinkMethodProvided_shouldCallScanWithCorrectMethod(
 
 def testScanRunRisk_whenLinkHeadersProvided_shouldCallScanWithHeaders(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --link-header populates extra_headers field."""
     scan_mocked = mocker.patch(
@@ -564,7 +564,7 @@ def testScanRunRisk_whenInvalidLinkHeaderFormat_shouldShowError(
 
 def testScanRunRisk_whenApiSchemaFileProvided_shouldCallScanWithContentAndPath(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
     tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run risk command with --api-schema-file populates content and path."""
@@ -597,7 +597,7 @@ def testScanRunRisk_whenApiSchemaFileProvided_shouldCallScanWithContentAndPath(
 
 def testScanRunRisk_whenApiSchemaUrlProvided_shouldCallScanWithContentUrl(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --api-schema-url populates content_url field."""
     scan_mocked = mocker.patch(
@@ -626,7 +626,7 @@ def testScanRunRisk_whenApiSchemaUrlProvided_shouldCallScanWithContentUrl(
 
 def testScanRunRisk_whenApiSchemaEndpointAndTypeProvided_shouldCallScanWithFields(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --api-schema-endpoint and --api-schema-type."""
     scan_mocked = mocker.patch(
@@ -657,7 +657,7 @@ def testScanRunRisk_whenApiSchemaEndpointAndTypeProvided_shouldCallScanWithField
 
 def testScanRunRisk_whenApiSchemaHeadersProvided_shouldCallScanWithExtraHeaders(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test oxo scan run risk command with --api-schema-header populates extra_headers."""
     scan_mocked = mocker.patch(
