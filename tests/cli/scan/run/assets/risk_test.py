@@ -477,35 +477,6 @@ def testScanRunRisk_whenIosIpaUrlProvided_shouldCallScanWithRiskAssetContainingC
     assert assets[0].ios_ipa == {"content_url": "https://example.com/app.ipa"}
 
 
-def testScanRunRisk_whenFileUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(
-    scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
-) -> None:
-    """Test oxo scan run risk command with --file-url populates file content_url field."""
-    scan_mocked = mocker.patch(
-        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
-    )
-
-    result = scan_run_cli_runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--agent=agent1",
-            "risk",
-            "--severity=HIGH",
-            "--description=Vulnerable file",
-            "--file-url=https://example.com/binary",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert scan_mocked.call_count == 1
-    assets = scan_mocked.call_args[1].get("assets")
-    assert isinstance(assets[0], risk_asset.Risk)
-    assert assets[0].file == {"content_url": "https://example.com/binary"}
-
-
 def testScanRunRisk_whenLinkMethodProvided_shouldCallScanWithCorrectMethod(
     scan_run_cli_runner: testing.CliRunner,
     mocker: MockerFixture,

@@ -19,7 +19,6 @@ class Risk(asset.Asset):
     link: Optional[dict[str, Any]] = None
     android_store: Optional[dict[str, Any]] = None
     ios_store: Optional[dict[str, Any]] = None
-    file: Optional[dict[str, Any]] = None
     android_aab: Optional[dict[str, Any]] = None
     android_apk: Optional[dict[str, Any]] = None
     ios_ipa: Optional[dict[str, Any]] = None

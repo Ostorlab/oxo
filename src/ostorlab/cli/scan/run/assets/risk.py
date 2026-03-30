@@ -94,20 +94,6 @@ _RISK_RATINGS = [
     help="iOS bundle ID the risk applies to.",
 )
 @click.option(
-    "--file",
-    "file_asset",
-    type=click.File(mode="rb"),
-    required=False,
-    default=None,
-    help="File the risk applies to.",
-)
-@click.option(
-    "--file-url",
-    required=False,
-    default=None,
-    help="URL of the file the risk applies to.",
-)
-@click.option(
     "--android-aab",
     "android_aab_file",
     type=click.File(mode="rb"),
@@ -193,8 +179,6 @@ def risk_cli(
     link_headers: tuple,
     android_store: Optional[str],
     ios_store: Optional[str],
-    file_asset: Optional[io.RawIOBase],
-    file_url: Optional[str],
     android_aab_file: Optional[io.RawIOBase],
     android_aab_url: Optional[str],
     android_apk_file: Optional[io.RawIOBase],
@@ -221,9 +205,6 @@ def risk_cli(
     if description_file is not None:
         description = description_file.read()
 
-    if file_asset is not None and file_url is not None:
-        console.error("Provide either --file or --file-url, not both.")
-        raise click.exceptions.Exit(2)
     if android_apk_file is not None and android_apk_url is not None:
         console.error("Provide either --android-apk or --android-apk-url, not both.")
         raise click.exceptions.Exit(2)
@@ -286,11 +267,6 @@ def risk_cli(
 
     if ios_store is not None:
         risk_kwargs["ios_store"] = {"bundle_id": ios_store}
-
-    if file_asset is not None:
-        risk_kwargs["file"] = {"content": file_asset.read(), "path": file_asset.name}
-    elif file_url is not None:
-        risk_kwargs["file"] = {"content_url": file_url}
 
     if android_aab_file is not None:
         risk_kwargs["android_aab"] = {
