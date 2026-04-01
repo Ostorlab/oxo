@@ -7,6 +7,7 @@ import pytest_mock
 
 from ostorlab.cli import rootcli
 from ostorlab.assets import risk as risk_asset
+from ostorlab.assets import ipv4 as ipv4_asset
 
 
 def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(
@@ -350,7 +351,7 @@ def testRiskAsset_serializationWithIp_shouldProduceValidProtobuf() -> None:
     r = risk_asset.Risk(
         description="server exposed",
         rating="CRITICAL",
-        ipv4={"host": "8.8.8.8", "mask": "32", "version": 4},
+        ipv4=ipv4_asset.IPv4(host="8.8.8.8", mask="32", version=4),
     )
     proto_bytes = r.to_proto()
 
