@@ -40,7 +40,7 @@ class Risk(asset.Asset):
             k: (v.__dict__ if isinstance(v, asset.Asset) else v)
             for k, v in self.__dict__.items()
         }
-        return serializer.serialize(self.selector, data).SerializeToString()
+        return bytes(serializer.serialize(self.selector, data).SerializeToString())
 
     @property
     def proto_field(self) -> str:
