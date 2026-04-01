@@ -6,7 +6,6 @@ import logging
 
 import click
 from google.protobuf import text_format
-
 from ostorlab.agent.message import serializer
 from ostorlab.assets import message as message_asset
 from ostorlab.cli import console as cli_console
