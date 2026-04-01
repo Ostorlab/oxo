@@ -14,6 +14,7 @@ import redis
 from docker.models import networks as networks_model
 from flask import testing as flask_testing
 from werkzeug import test as werkzeug_test
+from click import testing
 from pytest_mock import plugin
 
 import ostorlab
@@ -1619,3 +1620,11 @@ def call_trace() -> agent_report_vulnerability_mixin.CallTrace:
     return agent_report_vulnerability_mixin.CallTrace(
         frames=[frame1, frame2],
     )
+
+
+@pytest.fixture
+def scan_run_cli_runner(mocker):
+    """Fixture providing a CliRunner with mocked local runtime."""
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+    return testing.CliRunner()
