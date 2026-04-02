@@ -5,6 +5,7 @@ to be injected onto the message bus."""
 import logging
 
 import click
+from google.protobuf import message as proto_message_lib
 from google.protobuf import text_format
 from ostorlab.agent.message import serializer
 from ostorlab.assets import message as message_asset
@@ -54,7 +55,11 @@ def message_cli(
         console.error(f"Failed to parse proto text file: {e}")
         raise click.exceptions.Exit(2)
 
-    proto_bytes = proto_message.SerializeToString()
+    try:
+        proto_bytes = proto_message.SerializeToString()
+    except proto_message_lib.EncodeError as e:
+        console.error(f"Failed to serialize proto message: {e}")
+        raise click.exceptions.Exit(2)
 
     runtime = ctx.obj["runtime"]
     assets = [message_asset.Message(selector=selector, proto_bytes=proto_bytes)]
