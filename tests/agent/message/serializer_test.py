@@ -1,6 +1,7 @@
 """Tests for serializer module."""
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.agent.message import serializer
 
@@ -70,7 +71,7 @@ def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
     assert serialized is not None
 
 
-def testFindProtoClass_withValidSelector_returnsProtoClass():
+def testFindProtoClass_withValidSelector_returnsProtoClass() -> None:
     """Test find_proto_class returns the Message class for a valid selector."""
     proto_class = serializer.find_proto_class("v3.fingerprint.file")
 
@@ -78,13 +79,15 @@ def testFindProtoClass_withValidSelector_returnsProtoClass():
     assert proto_class.__name__ == "Message"
 
 
-def testFindProtoClass_withInvalidSelector_raisesSerializationError():
+def testFindProtoClass_withInvalidSelector_raisesSerializationError() -> None:
     """Test find_proto_class raises SerializationError when the module cannot be imported."""
     with pytest.raises(serializer.SerializationError):
         serializer.find_proto_class("v3.nonexistent.selector")
 
 
-def testFindProtoClass_whenModuleHasNoMessageClass_raisesSerializationError(mocker):
+def testFindProtoClass_whenModuleHasNoMessageClass_raisesSerializationError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test find_proto_class raises SerializationError when the module lacks the Message class."""
     mock_module = mocker.MagicMock(spec=[])
     mocker.patch("importlib.import_module", return_value=mock_module)
