@@ -3,7 +3,7 @@
 import pathlib
 
 from click import testing
-from pytest_mock import MockerFixture
+from pytest_mock import plugin
 
 from ostorlab.assets import message as message_asset
 from ostorlab.cli import rootcli
@@ -25,7 +25,7 @@ def testScanRunMessage_whenNoOptionsProvided_shouldShowUsageError(
 
 def testScanRunMessage_whenValidSelectorAndTextprotoFile_shouldCallScanWithMessageAsset(
     scan_run_cli_runner: testing.CliRunner,
-    mocker: MockerFixture,
+    mocker: plugin.MockerFixture,
     tmp_path: pathlib.Path,
 ) -> None:
     """Test oxo scan run message with valid selector and proto text file."""
@@ -119,6 +119,39 @@ def testScanRunMessage_whenFileNotFound_shouldShowError(
     )
 
     assert result.exit_code == 2
+
+
+def testScanRunMessage_whenTextprotoContainsBytesField_shouldCallScanWithMessageAsset(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: plugin.MockerFixture,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run message correctly handles a proto with a bytes-type field."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+    proto_file = tmp_path / "artifact.textproto"
+    proto_file.write_text('content: "binary_content"\ndescription: "test artifact"')
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "message",
+            "--selector=v3.capture.artifact",
+            f"--textproto={proto_file}",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], message_asset.Message)
+    assert assets[0].selector == "v3.capture.artifact"
+    assert len(assets[0].proto_bytes) > 0
 
 
 def testMessageAsset_toProto_shouldReturnPrecomputedBytes() -> None:

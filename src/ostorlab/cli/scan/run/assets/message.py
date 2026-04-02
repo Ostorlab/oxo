@@ -40,12 +40,10 @@ def message_cli(
         - oxo scan run --agent=agent/ostorlab/nebula message --selector "v3.report.risk" --textproto risk.textproto
     """
     try:
-        proto_class = serializer.find_proto_class(selector)
+        proto_message = serializer.serialize(selector, {})
     except serializer.SerializationError as e:
         console.error(f"Could not find proto definition for selector '{selector}': {e}")
         raise click.exceptions.Exit(2)
-
-    proto_message = proto_class()
 
     with open(proto_file, "r") as f:
         file_content = f.read()
@@ -57,12 +55,6 @@ def message_cli(
         raise click.exceptions.Exit(2)
 
     proto_bytes = proto_message.SerializeToString()
-    if proto_bytes == b"":
-        console.error(
-            "Proto text file produced an empty message. "
-            "Check that field names match the selector's proto definition."
-        )
-        raise click.exceptions.Exit(2)
 
     runtime = ctx.obj["runtime"]
     assets = [message_asset.Message(selector=selector, proto_bytes=proto_bytes)]

@@ -95,34 +95,6 @@ def _selector_to_package_regex(subject: str) -> str:
         )
 
 
-def find_proto_class(selector: str) -> Any:
-    """Finds and returns the proto Message class for the given selector.
-
-    Args:
-        selector: Message selector, e.g. 'v3.report.risk'.
-
-    Returns:
-        The proto Message class.
-
-    Raises:
-        SerializationError: If the selector has no matching proto definition,
-            the module cannot be imported, or the Message class is not found.
-    """
-    package_name = _find_package_name(selector)
-    try:
-        module = importlib.import_module(package_name)
-    except (ImportError, ModuleNotFoundError) as e:
-        raise SerializationError(
-            f"Could not import proto module '{package_name}': {e}"
-        ) from e
-    try:
-        return getattr(module, PROTO_CLASS_NAME)
-    except AttributeError as e:
-        raise SerializationError(
-            f"Proto module '{package_name}' has no class '{PROTO_CLASS_NAME}': {e}"
-        ) from e
-
-
 def serialize(selector: str, values: Dict[str, Any]) -> Any:
     """Serializes a Request message using the proper format defined using the seelctor value.
     If the subject is a.b.c. The corresponding proto is located at message/a/b/c/xxx.proto.
