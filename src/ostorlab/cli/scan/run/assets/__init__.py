@@ -14,6 +14,7 @@ from ostorlab.cli.scan.run.assets import android_store
 from ostorlab.cli.scan.run.assets import ios_store
 from ostorlab.cli.scan.run.assets import ios_testflight
 from ostorlab.cli.scan.run.assets import api_schema
+from ostorlab.cli.scan.run.assets import harmonyos_hap
 
 __all__ = (
     "agent",
@@ -30,4 +31,5 @@ __all__ = (
     "ios_store",
     "ios_testflight",
     "api_schema",
+    "harmonyos_hap",
 )
