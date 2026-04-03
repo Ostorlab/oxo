@@ -14,6 +14,12 @@ from ostorlab.cli.scan.run.assets import android_store
 from ostorlab.cli.scan.run.assets import ios_store
 from ostorlab.cli.scan.run.assets import ios_testflight
 from ostorlab.cli.scan.run.assets import api_schema
+from ostorlab.cli.scan.run.assets import harmonyos_hap
+from ostorlab.cli.scan.run.assets import harmonyos_apk
+from ostorlab.cli.scan.run.assets import harmonyos_aab
+from ostorlab.cli.scan.run.assets import harmonyos_app
+from ostorlab.cli.scan.run.assets import harmonyos_rpk
+from ostorlab.cli.scan.run.assets import harmonyos_store
 
 __all__ = (
     "agent",
@@ -30,4 +36,10 @@ __all__ = (
     "ios_store",
     "ios_testflight",
     "api_schema",
+    "harmonyos_hap",
+    "harmonyos_apk",
+    "harmonyos_aab",
+    "harmonyos_app",
+    "harmonyos_rpk",
+    "harmonyos_store",
 )
