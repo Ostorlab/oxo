@@ -5,9 +5,9 @@
 
 # OXO Scan Orchestration Engine
 
-OXO is a securitty scanning framewora built for modularity, scalability and simplicity. sddddddddddddddddddddd
+OXO is a security scanning framework built for modularity, scalability, and simplicity.
 
-OXO Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting ...
+OXO Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, fingerprinting, and more.
 
 
 * [Documentation](https://oxo.ostorlab.co/docs)
@@ -106,9 +106,6 @@ OXO supports scanning of multiple asset types, below is the list of currently su
 
 OXO lists all agents on a public store where you can search and also publish your own agents.
 
-![Store](images/store-preview.gif)
-
-gdfhdfhadh
 # Publish your first Agent
 
 To write your first agent, you can check out a full
@@ -147,8 +144,6 @@ Implementation of popular tools like:
 * [DnsReaper](https://github.com/punk-security/dnsReaper): Subdomain takeover scanning tool.
 
 ## Credits
-
-Hello from the other sioiiiiiiiiiiiiiiiiiiiiiiide
 
 As an open-source project in a rapidly developing field, we are always open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
