@@ -328,3 +328,59 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
 
     kwargs = create_service_mock.call_args.kwargs
     assert kwargs["mode"] == {"replicated": {"Replicas": 3}}
+
+
+def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
+    mocker,
+) -> None:
+    """SERVICE_NAME env var must equal the docker service name so agents can label GCP logs."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        service_name="my_explicit_service",
+        mounts=[],
+        mem_limit=420000,
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    service_name = kwargs["name"]
+    assert f"SERVICE_NAME={service_name}" in kwargs["env"]

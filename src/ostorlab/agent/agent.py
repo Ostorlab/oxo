@@ -50,7 +50,11 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
 
 
 def _setup_logging(
-    hostname: str, agent_key: str, agent_version: str, universe: str
+    hostname: str,
+    agent_key: str,
+    agent_version: str,
+    universe: str,
+    service_name: str | None = None,
 ) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
@@ -63,14 +67,15 @@ def _setup_logging(
             )
             credentials = service_account.Credentials.from_service_account_info(info)
             client = google.cloud.logging.Client(credentials=credentials)
-            client.setup_logging(
-                labels={
-                    "agent_key": agent_key,
-                    "agent_version": agent_version,
-                    "universe": universe,
-                    "hostname": hostname,
-                }
-            )
+            labels = {
+                "agent_key": agent_key,
+                "agent_version": agent_version,
+                "universe": universe,
+                "hostname": hostname,
+            }
+            if service_name is not None:
+                labels["service_name"] = service_name
+            client.setup_logging(labels=labels)
         except ImportError:
             logger.error(
                 "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
@@ -491,6 +496,7 @@ class AgentMixin(
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),
+                service_name=os.getenv("SERVICE_NAME"),
             )
 
             instance = cls(
