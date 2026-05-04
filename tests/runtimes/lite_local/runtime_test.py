@@ -328,3 +328,62 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
 
     kwargs = create_service_mock.call_args.kwargs
     assert kwargs["mode"] == {"replicated": {"Replicas": 3}}
+
+
+def testLiteLocalCreateAgentService_addsMachineNameAndUniverseToEnv(mocker):
+    """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
+    mock_host_hostname = "test-mocked-hostname"
+    mocker.patch("socket.gethostname", return_value=mock_host_hostname)
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=["def_mount1"],
+        mem_limit=420000,
+        service_name="test",
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        new_callable=mocker.PropertyMock,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+    mock_docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        mock_docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+
+    runtime_agent.create_agent_service(
+        network_name="test", extra_configs=[], replicas=3
+    )
+
+    create_service_mock.assert_called_once()
+    kwargs = create_service_mock.call_args.kwargs
+    env_vars = kwargs.get("env", [])
+    assert kwargs.get("mode") == {"replicated": {"Replicas": 3}}
+    assert any(env.startswith("UNIVERSE") for env in env_vars), (
+        "UNIVERSE not found in env variables"
+    )
+    assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars

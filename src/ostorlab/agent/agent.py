@@ -50,7 +50,7 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
 
 
 def _setup_logging(
-    hostname: str, machine_name: str, agent_key: str, agent_version: str, universe: str
+    hostname: str, host_hostname: str, agent_key: str, agent_version: str, universe: str
 ) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
@@ -69,7 +69,7 @@ def _setup_logging(
                     "agent_version": agent_version,
                     "universe": universe,
                     "hostname": hostname,
-                    "machine_name": machine_name,
+                    "host_hostname": host_hostname,
                 }
             )
         except ImportError:
@@ -489,7 +489,7 @@ class AgentMixin(
 
             _setup_logging(
                 hostname=os.getenv("HOSTNAME"),
-                machine_name=os.getenv("MACHINE_NAME"),
+                host_hostname=os.getenv("HOST_HOSTNAME"),
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),

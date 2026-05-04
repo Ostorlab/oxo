@@ -1071,3 +1071,52 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
                 "risk_rating": "MEDIUM",
             },
         )
+
+
+def testSetupLogging_internal_whenMachineNameIsProvided_addsToLogMetadata(mocker):
+    """Test the internal _setup_logging directly."""
+    mock_google = mocker.MagicMock()
+    mock_cloud = mocker.MagicMock()
+    mock_logging = mocker.MagicMock()
+    mock_oauth2 = mocker.MagicMock()
+    mock_service_account = mocker.MagicMock()
+    mock_google.cloud = mock_cloud
+    mock_cloud.logging = mock_logging
+    mock_google.oauth2 = mock_oauth2
+    mock_oauth2.service_account = mock_service_account
+    mocker.patch.dict(
+        "sys.modules",
+        {
+            "google": mock_google,
+            "google.cloud": mock_cloud,
+            "google.cloud.logging": mock_logging,
+            "google.oauth2": mock_oauth2,
+            "google.oauth2.service_account": mock_service_account,
+        },
+    )
+    mock_credentials = mocker.MagicMock()
+    mock_service_account.Credentials.from_service_account_info.return_value = (
+        mock_credentials
+    )
+    env_var_name = getattr(
+        agent, "GCP_LOGGING_CREDENTIAL_ENV", "GCP_LOGGING_CREDENTIAL"
+    )
+    mocker.patch.dict(os.environ, {env_var_name: "eyJwcm9qZWN0X2lkIjogImZvbyJ9"})
+    mock_client = mock_logging.Client.return_value
+
+    agent._setup_logging(
+        hostname="test_host",
+        host_hostname="test_machine",
+        agent_key="test_key",
+        agent_version="test_version",
+        universe="test_universe",
+    )
+
+    mock_client.setup_logging.assert_called_once()
+    call_args = mock_client.setup_logging.call_args
+    labels = call_args.kwargs.get("labels", {})
+    assert labels["host_hostname"] == "test_machine"
+    assert labels["hostname"] == "test_host"
+    assert labels["universe"] == "test_universe"
+    assert labels["agent_key"] == "test_key"
+    assert labels["agent_version"] == "test_version"
