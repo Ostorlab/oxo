@@ -617,11 +617,8 @@ def testCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
         "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
         return_value=None,
     )
-    create_service_mock = mocker.patch(
-        "docker.models.services.ServiceCollection.create", return_value=None
-    )
 
-    docker_client = docker.from_env()
+    docker_client = mocker.MagicMock()
     agent_settings = definitions.AgentSettings(key="agent/org/name")
     runtime_agent = agent_runtime.AgentRuntime(
         agent_settings,
@@ -633,6 +630,6 @@ def testCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
-    kwargs = create_service_mock.call_args.kwargs
+    kwargs = docker_client.services.create.call_args.kwargs
     service_name = kwargs["name"]
     assert f"SERVICE_NAME={service_name}" in kwargs["env"]
