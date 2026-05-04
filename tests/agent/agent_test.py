@@ -1074,8 +1074,8 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
         )
 
 
-def testSetupLogging_internal_whenMachineNameIsProvided_addsToLogMetadata(mocker):
-    """Test the internal _setup_logging directly."""
+def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
+    """Test the _setup_logging directly."""
     mock_google = mocker.MagicMock()
     mock_cloud = mocker.MagicMock()
     mock_logging = mocker.MagicMock()

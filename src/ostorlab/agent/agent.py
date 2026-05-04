@@ -51,7 +51,7 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
 
 def _setup_logging(
     hostname: str,
-    host_hostname: str, 
+    host_hostname: str,
     agent_key: str,
     agent_version: str,
     universe: str,
