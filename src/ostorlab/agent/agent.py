@@ -496,7 +496,7 @@ class AgentMixin(
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),
-                service_name=os.getenv("SERVICE_NAME"),
+                service_name=os.environ.get("SERVICE_NAME"),
             )
 
             instance = cls(
