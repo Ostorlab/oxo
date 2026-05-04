@@ -1,5 +1,6 @@
 """Agent class unit tests."""
 
+import base64
 import datetime
 import json
 import logging
@@ -1120,3 +1121,56 @@ def testSetupLogging_internal_whenMachineNameIsProvided_addsToLogMetadata(mocker
     assert labels["universe"] == "test_universe"
     assert labels["agent_key"] == "test_key"
     assert labels["agent_version"] == "test_version"
+
+
+def testSetupLogging_whenServiceNameIsProvided_labelIncludesServiceName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """service_name must appear in GCP logging labels when set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+        service_name="my_swarm_service",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert labels["service_name"] == "my_swarm_service"
+
+
+def testSetupLogging_whenServiceNameIsNotProvided_labelDoesNotIncludeServiceName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """service_name label must be absent when not set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert "service_name" not in labels
