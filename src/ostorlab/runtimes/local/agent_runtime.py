@@ -11,6 +11,7 @@ import io
 import logging
 import random
 import uuid
+import socket
 from typing import List, Optional
 
 import docker
@@ -373,9 +374,7 @@ class AgentRuntime:
                     + random_suffix
                 )
 
-        env = [
-            f"UNIVERSE={self.runtime_name}",
-        ]
+        env = [f"UNIVERSE={self.runtime_name}", f"MACHINE_NAME={socket.gethostname()}"]
         if self._gcp_logging_credential is not None:
             env.append(
                 f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
