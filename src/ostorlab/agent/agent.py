@@ -54,7 +54,7 @@ def _setup_logging(
     agent_key: str,
     agent_version: str,
     universe: str,
-    service_name: str | None = None,
+service_name: Optional[str] = None
 ) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
