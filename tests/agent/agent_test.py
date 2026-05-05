@@ -1076,34 +1076,16 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
 
 def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
     """Test the _setup_logging directly."""
-    mock_google = mocker.MagicMock()
-    mock_cloud = mocker.MagicMock()
-    mock_logging = mocker.MagicMock()
-    mock_oauth2 = mocker.MagicMock()
-    mock_service_account = mocker.MagicMock()
-    mock_google.cloud = mock_cloud
-    mock_cloud.logging = mock_logging
-    mock_google.oauth2 = mock_oauth2
-    mock_oauth2.service_account = mock_service_account
-    mocker.patch.dict(
-        "sys.modules",
-        {
-            "google": mock_google,
-            "google.cloud": mock_cloud,
-            "google.cloud.logging": mock_logging,
-            "google.oauth2": mock_oauth2,
-            "google.oauth2.service_account": mock_service_account,
-        },
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
     )
-    mock_credentials = mocker.MagicMock()
-    mock_service_account.Credentials.from_service_account_info.return_value = (
-        mock_credentials
-    )
-    env_var_name = getattr(
-        agent, "GCP_LOGGING_CREDENTIAL_ENV", "GCP_LOGGING_CREDENTIAL"
-    )
-    mocker.patch.dict(os.environ, {env_var_name: "eyJwcm9qZWN0X2lkIjogImZvbyJ9"})
-    mock_client = mock_logging.Client.return_value
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
 
     agent._setup_logging(
         hostname="test_host",
@@ -1113,8 +1095,8 @@ def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
         universe="test_universe",
     )
 
-    mock_client.setup_logging.assert_called_once()
-    call_args = mock_client.setup_logging.call_args
+    mock_client_instance.setup_logging.assert_called_once()
+    call_args = mock_client_instance.setup_logging.call_args
     labels = call_args.kwargs.get("labels", {})
     assert labels["host_hostname"] == "test_machine"
     assert labels["hostname"] == "test_host"
@@ -1174,3 +1156,29 @@ def testSetupLogging_whenServiceNameIsNotProvided_labelDoesNotIncludeServiceName
 
     labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
     assert "service_name" not in labels
+
+
+def testSetupLogging_whenMachineNameIsNotProvided_labelDoesNotIncludeMachineName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """host_hostname label must be absent when not set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert "host_hostname" not in labels

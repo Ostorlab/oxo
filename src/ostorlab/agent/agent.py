@@ -51,10 +51,10 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
 
 def _setup_logging(
     hostname: str,
-    host_hostname: str,
     agent_key: str,
     agent_version: str,
     universe: str,
+    host_hostname: Optional[str] = None,
     service_name: Optional[str] = None,
 ) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
@@ -73,10 +73,11 @@ def _setup_logging(
                 "agent_version": agent_version,
                 "universe": universe,
                 "hostname": hostname,
-                "host_hostname": host_hostname,
             }
             if service_name is not None:
                 labels["service_name"] = service_name
+            if host_hostname is not None:
+                labels["host_hostname"] = host_hostname
             client.setup_logging(labels=labels)
         except ImportError:
             logger.error(
