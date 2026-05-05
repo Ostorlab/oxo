@@ -28,7 +28,7 @@ SCANNER_FILE_HANDLER_NAME = "ostorlab-scanner-file"
 SCANNER_LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 
-def _configure_file_logging(log_file: str, log_level: int = logging.INFO) -> None:
+log_file: str | None,
     """Persist scanner logs to a file when requested."""
     if log_file is None:
         return
