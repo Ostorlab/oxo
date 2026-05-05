@@ -99,8 +99,38 @@ def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
     log_file = tmp_path / "scanner.log"
 
     scanner_cli._configure_file_logging(str(log_file))
-    logging.getLogger(scanner_cli.__name__).info("scanner log message")
+    logging.getLogger().info("scanner log message")
 
     _remove_scanner_file_handlers()
 
     assert "scanner log message" in log_file.read_text()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker(
+    mocker: plugin.MockerFixture,
+    tmp_path,
+) -> None:
+    """Ensure persisted log file path is passed to scanner workers."""
+    _remove_scanner_file_handlers()
+    mocker.patch("ostorlab.cli.scanner.scanner._configure_file_logging")
+    create_scan_process_mock = mocker.patch("multiprocessing.Process")
+    log_file = tmp_path / "scanner.log"
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--persist-logs",
+            "--log-file",
+            str(log_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert create_scan_process_mock.call_count == 1
+    assert create_scan_process_mock.call_args.kwargs["args"][3] == str(log_file)
