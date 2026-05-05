@@ -29,7 +29,7 @@ SCANNER_LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 
 def _configure_file_logging(
-    log_file: Optional[str], log_level: int = logging.INFO
+    log_file: str | None, log_level: int = logging.INFO
 ) -> None:
     """Persist scanner logs to a file when requested."""
     if log_file is None:
