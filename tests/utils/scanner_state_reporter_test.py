@@ -12,6 +12,10 @@ class Memory:
     total: int = 33454317568
 
 
+class Disk:
+    percent: float = 50.0
+
+
 @pytest.mark.asyncio
 async def testReportMethod_whenCalled_updateValuesCorrectly(
     mocker: pytest_mock.MockerFixture,
@@ -23,6 +27,7 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
     mocker.patch("psutil.cpu_percent", return_value=10)
     mocker.patch("psutil.cpu_count", return_value=10)
     mocker.patch("psutil.virtual_memory", return_value=Memory())
+    mocker.patch("psutil.disk_usage", return_value=Disk())
     api_request_mock = mocker.patch(
         "ostorlab.apis.add_scanner_state.AddScannerStateAPIRequest"
     )
@@ -35,6 +40,7 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         total_memory=31,
         hostname="",
         ip="",
+        disk_usage=50.0,
     )
     report = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD", hostname="", ip=""
