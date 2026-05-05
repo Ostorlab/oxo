@@ -58,6 +58,7 @@ class AddScannerStateAPIRequest(request.APIRequest):
                         "totalMemory": self._state.total_memory,
                         "cpuLoad": self._state.cpu_load,
                         "totalCpu": self._state.total_cpu,
+                        "diskUsage": self._state.disk_usage,
                     }
                 }
             ),
