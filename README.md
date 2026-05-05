@@ -87,6 +87,20 @@ Notes:
 * The command starts directly with: `scan run`, this is because the `ostorlab/oxo` image has `oxo` as an `entrypoint`.
 * It is important to mount the docker socket so `oxo` can create the agent in the host machine.
 
+# On-Prem Scanner Logs
+
+When running OXO as an on-prem scanner, use `--persist-logs` to write scanner logs to disk:
+
+```shell
+oxo scanner --scanner-id <scanner-uuid> --persist-logs
+```
+
+By default, logs are written to `~/.ostorlab/scanner.log`. To choose another file:
+
+```shell
+oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-file /var/log/ostorlab/scanner.log
+```
+
 # Assets
 
 OXO supports scanning of multiple asset types, below is the list of currently supported:

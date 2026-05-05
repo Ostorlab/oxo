@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import sys
 import socket
 import multiprocessing
@@ -21,6 +22,35 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 WAIT_CAPTURE_INTERVAL = 300
+DEFAULT_SCANNER_LOG_FILE = "~/.ostorlab/scanner.log"
+SCANNER_FILE_HANDLER_NAME = "ostorlab-scanner-file"
+
+
+def _configure_file_logging(log_file: Optional[str]) -> None:
+    """Persist scanner logs to a file when requested."""
+    if log_file is None:
+        return
+
+    log_file_path = os.path.abspath(os.path.expanduser(log_file))
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
+    root_logger = logging.getLogger()
+    for handler in root_logger.handlers:
+        if getattr(handler, "name", None) == SCANNER_FILE_HANDLER_NAME:
+            return
+
+    file_handler = logging.FileHandler(log_file_path)
+    file_handler.name = SCANNER_FILE_HANDLER_NAME
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s %(levelname)s [%(process)d] %(name)s: %(message)s"
+        )
+    )
+    root_logger.addHandler(file_handler)
+    if root_logger.level > logging.INFO:
+        root_logger.setLevel(logging.INFO)
+    logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
 
 
 async def _start_periodic_persist_state(
@@ -36,6 +66,17 @@ async def _start_periodic_persist_state(
 @click.option("--scanner-id", help="The scanner identifier.", required=True)
 @click.option("--daemon/--no-daemon", help="Run in daemon mode.", default=True)
 @click.option(
+    "--persist-logs/--no-persist-logs",
+    help="Persist on-prem scanner logs to a log file.",
+    default=False,
+)
+@click.option(
+    "--log-file",
+    help="Path to the scanner log file used with --persist-logs.",
+    default=DEFAULT_SCANNER_LOG_FILE,
+    show_default=True,
+)
+@click.option(
     "--parallel",
     help="Number of scans to run in parallel.",
     default=1,
@@ -43,7 +84,12 @@ async def _start_periodic_persist_state(
 )
 @click.pass_context
 def scanner(
-    ctx: click.core.Context, daemon: bool, scanner_id: str, parallel: str
+    ctx: click.core.Context,
+    daemon: bool,
+    scanner_id: str,
+    persist_logs: bool,
+    log_file: str,
+    parallel: str,
 ) -> None:
     """Oxo scanner enables running custom instances of scanners.
     Scanner communicates with NATs to receive start scan messages.\n
@@ -53,6 +99,8 @@ def scanner(
         raise click.exceptions.Exit(2)
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
+    scanner_log_file = log_file if persist_logs is True else None
+    _configure_file_logging(scanner_log_file)
 
     # The import is done for Windows compatibility.
     import daemon as dm
@@ -70,6 +118,7 @@ def scanner(
                 api_key,
                 scanner_id,
                 state_reporter,
+                scanner_log_file,
             ),
         )
         process.start()
@@ -88,6 +137,7 @@ def start_scanner(
     api_key: Optional[str],
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
+    log_file: Optional[str] = None,
 ) -> None:
     """Run subscription to nats in event loop.
 
@@ -95,7 +145,9 @@ def start_scanner(
         api_key: The api key to login to the platform.
         scanner_id: The id of the scanner.
         state_reporter: instance responsible for reporting the scanner state.
+        log_file: Optional path to persist scanner logs.
     """
+    _configure_file_logging(log_file)
     if api_key is None:
         logger.error("No api key provided.")
     loop = asyncio.new_event_loop()

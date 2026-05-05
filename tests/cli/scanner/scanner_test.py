@@ -1,5 +1,6 @@
 """Unit tests for the ostorlab scanner subcommand."""
 
+import logging
 import sys
 
 import pytest
@@ -7,6 +8,15 @@ from click import testing as click_testing
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
+from ostorlab.cli.scanner import scanner as scanner_cli
+
+
+def _remove_scanner_file_handlers() -> None:
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        if getattr(handler, "name", None) == scanner_cli.SCANNER_FILE_HANDLER_NAME:
+            root_logger.removeHandler(handler)
+            handler.close()
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
@@ -79,3 +89,18 @@ def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAnd
     assert (
         "Invalid value for '--parallel': -42 is not in the range x>=1" in result.output
     )
+
+
+def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
+    tmp_path,
+) -> None:
+    """Ensure scanner logs can be persisted to a file."""
+    _remove_scanner_file_handlers()
+    log_file = tmp_path / "scanner.log"
+
+    scanner_cli._configure_file_logging(str(log_file))
+    logging.getLogger(scanner_cli.__name__).info("scanner log message")
+
+    _remove_scanner_file_handlers()
+
+    assert "scanner log message" in log_file.read_text()
