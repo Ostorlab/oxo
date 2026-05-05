@@ -96,7 +96,13 @@ async def _start_periodic_persist_state(
 )
 @click.pass_context
 def scanner(
-    ctx: click.core.Context, daemon: bool, scanner_id: str, parallel: str
+    ctx: click.core.Context,
+    daemon: bool,
+    scanner_id: str,
+    persist_logs: bool,
+    log_file: str,
+    log_level: str,
+    parallel: int,
 ) -> None:
     """Oxo scanner enables running custom instances of scanners.
     Scanner communicates with NATs to receive start scan messages.\n
@@ -116,7 +122,7 @@ def scanner(
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
     )
-    nb_parallel_scans = int(parallel)
+    nb_parallel_scans = parallel
     processes = []
 
     for _ in range(nb_parallel_scans):
