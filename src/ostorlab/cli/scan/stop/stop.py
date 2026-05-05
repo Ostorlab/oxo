@@ -44,10 +44,10 @@ def stop(
         - ostorlab scan --runtime=local stop --all
         - ostorlab scan --runtime=local stop --last
     """
-    if len(scan_ids) > 0 and (stop_all or stop_last):
+    if len(scan_ids) > 0 and (stop_all is True or stop_last is True):
         raise click.UsageError("Cannot provide scan IDs with --all or --last flags.")
 
-    if stop_all and stop_last:
+    if stop_all is True and stop_last is True:
         raise click.UsageError("Cannot use --all and --last flags together.")
 
     if len(scan_ids) == 0 and stop_all is False and stop_last is False:
