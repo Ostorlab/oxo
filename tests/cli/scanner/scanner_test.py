@@ -162,23 +162,25 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 ) -> None:
     """Ensure persisted log file path is passed to scanner workers."""
     _remove_scanner_file_handlers()
-    mocker.patch("ostorlab.cli.scanner.scanner._configure_file_logging")
     create_scan_process_mock = mocker.patch("multiprocessing.Process")
     log_file = tmp_path / "scanner.log"
 
     runner = click_testing.CliRunner()
-    result = runner.invoke(
-        rootcli.rootcli,
-        [
-            "scanner",
-            "--no-daemon",
-            "--scanner-id",
-            "11226DS",
-            "--persist-logs",
-            "--log-file",
-            str(log_file),
-        ],
-    )
+    try:
+        result = runner.invoke(
+            rootcli.rootcli,
+            [
+                "scanner",
+                "--no-daemon",
+                "--scanner-id",
+                "11226DS",
+                "--persist-logs",
+                "--log-file",
+                str(log_file),
+            ],
+        )
+    finally:
+        _remove_scanner_file_handlers()
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
@@ -193,25 +195,27 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
 ) -> None:
     """Ensure persisted scanner logs use the requested verbosity."""
     _remove_scanner_file_handlers()
-    mocker.patch("ostorlab.cli.scanner.scanner._configure_file_logging")
     create_scan_process_mock = mocker.patch("multiprocessing.Process")
     log_file = tmp_path / "scanner.log"
 
     runner = click_testing.CliRunner()
-    result = runner.invoke(
-        rootcli.rootcli,
-        [
-            "scanner",
-            "--no-daemon",
-            "--scanner-id",
-            "11226DS",
-            "--persist-logs",
-            "--log-file",
-            str(log_file),
-            "--log-level",
-            "DEBUG",
-        ],
-    )
+    try:
+        result = runner.invoke(
+            rootcli.rootcli,
+            [
+                "scanner",
+                "--no-daemon",
+                "--scanner-id",
+                "11226DS",
+                "--persist-logs",
+                "--log-file",
+                str(log_file),
+                "--log-level",
+                "DEBUG",
+            ],
+        )
+    finally:
+        _remove_scanner_file_handlers()
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
