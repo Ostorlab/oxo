@@ -19,6 +19,32 @@ def _remove_scanner_file_handlers() -> None:
             handler.close()
 
 
+class _FakeEventLoop:
+    def create_task(self, coroutine):
+        coroutine.close()
+
+    def run_until_complete(self, result):
+        return result
+
+    def run_forever(self):
+        return None
+
+    def close(self):
+        return None
+
+
+def _start_scanner_with_fake_loop(mocker: plugin.MockerFixture, **kwargs) -> None:
+    mocker.patch("asyncio.new_event_loop", return_value=_FakeEventLoop())
+    mocker.patch("ostorlab.cli.scanner.scanner.scan_handler.subscribe_nats")
+
+    scanner_cli.start_scanner(
+        api_key=None,
+        scanner_id="11226DS",
+        state_reporter=mocker.Mock(),
+        **kwargs,
+    )
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenDaemonCommandIsProvided_runsBackground(
     mocker: plugin.MockerFixture,
@@ -92,21 +118,22 @@ def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAnd
 
 
 def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
+    mocker: plugin.MockerFixture,
     tmp_path,
 ) -> None:
     """Ensure scanner logs can be persisted to a file."""
     _remove_scanner_file_handlers()
     log_file = tmp_path / "scanner.log"
 
-    scanner_cli._configure_file_logging(str(log_file))
-    logging.getLogger().info("scanner log message")
+    _start_scanner_with_fake_loop(mocker, log_file=str(log_file))
 
     _remove_scanner_file_handlers()
 
-    assert "scanner log message" in log_file.read_text()
+    assert "No api key provided." in log_file.read_text()
 
 
 def testConfigureFileLogging_whenDebugLevelIsProvided_persistsDebugLogs(
+    mocker: plugin.MockerFixture,
     tmp_path,
 ) -> None:
     """Ensure scanner file logs honor the configured log level."""
@@ -117,7 +144,9 @@ def testConfigureFileLogging_whenDebugLevelIsProvided_persistsDebugLogs(
 
     try:
         root_logger.setLevel(logging.ERROR)
-        scanner_cli._configure_file_logging(str(log_file), logging.DEBUG)
+        _start_scanner_with_fake_loop(
+            mocker, log_file=str(log_file), log_level=logging.DEBUG
+        )
         logging.getLogger().debug("scanner debug log message")
     finally:
         _remove_scanner_file_handlers()
