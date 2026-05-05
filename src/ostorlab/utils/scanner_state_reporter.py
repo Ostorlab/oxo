@@ -33,6 +33,7 @@ class ScannerStateReporter:
                 total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
                 hostname=self._hostname,
                 ip=self._ip,
+                disk_usage=psutil.disk_usage("/").percent,
             )
         except ImportError:
             state = definitions.ScannerState(

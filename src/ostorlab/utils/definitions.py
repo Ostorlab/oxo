@@ -97,3 +97,4 @@ class ScannerState:
     total_memory: int
     hostname: str
     ip: str
+    disk_usage: float = 0.0
