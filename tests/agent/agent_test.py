@@ -1074,6 +1074,37 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
         )
 
 
+def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
+    """Test the _setup_logging directly."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="test_host",
+        host_hostname="test_machine",
+        agent_key="test_key",
+        agent_version="test_version",
+        universe="test_universe",
+    )
+
+    mock_client_instance.setup_logging.assert_called_once()
+    call_args = mock_client_instance.setup_logging.call_args
+    labels = call_args.kwargs.get("labels", {})
+    assert labels["host_hostname"] == "test_machine"
+    assert labels["hostname"] == "test_host"
+    assert labels["universe"] == "test_universe"
+    assert labels["agent_key"] == "test_key"
+    assert labels["agent_version"] == "test_version"
+
+
 def testSetupLogging_whenServiceNameIsProvided_labelIncludesServiceName(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -1125,3 +1156,29 @@ def testSetupLogging_whenServiceNameIsNotProvided_labelDoesNotIncludeServiceName
 
     labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
     assert "service_name" not in labels
+
+
+def testSetupLogging_whenMachineNameIsNotProvided_labelDoesNotIncludeMachineName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """host_hostname label must be absent when not set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert "host_hostname" not in labels
