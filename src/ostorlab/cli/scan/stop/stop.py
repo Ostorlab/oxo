@@ -22,16 +22,36 @@ console = cli_console.Console()
     help="Stop all running scans",
     default=False,
 )
+@click.option(
+    "--last",
+    "-l",
+    "stop_last",
+    is_flag=True,
+    help="Stop the last created scan",
+    default=False,
+)
 @click.pass_context
-def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> None:
+def stop(
+    ctx: click.core.Context,
+    scan_ids: Tuple[int, ...],
+    stop_all: bool,
+    stop_last: bool,
+) -> None:
     """Stop one or multiple scans.\n
     Usage:\n
         - ostorlab scan --runtime=local stop 4
         - ostorlab scan --runtime=local stop 4 5 6
         - ostorlab scan --runtime=local stop --all
+        - ostorlab scan --runtime=local stop --last
     """
-    if len(scan_ids) == 0 and stop_all is False:
-        raise click.UsageError("Either provide scan IDs or use --all flag")
+    if len(scan_ids) > 0 and (stop_all or stop_last):
+        raise click.UsageError("Cannot provide scan IDs with --all or --last flags.")
+
+    if stop_all and stop_last:
+        raise click.UsageError("Cannot use --all and --last flags together.")
+
+    if len(scan_ids) == 0 and stop_all is False and stop_last is False:
+        raise click.UsageError("Either provide scan IDs or use --all or --last flag.")
 
     runtime_instance = ctx.obj["runtime"]
     if stop_all is True:
@@ -44,6 +64,13 @@ def stop(ctx: click.core.Context, scan_ids: Tuple[int, ...], stop_all: bool) -> 
         if len(ids_to_stop) == 0:
             console.warning("No running scans found.")
             return
+    elif stop_last is True:
+        scans_list = runtime_instance.list()
+        if scans_list is None or len(scans_list) == 0:
+            console.warning("No scans found.")
+            return
+        last_scan = max(scans_list, key=lambda s: s.created_time)
+        ids_to_stop = [last_scan.id]
     else:
         ids_to_stop = list(scan_ids)
 
