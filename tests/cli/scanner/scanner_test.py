@@ -123,13 +123,18 @@ def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
 ) -> None:
     """Ensure scanner logs can be persisted to a file."""
     _remove_scanner_file_handlers()
+    root_logger = logging.getLogger()
+    original_level = root_logger.level
     log_file = tmp_path / "scanner.log"
 
-    _start_scanner_with_fake_loop(mocker, log_file=str(log_file))
+    try:
+        _start_scanner_with_fake_loop(mocker, log_file=str(log_file))
+        logging.getLogger().info("scanner log message")
+    finally:
+        _remove_scanner_file_handlers()
+        root_logger.setLevel(original_level)
 
-    _remove_scanner_file_handlers()
-
-    assert "No api key provided." in log_file.read_text()
+    assert "scanner log message" in log_file.read_text()
 
 
 def testConfigureFileLogging_whenDebugLevelIsProvided_persistsDebugLogs(
