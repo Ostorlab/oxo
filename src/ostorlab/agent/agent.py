@@ -495,7 +495,7 @@ class AgentMixin(
 
             _setup_logging(
                 hostname=os.getenv("HOSTNAME"),
-                host_hostname=os.getenv("HOST_HOSTNAME"),
+                host_hostname=os.environ.get("HOST_HOSTNAME"),
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),

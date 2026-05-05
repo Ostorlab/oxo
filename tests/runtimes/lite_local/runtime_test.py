@@ -382,7 +382,9 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
     assert f"SERVICE_NAME={service_name}" in kwargs["env"]
 
 
-def testLiteLocalCreateAgentService_addsMachineNameAndUniverseToEnv(mocker):
+def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUniverseToEnv(
+    mocker,
+):
     """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
     mock_host_hostname = "test-mocked-hostname"
     mocker.patch("socket.gethostname", return_value=mock_host_hostname)
