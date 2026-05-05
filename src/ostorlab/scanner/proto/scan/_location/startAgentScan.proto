@@ -31,6 +31,11 @@ message Arg{
 }
 
 
+message PortMapping {
+    optional uint32 src_port = 1;
+    optional uint32 dest_port = 2;
+}
+
 message Agent{
     required string key = 1;
     optional string version = 2;
@@ -39,8 +44,9 @@ message Agent{
     repeated string caps = 5;
     optional uint32 cyclic_processing_limit=6;
     optional uint32 depth_processing_limit=7;
-    repeated string accepted_agents = 8;
-    repeated string in_selectors = 9;
+    repeated string in_selectors = 8;
+    repeated PortMapping open_ports = 9;
+    optional string service_name = 10;
 }
 
 message Links {

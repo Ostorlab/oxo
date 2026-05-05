@@ -273,11 +273,18 @@ class AgentGroupDefinition:
                 version=agent.version,
                 args=agent_args,
                 replicas=replicas,
-                caps=agent.caps,
+                caps=list(agent.caps),
                 cyclic_processing_limit=agent.cyclic_processing_limit,
                 depth_processing_limit=agent.depth_processing_limit,
-                accepted_agents=agent.accepted_agents,
-                in_selectors=agent.in_selectors,
+                in_selectors=list(agent.in_selectors),
+                open_ports=[
+                    definitions.PortMapping(
+                        source_port=p.src_port,
+                        destination_port=p.dest_port,
+                    )
+                    for p in agent.open_ports
+                ],
+                service_name=agent.service_name or None,
             )
 
             agent_settings.append(agent_def)

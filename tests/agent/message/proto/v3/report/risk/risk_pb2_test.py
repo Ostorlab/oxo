@@ -2,6 +2,7 @@
 
 from src.ostorlab.agent.message.proto.v3.report.risk import risk_pb2
 from src.ostorlab.agent.message.proto.v3.asset.file.api_schema import api_schema_pb2
+from src.ostorlab.agent.message.proto.v3.asset.phone_number import phone_number_pb2
 from src.ostorlab.agent.message.proto.v3.asset.store.ios_testflight import (
     ios_testflight_pb2,
 )
@@ -49,3 +50,24 @@ def testMessage_whenCreateWithIosTestflight_shouldSerializeAndDeserializeCorrect
     )
     assert deserialized.description == "Insecure data storage in TestFlight build"
     assert deserialized.rating == "MEDIUM"
+
+
+def testMessage_whenCreateWithPhoneNumber_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
+    """Test that risk message with phone_number asset serializes correctly."""
+    phone_number_asset = phone_number_pb2.Message()
+    phone_number_asset.number = "+15555550123"
+
+    risk_message = risk_pb2.Message()
+    risk_message.phone_number.CopyFrom(phone_number_asset)
+    risk_message.description = "Phone-based social engineering risk"
+    risk_message.rating = "HIGH"
+
+    serialized = risk_message.SerializeToString()
+    deserialized = risk_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert deserialized.phone_number.number == "+15555550123"
+    assert deserialized.description == "Phone-based social engineering risk"
+    assert deserialized.rating == "HIGH"

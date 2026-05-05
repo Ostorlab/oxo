@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 import sys
+import dataclasses
 from typing import Dict, List, Any
 
 from google.protobuf import json_format
@@ -123,11 +124,13 @@ def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
 
 def _parse_list(values: Any, message: Any) -> None:
     """Parse list to protobuf message."""
-    if len(values) > 0 and isinstance(
-        values[0], dict
+    if len(values) > 0 and (
+        isinstance(values[0], dict) or dataclasses.is_dataclass(values[0])
     ):  # value needs to be further parsed
         for v in values:
             cmd = message.add()
+            if dataclasses.is_dataclass(v):
+                v = dataclasses.asdict(v)  # type:ignore[arg-type]
             _parse_dict(v, cmd)
     else:  # value can be set
         message.extend(values)

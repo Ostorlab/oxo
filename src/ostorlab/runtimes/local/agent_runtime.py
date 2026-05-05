@@ -375,6 +375,7 @@ class AgentRuntime:
 
         env = [
             f"UNIVERSE={self.runtime_name}",
+            f"SERVICE_NAME={docker_service_name}",
         ]
         if self._gcp_logging_credential is not None:
             env.append(

@@ -12,6 +12,7 @@ import 'ostorlab/agent/message/proto/v3/asset/file/android/aab/aab.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/android/apk/apk.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/ios/ipa/ipa.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/api_schema/api_schema.proto';
+import 'ostorlab/agent/message/proto/v3/asset/phone_number/phone_number.proto';
 
 package ostorlab.agent.message.proto.v3.report.risk;
 
@@ -29,6 +30,7 @@ message Message{
     ostorlab.agent.message.proto.v3.asset.file.ios.ipa.Message ios_ipa = 10;
     ostorlab.agent.message.proto.v3.asset.file.api_schema.Message api_schema = 13;
     ostorlab.agent.message.proto.v3.asset.store.ios_testflight.Message ios_testflight = 14;
+    ostorlab.agent.message.proto.v3.asset.phone_number.Message phone_number = 15;
   }
   required string description = 11;
   required string rating = 12;

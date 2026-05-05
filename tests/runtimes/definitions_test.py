@@ -416,6 +416,60 @@ def testAgentInstanceSettingsToRawProto_whenServiceNameIsNotSet_shouldDeserializ
     assert parsed_proto.service_name is None
 
 
+def testAgentGroupDefinitionFromNatsRequest_whenAgentHasCapsAndSelectors_returnsNativePythonLists() -> (
+    None
+):
+    """Ensure caps and in_selectors are plain Python lists, not protobuf RepeatedScalarFieldContainers."""
+    msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent1",
+                caps=["NET_ADMIN", "SYS_PTRACE"],
+                in_selectors=["v3.report.vulnerability.network.port.service.http"],
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(msg)
+
+    assert isinstance(agent_group_def.agents[0].caps, list) is True
+    assert isinstance(agent_group_def.agents[0].in_selectors, list) is True
+    assert agent_group_def.agents[0].caps == ["NET_ADMIN", "SYS_PTRACE"]
+    assert agent_group_def.agents[0].in_selectors == [
+        "v3.report.vulnerability.network.port.service.http"
+    ]
+
+
+def testAgentGroupDefinitionFromNatsRequest_whenAgentHasOpenPortsAndServiceName_parsedCorrectly() -> (
+    None
+):
+    """Ensure open_ports and service_name are correctly parsed from a NATS message."""
+    msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/proxy",
+                open_ports=[
+                    startAgentScan_pb2.PortMapping(src_port=56813, dest_port=56813)
+                ],
+                service_name="proxy_bus",
+            ),
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+
+    agent_group_def = definitions.AgentGroupDefinition.from_bus_message(msg)
+
+    assert agent_group_def.agents[0].open_ports == [
+        utils_definitions.PortMapping(source_port=56813, destination_port=56813)
+    ]
+    assert agent_group_def.agents[0].service_name == "proxy_bus"
+
+
 def testAssetGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAssetGroupDefinition(
     mocker: plugin.MockerFixture,
 ):

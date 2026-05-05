@@ -10,6 +10,7 @@ from ostorlab.cli.scan.run.assets import ip
 from ostorlab.cli.scan.run.assets import link
 from ostorlab.cli.scan.run.assets import message
 from ostorlab.cli.scan.run.assets import risk
+from ostorlab.cli.scan.run.assets import ticket
 from ostorlab.cli.scan.run.assets import android_store
 from ostorlab.cli.scan.run.assets import ios_store
 from ostorlab.cli.scan.run.assets import ios_testflight
@@ -33,6 +34,7 @@ __all__ = (
     "link",
     "risk",
     "message",
+    "ticket",
     "android_store",
     "ios_store",
     "ios_testflight",
