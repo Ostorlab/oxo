@@ -3,6 +3,7 @@
 import docker
 import pytest
 from docker.models import services as services_model
+from pytest_mock import plugin
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
@@ -383,7 +384,7 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
 
 
 def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUniverseToEnv(
-    mocker,
+    mocker: plugin.MockerFixture,
 ):
     """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
     mock_host_hostname = "test-mocked-hostname"

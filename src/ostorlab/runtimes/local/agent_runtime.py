@@ -10,8 +10,8 @@ import hashlib
 import io
 import logging
 import random
-import uuid
 import socket
+import uuid
 from typing import List, Optional
 
 import docker
