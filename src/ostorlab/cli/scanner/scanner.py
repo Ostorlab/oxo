@@ -23,10 +23,14 @@ logger = logging.getLogger(__name__)
 
 WAIT_CAPTURE_INTERVAL = 300
 DEFAULT_SCANNER_LOG_FILE = "~/.ostorlab/scanner.log"
+DEFAULT_SCANNER_LOG_LEVEL = "INFO"
 SCANNER_FILE_HANDLER_NAME = "ostorlab-scanner-file"
+SCANNER_LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 
-def _configure_file_logging(log_file: Optional[str]) -> None:
+def _configure_file_logging(
+    log_file: Optional[str], log_level: int = logging.INFO
+) -> None:
     """Persist scanner logs to a file when requested."""
     if log_file is None:
         return
@@ -41,15 +45,15 @@ def _configure_file_logging(log_file: Optional[str]) -> None:
 
     file_handler = logging.FileHandler(log_file_path)
     file_handler.name = SCANNER_FILE_HANDLER_NAME
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(log_level)
     file_handler.setFormatter(
         logging.Formatter(
             fmt="%(asctime)s %(levelname)s [%(process)d] %(name)s: %(message)s"
         )
     )
     root_logger.addHandler(file_handler)
-    if root_logger.level > logging.INFO:
-        root_logger.setLevel(logging.INFO)
+    if root_logger.level > log_level:
+        root_logger.setLevel(log_level)
     logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
 
 
@@ -66,14 +70,22 @@ async def _start_periodic_persist_state(
 @click.option("--scanner-id", help="The scanner identifier.", required=True)
 @click.option("--daemon/--no-daemon", help="Run in daemon mode.", default=True)
 @click.option(
-    "--persist-logs/--no-persist-logs",
+    "--persist-logs",
     help="Persist on-prem scanner logs to a log file.",
+    is_flag=True,
     default=False,
 )
 @click.option(
     "--log-file",
     help="Path to the scanner log file used with --persist-logs.",
     default=DEFAULT_SCANNER_LOG_FILE,
+    show_default=True,
+)
+@click.option(
+    "--log-level",
+    help="Scanner log file verbosity used with --persist-logs.",
+    type=click.Choice(SCANNER_LOG_LEVELS, case_sensitive=False),
+    default=DEFAULT_SCANNER_LOG_LEVEL,
     show_default=True,
 )
 @click.option(
@@ -89,6 +101,7 @@ def scanner(
     scanner_id: str,
     persist_logs: bool,
     log_file: str,
+    log_level: str,
     parallel: str,
 ) -> None:
     """Oxo scanner enables running custom instances of scanners.
@@ -100,7 +113,8 @@ def scanner(
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
     scanner_log_file = log_file if persist_logs is True else None
-    _configure_file_logging(scanner_log_file)
+    scanner_log_level = getattr(logging, log_level.upper())
+    _configure_file_logging(scanner_log_file, scanner_log_level)
 
     # The import is done for Windows compatibility.
     import daemon as dm
@@ -119,6 +133,7 @@ def scanner(
                 scanner_id,
                 state_reporter,
                 scanner_log_file,
+                scanner_log_level,
             ),
         )
         process.start()
@@ -138,6 +153,7 @@ def start_scanner(
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     log_file: Optional[str] = None,
+    log_level: int = logging.INFO,
 ) -> None:
     """Run subscription to nats in event loop.
 
@@ -146,8 +162,9 @@ def start_scanner(
         scanner_id: The id of the scanner.
         state_reporter: instance responsible for reporting the scanner state.
         log_file: Optional path to persist scanner logs.
+        log_level: Logging level used for persisted scanner logs.
     """
-    _configure_file_logging(log_file)
+    _configure_file_logging(log_file, log_level)
     if api_key is None:
         logger.error("No api key provided.")
     loop = asyncio.new_event_loop()

@@ -108,6 +108,12 @@ By default, logs are written to `~/.ostorlab/scanner.log`. To choose another fil
 oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-file /var/log/ostorlab/scanner.log
 ```
 
+To change the persisted log verbosity:
+
+```shell
+oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-level DEBUG
+```
+
 # Assets
 
 OXO supports scanning multiple asset types, allowing for comprehensive security coverage across different platforms and protocols.
