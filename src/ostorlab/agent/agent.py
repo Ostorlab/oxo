@@ -54,6 +54,7 @@ def _setup_logging(
     agent_key: str,
     agent_version: str,
     universe: str,
+    host_hostname: Optional[str] = None,
     service_name: Optional[str] = None,
 ) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
@@ -75,6 +76,8 @@ def _setup_logging(
             }
             if service_name is not None:
                 labels["service_name"] = service_name
+            if host_hostname is not None:
+                labels["host_hostname"] = host_hostname
             client.setup_logging(labels=labels)
         except ImportError:
             logger.error(
@@ -493,6 +496,7 @@ class AgentMixin(
 
             _setup_logging(
                 hostname=os.getenv("HOSTNAME"),
+                host_hostname=os.environ.get("HOST_HOSTNAME"),
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),
