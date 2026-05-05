@@ -34,6 +34,7 @@ class ScannerStateReporter:
                 hostname=self._hostname,
                 ip=self._ip,
                 disk_usage=psutil.disk_usage("/").percent,
+                total_disk=psutil.disk_usage("/").total >> 30,  # total disk in GB
             )
         except ImportError:
             state = definitions.ScannerState(

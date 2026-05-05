@@ -14,6 +14,7 @@ class Memory:
 
 class Disk:
     percent: float = 50.0
+    total: int = 107374182400  # 100 GB in bytes
 
 
 @pytest.mark.asyncio
@@ -41,6 +42,7 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
         hostname="",
         ip="",
         disk_usage=50.0,
+        total_disk=100,
     )
     report = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD", hostname="", ip=""
