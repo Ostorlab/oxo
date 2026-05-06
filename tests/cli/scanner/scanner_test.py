@@ -189,8 +189,11 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    assert create_scan_process_mock.call_args.kwargs["args"][3] == str(log_file)
-    assert create_scan_process_mock.call_args.kwargs["args"][4] == logging.INFO
+    _, _, _, scanner_log_file, scanner_log_level = (
+        create_scan_process_mock.call_args.kwargs["args"]
+    )
+    assert scanner_log_file == str(log_file)
+    assert scanner_log_level == logging.INFO
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
@@ -224,5 +227,8 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    assert create_scan_process_mock.call_args.kwargs["args"][3] == str(log_file)
-    assert create_scan_process_mock.call_args.kwargs["args"][4] == logging.DEBUG
+    _, _, _, scanner_log_file, scanner_log_level = (
+        create_scan_process_mock.call_args.kwargs["args"]
+    )
+    assert scanner_log_file == str(log_file)
+    assert scanner_log_level == logging.DEBUG
