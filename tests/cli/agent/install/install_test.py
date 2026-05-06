@@ -1,5 +1,6 @@
 """Unit tests for the CLI agent install command."""
 
+import logging
 import re
 
 import httpx
@@ -106,6 +107,27 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, httpx_mock):
     image_get_mock.assert_called()
     tag_image_mock.assert_called()
     assert "Installation successful" in result.output
+
+
+def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(mocker, caplog):
+    """Ensure existing-agent install messages are available to persisted logging."""
+    mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_details",
+        return_value={
+            "dockerLocation": "ostorlab.store/library/busybox",
+            "key": "agent/ostorlab/dependency_confusion",
+            "versions": {"versions": [{"version": "1.0.0"}]},
+        },
+    )
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=True)
+
+    with caplog.at_level(logging.INFO, logger="ostorlab.cli.install_agent"):
+        install_agent.install(
+            agent_key="agent/ostorlab/dependency_confusion",
+            docker_client=mocker.MagicMock(),
+        )
+
+    assert "agent/ostorlab/dependency_confusion already exist." in caplog.text
 
 
 def testAgentInstallCLI_whenPullFails_retries(mocker, httpx_mock):
