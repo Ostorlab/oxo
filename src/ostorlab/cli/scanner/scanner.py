@@ -75,6 +75,7 @@ async def _start_periodic_persist_state(
     "--persist-logs",
     help="Persist on-prem scanner logs to a log file.",
     is_flag=True,
+    flag_value=True,
     default=True,
 )
 @click.option(
