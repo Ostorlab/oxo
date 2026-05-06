@@ -46,3 +46,22 @@ def testComment_whenCreateWithDefaults_shouldHaveCorrectDefaults():
 
     assert comment.author == "test_author"
     assert comment.message == ""
+
+
+def testMessage_whenOrganisationIdSet_shouldSerializeAndDeserializeCorrectly():
+    msg = ticket_pb2.Message()
+    msg.title = "Test Ticket"
+    msg.description = "Test description."
+    msg.organisation_id = "org-456"
+
+    serialized = msg.SerializeToString()
+    deserialized_msg = ticket_pb2.Message()
+    deserialized_msg.ParseFromString(serialized)
+
+    assert deserialized_msg.organisation_id == "org-456"
+
+
+def testMessage_whenOrganisationIdNotSet_shouldDefaultToEmpty():
+    msg = ticket_pb2.Message()
+
+    assert msg.organisation_id == ""

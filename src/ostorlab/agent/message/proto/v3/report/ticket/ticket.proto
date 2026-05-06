@@ -12,4 +12,5 @@ message Message {
   required string title = 2;
   required string description = 3;
   repeated Comments comments = 4;
+  optional string organisation_id = 5;
 }
