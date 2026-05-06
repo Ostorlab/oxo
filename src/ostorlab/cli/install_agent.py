@@ -15,7 +15,7 @@ from ostorlab.cli import agent_fetcher
 
 logger = logging.getLogger(__name__)
 
-console = cli_console.Console()
+console = cli_console.Console(logger=logger)
 
 RETRY_ATTEMPTS = 3
 WAIT_TIME = datetime.timedelta(seconds=2)
