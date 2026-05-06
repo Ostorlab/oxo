@@ -212,3 +212,134 @@ def testOstorlabScanStopCLI_whenStopAllAndScansStatusInProgress_stopsScans(
 
     assert result.exception is None
     assert mock_scan_stop.call_count == 3
+
+
+@mock.patch.object(local_runtime.LocalRuntime, "stop")
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanStopCLI_whenStopLastIsUsedAndScansExist_stopsLastScan(
+    mock_list_scans: mock.Mock,
+    mock_scan_stop: mock.Mock,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan stop command with --last flag.
+    Should stop the most recently created scan.
+    """
+
+    mock_list_scans.return_value = [
+        mock.Mock(
+            id=101,
+            progress="in_progress",
+            created_time="2022-03-07T18:00:10.751840+00:00",
+        ),
+        mock.Mock(
+            id=102,
+            progress="in_progress",
+            created_time="2022-03-08T00:00:12.308967+00:00",
+        ),
+        mock.Mock(
+            id=103,
+            progress="not_started",
+            created_time="2022-03-06T10:00:00.000000+00:00",
+        ),
+    ]
+    mock_scan_stop.return_value = None
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "stop", "--last"]
+    )
+
+    assert result.exception is None
+    assert "Stopping 1 scan(s)" in result.output
+    mock_scan_stop.assert_called_once_with(scan_id=102)
+
+
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanStopCLI_whenStopLastIsUsedAndNoScansExist_showsWarning(
+    mock_list_scans: mock.Mock, mocker: plugin.MockerFixture
+) -> None:
+    """Test ostorlab scan stop command with --last flag.
+    Should show warning message when no scans exist.
+    """
+
+    mock_list_scans.return_value = []
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "stop", "--last"]
+    )
+
+    assert result.exception is None
+    assert "No scans found" in result.output
+
+
+def testOstorlabScanStopCLI_whenScanIdsWithLastFlagAreProvided_showsError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan stop command with scan IDs and --last flag.
+    Should show error message.
+    """
+
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "stop", "123", "--last"]
+    )
+
+    assert result.exit_code != 0
+    assert "Cannot provide scan IDs with --all or --last flags" in result.output
+
+
+def testOstorlabScanStopCLI_whenAllAndLastFlagsAreUsed_showsError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan stop command with --all and --last flags.
+    Should show error message.
+    """
+
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "stop", "--all", "--last"]
+    )
+
+    assert result.exit_code != 0
+    assert "Cannot use --all and --last flags together" in result.output
+
+
+@mock.patch.object(local_runtime.LocalRuntime, "stop")
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanStopCLI_whenStopLastWithShorthandIsUsedAndScansExist_stopsLastScan(
+    mock_list_scans: mock.Mock,
+    mock_scan_stop: mock.Mock,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test ostorlab scan stop command with -l shorthand.
+    Should stop the most recently created scan.
+    """
+
+    mock_list_scans.return_value = [
+        mock.Mock(
+            id=101,
+            progress="in_progress",
+            created_time="2022-03-07T18:00:10.751840+00:00",
+        ),
+        mock.Mock(
+            id=102,
+            progress="in_progress",
+            created_time="2022-03-08T00:00:12.308967+00:00",
+        ),
+    ]
+    mock_scan_stop.return_value = None
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+
+    result = runner.invoke(rootcli.rootcli, ["scan", "--runtime=local", "stop", "-l"])
+
+    assert result.exception is None
+    assert "Stopping 1 scan(s)" in result.output
+    mock_scan_stop.assert_called_once_with(scan_id=102)
