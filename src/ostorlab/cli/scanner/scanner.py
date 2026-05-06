@@ -1,5 +1,7 @@
 """Scanner module that run scanner command in daemon mode."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -28,7 +30,9 @@ SCANNER_FILE_HANDLER_NAME = "ostorlab-scanner-file"
 SCANNER_LOG_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 
-def _configure_file_logging(log_file: str, log_level: int = logging.INFO) -> None:
+def _configure_file_logging(
+    log_file: str | None, log_level: int = logging.INFO
+) -> None:
     """Persist scanner logs to a file when requested."""
     if log_file is None:
         return
@@ -150,7 +154,7 @@ def start_scanner(
     api_key: Optional[str],
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
-    log_file: str = None,
+    log_file: str | None = None,
     log_level: int = logging.INFO,
 ) -> None:
     """Run subscription to nats in event loop.
