@@ -116,7 +116,7 @@ def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
 
 
 def testAgentInstanceSettingsTo_whenProtoHasIntField_returnsBytes():
-    """Test supported serializing float number."""
+    """Test supported serializing int number."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
         bus_url="mq",
