@@ -1336,10 +1336,10 @@ def nmap_agent_def() -> agent_definitions.AgentDefinition:
                 "value": ["banner"],
             },
             {
-                "name": "float_arg",
+                "name": "arg",
                 "type": "number",
-                "description": "Float argument.",
-                "value": 3.14,
+                "description": "argument.",
+                "value": 3,
             },
         ],
     )

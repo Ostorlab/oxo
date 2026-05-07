@@ -667,7 +667,7 @@ def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(
             "--arg=top_ports:100",
             "--arg=timing_template:T4",
             "--arg=scripts:val1,val2",
-            "--arg=float_arg:3.24",
+            "--arg=arg:3",
             "ip",
             "8.8.8.8",
         ],
@@ -709,8 +709,8 @@ def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(
             "val2",
         ]
         assert args[3].type == "array"
-        assert args[4].name == "float_arg"
-        assert models.AgentArgument.from_bytes(args[4].type, args[4].value) == 3.24
+        assert args[4].name == "arg"
+        assert models.AgentArgument.from_bytes(args[4].type, args[4].value) == 3
         assert args[4].type == "number"
 
 

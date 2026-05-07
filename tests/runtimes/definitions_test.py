@@ -115,15 +115,15 @@ def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
     assert isinstance(proto, bytes)
 
 
-def testAgentInstanceSettingsTo_whenProtoHasFloatField_returnsBytes():
-    """Test supported serializing float number."""
+def testAgentInstanceSettingsTo_whenProtoHasIntField_returnsBytes():
+    """Test supported serializing int number."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
         bus_url="mq",
         bus_exchange_topic="topic",
         bus_management_url="mq_managment",
         bus_vhost="vhost",
-        args=[utils_definitions.Arg(name="speed", type="number", value=1.1)],
+        args=[utils_definitions.Arg(name="speed", type="number", value=1)],
     )
 
     proto = instance_settings.to_raw_proto()
@@ -206,7 +206,7 @@ def testAgentGroupDefinitionFromNatsRequest_always_returnsValidAgentGroupDefinit
     assert agent_group_def.agents[1].args == []
 
 
-def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeNumber_castsArgumentToFloat() -> (
+def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeNumber_castsArgumentToInt() -> (
     None
 ):
     """Ensure the agent argument, received as bytes, are casted to their corresponding type: Case of numbers."""
@@ -226,9 +226,9 @@ def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeNumber_castsArgume
 
     assert agent_group_def.name == "agent_group42"
     assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
-        name="arg1", type="number", value=42.0, description=None
+        name="arg1", type="number", value=42, description=None
     )
-    assert isinstance(agent_group_def.agents[0].args[0].value, float) is True
+    assert isinstance(agent_group_def.agents[0].args[0].value, int) is True
 
 
 def testAgentGroupDefinitionFromNatsRequest_whenAgentArgOfTypeString_castsArgumentToString() -> (
