@@ -10,7 +10,6 @@ import hashlib
 import io
 import logging
 import random
-import socket
 import uuid
 from typing import List, Optional
 
@@ -174,6 +173,7 @@ class AgentRuntime:
         self.redis_service = redis_service
         self.jaeger_service = jaeger_service
         self._gcp_logging_credential = gcp_logging_credential
+        self._host_hostname = self._docker_client.info().get("Name")
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -377,7 +377,7 @@ class AgentRuntime:
         env = [
             f"UNIVERSE={self.runtime_name}",
             f"SERVICE_NAME={docker_service_name}",
-            f"HOST_HOSTNAME={socket.gethostname()}",
+            f"HOST_HOSTNAME={self._host_hostname}",
         ]
 
         if self._gcp_logging_credential is not None:
