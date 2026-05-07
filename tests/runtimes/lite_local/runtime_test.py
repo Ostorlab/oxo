@@ -388,7 +388,7 @@ def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUn
 ):
     """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
     mock_host_hostname = "test-mocked-hostname"
-    mocker.patch("socket.gethostname", return_value=mock_host_hostname)
+    mocker.patch("docker.DockerClient.info", return_value={"Name": mock_host_hostname})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1"],
