@@ -4,7 +4,7 @@ from ostorlab.agent.message import serializer
 from ostorlab.assets import repository as repository_asset
 
 
-def testRepositoryAsset_whenSelectorIsSetWithContentUrl_generatesProto():
+def testToProto_whenContentUrlSet_returnsSerializedBytes():
     raw = repository_asset.Repository(
         content_url="https://storage.example.com/repo.zip",
         repo_url="https://github.com/org/repo.git",
@@ -18,7 +18,7 @@ def testRepositoryAsset_whenSelectorIsSetWithContentUrl_generatesProto():
     assert unraw.commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
 
 
-def testRepositoryAsset_whenSelectorIsSetWithContent_generatesProto():
+def testToProto_whenContentBytesSet_returnsSerializedBytes():
     raw = repository_asset.Repository(
         content=b"PK\x03\x04archive",
         repo_url="https://gitlab.com/org/repo.git",

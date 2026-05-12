@@ -7,7 +7,7 @@ from ostorlab.assets import repository as repository_asset
 from ostorlab.cli import rootcli
 
 
-def testScanRunRepository_whenNoOptionsProvided_shouldExitAndShowError(
+def testScanRunRepository_whenNoOptionsProvided_exitsWithError(
     scan_run_cli_runner: testing.CliRunner,
 ) -> None:
     result = scan_run_cli_runner.invoke(
@@ -18,7 +18,7 @@ def testScanRunRepository_whenNoOptionsProvided_shouldExitAndShowError(
     assert "Command accepts either --file or --url." in result.output
 
 
-def testScanRunRepository_whenUrlProvided_shouldCallScanWithRepositoryAsset(
+def testScanRunRepository_whenUrlProvided_callsScanWithRepositoryAsset(
     scan_run_cli_runner: testing.CliRunner,
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -52,7 +52,7 @@ def testScanRunRepository_whenUrlProvided_shouldCallScanWithRepositoryAsset(
     assert assets[0].commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
 
 
-def testScanRunRepository_whenFileProvided_shouldCallScanWithRepositoryAsset(
+def testScanRunRepository_whenFileProvided_callsScanWithRepositoryAsset(
     scan_run_cli_runner: testing.CliRunner,
     mocker: plugin.MockerFixture,
     tmp_path,

@@ -3,7 +3,7 @@
 from ostorlab.agent.message.proto.v3.asset.repository import repository_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testSerializeAndDeserialize_whenCreatedWithValidData_returnsEquivalentMessage():
     message = repository_pb2.Message()
     message.content_url = "https://storage.example.com/repo.zip"
     message.repo_url = "https://github.com/org/repo.git"
@@ -18,7 +18,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
 
 
-def testMessage_whenCreateWithContentBytes_shouldSerializeAndDeserializeCorrectly():
+def testSerializeAndDeserialize_whenCreatedWithContentBytes_returnsEquivalentMessage():
     message = repository_pb2.Message()
     message.content = b"PK\x03\x04archive_content"
     message.repo_url = "https://gitlab.com/org/repo.git"
@@ -32,7 +32,7 @@ def testMessage_whenCreateWithContentBytes_shouldSerializeAndDeserializeCorrectl
     assert deserialized.repo_url == "https://gitlab.com/org/repo.git"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testCreate_whenEmpty_hasDefaultValues():
     message = repository_pb2.Message()
 
     assert message.content == b""
@@ -41,7 +41,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.commit_hash == ""
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage():
     message = repository_pb2.Message()
 
     serialized = message.SerializeToString()
