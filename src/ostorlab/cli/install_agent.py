@@ -12,6 +12,8 @@ import datetime
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.install import install_progress
 from ostorlab.cli import agent_fetcher
+from ostorlab.apis import agent_download_token
+from ostorlab.apis.runners import authenticated_runner
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +75,34 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
         return False
 
 
+def _login_with_download_token(
+    docker_client: docker.DockerClient,
+    agent_key: str,
+    agent_docker_location: str,
+    version: Optional[str],
+    api_key: str,
+) -> None:
+    """Fetch a short-lived download token and authenticate to the docker registry.
+
+    Args:
+        docker_client: docker client instance.
+        agent_key: agent key in agent/org/name format.
+        agent_docker_location: docker image location (e.g. registry.ostorlab.co/agent_ot1_bigfuzzer).
+        version: optional version of the agent image.
+        api_key: api key for authentication.
+
+    Raises:
+        Exception: if token fetch or docker login fails.
+    """
+    runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
+    response = runner.execute(
+        agent_download_token.AgentDownloadTokenAPIRequest(agent_key, version)
+    )
+    token = response["data"]["generateAgentImageDownloadToken"]["token"]
+    registry_url = agent_docker_location.split("/")[0]
+    docker_client.login(username="token", password=token, registry=registry_url)
+
+
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(RETRY_ATTEMPTS),
     wait=tenacity.wait_fixed(WAIT_TIME.total_seconds()),
@@ -106,6 +136,7 @@ def install(
     agent_key: str,
     version: str = "",
     docker_client: Optional[docker.DockerClient] = None,
+    api_key: Optional[str] = None,
 ) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
@@ -114,6 +145,7 @@ def install(
         agent_key: key of the agent in agent/org/agentName format.
         version: version of the docker image.
         docker_client: optional instance of the docker client to use to install the agent.
+        api_key: optional api key to fetch a short-lived download token for the image.
 
     Returns:
         None
@@ -135,11 +167,19 @@ def install(
     logger.debug("searching for image name %s", image_name)
 
     try:
-        docker_client = docker_client or docker.from_env()
+        docker_client = docker_client or docker.from_env()  # update docker
 
         if _is_image_present(docker_client, f"{image_name}:v{expected_version}"):
             console.info(f"{agent_key} already exist.")
         else:
+            if api_key is not None:
+                _login_with_download_token(
+                    docker_client,
+                    agent_key,
+                    agent_docker_location,
+                    expected_version if version else None,
+                    api_key,
+                )
             _do_install(
                 docker_client,
                 agent_docker_location,

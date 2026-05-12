@@ -220,3 +220,73 @@ def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
     assert pull_mock.call_count == 2
     assert "Installation successful" in result.output
     assert result.exit_code == 0
+
+
+def testInstallAgent_whenApiKeyProvided_fetchesDownloadToken(mocker):
+    """Test that when api_key is provided, a download token is fetched before pulling."""
+    agent_details = {
+        "dockerLocation": "registry.ostorlab.co/agent_ot1_bigfuzzer",
+        "key": "agent/ot1/bigFuzzer",
+        "versions": {"versions": [{"version": "1.0.0"}]},
+    }
+    mocker.patch("ostorlab.cli.agent_fetcher.get_details", return_value=agent_details)
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
+
+    mock_client = mocker.MagicMock()
+    mock_image = mocker.MagicMock()
+    mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
+    mocker.patch("ostorlab.cli.install_agent._pull_logs", return_value=[])
+
+    token_response = {
+        "data": {"generateAgentImageDownloadToken": {"token": "test.jwt.token"}}
+    }
+    mock_runner = mocker.MagicMock()
+    mock_runner.execute.return_value = token_response
+    mocker.patch(
+        "ostorlab.cli.install_agent.authenticated_runner.AuthenticatedAPIRunner",
+        return_value=mock_runner,
+    )
+
+    install_agent.install(
+        agent_key="agent/ot1/bigFuzzer",
+        docker_client=mock_client,
+        api_key="test_api_key",
+    )
+
+    mock_runner.execute.assert_called_once()
+    mock_client.login.assert_called_once_with(
+        username="token", password="test.jwt.token", registry="registry.ostorlab.co"
+    )
+    mock_image.tag.assert_called_once()
+
+
+def testInstallAgent_whenApiKeyIsNone_skipsDownloadToken(mocker):
+    """Test that when api_key is None, download token fetch is skipped."""
+    agent_details = {
+        "dockerLocation": "registry.ostorlab.co/agent_ot1_bigfuzzer",
+        "key": "agent/ot1/bigFuzzer",
+        "versions": {"versions": [{"version": "1.0.0"}]},
+    }
+    mocker.patch("ostorlab.cli.agent_fetcher.get_details", return_value=agent_details)
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
+
+    mock_client = mocker.MagicMock()
+    mock_image = mocker.MagicMock()
+    mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
+    mocker.patch("ostorlab.cli.install_agent._pull_logs", return_value=[])
+
+    mock_runner = mocker.MagicMock()
+    mocker.patch(
+        "ostorlab.cli.install_agent.authenticated_runner.AuthenticatedAPIRunner",
+        return_value=mock_runner,
+    )
+
+    install_agent.install(
+        agent_key="agent/ot1/bigFuzzer",
+        docker_client=mock_client,
+        api_key=None,
+    )
+
+    mock_runner.execute.assert_not_called()
+    mock_client.login.assert_not_called()
+    mock_image.tag.assert_called_once()
