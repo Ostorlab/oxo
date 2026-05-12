@@ -15,19 +15,12 @@ from ostorlab import exceptions
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
-SCM_PROVIDERS = ["GITHUB", "GITLAB", "BITBUCKET", "AZURE_DEVOPS", "UNKNOWN"]
-
 
 @run.run.command(name="repository")
 @click.option("--file", type=click.File(mode="rb"), multiple=True, required=False)
 @click.option("--url", required=False, multiple=True)
 @click.option("--repo-url", required=False)
 @click.option("--commit-hash", required=False)
-@click.option(
-    "--scm-provider",
-    type=click.Choice(SCM_PROVIDERS, case_sensitive=False),
-    required=False,
-)
 @click.pass_context
 def repository_cli(
     ctx: click.core.Context,
@@ -35,7 +28,6 @@ def repository_cli(
     url: Optional[Tuple[str]] = None,
     repo_url: Optional[str] = None,
     commit_hash: Optional[str] = None,
-    scm_provider: Optional[str] = None,
 ) -> None:
     """Run scan for a source code repository asset."""
     assets = []
@@ -46,7 +38,6 @@ def repository_cli(
                     content=f.read(),
                     repo_url=repo_url,
                     commit_hash=commit_hash,
-                    scm_provider=scm_provider,
                 )
             )
     elif len(url) > 0:
@@ -56,7 +47,6 @@ def repository_cli(
                     content_url=u,
                     repo_url=repo_url,
                     commit_hash=commit_hash,
-                    scm_provider=scm_provider,
                 )
             )
     else:

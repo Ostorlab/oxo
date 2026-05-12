@@ -39,8 +39,6 @@ def testScanRunRepository_whenUrlProvided_shouldCallScanWithRepositoryAsset(
             "https://github.com/org/repo.git",
             "--commit-hash",
             "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
-            "--scm-provider",
-            "GITHUB",
         ],
     )
 
@@ -52,7 +50,6 @@ def testScanRunRepository_whenUrlProvided_shouldCallScanWithRepositoryAsset(
     assert assets[0].content_url == "https://storage.example.com/repo.zip"
     assert assets[0].repo_url == "https://github.com/org/repo.git"
     assert assets[0].commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
-    assert assets[0].scm_provider == "GITHUB"
 
 
 def testScanRunRepository_whenFileProvided_shouldCallScanWithRepositoryAsset(

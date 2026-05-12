@@ -24,15 +24,13 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAostorlab/agent/message/proto/v3/asset/repository/repository.proto\x12\x30ostorlab.agent.message.proto.v3.asset.repository\"\xab\x01\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x13\n\x0b\x63ontent_url\x18\x02 \x01(\t\x12\x10\n\x08repo_url\x18\x03 \x01(\t\x12\x13\n\x0b\x63ommit_hash\x18\x04 \x01(\t\x12S\n\x0cscm_provider\x18\x05 \x01(\x0e\x32=.ostorlab.agent.message.proto.v3.asset.repository.ScmProvider*S\n\x0bScmProvider\x12\x0b\n\x07UNKNOWN\x10\x00\x12\n\n\x06GITHUB\x10\x01\x12\n\n\x06GITLAB\x10\x02\x12\r\n\tBITBUCKET\x10\x03\x12\x10\n\x0c\x41ZURE_DEVOPS\x10\x04')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nAostorlab/agent/message/proto/v3/asset/repository/repository.proto\x12\x30ostorlab.agent.message.proto.v3.asset.repository\"V\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x13\n\x0b\x63ontent_url\x18\x02 \x01(\t\x12\x10\n\x08repo_url\x18\x03 \x01(\t\x12\x13\n\x0b\x63ommit_hash\x18\x04 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.asset.repository.repository_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_SCMPROVIDER']._serialized_start=293
-  _globals['_SCMPROVIDER']._serialized_end=376
-  _globals['_MESSAGE']._serialized_start=120
-  _globals['_MESSAGE']._serialized_end=291
+  _globals['_MESSAGE']._serialized_start=119
+  _globals['_MESSAGE']._serialized_end=205
 # @@protoc_insertion_point(module_scope)

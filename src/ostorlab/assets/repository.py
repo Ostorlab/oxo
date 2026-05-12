@@ -15,7 +15,6 @@ class Repository(asset.Asset):
     content_url: Optional[str] = None
     repo_url: Optional[str] = None
     commit_hash: Optional[str] = None
-    scm_provider: Optional[str] = None
 
     def __str__(self) -> str:
         if self.repo_url is not None:

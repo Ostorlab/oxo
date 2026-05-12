@@ -6,7 +6,6 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     message.content_url = "https://storage.example.com/repo.zip"
     message.repo_url = "https://github.com/org/repo.git"
     message.commit_hash = "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
-    message.scm_provider = repository_pb2.GITHUB
 
     serialized = message.SerializeToString()
     deserialized = repository_pb2.Message()
@@ -15,7 +14,6 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.content_url == "https://storage.example.com/repo.zip"
     assert deserialized.repo_url == "https://github.com/org/repo.git"
     assert deserialized.commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
-    assert deserialized.scm_provider == repository_pb2.GITHUB
 
 
 def testMessage_whenCreateWithContentBytes_shouldSerializeAndDeserializeCorrectly():
@@ -23,14 +21,13 @@ def testMessage_whenCreateWithContentBytes_shouldSerializeAndDeserializeCorrectl
     message.content = b"PK\x03\x04archive_content"
     message.repo_url = "https://gitlab.com/org/repo.git"
     message.commit_hash = "b2b20cdbc6551ba359169a3033f193b7f8c1b95e"
-    message.scm_provider = repository_pb2.GITLAB
 
     serialized = message.SerializeToString()
     deserialized = repository_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert deserialized.content == b"PK\x03\x04archive_content"
-    assert deserialized.scm_provider == repository_pb2.GITLAB
+    assert deserialized.repo_url == "https://gitlab.com/org/repo.git"
 
 
 def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
@@ -40,7 +37,6 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.content_url == ""
     assert message.repo_url == ""
     assert message.commit_hash == ""
-    assert message.scm_provider == repository_pb2.UNKNOWN
 
 
 def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
@@ -54,4 +50,3 @@ def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
     assert deserialized.content_url == ""
     assert deserialized.repo_url == ""
     assert deserialized.commit_hash == ""
-    assert deserialized.scm_provider == repository_pb2.UNKNOWN

@@ -9,7 +9,6 @@ def testRepositoryAsset_whenSelectorIsSetWithContentUrl_generatesProto():
         content_url="https://storage.example.com/repo.zip",
         repo_url="https://github.com/org/repo.git",
         commit_hash="a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
-        scm_provider="GITHUB",
     ).to_proto()
 
     assert isinstance(raw, bytes)
@@ -24,7 +23,6 @@ def testRepositoryAsset_whenSelectorIsSetWithContent_generatesProto():
         content=b"PK\x03\x04archive",
         repo_url="https://gitlab.com/org/repo.git",
         commit_hash="b2b20cdbc6551ba359169a3033f193b7f8c1b95e",
-        scm_provider="UNKNOWN",
     ).to_proto()
 
     assert isinstance(raw, bytes)

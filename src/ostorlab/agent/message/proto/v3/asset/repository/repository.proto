@@ -2,18 +2,9 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.asset.repository;
 
-enum ScmProvider {
-  UNKNOWN = 0;
-  GITHUB = 1;
-  GITLAB = 2;
-  BITBUCKET = 3;
-  AZURE_DEVOPS = 4;
-}
-
 message Message {
   optional bytes content = 1;
   optional string content_url = 2;
   optional string repo_url = 3;
   optional string commit_hash = 4;
-  optional ScmProvider scm_provider = 5;
 }
