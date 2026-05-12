@@ -33,6 +33,7 @@ def testScanRunTicket_whenValidArgumentsAreProvided_callScanWithValidSettings(
             "ticket",
             "--title=Sample Ticket",
             "--ticket-id=TCK-123",
+            "--ticket-key=PROJ-123",
             "--description=A sample ticket description",
             "--comment=alice:high priority",
             "--comment=bob:bug confirmed",
@@ -46,6 +47,7 @@ def testScanRunTicket_whenValidArgumentsAreProvided_callScanWithValidSettings(
     assert isinstance(asset, ticket.Ticket)
     assert asset.title == "Sample Ticket"
     assert asset.ticket_id == "TCK-123"
+    assert asset.ticket_key == "PROJ-123"
     assert asset.description == "A sample ticket description"
     assert len(asset.comments) == 2
     assert asset.comments[0].author == "alice"
