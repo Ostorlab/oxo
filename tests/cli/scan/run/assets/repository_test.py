@@ -1,5 +1,7 @@
 """Tests for the `oxo scan run repository` CLI command, covering --file and --url options."""
 
+import pathlib
+
 from click import testing
 from pytest_mock import plugin
 
@@ -55,7 +57,7 @@ def testScanRunRepository_whenUrlProvided_callsScanWithRepositoryAsset(
 def testScanRunRepository_whenFileProvided_callsScanWithRepositoryAsset(
     scan_run_cli_runner: testing.CliRunner,
     mocker: plugin.MockerFixture,
-    tmp_path,
+    tmp_path: pathlib.Path,
 ) -> None:
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
