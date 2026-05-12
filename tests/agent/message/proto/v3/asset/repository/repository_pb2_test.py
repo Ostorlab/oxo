@@ -1,3 +1,5 @@
+"""Tests for the repository protobuf message definitions and serialization behavior."""
+
 from ostorlab.agent.message.proto.v3.asset.repository import repository_pb2
 
 

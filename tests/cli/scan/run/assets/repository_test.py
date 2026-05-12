@@ -1,4 +1,4 @@
-"""Tests for scan run repository command."""
+"""Tests for the `oxo scan run repository` CLI command, covering --file and --url options."""
 
 from click import testing
 from pytest_mock import plugin

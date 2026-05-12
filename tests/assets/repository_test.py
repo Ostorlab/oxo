@@ -1,4 +1,4 @@
-"""Unit tests for Repository asset."""
+"""Unit tests for the Repository asset class, covering proto serialization and selector behavior."""
 
 from ostorlab.agent.message import serializer
 from ostorlab.assets import repository as repository_asset
