@@ -4,6 +4,7 @@ from ostorlab.cli import agent
 from ostorlab.cli import agentgroup
 from ostorlab.cli import auth
 from ostorlab.cli import ci_scan
+from ostorlab.cli import logs
 from ostorlab.cli import scan
 from ostorlab.cli import scanner
 from ostorlab.cli import serve
@@ -18,4 +19,5 @@ __all__ = [
     "ci_scan",
     "scanner",
     "serve",
+    "logs",
 ]
