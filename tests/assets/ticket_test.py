@@ -8,6 +8,7 @@ def testTicketToProto_whenValidData_generatesProto():
     asset = ticket.Ticket(
         title="Sample Ticket",
         ticket_id="TCK-123",
+        ticket_key="PROJ-123",
         description="A sample ticket description",
         comments=[
             ticket.Comment(author="alice", message="high priority"),
@@ -20,6 +21,7 @@ def testTicketToProto_whenValidData_generatesProto():
     unraw = serializer.deserialize("v3.report.ticket", raw)
     assert unraw.title == "Sample Ticket"
     assert unraw.ticket_id == "TCK-123"
+    assert unraw.ticket_key == "PROJ-123"
     assert unraw.description == "A sample ticket description"
     assert unraw.comments[0].author == "alice"
     assert unraw.comments[0].message == "high priority"
