@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @run.run.command()
 @click.option("--title", help="Ticket title.", required=True)
 @click.option("--ticket-id", help="Ticket ID.", required=False)
+@click.option("--ticket-key", help="Ticket key.", required=False)
 @click.option("--description", help="Ticket description.", required=True)
 @click.option(
     "--comment",
@@ -31,6 +32,7 @@ def ticket(
     title: str,
     description: str,
     ticket_id: Optional[str] = None,
+    ticket_key: Optional[str] = None,
     comments: Optional[list[str]] = None,
 ) -> None:
     """Run scan for ticket."""
@@ -51,6 +53,7 @@ def ticket(
         description=description,
         ticket_id=ticket_id,
         comments=parsed_comments,
+        ticket_key=ticket_key,
     )
     logger.debug("scanning asset %s", asset)
     try:
