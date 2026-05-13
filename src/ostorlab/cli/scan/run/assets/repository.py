@@ -34,12 +34,16 @@ def repository_cli(
     if len(file) > 0:
         for f in file:
             assets.append(
-                repository_asset.Repository(origin_url=repo_url, commit_hash=commit_hash)
+                repository_asset.Repository(
+                    origin_url=repo_url, commit_hash=commit_hash
+                )
             )
     elif len(url) > 0:
         for u in url:
             assets.append(
-                repository_asset.Repository(origin_url=repo_url, commit_hash=commit_hash)
+                repository_asset.Repository(
+                    origin_url=repo_url, commit_hash=commit_hash
+                )
             )
     else:
         console.error("Command accepts either --file or --url.")
