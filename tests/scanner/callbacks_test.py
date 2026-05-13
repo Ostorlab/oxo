@@ -626,3 +626,69 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
     assert ip_asset4.host == "192.168.1.1"
     assert ip_asset4.version == 4
     assert ip_asset4.mask == "24"
+
+
+def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """Ensure start_scan forwards the api_key down to install_agent.install
+    so the agent image is pulled with a short-lived registry token."""
+    start_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent42",
+                version="0.0.1",
+            )
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
+    install_agent_mock = mocker.patch("ostorlab.cli.install_agent.install")
+
+    callbacks.start_scan(
+        "some_subject",
+        start_scan_msg,
+        None,
+        registry_conf,
+        api_key="test_api_key",
+    )
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("api_key") == "test_api_key"
+
+
+def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
+    mocker: plugin.MockerFixture,
+    registry_conf: scanner_conf.RegistryConfig,
+) -> None:
+    """When start_scan is invoked without an api_key, install_agent.install
+    is called with api_key=None (anonymous pull)."""
+    start_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[
+            startAgentScan_pb2.Agent(
+                key="agent/ostorlab/agent42",
+                version="0.0.1",
+            )
+        ],
+        apk=apk_pb2.Message(content=b"dummy_apk"),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
+    install_agent_mock = mocker.patch("ostorlab.cli.install_agent.install")
+
+    callbacks.start_scan("some_subject", start_scan_msg, None, registry_conf)
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("api_key") is None

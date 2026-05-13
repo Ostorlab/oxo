@@ -165,16 +165,19 @@ def install(
     logger.debug("searching for image name %s", image_name)
 
     try:
-        docker_client = docker_client or docker.from_env()  # update docker
+        docker_client = docker_client or docker.from_env()
 
-        if _is_image_present(docker_client, f"{image_name}:v{expected_version}"):
+        if (
+            _is_image_present(docker_client, f"{image_name}:v{expected_version}")
+            is True
+        ):
             console.info(f"{agent_key} already exist.")
         else:
             auth_config = None
             if api_key is not None:
                 token = _fetch_download_token(
                     agent_key,
-                    expected_version if version else None,
+                    expected_version,
                     api_key,
                 )
                 auth_config = {"username": "token", "password": token}

@@ -223,7 +223,8 @@ def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
 
 
 def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(mocker):
-    """When api_key is provided, the token is fetched and passed as auth_config to the pull."""
+    """When api_key is provided, the token is fetched and forwarded as auth_config
+    to docker_client.api.pull through the public install interface."""
     agent_details = {
         "dockerLocation": "registry.ostorlab.co/agent_ot1_bigfuzzer",
         "key": "agent/ot1/bigFuzzer",
@@ -233,11 +234,7 @@ def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(mocker):
     mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
 
     mock_client = mocker.MagicMock()
-    mock_image = mocker.MagicMock()
-    mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
-    pull_logs_mock = mocker.patch(
-        "ostorlab.cli.install_agent._pull_logs", return_value=[]
-    )
+    mock_client.api.pull.return_value = iter([])
 
     token_response = {
         "data": {"generateAgentImageDownloadToken": {"token": "test.jwt.token"}}
@@ -257,16 +254,18 @@ def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(mocker):
 
     mock_runner.execute.assert_called_once()
     mock_client.login.assert_not_called()
-    pull_logs_mock.assert_called_once()
-    assert pull_logs_mock.call_args.kwargs["auth_config"] == {
+    mock_client.api.pull.assert_called_once()
+    _, pull_kwargs = mock_client.api.pull.call_args
+    assert pull_kwargs.get("auth_config") == {
         "username": "token",
         "password": "test.jwt.token",
     }
-    mock_image.tag.assert_called_once()
+    mock_client.images.get.assert_called()
 
 
 def testInstallAgent_whenApiKeyIsNone_skipsTokenFetchAndPullsAnonymously(mocker):
-    """When api_key is None, no token is fetched and pull is called with auth_config=None."""
+    """When api_key is None, no token is fetched and docker_client.api.pull
+    is called with auth_config=None."""
     agent_details = {
         "dockerLocation": "registry.ostorlab.co/agent_ot1_bigfuzzer",
         "key": "agent/ot1/bigFuzzer",
@@ -276,11 +275,7 @@ def testInstallAgent_whenApiKeyIsNone_skipsTokenFetchAndPullsAnonymously(mocker)
     mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
 
     mock_client = mocker.MagicMock()
-    mock_image = mocker.MagicMock()
-    mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
-    pull_logs_mock = mocker.patch(
-        "ostorlab.cli.install_agent._pull_logs", return_value=[]
-    )
+    mock_client.api.pull.return_value = iter([])
 
     mock_runner = mocker.MagicMock()
     mocker.patch(
@@ -296,29 +291,7 @@ def testInstallAgent_whenApiKeyIsNone_skipsTokenFetchAndPullsAnonymously(mocker)
 
     mock_runner.execute.assert_not_called()
     mock_client.login.assert_not_called()
-    pull_logs_mock.assert_called_once()
-    assert pull_logs_mock.call_args.kwargs["auth_config"] is None
-    mock_image.tag.assert_called_once()
-
-
-def testPullLogs_whenAuthConfigProvided_forwardsItToDockerApiPull(mocker):
-    """_pull_logs forwards the auth_config dict to docker_client.api.pull."""
-    mock_client = mocker.MagicMock()
-    mock_client.api.pull.return_value = iter([])
-
-    list(
-        install_agent._pull_logs(
-            mock_client,
-            "registry.ostorlab.co/agent_ot1_bigfuzzer",
-            tag="v1.0.0",
-            auth_config={"username": "token", "password": "test.jwt.token"},
-        )
-    )
-
-    mock_client.api.pull.assert_called_once_with(
-        "registry.ostorlab.co/agent_ot1_bigfuzzer",
-        tag="v1.0.0",
-        stream=True,
-        decode=True,
-        auth_config={"username": "token", "password": "test.jwt.token"},
-    )
+    mock_client.api.pull.assert_called_once()
+    _, pull_kwargs = mock_client.api.pull.call_args
+    assert pull_kwargs.get("auth_config") is None
+    mock_client.images.get.assert_called()
