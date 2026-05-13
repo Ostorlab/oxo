@@ -49,8 +49,7 @@ def testScanRunRepository_whenUrlProvided_callsScanWithRepositoryAsset(
     assets = scan_mocked.call_args[1].get("assets")
     assert len(assets) == 1
     assert isinstance(assets[0], repository_asset.Repository)
-    assert assets[0].content_url == "https://storage.example.com/repo.zip"
-    assert assets[0].repo_url == "https://github.com/org/repo.git"
+    assert assets[0].origin_url == "https://github.com/org/repo.git"
     assert assets[0].commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
 
 
@@ -86,5 +85,5 @@ def testScanRunRepository_whenFileProvided_callsScanWithRepositoryAsset(
     assets = scan_mocked.call_args[1].get("assets")
     assert len(assets) == 1
     assert isinstance(assets[0], repository_asset.Repository)
-    assert assets[0].content == b"PK\x03\x04archive_content"
-    assert assets[0].repo_url == "https://github.com/org/repo.git"
+    assert assets[0].origin_url == "https://github.com/org/repo.git"
+    assert assets[0].commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
