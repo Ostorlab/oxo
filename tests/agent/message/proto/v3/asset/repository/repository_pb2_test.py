@@ -1,5 +1,8 @@
 """Tests for the repository protobuf message definitions and serialization behavior."""
 
+import pytest
+from google.protobuf.message import EncodeError
+
 from ostorlab.agent.message.proto.v3.asset.repository import repository_pb2
 
 
@@ -23,12 +26,8 @@ def testCreate_whenEmpty_hasDefaultValues():
     assert message.commit_hash == ""
 
 
-def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage():
+def testSerializeAndDeserialize_whenEmpty_raisesEncodeError():
     message = repository_pb2.Message()
 
-    serialized = message.SerializeToString()
-    deserialized = repository_pb2.Message()
-    deserialized.ParseFromString(serialized)
-
-    assert deserialized.origin_url == ""
-    assert deserialized.commit_hash == ""
+    with pytest.raises(EncodeError):
+        message.SerializeToString()

@@ -1,7 +1,6 @@
 """Repository asset."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -11,22 +10,22 @@ from ostorlab.assets import asset
 class Repository(asset.Asset):
     """Source code repository target asset."""
 
-    origin_url: Optional[str] = None
-    commit_hash: Optional[str] = None
+    origin_url: str = ""
+    commit_hash: str = ""
 
     def __str__(self) -> str:
-        if self.origin_url is not None:
-            if self.commit_hash is not None:
+        if self.origin_url:
+            if self.commit_hash:
                 return f"Repository: {self.origin_url}@{self.commit_hash}"
             return f"Repository: {self.origin_url}"
         return "Repository"
 
     @property
-    def repo_url(self) -> Optional[str]:
+    def repo_url(self) -> str:
         return self.origin_url
 
     @repo_url.setter
-    def repo_url(self, value: Optional[str]) -> None:
+    def repo_url(self, value: str) -> None:
         self.origin_url = value
 
     @property

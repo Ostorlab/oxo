@@ -3,6 +3,6 @@ syntax = "proto2";
 package ostorlab.agent.message.proto.v3.asset.repository;
 
 message Message {
-  optional string origin_url = 1;
-  optional string commit_hash = 2;
+  required string origin_url = 1;
+  required string commit_hash = 2;
 }
