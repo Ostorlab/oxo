@@ -4,17 +4,20 @@ import logging
 import re
 
 import httpx
+import pytest
 import tenacity
 import docker.errors
 from click import testing
 from docker.models import images as images_model
+from pytest_httpx import HTTPXMock
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import public_runner
 from ostorlab.cli import rootcli
 from ostorlab.cli import install_agent
 
 
-def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
+def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage() -> None:
     """Test oxo agent install CLI command without the required agent_key option.
     Should show help message, and confirm the --agent option is missing.
     """
@@ -27,7 +30,9 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
     assert "Error: Missing argument" in result.output
 
 
-def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(httpx_mock, mocker):
+def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
+    httpx_mock: HTTPXMock, mocker: plugin.MockerFixture
+) -> None:
     """Test oxo agent install CLI command with a wrong agent_key value.
     Should show message.
     """
@@ -62,7 +67,9 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(httpx_mock, 
     assert result.exit_code == 2
 
 
-def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, httpx_mock):
+def testAgentInstallCLI_whenAgentExists_installsAgent(
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+) -> None:
     """Test oxo agent install CLI command with a valid agent_key value should install the agent."""
 
     image_pull_mock = mocker.patch("docker.api.client.APIClient.pull", autospec=True)
@@ -109,7 +116,9 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, httpx_mock):
     assert "Installation successful" in result.output
 
 
-def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(mocker, caplog):
+def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(
+    mocker: plugin.MockerFixture, caplog: pytest.LogCaptureFixture
+) -> None:
     """Ensure existing-agent install messages are available to persisted logging."""
     mocker.patch(
         "ostorlab.cli.agent_fetcher.get_details",
@@ -130,7 +139,9 @@ def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(mocker, caplog):
     assert "agent/ostorlab/dependency_confusion already exist." in caplog.text
 
 
-def testAgentInstallCLI_whenPullFails_retries(mocker, httpx_mock):
+def testAgentInstallCLI_whenPullFails_retries(
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+) -> None:
     """Test agent install retries on pull failure."""
 
     api_call_response = {
@@ -174,8 +185,8 @@ def testAgentInstallCLI_whenPullFails_retries(mocker, httpx_mock):
 
 
 def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
-    mocker, httpx_mock
-):
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+) -> None:
     """Test agent install succeeds if a retry eventually works."""
 
     api_call_response = {
@@ -222,7 +233,9 @@ def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
     assert result.exit_code == 0
 
 
-def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(mocker):
+def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(
+    mocker: plugin.MockerFixture,
+) -> None:
     """When api_key is provided, the token is fetched and forwarded as auth_config
     to docker_client.api.pull through the public install interface."""
     agent_details = {
@@ -260,7 +273,9 @@ def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(mocker):
     mock_client.images.get.assert_called()
 
 
-def testInstallAgent_whenApiKeyIsNone_skipsTokenFetchAndPullsAnonymously(mocker):
+def testInstallAgent_whenApiKeyIsNone_skipsTokenFetchAndPullsAnonymously(
+    mocker: plugin.MockerFixture,
+) -> None:
     """When api_key is None, no token is fetched and docker_client.api.pull
     is called with auth_config=None."""
     agent_details = {
