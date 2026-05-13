@@ -47,11 +47,16 @@ def _parse_repository_tag(repo_name: str, tag: str = None) -> tuple:
 
 
 def _pull_logs(
-    docker_client: docker.DockerClient, repository: str, tag: Optional[str] = None
+    docker_client: docker.DockerClient,
+    repository: str,
+    tag: Optional[str] = None,
+    auth_config: Optional[Dict[str, str]] = None,
 ) -> Generator[Dict, None, None]:
     """Generate logs of the docker pull method."""
     repository, tag = _parse_repository_tag(repository, tag)
-    pull_log = docker_client.api.pull(repository, tag=tag, stream=True, decode=True)
+    pull_log = docker_client.api.pull(
+        repository, tag=tag, stream=True, decode=True, auth_config=auth_config
+    )
     for log in pull_log:
         yield log
 
@@ -75,32 +80,22 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
         return False
 
 
-def _login_with_download_token(
-    docker_client: docker.DockerClient,
-    agent_key: str,
-    agent_docker_location: str,
-    version: Optional[str],
-    api_key: str,
-) -> None:
-    """Fetch a short-lived download token and authenticate to the docker registry.
+def _fetch_download_token(agent_key: str, version: Optional[str], api_key: str) -> str:
+    """Fetch a short-lived registry pull token for an agent image.
 
     Args:
-        docker_client: docker client instance.
         agent_key: agent key in agent/org/name format.
-        agent_docker_location: docker image location (e.g. registry.ostorlab.co/agent_ot1_bigfuzzer).
         version: optional version of the agent image.
         api_key: api key for authentication.
 
-    Raises:
-        Exception: if token fetch or docker login fails.
+    Returns:
+        The bearer token from the registry.
     """
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     response = runner.execute(
         agent_download_token.AgentDownloadTokenAPIRequest(agent_key, version)
     )
-    token = response["data"]["generateAgentImageDownloadToken"]["token"]
-    registry_url = agent_docker_location.split("/")[0]
-    docker_client.login(username="token", password=token, registry=registry_url)
+    return response["data"]["generateAgentImageDownloadToken"]["token"]
 
 
 @tenacity.retry(
@@ -116,10 +111,13 @@ def _do_install(
     agent_docker_location: str,
     tag: str,
     image_name: str,
+    auth_config: Optional[Dict[str, str]] = None,
 ) -> None:
     """Pull the image and tag it."""
     console.info(f"Pulling the image {agent_docker_location} from the ostorlab store.")
-    pull_logs_generator = _pull_logs(docker_client, agent_docker_location, tag)
+    pull_logs_generator = _pull_logs(
+        docker_client, agent_docker_location, tag, auth_config=auth_config
+    )
 
     agent_install_progress = install_progress.AgentInstallProgress()
     agent_install_progress.display(pull_logs_generator)
@@ -172,19 +170,20 @@ def install(
         if _is_image_present(docker_client, f"{image_name}:v{expected_version}"):
             console.info(f"{agent_key} already exist.")
         else:
+            auth_config = None
             if api_key is not None:
-                _login_with_download_token(
-                    docker_client,
+                token = _fetch_download_token(
                     agent_key,
-                    agent_docker_location,
                     expected_version if version else None,
                     api_key,
                 )
+                auth_config = {"username": "token", "password": token}
             _do_install(
                 docker_client,
                 agent_docker_location,
                 f"v{expected_version}",
                 image_name,
+                auth_config=auth_config,
             )
 
     except (docker.errors.APIError, docker.errors.DockerException) as e:
