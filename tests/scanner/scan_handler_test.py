@@ -98,13 +98,19 @@ async def testSubscribeAll_whenApiKeyProvided_forwardsApiKeyToHandleMessages(
 
 
 @pytest.mark.asyncio
-async def testHandleSingleMessage_whenApiKeyProvided_forwardsApiKeyToStartScan(
+async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     mocker, data_start_agent_scan
 ):
-    """_handle_message should forward the api_key to callbacks.start_scan
+    """handle_messages should forward the api_key to callbacks.start_scan
     so the image pull uses a short-lived registry token."""
     start_scan_mock = mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="scan-id"
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler._is_scan_running", side_effect=[False, True]
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.asyncio.sleep", side_effect=RuntimeError("stop")
     )
 
     async def _fake_process_message():
@@ -122,10 +128,10 @@ async def testHandleSingleMessage_whenApiKeyProvided_forwardsApiKeyToStartScan(
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
-    scan_id = await scan_handler_instance._handle_message(
-        bus_handler, config, "test_api_key"
-    )
+    with pytest.raises(RuntimeError, match="stop"):
+        await scan_handler_instance.handle_messages(
+            bus_handler, config, api_key="test_api_key"
+        )
 
-    assert scan_id == "scan-id"
     start_scan_mock.assert_called_once()
     assert start_scan_mock.call_args.kwargs.get("api_key") == "test_api_key"

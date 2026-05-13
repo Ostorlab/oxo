@@ -256,10 +256,7 @@ def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(mocker):
     mock_client.login.assert_not_called()
     mock_client.api.pull.assert_called_once()
     _, pull_kwargs = mock_client.api.pull.call_args
-    assert pull_kwargs.get("auth_config") == {
-        "username": "token",
-        "password": "test.jwt.token",
-    }
+    assert pull_kwargs.get("auth_config") == {"registrytoken": "test.jwt.token"}
     mock_client.images.get.assert_called()
 
 

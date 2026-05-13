@@ -180,7 +180,7 @@ def install(
                     expected_version,
                     api_key,
                 )
-                auth_config = {"username": "token", "password": token}
+                auth_config = {"registrytoken": token}
             _do_install(
                 docker_client,
                 agent_docker_location,
