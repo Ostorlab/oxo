@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import asyncio
 import datetime
-from typing import List
 
 import docker
 from docker.models import services
@@ -144,7 +143,7 @@ def _is_scan_running(client: docker.DockerClient, scan_id: str | None = None) ->
     """
     if scan_id is None:
         return False
-    scan_services: List[services.Service] = client.services.list(
+    scan_services: list[services.Service] = client.services.list(
         filters={"label": f"ostorlab.universe={str(scan_id)}"}
     )
     return len(scan_services) > 0
