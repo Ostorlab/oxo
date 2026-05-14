@@ -10,23 +10,31 @@ from ostorlab.assets import asset
 class Repository(asset.Asset):
     """Source code repository target asset."""
 
-    origin_url: str = ""
+    repository_url: str = ""
     commit_hash: str = ""
 
     def __str__(self) -> str:
-        if self.origin_url != "":
+        if self.repository_url != "":
             if self.commit_hash != "":
-                return f"Repository: {self.origin_url}@{self.commit_hash}"
-            return f"Repository: {self.origin_url}"
+                return f"Repository: {self.repository_url}@{self.commit_hash}"
+            return f"Repository: {self.repository_url}"
         return "Repository"
 
     @property
+    def origin_url(self) -> str:
+        return self.repository_url
+
+    @origin_url.setter
+    def origin_url(self, value: str) -> None:
+        self.repository_url = value
+
+    @property
     def repo_url(self) -> str:
-        return self.origin_url
+        return self.repository_url
 
     @repo_url.setter
     def repo_url(self, value: str) -> None:
-        self.origin_url = value
+        self.repository_url = value
 
     @property
     def proto_field(self) -> str:
