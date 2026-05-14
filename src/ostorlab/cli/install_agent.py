@@ -97,7 +97,15 @@ def _fetch_download_token(agent_key: str, version: str | None, api_key: str) -> 
     response = runner.execute(
         agent_download_token.AgentDownloadTokenAPIRequest(agent_key, version)
     )
-    return response["data"]["generateAgentImageDownloadToken"]["token"]
+    errors = response.get("errors")
+    if errors is not None:
+        raise RuntimeError(f"GraphQL API returned errors: {errors}")
+    data = response.get("data") or {}
+    generate_token = data.get("generateAgentImageDownloadToken") or {}
+    token = generate_token.get("token")
+    if token is None:
+        raise ValueError(f"Failed to retrieve installation token for agent {agent_key}")
+    return token
 
 
 @tenacity.retry(
