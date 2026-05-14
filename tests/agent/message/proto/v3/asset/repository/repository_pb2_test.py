@@ -26,7 +26,7 @@ def testCreate_whenEmpty_hasDefaultValues():
     assert message.commit_hash == ""
 
 
-def testSerializeAndDeserialize_whenEmpty_raisesEncodeError():
+def testSerialize_whenEmpty_raisesEncodeError():
     message = repository_pb2.Message()
 
     with pytest.raises(EncodeError):
