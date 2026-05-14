@@ -14,8 +14,8 @@ class Repository(asset.Asset):
     commit_hash: str = ""
 
     def __str__(self) -> str:
-        if self.origin_url:
-            if self.commit_hash:
+        if self.origin_url != "":
+            if self.commit_hash != "":
                 return f"Repository: {self.origin_url}@{self.commit_hash}"
             return f"Repository: {self.origin_url}"
         return "Repository"
