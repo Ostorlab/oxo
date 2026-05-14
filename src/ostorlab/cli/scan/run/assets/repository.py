@@ -2,7 +2,6 @@
 This module prepares a source code repository asset before injecting it to the runtime."""
 
 import logging
-from typing import Optional
 
 import click
 
@@ -21,8 +20,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def repository_cli(
     ctx: click.core.Context,
-    origin_url: Optional[str] = None,
-    commit_hash: Optional[str] = None,
+    origin_url: str,
+    commit_hash: str,
 ) -> None:
     """Run scan for a source code repository asset."""
     assets = [
