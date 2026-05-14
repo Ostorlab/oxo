@@ -1,8 +1,10 @@
 """Unit tests for start module."""
 
 import socket
+from typing import Any
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.scanner import scan_handler
 from ostorlab.scanner import scanner_conf
@@ -11,8 +13,8 @@ from ostorlab.utils import scanner_state_reporter
 
 @pytest.mark.asyncio
 async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
-    mocker, data_start_agent_scan
-):
+    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
+) -> None:
     nats_connect_mock = mocker.patch(
         "ostorlab.scanner.handler.ClientBusHandler.connect"
     )
@@ -43,7 +45,9 @@ async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
 
 
 @pytest.mark.asyncio
-async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
+async def testBusHandler_always_createBusHandler(
+    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
+) -> None:
     nats_subscribe_mock = mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
     mocker.patch("ostorlab.scanner.handler.ClientBusHandler.connect", return_value=None)
     mocker.patch("ostorlab.scanner.handler.ClientBusHandler.close", return_value=None)
@@ -70,8 +74,8 @@ async def testBusHandler_always_createBusHandler(mocker, data_start_agent_scan):
 
 @pytest.mark.asyncio
 async def testSubscribeAll_whenApiKeyProvided_forwardsApiKeyToHandleMessages(
-    mocker, data_start_agent_scan
-):
+    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
+) -> None:
     """subscribe_all should propagate api_key to handle_messages so it can
     be passed all the way down to install_agent."""
     mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
@@ -99,8 +103,8 @@ async def testSubscribeAll_whenApiKeyProvided_forwardsApiKeyToHandleMessages(
 
 @pytest.mark.asyncio
 async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
-    mocker, data_start_agent_scan
-):
+    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
+) -> None:
     """handle_messages should forward the api_key to callbacks.start_scan
     so the image pull uses a short-lived registry token."""
     start_scan_mock = mocker.patch(
