@@ -650,7 +650,9 @@ def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
-    install_agent_mock = mocker.patch("ostorlab.agent.install_agent.install")
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
 
     callbacks.start_scan(
         "some_subject",
@@ -686,7 +688,9 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
-    install_agent_mock = mocker.patch("ostorlab.agent.install_agent.install")
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
 
     callbacks.start_scan("some_subject", start_scan_msg, None, registry_conf)
 
