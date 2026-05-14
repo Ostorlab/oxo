@@ -113,3 +113,73 @@ def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list, 
 
     assert all(scan.id in result.output for scan in scans)
     mock_scan_list.assert_called()
+
+
+def testOstorlabScanListCLI_whenRuntimeIsCloudAndStateIsProvided_showsFilteredScanInfo(
+    httpx_mock,
+):
+    """Test ostorlab scan list command with state filter and cloud runtime.
+    Should show only scans matching the state.
+    """
+
+    scans_data = {
+        "data": {
+            "scans": {
+                "pageInfo": {},
+                "scans": [
+                    {
+                        "id": "58215",
+                        "assetType": "android_store",
+                        "scanProfile": "Fast Scan",
+                        "riskRating": "LOW",
+                        "title": "scan Birrapps - FREE app for homebrewers",
+                        "name": "",
+                        "createdTime": "2022-03-08T00:00:12.308967+00:00",
+                        "progress": "done",
+                    },
+                ],
+            }
+        }
+    }
+
+    runner = CliRunner()
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=scans_data,
+        status_code=200,
+    )
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=cloud", "list", "--state=done"]
+    )
+
+    assert result.exception is None
+    assert "Scans listed successfully" in result.output
+
+
+@mock.patch.object(local_runtime.LocalRuntime, "list")
+def testOstorlabScanListCLI_whenRuntimeIsLocalAndStateIsProvided_showsFilteredListOfScans(
+    mock_scan_list, mocker
+):
+    """Test ostorlab scan list command with local runtime and state filter.
+    Should show list of scans filtered by state.
+    """
+
+    scans = [
+        runtime.Scan(
+            id="1",
+            asset="File(/tmp/test)",
+            created_time="2021-12-27T13:37:02.795789947Z",
+            progress="done",
+        ),
+    ]
+
+    mock_scan_list.return_value = scans
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "list", "--state=done"]
+    )
+
+    assert all(scan.id in result.output for scan in scans)
+    mock_scan_list.assert_called_with(page=1, number_elements=10, state="done")

@@ -9,9 +9,10 @@ from ostorlab.apis import request
 class ScansListAPIRequest(request.APIRequest):
     """Lists the remote scans."""
 
-    def __init__(self, page: int, elements: int):
+    def __init__(self, page: int, elements: int, state: Optional[str] = None):
         self._page = page
         self._elements = elements
+        self._state = state
 
     @property
     def query(self) -> Optional[str]:
@@ -21,8 +22,8 @@ class ScansListAPIRequest(request.APIRequest):
             The query to list the scans.
         """
         return """
-         query Scans($page: Int, $numberElements: Int) {
-            scans(page: $page, numberElements: $numberElements) {
+         query Scans($page: Int, $numberElements: Int, $state: String) {
+            scans(page: $page, numberElements: $numberElements, state: $state) {
                 pageInfo {
                     hasNext
                     hasPrevious
@@ -50,10 +51,14 @@ class ScansListAPIRequest(request.APIRequest):
         Returns:
               The query to list the scans.
         """
+        variables: Dict[str, Any] = {
+            "page": self._page,
+            "numberElements": self._elements,
+        }
+        if self._state is not None:
+            variables["state"] = self._state
         data = {
             "query": self.query,
-            "variables": json.dumps(
-                {"page": self._page, "numberElements": self._elements}
-            ),
+            "variables": json.dumps(variables),
         }
         return data

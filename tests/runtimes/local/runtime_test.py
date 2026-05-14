@@ -335,6 +335,33 @@ def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
     assert scans is None
 
 
+def testRuntimeScanList_whenStateIsProvided_filtersScansByState(mocker, db_engine_path):
+    """Unittest for the scan list method with state filter.
+    Should return only scans matching the provided state.
+    """
+    mocker.patch.object(
+        ostorlab.runtimes.local.models.models, "ENGINE_URL", db_engine_path
+    )
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mock_client = mocker.Mock()
+    mock_client.services.list.return_value = []
+    mocker.patch("docker.from_env", return_value=mock_client)
+
+    models.Scan.create(title="scan1", progress=models.ScanProgress.IN_PROGRESS)
+    models.Scan.create(title="scan2", progress=models.ScanProgress.DONE)
+    models.Scan.create(title="scan3", progress=models.ScanProgress.ERROR)
+
+    done_scans = local_runtime.LocalRuntime().list(state="done")
+    in_progress_scans = local_runtime.LocalRuntime().list(state="in_progress")
+    all_scans = local_runtime.LocalRuntime().list()
+
+    assert len(done_scans) == 1
+    assert done_scans[0].progress == "done"
+    assert len(in_progress_scans) == 1
+    assert in_progress_scans[0].progress == "in_progress"
+    assert len(all_scans) == 3
+
+
 @pytest.mark.docker
 def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
     mocker: plugin.MockerFixture, db_engine_path: str

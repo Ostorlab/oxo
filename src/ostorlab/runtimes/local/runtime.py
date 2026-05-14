@@ -547,12 +547,18 @@ class LocalRuntime(runtime.Runtime):
             ],
         )
 
-    def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+    def list(
+        self,
+        page: int = 1,
+        number_elements: int = 10,
+        state: Optional[str] = None,
+    ) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
 
         Args:
             page: Page number for list pagination (default 1).
             number_elements: count of elements to show in the listed page (default 10).
+            state: Filter scans by state.
 
         Returns:
             List of scan objects.
@@ -562,7 +568,12 @@ class LocalRuntime(runtime.Runtime):
 
         scans = {}
         with models.Database() as session:
-            for scan in session.query(models.Scan):
+            query = session.query(models.Scan)
+            if state is not None:
+                query = query.filter(
+                    models.Scan.progress == models.ScanProgress[state.upper()]
+                )
+            for scan in query:
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
                     created_time=scan.created_time,

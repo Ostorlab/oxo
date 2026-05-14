@@ -138,12 +138,18 @@ class CloudRuntime(runtime.Runtime):
         except runner.Error:
             console.error("Could not stop scan.")
 
-    def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+    def list(
+        self,
+        page: int = 1,
+        number_elements: int = 10,
+        state: Optional[str] = None,
+    ) -> List[runtime.Scan]:
         """Lists scans managed by runtime.
 
         Args:
             page: Page number for list pagination (default 1).
             number_elements: count of elements to show in the listed page (default 10).
+            state: Filter scans by state.
 
         Returns:
             List of scan objects.
@@ -151,7 +157,7 @@ class CloudRuntime(runtime.Runtime):
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(
-                scan_list.ScansListAPIRequest(page, number_elements)
+                scan_list.ScansListAPIRequest(page, number_elements, state)
             )
             scans = response["data"]["scans"]["scans"]
 
