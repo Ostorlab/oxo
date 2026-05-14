@@ -1,9 +1,11 @@
 """Module Responsible for subscribing to nats for different subjects."""
 
+from __future__ import annotations
+
 import logging
 import asyncio
 import datetime
-from typing import List, Optional
+from typing import List
 
 import docker
 from docker.models import services
@@ -58,7 +60,7 @@ class ScanHandler:
         return bus_handler
 
     async def subscribe_all(
-        self, config: scanner_conf.ScannerConfig, api_key: Optional[str] = None
+        self, config: scanner_conf.ScannerConfig, api_key: str | None = None
     ) -> None:
         bus_handlers = []
         for bus_conf in config.subject_bus_configs:
@@ -79,7 +81,7 @@ class ScanHandler:
         self,
         bus_handler: scanner_handler.BusHandler,
         config: scanner_conf.ScannerConfig,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
         """Scan handler method responsible for fetching messages from the streaming server,
         parse the messages and trigger the scan.
@@ -106,7 +108,7 @@ class ScanHandler:
         self,
         bus_handler: scanner_handler.BusHandler,
         config: scanner_conf.ScannerConfig,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> str:
         """Fetch, parse a single message and trigger the corresponding scan."""
         async for msg, request in bus_handler.process_message():
@@ -136,9 +138,7 @@ class ScanHandler:
         return bus_handler
 
 
-def _is_scan_running(
-    client: docker.DockerClient, scan_id: Optional[str] = None
-) -> bool:
+def _is_scan_running(client: docker.DockerClient, scan_id: str | None = None) -> bool:
     """Returns True, if docker services with `ostorlab.universe` label exist,
     False otherwise.
     """
@@ -154,7 +154,7 @@ async def connect_nats(
     config: scanner_conf.ScannerConfig,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
-    api_key: Optional[str] = None,
+    api_key: str | None = None,
 ) -> ScanHandler:
     """connecting to nats.
 

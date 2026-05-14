@@ -1,8 +1,10 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 
+from __future__ import annotations
+
 import logging
 import ipaddress
-from typing import Any, Optional
+from typing import Any
 
 import docker
 
@@ -41,8 +43,8 @@ logger = logging.getLogger(__name__)
 def _install_agents(
     runtime_instance: runtime.Runtime,
     agents,
-    docker_client: Optional[docker.DockerClient] = None,
-    api_key: Optional[str] = None,
+    docker_client: docker.DockerClient | None = None,
+    api_key: str | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -174,7 +176,7 @@ def start_scan(
     request: Any,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     registry_conf: scanner_conf.RegistryConfig,
-    api_key: Optional[str] = None,
+    api_key: str | None = None,
 ) -> str:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
