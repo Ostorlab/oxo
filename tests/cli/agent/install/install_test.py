@@ -9,7 +9,7 @@ import tenacity
 import docker.errors
 from click import testing
 from docker.models import images as images_model
-from pytest_httpx import HTTPXMock
+import pytest_httpx
 from pytest_mock import plugin
 
 from ostorlab.apis.runners import public_runner
@@ -31,7 +31,7 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage() -> Non
 
 
 def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
-    httpx_mock: HTTPXMock, mocker: plugin.MockerFixture
+    httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
 ) -> None:
     """Test oxo agent install CLI command with a wrong agent_key value.
     Should show message.
@@ -68,7 +68,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
 
 
 def testAgentInstallCLI_whenAgentExists_installsAgent(
-    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
 ) -> None:
     """Test oxo agent install CLI command with a valid agent_key value should install the agent."""
 
@@ -140,7 +140,7 @@ def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(
 
 
 def testAgentInstallCLI_whenPullFails_retries(
-    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
 ) -> None:
     """Test agent install retries on pull failure."""
 
@@ -185,7 +185,7 @@ def testAgentInstallCLI_whenPullFails_retries(
 
 
 def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
-    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
 ) -> None:
     """Test agent install succeeds if a retry eventually works."""
 
