@@ -1,7 +1,9 @@
 """Module responsible for installing an agent : Pulling the image from the ostorlab store."""
 
+from __future__ import annotations
+
 import logging
-from typing import Dict, Optional, Generator
+from typing import Generator
 
 import click
 import docker
@@ -49,9 +51,9 @@ def _parse_repository_tag(repo_name: str, tag: str = None) -> tuple:
 def _pull_logs(
     docker_client: docker.DockerClient,
     repository: str,
-    tag: Optional[str] = None,
-    auth_config: Optional[Dict[str, str]] = None,
-) -> Generator[Dict, None, None]:
+    tag: str | None = None,
+    auth_config: dict[str, str] | None = None,
+) -> Generator[dict, None, None]:
     """Generate logs of the docker pull method."""
     repository, tag = _parse_repository_tag(repository, tag)
     pull_log = docker_client.api.pull(
@@ -80,7 +82,7 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
         return False
 
 
-def _fetch_download_token(agent_key: str, version: Optional[str], api_key: str) -> str:
+def _fetch_download_token(agent_key: str, version: str | None, api_key: str) -> str:
     """Fetch a short-lived registry pull token for an agent image.
 
     Args:
@@ -111,7 +113,7 @@ def _do_install(
     agent_docker_location: str,
     tag: str,
     image_name: str,
-    auth_config: Optional[Dict[str, str]] = None,
+    auth_config: dict[str, str] | None = None,
 ) -> None:
     """Pull the image and tag it."""
     console.info(f"Pulling the image {agent_docker_location} from the ostorlab store.")
@@ -133,8 +135,8 @@ def _do_install(
 def install(
     agent_key: str,
     version: str = "",
-    docker_client: Optional[docker.DockerClient] = None,
-    api_key: Optional[str] = None,
+    docker_client: docker.DockerClient | None = None,
+    api_key: str | None = None,
 ) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
