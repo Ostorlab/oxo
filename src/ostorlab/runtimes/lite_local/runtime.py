@@ -246,7 +246,15 @@ class LiteLocalRuntime(runtime.Runtime):
                 stopped_configs.append(config)
                 config.remove()
 
-        if stopped_services or stopped_network or stopped_configs:
+        stopped_volumes = []
+        for volume in client.volumes.list():
+            volume_labels = volume.attrs.get("Labels") or {}
+            if volume_labels.get("ostorlab.universe") == scan_id:
+                logger.debug("removing volume %s", volume.name)
+                stopped_volumes.append(volume)
+                volume.remove(force=True)
+
+        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
 
     def _check_agents_healthy(self):

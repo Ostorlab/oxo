@@ -84,6 +84,18 @@ class PortMapping:
 
 
 @dataclasses.dataclass
+class Volume:
+    """Data class defining a shared scan volume declared by an agent.
+
+    Agents declaring the same `name` share a single per-scan Docker volume,
+    enabling out-of-band data exchange (e.g. a cloned source repository)."""
+
+    name: str
+    path: str
+    read_only: bool = True
+
+
+@dataclasses.dataclass
 class ScannerState:
     """Current scanner state."""
 
