@@ -361,7 +361,12 @@ class LiteLocalRuntime(runtime.Runtime):
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def list(self, **kwargs):
+    def list(
+        self,
+        page: int = 1,
+        number_elements: int = 10,
+        state: Optional[str] = None,
+    ) -> List[runtime.Scan]:
         raise NotImplementedError()
 
     def _are_agents_ready(self, fail_fast=True) -> bool:

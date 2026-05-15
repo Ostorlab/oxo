@@ -119,6 +119,79 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
     )
 
 
+def testRuntimeScanList_whenNoStateIsProvided_returnsAllScans(httpx_mock):
+    """Unittest for the scan list method without state filter.
+    Should return all scans.
+    """
+    scans_data = {
+        "data": {
+            "scans": {
+                "pageInfo": {},
+                "scans": [
+                    {
+                        "id": "58215",
+                        "assetType": "android_store",
+                        "riskRating": "LOW",
+                        "createdTime": "2022-03-08T00:00:12.308967+00:00",
+                        "progress": "done",
+                    },
+                ],
+            }
+        }
+    }
+
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=scans_data,
+    )
+
+    scans = cloud_runtime.CloudRuntime().list()
+
+    assert len(scans) == 1
+    assert scans[0].id == "58215"
+    assert scans[0].progress == "done"
+
+
+def testRuntimeScanList_whenStateIsProvided_forwardsStateToApi(httpx_mock):
+    """Unittest for the scan list method with state filter.
+    Should forward the state parameter to the GraphQL API.
+    """
+    scans_data = {
+        "data": {
+            "scans": {
+                "pageInfo": {},
+                "scans": [
+                    {
+                        "id": "58215",
+                        "assetType": "android_store",
+                        "riskRating": "LOW",
+                        "createdTime": "2022-03-08T00:00:12.308967+00:00",
+                        "progress": "in_progress",
+                    },
+                ],
+            }
+        }
+    }
+
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json=scans_data,
+    )
+
+    scans = cloud_runtime.CloudRuntime().list(state="in_progress")
+
+    assert len(scans) == 1
+    assert scans[0].id == "58215"
+    assert scans[0].progress == "in_progress"
+
+    requests = httpx_mock.get_requests()
+    assert len(requests) == 1
+    request_body = requests[0].content.decode()
+    assert "%22state%22%3A+%22in_progress%22" in request_body
+
+
 def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormattedValue():
     """Ensure cloud formatter supports HarmonyOS asset payloads."""
     runtime = cloud_runtime.CloudRuntime()
