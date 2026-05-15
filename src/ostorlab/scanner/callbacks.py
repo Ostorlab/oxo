@@ -160,15 +160,13 @@ def _update_state_reporter(
 def _connect_containers_registry(
     configuration: scanner_conf.RegistryConfig,
 ) -> docker.DockerClient:
-    """Connect to container registry."""
-    logger.debug("Connecting to private container registry.")
-    client = docker.from_env()
-    client.login(
-        username=configuration.username,
-        password=configuration.token,
-        registry=configuration.url,
-    )
-    return client
+    """Build a docker client for pulling agent images.
+
+    Authentication is handled per-pull via a short-lived token in install_agent,
+    so no registry login is performed here.
+    """
+    logger.debug("Creating docker client for private container registry.")
+    return docker.from_env()
 
 
 def start_scan(
