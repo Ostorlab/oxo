@@ -116,6 +116,33 @@
       "description": "[Optional] - Array of strings of the mounts of the agent.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
     },
+    "volumes": {
+      "description": "[Optional] - Array of shared scan volumes mounted into the agent. Agents declaring the same name share a single per-scan volume.",
+      "type": "array",
+      "items": {
+        "description": "Dictionary-like object describing a shared scan volume.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "[Required] - Logical volume name shared across agents.",
+            "type": "string",
+            "maxLength": 512
+          },
+          "path": {
+            "description": "[Required] - Mount path of the volume inside the agent container.",
+            "$ref": "#/CustomTypes/Path"
+          },
+          "read_only": {
+            "description": "[Optional] - Whether the volume is mounted read-only. Defaults to true.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "path"
+        ]
+      }
+    },
     "caps": {
       "description": "[Optional] - Array of strings of kernel capabilities to add to the default set for the container.",
       "$ref": "#/CustomTypes/ArrayOfStrings"
