@@ -522,7 +522,9 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
 
     mounts = runtime_agent.create_scan_volume_mounts(
         [
-            utils_definitions.Volume(name="repository_code", path="/code", read_only=False),
+            utils_definitions.Volume(
+                name="repository_code", path="/code", read_only=False
+            ),
             utils_definitions.Volume(name="shared_cache", path="/cache"),
         ]
     )
