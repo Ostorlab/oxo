@@ -152,6 +152,11 @@ def testRuntimeScanList_whenNoStateIsProvided_returnsAllScans(httpx_mock):
     assert scans[0].id == "58215"
     assert scans[0].progress == "done"
 
+    requests = httpx_mock.get_requests()
+    assert len(requests) == 1
+    request_body = requests[0].content.decode()
+    assert "%22state%22" not in request_body
+
 
 def testRuntimeScanList_whenStateIsProvided_forwardsStateToApi(httpx_mock):
     """Unittest for the scan list method with state filter.
