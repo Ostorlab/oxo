@@ -22,6 +22,7 @@ from ostorlab import configuration_manager
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
@@ -300,6 +301,41 @@ class AgentRuntime:
             replaced_mounts.append(mount)
         return replaced_mounts
 
+    def create_scan_volume_mounts(
+        self, volumes: List[utils_definitions.Volume]
+    ) -> List[docker.types.Mount]:
+        """Ensure each declared shared scan volume exists and build its mount.
+
+        Agents declaring the same logical volume name share a single per-scan
+        Docker volume, named `{name}_{runtime_name}`. The volume is created
+        empty on first use; later writes by any agent are visible to all.
+
+        Args:
+            volumes: Shared scan volumes declared in the agent definition.
+
+        Returns:
+            List of docker Mounts for the declared volumes.
+        """
+        volume_mounts = []
+        for volume in volumes:
+            volume_name = f"{volume.name}_{self.runtime_name}"
+            try:
+                self._docker_client.volumes.get(volume_name)
+            except errors.NotFound:
+                self._docker_client.volumes.create(
+                    name=volume_name,
+                    labels={"ostorlab.universe": self.runtime_name},
+                )
+            volume_mounts.append(
+                docker_types_services.Mount(
+                    target=volume.path,
+                    source=volume_name,
+                    type="volume",
+                    read_only=volume.read_only,
+                )
+            )
+        return volume_mounts
+
     def create_agent_service(
         self,
         network_name: str,
@@ -334,6 +370,7 @@ class AgentRuntime:
 
         mounts = self.agent.mounts or agent_definition.mounts
         mounts = self.replace_variable_mounts(mounts)
+        mounts.extend(self.create_scan_volume_mounts(agent_definition.volumes))
         if extra_mounts is not None:
             mounts.extend(extra_mounts)
 
