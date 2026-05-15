@@ -24,7 +24,7 @@ console = cli_console.Console()
     "--state",
     "-s",
     type=click.Choice(
-        ["not_started", "in_progress", "stopped", "done", "error"],
+        [e.value for e in models.ScanProgress],
         case_sensitive=False,
     ),
     help="Filter scans by state.",

@@ -570,9 +570,7 @@ class LocalRuntime(runtime.Runtime):
         with models.Database() as session:
             query = session.query(models.Scan)
             if state is not None:
-                query = query.filter(
-                    models.Scan.progress == models.ScanProgress[state.upper()]
-                )
+                query = query.filter(models.Scan.progress == models.ScanProgress(state))
             for scan in query:
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
