@@ -20,7 +20,6 @@ from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
 from ostorlab.assets import link as link_asset
 from ostorlab.scanner import callbacks
-from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import aab_pb2
 from ostorlab.scanner.proto.assets import agent_pb2
 from ostorlab.scanner.proto.assets import android_store_pb2
@@ -45,7 +44,6 @@ from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for apk asset."""
     apk_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -61,7 +59,7 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None)
 
     apk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(apk_asset, android_apk.AndroidApk) is True
@@ -72,7 +70,6 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for aab asset."""
     aab_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -88,7 +85,7 @@ def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None)
 
     aab_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(aab_asset, android_aab.AndroidAab) is True
@@ -99,7 +96,6 @@ def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipa asset."""
     ipa_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -115,7 +111,7 @@ def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", ipa_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", ipa_start_agent_scan_msg, None)
 
     ipa_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ipa_asset, ios_ipa.IOSIpa) is True
@@ -126,7 +122,6 @@ def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for harmonyos hap asset."""
     hap_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -142,7 +137,7 @@ def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", hap_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", hap_start_agent_scan_msg, None)
 
     hap_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(hap_asset, harmonyos_hap.HarmonyOSHap) is True
@@ -153,7 +148,6 @@ def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenHarmonyosApkAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for harmonyos apk asset."""
     apk_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -169,7 +163,7 @@ def testExtractAssets_whenHarmonyosApkAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None)
 
     apk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(apk_asset, harmonyos_apk.HarmonyOSApk) is True
@@ -180,7 +174,6 @@ def testExtractAssets_whenHarmonyosApkAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenHarmonyosAabAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for harmonyos aab asset."""
     aab_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -196,7 +189,7 @@ def testExtractAssets_whenHarmonyosAabAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None)
 
     aab_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(aab_asset, harmonyos_aab.HarmonyOSAab) is True
@@ -207,7 +200,6 @@ def testExtractAssets_whenHarmonyosAabAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenHarmonyosRpkAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for harmonyos rpk asset."""
     rpk_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -223,7 +215,7 @@ def testExtractAssets_whenHarmonyosRpkAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", rpk_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", rpk_start_agent_scan_msg, None)
 
     rpk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(rpk_asset, harmonyos_rpk.HarmonyOSRpk) is True
@@ -234,7 +226,6 @@ def testExtractAssets_whenHarmonyosRpkAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenHarmonyosAppAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for harmonyos .app asset."""
     app_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -250,7 +241,7 @@ def testExtractAssets_whenHarmonyosAppAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", app_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", app_start_agent_scan_msg, None)
 
     app_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(app_asset, harmonyos_app.HarmonyOSApp) is True
@@ -261,7 +252,6 @@ def testExtractAssets_whenHarmonyosAppAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for android_store asset."""
     android_store_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -277,9 +267,7 @@ def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", android_store_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", android_store_start_agent_scan_msg, None)
 
     android_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(android_store_asset, android_store.AndroidStore) is True
@@ -288,7 +276,6 @@ def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ios_store asset."""
     ios_store_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -304,9 +291,7 @@ def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", ios_store_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", ios_store_start_agent_scan_msg, None)
 
     ios_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ios_store_asset, ios_store.IOSStore) is True
@@ -315,7 +300,6 @@ def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenHarmonyosStoreAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for harmonyos_store asset."""
     harmonyos_store_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -331,9 +315,7 @@ def testExtractAssets_whenHarmonyosStoreAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", harmonyos_store_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", harmonyos_store_start_agent_scan_msg, None)
 
     store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(store_asset, harmonyos_store.HarmonyOSStore) is True
@@ -342,7 +324,6 @@ def testExtractAssets_whenHarmonyosStoreAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for domain asset."""
     domain_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -358,9 +339,7 @@ def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", domain_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", domain_start_agent_scan_msg, None)
 
     domain_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(domain_asset, domain_name.DomainName) is True
@@ -369,7 +348,6 @@ def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     agent_start_agent_scan_msg = startAgentScan_pb2.Message(
         reference_scan_id=42,
@@ -390,9 +368,7 @@ def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", agent_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", agent_start_agent_scan_msg, None)
 
     agnt_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(agnt_asset, agent_asset.Agent) is True
@@ -405,7 +381,6 @@ def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for file asset."""
     file_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -421,7 +396,7 @@ def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", file_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", file_start_agent_scan_msg, None)
 
     file_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(file_asset, file.File) is True
@@ -432,7 +407,6 @@ def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ip asset."""
     ip_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -448,7 +422,7 @@ def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", ip_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", ip_start_agent_scan_msg, None)
 
     ip_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ip_asset, ipv4.IPv4) is True
@@ -460,7 +434,6 @@ def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipv4 asset."""
     ipv4_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -476,7 +449,7 @@ def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", ipv4_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", ipv4_start_agent_scan_msg, None)
 
     ipv4_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ipv4_asset, ipv4.IPv4) is True
@@ -487,7 +460,6 @@ def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipv6 without mask asset."""
     ipv6_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -503,7 +475,7 @@ def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None)
 
     ipv6_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ipv6_asset, ipv6.IPv6) is True
@@ -515,7 +487,6 @@ def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipv6 with mask asset."""
     ipv6_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -531,7 +502,7 @@ def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None)
 
     ipv6_asset = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ipv6_asset, ipv6.IPv6) is True
@@ -542,7 +513,6 @@ def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for links asset."""
     links_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -563,9 +533,7 @@ def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", links_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", links_start_agent_scan_msg, None)
 
     link_asst1 = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(link_asst1, link_asset.Link) is True
@@ -579,7 +547,6 @@ def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for network asset."""
     network_start_agent_scan_msg = startAgentScan_pb2.Message(
@@ -602,9 +569,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
         "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
     )
 
-    callbacks.start_scan(
-        "some_subject", network_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan("some_subject", network_start_agent_scan_msg, None)
 
     ip_asset1 = runtime_scan_mock.call_args[1].get("assets")[0]
     assert isinstance(ip_asset1, ipv4.IPv4) is True
@@ -630,7 +595,6 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
 
 def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure start_scan forwards the api_key down to install_agent.install
     so the agent image is pulled with a short-lived registry token."""
@@ -658,7 +622,6 @@ def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
         "some_subject",
         start_scan_msg,
         None,
-        registry_conf,
         api_key="test_api_key",
     )
 
@@ -668,7 +631,6 @@ def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
 
 def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """When start_scan is invoked without an api_key, install_agent.install
     is called with api_key=None (anonymous pull)."""
@@ -692,7 +654,7 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
         "ostorlab.scanner.callbacks.install_agent.install"
     )
 
-    callbacks.start_scan("some_subject", start_scan_msg, None, registry_conf)
+    callbacks.start_scan("some_subject", start_scan_msg, None)
 
     install_agent_mock.assert_called_once()
     assert install_agent_mock.call_args.kwargs.get("api_key") is None

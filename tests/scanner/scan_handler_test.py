@@ -103,7 +103,7 @@ async def testSubscribeAll_whenApiKeyProvided_forwardsApiKeyToHandleMessages(
 
 @pytest.mark.asyncio
 async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
-    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
+    mocker: plugin.MockerFixture,
 ) -> None:
     """handle_messages should forward the api_key to callbacks.start_scan
     so the image pull uses a short-lived registry token."""
@@ -124,7 +124,6 @@ async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     bus_handler = mocker.MagicMock()
     bus_handler.process_message = _fake_process_message
 
-    config = scanner_conf.ScannerConfig.from_json(config=data_start_agent_scan)
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname=socket.gethostname(),
@@ -133,9 +132,7 @@ async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
     with pytest.raises(RuntimeError, match="stop"):
-        await scan_handler_instance.handle_messages(
-            bus_handler, config, api_key="test_api_key"
-        )
+        await scan_handler_instance.handle_messages(bus_handler, api_key="test_api_key")
 
     start_scan_mock.assert_called_once()
     assert start_scan_mock.call_args.kwargs.get("api_key") == "test_api_key"

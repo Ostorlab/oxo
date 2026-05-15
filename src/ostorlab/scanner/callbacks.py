@@ -32,7 +32,6 @@ from ostorlab.assets import harmonyos_rpk
 from ostorlab.assets import harmonyos_app
 from ostorlab.assets import harmonyos_store
 from ostorlab.utils import scanner_state_reporter
-from ostorlab.scanner import scanner_conf
 from ostorlab.agent.message import proto_dict
 from ostorlab import exceptions
 
@@ -157,9 +156,7 @@ def _update_state_reporter(
     return state_reporter
 
 
-def _connect_containers_registry(
-    configuration: scanner_conf.RegistryConfig,
-) -> docker.DockerClient:
+def _connect_containers_registry() -> docker.DockerClient:
     """Build a docker client for pulling agent images.
 
     Authentication is handled per-pull via a short-lived token in install_agent,
@@ -173,7 +170,6 @@ def start_scan(
     subject: str,
     request: Any,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
-    registry_conf: scanner_conf.RegistryConfig,
     api_key: str | None = None,
 ) -> str:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
@@ -182,11 +178,10 @@ def start_scan(
         subject: Subject of the received message.
         request: Deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
-        registry_conf: Credentials to the registry, useful to pull agents images.
         api_key: Optional api key to fetch short-lived download tokens for agent images.
     """
     logger.debug("Triggering scan after receiving message on: %s", subject)
-    docker_client = _connect_containers_registry(configuration=registry_conf)
+    docker_client = _connect_containers_registry()
 
     agent_group_definition = _extract_agent_group_definition(request)
     assets = _extract_assets(request)

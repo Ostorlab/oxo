@@ -74,12 +74,11 @@ class ScanHandler:
             bus_handlers.append(bus_handler)
 
         for bus_handler in bus_handlers:
-            await self.handle_messages(bus_handler, config, api_key)
+            await self.handle_messages(bus_handler, api_key)
 
     async def handle_messages(
         self,
         bus_handler: scanner_handler.BusHandler,
-        config: scanner_conf.ScannerConfig,
         api_key: str | None = None,
     ) -> None:
         """Scan handler method responsible for fetching messages from the streaming server,
@@ -89,7 +88,6 @@ class ScanHandler:
 
         Args:
             bus_handler: instance for performing BUS operations.
-            config: The scanner configuration; holds credentials for the registry & streaming server.
             api_key: Optional api key to fetch short-lived download tokens for agent images.
         """
         scan_id = None
@@ -98,7 +96,7 @@ class ScanHandler:
                 await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
             else:
                 try:
-                    scan_id = await self._handle_message(bus_handler, config, api_key)
+                    scan_id = await self._handle_message(bus_handler, api_key)
                 except nats_errors.TimeoutError:
                     # No available message to fetch.
                     await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
@@ -106,7 +104,6 @@ class ScanHandler:
     async def _handle_message(
         self,
         bus_handler: scanner_handler.BusHandler,
-        config: scanner_conf.ScannerConfig,
         api_key: str | None = None,
     ) -> str:
         """Fetch, parse a single message and trigger the corresponding scan."""
@@ -117,7 +114,6 @@ class ScanHandler:
                         subject=msg.subject,
                         request=request,
                         state_reporter=self._state_reporter,
-                        registry_conf=config.registry_conf,
                         api_key=api_key,
                     )
                     await msg.ack()
