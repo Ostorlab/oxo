@@ -98,6 +98,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_p
     mocker.patch("docker.DockerClient.services.list", side_effect=docker_services)
     mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
     mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch("docker.models.volumes.VolumeCollection.list", return_value=[])
 
     docker_service_remove = mocker.patch(
         "docker.models.services.Service.remove", return_value=None
@@ -151,6 +152,39 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     local_runtime.LocalRuntime().stop(scan_id="9999")
 
     docker_service_remove.assert_not_called()
+
+
+@pytest.mark.docker
+def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
+    mocker, db_engine_path
+):
+    """Stopping a scan should remove only volumes labeled for that scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_scan_db = models.Scan.create("test")
+
+    matching_volume = mocker.MagicMock(
+        name="matching_volume",
+        attrs={"Labels": {"ostorlab.universe": str(create_scan_db.id)}},
+    )
+    other_volume = mocker.MagicMock(
+        name="other_volume",
+        attrs={"Labels": {"ostorlab.universe": "9999"}},
+    )
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch(
+        "docker.models.volumes.VolumeCollection.list",
+        return_value=[matching_volume, other_volume],
+    )
+
+    local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
+
+    matching_volume.remove.assert_called_once_with(force=True)
+    other_volume.remove.assert_not_called()
 
 
 def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):

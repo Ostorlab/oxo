@@ -691,3 +691,61 @@ def testCreateAgentService_whenServiceNameIsSet_addsMachineNameAsEnvVar(
         "UNIVERSE not found in env variables"
     )
     assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars
+
+
+def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Missing shared scan volumes should be created and mounted per scan."""
+    mock_docker_client = mocker.MagicMock()
+    mock_docker_client.info.return_value = {"Name": "host"}
+    mock_docker_client.volumes.get.side_effect = [
+        docker.errors.NotFound("missing"),
+        mocker.MagicMock(),
+    ]
+    create_volume_mock = mock_docker_client.volumes.create
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mount_mock = mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.docker_types_services.Mount",
+        side_effect=["mount-1", "mount-2"],
+    )
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        ostorlab.runtimes.definitions.AgentSettings(key="agent/org/name"),
+        "scan-42",
+        mock_docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+    )
+
+    mounts = runtime_agent.create_scan_volume_mounts(
+        [
+            utils_defintions.Volume(
+                name="repository_code", path="/code", read_only=False
+            ),
+            utils_defintions.Volume(name="shared_cache", path="/cache"),
+        ]
+    )
+
+    assert mounts == ["mount-1", "mount-2"]
+    mock_docker_client.volumes.get.assert_any_call("repository_code_scan-42")
+    mock_docker_client.volumes.get.assert_any_call("shared_cache_scan-42")
+    create_volume_mock.assert_called_once_with(
+        name="repository_code_scan-42",
+        labels={"ostorlab.universe": "scan-42"},
+    )
+    assert mount_mock.call_args_list[0].kwargs == {
+        "target": "/code",
+        "source": "repository_code_scan-42",
+        "type": "volume",
+        "read_only": False,
+    }

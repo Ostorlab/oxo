@@ -10,6 +10,7 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
+from ostorlab.utils import definitions as utils_definitions
 
 
 def container_name_mock(name):
@@ -119,6 +120,44 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     ).stop(scan_id="9999")
 
     docker_service_remove.assert_not_called()
+
+
+@pytest.mark.docker
+def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(mocker):
+    """Stopping a scan should remove only volumes labeled for that scan."""
+    matching_volume = mocker.MagicMock(
+        name="matching_volume",
+        attrs={"Labels": {"ostorlab.universe": "1"}},
+    )
+    other_volume = mocker.MagicMock(
+        name="other_volume",
+        attrs={"Labels": {"ostorlab.universe": "9999"}},
+    )
+
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch(
+        "docker.models.volumes.VolumeCollection.list",
+        return_value=[matching_volume, other_volume],
+    )
+
+    lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    ).stop(scan_id="1")
+
+    matching_volume.remove.assert_called_once_with(force=True)
+    other_volume.remove.assert_not_called()
 
 
 def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(mocker):
@@ -477,3 +516,64 @@ def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUn
         "UNIVERSE not found in env variables"
     )
     assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars
+
+
+def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Missing shared scan volumes should be created and mounted per scan."""
+    mock_docker_client = mocker.MagicMock()
+    mock_docker_client.info.return_value = {"Name": "host"}
+    mock_docker_client.volumes.get.side_effect = [
+        docker.errors.NotFound("missing"),
+        mocker.MagicMock(),
+    ]
+    create_volume_mock = mock_docker_client.volumes.create
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mount_mock = mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.docker_types_services.Mount",
+        side_effect=["mount-1", "mount-2"],
+    )
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        ostorlab.runtimes.definitions.AgentSettings(key="agent/org/name"),
+        "scan-42",
+        mock_docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+
+    mounts = runtime_agent.create_scan_volume_mounts(
+        [
+            utils_definitions.Volume(
+                name="repository_code", path="/code", read_only=False
+            ),
+            utils_definitions.Volume(name="shared_cache", path="/cache"),
+        ]
+    )
+
+    assert mounts == ["mount-1", "mount-2"]
+    mock_docker_client.volumes.get.assert_any_call("repository_code_scan-42")
+    mock_docker_client.volumes.get.assert_any_call("shared_cache_scan-42")
+    create_volume_mock.assert_called_once_with(
+        name="repository_code_scan-42",
+        labels={"ostorlab.universe": "scan-42"},
+    )
+    assert mount_mock.call_args_list[0].kwargs == {
+        "target": "/code",
+        "source": "repository_code_scan-42",
+        "type": "volume",
+        "read_only": False,
+    }
