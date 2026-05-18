@@ -1,6 +1,9 @@
 """Docker builder with log progress streaming."""
+
 import itertools
+import os
 import re
+import subprocess
 from typing import Generator, Dict, Any, Optional, Tuple
 
 import docker
@@ -18,7 +21,9 @@ class BuildProgress(Collection):
     def __init__(self) -> None:
         super().__init__(client=docker.from_env())
 
-    def build(self, **kwargs: Any) -> Generator[Dict[str, Any], None, Optional[Tuple[Any, Any]]]:
+    def build(
+        self, **kwargs: Any
+    ) -> Generator[Dict[str, Any], None, Optional[Tuple[Any, Any]]]:
         """Build command that copies the initial implementation with log streaming.
 
         Args:
@@ -27,6 +32,72 @@ class BuildProgress(Collection):
         Yields:
             Log dict with stream or aux as keys and log content in the value.
         """
+        try:
+            return self._build_with_cli(**kwargs)
+        except (subprocess.CalledProcessError, BuildError):
+            return self._build_with_sdk(**kwargs)
+
+    def _build_with_cli(
+        self, **kwargs: Any
+    ) -> Generator[Dict[str, Any], None, Optional[Tuple[Any, Any]]]:
+        """Build using Docker CLI to support BuildKit features."""
+
+        path = kwargs.get("path", ".")
+        dockerfile = kwargs.get("dockerfile")
+        tag = kwargs.get("tag")
+        labels = kwargs.get("labels", {})
+        nocache = kwargs.get("nocache", False)
+
+        command = ["docker", "build", "--progress=plain"]
+        if tag:
+            command.extend(["-t", tag])
+        if dockerfile:
+            command.extend(["-f", dockerfile])
+        if nocache:
+            command.append("--no-cache")
+        for key, value in labels.items():
+            command.extend(["--label", f"{key}={value}"])
+        command.append(path)
+
+        build_env = os.environ.copy()
+        build_env["DOCKER_BUILDKIT"] = "1"
+
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            env=build_env,
+        )
+
+        image_id = None
+        for line in process.stdout:
+            yield {"stream": line}
+            if "Successfully built" in line or "sha256:" in line:
+                match = re.search(r"(Successfully built |sha256:)([0-9a-f]+)", line)
+                if match:
+                    image_id = match.group(2)
+
+        process.wait()
+        if process.returncode != 0:
+            yield {
+                "error": f"Docker build failed with return code {process.returncode}"
+            }
+            raise BuildError(
+                f"Docker build failed with return code {process.returncode}", None
+            )
+
+        if image_id:
+            return (self.get(image_id), None)
+        elif tag:
+            return (self.get(tag), None)
+
+        return None
+
+    def _build_with_sdk(
+        self, **kwargs: Any
+    ) -> Generator[Dict[str, Any], None, Optional[Tuple[Any, Any]]]:
+        """SDK-based build."""
         resp = self.client.api.build(**kwargs)
         if isinstance(resp, str):
             return self.get(resp)
