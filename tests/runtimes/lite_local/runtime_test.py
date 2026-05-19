@@ -160,6 +160,41 @@ def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(mocker):
     other_volume.remove.assert_not_called()
 
 
+def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(mocker):
+    """Ensure LiteLocalRuntime.list() accepts the state parameter without TypeError."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+    with pytest.raises(NotImplementedError):
+        runtime.list(state="done")
+
+
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreatedWithAgentSettings(
     mocker,
 ):

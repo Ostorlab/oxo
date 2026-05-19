@@ -3,7 +3,7 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
-from typing import Union
+from typing import Optional, Union
 
 import click
 
@@ -20,15 +20,26 @@ console = cli_console.Console()
     "--page", "-p", help="Page number of scans you would like to see.", default=1
 )
 @click.option("--elements", "-e", help="Number of scans to show per page.", default=10)
+@click.option(
+    "--state",
+    "-s",
+    type=click.Choice(
+        [e.value for e in models.ScanProgress],
+        case_sensitive=False,
+    ),
+    help="Filter scans by state.",
+)
 @click.pass_context
-def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
+def list_scans(
+    ctx: click.core.Context, page: int, elements: int, state: Optional[str]
+) -> None:
     """List all your scans.\n
     Usage:\n
         - ostorlab scan --runtime=runtime list
     """
     runtime_instance = ctx.obj["runtime"]
     with console.status("Fetching scans"):
-        scans = runtime_instance.list(page=page, number_elements=elements)
+        scans = runtime_instance.list(page=page, number_elements=elements, state=state)
         if scans is not None:
             console.success("Scans listed successfully.")
             columns = {
