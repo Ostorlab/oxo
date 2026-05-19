@@ -144,6 +144,36 @@ def testScanRunRisk_whenLinkProvided_shouldCallScanWithRiskAssetContainingLink(
     assert assets[0].link == {"url": "https://example.com", "method": "GET"}
 
 
+def testScanRunRisk_whenRepositoryProvided_shouldCallScanWithRiskAssetContainingRepository(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """Test oxo scan run risk command with --repository-url populates repository field."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=LOW",
+            "--description=Repository risk",
+            "--repository-url=https://github.com/org/repo.git",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].repository == {"repository_url": "https://github.com/org/repo.git"}
+
+
 def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(
     mocker: pytest_mock.MockerFixture,
 ) -> None:

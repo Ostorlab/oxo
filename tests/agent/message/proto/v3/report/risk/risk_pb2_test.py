@@ -3,6 +3,7 @@
 from src.ostorlab.agent.message.proto.v3.report.risk import risk_pb2
 from src.ostorlab.agent.message.proto.v3.asset.file.api_schema import api_schema_pb2
 from src.ostorlab.agent.message.proto.v3.asset.phone_number import phone_number_pb2
+from src.ostorlab.agent.message.proto.v3.asset.repository import repository_pb2
 from src.ostorlab.agent.message.proto.v3.asset.store.ios_testflight import (
     ios_testflight_pb2,
 )
@@ -71,3 +72,29 @@ def testMessage_whenCreateWithPhoneNumber_shouldSerializeAndDeserializeCorrectly
     assert deserialized.phone_number.number == "+15555550123"
     assert deserialized.description == "Phone-based social engineering risk"
     assert deserialized.rating == "HIGH"
+
+
+def testMessage_whenCreateWithRepository_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
+    """Test that risk message with repository asset serializes correctly."""
+    repository_asset = repository_pb2.Message()
+    repository_asset.repository_url = "https://github.com/org/repo.git"
+    repository_asset.commit_hash = "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+
+    risk_message = risk_pb2.Message()
+    risk_message.repository.CopyFrom(repository_asset)
+    risk_message.description = "Repository exposes secrets"
+    risk_message.rating = "CRITICAL"
+
+    serialized = risk_message.SerializeToString()
+    deserialized = risk_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert deserialized.repository.repository_url == "https://github.com/org/repo.git"
+    assert (
+        deserialized.repository.commit_hash
+        == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    )
+    assert deserialized.description == "Repository exposes secrets"
+    assert deserialized.rating == "CRITICAL"

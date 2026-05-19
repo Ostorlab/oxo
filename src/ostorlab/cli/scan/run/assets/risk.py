@@ -166,6 +166,13 @@ _RISK_RATINGS = [
     multiple=True,
     help="API schema HTTP header in 'Name: Value' format. Can be repeated.",
 )
+@click.option(
+    "--repository-url",
+    "--repository",
+    required=False,
+    default=None,
+    help="Source code repository the risk applies to.",
+)
 @click.pass_context
 def risk_cli(
     ctx: click.core.Context,
@@ -190,6 +197,7 @@ def risk_cli(
     api_schema_endpoint: Optional[str],
     api_schema_type: Optional[str],
     api_schema_headers: tuple,
+    repository_url: Optional[str],
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
     Example:\n
@@ -319,6 +327,9 @@ def risk_cli(
                 parsed_schema_headers.append({"name": name, "value": value})
             schema_dict["extra_headers"] = parsed_schema_headers
         risk_kwargs["api_schema"] = schema_dict
+
+    if repository_url is not None:
+        risk_kwargs["repository"] = {"repository_url": repository_url}
 
     assets = [risk_asset.Risk(**risk_kwargs)]
 
