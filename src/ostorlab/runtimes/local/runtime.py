@@ -171,7 +171,7 @@ class LocalRuntime(runtime.Runtime):
             if not docker_requirements_checker.is_swarm_initialized():
                 docker_requirements_checker.init_swarm()
 
-        self._docker_client = docker.from_env()
+        self._docker_client = docker.from_env(max_pool_size=100)
 
     def prepare_scan(
         self, title: str, assets: Optional[List[base_asset.Asset]]
