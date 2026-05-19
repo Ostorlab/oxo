@@ -15,6 +15,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import repository as repository_asset
 
 
 @dataclasses.dataclass
@@ -34,6 +35,7 @@ class Risk(asset.Asset):
     android_apk: Optional[android_apk_asset.AndroidApk] = None
     ios_ipa: Optional[ios_ipa_asset.IOSIpa] = None
     api_schema: Optional[api_schema_asset.ApiSchema] = None
+    repository: Optional[repository_asset.Repository] = None
 
     def to_proto(self) -> bytes:
         data = {
