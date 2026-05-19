@@ -136,7 +136,7 @@ class LiteLocalRuntime(runtime.Runtime):
         else:
             if not docker_requirements_checker.is_swarm_initialized():
                 docker_requirements_checker.init_swarm()
-            self._docker_client = docker.from_env()
+            self._docker_client = docker.from_env(max_pool_size=100)
 
     @property
     def name(self) -> str:

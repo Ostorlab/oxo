@@ -1,9 +1,10 @@
 """Module Responsible for subscribing to nats for different subjects."""
 
+from __future__ import annotations
+
 import logging
 import asyncio
 import datetime
-from typing import List, Optional
 
 import docker
 from docker.models import services
@@ -57,7 +58,9 @@ class ScanHandler:
         self._bus_handlers.append(bus_handler)
         return bus_handler
 
-    async def subscribe_all(self, config: scanner_conf.ScannerConfig) -> None:
+    async def subscribe_all(
+        self, config: scanner_conf.ScannerConfig, api_key: str | None = None
+    ) -> None:
         bus_handlers = []
         for bus_conf in config.subject_bus_configs:
             bus_handler = await self._subscribe(
@@ -71,12 +74,12 @@ class ScanHandler:
             bus_handlers.append(bus_handler)
 
         for bus_handler in bus_handlers:
-            await self.handle_messages(bus_handler, config)
+            await self.handle_messages(bus_handler, api_key)
 
     async def handle_messages(
         self,
         bus_handler: scanner_handler.BusHandler,
-        config: scanner_conf.ScannerConfig,
+        api_key: str | None = None,
     ) -> None:
         """Scan handler method responsible for fetching messages from the streaming server,
         parse the messages and trigger the scan.
@@ -85,7 +88,7 @@ class ScanHandler:
 
         Args:
             bus_handler: instance for performing BUS operations.
-            config: The scanner configuration; holds credentials for the registry & streaming server.
+            api_key: Optional api key to fetch short-lived download tokens for agent images.
         """
         scan_id = None
         while True:
@@ -93,7 +96,7 @@ class ScanHandler:
                 await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
             else:
                 try:
-                    scan_id = await self._handle_message(bus_handler, config)
+                    scan_id = await self._handle_message(bus_handler, api_key)
                 except nats_errors.TimeoutError:
                     # No available message to fetch.
                     await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
@@ -101,7 +104,7 @@ class ScanHandler:
     async def _handle_message(
         self,
         bus_handler: scanner_handler.BusHandler,
-        config: scanner_conf.ScannerConfig,
+        api_key: str | None = None,
     ) -> str:
         """Fetch, parse a single message and trigger the corresponding scan."""
         async for msg, request in bus_handler.process_message():
@@ -111,7 +114,7 @@ class ScanHandler:
                         subject=msg.subject,
                         request=request,
                         state_reporter=self._state_reporter,
-                        registry_conf=config.registry_conf,
+                        api_key=api_key,
                     )
                     await msg.ack()
                     return scan_id
@@ -130,15 +133,13 @@ class ScanHandler:
         return bus_handler
 
 
-def _is_scan_running(
-    client: docker.DockerClient, scan_id: Optional[str] = None
-) -> bool:
+def _is_scan_running(client: docker.DockerClient, scan_id: str | None = None) -> bool:
     """Returns True, if docker services with `ostorlab.universe` label exist,
     False otherwise.
     """
     if scan_id is None:
         return False
-    scan_services: List[services.Service] = client.services.list(
+    scan_services: list[services.Service] = client.services.list(
         filters={"label": f"ostorlab.universe={str(scan_id)}"}
     )
     return len(scan_services) > 0
@@ -148,6 +149,7 @@ async def connect_nats(
     config: scanner_conf.ScannerConfig,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
+    api_key: str | None = None,
 ) -> ScanHandler:
     """connecting to nats.
 
@@ -155,12 +157,13 @@ async def connect_nats(
         config: The scanner configuration; holds credentials for the registry & streaming server.
         scanner_id: The scanner identifier.
         state_reporter: instance responsible for reporting the scanner state.
+        api_key: Optional api key to fetch short-lived download tokens for agent images.
     """
     try:
         logger.info("starting bus runner for scanner %s", scanner_id)
         scan_handler = ScanHandler(state_reporter)
         logger.info("connected, subscribing to plans channels ...")
-        await scan_handler.subscribe_all(config)
+        await scan_handler.subscribe_all(config, api_key)
         logger.info("subscribed")
         return scan_handler
     except jetstream_errors.ServiceUnavailableError as e:
@@ -189,4 +192,4 @@ async def subscribe_nats(
         return
 
     logger.info("Connecting to nats.")
-    await connect_nats(config, scanner_id, state_reporter)
+    await connect_nats(config, scanner_id, state_reporter, api_key)
