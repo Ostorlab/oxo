@@ -432,3 +432,26 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
 
     docker_service_remove.assert_called_once()
     docker_network_remove.assert_called_once()
+
+
+def testLocalRuntimeInit_always_setsMaxPoolSize(mocker):
+    """Test LocalRuntime initializes docker client with increased pool size."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mock_from_env = mocker.patch("docker.from_env")
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._docker_checks()
+    mock_from_env.assert_any_call(max_pool_size=100)
