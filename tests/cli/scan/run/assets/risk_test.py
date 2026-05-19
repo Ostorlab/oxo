@@ -148,7 +148,7 @@ def testScanRunRisk_whenRepositoryProvided_shouldCallScanWithRiskAssetContaining
     scan_run_cli_runner: testing.CliRunner,
     mocker: pytest_mock.MockerFixture,
 ) -> None:
-    """Test oxo scan run risk command with --repository-url populates repository field."""
+    """Test oxo scan run risk command with repository URL and commit hash."""
     scan_mocked = mocker.patch(
         "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
     )
@@ -163,6 +163,7 @@ def testScanRunRisk_whenRepositoryProvided_shouldCallScanWithRiskAssetContaining
             "--severity=LOW",
             "--description=Repository risk",
             "--repository-url=https://github.com/org/repo.git",
+            "--commit-hash=a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
         ],
     )
 
@@ -171,7 +172,31 @@ def testScanRunRisk_whenRepositoryProvided_shouldCallScanWithRiskAssetContaining
     assets = scan_mocked.call_args[1].get("assets")
     assert len(assets) == 1
     assert isinstance(assets[0], risk_asset.Risk)
-    assert assets[0].repository == {"repository_url": "https://github.com/org/repo.git"}
+    assert assets[0].repository == {
+        "repository_url": "https://github.com/org/repo.git",
+        "commit_hash": "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
+    }
+
+
+def testScanRunRisk_whenRepositoryIncomplete_shouldExitWithError(
+    scan_run_cli_runner: testing.CliRunner,
+) -> None:
+    """Test oxo scan run risk command requires repository URL and commit hash together."""
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=LOW",
+            "--description=Repository risk",
+            "--repository-url=https://github.com/org/repo.git",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "Provide both --repository-url and --commit-hash together." in result.output
 
 
 def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(

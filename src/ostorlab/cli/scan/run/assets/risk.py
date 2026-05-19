@@ -173,6 +173,12 @@ _RISK_RATINGS = [
     default=None,
     help="Source code repository the risk applies to.",
 )
+@click.option(
+    "--commit-hash",
+    required=False,
+    default=None,
+    help="Commit hash for the source code repository.",
+)
 @click.pass_context
 def risk_cli(
     ctx: click.core.Context,
@@ -198,6 +204,7 @@ def risk_cli(
     api_schema_type: Optional[str],
     api_schema_headers: tuple,
     repository_url: Optional[str],
+    commit_hash: Optional[str],
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
     Example:\n
@@ -224,6 +231,9 @@ def risk_cli(
         raise click.exceptions.Exit(2)
     if api_schema_file is not None and api_schema_url is not None:
         console.error("Provide either --api-schema-file or --api-schema-url, not both.")
+        raise click.exceptions.Exit(2)
+    if (repository_url is None) != (commit_hash is None):
+        console.error("Provide both --repository-url and --commit-hash together.")
         raise click.exceptions.Exit(2)
 
     runtime = ctx.obj["runtime"]
@@ -328,8 +338,11 @@ def risk_cli(
             schema_dict["extra_headers"] = parsed_schema_headers
         risk_kwargs["api_schema"] = schema_dict
 
-    if repository_url is not None:
-        risk_kwargs["repository"] = {"repository_url": repository_url}
+    if repository_url is not None and commit_hash is not None:
+        risk_kwargs["repository"] = {
+            "repository_url": repository_url,
+            "commit_hash": commit_hash,
+        }
 
     assets = [risk_asset.Risk(**risk_kwargs)]
 
