@@ -1,8 +1,10 @@
 """Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
 
+from __future__ import annotations
+
 import logging
 import ipaddress
-from typing import Any, Optional
+from typing import Any
 
 import docker
 
@@ -30,7 +32,6 @@ from ostorlab.assets import harmonyos_rpk
 from ostorlab.assets import harmonyos_app
 from ostorlab.assets import harmonyos_store
 from ostorlab.utils import scanner_state_reporter
-from ostorlab.scanner import scanner_conf
 from ostorlab.agent.message import proto_dict
 from ostorlab import exceptions
 
@@ -41,14 +42,18 @@ logger = logging.getLogger(__name__)
 def _install_agents(
     runtime_instance: runtime.Runtime,
     agents,
-    docker_client: Optional[docker.DockerClient] = None,
+    docker_client: docker.DockerClient | None = None,
+    api_key: str | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
         runtime_instance.install(docker_client=docker_client)
         for agent in agents:
             install_agent.install(
-                agent_key=agent.key, version=agent.version, docker_client=docker_client
+                agent_key=agent.key,
+                version=agent.version,
+                docker_client=docker_client,
+                api_key=api_key,
             )
     except agent_fetcher.AgentDetailsNotFound:
         logger.warning("agent %s not found on the store", agent.key)
@@ -151,25 +156,21 @@ def _update_state_reporter(
     return state_reporter
 
 
-def _connect_containers_registry(
-    configuration: scanner_conf.RegistryConfig,
-) -> docker.DockerClient:
-    """Connect to container registry."""
-    logger.debug("Connecting to private container registry.")
-    client = docker.from_env()
-    client.login(
-        username=configuration.username,
-        password=configuration.token,
-        registry=configuration.url,
-    )
-    return client
+def _connect_containers_registry() -> docker.DockerClient:
+    """Build a docker client for pulling agent images.
+
+    Authentication is handled per-pull via a short-lived token in install_agent,
+    so no registry login is performed here.
+    """
+    logger.debug("Creating docker client for private container registry.")
+    return docker.from_env()
 
 
 def start_scan(
     subject: str,
     request: Any,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
-    registry_conf: scanner_conf.RegistryConfig,
+    api_key: str | None = None,
 ) -> str:
     """Responsible for triggering an Ostorlab scan, after receiving a startAgentScan message in NATs.
 
@@ -177,10 +178,10 @@ def start_scan(
         subject: Subject of the received message.
         request: Deserialized message.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
-        registry_conf: Credentials to the registry, useful to pull agents images.
+        api_key: Optional api key to fetch short-lived download tokens for agent images.
     """
     logger.debug("Triggering scan after receiving message on: %s", subject)
-    docker_client = _connect_containers_registry(configuration=registry_conf)
+    docker_client = _connect_containers_registry()
 
     agent_group_definition = _extract_agent_group_definition(request)
     assets = _extract_assets(request)
@@ -197,6 +198,7 @@ def start_scan(
             runtime_instance=runtime_instance,
             agents=request.agents,
             docker_client=docker_client,
+            api_key=api_key,
         )
 
         try:

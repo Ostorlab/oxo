@@ -1,8 +1,10 @@
 """Module responsible for fetching the agent details from the container image."""
 
+from __future__ import annotations
+
 import logging
 import io
-from typing import Any, Optional
+from typing import Any
 
 import docker
 import docker.errors
@@ -63,7 +65,7 @@ def get_details(agent_key: str) -> dict[str, Any]:
 
 def get_definition(
     agent_key: str,
-    version: Optional[str] = None,
+    version: str | None = None,
 ) -> agent_definitions.AgentDefinition:
     """Fetch the agent definition.
 
@@ -89,7 +91,7 @@ def get_definition(
     return agent_definition
 
 
-def get_container_image(agent_key: str, version: Optional[str] = None) -> Optional[str]:
+def get_container_image(agent_key: str, version: str | None = None) -> str | None:
     """Get the agent container image name based on the agent key and optional version. If the version is not specified,
     the latest version is returned if found, otherwise, None is returned.
 
