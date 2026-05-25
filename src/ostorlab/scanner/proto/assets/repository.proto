@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.repository;
+
+message Message {
+  optional string repository_url = 1;
+  optional string commit_hash = 2;
+}
