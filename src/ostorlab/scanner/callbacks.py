@@ -31,6 +31,7 @@ from ostorlab.assets import harmonyos_aab
 from ostorlab.assets import harmonyos_rpk
 from ostorlab.assets import harmonyos_app
 from ostorlab.assets import harmonyos_store
+from ostorlab.assets import repository as repository_asset
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.agent.message import proto_dict
 from ostorlab import exceptions
@@ -113,6 +114,8 @@ def _extract_assets(request: Any) -> list[asset.Asset]:
         assets.append(agent_asset.Agent(**asset_value))
     elif asset_type == "file":
         assets.append(file.File(**asset_value))
+    elif asset_type == "repository":
+        assets.append(repository_asset.Repository(**asset_value))
     elif asset_type == "network":
         for ip in asset_value.get("ips"):
             ip_asset = _prepare_ip_asset(ip)
