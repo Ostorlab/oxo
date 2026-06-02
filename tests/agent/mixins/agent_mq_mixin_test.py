@@ -155,6 +155,43 @@ def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
     assert mock_send_message.call_count == 6
 
 
+def testAgentMqMixin_whenNoCurrentLoop_shouldCreateEventLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin creates a loop when none is available."""
+    mocker.patch("asyncio.get_event_loop", side_effect=RuntimeError)
+    new_event_loop = mocker.patch("asyncio.new_event_loop")
+    set_event_loop = mocker.patch("asyncio.set_event_loop")
+
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    assert agent._loop is new_event_loop.return_value
+    set_event_loop.assert_called_once_with(new_event_loop.return_value)
+
+
+def testAgentMqMixin_whenLoopIsProvided_usesProvidedLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin uses the explicitly provided event loop."""
+    provided_loop = asyncio.new_event_loop()
+    get_event_loop = mocker.patch("asyncio.get_event_loop")
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+        loop=provided_loop,
+    )
+    assert agent._loop is provided_loop
+    get_event_loop.assert_not_called()
+    provided_loop.close()
+
+
 def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
     mocker: plugin.MockerFixture,
 ) -> None:

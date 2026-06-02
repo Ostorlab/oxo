@@ -43,7 +43,14 @@ class AgentMQMixin:
         self._queue_name = f"{self._name}_queue"
         self._url = url
         self._topic = topic
-        self._loop = loop or asyncio.get_event_loop()
+        if loop is not None:
+            self._loop = loop
+        else:
+            try:
+                self._loop = asyncio.get_event_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._queue: Optional[aio_pika.Queue] = None
