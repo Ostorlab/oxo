@@ -6,7 +6,8 @@ import logging
 import ssl
 import sys
 import traceback
-from typing import Optional
+
+import tempfile
 
 from nats.js import errors as jetstream_errors
 from nats import errors as nats_errors
@@ -36,14 +37,21 @@ class ClientBusHandler:
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: Optional[ssl.SSLContext] = None,
+        tls_context: ssl.SSLContext | None = None,
         loop=None,
+        nats_user_creds: str | None = None,
     ):
         self._bus_url = bus_url
         self._cluster_id = cluster_id
         self._name = name
+        self._nats_user_creds = nats_user_creds
+        self._creds_file = None
+        if self._nats_user_creds:
+            self._creds_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+            self._creds_file.write(self._nats_user_creds)
+            self._creds_file.flush()
         self._nc: nats.NATS = nats.NATS()
-        self._js: Optional[js_client.JetStreamContext] = None
+        self._js: js_client.JetStreamContext | None = None
         self._loop = loop or asyncio.get_event_loop()
         if tls_context is None and bus_url.startswith("tls://"):
             self._tls_context = ssl.create_default_context()
@@ -64,14 +72,20 @@ class ClientBusHandler:
         Args:
             connect_timeout: Timeout for establishing the connection. Defaults to DEFAULT_CONNECT_TIMEOUT.
         """
+        kwargs = {
+            "servers": [self._bus_url],
+            "name": self._name,
+            "tls": self._tls_context,
+            "connect_timeout": connect_timeout,
+            "error_cb": self._error_cb,
+            "closed_cb": self._closed_cb,
+            "reconnected_cb": self._reconnected_cb,
+        }
+        if self._creds_file:
+            kwargs["user_credentials"] = self._creds_file.name
+
         await self._nc.connect(
-            self._bus_url,
-            name=self._name,
-            tls=self._tls_context,
-            connect_timeout=connect_timeout,
-            error_cb=self._error_cb,
-            closed_cb=self._closed_cb,
-            reconnected_cb=self._reconnected_cb,
+            **kwargs,
         )
         self._js = self._nc.jetstream()
 
@@ -123,8 +137,9 @@ class BusHandler(ClientBusHandler):
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: Optional[ssl.SSLContext] = None,
+        tls_context: ssl.SSLContext | None = None,
         loop=None,
+        nats_user_creds: str | None = None,
     ):
         super().__init__(
             bus_url=bus_url,
@@ -132,6 +147,7 @@ class BusHandler(ClientBusHandler):
             name=name,
             tls_context=tls_context,
             loop=loop,
+            nats_user_creds=nats_user_creds,
         )
         self._subjects_cb_map = {}
         self._last_message_received_time = datetime.datetime.now()
@@ -162,7 +178,7 @@ class BusHandler(ClientBusHandler):
     async def subscribe(
         self,
         subject: str,
-        durable_name: Optional[str] = None,
+        durable_name: str | None = None,
         start_at: str = "first",
         max_inflight: int = DEFAULT_MAX_INFLIGHT,
         ack_wait: int = DEFAULT_ACK_WAIT.seconds,
