@@ -43,7 +43,6 @@ class AgentMQMixin:
         self._queue_name = f"{self._name}_queue"
         self._url = url
         self._topic = topic
-        self._loop = loop or asyncio.get_event_loop()
         if loop is not None:
             self._loop = loop
         else:
