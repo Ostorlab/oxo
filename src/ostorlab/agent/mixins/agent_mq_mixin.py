@@ -6,6 +6,7 @@ Definition of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
+from typing import Optional
 
 import aio_pika
 import tenacity
@@ -173,7 +174,7 @@ class AgentMQMixin:
         raise NotImplementedError()
 
     async def async_mq_send_message(
-        self, key: str, message: bytes, message_priority: int | None = None
+        self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """Async Send the message to the provided routing key and its priority.
         Args:
@@ -206,7 +207,7 @@ class AgentMQMixin:
         reraise=True,
     )
     def mq_send_message(
-        self, key: str, message: bytes, message_priority: int | None = None
+        self, key: str, message: bytes, message_priority: Optional[int] = None
     ) -> None:
         """The method sends the message to the selected key with the defined priority in async mode .
         Args:
