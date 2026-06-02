@@ -17,21 +17,6 @@ NUMBER_RETRIES = 6
 WAIT_FIXED_TIME = 5
 
 
-def _resolve_event_loop(
-    loop: Optional[asyncio.AbstractEventLoop],
-) -> asyncio.AbstractEventLoop:
-    """Return the provided loop or resolve one for the current thread."""
-    if loop is not None:
-        return loop
-
-    try:
-        return asyncio.get_running_loop()
-    except RuntimeError:
-        new_loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(new_loop)
-        return new_loop
-
-
 class AgentMQMixin:
     """MQ Mixin class used to initialize the channel, send messages and process them."""
 
@@ -58,7 +43,7 @@ class AgentMQMixin:
         self._queue_name = f"{self._name}_queue"
         self._url = url
         self._topic = topic
-        self._loop = _resolve_event_loop(loop)
+        self._loop = loop or asyncio.get_event_loop()
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._queue: Optional[aio_pika.Queue] = None
