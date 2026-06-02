@@ -6,7 +6,6 @@ Definition of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
-from typing import List, Optional
 
 import aio_pika
 import tenacity
@@ -18,7 +17,7 @@ WAIT_FIXED_TIME = 5
 
 
 def _resolve_event_loop(
-    loop: Optional[asyncio.AbstractEventLoop],
+    loop: asyncio.AbstractEventLoop | None,
 ) -> asyncio.AbstractEventLoop:
     """Return the provided loop or resolve one for the current thread."""
     if loop is not None:
@@ -27,12 +26,9 @@ def _resolve_event_loop(
     try:
         return asyncio.get_running_loop()
     except RuntimeError:
-        try:
-            return asyncio.get_event_loop_policy().get_event_loop()
-        except RuntimeError:
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            return new_loop
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        return new_loop
 
 
 class AgentMQMixin:
@@ -41,12 +37,12 @@ class AgentMQMixin:
     def __init__(
         self,
         name: str,
-        keys: List[str],
+        keys: list[str],
         url: str,
         topic: str,
-        max_priority: Optional[int] = None,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
-    ):
+        max_priority: int | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
         Args:
             name: Name of the queue.
@@ -64,7 +60,7 @@ class AgentMQMixin:
         self._loop = _resolve_event_loop(loop)
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-        self._queue: Optional[aio_pika.Queue] = None
+        self._queue: aio_pika.Queue | None = None
         self._connection_pool: aio_pika.pool.Pool[aio_pika.Connection] = (
             aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
         )
@@ -177,7 +173,7 @@ class AgentMQMixin:
         raise NotImplementedError()
 
     async def async_mq_send_message(
-        self, key: str, message: bytes, message_priority: Optional[int] = None
+        self, key: str, message: bytes, message_priority: int | None = None
     ) -> None:
         """Async Send the message to the provided routing key and its priority.
         Args:
@@ -210,7 +206,7 @@ class AgentMQMixin:
         reraise=True,
     )
     def mq_send_message(
-        self, key: str, message: bytes, message_priority: Optional[int] = None
+        self, key: str, message: bytes, message_priority: int | None = None
     ) -> None:
         """The method sends the message to the selected key with the defined priority in async mode .
         Args:

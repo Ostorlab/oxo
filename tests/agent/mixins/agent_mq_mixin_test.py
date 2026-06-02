@@ -155,6 +155,70 @@ def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
     assert mock_send_message.call_count == 6
 
 
+def testAgentMqMixin_whenLoopProvided_shouldUseProvidedLoop() -> None:
+    """Test that the provided event loop is used during initialization."""
+    provided_loop = asyncio.new_event_loop()
+
+    try:
+        agent = agent_mq_mixin.AgentMQMixin(
+            name="test",
+            keys=["a.#"],
+            url="amqp://guest:guest@localhost:5672/",
+            topic="test_topic",
+            loop=provided_loop,
+        )
+    finally:
+        provided_loop.close()
+
+    assert agent._loop is provided_loop
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_whenRunningLoopExists_shouldUseRunningLoop() -> None:
+    """Test that the running event loop is reused during initialization."""
+    running_loop = asyncio.get_running_loop()
+
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    assert agent._loop is running_loop
+
+
+def testAgentMqMixin_whenNoCurrentLoop_shouldCreateLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that initialization creates and registers a loop when none exists."""
+    created_loop = asyncio.new_event_loop()
+    set_event_loop = mocker.patch(
+        "ostorlab.agent.mixins.agent_mq_mixin.asyncio.set_event_loop"
+    )
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_mq_mixin.asyncio.get_running_loop",
+        side_effect=RuntimeError("no running loop"),
+    )
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_mq_mixin.asyncio.new_event_loop",
+        return_value=created_loop,
+    )
+
+    try:
+        agent = agent_mq_mixin.AgentMQMixin(
+            name="test",
+            keys=["a.#"],
+            url="amqp://guest:guest@localhost:5672/",
+            topic="test_topic",
+        )
+    finally:
+        created_loop.close()
+
+    assert agent._loop is created_loop
+    set_event_loop.assert_called_once_with(created_loop)
+
+
 def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
     mocker: plugin.MockerFixture,
 ) -> None:
