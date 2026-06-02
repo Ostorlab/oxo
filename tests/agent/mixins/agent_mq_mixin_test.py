@@ -174,6 +174,24 @@ def testAgentMqMixin_whenNoCurrentLoop_shouldCreateEventLoop(
     set_event_loop.assert_called_once_with(new_event_loop.return_value)
 
 
+def testAgentMqMixin_whenLoopIsProvided_usesProvidedLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin uses the explicitly provided event loop."""
+    provided_loop = asyncio.new_event_loop()
+    get_event_loop = mocker.patch("asyncio.get_event_loop")
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+        loop=provided_loop,
+    )
+    assert agent._loop is provided_loop
+    get_event_loop.assert_not_called()
+    provided_loop.close()
+
+
 def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
     mocker: plugin.MockerFixture,
 ) -> None:
