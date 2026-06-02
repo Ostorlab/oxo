@@ -30,7 +30,7 @@ class ScannerConfig:
     bus_client_name: str
     registry_conf: RegistryConfig
     subject_bus_configs: List[SubjectBusConfigs]
-    nats_user_creds: str | None
+    nats_user_creds: Optional[str]
 
     @classmethod
     def from_json(cls, config: Dict[str, Any]) -> Optional["ScannerConfig"]:

@@ -40,7 +40,7 @@ class ClientBusHandler:
         name: str,
         tls_context: Optional[ssl.SSLContext] = None,
         loop=None,
-        nats_user_creds: str | None = None,
+        nats_user_creds: Optional[str] = None,
     ):
         self._bus_url = bus_url
         self._cluster_id = cluster_id
@@ -52,7 +52,7 @@ class ClientBusHandler:
             self._creds_file.write(self._nats_user_creds)
             self._creds_file.flush()
         self._nc: nats.NATS = nats.NATS()
-        self._js: js_client.JetStreamContext | None = None
+        self._js: Optional[js_client.JetStreamContext] = None
         self._loop = loop or asyncio.get_event_loop()
         if tls_context is None and bus_url.startswith("tls://"):
             self._tls_context = ssl.create_default_context()
@@ -140,7 +140,7 @@ class BusHandler(ClientBusHandler):
         name: str,
         tls_context: Optional[ssl.SSLContext] = None,
         loop=None,
-        nats_user_creds: str | None = None,
+        nats_user_creds: Optional[str] = None,
     ):
         super().__init__(
             bus_url=bus_url,
