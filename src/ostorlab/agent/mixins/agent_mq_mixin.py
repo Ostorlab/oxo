@@ -18,7 +18,7 @@ WAIT_FIXED_TIME = 5
 
 
 def _resolve_event_loop(
-    loop: asyncio.AbstractEventLoop | None,
+    loop: Optional[asyncio.AbstractEventLoop],
 ) -> asyncio.AbstractEventLoop:
     """Return the provided loop or resolve one for the current thread."""
     if loop is not None:
