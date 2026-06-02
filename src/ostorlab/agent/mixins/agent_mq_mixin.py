@@ -43,7 +43,7 @@ class AgentMQMixin:
         topic: str,
         max_priority: Optional[int] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-    ) -> None:
+    ):
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
         Args:
             name: Name of the queue.
