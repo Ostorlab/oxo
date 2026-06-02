@@ -6,7 +6,7 @@ Definition of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import aio_pika
 import tenacity
