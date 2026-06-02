@@ -38,11 +38,11 @@ class AgentMQMixin:
     def __init__(
         self,
         name: str,
-        keys: list[str],
+        keys: List[str],
         url: str,
         topic: str,
-        max_priority: int | None = None,
-        loop: asyncio.AbstractEventLoop | None = None,
+        max_priority: Optional[int] = None,
+        loop: Optional[asyncio.AbstractEventLoop] = None,
     ) -> None:
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
         Args:
@@ -61,7 +61,7 @@ class AgentMQMixin:
         self._loop = _resolve_event_loop(loop)
         self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-        self._queue: aio_pika.Queue | None = None
+        self._queue: Optional[aio_pika.Queue] = None
         self._connection_pool: aio_pika.pool.Pool[aio_pika.Connection] = (
             aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
         )
