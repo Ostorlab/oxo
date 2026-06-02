@@ -6,6 +6,7 @@ import logging
 import ssl
 import sys
 import traceback
+from typing import Optional
 
 import tempfile
 
@@ -37,7 +38,7 @@ class ClientBusHandler:
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: ssl.SSLContext | None = None,
+        tls_context: Optional[ssl.SSLContext] = None,
         loop=None,
         nats_user_creds: str | None = None,
     ):
@@ -137,7 +138,7 @@ class BusHandler(ClientBusHandler):
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: ssl.SSLContext | None = None,
+        tls_context: Optional[ssl.SSLContext] = None,
         loop=None,
         nats_user_creds: str | None = None,
     ):
@@ -178,7 +179,7 @@ class BusHandler(ClientBusHandler):
     async def subscribe(
         self,
         subject: str,
-        durable_name: str | None = None,
+        durable_name: Optional[str] = None,
         start_at: str = "first",
         max_inflight: int = DEFAULT_MAX_INFLIGHT,
         ack_wait: int = DEFAULT_ACK_WAIT.seconds,
