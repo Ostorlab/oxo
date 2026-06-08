@@ -132,17 +132,12 @@ class AgentMixin(
         self.bus_managment_url = agent_settings.bus_management_url
         self.bus_vhost = agent_settings.bus_vhost
         queue_name = agent_settings.service_name or agent_definition.name
-        has_vulnerability_listener = any(
-            "v3.report.vulnerability" in s for s in self.in_selectors
-        )
-        max_priority = 8 if has_vulnerability_listener else None
         agent_mq_mixin.AgentMQMixin.__init__(
             self,
             name=queue_name,
             keys=[f"{s}.#" for s in self.in_selectors],
             url=self.bus_url,
             topic=self.bus_exchange_topic,
-            max_priority=max_priority,
         )
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(
             self,
