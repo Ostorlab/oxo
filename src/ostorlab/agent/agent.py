@@ -362,6 +362,8 @@ class AgentMixin(
             selector: target selector.
             data: message data to be serialized.
             message_id: An id that will be added to the tail of the message.
+            message_priority: Optional priority for the message, used by priority queues.
+                Defaults to None.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
@@ -403,6 +405,8 @@ class AgentMixin(
             selector: target selector.
             raw: raw message to send.
             message_id: An id that will be added to the tail of the message.
+            message_priority: Optional priority for the message, used by priority queues.
+                Defaults to None.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
