@@ -1074,6 +1074,36 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
         )
 
 
+def testEmitRaw_whenMessagePriorityIsProvided_forwardsPriorityToMqSendMessage(
+    mocker,
+) -> None:
+    """Test that emit_raw forwards the message priority to MQ publishing."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="some_name", out_selectors=["v3.report.vulnerability"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ),
+    )
+    mock_send_message = mocker.patch.object(test_agent, "mq_send_message")
+
+    test_agent.emit_raw(
+        "v3.report.vulnerability",
+        b"some raw payload",
+        message_priority=7,
+    )
+
+    mock_send_message.assert_called_once()
+    assert mock_send_message.call_args.kwargs["message_priority"] == 7
+    assert mock_send_message.call_args.args[0].startswith("v3.report.vulnerability.")
+    assert mock_send_message.call_args.args[1] is not None
+
+
 def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
     """Test the _setup_logging directly."""
     mock_client_instance = mocker.MagicMock()

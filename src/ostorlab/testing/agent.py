@@ -48,7 +48,7 @@ def agent_mock(mocker) -> List[object]:
         return_value=None,
     )
 
-    def mq_send_message(key, message):
+    def mq_send_message(key, message, message_priority=None):
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
         control_message = msg.Message.from_raw("v3.control", message)
         agent_message = msg.Message.from_raw(
@@ -219,7 +219,7 @@ def agent_run_mock(mocker) -> AgentRunInstance:
         return_value=None,
     )
 
-    def mq_send_message(key, message):
+    def mq_send_message(key, message, message_priority=None):
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
         # Control Message.
         control_message = msg.Message.from_raw("v3.control", message)
