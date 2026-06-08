@@ -120,6 +120,10 @@ def testOpenTelemetryMixin_whenEmitMessageWithPriority_shouldForwardPriority(
 ) -> None:
     """Test that emit forwards message priority through the OpenTelemetry wrapper."""
     with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file_obj:
+        mocker.patch(
+            "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
+            return_value=None,
+        )
         agent_definition = agent_definitions.AgentDefinition(
             name="some_name", out_selectors=["v3.report.vulnerability"]
         )
