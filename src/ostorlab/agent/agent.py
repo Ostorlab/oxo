@@ -131,17 +131,18 @@ class AgentMixin(
         self.bus_exchange_topic = agent_settings.bus_exchange_topic
         self.bus_managment_url = agent_settings.bus_management_url
         self.bus_vhost = agent_settings.bus_vhost
-        # Use service_name as the queue name when set so each named instance gets its own queue
-        # and receives a full message fan-out instead of competing on a shared queue.
         queue_name = agent_settings.service_name or agent_definition.name
+        has_vulnerability_listener = any(
+            "v3.report.vulnerability" in s for s in self.in_selectors
+        )
+        max_priority = 8 if has_vulnerability_listener else None
         agent_mq_mixin.AgentMQMixin.__init__(
             self,
             name=queue_name,
-            # Selectors are mapped to queue binding that listen to all
-            # sub-routing keys.
             keys=[f"{s}.#" for s in self.in_selectors],
             url=self.bus_url,
             topic=self.bus_exchange_topic,
+            max_priority=max_priority,
         )
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(
             self,
@@ -354,7 +355,11 @@ class AgentMixin(
         raise NotImplementedError("Missing process method implementation.")
 
     def emit(
-        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+        self,
+        selector: str,
+        data: Dict[str, Any],
+        message_id: Optional[str] = None,
+        message_priority: Optional[int] = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
@@ -369,7 +374,12 @@ class AgentMixin(
             None
         """
         message = agent_message.Message.from_data(selector, data)
-        self.emit_raw(selector, message.raw, message_id=message_id)
+        self.emit_raw(
+            selector,
+            message.raw,
+            message_id=message_id,
+            message_priority=message_priority,
+        )
 
     @abc.abstractmethod
     def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
@@ -386,7 +396,11 @@ class AgentMixin(
         raise NotImplementedError()
 
     def emit_raw(
-        self, selector: str, raw: bytes, message_id: Optional[str] = None
+        self,
+        selector: str,
+        raw: bytes,
+        message_id: Optional[str] = None,
+        message_priority: Optional[int] = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
@@ -421,7 +435,9 @@ class AgentMixin(
             selector = f"{selector}.{message_id}"
 
         control_message = self._prepare_message(raw)
-        self.mq_send_message(selector, control_message)
+        self.mq_send_message(
+            selector, control_message, message_priority=message_priority
+        )
         logger.debug("done call to send_message")
 
     def _prepare_message(self, raw: bytes) -> bytes:

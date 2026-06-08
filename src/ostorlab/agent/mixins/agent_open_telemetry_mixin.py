@@ -251,7 +251,11 @@ class OpenTelemetryMixin:
             super().process_message(selector, message)
 
     def emit(
-        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+        self,
+        selector: str,
+        data: Dict[str, Any],
+        message_id: Optional[str] = None,
+        message_priority: Optional[int] = None,
     ) -> None:
         """Overridden emit method of the agent to add OpenTelemetry traces.
         Sends a message to all listening agents on the specified selector.
@@ -273,7 +277,10 @@ class OpenTelemetryMixin:
                 trace_id = emit_span.get_span_context().trace_id
                 span_id = emit_span.get_span_context().span_id
                 super().emit(
-                    selector, data, f"{message_id or uuid.uuid4()}-{trace_id}-{span_id}"
+                    selector,
+                    data,
+                    f"{message_id or uuid.uuid4()}-{trace_id}-{span_id}",
+                    message_priority=message_priority,
                 )
 
                 emit_span.set_attribute("agent.name", self.name)
@@ -283,4 +290,9 @@ class OpenTelemetryMixin:
                 )
                 emit_span.set_attribute("message.data", json.dumps(minified_msg_data))
         else:
-            super().emit(selector, data)
+            super().emit(
+                selector,
+                data,
+                message_id=message_id,
+                message_priority=message_priority,
+            )

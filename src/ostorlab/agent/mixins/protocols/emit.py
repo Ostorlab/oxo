@@ -7,7 +7,11 @@ class EmitProtocol(Protocol):
     """Protocol exposing the emit method."""
 
     def emit(
-        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+        self,
+        selector: str,
+        data: Dict[str, Any],
+        message_id: Optional[str] = None,
+        message_priority: Optional[int] = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
