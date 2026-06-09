@@ -126,6 +126,7 @@ class OpenTelemetryMixin:
         self,
         agent_definition: agent_definitions.AgentDefinition,
         agent_settings: runtime_definitions.AgentSettings,
+        max_priority: Optional[int] = None,
     ) -> None:
         """Initializes the mixin from the agent settings.
 
@@ -133,7 +134,9 @@ class OpenTelemetryMixin:
             agent_settings: Agent runtime settings.
         """
         super().__init__(
-            agent_definition=agent_definition, agent_settings=agent_settings
+            agent_definition=agent_definition,
+            agent_settings=agent_settings,
+            max_priority=max_priority,
         )
         self._agent_settings = agent_settings
         if (
