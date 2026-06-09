@@ -44,10 +44,15 @@ class MetaKB(type):
         entry_path = paths[0]
         if not (entry_path / META_JSON).exists():
             raise ValueError(f"{entry_path} does not have a mapping.")
+        recommendation_path = entry_path / RECOMMENDATION
+        recommendation = (
+            recommendation_path.read_text(encoding="utf-8")
+            if recommendation_path.exists()
+            else ""
+        )
         with (
             (entry_path / META_JSON).open(encoding="utf-8") as f,
             (entry_path / DESCRIPTION).open(encoding="utf-8") as d,
-            (entry_path / RECOMMENDATION).open(encoding="utf-8") as r,
         ):
             meta = json.loads(f.read())
             categories = meta.get("categories", {})
@@ -60,7 +65,7 @@ class MetaKB(type):
                 risk_rating=meta.get("risk_rating"),
                 short_description=meta.get("short_description"),
                 description=d.read(),
-                recommendation=r.read(),
+                recommendation=recommendation,
                 references=meta.get("references"),
                 security_issue=meta.get("security_issue", False),
                 privacy_issue=meta.get("privacy_issue", False),
