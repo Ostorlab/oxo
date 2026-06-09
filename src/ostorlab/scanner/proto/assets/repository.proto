@@ -8,7 +8,7 @@ message Message {
     GITLAB = 1;
     AZURE = 2;
     BITBUCKET = 3;
-    STANDARDGIT = 4;
+    GIT = 4;
   }
   optional string repository_url = 1;
   optional string commit_hash = 2;
