@@ -12,6 +12,7 @@ class Repository(asset.Asset):
 
     repository_url: str = ""
     commit_hash: str = ""
+    provider: str = ""
 
     def __str__(self) -> str:
         if self.repository_url != "":
