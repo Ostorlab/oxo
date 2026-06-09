@@ -4,11 +4,11 @@ package ostorlab.agent.message.proto.v3.asset.repository;
 
 message Message {
   enum Provider {
-    GITHUB = 1;
-    GITLAB = 2;
-    AZURE = 3;
-    BITBUCKET = 4;
-    STANDARDGIT = 5;
+    GITHUB = 0;
+    GITLAB = 1;
+    AZURE = 2;
+    BITBUCKET = 3;
+    STANDARDGIT = 4;
   }
   optional string repository_url = 1;
   optional string commit_hash = 2;
