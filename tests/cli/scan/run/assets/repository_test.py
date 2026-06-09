@@ -26,6 +26,8 @@ def testScanRunRepository_whenRepositoryUrlProvided_callsScanWithRepositoryAsset
             "https://github.com/org/repo.git",
             "--commit-hash",
             "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
+            "--provider",
+            "gitlab",
         ],
     )
 
@@ -36,3 +38,4 @@ def testScanRunRepository_whenRepositoryUrlProvided_callsScanWithRepositoryAsset
     assert isinstance(assets[0], repository_asset.Repository)
     assert assets[0].repository_url == "https://github.com/org/repo.git"
     assert assets[0].commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    assert assets[0].provider == "GITLAB"
