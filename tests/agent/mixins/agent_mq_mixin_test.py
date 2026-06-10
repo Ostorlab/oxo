@@ -209,3 +209,31 @@ def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
         agent.mq_send_message(key="a.1.2", message=b"test message")
 
     assert mock_send_message.call_count == 6
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_declaresQueueWithDefaultPriority(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin always declares a priority queue with the default max priority."""
+    channel = mocker.AsyncMock()
+    exchange = mocker.AsyncMock()
+    queue = mocker.AsyncMock()
+    channel.declare_queue.return_value = queue
+
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+    mocker.patch.object(agent, "_get_exchange", return_value=exchange)
+
+    await agent._declare_mq_queue(channel)
+
+    channel.declare_queue.assert_awaited_once_with(
+        "test_queue",
+        auto_delete=False,
+        durable=True,
+        arguments={"x-max-priority": agent_mq_mixin.DEFAULT_MAX_PRIORITY},
+    )

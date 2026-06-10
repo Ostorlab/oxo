@@ -193,8 +193,8 @@ def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(agent_mock):
     assert test_agent.args == {"color": "red", "speed": b"slow"}
 
 
-def testAgent_whenMaxPriorityProvided_passesItToMqMixin(mocker):
-    """Test agent init passes explicit queue priority to the MQ mixin."""
+def testAgent_whenMaxPriorityProvided_raisesTypeError(mocker):
+    """Test agent init rejects unsupported explicit queue priority override."""
 
     mq_init = mocker.patch("ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.__init__")
     mocker.patch(
@@ -217,7 +217,37 @@ def testAgent_whenMaxPriorityProvided_passesItToMqMixin(mocker):
         healthcheck_port=5301,
     )
 
-    TestAgent(agent_definition, agent_settings, max_priority=4)
+    with pytest.raises(TypeError):
+        TestAgent(agent_definition, agent_settings, max_priority=4)
+
+    mq_init.assert_not_called()
+
+
+def testAgent_whenMaxPriorityNotProvided_defaultsToMqPriorityQueue(mocker):
+    """Test agent init always configures the MQ mixin with the hardcoded priority queue."""
+
+    mq_init = mocker.patch("ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.__init__")
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
+        return_value=None,
+    )
+    mocker.patch("ostorlab.agent.agent.signal.signal", return_value=None)
+
+    class TestAgent(agent.Agent):
+        """Test Agent"""
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="priority_test_agent",
+        in_selectors=["v3.healthcheck.ping"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/priority_test_agent",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_exchange_topic="ostorlab_test",
+        healthcheck_port=5301,
+    )
+
+    TestAgent(agent_definition, agent_settings)
 
     mq_init.assert_called_once_with(
         mocker.ANY,
@@ -225,7 +255,6 @@ def testAgent_whenMaxPriorityProvided_passesItToMqMixin(mocker):
         keys=["v3.healthcheck.ping.#"],
         url="amqp://guest:guest@localhost:5672/",
         topic="ostorlab_test",
-        max_priority=4,
     )
 
 

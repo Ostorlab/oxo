@@ -15,6 +15,7 @@ from aiormq import exceptions as aiormq_exceptions
 logger = logging.getLogger(__name__)
 NUMBER_RETRIES = 6
 WAIT_FIXED_TIME = 5
+DEFAULT_MAX_PRIORITY = 255
 
 
 class AgentMQMixin:
@@ -26,7 +27,6 @@ class AgentMQMixin:
         keys: List[str],
         url: str,
         topic: str,
-        max_priority: Optional[int] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
     ):
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
@@ -35,8 +35,6 @@ class AgentMQMixin:
             keys: Selectors that the queue listens to.
             url: string for the MQ url might contain ssl parameters e.g.`amqps://user:pass@host//`
             topic: string with exchange name
-            max_priority: Optional To declare a priority queue, it is a positive int [1, 255],
-             indicating the max priority the queue supports.
         """
         self._name = name
         self._keys = keys
@@ -51,7 +49,6 @@ class AgentMQMixin:
             except RuntimeError:
                 self._loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self._loop)
-        self._max_priority = max_priority
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
         self._queue: Optional[aio_pika.Queue] = None
         self._connection_pool: aio_pika.pool.Pool[aio_pika.Connection] = (
@@ -126,17 +123,12 @@ class AgentMQMixin:
         if delete_queue_first:
             await channel.queue_delete(self._queue_name)
 
-        if self._max_priority is not None:
-            self._queue = await channel.declare_queue(
-                self._queue_name,
-                auto_delete=False,
-                durable=True,
-                arguments={"x-max-priority": self._max_priority},
-            )
-        else:
-            self._queue = await channel.declare_queue(
-                self._queue_name, auto_delete=False, durable=True
-            )
+        self._queue = await channel.declare_queue(
+            self._queue_name,
+            auto_delete=False,
+            durable=True,
+            arguments={"x-max-priority": DEFAULT_MAX_PRIORITY},
+        )
 
         if self._queue is None:
             raise ValueError("queue not declared.")

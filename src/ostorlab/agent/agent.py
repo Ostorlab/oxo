@@ -97,7 +97,6 @@ class AgentMixin(
         self,
         agent_definition: agent_definitions.AgentDefinition,
         agent_settings: runtime_definitions.AgentSettings,
-        max_priority: Optional[int] = None,
     ) -> None:
         """Inits the agent configuration from the Yaml agent definition.
 
@@ -105,7 +104,6 @@ class AgentMixin(
             agent_definition: Agent definition dictating the settings of the agent, like name, in_selectors ...
             agent_settings: The running instance definition dictating custom settings of the agent like bus
              URL.
-            max_priority: Optional RabbitMQ max queue priority for enabling per-message priority.
         """
         try:
             self._loop = asyncio.get_event_loop()
@@ -140,7 +138,6 @@ class AgentMixin(
             keys=[f"{s}.#" for s in self.in_selectors],
             url=self.bus_url,
             topic=self.bus_exchange_topic,
-            max_priority=max_priority,
         )
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(
             self,
