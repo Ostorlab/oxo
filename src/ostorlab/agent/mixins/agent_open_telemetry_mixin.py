@@ -133,7 +133,8 @@ class OpenTelemetryMixin:
             agent_settings: Agent runtime settings.
         """
         super().__init__(
-            agent_definition=agent_definition, agent_settings=agent_settings
+            agent_definition=agent_definition,
+            agent_settings=agent_settings,
         )
         self._agent_settings = agent_settings
         if (
