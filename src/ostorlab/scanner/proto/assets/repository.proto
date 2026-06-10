@@ -3,6 +3,14 @@ syntax = "proto2";
 package ostorlab.scanner.proto.assets.repository;
 
 message Message {
+  enum Provider {
+    GITHUB = 0;
+    GITLAB = 1;
+    AZURE = 2;
+    BITBUCKET = 3;
+    GIT = 4;
+  }
   optional string repository_url = 1;
   optional string commit_hash = 2;
+  optional Provider provider = 3;
 }

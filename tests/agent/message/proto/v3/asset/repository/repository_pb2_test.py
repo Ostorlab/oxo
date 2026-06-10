@@ -7,6 +7,7 @@ def testSerializeAndDeserialize_whenCreatedWithValidData_returnsEquivalentMessag
     message = repository_pb2.Message()
     message.repository_url = "https://github.com/org/repo.git"
     message.commit_hash = "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    message.provider = repository_pb2.Message.GITLAB
 
     serialized = message.SerializeToString()
     deserialized = repository_pb2.Message()
@@ -14,13 +15,15 @@ def testSerializeAndDeserialize_whenCreatedWithValidData_returnsEquivalentMessag
 
     assert deserialized.repository_url == "https://github.com/org/repo.git"
     assert deserialized.commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    assert deserialized.provider == repository_pb2.Message.GITLAB
 
 
-def testCreate_whenEmpty_hasDefaultValues():
+def testCreate_whenProviderNotSet_doesNotHaveProviderField():
     message = repository_pb2.Message()
 
     assert message.repository_url == ""
     assert message.commit_hash == ""
+    assert message.HasField("provider") is False
 
 
 def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage():
@@ -32,3 +35,4 @@ def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage():
 
     assert deserialized.repository_url == ""
     assert deserialized.commit_hash == ""
+    assert deserialized.HasField("provider") is False

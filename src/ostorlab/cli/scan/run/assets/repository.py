@@ -17,16 +17,27 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="repository")
 @click.option("--repository-url", "--origin-url", required=True)
 @click.option("--commit-hash", required=True)
+@click.option(
+    "--provider",
+    required=True,
+    type=click.Choice(
+        ["github", "gitlab", "azure", "bitbucket", "git"],
+        case_sensitive=False,
+    ),
+)
 @click.pass_context
 def repository_cli(
     ctx: click.core.Context,
     repository_url: str,
     commit_hash: str,
+    provider: str,
 ) -> None:
     """Run scan for a source code repository asset."""
     assets = [
         repository_asset.Repository(
-            repository_url=repository_url, commit_hash=commit_hash
+            repository_url=repository_url,
+            commit_hash=commit_hash,
+            provider=provider.upper(),
         )
     ]
 
