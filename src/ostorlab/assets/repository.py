@@ -15,7 +15,7 @@ class Repository(asset.Asset):
     provider: str = ""
 
     def __post_init__(self) -> None:
-        if not self.provider:
+        if self.provider == "":
             del self.provider
 
     def __str__(self) -> str:
