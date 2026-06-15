@@ -14,6 +14,10 @@ class Repository(asset.Asset):
     commit_hash: str = ""
     provider: str = ""
 
+    def __post_init__(self) -> None:
+        if self.provider == "":
+            del self.provider
+
     def __str__(self) -> str:
         if self.repository_url != "":
             if self.commit_hash != "":
