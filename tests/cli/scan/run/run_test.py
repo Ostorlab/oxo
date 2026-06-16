@@ -915,3 +915,51 @@ agents:
     assert len(calls) > 0
     assert calls[0][1]["version"] is None
     assert result.exit_code == 0
+
+
+def testRunScan_whenInstallAndReportingScanIdProvided_passesReportingScanIdToGetDetails(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that --reporting-scan-id is threaded into agent_fetcher.get_details when installing agents."""
+    agent_group_yaml = tmp_path / "agent_group.yaml"
+    agent_group_yaml.write_text(
+        """
+kind: AgentGroup
+description: Test agent group
+agents:
+  - key: agent/ostorlab/nmap
+"""
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
+    mocker.patch("ostorlab.cli.install_agent.install")
+    mock_get_details = mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_details",
+        return_value={"versions": {"versions": [{"version": "0.4.0"}]}},
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "--reporting-scan-id=42",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    mock_get_details.assert_called_once_with(
+        "agent/ostorlab/nmap", reporting_scan_id=42
+    )
+    assert result.exit_code == 0

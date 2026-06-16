@@ -65,6 +65,13 @@ from ostorlab.cli import input_validators
     required=False,
     hidden=True,
 )
+@click.option(
+    "--reporting-scan-id",
+    help="reporting_engine's scan id, used to resolve the calling organisation's "
+    "agent release channel when installing agents.",
+    required=False,
+    hidden=True,
+)
 @click.option("--tracing/--no-tracing", help="Enable tracing mode", default=False)
 @click.option(
     "--tracing-collector-url",
@@ -88,6 +95,7 @@ def scan(
     bus_management_url: Optional[str] = None,
     bus_exchange_topic: Optional[str] = None,
     scan_id: Optional[str] = None,
+    reporting_scan_id: Optional[str] = None,
     network: Optional[str] = None,
     redis_url: Optional[str] = None,
     tracing: bool = False,
@@ -123,6 +131,9 @@ def scan(
             gcp_logging_credential=ctx.obj.get("gcp_logging_credential"),
         )
         ctx.obj["runtime"] = runtime_instance
+        ctx.obj["reporting_scan_id"] = (
+            int(reporting_scan_id) if reporting_scan_id is not None else None
+        )
     except registry.RuntimeNotFoundError as e:
         raise click.ClickException(
             f"The selected runtime {runtime} is not supported."
