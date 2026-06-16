@@ -450,6 +450,9 @@ class AgentRuntime:
                 if service_name is not None
                 else agent_definition.name,
             },
+            container_labels={
+                "universe_scan_id": self.runtime_name,
+            },
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,

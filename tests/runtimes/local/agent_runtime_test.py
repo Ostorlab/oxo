@@ -90,6 +90,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 40000
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
+    assert kwargs["container_labels"] == {"universe_scan_id": "42"}
 
 
 def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_serviceCreatedWithAgentDef(

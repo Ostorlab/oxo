@@ -265,6 +265,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     assert (
         kwargs["name"] == "complex_long_name_special_duplicate_duplicate_name_agent_def"
     )
+    assert kwargs["container_labels"] == {"universe_scan_id": "42"}
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
