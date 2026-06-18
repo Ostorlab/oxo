@@ -21,8 +21,27 @@ class AgentDetailsAPIRequest(request.APIRequest):
         Returns:
             The query to fetch the agent details.
         """
+        if self._use_experimental is True:
+            return """
+                query Agent($agentKey: String!, $useExperimental: Boolean){
+                    agent(agentKey: $agentKey) {
+                        name,
+                        gitLocation,
+                        yamlFileLocation,
+                        dockerLocation,
+                        access,
+                        listable,
+                        key
+                        versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental) {
+                          versions {
+                            version
+                          }
+                        }
+                    }
+                }
+            """
         return """
-            query Agent($agentKey: String!, $useExperimental: Boolean){
+            query Agent($agentKey: String!){
                 agent(agentKey: $agentKey) {
                     name,
                     gitLocation,
@@ -31,7 +50,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
                     access,
                     listable,
                     key
-                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental) {
+                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1) {
                       versions {
                         version
                       }
@@ -47,10 +66,9 @@ class AgentDetailsAPIRequest(request.APIRequest):
         Returns:
             The body of the agent details request.
         """
-        variables: Dict[str, Any] = {
-            "agentKey": self._agent_key,
-            "useExperimental": self._use_experimental,
-        }
+        variables: Dict[str, Any] = {"agentKey": self._agent_key}
+        if self._use_experimental is True:
+            variables["useExperimental"] = True
         data = {
             "query": self.query,
             "variables": json.dumps(variables),
