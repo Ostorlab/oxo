@@ -109,6 +109,13 @@ WAIT_BETWEEN_RETRIES = 5
     help="Init sleep for tracker before checking the queues",
     required=False,
 )
+@click.option(
+    "--use-experimental-agents",
+    is_flag=True,
+    default=False,
+    help="When set, experimental (prerelease) agent versions are eligible during install.",
+    hidden=True,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -124,6 +131,7 @@ def run(
     no_asset: bool,
     timeout: Optional[int] = None,
     init_sleep: Optional[int] = None,
+    use_experimental_agents: bool = False,
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
@@ -197,7 +205,7 @@ def run(
                 _install_agents_with_retry(
                     runtime_instance,
                     agent_group,
-                    use_experimental=ctx.obj.get("use_experimental_agents", False),
+                    use_experimental=use_experimental_agents,
                 )
             except httpx.HTTPError as e:
                 console.error(f"Could not install the agents: {e}")
