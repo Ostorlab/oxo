@@ -949,8 +949,8 @@ agents:
         [
             "scan",
             "--runtime=local",
-            "run",
             "--use-experimental-agents",
+            "run",
             "-g",
             str(agent_group_yaml),
             "--install",
