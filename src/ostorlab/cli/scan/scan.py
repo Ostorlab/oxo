@@ -1,6 +1,6 @@
 """Scan module that handles running a scan using a list of agent keys and a target asset."""
 
-from typing import Optional
+from typing import Dict, Optional
 
 import click
 
@@ -66,10 +66,12 @@ from ostorlab.cli import input_validators
     hidden=True,
 )
 @click.option(
-    "--reference-scan-id",
-    help="Reference scan id to link scans together.",
+    "--container-labels",
+    help="Additional container labels as key:value pairs. Can be specified multiple times.",
     required=False,
     hidden=True,
+    multiple=True,
+    callback=input_validators.validate_container_labels,
 )
 @click.option("--tracing/--no-tracing", help="Enable tracing mode", default=False)
 @click.option(
@@ -94,7 +96,7 @@ def scan(
     bus_management_url: Optional[str] = None,
     bus_exchange_topic: Optional[str] = None,
     scan_id: Optional[str] = None,
-    reference_scan_id: Optional[str] = None,
+    container_labels: Optional[Dict[str, str]] = None,
     network: Optional[str] = None,
     redis_url: Optional[str] = None,
     tracing: bool = False,
@@ -118,7 +120,7 @@ def scan(
         runtime_instance = registry.select_runtime(
             runtime,
             scan_id=scan_id,
-            reference_scan_id=reference_scan_id,
+            container_labels=container_labels or {},
             bus_url=bus_url,
             bus_vhost=bus_vhost,
             bus_management_url=bus_management_url,

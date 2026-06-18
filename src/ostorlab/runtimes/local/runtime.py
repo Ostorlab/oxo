@@ -100,7 +100,7 @@ class LocalRuntime(runtime.Runtime):
         self,
         *args,
         scan_id: Optional[str] = None,
-        reference_scan_id: Optional[str] = None,
+        container_labels: Optional[Dict[str, str]] = None,
         tracing: Optional[bool] = False,
         mq_exposed_ports: Optional[Dict[int, int]] = None,
         gcp_logging_credential: Optional[str] = None,
@@ -110,7 +110,9 @@ class LocalRuntime(runtime.Runtime):
         super().__init__()
         del args, kwargs
         self._scan_id = scan_id
-        self._reference_scan_id = reference_scan_id
+        self._container_labels = (
+            container_labels if container_labels is not None else {}
+        )
         self.follow = []
         self._tracing = tracing
         self._mq_service: Optional[mq.LocalRabbitMQ] = None
@@ -458,7 +460,7 @@ class LocalRuntime(runtime.Runtime):
             redis_service=self._redis_service,
             jaeger_service=self._jaeger_service,
             gcp_logging_credential=self._gcp_logging_credential,
-            reference_scan_id=self._reference_scan_id,
+            container_labels=self._container_labels,
         )
         agent_service = runtime_agent.create_agent_service(
             network_name=self.network,

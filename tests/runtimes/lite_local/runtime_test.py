@@ -253,7 +253,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
-        reference_scan_id=None,
+        container_labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -328,7 +328,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
-        reference_scan_id=None,
+        container_labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -399,7 +399,7 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
-        reference_scan_id=None,
+        container_labels={},
     )
     runtime_agent.create_agent_service(
         network_name="test", extra_configs=[], replicas=3
@@ -453,7 +453,7 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
-        reference_scan_id=None,
+        container_labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -523,10 +523,10 @@ def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUn
     assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars
 
 
-def testLiteLocalCreateAgentService_whenReferenceScanIdIsProvided_addsReferenceScanIdLabel(
+def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContainerLabels(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Reference scan id should be added to container labels when provided."""
+    """Container labels should be merged into the container_labels dict when provided."""
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=[],
@@ -567,7 +567,7 @@ def testLiteLocalCreateAgentService_whenReferenceScanIdIsProvided_addsReferenceS
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
-        reference_scan_id="ref-123",
+        container_labels={"ostorlab.reference_scan_id": "ref-123"},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -611,7 +611,7 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
-        reference_scan_id=None,
+        container_labels={},
     )
 
     mounts = runtime_agent.create_scan_volume_mounts(
