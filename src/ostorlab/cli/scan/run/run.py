@@ -197,7 +197,10 @@ def run(
                 _install_agents_with_retry(
                     runtime_instance,
                     agent_group,
-                    use_experimental=ctx.obj.get("use_experimental_agents", False),
+                    use_experimental=(
+                        ctx.obj.get("use_experimental_agents", False)
+                        or agent_group.use_experimental_agents
+                    ),
                 )
             except httpx.HTTPError as e:
                 console.error(f"Could not install the agents: {e}")
