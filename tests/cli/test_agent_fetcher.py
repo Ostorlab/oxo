@@ -29,9 +29,7 @@ def testGetDetails_whenUseExperimentalNotProvided_buildsRequestWithDefaultFalse(
                 )
 
 
-def testGetDetails_whenUseExperimentalTrue_buildsRequestWithTrue() -> (
-    None
-):
+def testGetDetails_whenUseExperimentalTrue_buildsRequestWithTrue() -> None:
     """Test that get_details forwards reporting_scan_id to the API request."""
     with mock.patch(
         "ostorlab.cli.agent_fetcher.configuration_manager.ConfigurationManager"

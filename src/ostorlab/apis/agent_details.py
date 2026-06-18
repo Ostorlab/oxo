@@ -9,9 +9,7 @@ from ostorlab.apis import request
 class AgentDetailsAPIRequest(request.APIRequest):
     """Get agent details for a specified agent_key."""
 
-    def __init__(
-        self, agent_key: str, use_experimental: bool = False
-    ) -> None:
+    def __init__(self, agent_key: str, use_experimental: bool = False) -> None:
         """Initializer"""
         self._agent_key = agent_key
         self._use_experimental = use_experimental

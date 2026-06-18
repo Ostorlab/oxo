@@ -29,7 +29,9 @@ def testAgentDetailsAPIRequest_whenUseExperimentalTrue_setsTrueInVariables() -> 
     assert variables == {"agentKey": "agent/ostorlab/nmap", "useExperimental": True}
 
 
-def testAgentDetailsAPIRequest_whenCalled_queryDeclaresUseExperimentalVariable() -> None:
+def testAgentDetailsAPIRequest_whenCalled_queryDeclaresUseExperimentalVariable() -> (
+    None
+):
     """Test that the GraphQL query declares and forwards the useExperimental variable."""
     api_request = agent_details.AgentDetailsAPIRequest(agent_key="agent/ostorlab/nmap")
 
