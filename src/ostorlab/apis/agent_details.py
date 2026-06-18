@@ -10,11 +10,11 @@ class AgentDetailsAPIRequest(request.APIRequest):
     """Get agent details for a specified agent_key."""
 
     def __init__(
-        self, agent_key: str, reporting_scan_id: Optional[int] = None
+        self, agent_key: str, use_experimental: bool = False
     ) -> None:
         """Initializer"""
         self._agent_key = agent_key
-        self._reporting_scan_id = reporting_scan_id
+        self._use_experimental = use_experimental
 
     @property
     def query(self) -> Optional[str]:
@@ -24,7 +24,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
             The query to fetch the agent details.
         """
         return """
-            query Agent($agentKey: String!, $reportingScanId: Int){
+            query Agent($agentKey: String!, $useExperimental: Boolean){
                 agent(agentKey: $agentKey) {
                     name,
                     gitLocation,
@@ -33,7 +33,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
                     access,
                     listable,
                     key
-                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, reportingScanId: $reportingScanId) {
+                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental) {
                       versions {
                         version
                       }
@@ -49,9 +49,10 @@ class AgentDetailsAPIRequest(request.APIRequest):
         Returns:
             The body of the agent details request.
         """
-        variables: Dict[str, Any] = {"agentKey": self._agent_key}
-        if self._reporting_scan_id is not None:
-            variables["reportingScanId"] = self._reporting_scan_id
+        variables: Dict[str, Any] = {
+            "agentKey": self._agent_key,
+            "useExperimental": self._use_experimental,
+        }
         data = {
             "query": self.query,
             "variables": json.dumps(variables),

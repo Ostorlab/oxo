@@ -5,39 +5,35 @@ import json
 from ostorlab.apis import agent_details
 
 
-def testAgentDetailsAPIRequest_whenNoReportingScanId_omitsReportingScanIdFromVariables() -> (
+def testAgentDetailsAPIRequest_whenUseExperimentalNotProvided_defaultsFalseInVariables() -> (
     None
 ):
-    """Test that variables only contain agentKey when reporting_scan_id is not provided."""
+    """Test that useExperimental defaults to False in variables when not provided."""
     api_request = agent_details.AgentDetailsAPIRequest(agent_key="agent/ostorlab/nmap")
 
     data = api_request.data
     variables = json.loads(data["variables"])
 
-    assert variables == {"agentKey": "agent/ostorlab/nmap"}
+    assert variables == {"agentKey": "agent/ostorlab/nmap", "useExperimental": False}
 
 
-def testAgentDetailsAPIRequest_whenReportingScanIdProvided_includesReportingScanIdInVariables() -> (
-    None
-):
-    """Test that variables contain reportingScanId when reporting_scan_id is provided."""
+def testAgentDetailsAPIRequest_whenUseExperimentalTrue_setsTrueInVariables() -> None:
+    """Test that variables carry useExperimental: true when opted in."""
     api_request = agent_details.AgentDetailsAPIRequest(
-        agent_key="agent/ostorlab/nmap", reporting_scan_id=42
+        agent_key="agent/ostorlab/nmap", use_experimental=True
     )
 
     data = api_request.data
     variables = json.loads(data["variables"])
 
-    assert variables == {"agentKey": "agent/ostorlab/nmap", "reportingScanId": 42}
+    assert variables == {"agentKey": "agent/ostorlab/nmap", "useExperimental": True}
 
 
-def testAgentDetailsAPIRequest_whenCalled_queryDeclaresReportingScanIdVariable() -> (
-    None
-):
-    """Test that the GraphQL query declares and forwards the reportingScanId variable."""
+def testAgentDetailsAPIRequest_whenCalled_queryDeclaresUseExperimentalVariable() -> None:
+    """Test that the GraphQL query declares and forwards the useExperimental variable."""
     api_request = agent_details.AgentDetailsAPIRequest(agent_key="agent/ostorlab/nmap")
 
     query = api_request.query
 
-    assert "$reportingScanId: Int" in query
-    assert "reportingScanId: $reportingScanId" in query
+    assert "$useExperimental: Boolean" in query
+    assert "useExperimental: $useExperimental" in query

@@ -197,7 +197,7 @@ def run(
                 _install_agents_with_retry(
                     runtime_instance,
                     agent_group,
-                    reporting_scan_id=ctx.obj.get("reporting_scan_id"),
+                    use_experimental=ctx.obj.get("use_experimental_agents", False),
                 )
             except httpx.HTTPError as e:
                 console.error(f"Could not install the agents: {e}")
@@ -238,7 +238,7 @@ def run(
 def _install_agents_with_retry(
     runtime_instance: runtime.Runtime,
     agent_group: definitions.AgentGroupDefinition,
-    reporting_scan_id: Optional[int] = None,
+    use_experimental: bool = False,
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
@@ -247,7 +247,7 @@ def _install_agents_with_retry(
             if ag.version is None:
                 try:
                     agent_details = agent_fetcher.get_details(
-                        ag.key, reporting_scan_id=reporting_scan_id
+                        ag.key, use_experimental=use_experimental
                     )
                     ag.version = agent_details["versions"]["versions"][0]["version"]
                 except agent_fetcher.AgentDetailsNotFound:

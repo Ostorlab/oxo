@@ -5,10 +5,10 @@ from unittest import mock
 from ostorlab.cli import agent_fetcher
 
 
-def testGetDetails_whenNoReportingScanIdProvided_buildsRequestWithoutReportingScanId() -> (
+def testGetDetails_whenUseExperimentalNotProvided_buildsRequestWithDefaultFalse() -> (
     None
 ):
-    """Test that get_details builds the API request with reporting_scan_id=None by default."""
+    """Test that get_details builds the API request with use_experimental=False by default."""
     with mock.patch(
         "ostorlab.cli.agent_fetcher.configuration_manager.ConfigurationManager"
     ) as mock_config_manager:
@@ -25,11 +25,11 @@ def testGetDetails_whenNoReportingScanIdProvided_buildsRequestWithoutReportingSc
                 agent_fetcher.get_details("agent/ostorlab/nmap")
 
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", reporting_scan_id=None
+                    "agent/ostorlab/nmap", use_experimental=False
                 )
 
 
-def testGetDetails_whenReportingScanIdProvided_buildsRequestWithReportingScanId() -> (
+def testGetDetails_whenUseExperimentalTrue_buildsRequestWithTrue() -> (
     None
 ):
     """Test that get_details forwards reporting_scan_id to the API request."""
@@ -46,10 +46,10 @@ def testGetDetails_whenReportingScanIdProvided_buildsRequestWithReportingScanId(
             with mock.patch(
                 "ostorlab.cli.agent_fetcher.agent_details_api.AgentDetailsAPIRequest"
             ) as mock_request_cls:
-                agent_fetcher.get_details("agent/ostorlab/nmap", reporting_scan_id=42)
+                agent_fetcher.get_details("agent/ostorlab/nmap", use_experimental=True)
 
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", reporting_scan_id=42
+                    "agent/ostorlab/nmap", use_experimental=True
                 )
 
 

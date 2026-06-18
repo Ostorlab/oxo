@@ -917,10 +917,10 @@ agents:
     assert result.exit_code == 0
 
 
-def testRunScan_whenInstallAndReportingScanIdProvided_passesReportingScanIdToGetDetails(
+def testRunScan_whenInstallAndUseExperimentalFlagSet_passesUseExperimentalToGetDetails(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that --reporting-scan-id is threaded into agent_fetcher.get_details when installing agents."""
+    """Test that --use-experimental-agents is threaded into agent_fetcher.get_details when installing agents."""
     agent_group_yaml = tmp_path / "agent_group.yaml"
     agent_group_yaml.write_text(
         """
@@ -949,7 +949,7 @@ agents:
         [
             "scan",
             "--runtime=local",
-            "--reporting-scan-id=42",
+            "--use-experimental-agents",
             "run",
             "-g",
             str(agent_group_yaml),
@@ -960,6 +960,6 @@ agents:
     )
 
     mock_get_details.assert_called_once_with(
-        "agent/ostorlab/nmap", reporting_scan_id=42
+        "agent/ostorlab/nmap", use_experimental=True
     )
     assert result.exit_code == 0

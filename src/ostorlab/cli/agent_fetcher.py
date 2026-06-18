@@ -30,15 +30,14 @@ class AgentDetailsNotFound(Error):
 
 
 def get_details(
-    agent_key: str, reporting_scan_id: int | None = None
+    agent_key: str, use_experimental: bool = False
 ) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:
         agent_key: the agent key in the form : agent/org/name
-        reporting_scan_id: optional reporting_engine scan id, used to resolve the
-            calling organisation's experimental channel opt-in when picking the
-            latest version.
+        use_experimental: when True, the server includes experimental (prerelease)
+            versions in the result set for this agent.
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
@@ -56,7 +55,7 @@ def get_details(
     try:
         response = runner.execute(
             agent_details_api.AgentDetailsAPIRequest(
-                agent_key, reporting_scan_id=reporting_scan_id
+                agent_key, use_experimental=use_experimental
             )
         )
     except base_runner.ResponseError as e:
