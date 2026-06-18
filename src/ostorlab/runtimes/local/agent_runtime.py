@@ -156,6 +156,7 @@ class AgentRuntime:
         redis_service: redis.LocalRedis,
         jaeger_service: jaeger.LocalJaeger,
         gcp_logging_credential: Optional[str] = None,
+        reference_scan_id: Optional[str] = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -170,6 +171,7 @@ class AgentRuntime:
         self.agent = agent_settings
         self.image_name = agent_settings.container_image.split(":", maxsplit=1)[0]
         self.runtime_name = runtime_name
+        self.reference_scan_id = reference_scan_id
         self.mq_service = mq_service
         self.redis_service = redis_service
         self.jaeger_service = jaeger_service
@@ -440,8 +442,13 @@ class AgentRuntime:
                 else agent_definition.name,
             },
             container_labels={
-                "universe_scan_id": self.runtime_name,
-            },
+                "ostorlab.scan_id": self.runtime_name,
+            }
+            | (
+                {"ostorlab.reference_scan_id": self.reference_scan_id}
+                if self.reference_scan_id is not None
+                else {}
+            ),
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,

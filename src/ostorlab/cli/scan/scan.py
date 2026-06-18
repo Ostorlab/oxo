@@ -65,6 +65,12 @@ from ostorlab.cli import input_validators
     required=False,
     hidden=True,
 )
+@click.option(
+    "--reference-scan-id",
+    help="Reference scan id to link scans together.",
+    required=False,
+    hidden=True,
+)
 @click.option("--tracing/--no-tracing", help="Enable tracing mode", default=False)
 @click.option(
     "--tracing-collector-url",
@@ -88,6 +94,7 @@ def scan(
     bus_management_url: Optional[str] = None,
     bus_exchange_topic: Optional[str] = None,
     scan_id: Optional[str] = None,
+    reference_scan_id: Optional[str] = None,
     network: Optional[str] = None,
     redis_url: Optional[str] = None,
     tracing: bool = False,
@@ -111,6 +118,7 @@ def scan(
         runtime_instance = registry.select_runtime(
             runtime,
             scan_id=scan_id,
+            reference_scan_id=reference_scan_id,
             bus_url=bus_url,
             bus_vhost=bus_vhost,
             bus_management_url=bus_management_url,

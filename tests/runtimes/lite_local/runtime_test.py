@@ -253,6 +253,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        reference_scan_id=None,
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -265,7 +266,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     assert (
         kwargs["name"] == "complex_long_name_special_duplicate_duplicate_name_agent_def"
     )
-    assert kwargs["container_labels"] == {"universe_scan_id": "42"}
+    assert kwargs["container_labels"] == {"ostorlab.scan_id": "42"}
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
@@ -327,6 +328,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        reference_scan_id=None,
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -397,6 +399,7 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        reference_scan_id=None,
     )
     runtime_agent.create_agent_service(
         network_name="test", extra_configs=[], replicas=3
@@ -450,6 +453,7 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        reference_scan_id=None,
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -519,6 +523,59 @@ def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUn
     assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars
 
 
+def testLiteLocalCreateAgentService_whenReferenceScanIdIsProvided_addsReferenceScanIdLabel(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Reference scan id should be added to container labels when provided."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config"
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+        reference_scan_id="ref-123",
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["container_labels"]["ostorlab.reference_scan_id"] == "ref-123"
+    assert kwargs["container_labels"]["ostorlab.scan_id"] == "42"
+
+
 def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -554,6 +611,7 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        reference_scan_id=None,
     )
 
     mounts = runtime_agent.create_scan_volume_mounts(

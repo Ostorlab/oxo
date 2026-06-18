@@ -157,6 +157,7 @@ class AgentRuntime:
         redis_url: str,
         tracing_collector_url: str,
         gcp_logging_credential: Optional[str] = None,
+        reference_scan_id: Optional[str] = None,
     ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
 
@@ -172,12 +173,14 @@ class AgentRuntime:
             tracing_collector_url: Tracing Collector supporting Open Telemetry URL. The URL is a custom format to pass
              exporter and its arguments.
             gcp_logging_credential: GCP Logging JSON credentials.
+            reference_scan_id: Optional reference scan id to link scans together.
         """
         self._uuid = uuid.uuid4()
         self._docker_client = docker_client
         self.agent = agent_settings
         self.image_name = agent_settings.container_image.split(":", maxsplit=1)[0]
         self.runtime_name = runtime_name
+        self.reference_scan_id = reference_scan_id
         self.bus_url = bus_url
         self.bus_vhost = bus_vhost
         self.bus_management_url = bus_management_url
@@ -451,8 +454,13 @@ class AgentRuntime:
                 else agent_definition.name,
             },
             container_labels={
-                "universe_scan_id": self.runtime_name,
-            },
+                "ostorlab.scan_id": self.runtime_name,
+            }
+            | (
+                {"ostorlab.reference_scan_id": self.reference_scan_id}
+                if self.reference_scan_id is not None
+                else {}
+            ),
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
