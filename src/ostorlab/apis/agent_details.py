@@ -1,7 +1,7 @@
 """Get agent details from the public api."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -15,33 +15,14 @@ class AgentDetailsAPIRequest(request.APIRequest):
         self._use_experimental = use_experimental
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str:
         """The query to fetch the agent details with an agent key.
 
         Returns:
             The query to fetch the agent details.
         """
-        if self._use_experimental is True:
-            return """
-                query Agent($agentKey: String!, $useExperimental: Boolean){
-                    agent(agentKey: $agentKey) {
-                        name,
-                        gitLocation,
-                        yamlFileLocation,
-                        dockerLocation,
-                        access,
-                        listable,
-                        key
-                        versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental) {
-                          versions {
-                            version
-                          }
-                        }
-                    }
-                }
-            """
         return """
-            query Agent($agentKey: String!){
+            query Agent($agentKey: String!, $useExperimental: Boolean){
                 agent(agentKey: $agentKey) {
                     name,
                     gitLocation,
@@ -50,7 +31,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
                     access,
                     listable,
                     key
-                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1) {
+                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental) {
                       versions {
                         version
                       }
@@ -60,17 +41,15 @@ class AgentDetailsAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any]:
         """Sets the body of the API request, to fetch the specific agent.
 
         Returns:
             The body of the agent details request.
         """
-        variables: Dict[str, Any] = {"agentKey": self._agent_key}
-        if self._use_experimental is True:
-            variables["useExperimental"] = True
-        data = {
+        return {
             "query": self.query,
-            "variables": json.dumps(variables),
+            "variables": json.dumps(
+                {"agentKey": self._agent_key, "useExperimental": self._use_experimental}
+            ),
         }
-        return data

@@ -66,7 +66,9 @@ from ostorlab.cli import input_validators
     hidden=True,
 )
 @click.option(
-    "--use-experimental-agents",
+    "--experimental",
+    "-x",
+    "use_experimental_agents",
     is_flag=True,
     default=False,
     help="When set, experimental (prerelease) agent versions are eligible during install.",

@@ -5,28 +5,28 @@ import json
 from ostorlab.apis import agent_details
 
 
-def testAgentDetailsAPIRequest_whenUseExperimentalFalse_omitsUseExperimentalFromVariables() -> (
+def testAgentDetailsAPIRequest_whenUseExperimentalFalse_sendsUseExperimentalFalseInVariables() -> (
     None
 ):
-    """Test that variables only contain agentKey when use_experimental is False (backward-compatible)."""
+    """Test that variables include useExperimental: False when use_experimental is not set."""
     api_request = agent_details.AgentDetailsAPIRequest(agent_key="agent/ostorlab/nmap")
 
     data = api_request.data
     variables = json.loads(data["variables"])
 
-    assert variables == {"agentKey": "agent/ostorlab/nmap"}
+    assert variables == {"agentKey": "agent/ostorlab/nmap", "useExperimental": False}
 
 
-def testAgentDetailsAPIRequest_whenUseExperimentalFalse_sendsQueryWithoutUseExperimentalArg() -> (
+def testAgentDetailsAPIRequest_whenUseExperimentalFalse_sendsQueryWithUseExperimentalArg() -> (
     None
 ):
-    """Test that the original query form (without useExperimental) is sent by default for backward compat."""
+    """Test that the query always includes the useExperimental argument regardless of value."""
     api_request = agent_details.AgentDetailsAPIRequest(agent_key="agent/ostorlab/nmap")
 
     query = api_request.query
 
-    assert "$useExperimental" not in query
-    assert "useExperimental:" not in query
+    assert "$useExperimental: Boolean" in query
+    assert "useExperimental: $useExperimental" in query
 
 
 def testAgentDetailsAPIRequest_whenUseExperimentalTrue_includesUseExperimentalInVariables() -> (

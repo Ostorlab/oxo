@@ -920,7 +920,7 @@ agents:
 def testRunScan_whenInstallAndUseExperimentalFlagSet_passesUseExperimentalToGetDetails(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that --use-experimental-agents is threaded into agent_fetcher.get_details when installing agents."""
+    """Test that --experimental is threaded into agent_fetcher.get_details when installing agents."""
     agent_group_yaml = tmp_path / "agent_group.yaml"
     agent_group_yaml.write_text(
         """
@@ -949,7 +949,7 @@ agents:
         [
             "scan",
             "--runtime=local",
-            "--use-experimental-agents",
+            "--experimental",
             "run",
             "-g",
             str(agent_group_yaml),
