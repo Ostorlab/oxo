@@ -1,6 +1,6 @@
 # This workflow use pytest:
 #  - Install Python dependencies.
-#  - Run pytest for each of the supported Python versions ["3.10", "3.11", "3.12"]. 
+#  - Run pytest for each of the supported Python versions ["3.13", "3.14"]. 
 # Running pytest with -m "no docker" to disable test that require a docker installation.
 
 name: Pytest-Windows
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11" ,"3.14"]
+        python-version: ["3.13", "3.14"]
         os: [windows-latest]
 
     steps:
