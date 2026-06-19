@@ -153,7 +153,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 
 ### Git Workflow
 - Use conventional commit messages
-- Pull requests run CI on Python 3.10, 3.11, 3.12, 3.13, 3.14
+- Pull requests run CI on Python 3.13, 3.14
 - Squash commits when merging
 
 ## Project Structure Reference
