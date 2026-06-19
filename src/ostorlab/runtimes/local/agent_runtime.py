@@ -11,7 +11,7 @@ import io
 import logging
 import random
 import uuid
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import docker
 from docker import constants
@@ -156,7 +156,7 @@ class AgentRuntime:
         redis_service: redis.LocalRedis,
         jaeger_service: jaeger.LocalJaeger,
         gcp_logging_credential: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 

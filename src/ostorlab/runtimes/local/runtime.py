@@ -7,7 +7,7 @@ a local RabbitMQ.
 import logging
 import threading
 from concurrent import futures
-from typing import Dict, List
+from typing import List
 from typing import Optional
 
 import click
@@ -100,9 +100,9 @@ class LocalRuntime(runtime.Runtime):
         self,
         *args,
         scan_id: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
         tracing: Optional[bool] = False,
-        mq_exposed_ports: Optional[Dict[int, int]] = None,
+        mq_exposed_ports: dict[int, int] | None = None,
         gcp_logging_credential: Optional[str] = None,
         run_default_agents: bool = True,
         **kwargs,
@@ -117,7 +117,7 @@ class LocalRuntime(runtime.Runtime):
         self._redis_service: Optional[redis.LocalRedis] = None
         self._jaeger_service: Optional[jaeger.LocalJaeger] = None
         self._scan_db: Optional[models.Scan] = None
-        self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
+        self._mq_exposed_ports: dict[int, int] | None = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
         self._log_streamer: Optional[log_streamer.LogStream] = None

@@ -1,7 +1,6 @@
 """Module offering methods to validate CLI user input."""
 
 import re
-from typing import Dict, Tuple
 
 import click
 
@@ -25,8 +24,8 @@ def validate_port_binding_input(ctx: click.core.Context, param: str, value: str)
 
 
 def validate_labels(
-    ctx: click.core.Context, param: str, value: Tuple[str, ...]
-) -> Dict[str, str]:
+    ctx: click.core.Context, param: str, value: tuple[str, ...]
+) -> dict[str, str]:
     """Validator for the container labels flag.
     Input should be as follows: key1:value1 with support for multiple flags.
     """

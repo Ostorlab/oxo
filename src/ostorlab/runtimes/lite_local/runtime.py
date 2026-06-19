@@ -5,7 +5,7 @@ The local runtime requires Docker Swarm to run robust long-running services with
 
 import logging
 from concurrent import futures
-from typing import Dict, List
+from typing import List
 from typing import Optional
 
 import click
@@ -70,7 +70,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         *args,
         scan_id: str,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
         bus_url: str,
         bus_vhost: str,
         bus_management_url: str,

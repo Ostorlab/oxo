@@ -1,6 +1,6 @@
 """Scan module that handles running a scan using a list of agent keys and a target asset."""
 
-from typing import Dict, Optional
+from typing import Optional
 
 import click
 
@@ -96,7 +96,7 @@ def scan(
     bus_management_url: Optional[str] = None,
     bus_exchange_topic: Optional[str] = None,
     scan_id: Optional[str] = None,
-    labels: Optional[Dict[str, str]] = None,
+    labels: dict[str, str] | None = None,
     network: Optional[str] = None,
     redis_url: Optional[str] = None,
     tracing: bool = False,

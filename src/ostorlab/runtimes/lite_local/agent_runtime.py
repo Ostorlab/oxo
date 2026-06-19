@@ -12,7 +12,7 @@ import io
 import logging
 import random
 import uuid
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import docker
 from docker import constants
@@ -157,7 +157,7 @@ class AgentRuntime:
         redis_url: str,
         tracing_collector_url: str,
         gcp_logging_credential: Optional[str] = None,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
 
