@@ -66,12 +66,12 @@ from ostorlab.cli import input_validators
     hidden=True,
 )
 @click.option(
-    "--container-labels",
+    "--labels",
     help="Additional container labels as key:value pairs. Can be specified multiple times.",
     required=False,
     hidden=True,
     multiple=True,
-    callback=input_validators.validate_container_labels,
+    callback=input_validators.validate_labels,
 )
 @click.option("--tracing/--no-tracing", help="Enable tracing mode", default=False)
 @click.option(
@@ -96,7 +96,7 @@ def scan(
     bus_management_url: Optional[str] = None,
     bus_exchange_topic: Optional[str] = None,
     scan_id: Optional[str] = None,
-    container_labels: Optional[Dict[str, str]] = None,
+    labels: Optional[Dict[str, str]] = None,
     network: Optional[str] = None,
     redis_url: Optional[str] = None,
     tracing: bool = False,
@@ -120,7 +120,7 @@ def scan(
         runtime_instance = registry.select_runtime(
             runtime,
             scan_id=scan_id,
-            container_labels=container_labels or {},
+            labels=labels or {},
             bus_url=bus_url,
             bus_vhost=bus_vhost,
             bus_management_url=bus_management_url,

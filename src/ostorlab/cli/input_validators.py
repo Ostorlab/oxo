@@ -24,7 +24,7 @@ def validate_port_binding_input(ctx: click.core.Context, param: str, value: str)
         return value
 
 
-def validate_container_labels(
+def validate_labels(
     ctx: click.core.Context, param: str, value: Tuple[str, ...]
 ) -> Dict[str, str]:
     """Validator for the container labels flag.

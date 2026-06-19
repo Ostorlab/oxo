@@ -78,7 +78,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -145,7 +145,7 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -220,7 +220,7 @@ def testCreateAgentService_whenReplicasIsProvided_serviceCreatedWithReplicas(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(
         network_name="test", extra_configs=[], replicas=3
@@ -285,7 +285,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentDefinition_serviceCreat
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -412,7 +412,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentSettings_overridesAgent
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -465,7 +465,7 @@ def testCreateAgentService_whenNoExplicitServiceName_serviceKeyLabelIsAgentName(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -522,7 +522,7 @@ def testCreateAgentService_whenExplicitServiceName_serviceKeyLabelIsServiceName(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -584,7 +584,7 @@ def testCreateAgentService_whenImageNameTooLongForRandomSuffix_serviceNameTrunca
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -636,7 +636,7 @@ def testCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -687,7 +687,7 @@ def testCreateAgentService_whenServiceNameIsSet_addsMachineNameAsEnvVar(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
 
     runtime_agent.create_agent_service(
@@ -746,7 +746,7 @@ def testCreateAgentService_whenContainerLabelsProvided_mergesIntoContainerLabels
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={"ostorlab.reference_scan_id": "ref-123"},
+        labels={"ostorlab.reference_scan_id": "ref-123"},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -787,7 +787,7 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
-        container_labels={},
+        labels={},
     )
 
     mounts = runtime_agent.create_scan_volume_mounts(
