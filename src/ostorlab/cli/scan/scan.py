@@ -67,7 +67,7 @@ from ostorlab.cli import input_validators
 )
 @click.option(
     "--labels",
-    help="Additional container labels as key:value pairs. Can be specified multiple times.",
+    help="Additional container labels as key:value or key=value pairs. Can be specified multiple times.",
     required=False,
     hidden=True,
     multiple=True,
