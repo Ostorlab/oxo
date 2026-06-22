@@ -441,10 +441,10 @@ class AgentRuntime:
                 if service_name is not None
                 else agent_definition.name,
             },
-            container_labels={
+            container_labels=self.labels
+            | {
                 "ostorlab.scan_id": self.runtime_name,
-            }
-            | self.labels,
+            },
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
