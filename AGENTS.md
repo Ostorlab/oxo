@@ -74,7 +74,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 
 ### General Principles
 - **Line length**: 88 characters (Black/ruff compatible)
-- **Target Python versions**: 3.10, 3.11, 3.12, 3.13, 3.14
+- **Target Python versions**: 3.13, 3.14
 - **Code formatter**: Ruff (replaced flake8/black)
 - **Type checker**: mypy with strict configuration
 - **No comments**: Code should be self-documenting
