@@ -66,3 +66,8 @@ def testValidateLabels_whenMixedFormats_returnsAllParsed() -> None:
 def testValidateLabels_whenEmptyValue_parsesSuccessfully() -> None:
     result: dict[str, str] = input_validators.validate_labels(None, "", ("key:",))
     assert result == {"key": ""}
+
+
+def testValidateLabels_whenEqualsSeparatorAndColonInValue_splitsOnFirstEquals() -> None:
+    result = input_validators.validate_labels(None, "", ("key=http://host:8080",))
+    assert result == {"key": "http://host:8080"}

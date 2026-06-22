@@ -34,9 +34,11 @@ def validate_labels(
         return {}
     labels = {}
     for item in value:
-        if ":" in item:
+        colon_pos = item.find(":")
+        equals_pos = item.find("=")
+        if colon_pos != -1 and (equals_pos == -1 or colon_pos < equals_pos):
             key, val = item.split(":", 1)
-        elif "=" in item:
+        elif equals_pos != -1:
             key, val = item.split("=", 1)
         else:
             raise click.UsageError(
