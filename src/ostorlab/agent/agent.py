@@ -202,7 +202,7 @@ class AgentMixin(
         # This is call in a thread to avoid blocking calls from affecting the MQ heartbeat running on the main thread.
         t = threading.Thread(target=self.start)
         t.start()
-        # t.join()
+        t.join()
         logger.debug("calling start method done")
         try:
             if self.in_selectors is not None and len(self.in_selectors) > 0:
