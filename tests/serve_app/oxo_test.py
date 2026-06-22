@@ -2331,6 +2331,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
@@ -2476,6 +2477,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
@@ -2557,6 +2559,7 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
@@ -2629,6 +2632,7 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
@@ -2701,6 +2705,7 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )
@@ -2773,6 +2778,7 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
     )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
     )

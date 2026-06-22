@@ -194,6 +194,7 @@ class AgentGroupDefinition:
     agents: List[AgentSettings]
     name: Optional[str] = None
     description: Optional[str] = None
+    use_experimental_agents: bool = False
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -245,7 +246,8 @@ class AgentGroupDefinition:
         description = agent_group_def.get(
             "description", f"""Agent group : {",".join(agents_names)}"""
         )
-        return cls(agent_settings, name, description)
+        use_experimental_agents = agent_group_def.get("use_experimental_agents", False)
+        return cls(agent_settings, name, description, use_experimental_agents)
 
     @classmethod
     def from_bus_message(cls, request):
