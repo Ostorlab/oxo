@@ -71,3 +71,13 @@ def testValidateLabels_whenEmptyValue_parsesSuccessfully() -> None:
 def testValidateLabels_whenEqualsSeparatorAndColonInValue_splitsOnFirstEquals() -> None:
     result = input_validators.validate_labels(None, "", ("key=http://host:8080",))
     assert result == {"key": "http://host:8080"}
+
+
+def testValidateLabels_whenEmptyKeyWithColon_raisesUsageError() -> None:
+    with pytest.raises(click.UsageError):
+        input_validators.validate_labels(None, "", (":value",))
+
+
+def testValidateLabels_whenEmptyKeyWithEquals_raisesUsageError() -> None:
+    with pytest.raises(click.UsageError):
+        input_validators.validate_labels(None, "", ("=value",))
