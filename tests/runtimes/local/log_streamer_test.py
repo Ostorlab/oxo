@@ -39,6 +39,22 @@ def testServiceLogStream_whenLogsAreAvailable_logsArePrintedToConsole(
     )
 
 
+def testServiceLogStream_whenLogLineHasRichMarkup_escapesLogLine(
+    mocker: plugin.MockerFixture, service_mock: mock.MagicMock
+) -> None:
+    """Test that log lines are escaped before being passed to rich."""
+    service_mock.logs.return_value = [b"closing tag [/] without opener\n"]
+    console_mock = mocker.patch("ostorlab.runtimes.local.log_streamer.console")
+    mocker.patch("threading.Event.is_set", side_effect=[False, True])
+
+    stream = log_streamer._ServiceLogStream(service_mock, color="red")
+    stream._stream()
+
+    console_mock.info.assert_called_once_with(
+        "[red bold]service_name:[/] closing tag \\[/] without opener"
+    )
+
+
 def testLogStream_whenStreamIsCalled_aNewThreadIsStarted(
     mocker: plugin.MockerFixture, service_mock: mock.MagicMock
 ) -> None:

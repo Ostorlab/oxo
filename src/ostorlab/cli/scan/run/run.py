@@ -98,7 +98,7 @@ WAIT_BETWEEN_RETRIES = 5
 )
 @click.option(
     "--timeout",
-    "-t",
+    "-T",
     type=int,
     help="Timeout for the scan in seconds",
     required=False,
