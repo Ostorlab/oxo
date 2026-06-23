@@ -1,6 +1,7 @@
 """Tests for scan run command."""
 
 import pathlib
+import warnings
 
 from pytest_mock import plugin
 import httpx
@@ -28,6 +29,24 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
     assert "Commands:" in result.output
     assert "Options:" in result.output
     assert result.exit_code == 2
+
+
+def testOstorlabScanRunCLI_whenHelpRequested_doesNotWarnAboutDuplicateOptions(
+    mocker,
+) -> None:
+    """Test scan run help does not trigger click duplicate option warnings."""
+    runner = CliRunner()
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+
+    with warnings.catch_warnings(record=True) as caught_warnings:
+        warnings.simplefilter("always")
+        result = runner.invoke(rootcli.rootcli, ["scan", "run", "--help"])
+
+    assert result.exit_code == 0
+    assert all(
+        "The parameter -t is used more than once" not in str(w.message)
+        for w in caught_warnings
+    )
 
 
 def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
@@ -559,9 +578,9 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
             "scan",
             "--runtime=local",
             "run",
-            "--install",
             "--agent=agent/ostorlab/nmap",
-            "--timeout=3600",
+            "-T",
+            "3600",
             "--init-sleep=1800",
             "ip",
             "8.8.8.8",

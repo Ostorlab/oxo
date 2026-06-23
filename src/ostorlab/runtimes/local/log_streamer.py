@@ -5,6 +5,7 @@ import time
 
 import docker.errors
 from docker.models import services as docker_service
+from rich.markup import escape
 
 from ostorlab.cli import console as cli_console
 
@@ -48,7 +49,10 @@ class _ServiceLogStream:
         for line in logs:
             if self._stop_event.is_set():
                 break
-            console.info(f"[{self._color} bold]{name}:[/] {line[:-1].decode()}")
+            log_line = line[:-1].decode()
+            console.info(
+                f"[{self._color} bold]{escape(name)}:[/] {escape(log_line)}"
+            )
 
     def stop(self) -> None:
         """Stop the log stream."""
