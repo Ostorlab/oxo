@@ -66,6 +66,14 @@ from ostorlab.cli import input_validators
     hidden=True,
 )
 @click.option(
+    "--labels",
+    help="Additional container labels as key:value or key=value pairs. Can be specified multiple times.",
+    required=False,
+    hidden=True,
+    multiple=True,
+    callback=input_validators.validate_labels,
+)
+@click.option(
     "--experimental",
     "-x",
     "use_experimental_agents",
@@ -97,6 +105,7 @@ def scan(
     bus_management_url: Optional[str] = None,
     bus_exchange_topic: Optional[str] = None,
     scan_id: Optional[str] = None,
+    labels: dict[str, str] | None = None,
     use_experimental_agents: bool = False,
     network: Optional[str] = None,
     redis_url: Optional[str] = None,
@@ -121,6 +130,7 @@ def scan(
         runtime_instance = registry.select_runtime(
             runtime,
             scan_id=scan_id,
+            labels=labels or {},
             bus_url=bus_url,
             bus_vhost=bus_vhost,
             bus_management_url=bus_management_url,

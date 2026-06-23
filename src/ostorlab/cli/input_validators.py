@@ -21,3 +21,32 @@ def validate_port_binding_input(ctx: click.core.Context, param: str, value: str)
         )
     else:
         return value
+
+
+def validate_labels(
+    ctx: click.core.Context, param: str, value: tuple[str, ...] | None
+) -> dict[str, str]:
+    """Validator for the container labels flag.
+    Input should be key:value or key=value, with support for multiple flags.
+    """
+    del ctx, param
+    if value is None or len(value) == 0:
+        return {}
+    labels = {}
+    for item in value:
+        colon_pos = item.find(":")
+        equals_pos = item.find("=")
+        if colon_pos != -1 and (equals_pos == -1 or colon_pos < equals_pos):
+            key, val = item.split(":", 1)
+        elif equals_pos != -1:
+            key, val = item.split("=", 1)
+        else:
+            raise click.UsageError(
+                f"Invalid container label format '{item}'. Use key:value or key=value."
+            )
+        if key == "":
+            raise click.UsageError(
+                f"Invalid container label '{item}': key must not be empty."
+            )
+        labels[key] = val
+    return labels

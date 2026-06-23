@@ -78,6 +78,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -90,6 +91,7 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 40000
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
+    assert kwargs["container_labels"] == {"ostorlab.scan_id": "42"}
 
 
 def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_serviceCreatedWithAgentDef(
@@ -143,6 +145,7 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -217,6 +220,7 @@ def testCreateAgentService_whenReplicasIsProvided_serviceCreatedWithReplicas(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(
         network_name="test", extra_configs=[], replicas=3
@@ -281,6 +285,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentDefinition_serviceCreat
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -407,6 +412,7 @@ def testCreateAgentService_whenServiceNameProvidedInAgentSettings_overridesAgent
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -459,6 +465,7 @@ def testCreateAgentService_whenNoExplicitServiceName_serviceKeyLabelIsAgentName(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -515,6 +522,7 @@ def testCreateAgentService_whenExplicitServiceName_serviceKeyLabelIsServiceName(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -576,6 +584,7 @@ def testCreateAgentService_whenImageNameTooLongForRandomSuffix_serviceNameTrunca
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -627,6 +636,7 @@ def testCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -677,6 +687,7 @@ def testCreateAgentService_whenServiceNameIsSet_addsMachineNameAsEnvVar(
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
 
     runtime_agent.create_agent_service(
@@ -691,6 +702,57 @@ def testCreateAgentService_whenServiceNameIsSet_addsMachineNameAsEnvVar(
         "UNIVERSE not found in env variables"
     )
     assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars
+
+
+def testCreateAgentService_whenContainerLabelsProvided_mergesIntoContainerLabels(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Container labels should be merged into the container_labels dict when provided."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+        open_ports=[],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config"
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+        labels={"ostorlab.reference_scan_id": "ref-123"},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["container_labels"]["ostorlab.reference_scan_id"] == "ref-123"
+    assert kwargs["container_labels"]["ostorlab.scan_id"] == "42"
 
 
 def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts(
@@ -725,6 +787,7 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         mq_service=None,
         redis_service=None,
         jaeger_service=None,
+        labels={},
     )
 
     mounts = runtime_agent.create_scan_volume_mounts(

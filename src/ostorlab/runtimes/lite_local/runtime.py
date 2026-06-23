@@ -70,6 +70,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         *args,
         scan_id: str,
+        labels: dict[str, str] | None = None,
         bus_url: str,
         bus_vhost: str,
         bus_management_url: str,
@@ -84,6 +85,7 @@ class LiteLocalRuntime(runtime.Runtime):
 
         Args:
             scan_id: Provided scan identifier, will be used to define the runtime name.
+            labels: Optional additional container labels.
             bus_url: Bus URL, may contain credentials.
             bus_vhost: Bus virtual host, common default is / but none is provided here.
             bus_management_url: Bus management URL, typically runs on a separate port over https.
@@ -112,6 +114,7 @@ class LiteLocalRuntime(runtime.Runtime):
             raise ValueError("Missing required fields.")
 
         self.scan_id = scan_id
+        self._labels = labels if labels is not None else {}
         self._bus_url = bus_url
         self._bus_vhost = bus_vhost
         self._bus_management_url = bus_management_url
@@ -298,6 +301,7 @@ class LiteLocalRuntime(runtime.Runtime):
             self._redis_url,
             self._tracing_collector_url,
             self._gcp_logging_credential,
+            labels=self._labels,
         )
         runtime_agent.create_agent_service(
             network_name=self.network,
