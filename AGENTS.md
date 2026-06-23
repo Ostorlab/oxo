@@ -74,7 +74,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 
 ### General Principles
 - **Line length**: 88 characters (Black/ruff compatible)
-- **Target Python versions**: 3.9, 3.10, 3.11
+- **Target Python versions**: 3.13, 3.14
 - **Code formatter**: Ruff (replaced flake8/black)
 - **Type checker**: mypy with strict configuration
 - **No comments**: Code should be self-documenting
@@ -119,7 +119,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 - All public functions must have type annotations
 - Return types must be specified
 - Use `Optional[T]` instead of `Union[T, None]`
-- Use built-in generics: `list[str]` instead of `List[str]` (Python 3.9+)
+- Use built-in generics: `list[str]` instead of `List[str]` (Python 3.10+)
 - All abstract methods and properties must be typed
 
 ### Testing
@@ -153,7 +153,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 
 ### Git Workflow
 - Use conventional commit messages
-- Pull requests run CI on Python 3.9, 3.10, 3.11
+- Pull requests run CI on Python 3.13, 3.14
 - Squash commits when merging
 
 ## Project Structure Reference

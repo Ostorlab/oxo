@@ -9,7 +9,6 @@ import io
 import json
 import logging
 import os
-import sys
 import tempfile
 import uuid
 from typing import Any, Dict, Optional
@@ -154,17 +153,9 @@ class OpenTelemetryMixin:
             )
             trace.set_tracer_provider(provider)
 
-            # NOTE: We have experienced crashes with BatchSpan processor on python version 3.9. The error is linked to
-            # threading in the Python runtime. This warrants more investigation, this is a temporary fix until the
-            # root cause is clearly identified.
-            if sys.version_info >= (3, 10):
-                self._span_processor = sdk_export.BatchSpanProcessor(
-                    self._exporter.get_trace_exporter()
-                )
-            else:
-                self._span_processor = sdk_export.SimpleSpanProcessor(
-                    self._exporter.get_trace_exporter()
-                )
+            self._span_processor = sdk_export.BatchSpanProcessor(
+                self._exporter.get_trace_exporter()
+            )
             trace.get_tracer_provider().add_span_processor(self._span_processor)
             self._tracer = trace.get_tracer(__name__)
 
