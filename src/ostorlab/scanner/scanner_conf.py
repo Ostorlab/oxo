@@ -30,6 +30,7 @@ class ScannerConfig:
     bus_client_name: str
     registry_conf: RegistryConfig
     subject_bus_configs: List[SubjectBusConfigs]
+    nats_user_creds: Optional[str]
 
     @classmethod
     def from_json(cls, config: Dict[str, Any]) -> Optional["ScannerConfig"]:
@@ -74,6 +75,7 @@ class ScannerConfig:
             bus_url=conf.get("busUrl"),
             bus_cluster_id=conf.get("busClusterId"),
             bus_client_name=conf.get("busClientName"),
+            nats_user_creds=conf.get("natsUserCreds"),
             registry_conf=registry_conf_instance,
             subject_bus_configs=bus_configs,
         )

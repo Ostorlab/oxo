@@ -8,6 +8,8 @@ import sys
 import traceback
 from typing import Optional
 
+import tempfile
+
 from nats.js import errors as jetstream_errors
 from nats import errors as nats_errors
 import nats
@@ -38,10 +40,17 @@ class ClientBusHandler:
         name: str,
         tls_context: Optional[ssl.SSLContext] = None,
         loop=None,
+        nats_user_creds: Optional[str] = None,
     ):
         self._bus_url = bus_url
         self._cluster_id = cluster_id
         self._name = name
+        self._nats_user_creds = nats_user_creds
+        self._creds_file = None
+        if self._nats_user_creds:
+            self._creds_file = tempfile.NamedTemporaryFile(mode="w", delete=False)
+            self._creds_file.write(self._nats_user_creds)
+            self._creds_file.flush()
         self._nc: nats.NATS = nats.NATS()
         self._js: Optional[js_client.JetStreamContext] = None
         self._loop = loop or asyncio.get_event_loop()
@@ -64,14 +73,20 @@ class ClientBusHandler:
         Args:
             connect_timeout: Timeout for establishing the connection. Defaults to DEFAULT_CONNECT_TIMEOUT.
         """
+        kwargs = {
+            "servers": [self._bus_url],
+            "name": self._name,
+            "tls": self._tls_context,
+            "connect_timeout": connect_timeout,
+            "error_cb": self._error_cb,
+            "closed_cb": self._closed_cb,
+            "reconnected_cb": self._reconnected_cb,
+        }
+        if self._creds_file:
+            kwargs["user_credentials"] = self._creds_file.name
+
         await self._nc.connect(
-            self._bus_url,
-            name=self._name,
-            tls=self._tls_context,
-            connect_timeout=connect_timeout,
-            error_cb=self._error_cb,
-            closed_cb=self._closed_cb,
-            reconnected_cb=self._reconnected_cb,
+            **kwargs,
         )
         self._js = self._nc.jetstream()
 
@@ -125,6 +140,7 @@ class BusHandler(ClientBusHandler):
         name: str,
         tls_context: Optional[ssl.SSLContext] = None,
         loop=None,
+        nats_user_creds: Optional[str] = None,
     ):
         super().__init__(
             bus_url=bus_url,
@@ -132,6 +148,7 @@ class BusHandler(ClientBusHandler):
             name=name,
             tls_context=tls_context,
             loop=loop,
+            nats_user_creds=nats_user_creds,
         )
         self._subjects_cb_map = {}
         self._last_message_received_time = datetime.datetime.now()

@@ -129,6 +129,7 @@ class ScanHandler:
             bus_url=config.bus_url,
             cluster_id=config.bus_cluster_id,
             name=config.bus_client_name,
+            nats_user_creds=config.nats_user_creds,
         )
         return bus_handler
 

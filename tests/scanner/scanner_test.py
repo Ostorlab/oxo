@@ -24,6 +24,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
                             "busUrl": "nats://localhost:4222",
                             "busClusterId": "cluster_id",
                             "busClientName": "client_name",
+                            "natsUserCreds": "fake_creds",
                             "subjectBusConfigs": {
                                 "subjectBusConfigs": [
                                     {"subject": "subject1", "queue": "queue1"}
@@ -46,3 +47,4 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
     assert scanner_conf_instance.registry_conf.token == "<secret_key>"
     assert scanner_conf_instance.subject_bus_configs[0].subject == "subject1"
     assert scanner_conf_instance.subject_bus_configs[0].queue == "queue1"
+    assert scanner_conf_instance.nats_user_creds == "fake_creds"
