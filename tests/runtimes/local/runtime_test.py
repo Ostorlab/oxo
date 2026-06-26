@@ -14,6 +14,7 @@ from ostorlab.assets import android_apk
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
+from ostorlab.utils import definitions as utils_definitions
 
 
 @pytest.mark.skip(reason="Missing inject asset agent.")
@@ -481,3 +482,54 @@ def testLocalRuntimeInit_always_setsMaxPoolSize(mocker):
     runtime = local_runtime.LocalRuntime()
     runtime._docker_checks()
     mock_from_env.assert_any_call(max_pool_size=100)
+
+
+@pytest.mark.docker
+def testScanInLocalRuntime_whenInjectAssetAgentIsProvided_shouldUseTheProvidedAgentSettings(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """Ensure if an inject_asset agent settings are passed as part of the agent group,
+    they are used instead of the default ones."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.mq.LocalRabbitMQ.is_service_healthy",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.redis.LocalRedis.is_service_healthy",
+        return_value=True,
+    )
+    agent_runtime_mock = mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime"
+    )
+    local_runtime_instance = local_runtime.LocalRuntime(run_default_agents=False)
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[
+            definitions.AgentSettings(
+                key="agent/ostorlab/inject_asset",
+                args=[utils_definitions.Arg(name="arg1", type="string", value="val1")],
+            )
+        ]
+    )
+
+    local_runtime_instance.can_run(agent_group_definition=agent_group_definition)
+    local_runtime_instance.scan(
+        title="test local",
+        agent_group_definition=agent_group_definition,
+        assets=[android_apk.AndroidApk(content=b"APK")],
+    )
+
+    start_agent_mock_call_args = agent_runtime_mock.call_args_list
+    assert len(start_agent_mock_call_args) == 1
+    assert (
+        start_agent_mock_call_args[0].kwargs["agent_settings"].key
+        == "agent/ostorlab/inject_asset"
+    )
+    assert start_agent_mock_call_args[0].kwargs["agent_settings"].args[0].name == "arg1"
+    assert (
+        start_agent_mock_call_args[0].kwargs["agent_settings"].args[0].value == "val1"
+    )
