@@ -25,7 +25,7 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     result = runner.invoke(rootcli.rootcli, ["scan", "run"])
-    assert "Usage: rootcli scan run [OPTIONS] COMMAND [ARGS]..." in result.output
+    assert "Usage: rootcli scan run [OPTIONS] [COMMAND] [ARGS]..." in result.output
     assert "Commands:" in result.output
     assert "Options:" in result.output
     assert result.exit_code == 2
