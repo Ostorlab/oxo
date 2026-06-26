@@ -234,7 +234,18 @@ class LocalRuntime(runtime.Runtime):
                 raise AgentNotHealthy()
 
             if assets is not None:
-                self._inject_assets(assets)
+                inject_asset_agent_settings = next(
+                    (
+                        agent
+                        for agent in agent_group_definition.agents
+                        if agent.key == ASSET_INJECTION_AGENT_DEFAULT
+                    ),
+                    None,
+                )
+                self._inject_assets(
+                    assets=assets,
+                    inject_asset_agent_settings=inject_asset_agent_settings,
+                )
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
@@ -420,6 +431,7 @@ class LocalRuntime(runtime.Runtime):
             future_to_agent = {
                 executor.submit(self._start_agent, agent, extra_configs=[]): agent
                 for agent in agent_group_definition.agents
+                if agent.key != ASSET_INJECTION_AGENT_DEFAULT
             }
             for future in futures.as_completed(future_to_agent):
                 future.result()
@@ -536,7 +548,11 @@ class LocalRuntime(runtime.Runtime):
         )
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
 
-    def _inject_assets(self, assets: List[base_asset.Asset]):
+    def _inject_assets(
+        self,
+        assets: list[base_asset.Asset],
+        inject_asset_agent_settings: definitions.AgentSettings | None = None,
+    ):
         """Injects the scan target assets."""
         contents = {}
         for i, asset in enumerate(assets):
@@ -546,9 +562,11 @@ class LocalRuntime(runtime.Runtime):
 
         volumes.create_volume(f"asset_{self.name}", contents)
 
-        inject_asset_agent_settings = definitions.AgentSettings(
-            key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
-        )
+        if inject_asset_agent_settings is None:
+            inject_asset_agent_settings = definitions.AgentSettings(
+                key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
+            )
+
         self._start_agent(
             agent=inject_asset_agent_settings,
             extra_mounts=[

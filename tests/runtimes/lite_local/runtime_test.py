@@ -11,6 +11,7 @@ from ostorlab.runtimes import definitions
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
 from ostorlab.utils import definitions as utils_definitions
+from ostorlab.assets import android_apk
 
 
 def container_name_mock(name):
@@ -671,3 +672,72 @@ def testLiteLocalRuntimeInit_always_setsMaxPoolSize(mocker):
         tracing_collector_url="jaeger://localhost/",
     )
     mock_from_env.assert_called_once_with(max_pool_size=100)
+
+
+@pytest.mark.docker
+def testScanInLiteLocalRuntime_whenInjectAssetAgentIsProvided_shouldUseTheProvidedAgentSettings(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure if an inject_asset agent settings are passed as part of the agent group,
+    they are used instead of the default ones."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    agent_runtime_mock = mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.runtime.LiteLocalRuntime._are_agents_ready",
+        return_value=True,
+    )
+
+    lite_local_runtime_instance = lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[
+            definitions.AgentSettings(
+                key="agent/ostorlab/inject_asset",
+                args=[utils_definitions.Arg(name="arg1", type="string", value="val1")],
+            )
+        ]
+    )
+
+    lite_local_runtime_instance.scan(
+        title="test lite local",
+        agent_group_definition=agent_group_definition,
+        assets=[android_apk.AndroidApk(content=b"APK")],
+    )
+
+    start_agent_mock_call_args = agent_runtime_mock.call_args_list
+    assert len(start_agent_mock_call_args) == 1
+    assert start_agent_mock_call_args[0].args[0].key == "agent/ostorlab/inject_asset"
+    assert start_agent_mock_call_args[0].args[0].args[0].name == "arg1"
+    assert start_agent_mock_call_args[0].args[0].args[0].value == "val1"
