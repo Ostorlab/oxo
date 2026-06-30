@@ -675,8 +675,8 @@ def testLiteLocalRuntimeInit_always_setsMaxPoolSize(mocker):
 
 
 def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettings(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test that scan calls _inject_assets with None when assets are provided but cloud_inject_asset is missing."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
@@ -724,8 +724,8 @@ def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettin
 
 
 def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentPresent_callsInjectAssets(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test that scan calls _inject_assets when assets and cloud_inject_asset are provided."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
@@ -771,7 +771,9 @@ def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentPresent_callsInjectAssets
     mock_inject.assert_called_once_with(assets=assets, agent_settings=agent_settings)
 
 
-def testLiteLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(mocker):
+def testLiteLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test that _inject_assets creates a volume and starts the agent."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
@@ -819,7 +821,9 @@ def testLiteLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(mocker):
     assert any(m["Target"] == "/asset" for m in kwargs["extra_mounts"])
 
 
-def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(mocker):
+def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test that _inject_assets uses default settings when agent_settings is None."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
