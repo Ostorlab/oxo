@@ -360,7 +360,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         assets: List[base_asset.Asset],
         agent_settings: definitions.AgentSettings | None,
-    )-> None:
+    ) -> None:
         """Injects the scan target assets."""
 
         contents = {}
