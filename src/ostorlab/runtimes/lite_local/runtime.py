@@ -29,7 +29,8 @@ NETWORK_PREFIX = "ostorlab_lite_local_network"
 logger = logging.getLogger(__name__)
 console = cli_console.Console(logger=logger)
 
-ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/cloud_inject_asset"
+ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
+ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 
 
 class UnhealthyService(exceptions.OstorlabError):
@@ -198,7 +199,7 @@ class LiteLocalRuntime(runtime.Runtime):
                     (
                         agent
                         for agent in agent_group_definition.agents
-                        if agent.key == ASSET_INJECTION_AGENT_DEFAULT
+                        if agent.key == ASSET_CLOUD_INJECTION_AGENT
                     ),
                     None,
                 )
@@ -281,7 +282,7 @@ class LiteLocalRuntime(runtime.Runtime):
             future_to_agent = {
                 executor.submit(self._start_agent, agent, extra_configs=[]): agent
                 for agent in agent_group_definition.agents
-                if agent.key != ASSET_INJECTION_AGENT_DEFAULT
+                if agent.key != ASSET_CLOUD_INJECTION_AGENT
             }
             for future in futures.as_completed(future_to_agent):
                 future.result()
