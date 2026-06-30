@@ -866,5 +866,5 @@ def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_create_volume.assert_called_once()
     mock_start_agent.assert_called_once()
     args, kwargs = mock_start_agent.call_args
-    assert kwargs["agent"].key == "agent/ostorlab/cloud_inject_asset"
+    assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none"
