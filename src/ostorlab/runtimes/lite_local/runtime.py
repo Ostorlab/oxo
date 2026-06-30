@@ -29,7 +29,7 @@ NETWORK_PREFIX = "ostorlab_lite_local_network"
 logger = logging.getLogger(__name__)
 console = cli_console.Console(logger=logger)
 
-ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
+ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/cloud_inject_asset"
 
 
 class UnhealthyService(exceptions.OstorlabError):
@@ -194,8 +194,19 @@ class LiteLocalRuntime(runtime.Runtime):
             if is_healthy is False:
                 raise AgentNotHealthy()
             if assets is not None:
+                inject_asset_agent_settings = next(
+                    (
+                        agent
+                        for agent in agent_group_definition.agents
+                        if agent.key == ASSET_INJECTION_AGENT_DEFAULT
+                    ),
+                    None,
+                )
                 console.info("Injecting assets")
-                self._inject_assets(assets=assets)
+                self._inject_assets(
+                    assets=assets,
+                    agent_settings=inject_asset_agent_settings,
+                )
         except AgentNotHealthy:
             console.error("Agent not starting")
             self.stop(self.scan_id)
@@ -270,6 +281,7 @@ class LiteLocalRuntime(runtime.Runtime):
             future_to_agent = {
                 executor.submit(self._start_agent, agent, extra_configs=[]): agent
                 for agent in agent_group_definition.agents
+                if agent.key != ASSET_INJECTION_AGENT_DEFAULT
             }
             for future in futures.as_completed(future_to_agent):
                 future.result()
@@ -344,7 +356,11 @@ class LiteLocalRuntime(runtime.Runtime):
             if service.name.startswith("agent_"):
                 yield service
 
-    def _inject_assets(self, assets: List[base_asset.Asset]):
+    def _inject_assets(
+        self,
+        assets: List[base_asset.Asset],
+        agent_settings: definitions.AgentSettings | None,
+    ):
         """Injects the scan target assets."""
 
         contents = {}
@@ -354,11 +370,12 @@ class LiteLocalRuntime(runtime.Runtime):
 
         volumes.create_volume(f"asset_{self.name}", contents)
 
-        inject_asset_agent_settings = definitions.AgentSettings(
-            key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
-        )
+        if agent_settings is None:
+            agent_settings = definitions.AgentSettings(
+                key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
+            )
         self._start_agent(
-            agent=inject_asset_agent_settings,
+            agent=agent_settings,
             extra_mounts=[
                 docker.types.Mount(
                     target="/asset", source=f"asset_{self.name}", type="volume"

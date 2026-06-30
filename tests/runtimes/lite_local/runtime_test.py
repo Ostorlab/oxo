@@ -6,6 +6,7 @@ from docker.models import services as services_model
 from pytest_mock import plugin
 
 import ostorlab
+from ostorlab.assets import ipv4
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.lite_local import agent_runtime
@@ -671,3 +672,195 @@ def testLiteLocalRuntimeInit_always_setsMaxPoolSize(mocker):
         tracing_collector_url="jaeger://localhost/",
     )
     mock_from_env.assert_called_once_with(max_pool_size=100)
+
+
+def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettings(
+    mocker,
+):
+    """Test that scan calls _inject_assets with None when assets are provided but cloud_inject_asset is missing."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once()
+    _, kwargs = mock_inject.call_args
+    assert kwargs["agent_settings"] is None
+
+
+def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentPresent_callsInjectAssets(
+    mocker,
+):
+    """Test that scan calls _inject_assets when assets and cloud_inject_asset are provided."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    agent_group = definitions.AgentGroupDefinition(agents=[agent_settings])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once_with(assets=assets, agent_settings=agent_settings)
+
+
+def testLiteLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(mocker):
+    """Test that _inject_assets creates a volume and starts the agent."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent")
+
+    runtime._inject_assets(assets=assets, agent_settings=agent_settings)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"] == agent_settings
+    assert any(m["Target"] == "/asset" for m in kwargs["extra_mounts"])
+
+
+def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(mocker):
+    """Test that _inject_assets uses default settings when agent_settings is None."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent")
+
+    runtime._inject_assets(assets=assets, agent_settings=None)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"].key == "agent/ostorlab/cloud_inject_asset"
+    assert kwargs["agent"].restart_policy == "none"
