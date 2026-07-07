@@ -276,7 +276,9 @@ class LiteLocalRuntime(runtime.Runtime):
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
-    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
+    def _start_agents(
+        self, agent_group_definition: definitions.AgentGroupDefinition
+    ) -> None:
         """Starts all the agents as list in the agent run definition."""
         with futures.ThreadPoolExecutor() as executor:
             future_to_agent = {

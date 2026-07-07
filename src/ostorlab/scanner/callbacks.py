@@ -83,7 +83,9 @@ def _extract_assets(request: Any) -> list[asset.Asset]:
     logger.debug("Extracting assets.")
     assets = []
     asset_type = request.WhichOneof("asset")
-    asset_value = proto_dict.protobuf_to_dict(getattr(request, asset_type))
+    asset_value = proto_dict.protobuf_to_dict(
+        getattr(request, asset_type), use_enum_labels=True
+    )
     if asset_type in ("ip", "ipv4", "ipv6"):
         assets.append(_prepare_ip_asset(asset_value))
     elif asset_type == "android_store":

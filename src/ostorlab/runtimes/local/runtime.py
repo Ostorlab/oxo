@@ -46,6 +46,7 @@ NETWORK_PREFIX = "ostorlab_local_network"
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
 
+ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
@@ -234,7 +235,19 @@ class LocalRuntime(runtime.Runtime):
                 raise AgentNotHealthy()
 
             if assets is not None:
-                self._inject_assets(assets)
+                inject_asset_agent_settings = next(
+                    (
+                        agent
+                        for agent in agent_group_definition.agents
+                        if agent.key == ASSET_CLOUD_INJECTION_AGENT
+                    ),
+                    None,
+                )
+                console.info("Injecting assets")
+                self._inject_assets(
+                    assets=assets,
+                    agent_settings=inject_asset_agent_settings,
+                )
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
@@ -414,12 +427,15 @@ class LocalRuntime(runtime.Runtime):
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
-    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
+    def _start_agents(
+        self, agent_group_definition: definitions.AgentGroupDefinition
+    ) -> None:
         """Starts all the agents as list in the agent run definition."""
         with futures.ThreadPoolExecutor() as executor:
             future_to_agent = {
                 executor.submit(self._start_agent, agent, extra_configs=[]): agent
                 for agent in agent_group_definition.agents
+                if agent.key != ASSET_CLOUD_INJECTION_AGENT
             }
             for future in futures.as_completed(future_to_agent):
                 future.result()
@@ -536,7 +552,11 @@ class LocalRuntime(runtime.Runtime):
         )
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
 
-    def _inject_assets(self, assets: List[base_asset.Asset]):
+    def _inject_assets(
+        self,
+        assets: List[base_asset.Asset],
+        agent_settings: definitions.AgentSettings | None,
+    ):
         """Injects the scan target assets."""
         contents = {}
         for i, asset in enumerate(assets):
@@ -546,11 +566,13 @@ class LocalRuntime(runtime.Runtime):
 
         volumes.create_volume(f"asset_{self.name}", contents)
 
-        inject_asset_agent_settings = definitions.AgentSettings(
-            key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
-        )
+        if agent_settings is None:
+            agent_settings = definitions.AgentSettings(
+                key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
+            )
+
         self._start_agent(
-            agent=inject_asset_agent_settings,
+            agent=agent_settings,
             extra_mounts=[
                 docker.types.Mount(
                     target="/asset", source=f"asset_{self.name}", type="volume"
