@@ -481,3 +481,186 @@ def testLocalRuntimeInit_always_setsMaxPoolSize(mocker):
     runtime = local_runtime.LocalRuntime()
     runtime._docker_checks()
     mock_from_env.assert_any_call(max_pool_size=100)
+
+def testLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettings(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that scan calls _inject_assets with None when assets are provided but cloud_inject_asset is missing."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mocker.patch.object(runtime, "_check_services_healthy")
+    mocker.patch.object(runtime, "_start_services")
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_pre_agents")
+    mocker.patch.object(runtime, "_start_post_agents")
+    mocker.patch.object(runtime, "_update_scan_progress")
+    mocker.patch.object(runtime, "_wait_log_streamer")
+
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once()
+    _, kwargs = mock_inject.call_args
+    assert kwargs["agent_settings"] is None
+
+
+def testLocalRuntimeScan_whenAssetsProvidedAndAgentPresent_callsInjectAssets(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that scan calls _inject_assets when assets and cloud_inject_asset are provided."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    agent_group = definitions.AgentGroupDefinition(agents=[agent_settings])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mocker.patch.object(runtime, "_check_services_healthy")
+    mocker.patch.object(runtime, "_start_services")
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_pre_agents")
+    mocker.patch.object(runtime, "_start_post_agents")
+    mocker.patch.object(runtime, "_update_scan_progress")
+    mocker.patch.object(runtime, "_wait_log_streamer")
+
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once_with(assets=assets, agent_settings=agent_settings)
+
+
+def testLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that _inject_assets creates a volume and starts the agent."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._scan_db = models.Scan.create("test")
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent", return_value=None)
+
+    runtime._inject_assets(assets=assets, agent_settings=agent_settings)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"].key == agent_settings.key
+    assert any(m["Target"] == "/asset" for m in kwargs["extra_mounts"])
+
+
+def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that _inject_assets uses default settings when agent_settings is None."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._scan_db = models.Scan.create("test")
+
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent", return_value=None)
+
+    runtime._inject_assets(assets=assets, agent_settings=None)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+    assert kwargs["agent"].restart_policy == "none" == "agent/ostorlab/inject_asset"
+    
+
