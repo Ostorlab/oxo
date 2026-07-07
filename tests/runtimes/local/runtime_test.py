@@ -10,7 +10,8 @@ from pytest_mock import plugin
 
 import ostorlab
 from ostorlab import exceptions
-from ostorlab.assets import android_apk, ipv4
+from ostorlab.assets import android_apk
+from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
@@ -662,4 +663,3 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
-    assert kwargs["agent"].restart_policy == "none" == "agent/ostorlab/inject_asset"

@@ -570,8 +570,6 @@ class LocalRuntime(runtime.Runtime):
             agent_settings = definitions.AgentSettings(
                 key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
             )
-        else:
-            agent_settings.restart_policy = "none"
 
         self._start_agent(
             agent=agent_settings,
