@@ -482,6 +482,7 @@ def testLocalRuntimeInit_always_setsMaxPoolSize(mocker):
     runtime._docker_checks()
     mock_from_env.assert_any_call(max_pool_size=100)
 
+
 def testLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettings(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
@@ -662,5 +663,3 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none" == "agent/ostorlab/inject_asset"
-    
-
