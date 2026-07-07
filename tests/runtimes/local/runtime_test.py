@@ -10,7 +10,7 @@ from pytest_mock import plugin
 
 import ostorlab
 from ostorlab import exceptions
-from ostorlab.assets import android_apk
+from ostorlab.assets import android_apk, ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
