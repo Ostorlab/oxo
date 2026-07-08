@@ -13,5 +13,4 @@ message Message {
   optional string repository_url = 1;
   optional string commit_hash = 2;
   optional Provider provider = 3;
-  optional string content_url = 4;
 }
