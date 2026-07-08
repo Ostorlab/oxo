@@ -21,7 +21,7 @@ import "ostorlab/scanner/proto/assets/android_store.proto";
 import "ostorlab/scanner/proto/assets/ios_store.proto";
 import "ostorlab/scanner/proto/assets/harmonyos_store.proto";
 import "ostorlab/scanner/proto/assets/repository.proto";
-import "ostorlab/scanner/proto/assets/repository_archive/repository_archive.proto";
+import "ostorlab/scanner/proto/assets/repository_archive.proto";
 
 package  ostorlab.scanner.proto.scan._location.startAgentScan;
 
