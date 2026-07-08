@@ -64,6 +64,37 @@ def testScanRunRepositoryArchive_whenFileProvided_callsScanWithAsset(
     assert assets[0].content is not None
 
 
+def testScanRunRepositoryArchive_whenScanCreated_linksAgentGroupAndAssets(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: plugin.MockerFixture,
+) -> None:
+    created_scan = mocker.MagicMock(id=42)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.scan", return_value=created_scan)
+    link_group_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.link_agent_group_scan"
+    )
+    link_assets_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.link_assets_scan"
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "repository-archive",
+            "--url",
+            "https://example.com/source-archive.tar.gz",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert link_group_mocked.call_count == 1
+    assert link_assets_mocked.call_count == 1
+    assert link_assets_mocked.call_args[0][0] == 42
+
+
 def testScanRunRepositoryArchive_whenBothFileAndUrlProvided_shouldExitWithError(
     scan_run_cli_runner: testing.CliRunner,
     mocker: plugin.MockerFixture,
