@@ -10,7 +10,7 @@ def testToProto_whenContentUrlSet_returnsSerializedBytes() -> None:
     ).to_proto()
 
     assert isinstance(raw, bytes)
-    unraw = serializer.deserialize("v3.asset.repository_archive", raw)
+    unraw = serializer.deserialize("v3.asset.file.repository_archive", raw)
     assert unraw.content_url == "https://example.com/source-archive.tar.gz"
 
 
@@ -21,7 +21,7 @@ def testToProto_whenContentAndPathSet_returnsSerializedBytes() -> None:
     ).to_proto()
 
     assert isinstance(raw, bytes)
-    unraw = serializer.deserialize("v3.asset.repository_archive", raw)
+    unraw = serializer.deserialize("v3.asset.file.repository_archive", raw)
     assert unraw.content == b"archive-bytes"
     assert unraw.path == "/tmp/source-archive.tar.gz"
 

@@ -6,7 +6,7 @@ from ostorlab.assets import asset
 
 
 @dataclasses.dataclass
-@asset.selector("v3.asset.repository_archive")
+@asset.selector("v3.asset.file.repository_archive")
 class RepositoryArchive(asset.Asset):
     """Source code repository archive target asset."""
 
