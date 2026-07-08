@@ -3,7 +3,6 @@ This module prepares a source code repository archive asset before injecting it 
 
 import io
 import logging
-from typing import Tuple, Optional
 
 import click
 
@@ -22,8 +21,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def repository_archive_cli(
     ctx: click.core.Context,
-    file: Optional[Tuple[io.FileIO]] = (),
-    url: Optional[Tuple[str]] = (),
+    file: tuple[io.FileIO, ...] | None = (),
+    url: tuple[str, ...] | None = (),
 ) -> None:
     """Run scan for a source code repository archive asset."""
     runtime = ctx.obj["runtime"]

@@ -1,7 +1,6 @@
 """Repository archive asset."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -11,9 +10,9 @@ from ostorlab.assets import asset
 class RepositoryArchive(asset.Asset):
     """Source code repository archive target asset."""
 
-    content: Optional[bytes] = None
-    path: Optional[str] = None
-    content_url: Optional[str] = None
+    content: bytes | None = None
+    path: str | None = None
+    content_url: str | None = None
 
     def __str__(self) -> str:
         str_representation = "Repository archive"
