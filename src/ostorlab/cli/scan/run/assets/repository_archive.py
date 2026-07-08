@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def repository_archive_cli(
     ctx: click.core.Context,
-    files: tuple[io.FileIO, ...] | None = (),
-    urls: tuple[str, ...] | None = (),
+    files: tuple[io.FileIO, ...] = (),
+    urls: tuple[str, ...] = (),
 ) -> None:
     """Run scan for a source code repository archive asset."""
     runtime = ctx.obj["runtime"]
