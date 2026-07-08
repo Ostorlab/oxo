@@ -36,21 +36,5 @@ class Repository(asset.Asset):
         return f"Repository: {self.repository_url}"
 
     @property
-    def origin_url(self) -> str:
-        return self.repository_url
-
-    @origin_url.setter
-    def origin_url(self, value: str) -> None:
-        self.repository_url = value
-
-    @property
-    def repo_url(self) -> str:
-        return self.repository_url
-
-    @repo_url.setter
-    def repo_url(self, value: str) -> None:
-        self.repository_url = value
-
-    @property
     def proto_field(self) -> str:
         return "repository"
