@@ -40,7 +40,7 @@ from ostorlab.scanner.proto.assets import ipa_pb2
 from ostorlab.scanner.proto.assets import link_pb2
 from ostorlab.scanner.proto.assets import network_pb2
 from ostorlab.scanner.proto.assets import repository_pb2
-from ostorlab.scanner.proto.assets.repository_archive import repository_archive_pb2
+from ostorlab.scanner.proto.assets import repository_archive_pb2
 from ostorlab.scanner.proto.assets import v4_pb2
 from ostorlab.scanner.proto.assets import v6_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2

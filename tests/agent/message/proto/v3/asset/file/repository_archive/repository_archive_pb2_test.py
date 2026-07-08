@@ -1,6 +1,6 @@
 """Tests for the repository archive protobuf message definitions and serialization behavior."""
 
-from ostorlab.agent.message.proto.v3.asset.repository_archive import (
+from ostorlab.agent.message.proto.v3.asset.file.repository_archive import (
     repository_archive_pb2,
 )
 
