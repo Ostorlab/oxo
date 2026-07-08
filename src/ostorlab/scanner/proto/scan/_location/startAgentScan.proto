@@ -21,6 +21,7 @@ import "ostorlab/scanner/proto/assets/android_store.proto";
 import "ostorlab/scanner/proto/assets/ios_store.proto";
 import "ostorlab/scanner/proto/assets/harmonyos_store.proto";
 import "ostorlab/scanner/proto/assets/repository.proto";
+import "ostorlab/scanner/proto/assets/repository_archive.proto";
 
 package  ostorlab.scanner.proto.scan._location.startAgentScan;
 
@@ -82,6 +83,7 @@ message Message {
         ostorlab.scanner.proto.assets.harmonyos_rpk.Message harmonyos_rpk = 22;
         ostorlab.scanner.proto.assets.harmonyos_app.Message harmonyos_app = 23;
         ostorlab.scanner.proto.assets.repository.Message repository = 29;
+        ostorlab.scanner.proto.assets.repository_archive.Message repository_archive = 30;
     }
     optional int32 scan_id = 18;
 }
