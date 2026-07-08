@@ -5,7 +5,7 @@ from ostorlab.agent.message.proto.v3.asset.repository_archive import (
 )
 
 
-def testSerializeAndDeserialize_whenContentUrlSet_returnsEquivalentMessage():
+def testSerializeAndDeserialize_whenContentUrlSet_returnsEquivalentMessage() -> None:
     message = repository_archive_pb2.Message()
     message.content_url = "https://example.com/source-archive.tar.gz"
 
@@ -16,7 +16,9 @@ def testSerializeAndDeserialize_whenContentUrlSet_returnsEquivalentMessage():
     assert deserialized.content_url == "https://example.com/source-archive.tar.gz"
 
 
-def testSerializeAndDeserialize_whenContentAndPathSet_returnsEquivalentMessage():
+def testSerializeAndDeserialize_whenContentAndPathSet_returnsEquivalentMessage() -> (
+    None
+):
     message = repository_archive_pb2.Message()
     message.content = b"archive-bytes"
     message.path = "/tmp/source-archive.tar.gz"
@@ -29,7 +31,7 @@ def testSerializeAndDeserialize_whenContentAndPathSet_returnsEquivalentMessage()
     assert deserialized.path == "/tmp/source-archive.tar.gz"
 
 
-def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage():
+def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
     message = repository_archive_pb2.Message()
 
     serialized = message.SerializeToString()

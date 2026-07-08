@@ -16,38 +16,40 @@ logger = logging.getLogger(__name__)
 
 
 @run.run.command(name="repository-archive")
-@click.option("--file", type=click.File(mode="rb"), multiple=True, required=False)
-@click.option("--url", required=False, multiple=True)
+@click.option(
+    "--file", "files", type=click.File(mode="rb"), multiple=True, required=False
+)
+@click.option("--url", "urls", required=False, multiple=True)
 @click.pass_context
 def repository_archive_cli(
     ctx: click.core.Context,
-    file: tuple[io.FileIO, ...] | None = (),
-    url: tuple[str, ...] | None = (),
+    files: tuple[io.FileIO, ...] | None = (),
+    urls: tuple[str, ...] | None = (),
 ) -> None:
     """Run scan for a source code repository archive asset."""
     runtime = ctx.obj["runtime"]
     assets = []
 
-    if url != () and file != ():
+    if urls != () and files != ():
         console.error(
             "Command accepts either path or source url of the repository archive."
         )
         raise click.exceptions.Exit(2)
-    if url == () and file == ():
+    if urls == () and files == ():
         console.error(
             "Command missing either file path or source url of the repository archive."
         )
         raise click.exceptions.Exit(2)
 
-    if file != ():
-        for f in file:
+    if files != ():
+        for f in files:
             assets.append(
                 repository_archive_asset.RepositoryArchive(
                     content=f.read(), path=str(f.name)
                 )
             )
-    if url != ():
-        for u in url:
+    if urls != ():
+        for u in urls:
             assets.append(repository_archive_asset.RepositoryArchive(content_url=u))
 
     logger.debug("scanning assets %s", [str(asset) for asset in assets])
