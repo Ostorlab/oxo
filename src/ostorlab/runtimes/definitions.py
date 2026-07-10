@@ -16,12 +16,17 @@ from ostorlab.utils import definitions
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import file as file_asset
+from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import repository as repository_asset
+from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import asset as base_asset
 
 MAX_AGENT_REPLICAS = 100
@@ -319,6 +324,11 @@ class AssetsDefinition:
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
+        harmonyos_hap_file_assets = assets.get("harmonyHapFile", [])
+        repository_assets = assets.get("repository", [])
+        repository_archive_assets = assets.get("repositoryArchive", [])
+        api_schema_assets = assets.get("apiSchema", [])
+        file_assets = assets.get("file", [])
 
         assets_def: List[assets.Asset] = []
 
@@ -383,6 +393,69 @@ class AssetsDefinition:
         for asset in link_assets:
             assets_def.append(
                 link_asset.Link(url=asset.get("url"), method=asset.get("method"))
+            )
+
+        for asset in harmonyos_hap_file_assets:
+            path = asset.get("path")
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
+                continue
+            assets_def.append(
+                harmonyos_hap_asset.HarmonyOSHap(
+                    content=content, path=path, content_url=url
+                )
+            )
+
+        for asset in repository_assets:
+            assets_def.append(
+                repository_asset.Repository(
+                    repository_url=asset.get("url", ""),
+                    commit_hash=asset.get("commit_hash", ""),
+                    provider=asset.get("provider", ""),
+                )
+            )
+
+        for asset in repository_archive_assets:
+            path = asset.get("path")
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
+                continue
+            assets_def.append(
+                repository_archive_asset.RepositoryArchive(
+                    content=content, path=path, content_url=url
+                )
+            )
+
+        for asset in api_schema_assets:
+            path = asset.get("path")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            assets_def.append(
+                api_schema_asset.ApiSchema(
+                    endpoint_url=asset.get("endpoint_url"),
+                    content=content,
+                    content_url=asset.get("url"),
+                    schema_type=asset.get("schema_type"),
+                )
+            )
+
+        for asset in file_assets:
+            path = asset.get("path")
+            url = asset.get("url")
+            content = None
+            if path is not None:
+                content = _load_asset_from_file(asset.get("path", ""))
+            if content is None and url is None:
+                continue
+            assets_def.append(
+                file_asset.File(content=content, path=path, content_url=url)
             )
 
         return cls(

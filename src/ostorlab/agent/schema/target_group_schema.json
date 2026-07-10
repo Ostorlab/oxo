@@ -110,6 +110,88 @@
           "type": "number"
         }
       }
+    },
+    "harmonyHapFileType": {
+      "description": "[Optional] - HarmonyOS hap file asset.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "[Optional] - HarmonyOS hap file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - HarmonyOS hap file link.",
+          "type": "string"
+        }
+      }
+    },
+    "repositoryType": {
+      "description": "[Optional] - Source code repository asset.",
+      "type": "object",
+      "properties": {
+        "url": {
+          "description": "[Required] - Repository url.",
+          "type": "string"
+        },
+        "commit_hash": {
+          "description": "[Optional] - Commit hash to scan.",
+          "type": "string"
+        },
+        "provider": {
+          "description": "[Optional] - Repository provider (github, gitlab, azure, bitbucket, git).",
+          "type": "string"
+        }
+      }
+    },
+    "repositoryArchiveType": {
+      "description": "[Optional] - Source code repository archive asset.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "[Optional] - Repository archive file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - Repository archive file link.",
+          "type": "string"
+        }
+      }
+    },
+    "apiSchemaType": {
+      "description": "[Optional] - API schema asset.",
+      "type": "object",
+      "properties": {
+        "endpoint_url": {
+          "description": "[Required] - The API endpoint url to scan.",
+          "type": "string"
+        },
+        "path": {
+          "description": "[Optional] - The schema file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - The schema download url.",
+          "type": "string"
+        },
+        "schema_type": {
+          "description": "[Optional] - The schema type (graphql, wsdl, openapi).",
+          "type": "string"
+        }
+      }
+    },
+    "fileType": {
+      "description": "[Optional] - Generic file asset.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "[Optional] - File path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - File link.",
+          "type": "string"
+        }
+      }
     }
   },
   "properties": {
@@ -180,6 +262,36 @@
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/ipType"
+          }
+        },
+        "harmonyHapFile": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/harmonyHapFileType"
+          }
+        },
+        "repository": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/repositoryType"
+          }
+        },
+        "repositoryArchive": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/repositoryArchiveType"
+          }
+        },
+        "apiSchema": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/apiSchemaType"
+          }
+        },
+        "file": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/fileType"
           }
         }
       }
