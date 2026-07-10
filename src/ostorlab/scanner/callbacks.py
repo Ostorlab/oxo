@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import ipaddress
-from typing import Any
+from typing import Any, Callable
 
 import docker
 
@@ -79,66 +79,91 @@ def _prepare_ip_asset(ip_asset_value: dict[str, Any]) -> asset.Asset:
         raise ValueError(f"Invalid Ip address {host}")
 
 
+# Maps a single-value asset field name to the asset class built from its dict value.
+_SINGLE_ASSET_BUILDERS: dict[str, Callable[..., asset.Asset]] = {
+    "android_store": android_store.AndroidStore,
+    "ios_store": ios_store.IOSStore,
+    "harmonyos_store": harmonyos_store.HarmonyOSStore,
+    "ipa": ios_ipa.IOSIpa,
+    "apk": android_apk.AndroidApk,
+    "aab": android_aab.AndroidAab,
+    "harmonyos_hap": harmonyos_hap.HarmonyOSHap,
+    "harmonyos_apk": harmonyos_apk.HarmonyOSApk,
+    "harmonyos_aab": harmonyos_aab.HarmonyOSAab,
+    "harmonyos_rpk": harmonyos_rpk.HarmonyOSRpk,
+    "harmonyos_app": harmonyos_app.HarmonyOSApp,
+    "domain_name": domain_name.DomainName,
+    "agent": agent_asset.Agent,
+    "file": file.File,
+    "repository": repository_asset.Repository,
+    "repository_archive": repository_archive_asset.RepositoryArchive,
+}
+
+
+def _prepare_link_asset(link_value: dict[str, Any]) -> asset.Asset:
+    """Return a Link asset from a link proto value dict."""
+    return link_asset.Link(
+        url=link_value.get("url"),
+        method=link_value.get("method") or "GET",
+    )
+
+
+def _prepare_single_asset(
+    asset_type: str, asset_value: dict[str, Any], reference_scan_id: int
+) -> list[asset.Asset]:
+    """Build the injectable assets for a single asset field of a startAgentScan message.
+
+    Args:
+        asset_type: Name of the asset field (e.g. "apk", "domain_name", "network").
+        asset_value: Dict representation of the asset proto message.
+        reference_scan_id: Reference scan id, used for logging unsupported types.
+
+    Returns:
+        List of injectable assets for the given field (usually one, more for
+        aggregate fields such as "network").
+    """
+    if asset_type in ("ip", "ipv4", "ipv6"):
+        return [_prepare_ip_asset(asset_value)]
+    if asset_type == "network":
+        return [_prepare_ip_asset(ip) for ip in asset_value.get("ips", [])]
+    if asset_type in ("links", "link"):
+        links = asset_value.get("links", [asset_value])
+        return [_prepare_link_asset(link) for link in links]
+
+    builder = _SINGLE_ASSET_BUILDERS.get(asset_type)
+    if builder is None:
+        logger.error(
+            "%s not supported from scan reference  %s ",
+            asset_type,
+            reference_scan_id,
+        )
+        return []
+    return [builder(**asset_value)]
+
+
+def _extract_multi_asset(
+    multi_asset_value: dict[str, Any], reference_scan_id: int
+) -> list[asset.Asset]:
+    """Expand a multi_asset proto value into the flat list of injectable assets."""
+    assets: list[asset.Asset] = []
+    for asset_type, values in multi_asset_value.items():
+        for value in values:
+            assets.extend(_prepare_single_asset(asset_type, value, reference_scan_id))
+    return assets
+
+
 def _extract_assets(request: Any) -> list[asset.Asset]:
     """Returns list of specific Ostorlab-injectable assets, from a message received from NATs."""
     logger.debug("Extracting assets.")
-    assets = []
     asset_type = request.WhichOneof("asset")
     asset_value = proto_dict.protobuf_to_dict(
         getattr(request, asset_type), use_enum_labels=True
     )
-    if asset_type in ("ip", "ipv4", "ipv6"):
-        assets.append(_prepare_ip_asset(asset_value))
-    elif asset_type == "android_store":
-        assets.append(android_store.AndroidStore(**asset_value))
-    elif asset_type == "ios_store":
-        assets.append(ios_store.IOSStore(**asset_value))
-    elif asset_type == "harmonyos_store":
-        assets.append(harmonyos_store.HarmonyOSStore(**asset_value))
-    elif asset_type == "ipa":
-        assets.append(ios_ipa.IOSIpa(**asset_value))
-    elif asset_type == "apk":
-        assets.append(android_apk.AndroidApk(**asset_value))
-    elif asset_type == "aab":
-        assets.append(android_aab.AndroidAab(**asset_value))
-    elif asset_type == "harmonyos_hap":
-        assets.append(harmonyos_hap.HarmonyOSHap(**asset_value))
-    elif asset_type == "harmonyos_apk":
-        assets.append(harmonyos_apk.HarmonyOSApk(**asset_value))
-    elif asset_type == "harmonyos_aab":
-        assets.append(harmonyos_aab.HarmonyOSAab(**asset_value))
-    elif asset_type == "harmonyos_rpk":
-        assets.append(harmonyos_rpk.HarmonyOSRpk(**asset_value))
-    elif asset_type == "harmonyos_app":
-        assets.append(harmonyos_app.HarmonyOSApp(**asset_value))
-    elif asset_type == "domain_name":
-        assets.append(domain_name.DomainName(**asset_value))
-    elif asset_type == "agent":
-        assets.append(agent_asset.Agent(**asset_value))
-    elif asset_type == "file":
-        assets.append(file.File(**asset_value))
-    elif asset_type == "repository":
-        assets.append(repository_asset.Repository(**asset_value))
-    elif asset_type == "repository_archive":
-        assets.append(repository_archive_asset.RepositoryArchive(**asset_value))
-    elif asset_type == "network":
-        for ip in asset_value.get("ips"):
-            ip_asset = _prepare_ip_asset(ip)
-            assets.append(ip_asset)
-    elif asset_type == "links":
-        for link in asset_value.get("links"):
-            assets.append(
-                link_asset.Link(
-                    url=link.get("url"),
-                    method=link.get("method") or "GET",
-                )
-            )
-
+    if asset_type == "multi_asset":
+        assets = _extract_multi_asset(asset_value, request.reference_scan_id)
     else:
-        logger.error(
-            "%s not supported from scan reference  %s ",
-            asset_type,
-            request.reference_scan_id,
+        assets = _prepare_single_asset(
+            asset_type, asset_value, request.reference_scan_id
         )
 
     logger.debug("Extracted assets: %s.", assets)

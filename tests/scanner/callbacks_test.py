@@ -38,6 +38,7 @@ from ostorlab.scanner.proto.assets import ios_store_pb2
 from ostorlab.scanner.proto.assets import ip_pb2
 from ostorlab.scanner.proto.assets import ipa_pb2
 from ostorlab.scanner.proto.assets import link_pb2
+from ostorlab.scanner.proto.assets import multi_asset_pb2
 from ostorlab.scanner.proto.assets import network_pb2
 from ostorlab.scanner.proto.assets import repository_pb2
 from ostorlab.scanner.proto.assets import repository_archive_pb2
@@ -723,3 +724,64 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
 
     install_agent_mock.assert_called_once()
     assert install_agent_mock.call_args.kwargs.get("api_key") is None
+
+
+def testExtractAssets_whenMultiAsset_shouldReturnAllComposedAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets expands a multi_asset message into every composed asset."""
+    multi_asset_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        multi_asset=multi_asset_pb2.Message(
+            apk=[
+                apk_pb2.Message(content_url="https://cdn.example.com/app.apk"),
+                apk_pb2.Message(content_url="https://cdn.example.com/second-app.apk"),
+            ],
+            ipa=[ipa_pb2.Message(content_url="https://cdn.example.com/app.ipa")],
+            harmonyos_hap=[
+                harmonyos_hap_pb2.Message(content_url="https://cdn.example.com/app.hap")
+            ],
+            domain_name=[domain_name_pb2.Message(name="example.com")],
+            link=[link_pb2.Message(url="https://app.example.com", method="GET")],
+            repository=[
+                repository_pb2.Message(
+                    repository_url="https://github.com/org/repo",
+                    commit_hash="deadbeef",
+                )
+            ],
+            file=[file_pb2.Message(content_url="https://cdn.example.com/source.zip")],
+        ),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", multi_asset_start_agent_scan_msg, None)
+
+    scanned_assets = runtime_scan_mock.call_args[1].get("assets")
+    assert len(scanned_assets) == 8
+    apk_urls = [
+        a.content_url
+        for a in scanned_assets
+        if isinstance(a, android_apk.AndroidApk) is True
+    ]
+    assert apk_urls == [
+        "https://cdn.example.com/app.apk",
+        "https://cdn.example.com/second-app.apk",
+    ]
+    assert any(isinstance(a, ios_ipa.IOSIpa) is True for a in scanned_assets) is True
+    assert (
+        any(isinstance(a, domain_name.DomainName) is True for a in scanned_assets)
+        is True
+    )
+    assert any(isinstance(a, link_asset.Link) is True for a in scanned_assets) is True
+    assert (
+        any(isinstance(a, repository_asset.Repository) is True for a in scanned_assets)
+        is True
+    )
+    assert any(isinstance(a, file.File) is True for a in scanned_assets) is True

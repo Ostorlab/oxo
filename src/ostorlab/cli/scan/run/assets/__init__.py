@@ -5,6 +5,7 @@ from ostorlab.cli.scan.run.assets import android_aab
 from ostorlab.cli.scan.run.assets import android_apk
 from ostorlab.cli.scan.run.assets import domain_name
 from ostorlab.cli.scan.run.assets import file
+from ostorlab.cli.scan.run.assets import group
 from ostorlab.cli.scan.run.assets import ios_ipa
 from ostorlab.cli.scan.run.assets import ip
 from ostorlab.cli.scan.run.assets import link
@@ -31,6 +32,7 @@ __all__ = (
     "android_apk",
     "domain_name",
     "file",
+    "group",
     "ios_ipa",
     "ip",
     "link",
