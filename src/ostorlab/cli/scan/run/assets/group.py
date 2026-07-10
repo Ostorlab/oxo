@@ -5,7 +5,6 @@ instance in a single scan.
 """
 
 import logging
-from typing import List, Tuple
 
 import click
 
@@ -53,19 +52,19 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def group_cli(
     ctx: click.core.Context,
-    apk: Tuple[str, ...],
-    ipa: Tuple[str, ...],
-    harmony_hap: Tuple[str, ...],
-    domain: Tuple[str, ...],
-    link: Tuple[str, ...],
-    link_method: Tuple[str, ...],
-    repository_url: Tuple[str, ...],
-    repository_commit_hash: Tuple[str, ...],
-    repository_provider: Tuple[str, ...],
-    api_schema_endpoint: Tuple[str, ...],
-    api_schema_url: Tuple[str, ...],
-    api_schema_type: Tuple[str, ...],
-    file: Tuple[str, ...],
+    apk: tuple[str, ...],
+    ipa: tuple[str, ...],
+    harmony_hap: tuple[str, ...],
+    domain: tuple[str, ...],
+    link: tuple[str, ...],
+    link_method: tuple[str, ...],
+    repository_url: tuple[str, ...],
+    repository_commit_hash: tuple[str, ...],
+    repository_provider: tuple[str, ...],
+    api_schema_endpoint: tuple[str, ...],
+    api_schema_url: tuple[str, ...],
+    api_schema_type: tuple[str, ...],
+    file: tuple[str, ...],
 ) -> None:
     """Run a single scan on a heterogeneous group of assets.\n
     Example:\n
@@ -111,8 +110,8 @@ def group_cli(
 
 
 def _build_links(
-    link: Tuple[str, ...], link_method: Tuple[str, ...]
-) -> List[asset_lib.Asset]:
+    link: tuple[str, ...], link_method: tuple[str, ...]
+) -> list[asset_lib.Asset]:
     """Build Link assets, pairing each link with its method (defaults to GET)."""
     if len(link_method) > 0 and len(link_method) != len(link):
         console.error("Make sure every --link has its corresponding --link-method.")
@@ -124,10 +123,10 @@ def _build_links(
 
 
 def _build_repositories(
-    repository_url: Tuple[str, ...],
-    repository_commit_hash: Tuple[str, ...],
-    repository_provider: Tuple[str, ...],
-) -> List[asset_lib.Asset]:
+    repository_url: tuple[str, ...],
+    repository_commit_hash: tuple[str, ...],
+    repository_provider: tuple[str, ...],
+) -> list[asset_lib.Asset]:
     """Build Repository assets from parallel url / commit-hash / provider lists."""
     if len(repository_commit_hash) not in (0, len(repository_url)):
         console.error("Each --repository-url must have a --repository-commit-hash.")
@@ -136,7 +135,7 @@ def _build_repositories(
         console.error("Each --repository-url must have a --repository-provider.")
         raise click.exceptions.Exit(2)
 
-    repositories: List[asset_lib.Asset] = []
+    repositories: list[asset_lib.Asset] = []
     for index, url in enumerate(repository_url):
         commit_hash = (
             repository_commit_hash[index] if len(repository_commit_hash) > 0 else ""
@@ -155,10 +154,10 @@ def _build_repositories(
 
 
 def _build_api_schemas(
-    api_schema_endpoint: Tuple[str, ...],
-    api_schema_url: Tuple[str, ...],
-    api_schema_type: Tuple[str, ...],
-) -> List[asset_lib.Asset]:
+    api_schema_endpoint: tuple[str, ...],
+    api_schema_url: tuple[str, ...],
+    api_schema_type: tuple[str, ...],
+) -> list[asset_lib.Asset]:
     """Build ApiSchema assets from parallel endpoint / url / type lists."""
     if len(api_schema_url) not in (0, len(api_schema_endpoint)):
         console.error("Each --api-schema-endpoint must have a --api-schema-url.")
@@ -167,7 +166,7 @@ def _build_api_schemas(
         console.error("Each --api-schema-endpoint must have a --api-schema-type.")
         raise click.exceptions.Exit(2)
 
-    schemas: List[asset_lib.Asset] = []
+    schemas: list[asset_lib.Asset] = []
     for index, endpoint in enumerate(api_schema_endpoint):
         content_url = api_schema_url[index] if len(api_schema_url) > 0 else None
         schema_type = api_schema_type[index] if len(api_schema_type) > 0 else None
@@ -182,22 +181,22 @@ def _build_api_schemas(
 
 
 def _build_assets(
-    apk: Tuple[str, ...],
-    ipa: Tuple[str, ...],
-    harmony_hap: Tuple[str, ...],
-    domain: Tuple[str, ...],
-    link: Tuple[str, ...],
-    link_method: Tuple[str, ...],
-    repository_url: Tuple[str, ...],
-    repository_commit_hash: Tuple[str, ...],
-    repository_provider: Tuple[str, ...],
-    api_schema_endpoint: Tuple[str, ...],
-    api_schema_url: Tuple[str, ...],
-    api_schema_type: Tuple[str, ...],
-    file: Tuple[str, ...],
-) -> List[asset_lib.Asset]:
+    apk: tuple[str, ...],
+    ipa: tuple[str, ...],
+    harmony_hap: tuple[str, ...],
+    domain: tuple[str, ...],
+    link: tuple[str, ...],
+    link_method: tuple[str, ...],
+    repository_url: tuple[str, ...],
+    repository_commit_hash: tuple[str, ...],
+    repository_provider: tuple[str, ...],
+    api_schema_endpoint: tuple[str, ...],
+    api_schema_url: tuple[str, ...],
+    api_schema_type: tuple[str, ...],
+    file: tuple[str, ...],
+) -> list[asset_lib.Asset]:
     """Build the flat list of injectable assets from the group command options."""
-    assets: List[asset_lib.Asset] = []
+    assets: list[asset_lib.Asset] = []
     assets.extend(android_apk_asset.AndroidApk(content_url=url) for url in apk)
     assets.extend(ios_ipa_asset.IOSIpa(content_url=url) for url in ipa)
     assets.extend(
