@@ -110,6 +110,53 @@
           "type": "number"
         }
       }
+    },
+    "commentType": {
+      "description": "[Optional] - Ticket comment.",
+      "type": "object",
+      "properties": {
+        "author": {
+          "description": "[Optional] - Author of the comment.",
+          "type": "string"
+        },
+        "message": {
+          "description": "[Optional] - Comment message content.",
+          "type": "string"
+        }
+      }
+    },
+    "ticketType": {
+      "description": "[Optional] - Ticket asset.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "description": "[Required] - Title of the ticket.",
+          "type": "string"
+        },
+        "description": {
+          "description": "[Required] - Description of the ticket.",
+          "type": "string"
+        },
+        "ticket_id": {
+          "description": "[Optional] - ID of the ticket.",
+          "type": "string"
+        },
+        "ticket_key": {
+          "description": "[Optional] - Key of the ticket.",
+          "type": "string"
+        },
+        "comments": {
+          "description": "[Optional] - Comments list.",
+          "type": "array",
+          "items": {
+            "$ref": "#/CustomTypes/commentType"
+          }
+        }
+      },
+      "required": [
+        "title",
+        "description"
+      ]
     }
   },
   "properties": {
@@ -180,6 +227,12 @@
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/ipType"
+          }
+        },
+        "ticket": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/ticketType"
           }
         }
       }

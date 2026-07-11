@@ -23,6 +23,8 @@ from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import asset as base_asset
+from ostorlab.assets import ticket as ticket_asset
+
 
 MAX_AGENT_REPLICAS = 100
 
@@ -319,6 +321,7 @@ class AssetsDefinition:
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
+        ticket_assets = assets.get("ticket", [])
 
         assets_def: List[assets.Asset] = []
 
@@ -383,6 +386,25 @@ class AssetsDefinition:
         for asset in link_assets:
             assets_def.append(
                 link_asset.Link(url=asset.get("url"), method=asset.get("method"))
+            )
+
+        for asset in ticket_assets:
+            parsed_comments = []
+            for comment in asset.get("comments", []):
+                parsed_comments.append(
+                    ticket_asset.Comment(
+                        author=comment.get("author"),
+                        message=comment.get("message"),
+                    )
+                )
+            assets_def.append(
+                ticket_asset.Ticket(
+                    title=asset.get("title"),
+                    description=asset.get("description"),
+                    ticket_id=asset.get("ticket_id"),
+                    comments=parsed_comments,
+                    ticket_key=asset.get("ticket_key"),
+                )
             )
 
         return cls(
