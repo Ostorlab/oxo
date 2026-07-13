@@ -678,6 +678,30 @@ assets:
     assert isinstance(risk.to_proto(), bytes)
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskIosFileHasLocalPath_readsContent(
+    mocker: plugin.MockerFixture,
+):
+    """Tests that a risk embedding an iOS file by local path is read, guarding the
+    schema key which must be `path` (singular) to match the parser."""
+    mocker.patch("pathlib.Path.read_bytes", return_value=b"ipa content")
+    valid_yaml = """
+description: Target group with an iOS risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable IPA
+        iosFile:
+            path: /app.ipa
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.ios_ipa == ios_ipa_asset.IOSIpa(content=b"ipa content", path="/app.ipa")
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskIpInvalid_raisesValidationError():
     """Tests that a risk embedding an invalid ip is rejected instead of silently
     producing a risk with no target."""

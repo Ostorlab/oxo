@@ -457,7 +457,11 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     The embedded target reuses the same sub-schemas as standalone assets
     (ip, domain, link, stores and app files). A risk carries a single target
     because the underlying proto asset is a oneof; embedding more than one
-    would silently drop all but one."""
+    would silently drop all but one.
+
+    The ``Risk`` asset also defines ``api_schema`` and ``repository`` targets,
+    but these are intentionally not exposed here since they are not modeled as
+    target group assets anywhere else in ``from_yaml``."""
     provided_targets = [
         key for key in _RISK_TARGET_KEYS if risk_entry.get(key) is not None
     ]

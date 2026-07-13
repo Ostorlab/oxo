@@ -55,7 +55,7 @@
       "description": "[Optional] - Ios app file asset.",
       "type": "object",
       "properties": {
-        "paths": {
+        "path": {
           "description": "[Optional] - Ios app file path.",
           "type": "string"
         },
