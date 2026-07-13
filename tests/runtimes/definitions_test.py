@@ -539,7 +539,7 @@ assets:
         android_store_asset.AndroidStore(package_name="test.this.schema"),
         ios_store_asset.IOSStore(bundle_id="com.caesar.salad"),
         ios_store_asset.IOSStore(bundle_id="test.this.schema"),
-        ipv4_asset.IPv4(host="10.21.11.11", mask=30),
+        ipv4_asset.IPv4(host="10.21.11.11", mask="30"),
         ipv4_asset.IPv4(host="0.1.2.1", mask=None),
         domain_name_asset.DomainName(name="ostor.co"),
         domain_name_asset.DomainName(name="seclab.dev"),
@@ -597,7 +597,7 @@ assets:
     )
     assert asset_group_def.targets[0].rating == "HIGH"
     assert asset_group_def.targets[0].description == "Server exposed to the internet"
-    assert asset_group_def.targets[0].ipv4 == ipv4_asset.IPv4(host="8.8.8.8", mask=32)
+    assert asset_group_def.targets[0].ipv4 == ipv4_asset.IPv4(host="8.8.8.8", mask="32")
     assert asset_group_def.targets[1].rating == "LOW"
     assert asset_group_def.targets[1].domain_name == domain_name_asset.DomainName(
         name="example.com"
@@ -607,8 +607,11 @@ assets:
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskAssetProvided_serializesToProto():
-    """Tests that a risk asset parsed from a target group serializes to valid protobuf."""
+def testAssetGroupDefinitionFromYaml_whenRiskAssetHasMaskedIp_serializesToProto():
+    """Tests that a risk embedding an ip with a numeric mask serializes to protobuf.
+
+    The ipv4 proto mask field is a string while YAML parses the mask as an int, so
+    this guards against a regression where serialization crashed with a TypeError."""
     valid_yaml = """
 description: Target group with a risk
 kind: targetGroup
@@ -619,6 +622,7 @@ assets:
         description: Server exposed
         ip:
             host: "8.8.8.8"
+            mask: 32
 """
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
@@ -626,6 +630,28 @@ assets:
 
     assert isinstance(proto_bytes, bytes)
     assert len(proto_bytes) > 0
+    assert asset_group_def.targets[0].ipv4.mask == "32"
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsMultipleTargets_raisesValueError():
+    """Tests that a risk embedding more than one target is rejected instead of silently
+    dropping all but one when serialized to the proto oneof."""
+    invalid_yaml = """
+description: Target group with an invalid risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Server exposed
+        ip:
+            host: "8.8.8.8"
+        domain:
+            name: example.com
+"""
+
+    with pytest.raises(ValueError, match="at most one target"):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
 def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():

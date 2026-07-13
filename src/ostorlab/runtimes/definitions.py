@@ -431,11 +431,33 @@ def _parse_file_asset(
     return content, path, url
 
 
+_RISK_TARGET_KEYS = [
+    "ip",
+    "domain",
+    "link",
+    "androidStore",
+    "iosStore",
+    "androidApkFile",
+    "androidAabFile",
+    "iosFile",
+]
+
+
 def _parse_risk_asset(risk_entry: Dict[str, Any]) -> risk_asset.Risk:
     """Build a Risk asset from a target group risk entry.
 
     The embedded target reuses the same sub-schemas as standalone assets
-    (ip, domain, link, stores and app files)."""
+    (ip, domain, link, stores and app files). A risk carries a single target
+    because the underlying proto asset is a oneof; embedding more than one
+    would silently drop all but one."""
+    provided_targets = [
+        key for key in _RISK_TARGET_KEYS if risk_entry.get(key) is not None
+    ]
+    if len(provided_targets) > 1:
+        raise ValueError(
+            f"A risk asset must embed at most one target, got: {', '.join(provided_targets)}."
+        )
+
     risk_kwargs: Dict[str, Any] = {
         "description": risk_entry.get("description"),
         "rating": risk_entry.get("severity"),
@@ -498,10 +520,14 @@ def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
         logger.info(f"Invalid ip address: {ip_string}")
         return None
 
+    mask = ip_asset.get("mask")
+    # The ipv4/ipv6 proto mask field is a string, but YAML parses a numeric mask
+    # as an int; coerce so serialization does not fail.
+    mask = str(mask) if mask is not None else None
     if ip.version == 4:
-        return ipv4_asset.IPv4(host=ip_string, mask=ip_asset.get("mask"))
+        return ipv4_asset.IPv4(host=ip_string, mask=mask)
     if ip.version == 6:
-        return ipv6_asset.IPv6(host=ip_string, mask=ip_asset.get("mask"))
+        return ipv6_asset.IPv6(host=ip_string, mask=mask)
     return None
 
 
