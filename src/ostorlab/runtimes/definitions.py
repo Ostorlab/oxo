@@ -444,7 +444,7 @@ _RISK_TARGET_KEYS = [
 ]
 
 
-def _parse_risk_asset(risk_entry: Dict[str, Any]) -> risk_asset.Risk:
+def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     """Build a Risk asset from a target group risk entry.
 
     The embedded target reuses the same sub-schemas as standalone assets
