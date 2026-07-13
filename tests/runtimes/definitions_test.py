@@ -17,6 +17,7 @@ from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import ticket as ticket_asset
 
 
 def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
@@ -506,6 +507,14 @@ assets:
       - host: "10.21.11.11"
         mask: 30
       - host: 0.1.2.1
+  ticket:
+      - title: "Critical vulnerability"
+        description: "Details go here"
+        ticket_id: "T-01"
+        ticket_key: "PROJ-1"
+        comments:
+          - author: "sec-ops"
+            message: "confirmed reproduction"
 """
     mocker.patch("pathlib.Path.read_bytes", return_value=b"content")
     assets = [
@@ -535,10 +544,19 @@ assets:
         link_asset.Link(
             url="https://nasa.gov.ma/artemis_nuclear_capabilities", method="POST"
         ),
+        ticket_asset.Ticket(
+            title="Critical vulnerability",
+            description="Details go here",
+            ticket_id="T-01",
+            ticket_key="PROJ-1",
+            comments=[
+                ticket_asset.Comment(author="sec-ops", message="confirmed reproduction")
+            ],
+        ),
     ]
     valid_yaml_def = io.StringIO(valid_yaml)
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(valid_yaml_def)
 
-    assert len(asset_group_def.targets) == 16
+    assert len(asset_group_def.targets) == 17
     assert assets == asset_group_def.targets
