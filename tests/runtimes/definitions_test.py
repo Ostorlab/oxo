@@ -654,6 +654,30 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskHasNoTarget_returnsTargetlessRisk():
+    """Tests that a risk without an embedded target is accepted, consistent with the
+    ``oxo scan run ... risk`` subcommand where target assets are optional."""
+    valid_yaml = """
+description: Target group with a targetless risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: General exposure with no specific asset
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert len(asset_group_def.targets) == 1
+    risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
+    assert risk.rating == "HIGH"
+    assert risk.ipv4 is None
+    assert risk.domain_name is None
+    assert isinstance(risk.to_proto(), bytes)
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskIpInvalid_raisesValidationError():
     """Tests that a risk embedding an invalid ip is rejected instead of silently
     producing a risk with no target."""
