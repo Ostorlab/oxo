@@ -63,7 +63,8 @@
           "description": "[Optional] - Ios app file link.",
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "linkType": {
       "description": "[Optional] - Link asset.",
@@ -209,7 +210,8 @@
       "required": [
         "severity",
         "description"
-      ]
+      ],
+      "additionalProperties": false
     }
   },
   "properties": {

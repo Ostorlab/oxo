@@ -827,6 +827,44 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskHasUnknownTargetKey_raisesValidationError():
+    """Tests that an unsupported/misspelled risk target key (e.g. apiSchema) is rejected
+    instead of being silently ignored and producing a targetless risk."""
+    invalid_yaml = """
+description: Target group with an unknown risk target
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Server exposed
+        apiSchema:
+            url: schema.json
+"""
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskIosFileUsesUnknownKey_raisesValidationError():
+    """Tests that a misspelled iOS file key (the legacy `paths`) is rejected instead of
+    being silently ignored, which previously produced a confusing parser error."""
+    invalid_yaml = """
+description: Target group with a mistyped iOS file key
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable IPA
+        iosFile:
+            paths: /app.ipa
+"""
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
     """Tests that an invalid risk severity is rejected by schema validation."""
     invalid_yaml = """
