@@ -30,7 +30,7 @@ from ostorlab.assets import ticket as ticket_asset
 
 MAX_AGENT_REPLICAS = 100
 
-_RISK_TARGET_KEYS = [
+_RISK_TARGET_KEYS = (
     "ip",
     "domain",
     "link",
@@ -39,7 +39,7 @@ _RISK_TARGET_KEYS = [
     "androidApkFile",
     "androidAabFile",
     "iosFile",
-]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -471,8 +471,8 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
         )
 
     risk_kwargs: dict[str, Any] = {
-        "description": risk_entry.get("description"),
-        "rating": risk_entry.get("severity"),
+        "description": risk_entry["description"],
+        "rating": risk_entry["severity"],
     }
 
     if risk_entry.get("ip") is not None:

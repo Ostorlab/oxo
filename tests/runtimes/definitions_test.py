@@ -678,6 +678,94 @@ assets:
     assert isinstance(risk.to_proto(), bytes)
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsLink_returnsRiskWithLink():
+    """Tests parsing a risk asset embedding a link target."""
+    valid_yaml = """
+description: Risk with link
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable endpoint
+        link:
+            url: https://example.com/api
+            method: GET
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert asset_group_def.targets[0].link == link_asset.Link(
+        url="https://example.com/api", method="GET"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsAndroidStore_returnsRiskWithAndroidStore():
+    """Tests parsing a risk asset embedding an android store target."""
+    valid_yaml = """
+description: Risk with android store
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: MEDIUM
+        description: Risky Android app
+        androidStore:
+            package_name: com.example.app
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert asset_group_def.targets[0].android_store == android_store_asset.AndroidStore(
+        package_name="com.example.app"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsIosStore_returnsRiskWithIosStore():
+    """Tests parsing a risk asset embedding an iOS store target."""
+    valid_yaml = """
+description: Risk with iOS store
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: MEDIUM
+        description: Risky iOS app
+        iosStore:
+            bundle_id: com.example.app
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert asset_group_def.targets[0].ios_store == ios_store_asset.IOSStore(
+        bundle_id="com.example.app"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsAndroidAabFile_returnsRiskWithAab(
+    mocker: plugin.MockerFixture,
+):
+    """Tests parsing a risk asset embedding an Android AAB file by local path."""
+    mocker.patch("pathlib.Path.read_bytes", return_value=b"aab content")
+    valid_yaml = """
+description: Risk with android aab
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable AAB
+        androidAabFile:
+            path: /app.aab
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert asset_group_def.targets[0].android_aab == android_aab_asset.AndroidAab(
+        content=b"aab content", path="/app.aab"
+    )
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskIosFileHasLocalPath_readsContent(
     mocker: plugin.MockerFixture,
 ):
