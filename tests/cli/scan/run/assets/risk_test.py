@@ -1,6 +1,5 @@
 """Tests for scan run risk command."""
 
-import json
 import pathlib
 
 from click import testing
@@ -22,7 +21,7 @@ def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(
     )
 
     assert result.exit_code == 2
-    assert "Provide --severity or use --risks-file." in result.output
+    assert "Missing option" in result.output
 
 
 def testScanRunRisk_whenValidSeverityAndDescription_shouldCallScanWithRiskAsset(
@@ -767,149 +766,3 @@ def testScanRunRisk_whenApiSchemaFileAndUrlBothProvided_shouldShowError(
     )
 
     assert result.exit_code == 2
-
-
-def testScanRunRisk_whenRisksFileProvided_shouldCallScanWithMultipleRiskAssets(
-    scan_run_cli_runner: testing.CliRunner,
-    mocker: pytest_mock.MockerFixture,
-    tmp_path: pathlib.Path,
-) -> None:
-    """Test oxo scan run risk with --risks-file injects multiple risk assets in one scan."""
-    scan_mocked = mocker.patch(
-        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
-    )
-    risks_file = tmp_path / "risks.json"
-    risks_file.write_text(
-        json.dumps(
-            [
-                {"severity": "high", "description": "Server exposed", "ip": "8.8.8.8"},
-                {
-                    "severity": "LOW",
-                    "description": "Weak TLS",
-                    "domain": "example.com",
-                },
-                {
-                    "severity": "MEDIUM",
-                    "description": "Vulnerable APK",
-                    "android_apk_url": "https://example.com/app.apk",
-                },
-            ]
-        )
-    )
-
-    result = scan_run_cli_runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--agent=agent1",
-            "risk",
-            f"--risks-file={risks_file}",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert scan_mocked.call_count == 1
-    assets = scan_mocked.call_args[1].get("assets")
-    assert len(assets) == 3
-    assert all(isinstance(asset, risk_asset.Risk) for asset in assets)
-    assert assets[0].rating == "HIGH"
-    assert assets[0].ipv4 == {"host": "8.8.8.8", "mask": "32", "version": 4}
-    assert assets[1].rating == "LOW"
-    assert assets[1].domain_name == {"name": "example.com"}
-    assert assets[2].android_apk == {"content_url": "https://example.com/app.apk"}
-
-
-def testScanRunRisk_whenRisksFileAndSingleFlags_shouldShowError(
-    scan_run_cli_runner: testing.CliRunner,
-    tmp_path: pathlib.Path,
-) -> None:
-    """Test oxo scan run risk rejects mixing --risks-file with single-risk flags."""
-    risks_file = tmp_path / "risks.json"
-    risks_file.write_text(json.dumps([{"severity": "HIGH", "description": "Test"}]))
-
-    result = scan_run_cli_runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--agent=agent1",
-            "risk",
-            "--severity=HIGH",
-            f"--risks-file={risks_file}",
-        ],
-    )
-
-    assert result.exit_code == 2
-    assert "Provide either --risks-file or the single-risk flags, not both." in (
-        result.output
-    )
-
-
-def testScanRunRisk_whenRisksFileNotAList_shouldShowError(
-    scan_run_cli_runner: testing.CliRunner,
-    tmp_path: pathlib.Path,
-) -> None:
-    """Test oxo scan run risk rejects a risks file that is not a non-empty JSON list."""
-    risks_file = tmp_path / "risks.json"
-    risks_file.write_text(json.dumps({"severity": "HIGH", "description": "Test"}))
-
-    result = scan_run_cli_runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--agent=agent1",
-            "risk",
-            f"--risks-file={risks_file}",
-        ],
-    )
-
-    assert result.exit_code == 2
-    assert "non-empty JSON list" in result.output
-
-
-def testScanRunRisk_whenRisksFileEntryMissingSeverity_shouldShowError(
-    scan_run_cli_runner: testing.CliRunner,
-    tmp_path: pathlib.Path,
-) -> None:
-    """Test oxo scan run risk rejects a risks file entry without a valid severity."""
-    risks_file = tmp_path / "risks.json"
-    risks_file.write_text(json.dumps([{"description": "No severity here"}]))
-
-    result = scan_run_cli_runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--agent=agent1",
-            "risk",
-            f"--risks-file={risks_file}",
-        ],
-    )
-
-    assert result.exit_code == 2
-    assert "valid 'severity'" in result.output
-
-
-def testScanRunRisk_whenRisksFileInvalidJson_shouldShowError(
-    scan_run_cli_runner: testing.CliRunner,
-    tmp_path: pathlib.Path,
-) -> None:
-    """Test oxo scan run risk rejects a malformed JSON risks file."""
-    risks_file = tmp_path / "risks.json"
-    risks_file.write_text("{not valid json")
-
-    result = scan_run_cli_runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "run",
-            "--agent=agent1",
-            "risk",
-            f"--risks-file={risks_file}",
-        ],
-    )
-
-    assert result.exit_code == 2
-    assert "Invalid JSON in risks file" in result.output

@@ -22,6 +22,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import ticket as ticket_asset
 
@@ -322,6 +323,7 @@ class AssetsDefinition:
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
         ticket_assets = assets.get("ticket", [])
+        risk_assets = assets.get("risk", [])
 
         assets_def: List[assets.Asset] = []
 
@@ -407,11 +409,85 @@ class AssetsDefinition:
                 )
             )
 
+        for asset in risk_assets:
+            assets_def.append(_parse_risk_asset(asset))
+
         return cls(
             targets=assets_def,
             name=target_group_def.get("name"),
             description=target_group_def.get("description"),
         )
+
+
+def _parse_file_asset(
+    file_asset: Dict[str, Any],
+) -> tuple[Optional[bytes], Optional[str], Optional[str]]:
+    """Resolve a file asset entry into (content, path, url)."""
+    path = file_asset.get("path")
+    url = file_asset.get("url")
+    content = None
+    if path is not None:
+        content = _load_asset_from_file(path)
+    return content, path, url
+
+
+def _parse_risk_asset(risk_entry: Dict[str, Any]) -> risk_asset.Risk:
+    """Build a Risk asset from a target group risk entry.
+
+    The embedded target reuses the same sub-schemas as standalone assets
+    (ip, domain, link, stores and app files)."""
+    risk_kwargs: Dict[str, Any] = {
+        "description": risk_entry.get("description"),
+        "rating": risk_entry.get("severity"),
+    }
+
+    if risk_entry.get("ip") is not None:
+        ip_asset = _parse_ip_asset(risk_entry["ip"])
+        if isinstance(ip_asset, ipv4_asset.IPv4):
+            risk_kwargs["ipv4"] = ip_asset
+        elif isinstance(ip_asset, ipv6_asset.IPv6):
+            risk_kwargs["ipv6"] = ip_asset
+
+    if risk_entry.get("domain") is not None:
+        risk_kwargs["domain_name"] = domain_name_asset.DomainName(
+            name=risk_entry["domain"].get("name")
+        )
+
+    if risk_entry.get("link") is not None:
+        risk_kwargs["link"] = link_asset.Link(
+            url=risk_entry["link"].get("url"),
+            method=risk_entry["link"].get("method"),
+        )
+
+    if risk_entry.get("androidStore") is not None:
+        risk_kwargs["android_store"] = android_store_asset.AndroidStore(
+            package_name=risk_entry["androidStore"].get("package_name")
+        )
+
+    if risk_entry.get("iosStore") is not None:
+        risk_kwargs["ios_store"] = ios_store_asset.IOSStore(
+            bundle_id=risk_entry["iosStore"].get("bundle_id")
+        )
+
+    if risk_entry.get("androidApkFile") is not None:
+        content, path, url = _parse_file_asset(risk_entry["androidApkFile"])
+        risk_kwargs["android_apk"] = android_apk_asset.AndroidApk(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("androidAabFile") is not None:
+        content, path, url = _parse_file_asset(risk_entry["androidAabFile"])
+        risk_kwargs["android_aab"] = android_aab_asset.AndroidAab(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("iosFile") is not None:
+        content, path, url = _parse_file_asset(risk_entry["iosFile"])
+        risk_kwargs["ios_ipa"] = ios_ipa_asset.IOSIpa(
+            content=content, path=path, content_url=url
+        )
+
+    return risk_asset.Risk(**risk_kwargs)
 
 
 def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:

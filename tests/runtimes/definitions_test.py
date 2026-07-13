@@ -2,9 +2,11 @@
 
 import io
 
+import pytest
 from pytest_mock import plugin
 
 
+from ostorlab.agent.schema import validator
 from ostorlab.runtimes import definitions
 from ostorlab.utils import definitions as utils_definitions
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
@@ -18,6 +20,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import ticket as ticket_asset
+from ostorlab.assets import risk as risk_asset
 
 
 def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
@@ -560,3 +563,82 @@ assets:
 
     assert len(asset_group_def.targets) == 17
     assert assets == asset_group_def.targets
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskAssetsProvided_returnsRiskAssets():
+    """Tests parsing a target group with multiple risk assets embedding different targets."""
+    valid_yaml = """
+description: Target group with risks
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Server exposed to the internet
+        ip:
+            host: "8.8.8.8"
+            mask: 32
+      - severity: LOW
+        description: Weak TLS configuration
+        domain:
+            name: example.com
+      - severity: MEDIUM
+        description: Vulnerable APK
+        androidApkFile:
+            url: https://example.com/app.apk
+"""
+    valid_yaml_def = io.StringIO(valid_yaml)
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(valid_yaml_def)
+
+    assert len(asset_group_def.targets) == 3
+    assert all(
+        isinstance(target, risk_asset.Risk) for target in asset_group_def.targets
+    )
+    assert asset_group_def.targets[0].rating == "HIGH"
+    assert asset_group_def.targets[0].description == "Server exposed to the internet"
+    assert asset_group_def.targets[0].ipv4 == ipv4_asset.IPv4(host="8.8.8.8", mask=32)
+    assert asset_group_def.targets[1].rating == "LOW"
+    assert asset_group_def.targets[1].domain_name == domain_name_asset.DomainName(
+        name="example.com"
+    )
+    assert asset_group_def.targets[2].android_apk == android_apk_asset.AndroidApk(
+        content_url="https://example.com/app.apk"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskAssetProvided_serializesToProto():
+    """Tests that a risk asset parsed from a target group serializes to valid protobuf."""
+    valid_yaml = """
+description: Target group with a risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: CRITICAL
+        description: Server exposed
+        ip:
+            host: "8.8.8.8"
+"""
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    proto_bytes = asset_group_def.targets[0].to_proto()
+
+    assert isinstance(proto_bytes, bytes)
+    assert len(proto_bytes) > 0
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
+    """Tests that an invalid risk severity is rejected by schema validation."""
+    invalid_yaml = """
+description: Target group with an invalid risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: NOT_A_SEVERITY
+        description: Server exposed
+"""
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))

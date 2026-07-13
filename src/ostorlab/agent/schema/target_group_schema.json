@@ -157,6 +157,59 @@
         "title",
         "description"
       ]
+    },
+    "riskType": {
+      "description": "[Optional] - Risk report asset applying to an embedded target.",
+      "type": "object",
+      "properties": {
+        "severity": {
+          "description": "[Required] - Risk severity rating.",
+          "type": "string",
+          "enum": [
+            "CRITICAL",
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "POTENTIALLY",
+            "HARDENING",
+            "SECURE",
+            "IMPORTANT",
+            "INFO"
+          ]
+        },
+        "description": {
+          "description": "[Required] - Description of the risk.",
+          "type": "string"
+        },
+        "ip": {
+          "$ref": "#/CustomTypes/ipType"
+        },
+        "domain": {
+          "$ref": "#/CustomTypes/domainType"
+        },
+        "link": {
+          "$ref": "#/CustomTypes/linkType"
+        },
+        "androidStore": {
+          "$ref": "#/CustomTypes/androidStoreType"
+        },
+        "iosStore": {
+          "$ref": "#/CustomTypes/iosStoreType"
+        },
+        "androidApkFile": {
+          "$ref": "#/CustomTypes/androidApkFileType"
+        },
+        "androidAabFile": {
+          "$ref": "#/CustomTypes/androidAabFileType"
+        },
+        "iosFile": {
+          "$ref": "#/CustomTypes/iosFileType"
+        }
+      },
+      "required": [
+        "severity",
+        "description"
+      ]
     }
   },
   "properties": {
@@ -233,6 +286,12 @@
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/ticketType"
+          }
+        },
+        "risk": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/riskType"
           }
         }
       }
