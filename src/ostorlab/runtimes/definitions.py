@@ -329,13 +329,10 @@ class AssetsDefinition:
         assets_def: List[assets.Asset] = []
 
         for asset in android_aab_file_assets:
-            path = asset.get("path")
-            url = asset.get("url")
-            content = None
-            if path is not None:
-                content = _load_asset_from_file(asset.get("path", ""))
-            if content is None and url is None:
+            parsed_file = _parse_file_asset(asset)
+            if parsed_file is None:
                 continue
+            content, path, url = parsed_file
             assets_def.append(
                 android_aab_asset.AndroidAab(
                     content=content, path=path, content_url=url
@@ -343,13 +340,10 @@ class AssetsDefinition:
             )
 
         for asset in android_apk_file_assets:
-            path = asset.get("path")
-            url = asset.get("url")
-            content = None
-            if path is not None:
-                content = _load_asset_from_file(asset.get("path", ""))
-            if content is None and url is None:
+            parsed_file = _parse_file_asset(asset)
+            if parsed_file is None:
                 continue
+            content, path, url = parsed_file
             assets_def.append(
                 android_apk_asset.AndroidApk(
                     content=content, path=path, content_url=url
@@ -357,13 +351,10 @@ class AssetsDefinition:
             )
 
         for asset in ios_file_assets:
-            path = asset.get("path")
-            url = asset.get("url")
-            content = None
-            if path is not None:
-                content = _load_asset_from_file(asset.get("path", ""))
-            if content is None and url is None:
+            parsed_file = _parse_file_asset(asset)
+            if parsed_file is None:
                 continue
+            content, path, url = parsed_file
             assets_def.append(
                 ios_ipa_asset.IOSIpa(content=content, path=path, content_url=url)
             )
@@ -421,15 +412,32 @@ class AssetsDefinition:
 
 
 def _parse_file_asset(
-    file_asset: Dict[str, Any],
-) -> tuple[Optional[bytes], Optional[str], Optional[str]]:
-    """Resolve a file asset entry into (content, path, url)."""
+    file_asset: dict[str, Any],
+) -> tuple[bytes | None, str | None, str | None] | None:
+    """Resolve a file asset entry into (content, path, url).
+
+    Returns None when the entry has neither readable content nor a URL, so the
+    caller can skip it (standalone assets) or reject it (embedded risk asset)."""
     path = file_asset.get("path")
     url = file_asset.get("url")
     content = None
     if path is not None:
         content = _load_asset_from_file(path)
+    if content is None and url is None:
+        return None
     return content, path, url
+
+
+def _resolve_risk_file_asset(
+    risk_entry: dict[str, Any], key: str
+) -> tuple[bytes | None, str | None, str | None]:
+    """Resolve a risk-embedded file asset, rejecting entries with no usable data."""
+    parsed_file = _parse_file_asset(risk_entry[key])
+    if parsed_file is None:
+        raise validator.ValidationError(
+            f"Risk {key} requires either a valid path or a url."
+        )
+    return parsed_file
 
 
 _RISK_TARGET_KEYS = [
@@ -470,6 +478,10 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
             risk_kwargs["ipv4"] = ip_asset
         elif isinstance(ip_asset, ipv6_asset.IPv6):
             risk_kwargs["ipv6"] = ip_asset
+        else:
+            raise validator.ValidationError(
+                f"Risk asset has an invalid IP address: {risk_entry['ip'].get('host')}"
+            )
 
     if risk_entry.get("domain") is not None:
         risk_kwargs["domain_name"] = domain_name_asset.DomainName(
@@ -493,19 +505,19 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
         )
 
     if risk_entry.get("androidApkFile") is not None:
-        content, path, url = _parse_file_asset(risk_entry["androidApkFile"])
+        content, path, url = _resolve_risk_file_asset(risk_entry, "androidApkFile")
         risk_kwargs["android_apk"] = android_apk_asset.AndroidApk(
             content=content, path=path, content_url=url
         )
 
     if risk_entry.get("androidAabFile") is not None:
-        content, path, url = _parse_file_asset(risk_entry["androidAabFile"])
+        content, path, url = _resolve_risk_file_asset(risk_entry, "androidAabFile")
         risk_kwargs["android_aab"] = android_aab_asset.AndroidAab(
             content=content, path=path, content_url=url
         )
 
     if risk_entry.get("iosFile") is not None:
-        content, path, url = _parse_file_asset(risk_entry["iosFile"])
+        content, path, url = _resolve_risk_file_asset(risk_entry, "iosFile")
         risk_kwargs["ios_ipa"] = ios_ipa_asset.IOSIpa(
             content=content, path=path, content_url=url
         )

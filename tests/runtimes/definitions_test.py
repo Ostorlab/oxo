@@ -654,6 +654,43 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskIpInvalid_raisesValidationError():
+    """Tests that a risk embedding an invalid ip is rejected instead of silently
+    producing a risk with no target."""
+    invalid_yaml = """
+description: Target group with an invalid risk ip
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Server exposed
+        ip:
+            host: not-an-ip
+"""
+
+    with pytest.raises(validator.ValidationError, match="invalid IP address"):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskFileAssetEmpty_raisesValidationError():
+    """Tests that a risk embedding a file asset with neither path nor url is rejected
+    instead of producing an empty asset."""
+    invalid_yaml = """
+description: Target group with an empty risk file asset
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable APK
+        androidApkFile: {}
+"""
+
+    with pytest.raises(validator.ValidationError, match="requires either a valid path"):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
     """Tests that an invalid risk severity is rejected by schema validation."""
     invalid_yaml = """
