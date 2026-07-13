@@ -30,6 +30,17 @@ from ostorlab.assets import ticket as ticket_asset
 
 MAX_AGENT_REPLICAS = 100
 
+_RISK_TARGET_KEYS = [
+    "ip",
+    "domain",
+    "link",
+    "androidStore",
+    "iosStore",
+    "androidApkFile",
+    "androidAabFile",
+    "iosFile",
+]
+
 logger = logging.getLogger(__name__)
 
 
@@ -440,18 +451,6 @@ def _resolve_risk_file_asset(
     return parsed_file
 
 
-_RISK_TARGET_KEYS = [
-    "ip",
-    "domain",
-    "link",
-    "androidStore",
-    "iosStore",
-    "androidApkFile",
-    "androidAabFile",
-    "iosFile",
-]
-
-
 def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     """Build a Risk asset from a target group risk entry.
 
@@ -534,8 +533,6 @@ def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
         return None
 
     mask = ip_asset.get("mask")
-    # The ipv4/ipv6 proto mask field is a string, but YAML parses a numeric mask
-    # as an int; coerce so serialization does not fail.
     mask = str(mask) if mask is not None else None
     if ip.version == 4:
         return ipv4_asset.IPv4(host=ip_string, mask=mask)
