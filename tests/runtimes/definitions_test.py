@@ -633,7 +633,7 @@ assets:
     assert asset_group_def.targets[0].ipv4.mask == "32"
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsMultipleTargets_raisesValueError():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsMultipleTargets_raisesValidationError():
     """Tests that a risk embedding more than one target is rejected instead of silently
     dropping all but one when serialized to the proto oneof."""
     invalid_yaml = """
@@ -650,7 +650,7 @@ assets:
             name: example.com
 """
 
-    with pytest.raises(ValueError, match="at most one target"):
+    with pytest.raises(validator.ValidationError, match="at most one target"):
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 

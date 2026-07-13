@@ -10,6 +10,7 @@ import ipaddress
 
 
 from ostorlab.agent.schema import loader
+from ostorlab.agent.schema import validator
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import definitions
@@ -454,7 +455,7 @@ def _parse_risk_asset(risk_entry: Dict[str, Any]) -> risk_asset.Risk:
         key for key in _RISK_TARGET_KEYS if risk_entry.get(key) is not None
     ]
     if len(provided_targets) > 1:
-        raise ValueError(
+        raise validator.ValidationError(
             f"A risk asset must embed at most one target, got: {', '.join(provided_targets)}."
         )
 
