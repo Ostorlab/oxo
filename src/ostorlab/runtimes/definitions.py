@@ -459,7 +459,7 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
             f"A risk asset must embed at most one target, got: {', '.join(provided_targets)}."
         )
 
-    risk_kwargs: Dict[str, Any] = {
+    risk_kwargs: dict[str, Any] = {
         "description": risk_entry.get("description"),
         "rating": risk_entry.get("severity"),
     }
