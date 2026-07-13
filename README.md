@@ -169,7 +169,7 @@ Implementations of popular tools such as:
 * [Retire.js](http://retirejs.github.io/retire.js/): Scanner detecting the use of JavaScript libraries with known
   vulnerabilities.
 * ~~[snallygaster](https://github.com/hannob/snallygaster): Finds file leaks and other security problems on HTTP servers.~~
-* [testssl.sh](https://testssl.sh/): Identifies various TLS/SSL weaknesses, including Heartbleed, CRIME, and ROBOT.
+* ~~[testssl.sh](https://testssl.sh/): Identifies various TLS/SSL weaknesses, including Heartbleed, CRIME, and ROBOT.~~
 * ~~[TruffleHog](https://github.com/trufflesecurity/truffleHog): Searches through Git repositories for high-entropy~~
   strings and secrets, digging deep into commit history.
 * [cve-bin-tool](https://github.com/intel/cve-bin-tool): Scans binaries for vulnerable components.
