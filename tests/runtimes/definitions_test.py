@@ -861,6 +861,27 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskLinkHasNoMethod_raisesValidationError():
+    """Tests that a risk embedding a link without a method is rejected.
+
+    ``Link`` declares ``method`` as a non-optional str, so a missing method would
+    otherwise serialize to a proto with the method silently omitted."""
+    invalid_yaml = """
+description: Target group with a link missing its method
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable endpoint
+        link:
+            url: https://example.com/api
+"""
+
+    with pytest.raises(validator.ValidationError, match="Risk link requires a method."):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
     """Tests that an invalid risk severity is rejected by schema validation."""
     invalid_yaml = """
