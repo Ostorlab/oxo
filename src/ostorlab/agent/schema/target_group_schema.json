@@ -290,7 +290,7 @@
             "$ref": "#/CustomTypes/ticketType"
           }
         },
-        "risk": {
+        "risks": {
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/riskType"
