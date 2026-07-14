@@ -55,7 +55,7 @@
       "description": "[Optional] - Ios app file asset.",
       "type": "object",
       "properties": {
-        "path": {
+        "paths": {
           "description": "[Optional] - Ios app file path.",
           "type": "string"
         },
@@ -63,8 +63,7 @@
           "description": "[Optional] - Ios app file link.",
           "type": "string"
         }
-      },
-      "additionalProperties": false
+      }
     },
     "linkType": {
       "description": "[Optional] - Link asset.",
@@ -210,8 +209,7 @@
       "required": [
         "severity",
         "description"
-      ],
-      "additionalProperties": false
+      ]
     }
   },
   "properties": {
