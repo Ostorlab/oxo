@@ -827,6 +827,40 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+@pytest.mark.parametrize(
+    "target_key, missing_field",
+    [
+        ("domain", "name"),
+        ("link", "url"),
+        ("androidStore", "package_name"),
+        ("iosStore", "bundle_id"),
+    ],
+)
+def testAssetGroupDefinitionFromYaml_whenRiskTargetIsEmpty_raisesValidationError(
+    target_key: str, missing_field: str
+) -> None:
+    """Tests that a risk embedding a target with no identifying field is rejected.
+
+    The target sub-schemas mark no field as required, so an empty entry would
+    otherwise build a target that is silently dropped from the proto oneof."""
+    invalid_yaml = f"""
+description: Target group with an empty risk target
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Server exposed
+        {target_key}: {{}}
+"""
+
+    with pytest.raises(
+        validator.ValidationError,
+        match=f"Risk {target_key} requires a {missing_field}.",
+    ):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
     """Tests that an invalid risk severity is rejected by schema validation."""
     invalid_yaml = """

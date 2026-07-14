@@ -451,6 +451,18 @@ def _resolve_risk_file_asset(
     return parsed_file
 
 
+def _resolve_risk_target_field(risk_entry: dict[str, Any], key: str, field: str) -> str:
+    """Return a risk-embedded target's identifying field, rejecting empty entries.
+
+    The target sub-schemas mark no field as required, so an entry like ``domain: {}``
+    passes validation and would otherwise build a target with a ``None`` identifier
+    that is silently dropped from the proto oneof."""
+    value = risk_entry[key].get(field)
+    if value is None:
+        raise validator.ValidationError(f"Risk {key} requires a {field}.")
+    return str(value)
+
+
 def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     """Build a Risk asset from a target group risk entry.
 
@@ -488,23 +500,25 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
 
     if risk_entry.get("domain") is not None:
         risk_kwargs["domain_name"] = domain_name_asset.DomainName(
-            name=risk_entry["domain"].get("name")
+            name=_resolve_risk_target_field(risk_entry, "domain", "name")
         )
 
     if risk_entry.get("link") is not None:
         risk_kwargs["link"] = link_asset.Link(
-            url=risk_entry["link"].get("url"),
+            url=_resolve_risk_target_field(risk_entry, "link", "url"),
             method=risk_entry["link"].get("method"),
         )
 
     if risk_entry.get("androidStore") is not None:
         risk_kwargs["android_store"] = android_store_asset.AndroidStore(
-            package_name=risk_entry["androidStore"].get("package_name")
+            package_name=_resolve_risk_target_field(
+                risk_entry, "androidStore", "package_name"
+            )
         )
 
     if risk_entry.get("iosStore") is not None:
         risk_kwargs["ios_store"] = ios_store_asset.IOSStore(
-            bundle_id=risk_entry["iosStore"].get("bundle_id")
+            bundle_id=_resolve_risk_target_field(risk_entry, "iosStore", "bundle_id")
         )
 
     if risk_entry.get("androidApkFile") is not None:
