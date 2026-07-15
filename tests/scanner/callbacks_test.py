@@ -21,6 +21,7 @@ from ostorlab.assets import ipv6
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import generic_file as generic_file_asset
 from ostorlab.scanner import callbacks
 from ostorlab.scanner.proto.assets import aab_pb2
 from ostorlab.scanner.proto.assets import agent_pb2
@@ -41,6 +42,7 @@ from ostorlab.scanner.proto.assets import link_pb2
 from ostorlab.scanner.proto.assets import network_pb2
 from ostorlab.scanner.proto.assets import repository_pb2
 from ostorlab.scanner.proto.assets import repository_archive_pb2
+from ostorlab.scanner.proto.assets import generic_file_pb2
 from ostorlab.scanner.proto.assets import v4_pb2
 from ostorlab.scanner.proto.assets import v6_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
@@ -468,6 +470,32 @@ def testExtractAssets_whenRepositoryArchiveAsset_shouldReturnCorrectAsset(
         isinstance(extracted_asset, repository_archive_asset.RepositoryArchive) is True
     )
     assert extracted_asset.content_url == "https://example.com/source-archive.tar.gz"
+
+
+def testExtractAssets_whenGenericFileAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for generic file asset."""
+    generic_file_start_agent_scan_msg = startAgentScan_pb2.Message(
+        reference_scan_id=42,
+        key="agentgroup/ostorlab/agent_group42",
+        agents=[],
+        generic_file=generic_file_pb2.Message(
+            content_url="https://example.com/file.bin",
+        ),
+    )
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_scan_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    )
+
+    callbacks.start_scan("some_subject", generic_file_start_agent_scan_msg, None)
+
+    extracted_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    assert isinstance(extracted_asset, generic_file_asset.GenericFile) is True
+    assert extracted_asset.content_url == "https://example.com/file.bin"
 
 
 def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(

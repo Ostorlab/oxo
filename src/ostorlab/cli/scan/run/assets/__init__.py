@@ -24,6 +24,7 @@ from ostorlab.cli.scan.run.assets import harmonyos_store
 from ostorlab.cli.scan.run.assets import phone_number
 from ostorlab.cli.scan.run.assets import repository
 from ostorlab.cli.scan.run.assets import repository_archive
+from ostorlab.cli.scan.run.assets import generic_file
 
 __all__ = (
     "agent",
@@ -50,4 +51,5 @@ __all__ = (
     "phone_number",
     "repository",
     "repository_archive",
+    "generic_file",
 )

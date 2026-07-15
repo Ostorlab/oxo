@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.generic_file;
+
+message Message {
+  optional bytes content = 1;
+  optional string path = 2;
+  optional string content_url = 3;
+}
