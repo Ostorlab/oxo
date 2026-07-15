@@ -458,7 +458,7 @@ def _resolve_risk_target_field(risk_entry: dict[str, Any], key: str, field: str)
     passes validation and would otherwise build a target with a ``None`` identifier
     that is silently dropped from the proto oneof."""
     value = risk_entry[key].get(field)
-    if value is None:
+    if value is None or value == "":
         raise validator.ValidationError(f"Risk {key} requires a {field}.")
     return str(value)
 

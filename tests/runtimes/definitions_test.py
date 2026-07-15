@@ -861,6 +861,41 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+@pytest.mark.parametrize(
+    "target_key, blank_field",
+    [
+        ("domain", "name"),
+        ("link", "url"),
+        ("androidStore", "package_name"),
+        ("iosStore", "bundle_id"),
+    ],
+)
+def testAssetGroupDefinitionFromYaml_whenRiskTargetFieldBlank_raisesValidationError(
+    target_key: str, blank_field: str
+) -> None:
+    """Tests that a risk target whose identifying field is an empty string is rejected.
+
+    The sub-schemas set no ``minLength``, so a blank value passes schema validation
+    and would otherwise build a target serialized as an empty proto oneof."""
+    invalid_yaml = f"""
+description: Target group with a blank risk target field
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Server exposed
+        {target_key}:
+            {blank_field}: ""
+"""
+
+    with pytest.raises(
+        validator.ValidationError,
+        match=f"Risk {target_key} requires a {blank_field}.",
+    ):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskLinkHasNoMethod_raisesValidationError():
     """Tests that a risk embedding a link without a method is rejected.
 
