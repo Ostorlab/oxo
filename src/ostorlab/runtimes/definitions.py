@@ -5,7 +5,7 @@ import io
 import pathlib
 import logging
 import json
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, NamedTuple, Optional, Any
 import ipaddress
 
 
@@ -422,10 +422,16 @@ class AssetsDefinition:
         )
 
 
-def _parse_file_asset(
-    file_asset: dict[str, Any],
-) -> tuple[bytes | None, str | None, str | None] | None:
-    """Resolve a file asset entry into (content, path, url).
+class ParsedFileAsset(NamedTuple):
+    """A file asset resolved into its content, local path and remote URL."""
+
+    content: bytes | None
+    path: str | None
+    url: str | None
+
+
+def _parse_file_asset(file_asset: dict[str, Any]) -> ParsedFileAsset | None:
+    """Resolve a file asset entry into its content, path and url.
 
     Returns None when the entry has neither readable content nor a URL, so the
     caller can skip it (standalone assets) or reject it (embedded risk asset)."""
@@ -436,12 +442,10 @@ def _parse_file_asset(
         content = _load_asset_from_file(path)
     if content is None and url is None:
         return None
-    return content, path, url
+    return ParsedFileAsset(content=content, path=path, url=url)
 
 
-def _resolve_risk_file_asset(
-    risk_entry: dict[str, Any], key: str
-) -> tuple[bytes | None, str | None, str | None]:
+def _resolve_risk_file_asset(risk_entry: dict[str, Any], key: str) -> ParsedFileAsset:
     """Resolve a risk-embedded file asset, rejecting entries with no usable data."""
     parsed_file = _parse_file_asset(risk_entry[key])
     if parsed_file is None:
