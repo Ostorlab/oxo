@@ -506,7 +506,7 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     if risk_entry.get("link") is not None:
         risk_kwargs["link"] = link_asset.Link(
             url=_resolve_risk_target_field(risk_entry, "link", "url"),
-            method=_resolve_risk_target_field(risk_entry, "link", "method"),
+            method=risk_entry["link"].get("method") or "GET",
         )
 
     if risk_entry.get("androidStore") is not None:

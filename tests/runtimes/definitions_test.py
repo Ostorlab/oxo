@@ -896,12 +896,12 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskLinkHasNoMethod_raisesValidationError():
-    """Tests that a risk embedding a link without a method is rejected.
+def testAssetGroupDefinitionFromYaml_whenRiskLinkHasNoMethod_defaultsToGet():
+    """Tests that a risk link without a method defaults to GET, matching the CLI.
 
-    ``Link`` declares ``method`` as a non-optional str, so a missing method would
-    otherwise serialize to a proto with the method silently omitted."""
-    invalid_yaml = """
+    The ``risk`` CLI defaults ``--link-method`` to GET, so a link ported to YAML
+    without a method should behave the same rather than being rejected."""
+    yaml_definition = """
 description: Target group with a link missing its method
 kind: targetGroup
 name: risk_scan
@@ -913,8 +913,13 @@ assets:
             url: https://example.com/api
 """
 
-    with pytest.raises(validator.ValidationError, match="Risk link requires a method."):
-        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+    asset_group_def = definitions.AssetsDefinition.from_yaml(
+        io.StringIO(yaml_definition)
+    )
+
+    assert asset_group_def.targets[0].link == link_asset.Link(
+        url="https://example.com/api", method="GET"
+    )
 
 
 def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
