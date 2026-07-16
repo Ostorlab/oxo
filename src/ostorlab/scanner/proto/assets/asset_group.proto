@@ -16,14 +16,14 @@ package ostorlab.scanner.proto.assets.asset_group;
 
 message Message {
   repeated ostorlab.scanner.proto.assets.file.Message files = 1;
-  repeated ostorlab.scanner.proto.assets.apk.Message android_apk = 4;
-  repeated ostorlab.scanner.proto.assets.aab.Message android_aab = 5;
-  repeated ostorlab.scanner.proto.assets.ipa.Message ios_ipa = 6;
-  repeated ostorlab.scanner.proto.assets.repository.Message repositories = 7;
-  repeated ostorlab.scanner.proto.assets.repository_archive.Message repository_archives = 8;
-  repeated ostorlab.scanner.proto.assets.link.Message urls = 9;
-  repeated ostorlab.scanner.proto.assets.network.Message networks = 10;
-  repeated ostorlab.scanner.proto.assets.ip.Message ips = 11;
-  repeated ostorlab.scanner.proto.assets.v4.Message ipv4s = 12;
-  repeated ostorlab.scanner.proto.assets.v6.Message ipv6s = 13;
+  repeated ostorlab.scanner.proto.assets.apk.Message android_apk = 2;
+  repeated ostorlab.scanner.proto.assets.aab.Message android_aab = 3;
+  repeated ostorlab.scanner.proto.assets.ipa.Message ios_ipa = 4;
+  repeated ostorlab.scanner.proto.assets.repository.Message repositories = 5;
+  repeated ostorlab.scanner.proto.assets.repository_archive.Message repository_archives = 6;
+  repeated ostorlab.scanner.proto.assets.link.Message urls = 7;
+  repeated ostorlab.scanner.proto.assets.network.Message networks = 8;
+  repeated ostorlab.scanner.proto.assets.ip.Message ips = 9;
+  repeated ostorlab.scanner.proto.assets.v4.Message ipv4s = 10;
+  repeated ostorlab.scanner.proto.assets.v6.Message ipv6s = 11;
 }
