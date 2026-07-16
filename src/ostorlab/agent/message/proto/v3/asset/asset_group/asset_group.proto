@@ -1,8 +1,6 @@
 syntax = "proto2";
 
 import "ostorlab/agent/message/proto/v3/asset/file/file.proto";
-import "ostorlab/agent/message/proto/v3/asset/store/android_store/android_store.proto";
-import "ostorlab/agent/message/proto/v3/asset/store/ios_store/ios_store.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/android/apk/apk.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/android/aab/aab.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/ios/ipa/ipa.proto";
@@ -17,8 +15,6 @@ package ostorlab.agent.message.proto.v3.asset.asset_group;
 
 message Message {
   repeated ostorlab.agent.message.proto.v3.asset.file.Message files = 1;
-  repeated ostorlab.agent.message.proto.v3.asset.store.android_store.Message android_package_name = 2;
-  repeated ostorlab.agent.message.proto.v3.asset.store.ios_store.Message ios_bundle_id = 3;
   repeated ostorlab.agent.message.proto.v3.asset.file.android.apk.Message android_apk = 4;
   repeated ostorlab.agent.message.proto.v3.asset.file.android.aab.Message android_aab = 5;
   repeated ostorlab.agent.message.proto.v3.asset.file.ios.ipa.Message ios_ipa = 6;
