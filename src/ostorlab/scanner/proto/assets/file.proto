@@ -18,7 +18,9 @@ message Message {
   optional bytes content = 1;
   optional string path = 2;
   optional string content_url = 3;
-  optional AndroidMetadata android_metadata = 4;
-  optional IOSMetadata ios_metadata = 5;
-  optional HarmonyOSMetadata harmonyos_metadata = 6;
+  oneof metadata_oneof {
+    AndroidMetadata android_metadata = 4;
+    IOSMetadata ios_metadata = 5;
+    HarmonyOSMetadata harmonyos_metadata = 6;
+  }
 }
