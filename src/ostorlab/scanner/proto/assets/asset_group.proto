@@ -18,11 +18,11 @@ package ostorlab.scanner.proto.assets.asset_group;
 
 message Message {
   repeated ostorlab.scanner.proto.assets.file.Message files = 1;
-  optional ostorlab.scanner.proto.assets.android_store.Message android_package_name = 2;
-  optional ostorlab.scanner.proto.assets.ios_store.Message ios_bundle_id = 3;
-  optional ostorlab.scanner.proto.assets.apk.Message android_apk = 4;
-  optional ostorlab.scanner.proto.assets.aab.Message android_aab = 5;
-  optional ostorlab.scanner.proto.assets.ipa.Message ios_ipa = 6;
+  repeated ostorlab.scanner.proto.assets.android_store.Message android_package_name = 2;
+  repeated ostorlab.scanner.proto.assets.ios_store.Message ios_bundle_id = 3;
+  repeated ostorlab.scanner.proto.assets.apk.Message android_apk = 4;
+  repeated ostorlab.scanner.proto.assets.aab.Message android_aab = 5;
+  repeated ostorlab.scanner.proto.assets.ipa.Message ios_ipa = 6;
   repeated ostorlab.scanner.proto.assets.repository.Message repositories = 7;
   repeated ostorlab.scanner.proto.assets.repository_archive.Message repository_archives = 8;
   repeated ostorlab.scanner.proto.assets.link.Message urls = 9;

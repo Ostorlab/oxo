@@ -17,11 +17,11 @@ package ostorlab.agent.message.proto.v3.asset.asset_group;
 
 message Message {
   repeated ostorlab.agent.message.proto.v3.asset.file.Message files = 1;
-  optional ostorlab.agent.message.proto.v3.asset.store.android_store.Message android_package_name = 2;
-  optional ostorlab.agent.message.proto.v3.asset.store.ios_store.Message ios_bundle_id = 3;
-  optional ostorlab.agent.message.proto.v3.asset.file.android.apk.Message android_apk = 4;
-  optional ostorlab.agent.message.proto.v3.asset.file.android.aab.Message android_aab = 5;
-  optional ostorlab.agent.message.proto.v3.asset.file.ios.ipa.Message ios_ipa = 6;
+  repeated ostorlab.agent.message.proto.v3.asset.store.android_store.Message android_package_name = 2;
+  repeated ostorlab.agent.message.proto.v3.asset.store.ios_store.Message ios_bundle_id = 3;
+  repeated ostorlab.agent.message.proto.v3.asset.file.android.apk.Message android_apk = 4;
+  repeated ostorlab.agent.message.proto.v3.asset.file.android.aab.Message android_aab = 5;
+  repeated ostorlab.agent.message.proto.v3.asset.file.ios.ipa.Message ios_ipa = 6;
   repeated ostorlab.agent.message.proto.v3.asset.repository.Message repositories = 7;
   repeated ostorlab.agent.message.proto.v3.asset.file.repository_archive.Message repository_archives = 8;
   repeated ostorlab.agent.message.proto.v3.asset.link.Message urls = 9;
