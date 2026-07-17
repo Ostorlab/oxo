@@ -1,10 +1,10 @@
-"""Tests for the asset group protobuf message serialization and deserialization behavior."""
+"""Tests for the multi-asset group protobuf message serialization and deserialization behavior."""
 
-from ostorlab.agent.message.proto.v3.asset.asset_group import asset_group_pb2
+from ostorlab.agent.message.proto.v3.asset.multi_asset import multi_asset_pb2
 
 
 def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() -> None:
-    message = asset_group_pb2.Message()
+    message = multi_asset_pb2.Message()
     message.files.add(content=b"file-bytes", path="/tmp/a.bin")
     message.ios_ipa.content = b"ipa-bytes"
     message.repositories.add(repository_url="https://example.com/repo.git")
@@ -15,7 +15,7 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
     message.ipv6s.add(host="::1")
 
     serialized = message.SerializeToString()
-    deserialized = asset_group_pb2.Message()
+    deserialized = multi_asset_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert deserialized.files[0].content == b"file-bytes"
@@ -33,14 +33,14 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
 
 
 def testSerializeAndDeserialize_whenMultipleOfSameType_preservesAllEntries() -> None:
-    message = asset_group_pb2.Message()
+    message = multi_asset_pb2.Message()
     message.files.add(content=b"first")
     message.files.add(content=b"second")
     message.repositories.add(repository_url="https://example.com/one.git")
     message.repositories.add(repository_url="https://example.com/two.git")
 
     serialized = message.SerializeToString()
-    deserialized = asset_group_pb2.Message()
+    deserialized = multi_asset_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert len(deserialized.files) == 2
@@ -52,12 +52,12 @@ def testSerializeAndDeserialize_whenMultipleOfSameType_preservesAllEntries() -> 
 
 
 def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> None:
-    message = asset_group_pb2.Message()
+    message = multi_asset_pb2.Message()
     message.android_package_name.package_name = "com.example.app"
     message.ios_ipa.content = b"ipa-bytes"
 
     serialized = message.SerializeToString()
-    deserialized = asset_group_pb2.Message()
+    deserialized = multi_asset_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert deserialized.WhichOneof("mobile_asset") == "ios_ipa"
@@ -65,11 +65,44 @@ def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> No
     assert deserialized.HasField("android_package_name") is False
 
 
-def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
-    message = asset_group_pb2.Message()
+def testMobileAssetOneof_whenHarmonyosStoreSet_returnsBundleName() -> None:
+    message = multi_asset_pb2.Message()
+    message.harmonyos_bundle_name.bundle_name = "com.example.harmony"
 
     serialized = message.SerializeToString()
-    deserialized = asset_group_pb2.Message()
+    deserialized = multi_asset_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert deserialized.WhichOneof("mobile_asset") == "harmonyos_bundle_name"
+    assert deserialized.harmonyos_bundle_name.bundle_name == "com.example.harmony"
+
+
+def testMobileAssetOneof_whenHarmonyosFileSet_returnsFileContent() -> None:
+    harmonyos_files = [
+        "harmonyos_hap",
+        "harmonyos_apk",
+        "harmonyos_aab",
+        "harmonyos_app",
+        "harmonyos_rpk",
+    ]
+
+    for field_name in harmonyos_files:
+        message = multi_asset_pb2.Message()
+        getattr(message, field_name).content = b"harmony-bytes"
+
+        serialized = message.SerializeToString()
+        deserialized = multi_asset_pb2.Message()
+        deserialized.ParseFromString(serialized)
+
+        assert deserialized.WhichOneof("mobile_asset") == field_name
+        assert getattr(deserialized, field_name).content == b"harmony-bytes"
+
+
+def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
+    message = multi_asset_pb2.Message()
+
+    serialized = message.SerializeToString()
+    deserialized = multi_asset_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert len(deserialized.files) == 0
