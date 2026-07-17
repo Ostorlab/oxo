@@ -6,6 +6,8 @@ import "ostorlab/agent/message/proto/v3/asset/store/ios_store/ios_store.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/android/apk/apk.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/android/aab/aab.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/ios/ipa/ipa.proto";
+import "ostorlab/agent/message/proto/v3/asset/store/harmonyos_store/harmonyos_store.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/harmonyos/hap/hap.proto";
 import "ostorlab/agent/message/proto/v3/asset/repository/repository.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/repository_archive/repository_archive.proto";
 import "ostorlab/agent/message/proto/v3/asset/link/link.proto";
@@ -13,7 +15,7 @@ import "ostorlab/agent/message/proto/v3/asset/ip/ip.proto";
 import "ostorlab/agent/message/proto/v3/asset/ip/v4/v4.proto";
 import "ostorlab/agent/message/proto/v3/asset/ip/v6/v6.proto";
 
-package ostorlab.agent.message.proto.v3.asset.asset_group;
+package ostorlab.agent.message.proto.v3.asset.multi_asset;
 
 message Message {
   repeated ostorlab.agent.message.proto.v3.asset.file.Message files = 1;
@@ -23,6 +25,8 @@ message Message {
     ostorlab.agent.message.proto.v3.asset.file.android.apk.Message android_apk = 4;
     ostorlab.agent.message.proto.v3.asset.file.android.aab.Message android_aab = 5;
     ostorlab.agent.message.proto.v3.asset.file.ios.ipa.Message ios_ipa = 6;
+    ostorlab.agent.message.proto.v3.asset.store.harmonyos_store.Message harmonyos_bundle_name = 13;
+    ostorlab.agent.message.proto.v3.asset.file.harmonyos.hap.Message harmonyos_hap = 14;
   }
   repeated ostorlab.agent.message.proto.v3.asset.repository.Message repositories = 7;
   repeated ostorlab.agent.message.proto.v3.asset.file.repository_archive.Message repository_archives = 8;
