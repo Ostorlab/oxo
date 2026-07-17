@@ -6,9 +6,7 @@ from ostorlab.agent.message.proto.v3.asset.asset_group import asset_group_pb2
 def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() -> None:
     message = asset_group_pb2.Message()
     message.files.add(content=b"file-bytes", path="/tmp/a.bin")
-    message.android_apk.add(content=b"apk-bytes")
-    message.android_aab.add(content=b"aab-bytes")
-    message.ios_ipa.add(content=b"ipa-bytes")
+    message.ios_ipa.content = b"ipa-bytes"
     message.repositories.add(repository_url="https://example.com/repo.git")
     message.repository_archives.add(content_url="https://example.com/archive.tar.gz")
     message.urls.add(url="https://example.com")
@@ -22,9 +20,7 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
 
     assert deserialized.files[0].content == b"file-bytes"
     assert deserialized.files[0].path == "/tmp/a.bin"
-    assert deserialized.android_apk[0].content == b"apk-bytes"
-    assert deserialized.android_aab[0].content == b"aab-bytes"
-    assert deserialized.ios_ipa[0].content == b"ipa-bytes"
+    assert deserialized.ios_ipa.content == b"ipa-bytes"
     assert deserialized.repositories[0].repository_url == "https://example.com/repo.git"
     assert (
         deserialized.repository_archives[0].content_url
@@ -40,8 +36,8 @@ def testSerializeAndDeserialize_whenMultipleOfSameType_preservesAllEntries() -> 
     message = asset_group_pb2.Message()
     message.files.add(content=b"first")
     message.files.add(content=b"second")
-    message.android_apk.add(content=b"apk-one")
-    message.android_apk.add(content=b"apk-two")
+    message.repositories.add(repository_url="https://example.com/one.git")
+    message.repositories.add(repository_url="https://example.com/two.git")
 
     serialized = message.SerializeToString()
     deserialized = asset_group_pb2.Message()
@@ -50,9 +46,23 @@ def testSerializeAndDeserialize_whenMultipleOfSameType_preservesAllEntries() -> 
     assert len(deserialized.files) == 2
     assert deserialized.files[0].content == b"first"
     assert deserialized.files[1].content == b"second"
-    assert len(deserialized.android_apk) == 2
-    assert deserialized.android_apk[0].content == b"apk-one"
-    assert deserialized.android_apk[1].content == b"apk-two"
+    assert len(deserialized.repositories) == 2
+    assert deserialized.repositories[0].repository_url == "https://example.com/one.git"
+    assert deserialized.repositories[1].repository_url == "https://example.com/two.git"
+
+
+def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> None:
+    message = asset_group_pb2.Message()
+    message.android_package_name.package_name = "com.example.app"
+    message.ios_ipa.content = b"ipa-bytes"
+
+    serialized = message.SerializeToString()
+    deserialized = asset_group_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert deserialized.WhichOneof("mobile_asset") == "ios_ipa"
+    assert deserialized.ios_ipa.content == b"ipa-bytes"
+    assert deserialized.HasField("android_package_name") is False
 
 
 def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
@@ -63,7 +73,7 @@ def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
     deserialized.ParseFromString(serialized)
 
     assert len(deserialized.files) == 0
-    assert len(deserialized.android_apk) == 0
+    assert deserialized.WhichOneof("mobile_asset") is None
     assert len(deserialized.repositories) == 0
     assert len(deserialized.urls) == 0
     assert len(deserialized.ips) == 0
