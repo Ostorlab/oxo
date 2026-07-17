@@ -8,6 +8,7 @@ import pytest
 from pytest_mock import plugin
 from aiormq import exceptions as aiormq_exceptions
 
+from ostorlab.agent.message import serializer
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.utils import strings
 
@@ -209,6 +210,41 @@ def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
         agent.mq_send_message(key="a.1.2", message=b"test message")
 
     assert mock_send_message.call_count == 6
+
+
+@pytest.mark.asyncio
+async def testMqRun_whenConsumedMessageSelectorIsUnsupported_acksMessageAndLogsWarning(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Messages with a selector matching no proto must be acked and skipped, not requeued."""
+    logger_warning = mocker.patch.object(agent_mq_mixin.logger, "warning")
+    stub = mocker.stub(name="test_unsupported_selector")
+    stub.side_effect = serializer.NoMatchingPackageNameError
+    client = Agent.create(stub, name="test_unsupported_selector", keys=["a.#"])
+    connection = mocker.AsyncMock()
+    channel = mocker.AsyncMock()
+    connection.channel.return_value = channel
+    queue = mocker.AsyncMock()
+    channel.declare_queue.return_value = queue
+    mocker.patch.object(client, "_get_connection", return_value=connection)
+    mocker.patch.object(client, "_get_exchange", return_value=mocker.AsyncMock())
+
+    await client.mq_run()
+
+    consume_callback = queue.consume.call_args[0][0]
+    incoming_message = mocker.MagicMock()
+    incoming_message.routing_key = (
+        "v3.asset.file.unsupported.85ba9f25-2c55-4722-96f7-35327f678d3a"
+    )
+    incoming_message.body = b"raw message"
+
+    await consume_callback(incoming_message)
+
+    stub.assert_called_once_with(b"raw message")
+    logger_warning.assert_called_once()
+    incoming_message.process.return_value.__aexit__.assert_awaited_once_with(
+        None, None, None
+    )
 
 
 @pytest.mark.asyncio

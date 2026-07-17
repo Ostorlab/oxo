@@ -12,6 +12,8 @@ import aio_pika
 import tenacity
 from aiormq import exceptions as aiormq_exceptions
 
+from ostorlab.agent.message import serializer
+
 logger = logging.getLogger(__name__)
 NUMBER_RETRIES = 6
 WAIT_FIXED_TIME = 5
@@ -143,12 +145,19 @@ class AgentMQMixin:
         logger.debug("incoming pika message received")
         try:
             async with message.process(requeue=True, reject_on_redelivered=True):
-                await self._loop.run_in_executor(
-                    self._executor,
-                    self.process_message,
-                    message.routing_key,
-                    message.body,
-                )
+                try:
+                    await self._loop.run_in_executor(
+                        self._executor,
+                        self.process_message,
+                        message.routing_key,
+                        message.body,
+                    )
+                except serializer.NoMatchingPackageNameError as e:
+                    logger.warning(
+                        "Skipping message with unsupported selector %s: %s",
+                        message.routing_key,
+                        e,
+                    )
         except aio_pika.exceptions.ChannelInvalidStateError:
             logger.warning("The channel is closed unexpectedly.")
             await self.mq_run()

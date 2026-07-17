@@ -46,7 +46,9 @@ def _find_package_name(selector: str) -> str:
     if len(filtered_matching) > 1:
         raise TooManyMatchingPackageNamesError(f"Found {','.join(filtered_matching)}")
     elif len(filtered_matching) == 0:
-        raise NoMatchingPackageNameError()
+        raise NoMatchingPackageNameError(
+            f"No matching package name for selector: {selector}"
+        )
     else:
         return _replace_module_proto(filtered_matching[0])
 

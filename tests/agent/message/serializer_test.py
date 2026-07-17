@@ -62,6 +62,14 @@ def testDeserializeRequest_withIncorrectSelector_throwsError():
         serializer.deserialize("v3.random.foo.bar", serialized.SerializeToString())
 
 
+def testDeserializeRequest_withUnknownSelector_errorMessageIncludesSelector() -> None:
+    """Test deserialization error message includes the selector that matched no proto."""
+    with pytest.raises(
+        serializer.NoMatchingPackageNameError, match="v3.random.foo.bar"
+    ):
+        serializer.deserialize("v3.random.foo.bar", b"")
+
+
 def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
     """Test message serialization with an empty message event message."""
     serialized = serializer.serialize("v3.report.event.scan.done", {})
