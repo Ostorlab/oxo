@@ -23,6 +23,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import ticket as ticket_asset
@@ -420,6 +421,14 @@ class AssetsDefinition:
             name=target_group_def.get("name"),
             description=target_group_def.get("description"),
         )
+
+    def to_multi_asset(self) -> multi_asset_asset.MultiAsset:
+        """Bundle all the definition's targets into a single multi-asset.
+
+        Returns:
+            A ``MultiAsset`` wrapping the definition's targets.
+        """
+        return multi_asset_asset.MultiAsset(targets=list(self.targets))
 
 
 class ParsedFileAsset(NamedTuple):

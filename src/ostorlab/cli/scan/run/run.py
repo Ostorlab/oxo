@@ -14,6 +14,7 @@ from ruamel.yaml import error
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
+from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import install_agent
 from ostorlab.cli.scan import scan
@@ -63,6 +64,14 @@ WAIT_BETWEEN_RETRIES = 5
     "-a",
     type=click.File("r"),
     help="Path to target list definition file (yaml).",
+    required=False,
+)
+@click.option(
+    "--multi-asset",
+    "-m",
+    help="Bundle the provided assets into a single multi-asset target.",
+    is_flag=True,
+    default=False,
     required=False,
 )
 @click.option(
@@ -117,6 +126,7 @@ def run(
     agent_group_definition: io.FileIO,
     assets: io.FileIO,
     title: str,
+    multi_asset: bool,
     install: bool,
     follow: List[str],
     no_follow: bool,
@@ -168,6 +178,21 @@ def run(
         except validator.ValidationError as e:
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
+
+    scan_assets: Optional[List[base_asset.Asset]] = None
+    if asset_group is not None:
+        if multi_asset is True:
+            bundled_asset = asset_group.to_multi_asset()
+            try:
+                # Build the proto eagerly to surface invalid bundles before scanning.
+                bundled_asset.to_proto()
+            except ValueError as e:
+                console.error(f"{e}")
+                raise click.ClickException("Invalid multi-asset definition.") from e
+            scan_assets = [bundled_asset]
+        else:
+            scan_assets = asset_group.targets
+
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
 
     if no_tracker is True:
@@ -216,7 +241,7 @@ def run(
                 created_scan = runtime_instance.scan(
                     title=ctx.obj["title"],
                     agent_group_definition=ctx.obj["agent_group_definition"],
-                    assets=asset_group.targets if asset_group is not None else None,
+                    assets=scan_assets,
                 )
                 if created_scan is not None:
                     runtime_instance.link_agent_group_scan(created_scan, agent_group)
