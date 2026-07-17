@@ -1,304 +1,261 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Target Group Schema",
-  "description": "Target Group json-specification : A full description of fields of a target group definition yaml file.",
-  "CustomTypes": {
-    "androidStoreType": {
-      "description": "[Optional] - Android store asset.",
-      "type": "object",
-      "properties": {
-        "package_name": {
-          "description": "[Required] - Package name of the android app.",
-          "type": "string"
-        }
-      }
-    },
-    "androidApkFileType": {
-      "description": "[Optional] - Android apk file asset.",
-      "type": "object",
-      "properties": {
-        "path": {
-          "description": "[Optional] - Android apk file path.",
-          "type": "string"
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Target Group Schema",
+    "description": "Target Group json-specification : A full description of fields of a target group definition yaml file.",
+    "CustomTypes": {
+        "androidStoreType": {
+            "description": "[Optional] - Android store asset.",
+            "type": "object",
+            "properties": {
+                "package_name": {
+                    "description": "[Required] - Package name of the android app.",
+                    "type": "string",
+                }
+            },
         },
-        "url": {
-          "description": "[Optional] - Android apk file link.",
-          "type": "string"
-        }
-      }
-    },
-    "androidAabFileType": {
-      "description": "[Optional] - Android aab file asset.",
-      "type": "object",
-      "properties": {
-        "path": {
-          "description": "[Optional] - Android aab file path.",
-          "type": "string"
+        "androidApkFileType": {
+            "description": "[Optional] - Android apk file asset.",
+            "type": "object",
+            "properties": {
+                "path": {
+                    "description": "[Optional] - Android apk file path.",
+                    "type": "string",
+                },
+                "url": {
+                    "description": "[Optional] - Android apk file link.",
+                    "type": "string",
+                },
+            },
         },
-        "url": {
-          "description": "[Optional] - Android aab file link.",
-          "type": "string"
-        }
-      }
-    },
-    "iosStoreType": {
-      "description": "[Optional] - Ios app Store asset.",
-      "type": "object",
-      "properties": {
-        "bundle_id": {
-          "description": "[Required] - App bundle id.",
-          "type": "string"
-        }
-      }
-    },
-    "iosFileType": {
-      "description": "[Optional] - Ios app file asset.",
-      "type": "object",
-      "properties": {
-        "paths": {
-          "description": "[Optional] - Ios app file path.",
-          "type": "string"
+        "androidAabFileType": {
+            "description": "[Optional] - Android aab file asset.",
+            "type": "object",
+            "properties": {
+                "path": {
+                    "description": "[Optional] - Android aab file path.",
+                    "type": "string",
+                },
+                "url": {
+                    "description": "[Optional] - Android aab file link.",
+                    "type": "string",
+                },
+            },
         },
-        "url": {
-          "description": "[Optional] - Ios app file link.",
-          "type": "string"
-        }
-      }
+        "iosStoreType": {
+            "description": "[Optional] - Ios app Store asset.",
+            "type": "object",
+            "properties": {
+                "bundle_id": {
+                    "description": "[Required] - App bundle id.",
+                    "type": "string",
+                }
+            },
+        },
+        "repositoryType": {
+            "description": "[Optional] - Source code repository asset.",
+            "type": "object",
+            "properties": {
+                "repository_url": {
+                    "description": "[Required] - Source code repository url.",
+                    "type": "string",
+                },
+                "commit_hash": {
+                    "description": "[Optional] - Commit hash the risk applies to.",
+                    "type": "string",
+                },
+            },
+        },
+        "repositoryArchiveType": {
+            "description": "[Optional] - Source code repository archive file asset.",
+            "type": "object",
+            "properties": {
+                "path": {
+                    "description": "[Optional] - Repository archive file path.",
+                    "type": "string",
+                },
+                "url": {
+                    "description": "[Optional] - Repository archive file link.",
+                    "type": "string",
+                },
+            },
+        },
+        "iosFileType": {
+            "description": "[Optional] - Ios app file asset.",
+            "type": "object",
+            "properties": {
+                "paths": {
+                    "description": "[Optional] - Ios app file path.",
+                    "type": "string",
+                },
+                "url": {
+                    "description": "[Optional] - Ios app file link.",
+                    "type": "string",
+                },
+            },
+        },
+        "linkType": {
+            "description": "[Optional] - Link asset.",
+            "type": "object",
+            "properties": {
+                "url": {"description": "[Required] - url link type.", "type": "string"},
+                "method": {
+                    "description": "[Required] - Target method.",
+                    "type": "string",
+                },
+                "port": {
+                    "description": "[Optional] - Target's port.",
+                    "type": "number",
+                },
+                "path": {"description": "[Optional] - Link's path.", "type": "string"},
+            },
+        },
+        "domainType": {
+            "description": "[Optional] - Domain name asset.",
+            "type": "object",
+            "properties": {
+                "name": {"description": "[Required] - Domain name.", "type": "string"}
+            },
+        },
+        "ipType": {
+            "description": "[Optional] - Ip asset.",
+            "type": "object",
+            "properties": {
+                "host": {"description": "[Required] - The ip host.", "type": "string"},
+                "mask": {"description": "[Optional] - Network mask.", "type": "number"},
+            },
+        },
+        "commentType": {
+            "description": "[Optional] - Ticket comment.",
+            "type": "object",
+            "properties": {
+                "author": {
+                    "description": "[Optional] - Author of the comment.",
+                    "type": "string",
+                },
+                "message": {
+                    "description": "[Optional] - Comment message content.",
+                    "type": "string",
+                },
+            },
+        },
+        "ticketType": {
+            "description": "[Optional] - Ticket asset.",
+            "type": "object",
+            "properties": {
+                "title": {
+                    "description": "[Required] - Title of the ticket.",
+                    "type": "string",
+                },
+                "description": {
+                    "description": "[Required] - Description of the ticket.",
+                    "type": "string",
+                },
+                "ticket_id": {
+                    "description": "[Optional] - ID of the ticket.",
+                    "type": "string",
+                },
+                "ticket_key": {
+                    "description": "[Optional] - Key of the ticket.",
+                    "type": "string",
+                },
+                "comments": {
+                    "description": "[Optional] - Comments list.",
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/commentType"},
+                },
+            },
+            "required": ["title", "description"],
+        },
+        "riskType": {
+            "description": "[Optional] - Risk report asset applying to an embedded target.",
+            "type": "object",
+            "properties": {
+                "severity": {
+                    "description": "[Required] - Risk severity rating.",
+                    "type": "string",
+                    "enum": [
+                        "CRITICAL",
+                        "HIGH",
+                        "MEDIUM",
+                        "LOW",
+                        "POTENTIALLY",
+                        "HARDENING",
+                        "SECURE",
+                        "IMPORTANT",
+                        "INFO",
+                    ],
+                },
+                "description": {
+                    "description": "[Required] - Description of the risk.",
+                    "type": "string",
+                },
+                "ip": {"$ref": "#/CustomTypes/ipType"},
+                "domain": {"$ref": "#/CustomTypes/domainType"},
+                "link": {"$ref": "#/CustomTypes/linkType"},
+                "androidStore": {"$ref": "#/CustomTypes/androidStoreType"},
+                "iosStore": {"$ref": "#/CustomTypes/iosStoreType"},
+                "androidApkFile": {"$ref": "#/CustomTypes/androidApkFileType"},
+                "androidAabFile": {"$ref": "#/CustomTypes/androidAabFileType"},
+                "iosFile": {"$ref": "#/CustomTypes/iosFileType"},
+                "repository": {"$ref": "#/CustomTypes/repositoryType"},
+                "repositoryArchive": {"$ref": "#/CustomTypes/repositoryArchiveType"},
+            },
+            "required": ["severity", "description"],
+        },
     },
-    "linkType": {
-      "description": "[Optional] - Link asset.",
-      "type": "object",
-      "properties": {
-        "url": {
-          "description": "[Required] - url link type.",
-          "type": "string"
+    "properties": {
+        "kind": {
+            "description": "[Required] - Only expected value : targetGroup.",
+            "type": "string",
+            "enum": ["targetGroup"],
         },
-        "method": {
-          "description": "[Required] - Target method.",
-          "type": "string"
-        },
-        "port": {
-          "description": "[Optional] - Target's port.",
-          "type": "number"
-        },
-        "path": {
-          "description": "[Optional] - Link's path.",
-          "type": "string"
-        }
-      }
-    },
-    "domainType": {
-      "description": "[Optional] - Domain name asset.",
-      "type": "object",
-      "properties": {
         "name": {
-          "description": "[Required] - Domain name.",
-          "type": "string"
-        }
-      }
-    },
-    "ipType": {
-      "description": "[Optional] - Ip asset.",
-      "type": "object",
-      "properties": {
-        "host": {
-          "description": "[Required] - The ip host.",
-          "type": "string"
-        },
-        "mask": {
-          "description": "[Optional] - Network mask.",
-          "type": "number"
-        }
-      }
-    },
-    "commentType": {
-      "description": "[Optional] - Ticket comment.",
-      "type": "object",
-      "properties": {
-        "author": {
-          "description": "[Optional] - Author of the comment.",
-          "type": "string"
-        },
-        "message": {
-          "description": "[Optional] - Comment message content.",
-          "type": "string"
-        }
-      }
-    },
-    "ticketType": {
-      "description": "[Optional] - Ticket asset.",
-      "type": "object",
-      "properties": {
-        "title": {
-          "description": "[Required] - Title of the ticket.",
-          "type": "string"
+            "description": "[Optional] - Target group full Name, accept lower case ascii, number and _, - characters.",
+            "type": "string",
+            "pattern": "^[a-z0-9_\\-]+$",
+            "maxLength": 512,
         },
         "description": {
-          "description": "[Required] - Description of the ticket.",
-          "type": "string"
+            "description": "[Required] - Description of the target group.",
+            "type": "string",
         },
-        "ticket_id": {
-          "description": "[Optional] - ID of the ticket.",
-          "type": "string"
+        "assets": {
+            "description": "[Required] - List of dictionary-like objects explaining the targets belonging to the current target group.",
+            "type": "object",
+            "properties": {
+                "androidStore": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/androidStoreType"},
+                },
+                "androidApkFile": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/androidApkFileType"},
+                },
+                "androidAabFile": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/androidAabFileType"},
+                },
+                "iosStore": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/iosStoreType"},
+                },
+                "iosFile": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/iosFileType"},
+                },
+                "link": {"type": "array", "items": {"$ref": "#/CustomTypes/linkType"}},
+                "domain": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/domainType"},
+                },
+                "ip": {"type": "array", "items": {"$ref": "#/CustomTypes/ipType"}},
+                "ticket": {
+                    "type": "array",
+                    "items": {"$ref": "#/CustomTypes/ticketType"},
+                },
+                "risk": {"type": "array", "items": {"$ref": "#/CustomTypes/riskType"}},
+            },
         },
-        "ticket_key": {
-          "description": "[Optional] - Key of the ticket.",
-          "type": "string"
-        },
-        "comments": {
-          "description": "[Optional] - Comments list.",
-          "type": "array",
-          "items": {
-            "$ref": "#/CustomTypes/commentType"
-          }
-        }
-      },
-      "required": [
-        "title",
-        "description"
-      ]
     },
-    "riskType": {
-      "description": "[Optional] - Risk report asset applying to an embedded target.",
-      "type": "object",
-      "properties": {
-        "severity": {
-          "description": "[Required] - Risk severity rating.",
-          "type": "string",
-          "enum": [
-            "CRITICAL",
-            "HIGH",
-            "MEDIUM",
-            "LOW",
-            "POTENTIALLY",
-            "HARDENING",
-            "SECURE",
-            "IMPORTANT",
-            "INFO"
-          ]
-        },
-        "description": {
-          "description": "[Required] - Description of the risk.",
-          "type": "string"
-        },
-        "ip": {
-          "$ref": "#/CustomTypes/ipType"
-        },
-        "domain": {
-          "$ref": "#/CustomTypes/domainType"
-        },
-        "link": {
-          "$ref": "#/CustomTypes/linkType"
-        },
-        "androidStore": {
-          "$ref": "#/CustomTypes/androidStoreType"
-        },
-        "iosStore": {
-          "$ref": "#/CustomTypes/iosStoreType"
-        },
-        "androidApkFile": {
-          "$ref": "#/CustomTypes/androidApkFileType"
-        },
-        "androidAabFile": {
-          "$ref": "#/CustomTypes/androidAabFileType"
-        },
-        "iosFile": {
-          "$ref": "#/CustomTypes/iosFileType"
-        }
-      },
-      "required": [
-        "severity",
-        "description"
-      ]
-    }
-  },
-  "properties": {
-    "kind": {
-      "description": "[Required] - Only expected value : targetGroup.",
-      "type": "string",
-      "enum": [
-        "targetGroup"
-      ]
-    },
-    "name": {
-      "description": "[Optional] - Target group full Name, accept lower case ascii, number and _, - characters.",
-      "type": "string",
-      "pattern": "^[a-z0-9_\\-]+$",
-      "maxLength": 512
-    },
-    "description": {
-      "description": "[Required] - Description of the target group.",
-      "type": "string"
-    },
-    "assets": {
-      "description": "[Required] - List of dictionary-like objects explaining the targets belonging to the current target group.",
-      "type": "object",
-      "properties": {
-        "androidStore": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/androidStoreType"
-          }
-        },
-        "androidApkFile": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/androidApkFileType"
-          }
-        },
-        "androidAabFile": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/androidAabFileType"
-          }
-        },
-        "iosStore": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/iosStoreType"
-          }
-        },
-        "iosFile": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/iosFileType"
-          }
-        },
-        "link": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/linkType"
-          }
-        },
-        "domain": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/domainType"
-          }
-        },
-        "ip": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/ipType"
-          }
-        },
-        "ticket": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/ticketType"
-          }
-        },
-        "risk": {
-          "type": "array",
-          "items" : {
-            "$ref": "#/CustomTypes/riskType"
-          }
-        }
-      }
-    }
-  },
-  "required": [
-    "kind",
-    "assets"
-  ]
+    "required": ["kind", "assets"],
 }
