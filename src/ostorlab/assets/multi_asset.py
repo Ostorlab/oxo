@@ -2,21 +2,21 @@
 
 import dataclasses
 
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import android_store
+from ostorlab.assets import android_aab as android_aab_asset
+from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import asset
-from ostorlab.assets import file
-from ostorlab.assets import harmonyos_hap
-from ostorlab.assets import harmonyos_store
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import ios_store
-from ostorlab.assets import ip
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
-from ostorlab.assets import link
-from ostorlab.assets import repository
-from ostorlab.assets import repository_archive
+from ostorlab.assets import file as file_asset
+from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
+from ostorlab.assets import harmonyos_store as harmonyos_store_asset
+from ostorlab.assets import ios_ipa as ios_ipa_asset
+from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ip as ip_asset
+from ostorlab.assets import ipv4 as ipv4_asset
+from ostorlab.assets import ipv6 as ipv6_asset
+from ostorlab.assets import link as link_asset
+from ostorlab.assets import repository as repository_asset
+from ostorlab.assets import repository_archive as repository_archive_asset
 
 
 @dataclasses.dataclass
@@ -24,22 +24,24 @@ from ostorlab.assets import repository_archive
 class MultiAsset(asset.Asset):
     """Multi-asset target grouping heterogeneous assets in a single scan target."""
 
-    files: list[file.File] = dataclasses.field(default_factory=list)
-    android_package_name: android_store.AndroidStore | None = None
-    ios_bundle_id: ios_store.IOSStore | None = None
-    harmonyos_bundle_name: harmonyos_store.HarmonyOSStore | None = None
-    android_apk: android_apk.AndroidApk | None = None
-    android_aab: android_aab.AndroidAab | None = None
-    ios_ipa: ios_ipa.IOSIpa | None = None
-    harmonyos_hap: harmonyos_hap.HarmonyOSHap | None = None
-    repositories: list[repository.Repository] = dataclasses.field(default_factory=list)
-    repository_archives: list[repository_archive.RepositoryArchive] = dataclasses.field(
+    files: list[file_asset.File] = dataclasses.field(default_factory=list)
+    android_package_name: android_store_asset.AndroidStore | None = None
+    ios_bundle_id: ios_store_asset.IOSStore | None = None
+    harmonyos_bundle_name: harmonyos_store_asset.HarmonyOSStore | None = None
+    android_apk: android_apk_asset.AndroidApk | None = None
+    android_aab: android_aab_asset.AndroidAab | None = None
+    ios_ipa: ios_ipa_asset.IOSIpa | None = None
+    harmonyos_hap: harmonyos_hap_asset.HarmonyOSHap | None = None
+    repositories: list[repository_asset.Repository] = dataclasses.field(
         default_factory=list
     )
-    urls: list[link.Link] = dataclasses.field(default_factory=list)
-    ips: list[ip.IP] = dataclasses.field(default_factory=list)
-    ipv4s: list[ipv4.IPv4] = dataclasses.field(default_factory=list)
-    ipv6s: list[ipv6.IPv6] = dataclasses.field(default_factory=list)
+    repository_archives: list[repository_archive_asset.RepositoryArchive] = (
+        dataclasses.field(default_factory=list)
+    )
+    urls: list[link_asset.Link] = dataclasses.field(default_factory=list)
+    ips: list[ip_asset.IP] = dataclasses.field(default_factory=list)
+    ipv4s: list[ipv4_asset.IPv4] = dataclasses.field(default_factory=list)
+    ipv6s: list[ipv6_asset.IPv6] = dataclasses.field(default_factory=list)
 
     def __str__(self) -> str:
         nested_assets = [
