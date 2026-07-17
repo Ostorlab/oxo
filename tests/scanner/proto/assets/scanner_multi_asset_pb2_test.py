@@ -66,6 +66,39 @@ def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> No
     assert deserialized.HasField("android_package_name") is False
 
 
+def testMobileAssetOneof_whenHarmonyosStoreSet_returnsBundleName() -> None:
+    message = multi_asset_pb2.Message()
+    message.harmonyos_bundle_name.bundle_name = "com.example.harmony"
+
+    serialized = message.SerializeToString()
+    deserialized = multi_asset_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert deserialized.WhichOneof("mobile_asset") == "harmonyos_bundle_name"
+    assert deserialized.harmonyos_bundle_name.bundle_name == "com.example.harmony"
+
+
+def testMobileAssetOneof_whenHarmonyosFileSet_returnsFileContent() -> None:
+    harmonyos_files = [
+        "harmonyos_hap",
+        "harmonyos_apk",
+        "harmonyos_aab",
+        "harmonyos_app",
+        "harmonyos_rpk",
+    ]
+
+    for field_name in harmonyos_files:
+        message = multi_asset_pb2.Message()
+        getattr(message, field_name).content = b"harmony-bytes"
+
+        serialized = message.SerializeToString()
+        deserialized = multi_asset_pb2.Message()
+        deserialized.ParseFromString(serialized)
+
+        assert deserialized.WhichOneof("mobile_asset") == field_name
+        assert getattr(deserialized, field_name).content == b"harmony-bytes"
+
+
 def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
     message = multi_asset_pb2.Message()
 
