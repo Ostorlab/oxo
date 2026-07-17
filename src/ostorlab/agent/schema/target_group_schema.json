@@ -232,6 +232,12 @@
         },
         "iosFile": {
           "$ref": "#/CustomTypes/iosFileType"
+        },
+        "repository": {
+          "$ref": "#/CustomTypes/repositoryType"
+        },
+        "repositoryArchive": {
+          "$ref": "#/CustomTypes/repositoryArchiveType"
         }
       },
       "required": [
