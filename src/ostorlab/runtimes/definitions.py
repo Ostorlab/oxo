@@ -23,6 +23,8 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import repository as repository_asset
+from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import ticket as ticket_asset
@@ -39,6 +41,8 @@ _RISK_TARGET_KEYS = (
     "androidApkFile",
     "androidAabFile",
     "iosFile",
+    "repository",
+    "repositoryArchive",
 )
 
 logger = logging.getLogger(__name__)
@@ -473,11 +477,7 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     The embedded target reuses the same sub-schemas as standalone assets
     (ip, domain, link, stores and app files). A risk carries a single target
     because the underlying proto asset is a oneof; embedding more than one
-    would silently drop all but one.
-
-    The ``Risk`` asset also defines ``api_schema`` and ``repository`` targets,
-    but these are intentionally not exposed here since they are not modeled as
-    target group assets anywhere else in ``from_yaml``."""
+    would silently drop all but one."""
     provided_targets = [
         key for key in _RISK_TARGET_KEYS if risk_entry.get(key) is not None
     ]
@@ -540,6 +540,20 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     if risk_entry.get("iosFile") is not None:
         content, path, url = _resolve_risk_file_asset(risk_entry, "iosFile")
         risk_kwargs["ios_ipa"] = ios_ipa_asset.IOSIpa(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("repository") is not None:
+        risk_kwargs["repository"] = repository_asset.Repository(
+            repository_url=_resolve_risk_target_field(
+                risk_entry, "repository", "repository_url"
+            ),
+            commit_hash=risk_entry["repository"].get("commit_hash") or "",
+        )
+
+    if risk_entry.get("repositoryArchive") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "repositoryArchive")
+        risk_kwargs["repository_archive"] = repository_archive_asset.RepositoryArchive(
             content=content, path=path, content_url=url
         )
 

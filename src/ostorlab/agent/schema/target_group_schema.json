@@ -125,6 +125,34 @@
         }
       }
     },
+    "repositoryType": {
+        "description": "[Optional] - Source code repository asset.",
+        "type": "object",
+        "properties": {
+            "repository_url": {
+                "description": "[Required] - Source code repository url.",
+                "type": "string"
+            },
+            "commit_hash": {
+                "description": "[Optional] - Commit hash the risk applies to.",
+                "type": "string"
+            }
+        }
+    },
+    "repositoryArchiveType": {
+        "description": "[Optional] - Source code repository archive file asset.",
+        "type": "object",
+        "properties": {
+            "path": {
+                "description": "[Optional] - Repository archive file path.",
+                "type": "string"
+            },
+            "url": {
+                "description": "[Optional] - Repository archive file link.",
+                "type": "string"
+            }
+        }
+    },
     "ticketType": {
       "description": "[Optional] - Ticket asset.",
       "type": "object",
@@ -204,6 +232,12 @@
         },
         "iosFile": {
           "$ref": "#/CustomTypes/iosFileType"
+        },
+        "repository": {
+          "$ref": "#/CustomTypes/repositoryType"
+        },
+        "repositoryArchive": {
+          "$ref": "#/CustomTypes/repositoryArchiveType"
         }
       },
       "required": [

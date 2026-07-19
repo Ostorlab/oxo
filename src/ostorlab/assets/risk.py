@@ -16,6 +16,7 @@ from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
+from ostorlab.assets import repository_archive as repository_archive_asset
 
 
 @dataclasses.dataclass
@@ -36,6 +37,7 @@ class Risk(asset.Asset):
     ios_ipa: Optional[ios_ipa_asset.IOSIpa] = None
     api_schema: Optional[api_schema_asset.ApiSchema] = None
     repository: Optional[repository_asset.Repository] = None
+    repository_archive: Optional[repository_archive_asset.RepositoryArchive] = None
 
     def to_proto(self) -> bytes:
         data = {

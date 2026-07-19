@@ -19,6 +19,8 @@ from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import repository as repository_asset
+from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import ticket as ticket_asset
 from ostorlab.assets import risk as risk_asset
 
@@ -788,6 +790,71 @@ assets:
 
     risk = asset_group_def.targets[0]
     assert risk.ios_ipa == ios_ipa_asset.IOSIpa(content=b"ipa content", path="/app.ipa")
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsRepository_parsesRepositoryTarget():
+    """Tests that a risk embedding a source code repository is parsed into a
+    repository target."""
+    valid_yaml = """
+description: Target group with a repository risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Hardcoded secret in source
+        repository:
+            repository_url: https://github.com/ostorlab/oxo
+            commit_hash: deadbeef
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.repository == repository_asset.Repository(
+        repository_url="https://github.com/ostorlab/oxo", commit_hash="deadbeef"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsRepositoryArchive_parsesArchiveTarget():
+    """Tests that a risk embedding a repository archive by url is parsed into a
+    repository archive target."""
+    valid_yaml = """
+description: Target group with a repository archive risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Hardcoded secret in archive
+        repositoryArchive:
+            url: https://storage.example.com/repo.zip
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.repository_archive == repository_archive_asset.RepositoryArchive(
+        content=None, path=None, content_url="https://storage.example.com/repo.zip"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskRepositoryMissingUrl_raisesValidationError():
+    """Tests that a repository risk with no repository_url is rejected instead of
+    building a target with a None identifier."""
+    invalid_yaml = """
+description: Target group with an empty repository risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable repo
+        repository: {}
+"""
+
+    with pytest.raises(validator.ValidationError, match="requires a repository_url"):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
 def testAssetGroupDefinitionFromYaml_whenRiskIpInvalid_raisesValidationError():
