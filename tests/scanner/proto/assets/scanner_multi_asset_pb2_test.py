@@ -99,6 +99,44 @@ def testMobileAssetOneof_whenHarmonyosFileSet_returnsFileContent() -> None:
         assert getattr(deserialized, field_name).content == b"harmony-bytes"
 
 
+def testSerializeAndDeserialize_whenApiSchemasSet_preservesApiSchemaFields() -> None:
+    message = multi_asset_pb2.Message()
+    api_schema = message.api_schemas.add(
+        content_url="https://example.com/schema.json",
+        endpoint_url="https://example.com/graphql",
+        schema_type="graphql",
+    )
+    api_schema.extra_headers.add(name="Authorization", value="Bearer token")
+    api_schema.android_metadata.package_name = "com.example.app"
+
+    serialized = message.SerializeToString()
+    deserialized = multi_asset_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert deserialized.api_schemas[0].content_url == "https://example.com/schema.json"
+    assert deserialized.api_schemas[0].endpoint_url == "https://example.com/graphql"
+    assert deserialized.api_schemas[0].schema_type == "graphql"
+    assert deserialized.api_schemas[0].extra_headers[0].name == "Authorization"
+    assert deserialized.api_schemas[0].extra_headers[0].value == "Bearer token"
+    assert (
+        deserialized.api_schemas[0].android_metadata.package_name == "com.example.app"
+    )
+
+
+def testSerializeAndDeserialize_whenMultipleApiSchemas_preservesAllEntries() -> None:
+    message = multi_asset_pb2.Message()
+    message.api_schemas.add(endpoint_url="https://example.com/graphql")
+    message.api_schemas.add(endpoint_url="https://example.com/openapi")
+
+    serialized = message.SerializeToString()
+    deserialized = multi_asset_pb2.Message()
+    deserialized.ParseFromString(serialized)
+
+    assert len(deserialized.api_schemas) == 2
+    assert deserialized.api_schemas[0].endpoint_url == "https://example.com/graphql"
+    assert deserialized.api_schemas[1].endpoint_url == "https://example.com/openapi"
+
+
 def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
     message = multi_asset_pb2.Message()
 
