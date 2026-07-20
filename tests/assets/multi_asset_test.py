@@ -19,6 +19,10 @@ def testMultiAsset_whenCreatedWithDefaults_hasEmptyNestedAssets() -> None:
     assert asset.android_aab is None
     assert asset.ios_ipa is None
     assert asset.harmonyos_hap is None
+    assert asset.harmonyos_apk is None
+    assert asset.harmonyos_aab is None
+    assert asset.harmonyos_app is None
+    assert asset.harmonyos_rpk is None
     assert asset.repositories == []
     assert asset.repository_archives == []
     assert asset.urls == []

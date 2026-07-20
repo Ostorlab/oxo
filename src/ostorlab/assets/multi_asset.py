@@ -7,7 +7,11 @@ from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import asset
 from ostorlab.assets import file as file_asset
+from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
+from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
+from ostorlab.assets import harmonyos_app as harmonyos_app_asset
 from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
+from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
@@ -32,6 +36,10 @@ class MultiAsset(asset.Asset):
     android_aab: android_aab_asset.AndroidAab | None = None
     ios_ipa: ios_ipa_asset.IOSIpa | None = None
     harmonyos_hap: harmonyos_hap_asset.HarmonyOSHap | None = None
+    harmonyos_apk: harmonyos_apk_asset.HarmonyOSApk | None = None
+    harmonyos_aab: harmonyos_aab_asset.HarmonyOSAab | None = None
+    harmonyos_app: harmonyos_app_asset.HarmonyOSApp | None = None
+    harmonyos_rpk: harmonyos_rpk_asset.HarmonyOSRpk | None = None
     repositories: list[repository_asset.Repository] = dataclasses.field(
         default_factory=list
     )
@@ -61,6 +69,10 @@ class MultiAsset(asset.Asset):
             self.android_aab,
             self.ios_ipa,
             self.harmonyos_hap,
+            self.harmonyos_apk,
+            self.harmonyos_aab,
+            self.harmonyos_app,
+            self.harmonyos_rpk,
             *self.repositories,
             *self.repository_archives,
             *self.urls,
