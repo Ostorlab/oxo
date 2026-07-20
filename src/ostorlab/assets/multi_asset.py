@@ -1,7 +1,9 @@
 """Multi asset."""
 
 import dataclasses
+from typing import Any
 
+from ostorlab.agent.message import serializer
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -21,6 +23,21 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+
+
+MOBILE_ASSET_FIELDS = (
+    "android_package_name",
+    "ios_bundle_id",
+    "harmonyos_bundle_name",
+    "android_apk",
+    "android_aab",
+    "ios_ipa",
+    "harmonyos_hap",
+    "harmonyos_apk",
+    "harmonyos_aab",
+    "harmonyos_app",
+    "harmonyos_rpk",
+)
 
 
 @dataclasses.dataclass
@@ -80,6 +97,45 @@ class MultiAsset(asset.Asset):
             *self.ipv4s,
             *self.ipv6s,
         ]
+
+    @property
+    def set_mobile_asset_fields(self) -> list[str]:
+        """Names of the mobile asset fields that are set."""
+        return [
+            key
+            for key, value in self.__dict__.items()
+            if key in MOBILE_ASSET_FIELDS and value is not None
+        ]
+
+    def to_proto(self) -> bytes:
+        """Serialize the grouped assets into a single multi asset proto message.
+
+        Raises ValueError if more than one mobile asset is set, since the proto oneof
+        would silently drop the extras."""
+        set_mobile_fields = self.set_mobile_asset_fields
+        if len(set_mobile_fields) > 1:
+            raise ValueError(
+                f"A multi asset accepts at most one mobile asset, got: "
+                f"{', '.join(set_mobile_fields)}."
+            )
+
+        data: dict[str, Any] = {}
+        for key, value in self.__dict__.items():
+            if value is None:
+                continue
+            if isinstance(value, asset.Asset):
+                data[key] = value.__dict__
+            elif isinstance(value, list):
+                # __dict__ rather than dataclasses.asdict, which would reintroduce
+                # defaults the asset unset (see Repository.__post_init__).
+                data[key] = [
+                    entry.__dict__ if isinstance(entry, asset.Asset) else entry
+                    for entry in value
+                ]
+            else:
+                data[key] = value
+
+        return bytes(serializer.serialize(self.selector, data).SerializeToString())
 
     @property
     def proto_field(self) -> str:
