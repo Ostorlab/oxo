@@ -9,9 +9,9 @@ def test_test_credential_email_2fa_to_variables():
     )
     expected = {
         "testCredentials": {
-            "email2FA": {
-                "senderEmailAddress": "sender@ex.com",
-                "emailAddress": "user@ex.com",
+            "email2fa": {
+                "emailSender": "sender@ex.com",
+                "email": "user@ex.com",
                 "password": "password",
             }
         }
@@ -25,8 +25,8 @@ def test_test_credential_sms_2fa_to_variables():
     )
     expected = {
         "testCredentials": {
-            "sms2FA": {
-                "senderPhoneNumber": "+123",
+            "sms2fa": {
+                "phoneSender": "+123",
             }
         }
     }
@@ -37,8 +37,8 @@ def test_test_credential_totp_2fa_to_variables():
     credential = test_credentials_create_api.TestCredentialTOTP2FA(totp_seed="123456")
     expected = {
         "testCredentials": {
-            "totp2FA": {
-                "totpSeed": "123456",
+            "totp2fa": {
+                "totpSecret": "123456",
             }
         }
     }
