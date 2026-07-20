@@ -140,7 +140,7 @@ class MultiAsset(asset.Asset):
             else:
                 data[key] = value
 
-        return serializer.serialize(self.selector, data).SerializeToString()
+        return bytes(serializer.serialize(self.selector, data).SerializeToString())
 
     @property
     def proto_field(self) -> str:
