@@ -140,7 +140,10 @@ def _parse_dict(values: Any, message: Any) -> None:
     """Parse dict to protobuf message."""
     for k, v in values.items():
         if dataclasses.is_dataclass(v) is True:  # nested asset, parse recursively
-            _parse_dict(v.__dict__, getattr(message, k))
+            try:
+                _parse_dict(v.__dict__, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         elif isinstance(v, dict):  # value needs to be further parsed
             _parse_dict(v, getattr(message, k))
         elif isinstance(v, list):

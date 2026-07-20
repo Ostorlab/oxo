@@ -7,7 +7,6 @@ from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import api_schema as api_schema_asset
-from ostorlab.agent.message import serializer
 from ostorlab.assets import asset
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
@@ -39,14 +38,7 @@ class Risk(asset.Asset):
     api_schema: Optional[api_schema_asset.ApiSchema] = None
     repository: Optional[repository_asset.Repository] = None
     repository_archive: Optional[repository_archive_asset.RepositoryArchive] = None
-    multi_asset: Optional[multi_asset_asset.MultiAsset] = None
-
-    def to_proto(self) -> bytes:
-        data = {
-            k: (v.__dict__ if isinstance(v, asset.Asset) else v)
-            for k, v in self.__dict__.items()
-        }
-        return bytes(serializer.serialize(self.selector, data).SerializeToString())
+    multi_asset: multi_asset_asset.MultiAsset | None = None
 
     @property
     def proto_field(self) -> str:
