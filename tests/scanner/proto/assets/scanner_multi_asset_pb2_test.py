@@ -101,11 +101,13 @@ def testMobileAssetOneof_whenHarmonyosFileSet_returnsFileContent() -> None:
 
 def testSerializeAndDeserialize_whenApiSchemasSet_preservesApiSchemaFields() -> None:
     message = multi_asset_pb2.Message()
-    message.api_schemas.add(
+    api_schema = message.api_schemas.add(
         content_url="https://example.com/schema.json",
         endpoint_url="https://example.com/graphql",
         schema_type="graphql",
     )
+    api_schema.extra_headers.add(name="Authorization", value="Bearer token")
+    api_schema.android_metadata.package_name = "com.example.app"
 
     serialized = message.SerializeToString()
     deserialized = multi_asset_pb2.Message()
@@ -114,6 +116,9 @@ def testSerializeAndDeserialize_whenApiSchemasSet_preservesApiSchemaFields() -> 
     assert deserialized.api_schemas[0].content_url == "https://example.com/schema.json"
     assert deserialized.api_schemas[0].endpoint_url == "https://example.com/graphql"
     assert deserialized.api_schemas[0].schema_type == "graphql"
+    assert deserialized.api_schemas[0].extra_headers[0].name == "Authorization"
+    assert deserialized.api_schemas[0].extra_headers[0].value == "Bearer token"
+    assert deserialized.api_schemas[0].android_metadata.package_name == "com.example.app"
 
 
 def testSerializeAndDeserialize_whenMultipleApiSchemas_preservesAllEntries() -> None:

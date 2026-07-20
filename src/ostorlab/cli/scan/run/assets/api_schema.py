@@ -32,7 +32,8 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--schema-type",
-    help="The schema type (graphql, wsdl, or openapi).",
+    type=click.Choice(["graphql", "wsdl", "openapi"], case_sensitive=False),
+    help="The schema type.",
     multiple=False,
     required=False,
 )
