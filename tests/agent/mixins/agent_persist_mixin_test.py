@@ -102,6 +102,31 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(
 @pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
 @pytest.mark.asyncio
 @pytest.mark.docker
+async def testAgentPersistMixin_whenHashKeyIsDeleted_keyIsRemoved(
+    mocker, redis_service, clean_redis_data
+):
+    """Test proper deletion of one or more keys from a hash."""
+    del mocker, redis_service, clean_redis_data
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    mixin.hash_add("hash_name", {"key1": "val1", "key2": "val2", "key3": "val3"})
+
+    assert mixin.hash_delete("hash_name", "key1") is True
+    assert mixin.hash_exists("hash_name", "key1") is False
+    assert mixin.hash_exists("hash_name", "key2") is True
+
+    assert mixin.hash_delete("hash_name", "NoneExistingKey") is False
+
+    assert mixin.hash_delete("hash_name", "key2", "key3") is True
+    assert mixin.hash_get_all("hash_name") == {}
+
+
+@pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
 async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue(
     mocker, redis_service, clean_redis_data
 ):

@@ -179,6 +179,20 @@ class AgentPersistMixin:
         """
         return self._redis_client.hgetall(hash_name)
 
+    def hash_delete(
+        self, hash_name: Union[bytes, str], *keys: Union[bytes, str]
+    ) -> bool:
+        """Delete one or more keys from the hash hash_name.
+
+        Args:
+            hash_name: Name of the hash.
+            keys: Keys to delete from the hash.
+
+        Returns:
+            True if at least one key was deleted, False otherwise.
+        """
+        return bool(self._redis_client.hdel(hash_name, *keys))
+
     def delete(self, key: Union[bytes, str]) -> bool:
         """Delete a specific key.
 
