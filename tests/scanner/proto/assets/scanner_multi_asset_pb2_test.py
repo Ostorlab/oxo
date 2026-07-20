@@ -118,7 +118,9 @@ def testSerializeAndDeserialize_whenApiSchemasSet_preservesApiSchemaFields() -> 
     assert deserialized.api_schemas[0].schema_type == "graphql"
     assert deserialized.api_schemas[0].extra_headers[0].name == "Authorization"
     assert deserialized.api_schemas[0].extra_headers[0].value == "Bearer token"
-    assert deserialized.api_schemas[0].android_metadata.package_name == "com.example.app"
+    assert (
+        deserialized.api_schemas[0].android_metadata.package_name == "com.example.app"
+    )
 
 
 def testSerializeAndDeserialize_whenMultipleApiSchemas_preservesAllEntries() -> None:
