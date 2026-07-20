@@ -12,6 +12,7 @@ import "ostorlab/scanner/proto/assets/harmonyos_apk.proto";
 import "ostorlab/scanner/proto/assets/harmonyos_aab.proto";
 import "ostorlab/scanner/proto/assets/harmonyos_app.proto";
 import "ostorlab/scanner/proto/assets/harmonyos_rpk.proto";
+import "ostorlab/scanner/proto/assets/api_schema.proto";
 import "ostorlab/scanner/proto/assets/repository.proto";
 import "ostorlab/scanner/proto/assets/repository_archive.proto";
 import "ostorlab/scanner/proto/assets/link.proto";
@@ -44,4 +45,5 @@ message Message {
   repeated ostorlab.scanner.proto.assets.ip.Message ips = 17;
   repeated ostorlab.scanner.proto.assets.v4.Message ipv4s = 18;
   repeated ostorlab.scanner.proto.assets.v6.Message ipv6s = 19;
+  repeated ostorlab.scanner.proto.assets.api_schema.Message api_schemas = 20;
 }

@@ -12,6 +12,7 @@ import "ostorlab/agent/message/proto/v3/asset/file/harmonyos/apk/apk.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/harmonyos/aab/aab.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/harmonyos/app/app.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/harmonyos/rpk/rpk.proto";
+import "ostorlab/agent/message/proto/v3/asset/file/api_schema/api_schema.proto";
 import "ostorlab/agent/message/proto/v3/asset/repository/repository.proto";
 import "ostorlab/agent/message/proto/v3/asset/file/repository_archive/repository_archive.proto";
 import "ostorlab/agent/message/proto/v3/asset/link/link.proto";
@@ -42,4 +43,5 @@ message Message {
   repeated ostorlab.agent.message.proto.v3.asset.ip.Message ips = 16;
   repeated ostorlab.agent.message.proto.v3.asset.ip.v4.Message ipv4s = 17;
   repeated ostorlab.agent.message.proto.v3.asset.ip.v6.Message ipv6s = 18;
+  repeated ostorlab.agent.message.proto.v3.asset.file.api_schema.Message api_schemas = 19;
 }
