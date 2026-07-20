@@ -18,6 +18,12 @@ from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import harmonyos_store as harmonyos_store_asset
+from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
+from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
+from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
+from ostorlab.assets import harmonyos_app as harmonyos_app_asset
+from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
@@ -43,6 +49,12 @@ _RISK_TARGET_KEYS = (
     "iosFile",
     "repository",
     "repositoryArchive",
+    "harmonyosStore",
+    "harmonyosApkFile",
+    "harmonyosAabFile",
+    "harmonyosHapFile",
+    "harmonyosAppFile",
+    "harmonyosRpkFile",
 )
 
 logger = logging.getLogger(__name__)
@@ -554,6 +566,43 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     if risk_entry.get("repositoryArchive") is not None:
         content, path, url = _resolve_risk_file_asset(risk_entry, "repositoryArchive")
         risk_kwargs["repository_archive"] = repository_archive_asset.RepositoryArchive(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("harmonyosStore") is not None:
+        risk_kwargs["harmonyos_store"] = harmonyos_store_asset.HarmonyOSStore(
+            bundle_name=_resolve_risk_target_field(
+                risk_entry, "harmonyosStore", "bundle_name"
+            )
+        )
+
+    if risk_entry.get("harmonyosApkFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "harmonyosApkFile")
+        risk_kwargs["harmonyos_apk"] = harmonyos_apk_asset.HarmonyOSApk(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("harmonyosAabFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "harmonyosAabFile")
+        risk_kwargs["harmonyos_aab"] = harmonyos_aab_asset.HarmonyOSAab(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("harmonyosHapFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "harmonyosHapFile")
+        risk_kwargs["harmonyos_hap"] = harmonyos_hap_asset.HarmonyOSHap(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("harmonyosAppFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "harmonyosAppFile")
+        risk_kwargs["harmonyos_app"] = harmonyos_app_asset.HarmonyOSApp(
+            content=content, path=path, content_url=url
+        )
+
+    if risk_entry.get("harmonyosRpkFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "harmonyosRpkFile")
+        risk_kwargs["harmonyos_rpk"] = harmonyos_rpk_asset.HarmonyOSRpk(
             content=content, path=path, content_url=url
         )
 

@@ -15,6 +15,12 @@ import 'ostorlab/agent/message/proto/v3/asset/file/api_schema/api_schema.proto';
 import 'ostorlab/agent/message/proto/v3/asset/phone_number/phone_number.proto';
 import 'ostorlab/agent/message/proto/v3/asset/repository/repository.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/repository_archive/repository_archive.proto';
+import 'ostorlab/agent/message/proto/v3/asset/store/harmonyos_store/harmonyos_store.proto';
+import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/apk/apk.proto';
+import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/aab/aab.proto';
+import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/hap/hap.proto';
+import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/app/app.proto';
+import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/rpk/rpk.proto';
 
 package ostorlab.agent.message.proto.v3.report.risk;
 
@@ -35,6 +41,12 @@ message Message{
     ostorlab.agent.message.proto.v3.asset.phone_number.Message phone_number = 15;
     ostorlab.agent.message.proto.v3.asset.repository.Message repository = 16;
     ostorlab.agent.message.proto.v3.asset.file.repository_archive.Message repository_archive = 17;
+    ostorlab.agent.message.proto.v3.asset.store.harmonyos_store.Message harmonyos_store = 18;
+    ostorlab.agent.message.proto.v3.asset.file.harmonyos.apk.Message harmonyos_apk = 19;
+    ostorlab.agent.message.proto.v3.asset.file.harmonyos.aab.Message harmonyos_aab = 20;
+    ostorlab.agent.message.proto.v3.asset.file.harmonyos.hap.Message harmonyos_hap = 21;
+    ostorlab.agent.message.proto.v3.asset.file.harmonyos.app.Message harmonyos_app = 22;
+    ostorlab.agent.message.proto.v3.asset.file.harmonyos.rpk.Message harmonyos_rpk = 23;
   }
   required string description = 11;
   required string rating = 12;

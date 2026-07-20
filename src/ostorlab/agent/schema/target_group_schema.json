@@ -153,6 +153,30 @@
             }
         }
     },
+    "harmonyosStoreType": {
+        "description": "[Optional] - HarmonyOS app Store asset.",
+        "type": "object",
+        "properties": {
+            "bundle_name": {
+                "description": "[Required] - HarmonyOS app bundle name.",
+                "type": "string"
+            }
+        }
+    },
+    "harmonyosFileType": {
+        "description": "[Optional] - HarmonyOS app file asset (apk/aab/hap/app/rpk).",
+        "type": "object",
+        "properties": {
+            "path": {
+                "description": "[Optional] - HarmonyOS app file path.",
+                "type": "string"
+            },
+            "url": {
+                "description": "[Optional] - HarmonyOS app file link.",
+                "type": "string"
+            }
+        }
+    },
     "ticketType": {
       "description": "[Optional] - Ticket asset.",
       "type": "object",
@@ -238,6 +262,24 @@
         },
         "repositoryArchive": {
           "$ref": "#/CustomTypes/repositoryArchiveType"
+        },
+        "harmonyosStore": {
+          "$ref": "#/CustomTypes/harmonyosStoreType"
+        },
+        "harmonyosApkFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosAabFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosHapFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosAppFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosRpkFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
         }
       },
       "required": [
