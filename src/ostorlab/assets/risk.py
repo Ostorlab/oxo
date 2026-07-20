@@ -43,7 +43,7 @@ class Risk(asset.Asset):
 
     def to_proto(self) -> bytes:
         data = {
-            k: (dataclasses.asdict(v) if dataclasses.is_dataclass(v) is True else v)
+            k: (v.__dict__ if isinstance(v, asset.Asset) else v)
             for k, v in self.__dict__.items()
         }
         return bytes(serializer.serialize(self.selector, data).SerializeToString())
