@@ -153,6 +153,36 @@
             }
         }
     },
+    "apiSchemaType": {
+      "description": "[Optional] - API schema asset.",
+      "type": "object",
+      "properties": {
+        "endpoint_url": {
+          "description": "[Required] - Url of the API the schema describes.",
+          "type": "string"
+        },
+        "path": {
+          "description": "[Optional] - API schema file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - API schema file link.",
+          "type": "string"
+        },
+        "schema_type": {
+          "description": "[Optional] - API schema type, one of graphql, wsdl or openapi.",
+          "type": "string",
+          "enum": [
+            "graphql",
+            "wsdl",
+            "openapi"
+          ]
+        }
+      },
+      "required": [
+        "endpoint_url"
+      ]
+    },
     "ticketType": {
       "description": "[Optional] - Ticket asset.",
       "type": "object",
@@ -314,6 +344,12 @@
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/ipType"
+          }
+        },
+        "apiSchema": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/apiSchemaType"
           }
         },
         "ticket": {
