@@ -118,7 +118,7 @@ assets:
         ("harmonyosStore", "bundle_name: com.a.b", "harmonyos_bundle_name"),
         ("androidApkFile", "url: https://host/x.apk", "android_apk"),
         ("androidAabFile", "url: https://host/x.aab", "android_aab"),
-        ("iosFile", "url: https://host/x.ipa", "ios_ipa"),
+        ("iosIpaFile", "url: https://host/x.ipa", "ios_ipa"),
         ("harmonyosHapFile", "url: https://host/x.hap", "harmonyos_hap"),
         ("harmonyosApkFile", "url: https://host/x.apk", "harmonyos_apk"),
         ("harmonyosAabFile", "url: https://host/x.aab", "harmonyos_aab"),

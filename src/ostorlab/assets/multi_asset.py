@@ -40,6 +40,14 @@ MOBILE_ASSET_FIELDS = (
 )
 
 
+def single_mobile_asset_error_message(mobile_fields: list[str]) -> str:
+    """Build the error message shown when more than one mobile asset is bundled."""
+    return (
+        f"A multi asset accepts at most one mobile asset, got: "
+        f"{', '.join(mobile_fields)}."
+    )
+
+
 @dataclasses.dataclass
 @asset.selector("v3.asset.multi_asset")
 class MultiAsset(asset.Asset):
@@ -99,7 +107,7 @@ class MultiAsset(asset.Asset):
         ]
 
     @property
-    def set_mobile_asset_fields(self) -> list[str]:
+    def mobile_asset_fields_present(self) -> list[str]:
         """Names of the mobile asset fields that are set."""
         return [
             key
@@ -112,12 +120,9 @@ class MultiAsset(asset.Asset):
 
         Raises ValueError if more than one mobile asset is set, since the proto oneof
         would silently drop the extras."""
-        set_mobile_fields = self.set_mobile_asset_fields
+        set_mobile_fields = self.mobile_asset_fields_present
         if len(set_mobile_fields) > 1:
-            raise ValueError(
-                f"A multi asset accepts at most one mobile asset, got: "
-                f"{', '.join(set_mobile_fields)}."
-            )
+            raise ValueError(single_mobile_asset_error_message(set_mobile_fields))
 
         data: dict[str, Any] = {}
         for key, value in self.__dict__.items():
@@ -135,7 +140,7 @@ class MultiAsset(asset.Asset):
             else:
                 data[key] = value
 
-        return bytes(serializer.serialize(self.selector, data).SerializeToString())
+        return serializer.serialize(self.selector, data).SerializeToString()
 
     @property
     def proto_field(self) -> str:

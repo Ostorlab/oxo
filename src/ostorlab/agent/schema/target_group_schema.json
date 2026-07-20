@@ -230,7 +230,7 @@
         "androidAabFile": {
           "$ref": "#/CustomTypes/androidAabFileType"
         },
-        "iosFile": {
+        "iosIpaFile": {
           "$ref": "#/CustomTypes/iosFileType"
         },
         "repository": {
@@ -292,7 +292,7 @@
             "$ref": "#/CustomTypes/iosStoreType"
           }
         },
-        "iosFile": {
+        "iosIpaFile": {
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/iosFileType"
@@ -405,7 +405,7 @@
             "androidAabFile": {
               "$ref": "#/CustomTypes/androidAabFileType"
             },
-            "iosFile": {
+            "iosIpaFile": {
               "$ref": "#/CustomTypes/iosFileType"
             },
             "harmonyosHapFile": {

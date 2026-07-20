@@ -49,7 +49,7 @@ _RISK_TARGET_KEYS = (
     "iosStore",
     "androidApkFile",
     "androidAabFile",
-    "iosFile",
+    "iosIpaFile",
     "repository",
     "repositoryArchive",
 )
@@ -64,21 +64,17 @@ _MULTI_ASSET_REPEATED_FIELDS: dict[type[base_asset.Asset], str] = {
     ipv6_asset.IPv6: "ipv6s",
 }
 
-_MULTI_ASSET_IP_CLASSES: dict[str, Any] = {
-    "ip": ip_asset.IP,
-    "ipv4": ipv4_asset.IPv4,
-    "ipv6": ipv6_asset.IPv6,
-}
+_MULTI_ASSET_IP_KEYS = ("ip", "ipv4", "ipv6")
 
-_MULTI_ASSET_REPEATED_FILE_CLASSES: dict[str, Any] = {
+_MULTI_ASSET_REPEATED_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
     "file": file_asset.File,
     "repositoryArchive": repository_archive_asset.RepositoryArchive,
 }
 
-_MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, Any] = {
+_MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
     "androidApkFile": android_apk_asset.AndroidApk,
     "androidAabFile": android_aab_asset.AndroidAab,
-    "iosFile": ios_ipa_asset.IOSIpa,
+    "iosIpaFile": ios_ipa_asset.IOSIpa,
     "harmonyosHapFile": harmonyos_hap_asset.HarmonyOSHap,
     "harmonyosApkFile": harmonyos_apk_asset.HarmonyOSApk,
     "harmonyosAabFile": harmonyos_aab_asset.HarmonyOSAab,
@@ -86,7 +82,7 @@ _MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, Any] = {
     "harmonyosRpkFile": harmonyos_rpk_asset.HarmonyOSRpk,
 }
 
-_MULTI_ASSET_STORE_CLASSES: dict[str, tuple[Any, str]] = {
+_MULTI_ASSET_STORE_CLASSES: dict[str, tuple[type[base_asset.Asset], str]] = {
     "androidStore": (android_store_asset.AndroidStore, "package_name"),
     "iosStore": (ios_store_asset.IOSStore, "bundle_id"),
     "harmonyosStore": (harmonyos_store_asset.HarmonyOSStore, "bundle_name"),
@@ -395,7 +391,7 @@ class AssetsDefinition:
         android_aab_file_assets = assets.get("androidAabFile", [])
         android_apk_file_assets = assets.get("androidApkFile", [])
         ios_store_assets = assets.get("iosStore", [])
-        ios_file_assets = assets.get("iosFile", [])
+        ios_file_assets = assets.get("iosIpaFile", [])
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
@@ -525,11 +521,12 @@ def _bundle_multi_asset(
         )
 
     bundled_asset = multi_asset_asset.MultiAsset(**multi_asset_kwargs)
-    set_mobile_fields = bundled_asset.set_mobile_asset_fields
+    set_mobile_fields = bundled_asset.mobile_asset_fields_present
     if len(set_mobile_fields) > 1:
+        # MultiAsset.to_proto enforces this same invariant with a ValueError; here at the
+        # config-parsing layer we raise ValidationError so the CLI reports a config error.
         raise validator.ValidationError(
-            f"A multi asset accepts at most one mobile asset, got: "
-            f"{', '.join(set_mobile_fields)}."
+            multi_asset_asset.single_mobile_asset_error_message(set_mobile_fields)
         )
     return bundled_asset
 
@@ -542,15 +539,15 @@ def _parse_multi_asset(
     Returns None when the section holds no asset, so no empty message is injected."""
     targets: list[base_asset.Asset] = []
 
-    for yaml_key, asset_class in _MULTI_ASSET_IP_CLASSES.items():
+    for yaml_key in _MULTI_ASSET_IP_KEYS:
         for entry in multi_asset_group.get(yaml_key, []):
-            mask = entry.get("mask")
-            targets.append(
-                asset_class(
-                    host=entry.get("host"),
-                    mask=str(mask) if mask is not None else None,
+            ip = _parse_ip_asset(entry)
+            if ip is None:
+                raise validator.ValidationError(
+                    f"Multi asset {yaml_key} has an invalid IP address: "
+                    f"{entry.get('host')}."
                 )
-            )
+            targets.append(ip)
 
     for entry in multi_asset_group.get("link", []):
         targets.append(
@@ -566,9 +563,12 @@ def _parse_multi_asset(
 
     for yaml_key, (asset_class, field) in _MULTI_ASSET_STORE_CLASSES.items():
         if multi_asset_group.get(yaml_key) is not None:
-            targets.append(
-                asset_class(**{field: multi_asset_group[yaml_key].get(field)})
-            )
+            field_value = multi_asset_group[yaml_key].get(field)
+            if field_value is None or str(field_value).strip() == "":
+                raise validator.ValidationError(
+                    f"Multi asset {yaml_key} is missing required field '{field}'."
+                )
+            targets.append(asset_class(**{field: field_value}))
 
     for yaml_key, asset_class in _MULTI_ASSET_MOBILE_FILE_CLASSES.items():
         if multi_asset_group.get(yaml_key) is not None:
@@ -603,7 +603,7 @@ def _parse_repository_asset(entry: dict[str, Any]) -> repository_asset.Repositor
 
 
 def _build_multi_asset_file(
-    entry: dict[str, Any], yaml_key: str, asset_class: Any
+    entry: dict[str, Any], yaml_key: str, asset_class: type[base_asset.Asset]
 ) -> base_asset.Asset:
     """Build a file-backed multi asset target, rejecting entries with no path nor url."""
     parsed_file = _parse_file_asset(entry)
@@ -632,7 +632,8 @@ def _parse_file_asset(file_asset: dict[str, Any]) -> ParsedFileAsset | None:
 
     Returns None when the entry has neither readable content nor a URL, so the
     caller can skip it (standalone assets) or reject it (embedded risk asset)."""
-    path = file_asset.get("path")
+    # The iOS file schema historically spells the key ``paths``; accept both.
+    path = file_asset.get("path") or file_asset.get("paths")
     url = file_asset.get("url")
     content = None
     if path is not None:
@@ -730,8 +731,8 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
             content=content, path=path, content_url=url
         )
 
-    if risk_entry.get("iosFile") is not None:
-        content, path, url = _resolve_risk_file_asset(risk_entry, "iosFile")
+    if risk_entry.get("iosIpaFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "iosIpaFile")
         risk_kwargs["ios_ipa"] = ios_ipa_asset.IOSIpa(
             content=content, path=path, content_url=url
         )
