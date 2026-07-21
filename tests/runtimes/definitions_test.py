@@ -22,6 +22,12 @@ from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import harmonyos_store as harmonyos_store_asset
+from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
+from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
+from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
+from ostorlab.assets import harmonyos_app as harmonyos_app_asset
+from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import ticket as ticket_asset
 from ostorlab.assets import risk as risk_asset
 
@@ -838,6 +844,162 @@ assets:
     assert risk.repository_archive == repository_archive_asset.RepositoryArchive(
         content=None, path=None, content_url="https://storage.example.com/repo.zip"
     )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosStore_parsesStoreTarget():
+    """Tests that a risk embedding a HarmonyOS store is parsed into a
+    harmonyos_store target."""
+    valid_yaml = """
+description: Target group with a HarmonyOS store risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable HarmonyOS app
+        harmonyosStore:
+            bundle_name: com.example.harmonyapp
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.harmonyos_store == harmonyos_store_asset.HarmonyOSStore(
+        bundle_name="com.example.harmonyapp"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosHap_parsesHapTarget():
+    """Tests that a risk embedding a HarmonyOS .hap file by url is parsed into a
+    harmonyos_hap target."""
+    valid_yaml = """
+description: Target group with a HarmonyOS hap risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable HAP
+        harmonyosHapFile:
+            url: https://storage.example.com/app.hap
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.harmonyos_hap == harmonyos_hap_asset.HarmonyOSHap(
+        content=None, path=None, content_url="https://storage.example.com/app.hap"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosApk_parsesApkTarget():
+    """Tests that a risk embedding a HarmonyOS .apk file by url is parsed into a
+    harmonyos_apk target."""
+    valid_yaml = """
+description: Target group with a HarmonyOS apk risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable APK
+        harmonyosApkFile:
+            url: https://storage.example.com/app.apk
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.harmonyos_apk == harmonyos_apk_asset.HarmonyOSApk(
+        content=None, path=None, content_url="https://storage.example.com/app.apk"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosAab_parsesAabTarget():
+    """Tests that a risk embedding a HarmonyOS .aab file by url is parsed into a
+    harmonyos_aab target."""
+    valid_yaml = """
+description: Target group with a HarmonyOS aab risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable AAB
+        harmonyosAabFile:
+            url: https://storage.example.com/app.aab
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.harmonyos_aab == harmonyos_aab_asset.HarmonyOSAab(
+        content=None, path=None, content_url="https://storage.example.com/app.aab"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosApp_parsesAppTarget():
+    """Tests that a risk embedding a HarmonyOS .app file by url is parsed into a
+    harmonyos_app target."""
+    valid_yaml = """
+description: Target group with a HarmonyOS app risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable APP
+        harmonyosAppFile:
+            url: https://storage.example.com/app.app
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.harmonyos_app == harmonyos_app_asset.HarmonyOSApp(
+        content=None, path=None, content_url="https://storage.example.com/app.app"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosRpk_parsesRpkTarget():
+    """Tests that a risk embedding a HarmonyOS .rpk file by url is parsed into a
+    harmonyos_rpk target."""
+    valid_yaml = """
+description: Target group with a HarmonyOS rpk risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable RPK
+        harmonyosRpkFile:
+            url: https://storage.example.com/app.rpk
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.harmonyos_rpk == harmonyos_rpk_asset.HarmonyOSRpk(
+        content=None, path=None, content_url="https://storage.example.com/app.rpk"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskHarmonyosStoreMissingBundle_raisesValidationError():
+    """Tests that a HarmonyOS store risk with no bundle_name is rejected instead of
+    building a target with a None identifier."""
+    invalid_yaml = """
+description: Target group with an empty HarmonyOS store risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable HarmonyOS app
+        harmonyosStore: {}
+"""
+
+    with pytest.raises(validator.ValidationError, match="requires a bundle_name"):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
 def testAssetGroupDefinitionFromYaml_whenRiskRepositoryMissingUrl_raisesValidationError():
