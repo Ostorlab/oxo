@@ -12,6 +12,8 @@ def testScansDiscoverAPIRequest_whenCalled_queryContainsGetPendingScansQuery() -
     assert api_request.query is not None
     assert "query GetPendingScans" in api_request.query
     assert "$progresses: [String]" in api_request.query
+    assert "$oldLockedScans: Boolean" in api_request.query
+    assert "$numberElements: Int" in api_request.query
 
 
 def testScansDiscoverAPIRequest_whenCalled_dataContainsCorrectVariables() -> None:

@@ -1,7 +1,7 @@
 """Update scan state request."""
 
 import json
-from typing import Any
+from typing import Any, Literal
 
 from ostorlab.apis import request
 
@@ -9,7 +9,9 @@ from ostorlab.apis import request
 class ScanUpdateStateAPIRequest(request.APIRequest):
     """State update mutation API request (Start / Rollback / Finish)."""
 
-    def __init__(self, scan_id: int, progress: str) -> None:
+    def __init__(
+        self, scan_id: int, progress: Literal["started", "rolled_back", "finished"]
+    ) -> None:
         self._scan_id = scan_id
         self._progress = progress
 

@@ -1,8 +1,7 @@
 """Discovery query to fetch pending/abandoned scans."""
 
-from typing import Any
-
 import json
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -18,8 +17,8 @@ class ScansDiscoverAPIRequest(request.APIRequest):
     @property
     def query(self) -> str | None:
         return """
-        query GetPendingScans($progresses: [String]) {
-          scans(progresses: $progresses) {
+        query GetPendingScans($progresses: [String], $oldLockedScans: Boolean, $numberElements: Int) {
+          scans(progresses: $progresses, oldLockedScans: $oldLockedScans, numberElements: $numberElements) {
             scans {
               id
             }
