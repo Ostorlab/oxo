@@ -74,7 +74,7 @@ def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
     assert serialized is not None
 
 
-def testSerialize_whenDataclassValue_shouldRecurseIntoNestedFields():
+def testSerialize_whenDataclassValue_shouldRecurseIntoNestedFields() -> None:
     """A dataclass value is recursed into instead of being set directly."""
     serialized = serializer.serialize(
         "v3.asset.multi_asset",
@@ -88,7 +88,7 @@ def testSerialize_whenDataclassValue_shouldRecurseIntoNestedFields():
     assert serialized.android_package_name.package_name == "com.a.b"
 
 
-def testSerialize_whenListOfDataclasses_shouldRecurseIntoEachItem():
+def testSerialize_whenListOfDataclasses_shouldRecurseIntoEachItem() -> None:
     """Each dataclass in a repeated field is recursed into and appended."""
     serialized = serializer.serialize(
         "v3.asset.multi_asset",
@@ -106,7 +106,7 @@ def testSerialize_whenListOfDataclasses_shouldRecurseIntoEachItem():
     ]
 
 
-def testSerialize_whenDataclassWithInvalidField_shouldRaiseSerializationError():
+def testSerialize_whenDataclassWithInvalidField_shouldRaiseSerializationError() -> None:
     """A dataclass field absent from the proto raises SerializationError, not AttributeError."""
 
     @dataclasses.dataclass
