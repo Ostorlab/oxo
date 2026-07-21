@@ -5,7 +5,9 @@ import json
 from ostorlab.apis import scan_update_state
 
 
-def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_queryContainsUpdateScanStateMutation()-> None:
+def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_queryContainsUpdateScanStateMutation() -> (
+    None
+):
     """Test scan update state API request contains the correct mutation."""
     api_request = scan_update_state.ScanUpdateStateAPIRequest(
         scan_id=1, progress="started"
@@ -17,7 +19,9 @@ def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_queryContainsUpd
     assert "$progress: String!" in api_request.query
 
 
-def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorrectVariables()-> None:
+def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorrectVariables() -> (
+    None
+):
     """Test scan update state API request data contains correct variables."""
     api_request = scan_update_state.ScanUpdateStateAPIRequest(
         scan_id=42, progress="finished"
@@ -32,7 +36,7 @@ def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorr
     assert variables["progress"] == "finished"
 
 
-def testScanUpdateStateAPIRequest_whenCalled_endpointIsScannerGraphql()-> None:
+def testScanUpdateStateAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
     """Test scan update state API request has the correct endpoint."""
     api_request = scan_update_state.ScanUpdateStateAPIRequest(
         scan_id=1, progress="started"

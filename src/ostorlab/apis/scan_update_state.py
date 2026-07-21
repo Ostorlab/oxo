@@ -1,7 +1,7 @@
 """Update scan state request."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -19,7 +19,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
         return "https://scanner.ostorlab.co/orchestrator/graphql"
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         return """
         mutation UpdateScanState($scanId: Int!, $progress: String!) {
           updateScan(scanId: $scanId, progress: $progress, deviceId: null) {
@@ -34,7 +34,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         return {
             "query": self.query,
             "variables": json.dumps(

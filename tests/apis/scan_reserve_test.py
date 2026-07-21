@@ -5,7 +5,9 @@ import json
 from ostorlab.apis import scan_reserve
 
 
-def testScanReserveAPIRequest_whenScanIdProvided_queryContainsReserveScanMutation()-> None:
+def testScanReserveAPIRequest_whenScanIdProvided_queryContainsReserveScanMutation() -> (
+    None
+):
     """Test scan reserve API request contains the correct mutation."""
     api_request = scan_reserve.ScanReserveAPIRequest(scan_id=1)
 
@@ -14,7 +16,7 @@ def testScanReserveAPIRequest_whenScanIdProvided_queryContainsReserveScanMutatio
     assert "$scanId: Int!" in api_request.query
 
 
-def testScanReserveAPIRequest_whenScanIdProvided_dataContainsCorrectVariables()-> None:
+def testScanReserveAPIRequest_whenScanIdProvided_dataContainsCorrectVariables() -> None:
     """Test scan reserve API request data contains correct variables."""
     api_request = scan_reserve.ScanReserveAPIRequest(scan_id=42)
 
@@ -26,7 +28,7 @@ def testScanReserveAPIRequest_whenScanIdProvided_dataContainsCorrectVariables()-
     assert variables["scanId"] == 42
 
 
-def testScanReserveAPIRequest_whenCalled_endpointIsScannerGraphql()-> None:
+def testScanReserveAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
     """Test scan reserve API request has the correct endpoint."""
     api_request = scan_reserve.ScanReserveAPIRequest(scan_id=1)
 

@@ -41,7 +41,7 @@ def _make_runner() -> authenticated_runner.AuthenticatedAPIRunner:
     return runner
 
 
-def testSentRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint()-> None:
+def testSentRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint() -> None:
     """Test _sent_request uses request endpoint when request has custom endpoint."""
     runner = _make_runner()
     request_with_endpoint = _RequestWithEndpoint()
@@ -56,7 +56,7 @@ def testSentRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint()-> None:
     assert call_url == "https://custom.endpoint/graphql"
 
 
-def testSentRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint()-> None:
+def testSentRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint() -> None:
     """Test _sent_request uses runner endpoint when request has no custom endpoint."""
     runner = _make_runner()
     request_without_endpoint = _RequestWithoutEndpoint()
@@ -71,7 +71,7 @@ def testSentRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint()-> None:
     assert call_url == authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT
 
 
-def testSendUbjsonRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint()-> None:
+def testSendUbjsonRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint() -> None:
     """Test _send_ubjson_request uses request endpoint when request has custom endpoint."""
     runner = _make_runner()
     request_with_endpoint = _RequestWithEndpoint()
@@ -86,7 +86,7 @@ def testSendUbjsonRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint()-> N
     assert call_url == "https://custom.endpoint/graphql"
 
 
-def testSendUbjsonRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint()-> None:
+def testSendUbjsonRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint() -> None:
     """Test _send_ubjson_request uses runner endpoint when request has no custom endpoint."""
     runner = _make_runner()
     request_without_endpoint = _RequestWithoutEndpoint()

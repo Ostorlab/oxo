@@ -5,7 +5,7 @@ import json
 from ostorlab.apis import scans_discover
 
 
-def testScansDiscoverAPIRequest_whenCalled_queryContainsGetPendingScansQuery()-> None:
+def testScansDiscoverAPIRequest_whenCalled_queryContainsGetPendingScansQuery() -> None:
     """Test scans discover API request contains the correct query."""
     api_request = scans_discover.ScansDiscoverAPIRequest()
 
@@ -14,7 +14,7 @@ def testScansDiscoverAPIRequest_whenCalled_queryContainsGetPendingScansQuery()->
     assert "$progresses: [String]" in api_request.query
 
 
-def testScansDiscoverAPIRequest_whenCalled_dataContainsCorrectVariables()-> None:
+def testScansDiscoverAPIRequest_whenCalled_dataContainsCorrectVariables() -> None:
     """Test scans discover API request data contains correct variables."""
     api_request = scans_discover.ScansDiscoverAPIRequest()
 
@@ -28,7 +28,7 @@ def testScansDiscoverAPIRequest_whenCalled_dataContainsCorrectVariables()-> None
     assert variables["numberElements"] == 50
 
 
-def testScansDiscoverAPIRequest_whenCalled_endpointIsScannerGraphql()-> None:
+def testScansDiscoverAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
     """Test scans discover API request has the correct endpoint."""
     api_request = scans_discover.ScansDiscoverAPIRequest()
 

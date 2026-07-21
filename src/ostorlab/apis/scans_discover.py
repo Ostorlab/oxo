@@ -1,10 +1,10 @@
 """Discovery query to fetch pending/abandoned scans."""
 
-from typing import Dict, Optional, Any
-
-from ostorlab.apis import request
+from typing import Any
 
 import json
+
+from ostorlab.apis import request
 
 
 class ScansDiscoverAPIRequest(request.APIRequest):
@@ -16,7 +16,7 @@ class ScansDiscoverAPIRequest(request.APIRequest):
         return "https://scanner.ostorlab.co/orchestrator/graphql"
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         return """
         query GetPendingScans($progresses: [String]) {
           scans(progresses: $progresses) {
@@ -28,7 +28,7 @@ class ScansDiscoverAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         return {
             "query": self.query,
             "variables": json.dumps(

@@ -1,7 +1,7 @@
 """Reservation request to lock a scan."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -18,7 +18,7 @@ class ScanReserveAPIRequest(request.APIRequest):
         return "https://scanner.ostorlab.co/orchestrator/graphql"
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         return """
           mutation ReserveScan($scanId: Int!) {
             updateScan(scanId: $scanId, progress: "locked") {
@@ -84,7 +84,7 @@ class ScanReserveAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         return {
             "query": self.query,
             "variables": json.dumps({"scanId": self._scan_id}),
