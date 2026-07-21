@@ -12,6 +12,11 @@ class APIRequest(abc.ABC):
     """API request base class. ALL requests should inherit from this class."""
 
     @property
+    def endpoint(self) -> Optional[str]:
+        """API Endpoint. If None, the runner's default endpoint is used."""
+        return None
+
+    @property
     @abc.abstractmethod
     def query(self) -> Optional[str]:
         """Query to the GraphQL API."""

@@ -153,12 +153,13 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     ) -> httpx.Response:
         """Sends an API request, handling JSON or form encoding."""
         headers = headers or {}
+        endpoint = request.endpoint or self.endpoint
 
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
             if request.is_json is True:
                 headers["Content-Type"] = "application/json"
                 return client.post(
-                    self.endpoint,
+                    endpoint,
                     files=request.files,
                     headers=headers,
                     timeout=runner.REQUEST_TIMEOUT,
@@ -166,7 +167,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                 )
             else:
                 return client.post(
-                    self.endpoint,
+                    endpoint,
                     files=request.files,
                     headers=headers,
                     timeout=runner.REQUEST_TIMEOUT,
@@ -216,9 +217,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
     ) -> httpx.Response:
         """Sends an API request."""
+        endpoint = request.endpoint or self.endpoint
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
             return client.post(
-                self.endpoint,
+                endpoint,
                 data=ubjson.dumpb(request.data),
                 files=request.files,
                 headers=headers,
