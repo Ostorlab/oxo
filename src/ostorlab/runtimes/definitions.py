@@ -570,13 +570,26 @@ def _parse_multi_asset(
         targets.append(link_asset.Link(url=url, method=entry.get("method") or "GET"))
 
     for entry in multi_asset_group.get("repository", []):
+        repository_url = entry.get("repository_url")
+        if repository_url is None or str(repository_url).strip() == "":
+            raise validator.ValidationError(
+                "Multi asset repository requires a non-empty 'repository_url' field."
+            )
         targets.append(_parse_repository_asset(entry))
 
     for entry in multi_asset_group.get("apiSchema", []):
         parsed_file = _parse_file_asset(entry)
+        endpoint_url = entry.get("endpoint_url")
+        if parsed_file is None and (
+            endpoint_url is None or str(endpoint_url).strip() == ""
+        ):
+            raise validator.ValidationError(
+                "Multi asset apiSchema requires either a content/content_url or an "
+                "'endpoint_url'."
+            )
         targets.append(
             api_schema_asset.ApiSchema(
-                endpoint_url=entry.get("endpoint_url"),
+                endpoint_url=endpoint_url,
                 content=parsed_file.content if parsed_file is not None else None,
                 content_url=parsed_file.url if parsed_file is not None else None,
                 schema_type=entry.get("schema_type"),
