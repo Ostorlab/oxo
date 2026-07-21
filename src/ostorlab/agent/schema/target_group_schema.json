@@ -125,6 +125,88 @@
         }
       }
     },
+    "repositoryType": {
+        "description": "[Optional] - Source code repository asset.",
+        "type": "object",
+        "properties": {
+            "repository_url": {
+                "description": "[Required] - Source code repository url.",
+                "type": "string"
+            },
+            "commit_hash": {
+                "description": "[Optional] - Commit hash the risk applies to.",
+                "type": "string"
+            }
+        }
+    },
+    "repositoryArchiveType": {
+        "description": "[Optional] - Source code repository archive file asset.",
+        "type": "object",
+        "properties": {
+            "path": {
+                "description": "[Optional] - Repository archive file path.",
+                "type": "string"
+            },
+            "url": {
+                "description": "[Optional] - Repository archive file link.",
+                "type": "string"
+            }
+        }
+    },
+    "harmonyosStoreType": {
+        "description": "[Optional] - HarmonyOS app Store asset.",
+        "type": "object",
+        "properties": {
+            "bundle_name": {
+                "description": "[Required] - HarmonyOS app bundle name.",
+                "type": "string"
+            }
+        }
+    },
+    "harmonyosFileType": {
+        "description": "[Optional] - HarmonyOS app file asset (apk/aab/hap/app/rpk).",
+        "type": "object",
+        "properties": {
+            "path": {
+                "description": "[Optional] - HarmonyOS app file path.",
+                "type": "string"
+            },
+            "url": {
+                "description": "[Optional] - HarmonyOS app file link.",
+                "type": "string"
+            }
+        }
+    },
+    "apiSchemaType": {
+      "description": "[Optional] - API schema asset.",
+      "type": "object",
+      "properties": {
+        "endpoint_url": {
+          "description": "[Required] - Url of the API the schema describes.",
+          "type": "string"
+        },
+        "path": {
+          "description": "[Optional] - API schema file path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - API schema file link.",
+          "type": "string"
+        },
+        "schema_type": {
+          "description": "[Optional] - API schema type, one of graphql, wsdl or openapi.",
+          "type": "string",
+          "enum": [
+            "graphql",
+            "wsdl",
+            "openapi"
+          ]
+        }
+      },
+      "required": [
+        "endpoint_url"
+      ]
+    },
     "ticketType": {
       "description": "[Optional] - Ticket asset.",
       "type": "object",
@@ -155,6 +237,83 @@
       },
       "required": [
         "title",
+        "description"
+      ]
+    },
+    "riskType": {
+      "description": "[Optional] - Risk report asset applying to an embedded target.",
+      "type": "object",
+      "properties": {
+        "severity": {
+          "description": "[Required] - Risk severity rating.",
+          "type": "string",
+          "enum": [
+            "CRITICAL",
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "POTENTIALLY",
+            "HARDENING",
+            "SECURE",
+            "IMPORTANT",
+            "INFO"
+          ]
+        },
+        "description": {
+          "description": "[Required] - Description of the risk.",
+          "type": "string"
+        },
+        "ip": {
+          "$ref": "#/CustomTypes/ipType"
+        },
+        "domain": {
+          "$ref": "#/CustomTypes/domainType"
+        },
+        "link": {
+          "$ref": "#/CustomTypes/linkType"
+        },
+        "androidStore": {
+          "$ref": "#/CustomTypes/androidStoreType"
+        },
+        "iosStore": {
+          "$ref": "#/CustomTypes/iosStoreType"
+        },
+        "androidApkFile": {
+          "$ref": "#/CustomTypes/androidApkFileType"
+        },
+        "androidAabFile": {
+          "$ref": "#/CustomTypes/androidAabFileType"
+        },
+        "iosFile": {
+          "$ref": "#/CustomTypes/iosFileType"
+        },
+        "repository": {
+          "$ref": "#/CustomTypes/repositoryType"
+        },
+        "repositoryArchive": {
+          "$ref": "#/CustomTypes/repositoryArchiveType"
+        },
+        "harmonyosStore": {
+          "$ref": "#/CustomTypes/harmonyosStoreType"
+        },
+        "harmonyosApkFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosAabFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosHapFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosAppFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        },
+        "harmonyosRpkFile": {
+          "$ref": "#/CustomTypes/harmonyosFileType"
+        }
+      },
+      "required": [
+        "severity",
         "description"
       ]
     }
@@ -229,10 +388,22 @@
             "$ref": "#/CustomTypes/ipType"
           }
         },
+        "apiSchema": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/apiSchemaType"
+          }
+        },
         "ticket": {
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/ticketType"
+          }
+        },
+        "risk": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/riskType"
           }
         }
       }

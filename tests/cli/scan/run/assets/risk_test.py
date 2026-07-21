@@ -6,8 +6,12 @@ from click import testing
 import pytest_mock
 
 from ostorlab.cli import rootcli
-from ostorlab.assets import risk as risk_asset
+from ostorlab.agent.message import serializer
+from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import ipv4 as ipv4_asset
+from ostorlab.assets import link as link_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
+from ostorlab.assets import risk as risk_asset
 
 
 def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(
@@ -420,6 +424,28 @@ def testRiskAsset_selector_shouldBeCorrect() -> None:
     assert r.selector == "v3.report.risk"
 
 
+def testRiskAsset_whenMultiAssetProvided_shouldSerializeAndDeserialize() -> None:
+    """Test that a Risk located on a multi-asset target round-trips through protobuf."""
+    multi_asset = multi_asset_asset.MultiAsset(
+        android_apk=android_apk_asset.AndroidApk(content=b"apk content", path="/a.apk"),
+        urls=[link_asset.Link(url="https://example.com", method="GET")],
+    )
+    r = risk_asset.Risk(
+        description="vulnerable multi-asset target",
+        rating="HIGH",
+        multi_asset=multi_asset,
+    )
+
+    message = serializer.deserialize("v3.report.risk", r.to_proto())
+
+    assert message.HasField("multi_asset") is True
+    assert message.multi_asset.android_apk.path == "/a.apk"
+    assert message.multi_asset.android_apk.content == b"apk content"
+    assert message.multi_asset.urls[0].url == "https://example.com"
+    assert message.description == "vulnerable multi-asset target"
+    assert message.rating == "HIGH"
+
+
 def testScanRunRisk_whenAndroidApkUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(
     scan_run_cli_runner: testing.CliRunner,
     mocker: pytest_mock.MockerFixture,
@@ -448,6 +474,97 @@ def testScanRunRisk_whenAndroidApkUrlProvided_shouldCallScanWithRiskAssetContain
     assert len(assets) == 1
     assert isinstance(assets[0], risk_asset.Risk)
     assert assets[0].android_apk == {"content_url": "https://example.com/app.apk"}
+
+
+def testScanRunRisk_whenRepositoryArchiveUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """Test oxo scan run risk command with --repository-archive-url populates repository_archive content_url field."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Hardcoded secret in archive",
+            "--repository-archive-url=https://example.com/repo.zip",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].repository_archive == {
+        "content_url": "https://example.com/repo.zip"
+    }
+
+
+def testScanRunRisk_whenRepositoryArchiveFileProvided_shouldCallScanWithContentAndPath(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk command with --repository-archive populates content and path."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+    archive_file = tmp_path / "repo.zip"
+    archive_file.write_bytes(b"archive content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Hardcoded secret in archive",
+            f"--repository-archive={archive_file}",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].repository_archive["content"] == b"archive content"
+    assert assets[0].repository_archive["path"] == str(archive_file)
+
+
+def testScanRunRisk_whenRepositoryArchiveFileAndUrlBothProvided_shouldShowError(
+    scan_run_cli_runner: testing.CliRunner,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk with both --repository-archive and --repository-archive-url shows error."""
+    archive_file = tmp_path / "repo.zip"
+    archive_file.write_bytes(b"archive content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Test",
+            f"--repository-archive={archive_file}",
+            "--repository-archive-url=https://example.com/repo.zip",
+        ],
+    )
+
+    assert result.exit_code == 2
 
 
 def testScanRunRisk_whenAndroidApkFileAndUrlBothProvided_shouldShowError(

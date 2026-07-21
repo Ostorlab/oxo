@@ -179,6 +179,20 @@ _RISK_RATINGS = [
     default=None,
     help="Commit hash for the source code repository.",
 )
+@click.option(
+    "--repository-archive",
+    "repository_archive_file",
+    type=click.File(mode="rb"),
+    required=False,
+    default=None,
+    help="Source code repository archive the risk applies to.",
+)
+@click.option(
+    "--repository-archive-url",
+    required=False,
+    default=None,
+    help="URL of the source code repository archive the risk applies to.",
+)
 @click.pass_context
 def risk_cli(
     ctx: click.core.Context,
@@ -205,11 +219,15 @@ def risk_cli(
     api_schema_headers: tuple,
     repository_url: Optional[str],
     commit_hash: Optional[str],
+    repository_archive_file: Optional[io.RawIOBase],
+    repository_archive_url: Optional[str],
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
     Example:\n
         - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Server exposed" --ip 8.8.8.8\n
-        - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description-file report.txt --ip 8.8.8.8
+        - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description-file report.txt --ip 8.8.8.8\n
+        - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Hardcoded secret" --repository-url https://github.com/org/repo --commit-hash abc123\n
+        - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Hardcoded secret" --repository-archive-url https://example.com/repo.zip
     """
     if description is None and description_file is None:
         console.error("Provide either --description or --description-file.")
@@ -234,6 +252,11 @@ def risk_cli(
         raise click.exceptions.Exit(2)
     if (repository_url is None) != (commit_hash is None):
         console.error("Provide both --repository-url and --commit-hash together.")
+        raise click.exceptions.Exit(2)
+    if repository_archive_file is not None and repository_archive_url is not None:
+        console.error(
+            "Provide either --repository-archive or --repository-archive-url, not both."
+        )
         raise click.exceptions.Exit(2)
 
     runtime = ctx.obj["runtime"]
@@ -343,6 +366,14 @@ def risk_cli(
             "repository_url": repository_url,
             "commit_hash": commit_hash,
         }
+
+    if repository_archive_file is not None:
+        risk_kwargs["repository_archive"] = {
+            "content": repository_archive_file.read(),
+            "path": repository_archive_file.name,
+        }
+    elif repository_archive_url is not None:
+        risk_kwargs["repository_archive"] = {"content_url": repository_archive_url}
 
     assets = [risk_asset.Risk(**risk_kwargs)]
 
