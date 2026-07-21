@@ -3,7 +3,7 @@ syntax = "proto2";
 package ostorlab.agent.message.proto.v3.asset.network;
 
 message Message {
-  optional string cidr = 1;
-  optional int32 version = 2;
-  optional string origin_asn = 3;
+  required string cidr = 1;
+  required int32 version = 2;
+  required string origin_asn = 3;
 }

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;ostorlab/agent/message/proto/v3/asset/network/network.proto\x12-ostorlab.agent.message.proto.v3.asset.network\"<\n\x07Message\x12\x0c\n\x04\x63idr\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\x05\x12\x12\n\norigin_asn\x18\x03 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;ostorlab/agent/message/proto/v3/asset/network/network.proto\x12-ostorlab.agent.message.proto.v3.asset.network\"<\n\x07Message\x12\x0c\n\x04\x63idr\x18\x01 \x02(\t\x12\x0f\n\x07version\x18\x02 \x02(\x05\x12\x12\n\norigin_asn\x18\x03 \x02(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
