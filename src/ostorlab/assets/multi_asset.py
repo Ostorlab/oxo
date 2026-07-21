@@ -112,7 +112,7 @@ class MultiAsset(asset.Asset):
         ]
 
     @property
-    def mobile_asset_fields_present(self) -> list[str]:
+    def present_mobile_asset_fields(self) -> list[str]:
         """Names of the mobile asset fields that are set."""
         return [
             key
@@ -125,7 +125,7 @@ class MultiAsset(asset.Asset):
 
         Raises ValueError if more than one mobile asset is set, since the proto oneof
         would silently drop the extras."""
-        set_mobile_fields = self.mobile_asset_fields_present
+        set_mobile_fields = self.present_mobile_asset_fields
         if len(set_mobile_fields) > 1:
             raise ValueError(single_mobile_asset_error_message(set_mobile_fields))
 

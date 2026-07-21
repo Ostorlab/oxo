@@ -533,7 +533,7 @@ def _bundle_multi_asset(
         )
 
     bundled_asset = multi_asset_asset.MultiAsset(**multi_asset_kwargs)
-    set_mobile_fields = bundled_asset.mobile_asset_fields_present
+    set_mobile_fields = bundled_asset.present_mobile_asset_fields
     if len(set_mobile_fields) > 1:
         # MultiAsset.to_proto enforces this same invariant with a ValueError; here at the
         # config-parsing layer we raise ValidationError so the CLI reports a config error.
@@ -570,11 +570,15 @@ def _parse_multi_asset_ips(
     targets: list[base_asset.Asset] = []
     for yaml_key in _MULTI_ASSET_IP_KEYS:
         for entry in multi_asset_group.get(yaml_key, []):
+            host = entry.get("host")
+            if host is None or str(host).strip() == "":
+                raise validator.ValidationError(
+                    f"Multi asset {yaml_key} is missing required 'host' field."
+                )
             ip = _parse_ip_asset(entry)
             if ip is None:
                 raise validator.ValidationError(
-                    f"Multi asset {yaml_key} has an invalid IP address: "
-                    f"{entry.get('host')}."
+                    f"Multi asset {yaml_key} has an invalid IP address: {host}."
                 )
             targets.append(ip)
     return targets
