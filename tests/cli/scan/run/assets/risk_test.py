@@ -6,8 +6,12 @@ from click import testing
 import pytest_mock
 
 from ostorlab.cli import rootcli
-from ostorlab.assets import risk as risk_asset
+from ostorlab.agent.message import serializer
+from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import ipv4 as ipv4_asset
+from ostorlab.assets import link as link_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
+from ostorlab.assets import risk as risk_asset
 
 
 def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(
@@ -418,6 +422,28 @@ def testRiskAsset_selector_shouldBeCorrect() -> None:
     """Test that Risk asset has the correct selector."""
     r = risk_asset.Risk(description="test", rating="HIGH")
     assert r.selector == "v3.report.risk"
+
+
+def testRiskAsset_whenMultiAssetProvided_shouldSerializeAndDeserialize() -> None:
+    """Test that a Risk located on a multi-asset target round-trips through protobuf."""
+    multi_asset = multi_asset_asset.MultiAsset(
+        android_apk=android_apk_asset.AndroidApk(content=b"apk content", path="/a.apk"),
+        urls=[link_asset.Link(url="https://example.com", method="GET")],
+    )
+    r = risk_asset.Risk(
+        description="vulnerable multi-asset target",
+        rating="HIGH",
+        multi_asset=multi_asset,
+    )
+
+    message = serializer.deserialize("v3.report.risk", r.to_proto())
+
+    assert message.HasField("multi_asset") is True
+    assert message.multi_asset.android_apk.path == "/a.apk"
+    assert message.multi_asset.android_apk.content == b"apk content"
+    assert message.multi_asset.urls[0].url == "https://example.com"
+    assert message.description == "vulnerable multi-asset target"
+    assert message.rating == "HIGH"
 
 
 def testScanRunRisk_whenAndroidApkUrlProvided_shouldCallScanWithRiskAssetContainingContentUrl(

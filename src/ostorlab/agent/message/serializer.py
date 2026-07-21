@@ -129,8 +129,12 @@ def _parse_list(values: Any, message: Any) -> None:
     ):  # value needs to be further parsed
         for v in values:
             cmd = message.add()
-            if dataclasses.is_dataclass(v):
-                v = dataclasses.asdict(v)  # type:ignore[arg-type]
+            if dataclasses.is_dataclass(v) is True:
+                v = v.__dict__
+            elif isinstance(v, dict) is False:
+                raise ValueError(
+                    f"Unexpected type {type(v)} in list, expected dict or dataclass."
+                )
             _parse_dict(v, cmd)
     else:  # value can be set
         message.extend(values)
@@ -139,10 +143,21 @@ def _parse_list(values: Any, message: Any) -> None:
 def _parse_dict(values: Any, message: Any) -> None:
     """Parse dict to protobuf message."""
     for k, v in values.items():
-        if isinstance(v, dict):  # value needs to be further parsed
-            _parse_dict(v, getattr(message, k))
+        if dataclasses.is_dataclass(v) is True:  # nested asset, parse recursively
+            try:
+                _parse_dict(v.__dict__, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
+        elif isinstance(v, dict):  # value needs to be further parsed
+            try:
+                _parse_dict(v, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         elif isinstance(v, list):
-            _parse_list(v, getattr(message, k))
+            try:
+                _parse_list(v, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         else:
             try:
                 # if is of type ENUM.

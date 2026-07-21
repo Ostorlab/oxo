@@ -15,6 +15,7 @@ import 'ostorlab/agent/message/proto/v3/asset/file/api_schema/api_schema.proto';
 import 'ostorlab/agent/message/proto/v3/asset/phone_number/phone_number.proto';
 import 'ostorlab/agent/message/proto/v3/asset/repository/repository.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/repository_archive/repository_archive.proto';
+import 'ostorlab/agent/message/proto/v3/asset/multi_asset/multi_asset.proto';
 
 package ostorlab.agent.message.proto.v3.report.risk;
 
@@ -35,6 +36,7 @@ message Message{
     ostorlab.agent.message.proto.v3.asset.phone_number.Message phone_number = 15;
     ostorlab.agent.message.proto.v3.asset.repository.Message repository = 16;
     ostorlab.agent.message.proto.v3.asset.file.repository_archive.Message repository_archive = 17;
+    ostorlab.agent.message.proto.v3.asset.multi_asset.Message multi_asset = 18;
   }
   required string description = 11;
   required string rating = 12;
