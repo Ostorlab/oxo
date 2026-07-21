@@ -586,6 +586,14 @@ def _parse_multi_asset_ips(
                 raise validator.ValidationError(
                     f"Multi asset {yaml_key} has an invalid IP address: {host}."
                 )
+            if yaml_key == "ipv4" and isinstance(ip, ipv4_asset.IPv4) is False:
+                raise validator.ValidationError(
+                    f"Multi asset ipv4 entry has an IPv6 address: {host}."
+                )
+            if yaml_key == "ipv6" and isinstance(ip, ipv6_asset.IPv6) is False:
+                raise validator.ValidationError(
+                    f"Multi asset ipv6 entry has an IPv4 address: {host}."
+                )
             targets.append(ip)
     return targets
 
@@ -626,12 +634,12 @@ def _parse_multi_asset_api_schemas(
     """Parse the apiSchema entries, requiring a non-empty endpoint_url."""
     targets: list[base_asset.Asset] = []
     for entry in multi_asset_group.get("apiSchema", []):
-        parsed_file = _parse_file_asset(entry)
         endpoint_url = entry.get("endpoint_url")
         if endpoint_url is None or str(endpoint_url).strip() == "":
             raise validator.ValidationError(
                 "Multi asset apiSchema requires a non-empty 'endpoint_url' field."
             )
+        parsed_file = _parse_file_asset(entry)
         targets.append(
             api_schema_asset.ApiSchema(
                 endpoint_url=endpoint_url,

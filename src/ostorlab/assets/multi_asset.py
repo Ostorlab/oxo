@@ -43,6 +43,18 @@ MOBILE_ASSET_FIELDS: frozenset[str] = frozenset(
 )
 
 
+def _asset_fields(nested_asset: asset.Asset) -> dict[str, Any]:
+    """Map a nested asset to its set dataclass fields, dropping unset optionals
+    and attributes removed in __post_init__ (e.g. Repository.provider)."""
+    instance_values = nested_asset.__dict__
+    declared_fields = dataclasses.fields(nested_asset)  # type: ignore[arg-type]
+    return {
+        field.name: instance_values[field.name]
+        for field in declared_fields
+        if field.name in instance_values and instance_values[field.name] is not None
+    }
+
+
 def single_mobile_asset_error_message(mobile_fields: list[str]) -> str:
     """Build the error message shown when more than one mobile asset is bundled."""
     return (
@@ -136,12 +148,10 @@ class MultiAsset(asset.Asset):
             if value is None:
                 continue
             if isinstance(value, asset.Asset):
-                data[key] = value.__dict__
+                data[key] = _asset_fields(value)
             elif isinstance(value, list):
-                # __dict__ rather than dataclasses.asdict, which would reintroduce
-                # defaults the asset unset (see Repository.__post_init__).
                 data[key] = [
-                    entry.__dict__ if isinstance(entry, asset.Asset) else entry
+                    _asset_fields(entry) if isinstance(entry, asset.Asset) else entry
                     for entry in value
                 ]
             else:

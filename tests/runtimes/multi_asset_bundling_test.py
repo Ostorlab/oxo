@@ -219,6 +219,32 @@ assets:
     assert "requires either a valid path or a url" in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    "yaml_snippet,expected_message",
+    [
+        ("link:\n      - {}", "non-empty 'url'"),
+        ("repository:\n      - {}", "non-empty 'repository_url'"),
+        ("ipv4:\n      - {}", "missing required 'host'"),
+        ("ipv4:\n      - host: not-an-ip", "invalid IP address"),
+        ("ipv4:\n      - host: '2001:db8::1'", "ipv4 entry has an IPv6 address"),
+        ("ipv6:\n      - host: 8.8.8.8", "ipv6 entry has an IPv4 address"),
+        ("androidStore:\n      {}", "missing required field 'package_name'"),
+    ],
+)
+def testFromYaml_whenInvalidMultiAssetEntry_shouldRaiseValidationError(
+    yaml_snippet: str, expected_message: str
+) -> None:
+    yaml_definition = io.StringIO(f"""
+kind: targetGroup
+assets:
+  multi_asset:
+    {yaml_snippet}
+""")
+
+    with pytest.raises(validator.ValidationError, match=expected_message):
+        definitions.AssetsDefinition.from_yaml(yaml_definition)
+
+
 def testFromYaml_whenNoMultiAssetSection_shouldOnlyEmitIndividualAssets() -> None:
     yaml_definition = io.StringIO("""
 kind: targetGroup
