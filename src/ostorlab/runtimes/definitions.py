@@ -63,6 +63,7 @@ _MULTI_ASSET_REPEATED_FIELDS: dict[type[base_asset.Asset], str] = {
     ip_asset.IP: "ips",
     ipv4_asset.IPv4: "ipv4s",
     ipv6_asset.IPv6: "ipv6s",
+    api_schema_asset.ApiSchema: "api_schemas",
 }
 
 _MULTI_ASSET_IP_KEYS = ("ip", "ipv4", "ipv6")
@@ -569,6 +570,17 @@ def _parse_multi_asset(
 
     for entry in multi_asset_group.get("repository", []):
         targets.append(_parse_repository_asset(entry))
+
+    for entry in multi_asset_group.get("apiSchema", []):
+        parsed_file = _parse_file_asset(entry)
+        targets.append(
+            api_schema_asset.ApiSchema(
+                endpoint_url=entry.get("endpoint_url"),
+                content=parsed_file.content if parsed_file is not None else None,
+                content_url=parsed_file.url if parsed_file is not None else None,
+                schema_type=entry.get("schema_type"),
+            )
+        )
 
     for yaml_key, asset_class in _MULTI_ASSET_REPEATED_FILE_CLASSES.items():
         for entry in multi_asset_group.get(yaml_key, []):

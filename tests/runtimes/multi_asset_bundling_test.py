@@ -110,6 +110,25 @@ assets:
     assert len(message.repository_archives) == 1
 
 
+def testFromYaml_whenApiSchemaAssets_shouldMapToApiSchemasProtoField() -> None:
+    message = _parse_multi_asset_message("""
+kind: targetGroup
+assets:
+  multi_asset:
+    apiSchema:
+      - endpoint_url: https://example.com/graphql
+        schema_type: graphql
+      - endpoint_url: https://example.com/openapi
+        schema_type: openapi
+""")
+
+    assert len(message.api_schemas) == 2
+    assert message.api_schemas[0].endpoint_url == "https://example.com/graphql"
+    assert message.api_schemas[0].schema_type == "graphql"
+    assert message.api_schemas[1].endpoint_url == "https://example.com/openapi"
+    assert message.api_schemas[1].schema_type == "openapi"
+
+
 @pytest.mark.parametrize(
     "yaml_key,yaml_body,proto_field",
     [

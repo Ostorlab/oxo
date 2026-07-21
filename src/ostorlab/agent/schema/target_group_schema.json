@@ -420,6 +420,12 @@
                 "$ref": "#/CustomTypes/repositoryArchiveType"
               }
             },
+            "apiSchema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/apiSchemaType"
+              }
+            },
             "androidStore": {
               "$ref": "#/CustomTypes/androidStoreType"
             },
