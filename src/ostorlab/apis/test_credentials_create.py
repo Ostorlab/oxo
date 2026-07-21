@@ -74,9 +74,9 @@ class TestCredentialEmail2FA(TestCredential):
         """Generate query variables."""
         return {
             "testCredentials": {
-                "email2FA": {
-                    "senderEmailAddress": self.sender_email_address,
-                    "emailAddress": self.email_address,
+                "email2fa": {
+                    "emailSender": self.sender_email_address,
+                    "email": self.email_address,
                     "password": self.password,
                 }
             }
@@ -93,8 +93,8 @@ class TestCredentialSMS2FA(TestCredential):
         """Generate query variables."""
         return {
             "testCredentials": {
-                "sms2FA": {
-                    "senderPhoneNumber": self.sender_phone_number,
+                "sms2fa": {
+                    "phoneSender": self.sender_phone_number,
                 }
             }
         }
@@ -110,8 +110,8 @@ class TestCredentialTOTP2FA(TestCredential):
         """Generate query variables."""
         return {
             "testCredentials": {
-                "totp2FA": {
-                    "totpSeed": self.totp_seed,
+                "totp2fa": {
+                    "totpSecret": self.totp_seed,
                 }
             }
         }

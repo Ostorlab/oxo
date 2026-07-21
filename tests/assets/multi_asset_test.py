@@ -1,6 +1,7 @@
 """Unit tests for the MultiAsset asset class."""
 
 from ostorlab.assets import android_store
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import file as file_asset
 from ostorlab.assets import ipv4
 from ostorlab.assets import link as link_asset
@@ -29,6 +30,7 @@ def testMultiAsset_whenCreatedWithDefaults_hasEmptyNestedAssets() -> None:
     assert asset.ips == []
     assert asset.ipv4s == []
     assert asset.ipv6s == []
+    assert asset.api_schemas == []
 
 
 def testMultiAsset_whenCreatedWithNestedAssets_storesAllNestedAssets() -> None:
@@ -55,6 +57,32 @@ def testMultiAsset_whenCreatedWithNestedAssets_storesAllNestedAssets() -> None:
     assert asset.repositories == [nested_repository]
     assert asset.urls == [nested_link]
     assert asset.ipv4s == [nested_ipv4]
+
+
+def testMultiAsset_whenCreatedWithApiSchemas_storesApiSchemas() -> None:
+    nested_api_schema = api_schema_asset.ApiSchema(
+        endpoint_url="https://ostorlab.co/graphql",
+        content_url="https://ostorlab.co/schema.json",
+        schema_type="graphql",
+    )
+
+    asset = multi_asset.MultiAsset(api_schemas=[nested_api_schema])
+
+    assert asset.api_schemas == [nested_api_schema]
+
+
+def testMultiAsset_whenApiSchemaNested_isListedInStringRepresentation() -> None:
+    asset = multi_asset.MultiAsset(
+        api_schemas=[
+            api_schema_asset.ApiSchema(
+                endpoint_url="https://ostorlab.co/graphql", schema_type="graphql"
+            )
+        ]
+    )
+
+    assert (
+        str(asset) == "MultiAsset: [API Schema (graphql): https://ostorlab.co/graphql]"
+    )
 
 
 def testMultiAsset_whenProtoFieldAccessed_returnsMultiAssetProtoField() -> None:

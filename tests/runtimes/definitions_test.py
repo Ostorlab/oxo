@@ -14,6 +14,7 @@ from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
@@ -1161,6 +1162,88 @@ assets:
   risk:
       - severity: NOT_A_SEVERITY
         description: Server exposed
+"""
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAssetGroupDefinitionFromYaml_whenApiSchemaAssetsProvided_returnsApiSchemaAssets():
+    """Tests parsing a target group holding api schema assets defined by url and by endpoint only."""
+    valid_yaml = """
+description: Target group with api schemas
+kind: targetGroup
+name: api_schema_scan
+assets:
+  apiSchema:
+      - endpoint_url: https://example.com/graphql
+        url: https://example.com/schema.json
+        schema_type: graphql
+      - endpoint_url: https://example.com/soap
+"""
+    valid_yaml_def = io.StringIO(valid_yaml)
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(valid_yaml_def)
+
+    assert len(asset_group_def.targets) == 2
+    assert asset_group_def.targets[0] == api_schema_asset.ApiSchema(
+        endpoint_url="https://example.com/graphql",
+        content_url="https://example.com/schema.json",
+        schema_type="graphql",
+    )
+    assert asset_group_def.targets[1] == api_schema_asset.ApiSchema(
+        endpoint_url="https://example.com/soap"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenApiSchemaHasFilePath_readsSchemaContent(
+    tmp_path,
+):
+    """Tests that an api schema defined by a local path has its content read from disk."""
+    schema_file = tmp_path / "schema.json"
+    schema_file.write_bytes(b'{"openapi": "3.0.0"}')
+    valid_yaml = f"""
+description: Target group with a local api schema
+kind: targetGroup
+name: api_schema_scan
+assets:
+  apiSchema:
+      - endpoint_url: https://example.com/api
+        path: {schema_file}
+        schema_type: openapi
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert asset_group_def.targets[0].content == b'{"openapi": "3.0.0"}'
+    assert asset_group_def.targets[0].schema_type == "openapi"
+
+
+def testAssetGroupDefinitionFromYaml_whenApiSchemaMissesEndpointUrl_raisesValidationError():
+    """Tests that an api schema entry without an endpoint_url is rejected."""
+    invalid_yaml = """
+description: Target group with an incomplete api schema
+kind: targetGroup
+name: api_schema_scan
+assets:
+  apiSchema:
+      - schema_type: graphql
+"""
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAssetGroupDefinitionFromYaml_whenApiSchemaTypeUnsupported_raisesValidationError():
+    """Tests that an api schema with a type outside the supported set is rejected."""
+    invalid_yaml = """
+description: Target group with an unsupported api schema type
+kind: targetGroup
+name: api_schema_scan
+assets:
+  apiSchema:
+      - endpoint_url: https://example.com/graphql
+        schema_type: grapql
 """
 
     with pytest.raises(validator.ValidationError):
