@@ -50,7 +50,7 @@ _RISK_TARGET_KEYS = (
     "iosStore",
     "androidApkFile",
     "androidAabFile",
-    "iosIpaFile",
+    "iosFile",
     "repository",
     "repositoryArchive",
 )
@@ -393,11 +393,11 @@ class AssetsDefinition:
         android_aab_file_assets = assets.get("androidAabFile", [])
         android_apk_file_assets = assets.get("androidApkFile", [])
         ios_store_assets = assets.get("iosStore", [])
-        ios_file_assets = assets.get("iosIpaFile", [])
+        ios_file_assets = assets.get("iosFile", [])
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
-        api_schema_assets = assets.get("apiSchema", [])
+        api_schema_assets = assets.get("apiSchema"p, [])
         ticket_assets = assets.get("ticket", [])
         risk_assets = assets.get("risk", [])
 
@@ -756,8 +756,8 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
             content=content, path=path, content_url=url
         )
 
-    if risk_entry.get("iosIpaFile") is not None:
-        content, path, url = _resolve_risk_file_asset(risk_entry, "iosIpaFile")
+    if risk_entry.get("iosFile") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "iosFile")
         risk_kwargs["ios_ipa"] = ios_ipa_asset.IOSIpa(
             content=content, path=path, content_url=url
         )

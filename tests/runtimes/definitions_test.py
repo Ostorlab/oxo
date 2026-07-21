@@ -498,7 +498,7 @@ assets:
   iosStore:
       - bundle_id: "com.caesar.salad"
       - bundle_id: "test.this.schema"
-  iosIpaFile:
+  iosFile:
       - path: /files/fake_app.ipa
       - url: https://cia.sketchy.com/secret_files.ipa
   link:
@@ -783,7 +783,7 @@ assets:
   risk:
       - severity: HIGH
         description: Vulnerable IPA
-        iosIpaFile:
+        iosFile:
             path: /app.ipa
 """
 

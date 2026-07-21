@@ -260,7 +260,7 @@
         "androidAabFile": {
           "$ref": "#/CustomTypes/androidAabFileType"
         },
-        "iosIpaFile": {
+        "iosFile": {
           "$ref": "#/CustomTypes/iosFileType"
         },
         "repository": {
@@ -322,7 +322,7 @@
             "$ref": "#/CustomTypes/iosStoreType"
           }
         },
-        "iosIpaFile": {
+        "iosFile": {
           "type": "array",
           "items" : {
             "$ref": "#/CustomTypes/iosFileType"
