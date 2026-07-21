@@ -31,7 +31,6 @@ from ostorlab.assets import harmonyos_app as harmonyos_app_asset
 from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
 from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import harmonyos_store as harmonyos_store_asset
-from ostorlab.assets import ip as ip_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
@@ -60,7 +59,6 @@ _MULTI_ASSET_REPEATED_FIELDS: dict[type[base_asset.Asset], str] = {
     repository_asset.Repository: "repositories",
     repository_archive_asset.RepositoryArchive: "repository_archives",
     link_asset.Link: "urls",
-    ip_asset.IP: "ips",
     ipv4_asset.IPv4: "ipv4s",
     ipv6_asset.IPv6: "ipv6s",
     api_schema_asset.ApiSchema: "api_schemas",
@@ -564,9 +562,12 @@ def _parse_multi_asset(
             targets.append(ip)
 
     for entry in multi_asset_group.get("link", []):
-        targets.append(
-            link_asset.Link(url=entry.get("url"), method=entry.get("method") or "GET")
-        )
+        url = entry.get("url")
+        if url is None or str(url).strip() == "":
+            raise validator.ValidationError(
+                "Multi asset link requires a non-empty 'url' field."
+            )
+        targets.append(link_asset.Link(url=url, method=entry.get("method") or "GET"))
 
     for entry in multi_asset_group.get("repository", []):
         targets.append(_parse_repository_asset(entry))
@@ -613,8 +614,8 @@ def _parse_repository_asset(entry: dict[str, Any]) -> repository_asset.Repositor
 
     Repository.__post_init__ drops an empty provider since the proto field is an enum
     with no empty member."""
-    repository_url = str(entry.get("repository_url", ""))
-    commit_hash = str(entry.get("commit_hash", ""))
+    repository_url = str(entry.get("repository_url") or "")
+    commit_hash = str(entry.get("commit_hash") or "")
     provider = entry.get("provider")
     if provider is None:
         return repository_asset.Repository(

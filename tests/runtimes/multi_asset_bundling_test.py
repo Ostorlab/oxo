@@ -65,7 +65,7 @@ assets:
     ]
 
 
-def testFromYaml_whenIpIpv4AndIpv6_shouldMapToTheirOwnProtoFields() -> None:
+def testFromYaml_whenIpIpv4AndIpv6_shouldClassifyIpByVersionIntoIpv4sOrIpv6s() -> None:
     message = _parse_multi_asset_message("""
 kind: targetGroup
 assets:
