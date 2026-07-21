@@ -80,9 +80,11 @@ assets:
       - host: "2001:4860:4860::8888"
 """)
 
-    assert [ip.host for ip in message.ips] == ["10.0.0.1"]
-    assert [ip.host for ip in message.ipv4s] == ["8.8.8.8", "192.168.1.0"]
-    assert message.ipv4s[1].mask == "24"
+    # A host under `ip` is classified by its address version, so 10.0.0.1 lands in
+    # ipv4s alongside the entries from the explicit `ipv4` key.
+    assert len(message.ips) == 0
+    assert [ip.host for ip in message.ipv4s] == ["10.0.0.1", "8.8.8.8", "192.168.1.0"]
+    assert message.ipv4s[2].mask == "24"
     assert [ip.host for ip in message.ipv6s] == ["2001:4860:4860::8888"]
 
 
