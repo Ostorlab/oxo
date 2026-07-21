@@ -35,6 +35,7 @@ class ScannerConfigAPIRequest(request.APIRequest):
                 busUrl
                 busClusterId
                 busClientName
+                scanResourceRequirements
                 subjectBusConfigs{
                     subjectBusConfigs{
                         subject

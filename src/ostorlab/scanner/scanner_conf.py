@@ -1,7 +1,7 @@
 """Representations of nats configuration definitions."""
 
 import dataclasses
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 
 
 @dataclasses.dataclass
@@ -21,6 +21,39 @@ class SubjectBusConfigs:
     queue: str
 
 
+@dataclasses.dataclass(frozen=True)
+class ScanResourceRequirements:
+    """Minimum host resources required to run a scan."""
+
+    cpu_count: int
+    memory: int
+    disk: int
+
+    @classmethod
+    def from_json(cls, value: Any) -> Optional["ScanResourceRequirements"]:
+        if isinstance(value, dict) is False:
+            return None
+
+        resource_values = (
+            value.get("cpu_count"),
+            value.get("memory"),
+            value.get("disk"),
+        )
+        if any(
+            isinstance(resource_value, int) is False
+            or isinstance(resource_value, bool) is True
+            or resource_value < 0
+            for resource_value in resource_values
+        ):
+            return None
+
+        return cls(
+            cpu_count=resource_values[0],
+            memory=resource_values[1],
+            disk=resource_values[2],
+        )
+
+
 @dataclasses.dataclass
 class ScannerConfig:
     """Represents the configuration for a scanner."""
@@ -29,10 +62,11 @@ class ScannerConfig:
     bus_cluster_id: str
     bus_client_name: str
     registry_conf: RegistryConfig
-    subject_bus_configs: List[SubjectBusConfigs]
+    subject_bus_configs: list[SubjectBusConfigs]
+    scan_resource_requirements: dict[str, ScanResourceRequirements]
 
     @classmethod
-    def from_json(cls, config: Dict[str, Any]) -> Optional["ScannerConfig"]:
+    def from_json(cls, config: dict[str, Any]) -> Optional["ScannerConfig"]:
         """Creates a ScannerConfig instance from a JSON configuration.
 
         Args:
@@ -70,10 +104,18 @@ class ScannerConfig:
             token=registry_conf.get("credentials"),
             url=registry_conf.get("url"),
         )
+        resource_requirements = {}
+        raw_resource_requirements = conf.get("scanResourceRequirements", {})
+        if isinstance(raw_resource_requirements, dict):
+            for scan_type, requirements in raw_resource_requirements.items():
+                parsed_requirements = ScanResourceRequirements.from_json(requirements)
+                if isinstance(scan_type, str) and parsed_requirements is not None:
+                    resource_requirements[scan_type] = parsed_requirements
         return cls(
             bus_url=conf.get("busUrl"),
             bus_cluster_id=conf.get("busClusterId"),
             bus_client_name=conf.get("busClientName"),
             registry_conf=registry_conf_instance,
             subject_bus_configs=bus_configs,
+            scan_resource_requirements=resource_requirements,
         )

@@ -24,6 +24,13 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
                             "busUrl": "nats://localhost:4222",
                             "busClusterId": "cluster_id",
                             "busClientName": "client_name",
+                            "scanResourceRequirements": {
+                                "agentgroup/ostorlab/agent_group42": {
+                                    "cpu_count": 8,
+                                    "memory": 17179869184,
+                                    "disk": 53687091200,
+                                }
+                            },
                             "subjectBusConfigs": {
                                 "subjectBusConfigs": [
                                     {"subject": "subject1", "queue": "queue1"}
@@ -46,3 +53,41 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
     assert scanner_conf_instance.registry_conf.token == "<secret_key>"
     assert scanner_conf_instance.subject_bus_configs[0].subject == "subject1"
     assert scanner_conf_instance.subject_bus_configs[0].queue == "queue1"
+    requirements = scanner_conf_instance.scan_resource_requirements[
+        "agentgroup/ostorlab/agent_group42"
+    ]
+    assert requirements.cpu_count == 8
+    assert requirements.memory == 17179869184
+    assert requirements.disk == 53687091200
+
+
+def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry() -> (
+    None
+):
+    api_response_data = {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "config": {
+                            "scanResourceRequirements": {
+                                "agentgroup/ostorlab/missing_disk": {
+                                    "cpu_count": 4,
+                                    "memory": 17179869184,
+                                },
+                                "agentgroup/ostorlab/invalid_cpu": {
+                                    "cpu_count": "four",
+                                    "memory": 17179869184,
+                                    "disk": 53687091200,
+                                },
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+
+    assert scanner_conf_instance.scan_resource_requirements == {}
