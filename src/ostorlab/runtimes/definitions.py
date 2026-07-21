@@ -31,12 +31,6 @@ from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import file as file_asset
-from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
-from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
-from ostorlab.assets import harmonyos_app as harmonyos_app_asset
-from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
-from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
-from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
