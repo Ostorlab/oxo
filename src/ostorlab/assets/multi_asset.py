@@ -7,6 +7,7 @@ from ostorlab.agent.message import serializer
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import asset
 from ostorlab.assets import file as file_asset
 from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
@@ -75,6 +76,9 @@ class MultiAsset(asset.Asset):
     ips: list[ip_asset.IP] = dataclasses.field(default_factory=list)
     ipv4s: list[ipv4_asset.IPv4] = dataclasses.field(default_factory=list)
     ipv6s: list[ipv6_asset.IPv6] = dataclasses.field(default_factory=list)
+    api_schemas: list[api_schema_asset.ApiSchema] = dataclasses.field(
+        default_factory=list
+    )
 
     def __str__(self) -> str:
         nested_assets = [
@@ -104,6 +108,7 @@ class MultiAsset(asset.Asset):
             *self.ips,
             *self.ipv4s,
             *self.ipv6s,
+            *self.api_schemas,
         ]
 
     @property

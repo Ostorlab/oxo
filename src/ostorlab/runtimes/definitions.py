@@ -17,6 +17,7 @@ from ostorlab.utils import definitions
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
@@ -395,6 +396,7 @@ class AssetsDefinition:
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
+        api_schema_assets = assets.get("apiSchema", [])
         ticket_assets = assets.get("ticket", [])
         risk_assets = assets.get("risk", [])
 
@@ -452,6 +454,17 @@ class AssetsDefinition:
         for asset in link_assets:
             assets_def.append(
                 link_asset.Link(url=asset.get("url"), method=asset.get("method"))
+            )
+
+        for asset in api_schema_assets:
+            parsed_file = _parse_file_asset(asset)
+            assets_def.append(
+                api_schema_asset.ApiSchema(
+                    endpoint_url=asset.get("endpoint_url"),
+                    content=parsed_file.content if parsed_file is not None else None,
+                    content_url=parsed_file.url if parsed_file is not None else None,
+                    schema_type=asset.get("schema_type"),
+                )
             )
 
         for asset in ticket_assets:
