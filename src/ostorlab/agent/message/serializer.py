@@ -145,9 +145,15 @@ def _parse_dict(values: Any, message: Any) -> None:
             except AttributeError as e:
                 raise SerializationError(f"invalid attribute {k}") from e
         elif isinstance(v, dict):  # value needs to be further parsed
-            _parse_dict(v, getattr(message, k))
+            try:
+                _parse_dict(v, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         elif isinstance(v, list):
-            _parse_list(v, getattr(message, k))
+            try:
+                _parse_list(v, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         else:
             try:
                 # if is of type ENUM.
