@@ -175,6 +175,7 @@
                 "description": "[Optional] - HarmonyOS app file link.",
                 "type": "string"
             }
+        }
     },
     "apiSchemaType": {
       "description": "[Optional] - API schema asset.",
