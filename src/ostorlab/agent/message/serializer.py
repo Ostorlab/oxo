@@ -131,6 +131,10 @@ def _parse_list(values: Any, message: Any) -> None:
             cmd = message.add()
             if dataclasses.is_dataclass(v) is True:
                 v = v.__dict__
+            elif isinstance(v, dict) is False:
+                raise ValueError(
+                    f"Unexpected type {type(v)} in list, expected dict or dataclass."
+                )
             _parse_dict(v, cmd)
     else:  # value can be set
         message.extend(values)
