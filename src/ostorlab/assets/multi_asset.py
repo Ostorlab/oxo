@@ -26,18 +26,20 @@ from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 
 
-MOBILE_ASSET_FIELDS = (
-    "android_package_name",
-    "ios_bundle_id",
-    "harmonyos_bundle_name",
-    "android_apk",
-    "android_aab",
-    "ios_ipa",
-    "harmonyos_hap",
-    "harmonyos_apk",
-    "harmonyos_aab",
-    "harmonyos_app",
-    "harmonyos_rpk",
+MOBILE_ASSET_FIELDS: frozenset[str] = frozenset(
+    {
+        "android_package_name",
+        "ios_bundle_id",
+        "harmonyos_bundle_name",
+        "android_apk",
+        "android_aab",
+        "ios_ipa",
+        "harmonyos_hap",
+        "harmonyos_apk",
+        "harmonyos_aab",
+        "harmonyos_app",
+        "harmonyos_rpk",
+    }
 )
 
 

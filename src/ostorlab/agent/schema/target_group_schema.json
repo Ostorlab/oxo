@@ -475,13 +475,7 @@
               "$ref": "#/CustomTypes/iosStoreType"
             },
             "harmonyosStore": {
-              "type": "object",
-              "properties": {
-                "bundle_name": {
-                  "description": "[Required] - App bundle name.",
-                  "type": "string"
-                }
-              }
+              "$ref": "#/CustomTypes/harmonyosStoreType"
             },
             "androidApkFile": {
               "$ref": "#/CustomTypes/androidApkFileType"
@@ -493,69 +487,19 @@
               "$ref": "#/CustomTypes/iosFileType"
             },
             "harmonyosHapFile": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "description": "[Optional] - File path.",
-                  "type": "string"
-                },
-                "url": {
-                  "description": "[Optional] - File link.",
-                  "type": "string"
-                }
-              }
+              "$ref": "#/CustomTypes/harmonyosFileType"
             },
             "harmonyosApkFile": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "description": "[Optional] - File path.",
-                  "type": "string"
-                },
-                "url": {
-                  "description": "[Optional] - File link.",
-                  "type": "string"
-                }
-              }
+              "$ref": "#/CustomTypes/harmonyosFileType"
             },
             "harmonyosAabFile": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "description": "[Optional] - File path.",
-                  "type": "string"
-                },
-                "url": {
-                  "description": "[Optional] - File link.",
-                  "type": "string"
-                }
-              }
+              "$ref": "#/CustomTypes/harmonyosFileType"
             },
             "harmonyosAppFile": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "description": "[Optional] - File path.",
-                  "type": "string"
-                },
-                "url": {
-                  "description": "[Optional] - File link.",
-                  "type": "string"
-                }
-              }
+              "$ref": "#/CustomTypes/harmonyosFileType"
             },
             "harmonyosRpkFile": {
-              "type": "object",
-              "properties": {
-                "path": {
-                  "description": "[Optional] - File path.",
-                  "type": "string"
-                },
-                "url": {
-                  "description": "[Optional] - File link.",
-                  "type": "string"
-                }
-              }
+              "$ref": "#/CustomTypes/harmonyosFileType"
             }
           },
           "additionalProperties": false

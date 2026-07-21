@@ -623,17 +623,14 @@ def _parse_multi_asset_repositories(
 def _parse_multi_asset_api_schemas(
     multi_asset_group: dict[str, Any],
 ) -> list[base_asset.Asset]:
-    """Parse the apiSchema entries, requiring a file content/url or an endpoint_url."""
+    """Parse the apiSchema entries, requiring a non-empty endpoint_url."""
     targets: list[base_asset.Asset] = []
     for entry in multi_asset_group.get("apiSchema", []):
         parsed_file = _parse_file_asset(entry)
         endpoint_url = entry.get("endpoint_url")
-        if parsed_file is None and (
-            endpoint_url is None or str(endpoint_url).strip() == ""
-        ):
+        if endpoint_url is None or str(endpoint_url).strip() == "":
             raise validator.ValidationError(
-                "Multi asset apiSchema requires either a content/content_url or an "
-                "'endpoint_url'."
+                "Multi asset apiSchema requires a non-empty 'endpoint_url' field."
             )
         targets.append(
             api_schema_asset.ApiSchema(

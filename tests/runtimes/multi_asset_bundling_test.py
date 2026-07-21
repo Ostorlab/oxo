@@ -131,6 +131,19 @@ assets:
     assert message.api_schemas[1].schema_type == "openapi"
 
 
+def testFromYaml_whenApiSchemaWithoutEndpointUrl_shouldRaiseValidationError() -> None:
+    yaml_definition = io.StringIO("""
+kind: targetGroup
+assets:
+  multi_asset:
+    apiSchema:
+      - path: /schema.json
+""")
+
+    with pytest.raises(validator.ValidationError, match="endpoint_url"):
+        definitions.AssetsDefinition.from_yaml(yaml_definition)
+
+
 @pytest.mark.parametrize(
     "yaml_key,yaml_body,proto_field",
     [
