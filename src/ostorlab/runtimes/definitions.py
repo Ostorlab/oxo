@@ -397,7 +397,7 @@ class AssetsDefinition:
         ip_assets = assets.get("ip", [])
         domain_assets = assets.get("domain", [])
         link_assets = assets.get("link", [])
-        api_schema_assets = assets.get("apiSchema"p, [])
+        api_schema_assets = assets.get("apiSchema", [])
         ticket_assets = assets.get("ticket", [])
         risk_assets = assets.get("risk", [])
 
