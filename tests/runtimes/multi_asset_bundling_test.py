@@ -187,7 +187,7 @@ assets:
       - name: example.com
 """)
 
-    with pytest.raises(validator.ValidationError):
+    with pytest.raises(validator.ValidationError, match="additionalProperties"):
         definitions.AssetsDefinition.from_yaml(yaml_definition)
 
 

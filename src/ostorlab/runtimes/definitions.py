@@ -550,7 +550,24 @@ def _parse_multi_asset(
 
     Returns None when the section holds no asset, so no empty message is injected."""
     targets: list[base_asset.Asset] = []
+    targets.extend(_parse_multi_asset_ips(multi_asset_group))
+    targets.extend(_parse_multi_asset_links(multi_asset_group))
+    targets.extend(_parse_multi_asset_repositories(multi_asset_group))
+    targets.extend(_parse_multi_asset_api_schemas(multi_asset_group))
+    targets.extend(_parse_multi_asset_files(multi_asset_group))
+    targets.extend(_parse_multi_asset_stores(multi_asset_group))
+    targets.extend(_parse_multi_asset_mobile_files(multi_asset_group))
 
+    if len(targets) == 0:
+        return None
+    return _bundle_multi_asset(targets)
+
+
+def _parse_multi_asset_ips(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the ip, ipv4 and ipv6 entries, rejecting invalid IP addresses."""
+    targets: list[base_asset.Asset] = []
     for yaml_key in _MULTI_ASSET_IP_KEYS:
         for entry in multi_asset_group.get(yaml_key, []):
             ip = _parse_ip_asset(entry)
@@ -560,7 +577,14 @@ def _parse_multi_asset(
                     f"{entry.get('host')}."
                 )
             targets.append(ip)
+    return targets
 
+
+def _parse_multi_asset_links(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the link entries, rejecting entries with a missing or empty url."""
+    targets: list[base_asset.Asset] = []
     for entry in multi_asset_group.get("link", []):
         url = entry.get("url")
         if url is None or str(url).strip() == "":
@@ -568,7 +592,14 @@ def _parse_multi_asset(
                 "Multi asset link requires a non-empty 'url' field."
             )
         targets.append(link_asset.Link(url=url, method=entry.get("method") or "GET"))
+    return targets
 
+
+def _parse_multi_asset_repositories(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the repository entries, rejecting entries with an empty repository_url."""
+    targets: list[base_asset.Asset] = []
     for entry in multi_asset_group.get("repository", []):
         repository_url = entry.get("repository_url")
         if repository_url is None or str(repository_url).strip() == "":
@@ -576,7 +607,14 @@ def _parse_multi_asset(
                 "Multi asset repository requires a non-empty 'repository_url' field."
             )
         targets.append(_parse_repository_asset(entry))
+    return targets
 
+
+def _parse_multi_asset_api_schemas(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the apiSchema entries, requiring a file content/url or an endpoint_url."""
+    targets: list[base_asset.Asset] = []
     for entry in multi_asset_group.get("apiSchema", []):
         parsed_file = _parse_file_asset(entry)
         endpoint_url = entry.get("endpoint_url")
@@ -595,11 +633,25 @@ def _parse_multi_asset(
                 schema_type=entry.get("schema_type"),
             )
         )
+    return targets
 
+
+def _parse_multi_asset_files(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the repeated file-backed entries (file, repositoryArchive)."""
+    targets: list[base_asset.Asset] = []
     for yaml_key, asset_class in _MULTI_ASSET_REPEATED_FILE_CLASSES.items():
         for entry in multi_asset_group.get(yaml_key, []):
             targets.append(_build_multi_asset_file(entry, yaml_key, asset_class))
+    return targets
 
+
+def _parse_multi_asset_stores(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the store entries, rejecting entries missing their identifier field."""
+    targets: list[base_asset.Asset] = []
     for yaml_key, (asset_class, field) in _MULTI_ASSET_STORE_CLASSES.items():
         if multi_asset_group.get(yaml_key) is not None:
             field_value = multi_asset_group[yaml_key].get(field)
@@ -608,7 +660,14 @@ def _parse_multi_asset(
                     f"Multi asset {yaml_key} is missing required field '{field}'."
                 )
             targets.append(asset_class(**{field: field_value}))
+    return targets
 
+
+def _parse_multi_asset_mobile_files(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the single mobile file entries (apk, aab, ipa, harmonyos variants)."""
+    targets: list[base_asset.Asset] = []
     for yaml_key, asset_class in _MULTI_ASSET_MOBILE_FILE_CLASSES.items():
         if multi_asset_group.get(yaml_key) is not None:
             targets.append(
@@ -616,10 +675,7 @@ def _parse_multi_asset(
                     multi_asset_group[yaml_key], yaml_key, asset_class
                 )
             )
-
-    if len(targets) == 0:
-        return None
-    return _bundle_multi_asset(targets)
+    return targets
 
 
 def _parse_repository_asset(entry: dict[str, Any]) -> repository_asset.Repository:
