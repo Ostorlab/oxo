@@ -1,8 +1,12 @@
 """Tests for serializer module."""
 
+import dataclasses
+
 import pytest
 
 from ostorlab.agent.message import serializer
+from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import link as link_asset
 
 
 def testSerializeRequest_withFileFingerprint_returnsCorrectProtobufMessage():
@@ -68,3 +72,48 @@ def testSerializeScanEventDone_always_returnsCorrectProtobufMessage():
     assert serialized is not None
     serialized = serializer.serialize("v3.report.event.post_scan.done", {})
     assert serialized is not None
+
+
+def testSerialize_whenDataclassValue_shouldRecurseIntoNestedFields() -> None:
+    """A dataclass value is recursed into instead of being set directly."""
+    serialized = serializer.serialize(
+        "v3.asset.multi_asset",
+        {
+            "android_package_name": android_store_asset.AndroidStore(
+                package_name="com.a.b"
+            )
+        },
+    )
+
+    assert serialized.android_package_name.package_name == "com.a.b"
+
+
+def testSerialize_whenListOfDataclasses_shouldRecurseIntoEachItem() -> None:
+    """Each dataclass in a repeated field is recursed into and appended."""
+    serialized = serializer.serialize(
+        "v3.asset.multi_asset",
+        {
+            "urls": [
+                link_asset.Link(url="https://example.com/1", method="GET"),
+                link_asset.Link(url="https://example.com/2", method="POST"),
+            ]
+        },
+    )
+
+    assert [(url.url, url.method) for url in serialized.urls] == [
+        ("https://example.com/1", "GET"),
+        ("https://example.com/2", "POST"),
+    ]
+
+
+def testSerialize_whenDataclassWithInvalidField_shouldRaiseSerializationError() -> None:
+    """A dataclass field absent from the proto raises SerializationError, not AttributeError."""
+
+    @dataclasses.dataclass
+    class _InvalidAsset:
+        not_a_proto_field: str = "value"
+
+    with pytest.raises(serializer.SerializationError):
+        serializer.serialize(
+            "v3.asset.multi_asset", {"android_package_name": _InvalidAsset()}
+        )

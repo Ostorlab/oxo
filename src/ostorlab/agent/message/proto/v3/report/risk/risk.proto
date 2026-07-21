@@ -21,6 +21,7 @@ import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/aab/aab.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/hap/hap.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/app/app.proto';
 import 'ostorlab/agent/message/proto/v3/asset/file/harmonyos/rpk/rpk.proto';
+import 'ostorlab/agent/message/proto/v3/asset/multi_asset/multi_asset.proto';
 
 package ostorlab.agent.message.proto.v3.report.risk;
 
@@ -47,6 +48,7 @@ message Message{
     ostorlab.agent.message.proto.v3.asset.file.harmonyos.hap.Message harmonyos_hap = 21;
     ostorlab.agent.message.proto.v3.asset.file.harmonyos.app.Message harmonyos_app = 22;
     ostorlab.agent.message.proto.v3.asset.file.harmonyos.rpk.Message harmonyos_rpk = 23;
+    ostorlab.agent.message.proto.v3.asset.multi_asset.Message multi_asset = 24;
   }
   required string description = 11;
   required string rating = 12;

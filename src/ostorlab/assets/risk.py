@@ -7,14 +7,15 @@ from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import api_schema as api_schema_asset
-from ostorlab.agent.message import serializer
 from ostorlab.assets import asset
+from ostorlab.agent.message import serializer
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
@@ -50,6 +51,7 @@ class Risk(asset.Asset):
     harmonyos_hap: Optional[harmonyos_hap_asset.HarmonyOSHap] = None
     harmonyos_app: Optional[harmonyos_app_asset.HarmonyOSApp] = None
     harmonyos_rpk: Optional[harmonyos_rpk_asset.HarmonyOSRpk] = None
+    multi_asset: multi_asset_asset.MultiAsset | None = None
 
     def to_proto(self) -> bytes:
         data = {
