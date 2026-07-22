@@ -8,6 +8,7 @@ import logging
 from typing import Any
 
 logger = logging.getLogger(__name__)
+SCAN_RESOURCE_REQUIREMENTS_KEY = "scanResourceRequirements"
 
 
 @dataclasses.dataclass
@@ -37,6 +38,7 @@ class ScanResourceRequirements:
 
     @classmethod
     def from_json(cls, value: Any) -> ScanResourceRequirements | None:
+        """Create scan resource requirements from a JSON-compatible value."""
         if isinstance(value, dict) is False:
             return None
 
@@ -111,7 +113,7 @@ class ScannerConfig:
             url=registry_conf.get("url"),
         )
         resource_requirements = {}
-        raw_resource_requirements = conf.get("scanResourceRequirements", {})
+        raw_resource_requirements = conf.get(SCAN_RESOURCE_REQUIREMENTS_KEY, {})
         if isinstance(raw_resource_requirements, str):
             try:
                 raw_resource_requirements = json.loads(raw_resource_requirements)
@@ -128,7 +130,7 @@ class ScannerConfig:
                         "Skipping malformed scan resource requirements entry: %r",
                         scan_type,
                     )
-        elif "scanResourceRequirements" in conf:
+        elif SCAN_RESOURCE_REQUIREMENTS_KEY in conf:
             logger.warning(
                 "scanResourceRequirements must be an object, received %s",
                 type(raw_resource_requirements).__name__,

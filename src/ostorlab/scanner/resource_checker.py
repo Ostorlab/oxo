@@ -16,21 +16,24 @@ def can_run_scan(
     disk_path: str = "/",
 ) -> bool:
     """Return whether the host has resources for ``scan_key`` at ``disk_path``."""
-    scan_requirements = requirements.get(scan_key)
-    if scan_requirements is None:
-        scan_requirements = requirements.get(scan_key.split("/")[-1])
-    if scan_requirements is None:
-        scan_requirements = requirements.get("default")
+    scan_requirements = (
+        requirements.get(scan_key)
+        or requirements.get(scan_key.split("/")[-1])
+        or requirements.get("default")
+    )
     if scan_requirements is None:
         logger.warning("No resource requirements configured for scan %s", scan_key)
         return False
 
     try:
-        cpu_count = psutil.cpu_count(logical=True) or 0
+        cpu_count = psutil.cpu_count(logical=True)
         total_memory = psutil.virtual_memory().total
         available_disk = psutil.disk_usage(disk_path).free
     except (OSError, psutil.Error) as error:
         logger.warning("Unable to determine host resources for %s: %s", scan_key, error)
+        return False
+    if cpu_count is None:
+        logger.warning("Unable to determine host CPU count for %s", scan_key)
         return False
     has_capacity = (
         cpu_count >= scan_requirements.cpu_count

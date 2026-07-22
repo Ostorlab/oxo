@@ -28,7 +28,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
                             "busClientName": "client_name",
                             "scanResourceRequirements": {
                                 "agentgroup/ostorlab/agent_group42": {
-                                    "cpu_count": 8,
+                                    "cpuCount": 8,
                                     "memory": 17179869184,
                                     "disk": 53687091200,
                                 }
@@ -74,11 +74,11 @@ def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry(
                         "config": {
                             "scanResourceRequirements": {
                                 "agentgroup/ostorlab/missing_disk": {
-                                    "cpu_count": 4,
+                                    "cpuCount": 4,
                                     "memory": 17179869184,
                                 },
                                 "agentgroup/ostorlab/invalid_cpu": {
-                                    "cpu_count": "four",
+                                    "cpuCount": "four",
                                     "memory": 17179869184,
                                     "disk": 53687091200,
                                 },
@@ -118,7 +118,7 @@ def testScannerConfigFromJson_whenResourceRequirementsJsonString_shouldParseEntr
                         "config": {
                             "scanResourceRequirements": (
                                 '{"agentgroup/ostorlab/test": {'
-                                '"cpu_count": 8, "memory": 16, "disk": 32}}'
+                                '"cpuCount": 8, "memory": 16, "disk": 32}}'
                             )
                         }
                     }

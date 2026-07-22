@@ -98,6 +98,23 @@ def testCanRunScan_whenResourceCollectionFails_returnsFalse(
     assert "Unable to determine host resources" in warning.call_args.args[0]
 
 
+def testCanRunScan_whenCpuCountIsUnavailable_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch("psutil.cpu_count", return_value=None)
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=20_000))
+    mocker.patch("psutil.disk_usage", return_value=SimpleNamespace(free=30_000))
+    requirements = {
+        "default": scanner_conf.ScanResourceRequirements(
+            cpu_count=0, memory=0, disk=0
+        )
+    }
+
+    can_run = resource_checker.can_run_scan("agentgroup/ostorlab/test", requirements)
+
+    assert can_run is False
+
+
 def testCanRunScan_whenDiskPathProvided_checksConfiguredPath(
     mocker: plugin.MockerFixture,
 ) -> None:
