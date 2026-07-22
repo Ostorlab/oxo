@@ -2,6 +2,7 @@
 
 import json
 
+from ostorlab.apis import request
 from ostorlab.apis import scan_reserve
 
 
@@ -32,4 +33,4 @@ def testScanReserveAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
     """Test scan reserve API request has the correct endpoint."""
     api_request = scan_reserve.ScanReserveAPIRequest(scan_id=1)
 
-    assert api_request.endpoint == "https://scanner.ostorlab.co/orchestrator/graphql"
+    assert api_request.endpoint == request.SCANNER_GRAPHQL_ENDPOINT

@@ -2,6 +2,7 @@
 
 import json
 
+from ostorlab.apis import request
 from ostorlab.apis import scan_update_state
 
 
@@ -42,4 +43,4 @@ def testScanUpdateStateAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
         scan_id=1, progress="started"
     )
 
-    assert api_request.endpoint == "https://scanner.ostorlab.co/orchestrator/graphql"
+    assert api_request.endpoint == request.SCANNER_GRAPHQL_ENDPOINT

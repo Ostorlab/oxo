@@ -18,7 +18,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return "https://scanner.ostorlab.co/orchestrator/graphql"
+        return request.SCANNER_GRAPHQL_ENDPOINT
 
     @property
     def query(self) -> str | None:

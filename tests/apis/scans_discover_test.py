@@ -2,6 +2,7 @@
 
 import json
 
+from ostorlab.apis import request
 from ostorlab.apis import scans_discover
 
 
@@ -34,4 +35,4 @@ def testScansDiscoverAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
     """Test scans discover API request has the correct endpoint."""
     api_request = scans_discover.ScansDiscoverAPIRequest()
 
-    assert api_request.endpoint == "https://scanner.ostorlab.co/orchestrator/graphql"
+    assert api_request.endpoint == request.SCANNER_GRAPHQL_ENDPOINT

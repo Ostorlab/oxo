@@ -46,7 +46,7 @@ def testSentRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint() -> None:
     runner = _make_runner()
     request_with_endpoint = _RequestWithEndpoint()
 
-    with mock.patch.object(httpx, "Client") as mock_client:
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
         mock_client.return_value.__enter__.return_value.post.return_value = (
             httpx.Response(200, json={"data": {"test": "ok"}})
         )
@@ -61,7 +61,7 @@ def testSentRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint() -> None:
     runner = _make_runner()
     request_without_endpoint = _RequestWithoutEndpoint()
 
-    with mock.patch.object(httpx, "Client") as mock_client:
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
         mock_client.return_value.__enter__.return_value.post.return_value = (
             httpx.Response(200, json={"data": {"test": "ok"}})
         )
@@ -76,7 +76,7 @@ def testSendUbjsonRequest_whenRequestHasCustomEndpoint_usesRequestEndpoint() -> 
     runner = _make_runner()
     request_with_endpoint = _RequestWithEndpoint()
 
-    with mock.patch.object(httpx, "Client") as mock_client:
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
         mock_client.return_value.__enter__.return_value.post.return_value = (
             httpx.Response(200, json={"data": {"test": "ok"}})
         )
@@ -91,7 +91,7 @@ def testSendUbjsonRequest_whenRequestHasNoEndpoint_usesRunnerEndpoint() -> None:
     runner = _make_runner()
     request_without_endpoint = _RequestWithoutEndpoint()
 
-    with mock.patch.object(httpx, "Client") as mock_client:
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
         mock_client.return_value.__enter__.return_value.post.return_value = (
             httpx.Response(200, json={"data": {"test": "ok"}})
         )

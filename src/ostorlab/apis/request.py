@@ -7,6 +7,8 @@ from typing import Dict, Optional, Any
 
 logger = logging.getLogger(__name__)
 
+SCANNER_GRAPHQL_ENDPOINT = "https://scanner.ostorlab.co/orchestrator/graphql"
+
 
 class APIRequest(abc.ABC):
     """API request base class. ALL requests should inherit from this class."""
