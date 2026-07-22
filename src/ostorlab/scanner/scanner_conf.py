@@ -1,7 +1,7 @@
 """Representations of nats configuration definitions."""
 
 import dataclasses
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 
 
 @dataclasses.dataclass
@@ -29,7 +29,8 @@ class ScannerConfig:
     bus_cluster_id: str
     bus_client_name: str
     registry_conf: RegistryConfig
-    subject_bus_configs: List[SubjectBusConfigs]
+    subject_bus_configs: list[SubjectBusConfigs]
+    api_key: str | None = None
 
     @classmethod
     def from_json(cls, config: Dict[str, Any]) -> Optional["ScannerConfig"]:
@@ -76,4 +77,5 @@ class ScannerConfig:
             bus_client_name=conf.get("busClientName"),
             registry_conf=registry_conf_instance,
             subject_bus_configs=bus_configs,
+            api_key=conf.get("apiKey"),
         )
