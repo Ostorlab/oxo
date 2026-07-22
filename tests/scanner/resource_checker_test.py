@@ -1,6 +1,5 @@
 """Tests for scanner host resource checks."""
 
-import logging
 from types import SimpleNamespace
 
 from pytest_mock import plugin
@@ -89,22 +88,20 @@ def testCanRunScan_whenScanKeyMissing_usesDefault(
 
 def testCanRunScan_whenResourceCollectionFails_returnsFalse(
     mocker: plugin.MockerFixture,
-    caplog,
 ) -> None:
     mocker.patch("psutil.cpu_count", side_effect=OSError("host unavailable"))
+    warning = mocker.patch.object(resource_checker.logger, "warning")
     requirements = {
         "agentgroup/ostorlab/test": scanner_conf.ScanResourceRequirements(
             cpu_count=4, memory=10_000, disk=20_000
         )
     }
 
-    with caplog.at_level(logging.WARNING):
-        can_run = resource_checker.can_run_scan(
-            "agentgroup/ostorlab/test", requirements
-        )
+    can_run = resource_checker.can_run_scan("agentgroup/ostorlab/test", requirements)
 
     assert can_run is False
-    assert "Unable to determine host resources" in caplog.text
+    warning.assert_called_once()
+    assert "Unable to determine host resources" in warning.call_args.args[0]
 
 
 def testCanRunScan_whenDiskPathProvided_checksConfiguredPath(

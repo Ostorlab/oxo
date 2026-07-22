@@ -1,6 +1,6 @@
 """Unit test for the scanner configuration module."""
 
-import logging
+from pytest_mock import plugin
 
 from ostorlab.scanner import scanner_conf
 
@@ -127,7 +127,7 @@ def testScannerConfigFromJson_whenResourceRequirementsJsonString_shouldParseEntr
 
 
 def testScannerConfigFromJson_whenResourceRequirementsInvalidJson_shouldLogWarning(
-    caplog,
+    mocker: plugin.MockerFixture,
 ) -> None:
     api_response_data = {
         "data": {
@@ -137,8 +137,9 @@ def testScannerConfigFromJson_whenResourceRequirementsInvalidJson_shouldLogWarni
         }
     }
 
-    with caplog.at_level(logging.WARNING):
-        scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+    warning = mocker.patch.object(scanner_conf.logger, "warning")
+
+    scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
 
     assert scanner_conf_instance.scan_resource_requirements == {}
-    assert "Invalid JSON in scanResourceRequirements" in caplog.text
+    warning.assert_called_once_with("Invalid JSON in scanResourceRequirements")
