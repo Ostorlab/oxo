@@ -405,6 +405,104 @@
           "items" : {
             "$ref": "#/CustomTypes/riskType"
           }
+        },
+        "multi_asset": {
+          "description": "[Optional] - Assets bundled together and emitted as a single multi asset message. The store and app file assets map to a proto oneof, so at most one of them may be set.",
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "description": "[Optional] - File path.",
+                    "type": "string"
+                  },
+                  "url": {
+                    "description": "[Optional] - File link.",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "link": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/linkType"
+              }
+            },
+            "ip": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/ipType"
+              }
+            },
+            "ipv4": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/ipType"
+              }
+            },
+            "ipv6": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/ipType"
+              }
+            },
+            "repository": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/repositoryType"
+              }
+            },
+            "repositoryArchive": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/repositoryArchiveType"
+              }
+            },
+            "apiSchema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/CustomTypes/apiSchemaType"
+              }
+            },
+            "androidStore": {
+              "$ref": "#/CustomTypes/androidStoreType"
+            },
+            "iosStore": {
+              "$ref": "#/CustomTypes/iosStoreType"
+            },
+            "harmonyosStore": {
+              "$ref": "#/CustomTypes/harmonyosStoreType"
+            },
+            "androidApkFile": {
+              "$ref": "#/CustomTypes/androidApkFileType"
+            },
+            "androidAabFile": {
+              "$ref": "#/CustomTypes/androidAabFileType"
+            },
+            "iosIpaFile": {
+              "$ref": "#/CustomTypes/iosFileType"
+            },
+            "harmonyosHapFile": {
+              "$ref": "#/CustomTypes/harmonyosFileType"
+            },
+            "harmonyosApkFile": {
+              "$ref": "#/CustomTypes/harmonyosFileType"
+            },
+            "harmonyosAabFile": {
+              "$ref": "#/CustomTypes/harmonyosFileType"
+            },
+            "harmonyosAppFile": {
+              "$ref": "#/CustomTypes/harmonyosFileType"
+            },
+            "harmonyosRpkFile": {
+              "$ref": "#/CustomTypes/harmonyosFileType"
+            }
+          },
+          "additionalProperties": false
         }
       }
     }

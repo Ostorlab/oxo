@@ -30,6 +30,8 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import file as file_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
@@ -57,6 +59,54 @@ _RISK_TARGET_KEYS = (
     "harmonyosAppFile",
     "harmonyosRpkFile",
 )
+
+_MULTI_ASSET_REPEATED_FIELDS: dict[type[base_asset.Asset], str] = {
+    file_asset.File: "files",
+    repository_asset.Repository: "repositories",
+    repository_archive_asset.RepositoryArchive: "repository_archives",
+    link_asset.Link: "urls",
+    ipv4_asset.IPv4: "ipv4s",
+    ipv6_asset.IPv6: "ipv6s",
+    api_schema_asset.ApiSchema: "api_schemas",
+}
+
+_MULTI_ASSET_IP_KEYS = ("ip", "ipv4", "ipv6")
+
+_MULTI_ASSET_REPEATED_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
+    "file": file_asset.File,
+    "repositoryArchive": repository_archive_asset.RepositoryArchive,
+}
+
+_MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
+    "androidApkFile": android_apk_asset.AndroidApk,
+    "androidAabFile": android_aab_asset.AndroidAab,
+    "iosIpaFile": ios_ipa_asset.IOSIpa,
+    "harmonyosHapFile": harmonyos_hap_asset.HarmonyOSHap,
+    "harmonyosApkFile": harmonyos_apk_asset.HarmonyOSApk,
+    "harmonyosAabFile": harmonyos_aab_asset.HarmonyOSAab,
+    "harmonyosAppFile": harmonyos_app_asset.HarmonyOSApp,
+    "harmonyosRpkFile": harmonyos_rpk_asset.HarmonyOSRpk,
+}
+
+_MULTI_ASSET_STORE_CLASSES: dict[str, tuple[type[base_asset.Asset], str]] = {
+    "androidStore": (android_store_asset.AndroidStore, "package_name"),
+    "iosStore": (ios_store_asset.IOSStore, "bundle_id"),
+    "harmonyosStore": (harmonyos_store_asset.HarmonyOSStore, "bundle_name"),
+}
+
+_MULTI_ASSET_MOBILE_FIELDS: dict[type[base_asset.Asset], str] = {
+    android_store_asset.AndroidStore: "android_package_name",
+    ios_store_asset.IOSStore: "ios_bundle_id",
+    harmonyos_store_asset.HarmonyOSStore: "harmonyos_bundle_name",
+    android_apk_asset.AndroidApk: "android_apk",
+    android_aab_asset.AndroidAab: "android_aab",
+    ios_ipa_asset.IOSIpa: "ios_ipa",
+    harmonyos_hap_asset.HarmonyOSHap: "harmonyos_hap",
+    harmonyos_apk_asset.HarmonyOSApk: "harmonyos_apk",
+    harmonyos_aab_asset.HarmonyOSAab: "harmonyos_aab",
+    harmonyos_app_asset.HarmonyOSApp: "harmonyos_app",
+    harmonyos_rpk_asset.HarmonyOSRpk: "harmonyos_rpk",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -444,11 +494,239 @@ class AssetsDefinition:
         for asset in risk_assets:
             assets_def.append(_parse_risk_asset(asset))
 
+        multi_asset_group = assets.get("multi_asset")
+        if multi_asset_group is not None:
+            bundled_asset = _parse_multi_asset(multi_asset_group)
+            if bundled_asset is not None:
+                assets_def.append(bundled_asset)
+
         return cls(
             targets=assets_def,
             name=target_group_def.get("name"),
             description=target_group_def.get("description"),
         )
+
+
+def _bundle_multi_asset(
+    targets: list[base_asset.Asset],
+) -> multi_asset_asset.MultiAsset:
+    """Group targets into a single multi asset.
+
+    Raises ValidationError if a target has no matching field, or if more than one mobile
+    asset is present."""
+    multi_asset_kwargs: dict[str, Any] = {
+        field: [] for field in _MULTI_ASSET_REPEATED_FIELDS.values()
+    }
+    unsupported_targets = []
+
+    for target in targets:
+        repeated_field = _MULTI_ASSET_REPEATED_FIELDS.get(type(target))
+        if repeated_field is not None:
+            multi_asset_kwargs[repeated_field].append(target)
+            continue
+
+        mobile_field = _MULTI_ASSET_MOBILE_FIELDS.get(type(target))
+        if mobile_field is not None:
+            multi_asset_kwargs[mobile_field] = target
+            continue
+
+        unsupported_targets.append(str(target))
+
+    if len(unsupported_targets) > 0:
+        raise validator.ValidationError(
+            f"The multi asset message has no field for the following targets: "
+            f"{', '.join(unsupported_targets)}."
+        )
+
+    bundled_asset = multi_asset_asset.MultiAsset(**multi_asset_kwargs)
+    set_mobile_fields = bundled_asset.present_mobile_asset_fields
+    if len(set_mobile_fields) > 1:
+        # MultiAsset.to_proto enforces this same invariant with a ValueError; here at the
+        # config-parsing layer we raise ValidationError so the CLI reports a config error.
+        raise validator.ValidationError(
+            multi_asset_asset.single_mobile_asset_error_message(set_mobile_fields)
+        )
+    return bundled_asset
+
+
+def _parse_multi_asset(
+    multi_asset_group: dict[str, Any],
+) -> multi_asset_asset.MultiAsset | None:
+    """Build a single multi asset from the target group's multi_asset section.
+
+    Returns None when the section holds no asset, so no empty message is injected."""
+    targets: list[base_asset.Asset] = []
+    targets.extend(_parse_multi_asset_ips(multi_asset_group))
+    targets.extend(_parse_multi_asset_links(multi_asset_group))
+    targets.extend(_parse_multi_asset_repositories(multi_asset_group))
+    targets.extend(_parse_multi_asset_api_schemas(multi_asset_group))
+    targets.extend(_parse_multi_asset_files(multi_asset_group))
+    targets.extend(_parse_multi_asset_stores(multi_asset_group))
+    targets.extend(_parse_multi_asset_mobile_files(multi_asset_group))
+
+    if len(targets) == 0:
+        return None
+    return _bundle_multi_asset(targets)
+
+
+def _parse_multi_asset_ips(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the ip, ipv4 and ipv6 entries, rejecting invalid IP addresses."""
+    targets: list[base_asset.Asset] = []
+    for yaml_key in _MULTI_ASSET_IP_KEYS:
+        for entry in multi_asset_group.get(yaml_key, []):
+            host = entry.get("host")
+            if host is None or str(host).strip() == "":
+                raise validator.ValidationError(
+                    f"Multi asset {yaml_key} is missing required 'host' field."
+                )
+            ip = _parse_ip_asset(entry)
+            if ip is None:
+                raise validator.ValidationError(
+                    f"Multi asset {yaml_key} has an invalid IP address: {host}."
+                )
+            if yaml_key == "ipv4" and isinstance(ip, ipv4_asset.IPv4) is False:
+                raise validator.ValidationError(
+                    f"Multi asset ipv4 entry has an IPv6 address: {host}."
+                )
+            if yaml_key == "ipv6" and isinstance(ip, ipv6_asset.IPv6) is False:
+                raise validator.ValidationError(
+                    f"Multi asset ipv6 entry has an IPv4 address: {host}."
+                )
+            targets.append(ip)
+    return targets
+
+
+def _parse_multi_asset_links(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the link entries, rejecting entries with a missing or empty url."""
+    targets: list[base_asset.Asset] = []
+    for entry in multi_asset_group.get("link", []):
+        url = entry.get("url")
+        if url is None or str(url).strip() == "":
+            raise validator.ValidationError(
+                "Multi asset link requires a non-empty 'url' field."
+            )
+        targets.append(link_asset.Link(url=url, method=entry.get("method") or "GET"))
+    return targets
+
+
+def _parse_multi_asset_repositories(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the repository entries, rejecting entries with an empty repository_url."""
+    targets: list[base_asset.Asset] = []
+    for entry in multi_asset_group.get("repository", []):
+        repository_url = entry.get("repository_url")
+        if repository_url is None or str(repository_url).strip() == "":
+            raise validator.ValidationError(
+                "Multi asset repository requires a non-empty 'repository_url' field."
+            )
+        targets.append(_parse_repository_asset(entry))
+    return targets
+
+
+def _parse_multi_asset_api_schemas(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the apiSchema entries, requiring a non-empty endpoint_url."""
+    targets: list[base_asset.Asset] = []
+    for entry in multi_asset_group.get("apiSchema", []):
+        endpoint_url = entry.get("endpoint_url")
+        if endpoint_url is None or str(endpoint_url).strip() == "":
+            raise validator.ValidationError(
+                "Multi asset apiSchema requires a non-empty 'endpoint_url' field."
+            )
+        parsed_file = _parse_file_asset(entry)
+        targets.append(
+            api_schema_asset.ApiSchema(
+                endpoint_url=endpoint_url,
+                content=parsed_file.content if parsed_file is not None else None,
+                content_url=parsed_file.url if parsed_file is not None else None,
+                schema_type=entry.get("schema_type"),
+            )
+        )
+    return targets
+
+
+def _parse_multi_asset_files(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the repeated file-backed entries (file, repositoryArchive)."""
+    targets: list[base_asset.Asset] = []
+    for yaml_key, asset_class in _MULTI_ASSET_REPEATED_FILE_CLASSES.items():
+        for entry in multi_asset_group.get(yaml_key, []):
+            targets.append(_build_multi_asset_file(entry, yaml_key, asset_class))
+    return targets
+
+
+def _parse_multi_asset_stores(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the store entries, rejecting entries missing their identifier field."""
+    targets: list[base_asset.Asset] = []
+    for yaml_key, (asset_class, field) in _MULTI_ASSET_STORE_CLASSES.items():
+        if multi_asset_group.get(yaml_key) is not None:
+            field_value = multi_asset_group[yaml_key].get(field)
+            if field_value is None or str(field_value).strip() == "":
+                raise validator.ValidationError(
+                    f"Multi asset {yaml_key} is missing required field '{field}'."
+                )
+            targets.append(asset_class(**{field: field_value}))
+    return targets
+
+
+def _parse_multi_asset_mobile_files(
+    multi_asset_group: dict[str, Any],
+) -> list[base_asset.Asset]:
+    """Parse the single mobile file entries (apk, aab, ipa, harmonyos variants)."""
+    targets: list[base_asset.Asset] = []
+    for yaml_key, asset_class in _MULTI_ASSET_MOBILE_FILE_CLASSES.items():
+        if multi_asset_group.get(yaml_key) is not None:
+            targets.append(
+                _build_multi_asset_file(
+                    multi_asset_group[yaml_key], yaml_key, asset_class
+                )
+            )
+    return targets
+
+
+def _parse_repository_asset(entry: dict[str, Any]) -> repository_asset.Repository:
+    """Build a repository asset, omitting an unset provider.
+
+    Repository.__post_init__ drops an empty provider since the proto field is an enum
+    with no empty member."""
+    repository_url = str(entry.get("repository_url") or "")
+    commit_hash = str(entry.get("commit_hash") or "")
+    provider = entry.get("provider")
+    if provider is None:
+        return repository_asset.Repository(
+            repository_url=repository_url, commit_hash=commit_hash
+        )
+    return repository_asset.Repository(
+        repository_url=repository_url,
+        commit_hash=commit_hash,
+        provider=str(provider),
+    )
+
+
+def _build_multi_asset_file(
+    entry: dict[str, Any], yaml_key: str, asset_class: type[base_asset.Asset]
+) -> base_asset.Asset:
+    """Build a file-backed multi asset target, rejecting entries with no path nor url."""
+    parsed_file = _parse_file_asset(entry)
+    if parsed_file is None:
+        raise validator.ValidationError(
+            f"Multi asset {yaml_key} requires either a valid path or a url."
+        )
+    built_asset: base_asset.Asset = asset_class(
+        content=parsed_file.content,
+        path=parsed_file.path,
+        content_url=parsed_file.url,
+    )
+    return built_asset
 
 
 class ParsedFileAsset(NamedTuple):
@@ -464,7 +742,8 @@ def _parse_file_asset(file_asset: dict[str, Any]) -> ParsedFileAsset | None:
 
     Returns None when the entry has neither readable content nor a URL, so the
     caller can skip it (standalone assets) or reject it (embedded risk asset)."""
-    path = file_asset.get("path")
+    # The iOS file schema historically spells the key ``paths``; accept both.
+    path = file_asset.get("path") or file_asset.get("paths")
     url = file_asset.get("url")
     content = None
     if path is not None:
