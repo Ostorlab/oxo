@@ -1,7 +1,8 @@
 """Update scan state request."""
 
 import json
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
 from ostorlab.apis import request
 
