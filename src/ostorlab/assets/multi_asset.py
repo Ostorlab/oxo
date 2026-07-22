@@ -1,7 +1,9 @@
 """Multi asset."""
 
 import dataclasses
+from typing import Any
 
+from ostorlab.agent.message import serializer
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -22,6 +24,43 @@ from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+
+
+MOBILE_ASSET_FIELDS: frozenset[str] = frozenset(
+    {
+        "android_package_name",
+        "ios_bundle_id",
+        "harmonyos_bundle_name",
+        "android_apk",
+        "android_aab",
+        "ios_ipa",
+        "harmonyos_hap",
+        "harmonyos_apk",
+        "harmonyos_aab",
+        "harmonyos_app",
+        "harmonyos_rpk",
+    }
+)
+
+
+def _asset_fields(nested_asset: asset.Asset) -> dict[str, Any]:
+    """Map a nested asset to its set dataclass fields, dropping unset optionals
+    and attributes removed in __post_init__ (e.g. Repository.provider)."""
+    instance_values = nested_asset.__dict__
+    declared_fields = dataclasses.fields(nested_asset)  # type: ignore[arg-type]
+    return {
+        field.name: instance_values[field.name]
+        for field in declared_fields
+        if field.name in instance_values and instance_values[field.name] is not None
+    }
+
+
+def single_mobile_asset_error_message(mobile_fields: list[str]) -> str:
+    """Build the error message shown when more than one mobile asset is bundled."""
+    return (
+        f"A multi asset accepts at most one mobile asset, got: "
+        f"{', '.join(mobile_fields)}."
+    )
 
 
 @dataclasses.dataclass
@@ -85,6 +124,40 @@ class MultiAsset(asset.Asset):
             *self.ipv6s,
             *self.api_schemas,
         ]
+
+    @property
+    def present_mobile_asset_fields(self) -> list[str]:
+        """Names of the mobile asset fields that are set."""
+        return [
+            key
+            for key, value in self.__dict__.items()
+            if key in MOBILE_ASSET_FIELDS and value is not None
+        ]
+
+    def to_proto(self) -> bytes:
+        """Serialize the grouped assets into a single multi asset proto message.
+
+        Raises ValueError if more than one mobile asset is set, since the proto oneof
+        would silently drop the extras."""
+        set_mobile_fields = self.present_mobile_asset_fields
+        if len(set_mobile_fields) > 1:
+            raise ValueError(single_mobile_asset_error_message(set_mobile_fields))
+
+        data: dict[str, Any] = {}
+        for key, value in self.__dict__.items():
+            if value is None:
+                continue
+            if isinstance(value, asset.Asset):
+                data[key] = _asset_fields(value)
+            elif isinstance(value, list):
+                data[key] = [
+                    _asset_fields(entry) if isinstance(entry, asset.Asset) else entry
+                    for entry in value
+                ]
+            else:
+                data[key] = value
+
+        return bytes(serializer.serialize(self.selector, data).SerializeToString())
 
     @property
     def proto_field(self) -> str:
