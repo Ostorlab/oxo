@@ -1,5 +1,7 @@
 """Unit test for the scanner configuration module."""
 
+import logging
+
 from ostorlab.scanner import scanner_conf
 
 
@@ -91,3 +93,52 @@ def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry(
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
 
     assert scanner_conf_instance.scan_resource_requirements == {}
+
+
+def testScannerConfigFromJson_whenResourceRequirementsJsonString_shouldParseEntry() -> (
+    None
+):
+    api_response_data = {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "config": {
+                            "scanResourceRequirements": (
+                                '{"agentgroup/ostorlab/test": {'
+                                '"cpu_count": 8, "memory": 16, "disk": 32}}'
+                            )
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+
+    assert scanner_conf_instance.scan_resource_requirements == {
+        "agentgroup/ostorlab/test": scanner_conf.ScanResourceRequirements(
+            cpu_count=8,
+            memory=16,
+            disk=32,
+        )
+    }
+
+
+def testScannerConfigFromJson_whenResourceRequirementsInvalidJson_shouldLogWarning(
+    caplog,
+) -> None:
+    api_response_data = {
+        "data": {
+            "scanners": {
+                "scanners": [{"config": {"scanResourceRequirements": "invalid json"}}]
+            }
+        }
+    }
+
+    with caplog.at_level(logging.WARNING):
+        scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+
+    assert scanner_conf_instance.scan_resource_requirements == {}
+    assert "Invalid JSON in scanResourceRequirements" in caplog.text

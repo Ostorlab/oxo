@@ -13,8 +13,9 @@ logger = logging.getLogger(__name__)
 def can_run_scan(
     scan_key: str,
     requirements: dict[str, scanner_conf.ScanResourceRequirements],
+    disk_path: str = "/",
 ) -> bool:
-    """Return whether the host has the resources required by ``scan_key``."""
+    """Return whether the host has resources for ``scan_key`` at ``disk_path``."""
     scan_requirements = requirements.get(scan_key)
     if scan_requirements is None:
         scan_requirements = requirements.get(scan_key.split("/")[-1])
@@ -24,9 +25,13 @@ def can_run_scan(
         logger.warning("No resource requirements configured for scan %s", scan_key)
         return False
 
-    cpu_count = psutil.cpu_count(logical=True) or 0
-    available_memory = psutil.virtual_memory().available
-    available_disk = psutil.disk_usage("/").free
+    try:
+        cpu_count = psutil.cpu_count(logical=True) or 0
+        available_memory = psutil.virtual_memory().available
+        available_disk = psutil.disk_usage(disk_path).free
+    except (OSError, psutil.Error) as error:
+        logger.warning("Unable to determine host resources for %s: %s", scan_key, error)
+        return False
     has_capacity = (
         cpu_count >= scan_requirements.cpu_count
         and available_memory >= scan_requirements.memory

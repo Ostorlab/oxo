@@ -1,7 +1,13 @@
 """Representations of nats configuration definitions."""
 
+from __future__ import annotations
+
 import dataclasses
-from typing import Any, Optional
+import json
+import logging
+from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -30,7 +36,7 @@ class ScanResourceRequirements:
     disk: int
 
     @classmethod
-    def from_json(cls, value: Any) -> Optional["ScanResourceRequirements"]:
+    def from_json(cls, value: Any) -> ScanResourceRequirements | None:
         if isinstance(value, dict) is False:
             return None
 
@@ -66,7 +72,7 @@ class ScannerConfig:
     scan_resource_requirements: dict[str, ScanResourceRequirements]
 
     @classmethod
-    def from_json(cls, config: dict[str, Any]) -> Optional["ScannerConfig"]:
+    def from_json(cls, config: dict[str, Any]) -> ScannerConfig | None:
         """Creates a ScannerConfig instance from a JSON configuration.
 
         Args:
@@ -106,11 +112,22 @@ class ScannerConfig:
         )
         resource_requirements = {}
         raw_resource_requirements = conf.get("scanResourceRequirements", {})
+        if isinstance(raw_resource_requirements, str):
+            try:
+                raw_resource_requirements = json.loads(raw_resource_requirements)
+            except json.JSONDecodeError:
+                logger.warning("Invalid JSON in scanResourceRequirements")
+                raw_resource_requirements = {}
         if isinstance(raw_resource_requirements, dict):
             for scan_type, requirements in raw_resource_requirements.items():
                 parsed_requirements = ScanResourceRequirements.from_json(requirements)
                 if isinstance(scan_type, str) and parsed_requirements is not None:
                     resource_requirements[scan_type] = parsed_requirements
+        elif "scanResourceRequirements" in conf:
+            logger.warning(
+                "scanResourceRequirements must be an object, received %s",
+                type(raw_resource_requirements).__name__,
+            )
         return cls(
             bus_url=conf.get("busUrl"),
             bus_cluster_id=conf.get("busClusterId"),
