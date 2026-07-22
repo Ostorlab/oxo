@@ -123,6 +123,11 @@ class ScannerConfig:
                 parsed_requirements = ScanResourceRequirements.from_json(requirements)
                 if isinstance(scan_type, str) and parsed_requirements is not None:
                     resource_requirements[scan_type] = parsed_requirements
+                else:
+                    logger.warning(
+                        "Skipping malformed scan resource requirements entry: %r",
+                        scan_type,
+                    )
         elif "scanResourceRequirements" in conf:
             logger.warning(
                 "scanResourceRequirements must be an object, received %s",

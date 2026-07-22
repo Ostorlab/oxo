@@ -63,9 +63,9 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
     assert requirements.disk == 53687091200
 
 
-def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry() -> (
-    None
-):
+def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry(
+    mocker: plugin.MockerFixture,
+) -> None:
     api_response_data = {
         "data": {
             "scanners": {
@@ -90,9 +90,21 @@ def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry(
         }
     }
 
+    warning = mocker.patch.object(scanner_conf.logger, "warning")
+
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
 
     assert scanner_conf_instance.scan_resource_requirements == {}
+    assert warning.call_args_list == [
+        mocker.call(
+            "Skipping malformed scan resource requirements entry: %r",
+            "agentgroup/ostorlab/missing_disk",
+        ),
+        mocker.call(
+            "Skipping malformed scan resource requirements entry: %r",
+            "agentgroup/ostorlab/invalid_cpu",
+        ),
+    ]
 
 
 def testScannerConfigFromJson_whenResourceRequirementsJsonString_shouldParseEntry() -> (

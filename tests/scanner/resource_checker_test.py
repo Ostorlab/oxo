@@ -12,9 +12,7 @@ def testCanRunScan_whenHostHasRequiredResources_returnsTrue(
     mocker: plugin.MockerFixture,
 ) -> None:
     mocker.patch("psutil.cpu_count", return_value=8)
-    mocker.patch(
-        "psutil.virtual_memory", return_value=SimpleNamespace(available=20_000)
-    )
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=20_000))
     mocker.patch("psutil.disk_usage", return_value=SimpleNamespace(free=30_000))
     requirements = {
         "agentgroup/ostorlab/test": scanner_conf.ScanResourceRequirements(
@@ -31,7 +29,7 @@ def testCanRunScan_whenHostDoesNotHaveRequiredResources_returnsFalse(
     mocker: plugin.MockerFixture,
 ) -> None:
     mocker.patch("psutil.cpu_count", return_value=2)
-    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(available=5_000))
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=5_000))
     mocker.patch("psutil.disk_usage", return_value=SimpleNamespace(free=5_000))
     requirements = {
         "agentgroup/ostorlab/test": scanner_conf.ScanResourceRequirements(
@@ -52,9 +50,7 @@ def testCanRunScan_whenFullKeyMissing_usesShortKey(
     mocker: plugin.MockerFixture,
 ) -> None:
     mocker.patch("psutil.cpu_count", return_value=8)
-    mocker.patch(
-        "psutil.virtual_memory", return_value=SimpleNamespace(available=20_000)
-    )
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=20_000))
     mocker.patch("psutil.disk_usage", return_value=SimpleNamespace(free=30_000))
     requirements = {
         "test": scanner_conf.ScanResourceRequirements(
@@ -71,9 +67,7 @@ def testCanRunScan_whenScanKeyMissing_usesDefault(
     mocker: plugin.MockerFixture,
 ) -> None:
     mocker.patch("psutil.cpu_count", return_value=8)
-    mocker.patch(
-        "psutil.virtual_memory", return_value=SimpleNamespace(available=20_000)
-    )
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=20_000))
     mocker.patch("psutil.disk_usage", return_value=SimpleNamespace(free=30_000))
     requirements = {
         "default": scanner_conf.ScanResourceRequirements(
@@ -108,9 +102,7 @@ def testCanRunScan_whenDiskPathProvided_checksConfiguredPath(
     mocker: plugin.MockerFixture,
 ) -> None:
     mocker.patch("psutil.cpu_count", return_value=8)
-    mocker.patch(
-        "psutil.virtual_memory", return_value=SimpleNamespace(available=20_000)
-    )
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=20_000))
     disk_usage = mocker.patch(
         "psutil.disk_usage", return_value=SimpleNamespace(free=30_000)
     )
