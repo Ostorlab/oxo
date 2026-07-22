@@ -2,7 +2,7 @@
 
 import abc
 import logging
-from typing import Dict, Optional, Any
+from typing import Any
 
 
 logger = logging.getLogger(__name__)
@@ -14,24 +14,24 @@ class APIRequest(abc.ABC):
     """API request base class. ALL requests should inherit from this class."""
 
     @property
-    def endpoint(self) -> Optional[str]:
+    def endpoint(self) -> str | None:
         """API Endpoint. If None, the runner's default endpoint is used."""
         return None
 
     @property
     @abc.abstractmethod
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Query to the GraphQL API."""
         raise NotImplementedError("Missing implementation")
 
     @property
     @abc.abstractmethod
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Body of the API request, containing the query & any additional data."""
         raise NotImplementedError("Missing implementation")
 
     @property
-    def files(self) -> Optional[Dict[str, Any]]:
+    def files(self) -> dict[str, Any] | None:
         """Files of the API request, containing the binary data."""
         return None
 
