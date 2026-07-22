@@ -80,7 +80,7 @@ _MULTI_ASSET_REPEATED_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
 _MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
     "androidApkFile": android_apk_asset.AndroidApk,
     "androidAabFile": android_aab_asset.AndroidAab,
-    "iosIpaFile": ios_ipa_asset.IOSIpa,
+    "iosFile": ios_ipa_asset.IOSIpa,
     "harmonyosHapFile": harmonyos_hap_asset.HarmonyOSHap,
     "harmonyosApkFile": harmonyos_apk_asset.HarmonyOSApk,
     "harmonyosAabFile": harmonyos_aab_asset.HarmonyOSAab,
