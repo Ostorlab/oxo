@@ -7,7 +7,7 @@ Typical usage example:
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import httpx
 
@@ -25,7 +25,7 @@ class ScannerAPIRunner(runner.APIRunner):
     def __init__(
         self,
         api_key: str,
-        proxy: Optional[str] = None,
+        proxy: str | None = None,
         verify: bool = True,
     ) -> None:
         """Constructs all the necessary attributes for the object.
@@ -43,7 +43,7 @@ class ScannerAPIRunner(runner.APIRunner):
         """API endpoint."""
         return SCANNER_GRAPHQL_ENDPOINT
 
-    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Scanner GraphQL API.
 
         Args:
@@ -67,7 +67,7 @@ class ScannerAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = response.json()
+        data: dict[str, Any] = response.json()
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")
@@ -78,7 +78,7 @@ class ScannerAPIRunner(runner.APIRunner):
     def _sent_request(
         self,
         request: api_request.APIRequest,
-        headers: Optional[Dict[str, str]] = None,
+        headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         """Sends an API request to the scanner orchestrator."""
         headers = headers or {}
