@@ -820,3 +820,25 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidAabUrl_androidFileC
         assert len(assets) == 1
         assert assets[0].path == "https://example.com/app.aab"
         assert assets[0].package_name == "N/A"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure MultiAsset is correctly decomposed and nested assets are created."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    from ostorlab.assets import multi_asset as multi_asset_asset
+    from ostorlab.assets import ipv4
+    from ostorlab.assets import link
+
+    ip_asset = ipv4.IPv4(host="10.0.0.1")
+    link_asset = link.Link(url="https://example.com/test", method="GET")
+    multi = multi_asset_asset.MultiAsset(ipv4s=[ip_asset], urls=[link_asset])
+
+    models.Asset.create_from_assets_definition([multi])
+
+    with models.Database() as session:
+        networks = session.query(models.Network).all()
+        urls = session.query(models.Urls).all()
+        assert len(networks) == 1
+        assert len(urls) == 1
