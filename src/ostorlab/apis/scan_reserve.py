@@ -13,11 +13,6 @@ class ScanReserveAPIRequest(request.APIRequest):
         self._scan_id = scan_id
 
     @property
-    def endpoint(self) -> str:
-        """API endpoint."""
-        return request.SCANNER_GRAPHQL_ENDPOINT
-
-    @property
     def query(self) -> str | None:
         return """
           mutation ReserveScan($scanId: Int!) {

@@ -2,6 +2,7 @@
 
 import json
 from typing import Any
+
 from ostorlab.apis import request
 
 
@@ -11,11 +12,6 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
     def __init__(self, scan_id: int, progress: str) -> None:
         self._scan_id = scan_id
         self._progress = progress
-
-    @property
-    def endpoint(self) -> str:
-        """API endpoint."""
-        return request.SCANNER_GRAPHQL_ENDPOINT
 
     @property
     def query(self) -> str | None:

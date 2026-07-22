@@ -2,7 +2,6 @@
 
 import json
 
-from ostorlab.apis import request
 from ostorlab.apis import scan_update_state
 
 
@@ -35,12 +34,3 @@ def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorr
     variables = json.loads(data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "finished"
-
-
-def testScanUpdateStateAPIRequest_whenCalled_endpointIsScannerGraphql() -> None:
-    """Test scan update state API request has the correct endpoint."""
-    api_request = scan_update_state.ScanUpdateStateAPIRequest(
-        scan_id=1, progress="started"
-    )
-
-    assert api_request.endpoint == request.SCANNER_GRAPHQL_ENDPOINT

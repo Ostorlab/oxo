@@ -7,16 +7,9 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-SCANNER_GRAPHQL_ENDPOINT = "https://scanner.ostorlab.co/orchestrator/graphql"
-
 
 class APIRequest(abc.ABC):
     """API request base class. ALL requests should inherit from this class."""
-
-    @property
-    def endpoint(self) -> str | None:
-        """API Endpoint. If None, the runner's default endpoint is used."""
-        return None
 
     @property
     @abc.abstractmethod

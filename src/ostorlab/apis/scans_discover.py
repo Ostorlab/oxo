@@ -10,11 +10,6 @@ class ScansDiscoverAPIRequest(request.APIRequest):
     """Discovery query API request."""
 
     @property
-    def endpoint(self) -> str:
-        """API endpoint."""
-        return request.SCANNER_GRAPHQL_ENDPOINT
-
-    @property
     def query(self) -> str | None:
         return """
         query GetPendingScans($progresses: [String], $oldLockedScans: Boolean, $numberElements: Int) {
