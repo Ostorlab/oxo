@@ -262,7 +262,9 @@ assets:
     assert all(target.selector != "v3.asset.multi_asset" for target in targets) is True
 
 
-def testFromYaml_whenStandaloneRepositoryAndArchive_shouldEmitStandaloneRepositoryAndArchive() -> None:
+def testFromYaml_whenStandaloneRepositoryAndArchive_shouldEmitStandaloneRepositoryAndArchive() -> (
+    None
+):
     yaml_definition = io.StringIO("""
 kind: targetGroup
 assets:
