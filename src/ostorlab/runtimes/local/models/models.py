@@ -39,6 +39,7 @@ from ostorlab.assets import android_store
 from ostorlab.assets import ip
 from ostorlab.assets import domain_name
 from ostorlab.assets import asset as base_asset
+from ostorlab.assets import multi_asset
 
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
 OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
@@ -847,7 +848,12 @@ class Asset(Base):
         links: List[Dict[str, str]] = []
         domains: List[Dict[str, str]] = []
         for asset in assets:
-            if (
+            if isinstance(asset, multi_asset.MultiAsset):
+                Asset.create_from_assets_definition(
+                    assets=[a for a in asset._nested_assets() if a is not None],
+                    scan_id=scan_id,
+                )
+            elif (
                 isinstance(asset, ip.IP)
                 or isinstance(asset, ipv4.IPv4)
                 or isinstance(asset, ipv6.IPv6)
