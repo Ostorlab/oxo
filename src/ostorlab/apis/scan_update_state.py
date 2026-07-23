@@ -31,7 +31,6 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on Ipv4AssetType { host version mask }
                     ... on Ipv6AssetType { host version mask }
                     ... on IpAssetType { host version mask }
-                    ... on AndroidAabAssetType { path content }
                     ... on AndroidApkAssetType { path contentUrl }
                     ... on DomainNameAssetType { name }
                     ... on AndroidPackageNameAssetType { packageName }
