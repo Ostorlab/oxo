@@ -24,6 +24,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
                                 "url": "https://ostorlab.store/",
                             },
                             "busUrl": "nats://localhost:4222",
+                            "apiKey": "test-api-key",
                             "busClusterId": "cluster_id",
                             "busClientName": "client_name",
                             "scanResourceRequirements": {
@@ -49,6 +50,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
         config=api_response_data,
     )
     assert scanner_conf_instance.bus_url == "nats://localhost:4222"
+    assert scanner_conf_instance.api_key == "test-api-key"
     assert scanner_conf_instance.bus_cluster_id == "cluster_id"
     assert scanner_conf_instance.bus_client_name == "client_name"
     assert scanner_conf_instance.registry_conf.username == "robot_account"

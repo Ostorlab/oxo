@@ -5,7 +5,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
-from typing import Any
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 SCAN_RESOURCE_REQUIREMENTS_KEY = "scanResourceRequirements"
@@ -72,6 +72,7 @@ class ScannerConfig:
     registry_conf: RegistryConfig
     subject_bus_configs: list[SubjectBusConfigs]
     scan_resource_requirements: dict[str, ScanResourceRequirements]
+    api_key: str | None = None
 
     @classmethod
     def from_json(cls, config: dict[str, Any]) -> ScannerConfig | None:
@@ -142,4 +143,5 @@ class ScannerConfig:
             registry_conf=registry_conf_instance,
             subject_bus_configs=bus_configs,
             scan_resource_requirements=resource_requirements,
+            api_key=conf.get("apiKey"),
         )
