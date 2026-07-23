@@ -404,6 +404,8 @@ class AssetsDefinition:
         api_schema_assets = assets.get("apiSchema", [])
         ticket_assets = assets.get("ticket", [])
         risk_assets = assets.get("risk", [])
+        repository_assets = assets.get("repository", [])
+        repository_archive_assets = assets.get("repositoryArchive", [])
 
         assets_def: List[assets.Asset] = []
 
@@ -488,6 +490,28 @@ class AssetsDefinition:
                     ticket_id=asset.get("ticket_id"),
                     comments=parsed_comments,
                     ticket_key=asset.get("ticket_key"),
+                )
+            )
+
+        for asset in repository_assets:
+            repository_url = asset.get("repository_url")
+            if repository_url is None or str(repository_url).strip() == "":
+                raise validator.ValidationError(
+                    "Repository requires a non-empty 'repository_url' field."
+                )
+            assets_def.append(_parse_repository_asset(asset))
+
+        for asset in repository_archive_assets:
+            parsed_file = _parse_file_asset(asset)
+            if parsed_file is None:
+                raise validator.ValidationError(
+                    "Repository archive requires either a valid path or a content-url."
+                )
+            assets_def.append(
+                repository_archive_asset.RepositoryArchive(
+                    content=parsed_file.content,
+                    path=parsed_file.path,
+                    content_url=parsed_file.url,
                 )
             )
 

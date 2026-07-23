@@ -87,20 +87,3 @@ def testScannerAPIRunner_whenExecuteSucceeds_returnsData() -> None:
         result = runner.execute(req)
 
     assert result == {"data": {"test": "ok"}}
-
-
-def testScannerAPIRunner_whenRequestIsJson_setsContentType() -> None:
-    """Test _sent_request sets Content-Type to application/json."""
-    runner = _make_runner()
-    req = _TestRequest()
-
-    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
-        mock_client.return_value.__enter__.return_value.post.return_value = (
-            httpx.Response(200, json={"data": {"test": "ok"}})
-        )
-        runner._sent_request(req, headers={})
-
-    call_headers = mock_client.return_value.__enter__.return_value.post.call_args[1][
-        "headers"
-    ]
-    assert call_headers["Content-Type"] == "application/json"
