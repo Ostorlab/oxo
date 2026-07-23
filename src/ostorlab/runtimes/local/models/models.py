@@ -835,25 +835,18 @@ class Asset(Base):
     )
 
     @staticmethod
-    def create_from_assets_definition(
+    def _create_from_assets_definition(
         assets: Optional[List[base_asset.Asset]], scan_id: Optional[int] = None
     ) -> None:
-        """Create the assets from the asset definition.
+        """Create the assets from the asset definition without multi_asset handling."""
+        if assets is None or len(assets) == 0:
+            return
 
-        Args:
-            assets: The list of assets to create.
-            scan_id: The scan id.
-        """
         networks: List[Dict[str, Union[str, int]]] = []
         links: List[Dict[str, str]] = []
         domains: List[Dict[str, str]] = []
         for asset in assets:
-            if isinstance(asset, multi_asset.MultiAsset):
-                Asset.create_from_assets_definition(
-                    assets=[a for a in asset._nested_assets() if a is not None],
-                    scan_id=scan_id,
-                )
-            elif (
+            if (
                 isinstance(asset, ip.IP)
                 or isinstance(asset, ipv4.IPv4)
                 or isinstance(asset, ipv6.IPv6)
@@ -894,6 +887,30 @@ class Asset(Base):
 
         if len(domains) > 0:
             DomainAsset.create(domains=domains, scan_id=scan_id)
+
+    @staticmethod
+    def create_from_assets_definition(
+        assets: Optional[List[base_asset.Asset]], scan_id: Optional[int] = None
+    ) -> None:
+        """Create the assets from the asset definition.
+
+        Args:
+            assets: The list of assets to create.
+            scan_id: The scan id.
+        """
+        if assets is None or len(assets) == 0:
+            return
+
+        flattened_assets = []
+        queue = list(assets)
+        while queue:
+            asset = queue.pop(0)
+            if isinstance(asset, multi_asset.MultiAsset):
+                queue.extend([a for a in asset.nested_assets() if a is not None])
+            else:
+                flattened_assets.append(asset)
+
+        Asset._create_from_assets_definition(assets=flattened_assets, scan_id=scan_id)
 
 
 class AndroidFile(Asset):

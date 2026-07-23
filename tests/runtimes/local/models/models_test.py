@@ -2,11 +2,14 @@
 
 from pytest_mock import plugin
 
-from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating
-from ostorlab.assets import ios_ipa
 from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ipv4
+from ostorlab.assets import link
+from ostorlab.assets import multi_asset as multi_asset_asset
+from ostorlab.runtimes.local.models import models
+from ostorlab.utils import risk_rating
 
 
 def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
@@ -827,9 +830,6 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCre
 ) -> None:
     """Ensure MultiAsset is correctly decomposed and nested assets are created."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    from ostorlab.assets import multi_asset as multi_asset_asset
-    from ostorlab.assets import ipv4
-    from ostorlab.assets import link
 
     ip_asset = ipv4.IPv4(host="10.0.0.1")
     link_asset = link.Link(url="https://example.com/test", method="GET")
