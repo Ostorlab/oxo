@@ -219,8 +219,8 @@ def _extract_agent_group_definition(
 
 
 def _extract_scan_id(request: dict[str, Any]) -> int:
-    scan_id = int(request.get("id", 0))
-    logger.info("Extracted scan id: %s.", scan_id)
+    scan_id = int(request["id"])
+    logger.debug("Extracted scan id: %s.", scan_id)
     return scan_id
 
 

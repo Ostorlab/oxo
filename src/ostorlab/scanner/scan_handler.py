@@ -49,12 +49,12 @@ class ScanHandler:
 
         while True:
             if scan_id is not None and self._is_scan_running(scan_id=scan_id) is True:
-                logger.info(f"Scan {scan_id} is still running. Sleeping...")
+                logger.debug("Scan %s is still running. Sleeping...", scan_id)
                 await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
             if scan_id is not None:
-                logger.info(f"Scan {scan_id} has finished. Ready for next.")
+                logger.debug("Scan %s has finished. Ready for next.", scan_id)
             scan_id = None
 
             scans_list = self._fetch_available_scans(runner)
@@ -84,10 +84,10 @@ class ScanHandler:
         try:
             response = runner.execute(scans_discover.ScansDiscoverAPIRequest())
             scans_list = response.get("data", {}).get("scans", {}).get("scans", [])
-            logger.info(f"Discovered {len(scans_list)} potential scans.")
+            logger.info("Discovered %s potential scans.", len(scans_list))
             return scans_list
         except Exception as e:
-            logger.exception(f"Exception while fetching scans: {e}")
+            logger.exception("Exception while fetching scans: %s", e)
             return []
 
     def _reserve_single_scan(
@@ -105,7 +105,7 @@ class ScanHandler:
                 continue
 
             candidate_id = int(candidate_id)
-            logger.debug(f"Attempting to reserve candidate scan ID: {candidate_id}...")
+            logger.debug("Attempting to reserve candidate scan ID: %s...", candidate_id)
 
             try:
                 reserve_response = runner.execute(
@@ -117,7 +117,8 @@ class ScanHandler:
 
                 if reserve_data.get("success") is True:
                     logger.info(
-                        f"Successfully locked and reserved scan ID: {candidate_id}."
+                        "Successfully locked and reserved scan ID: %s.",
+                        candidate_id,
                     )
                     return reserve_data.get("scan")
                 else:
