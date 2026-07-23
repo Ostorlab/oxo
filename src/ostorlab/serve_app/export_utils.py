@@ -5,7 +5,6 @@ import ipaddress
 import json
 import pathlib
 import zipfile
-from typing import Optional
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
@@ -62,7 +61,7 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
             session.query(models.Asset).filter(models.Asset.scan_id == scan_id).all()
         )
         if len(assets) == 0:
-            return None
+            return
         assets_data = []
         for asset in assets:
             asset_type = asset.type.replace("_", " ").lower()
@@ -98,7 +97,7 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
 
 def _write_mobile_app(
     asset: models.Asset, archive: zipfile.ZipFile, asset_type: str
-) -> Optional[str]:
+) -> str | None:
     """Write the mobile app to the given archive.
 
     Args:

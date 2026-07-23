@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
+import datetime
 import logging
-from typing import Generator
+from collections.abc import Generator
 
 import click
 import docker
 import docker.errors
 import tenacity
-import datetime
 
-from ostorlab.cli import console as cli_console
-from ostorlab.cli.agent.install import install_progress
-from ostorlab.cli import agent_fetcher
 from ostorlab.apis import agent_download_token
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.cli import agent_fetcher
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.agent.install import install_progress
 
 logger = logging.getLogger(__name__)
 

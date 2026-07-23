@@ -3,8 +3,8 @@
 from click import testing as click_testing
 from pytest_mock import plugin
 
-from ostorlab.cli import rootcli
 from ostorlab.assets import api_schema
+from ostorlab.cli import rootcli
 
 
 def testScanRunApiSchema_whenSchemaFileIsProvided_callScanWithValidAsset(

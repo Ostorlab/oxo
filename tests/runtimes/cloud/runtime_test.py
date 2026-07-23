@@ -1,12 +1,12 @@
 """Unittest for cloud runtime."""
 
 import io
-from typing import Dict, List, Optional, Union
 
 import pytest
+
 from ostorlab.apis import request
-from ostorlab.runtimes import definitions
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.runtimes import definitions
 from ostorlab.runtimes.cloud import runtime as cloud_runtime
 
 
@@ -15,9 +15,9 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
 
     def __init__(
         self,
-        name: Optional[str],
+        name: str | None,
         description: str,
-        agents: List[Dict[str, Union[str, List]]],
+        agents: list[dict[str, str | list]],
     ) -> None:
         """Initializer"""
         self._name = name
@@ -25,7 +25,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
         self._agents = agents
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Sets the query of the API request.
 
         Returns:
@@ -42,7 +42,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict | None:
         """Sets the body of the API request.
 
         Returns:

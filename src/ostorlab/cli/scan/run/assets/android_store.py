@@ -1,14 +1,13 @@
 """This module triggers a scan using the android_store asset."""
 
 import logging
-from typing import Tuple, Optional
 
 import click
 
-from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
-from ostorlab.assets import android_store as android_store_asset
 from ostorlab import exceptions
+from ostorlab.assets import android_store as android_store_asset
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 @click.option("--package-name", multiple=True, required=False)
 @click.pass_context
 def android_store(
-    ctx: click.core.Context, package_name: Optional[Tuple[str]] = ()
+    ctx: click.core.Context, package_name: tuple[str] | None = ()
 ) -> None:
     """Run scan for a package_name."""
     runtime = ctx.obj["runtime"]

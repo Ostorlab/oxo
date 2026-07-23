@@ -2,7 +2,6 @@
 
 import json
 import pathlib
-from typing import Dict, Optional, Tuple
 
 OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / ".ostorlab"
 
@@ -10,10 +9,10 @@ OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / ".ostorlab"
 class SingletonMeta(type):
     """Metaclass implementation of a singleton pattern."""
 
-    _instances: Dict[object, object] = {}
+    _instances: dict[object, object] = {}
 
     def __call__(
-        cls: "SingletonMeta", *args: Tuple[object], **kwargs: Dict[object, object]
+        cls: "SingletonMeta", *args: tuple[object], **kwargs: dict[object, object]
     ) -> object:
         """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
         if cls not in cls._instances:
@@ -38,7 +37,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
         self._uploads_dir = private_dir / "uploads"
         self._uploads_dir.mkdir(parents=True, exist_ok=True)
         self._complete_authorization_token_path = self._private_dir / "token"
-        self._api_key: Optional[str] = None
+        self._api_key: str | None = None
 
     @property
     def conf_path(self) -> pathlib.Path:
@@ -51,18 +50,18 @@ class ConfigurationManager(metaclass=SingletonMeta):
         return self._uploads_dir.resolve()
 
     @property
-    def api_key(self) -> Optional[str]:
+    def api_key(self) -> str | None:
         """API key their either uses a predefined value, or retrieve the one in the configuration folder."""
         if self._api_key is not None:
             return self._api_key
         return None
 
     @property
-    def authorization_token(self) -> Optional[str]:
+    def authorization_token(self) -> str | None:
         """retrieve authorization token in the configuration folder."""
         authorization_token_data = self._get_authorization_token()
         if authorization_token_data is not None:
-            authorization_token: Optional[str] = authorization_token_data.get(
+            authorization_token: str | None = authorization_token_data.get(
                 "authorization_token"
             )
             return authorization_token
@@ -70,7 +69,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
             return None
 
     @api_key.setter
-    def api_key(self, key: Optional[str]) -> None:
+    def api_key(self, key: str | None) -> None:
         """Set API key"""
         self._api_key = key
 
@@ -92,7 +91,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
             data = json.dumps(authorization_token_data, indent=4)
             file.write(data)
 
-    def _get_authorization_token(self) -> Optional[Dict[str, str]]:
+    def _get_authorization_token(self) -> dict[str, str] | None:
         """Gets the authorization token from the location in which it is saved.
 
         Returns:
@@ -102,7 +101,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
             with open(
                 self._complete_authorization_token_path, "r", encoding="utf-8"
             ) as file:
-                authorization_token_data: Dict[str, str] = json.loads(file.read())
+                authorization_token_data: dict[str, str] = json.loads(file.read())
                 return authorization_token_data
         except FileNotFoundError:
             return None

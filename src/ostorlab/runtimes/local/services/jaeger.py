@@ -1,12 +1,10 @@
 """Jaeger service to collect Agent traces."""
 
 import logging
-from typing import Dict, Optional
 
 import docker
 import tenacity
-from docker import errors
-from docker import types
+from docker import errors, types
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -35,7 +33,7 @@ class LocalJaeger:
         self,
         name: str,
         network: str,
-        exposed_ports: Optional[Dict[int, int]] = None,
+        exposed_ports: dict[int, int] | None = None,
         image: str = JAEGER_IMAGE,
     ) -> None:
         """Initialize the Jaeger service parameters.
@@ -102,7 +100,7 @@ class LocalJaeger:
                 check_duplicate=True,
             )
 
-    def _start_jaeger(self) -> Optional[services.Service]:
+    def _start_jaeger(self) -> services.Service | None:
         try:
             logger.info("starting Jaeger")
             endpoint_spec = types.services.EndpointSpec(

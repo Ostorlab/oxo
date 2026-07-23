@@ -6,8 +6,8 @@ import zipfile
 
 from pytest_mock import plugin
 
-from ostorlab.serve_app import export_utils, import_utils
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import export_utils, import_utils
 from ostorlab.utils import risk_rating
 
 

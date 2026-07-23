@@ -1,8 +1,9 @@
-import click
 from unittest import mock
 
-from ostorlab.cli.ci_scan.run.assets import link
+import click
+
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
+from ostorlab.cli.ci_scan.run.assets import link
 
 
 def test_prepare_test_credentials_link_with_single_credential():

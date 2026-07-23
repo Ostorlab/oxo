@@ -6,13 +6,12 @@ import logging
 import ssl
 import sys
 import traceback
-from typing import Optional
 
-from nats.js import errors as jetstream_errors
-from nats import errors as nats_errors
 import nats
+from nats import errors as nats_errors
 from nats.js import api as js_api
 from nats.js import client as js_client
+from nats.js import errors as jetstream_errors
 
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
@@ -36,14 +35,14 @@ class ClientBusHandler:
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: Optional[ssl.SSLContext] = None,
+        tls_context: ssl.SSLContext | None = None,
         loop=None,
     ):
         self._bus_url = bus_url
         self._cluster_id = cluster_id
         self._name = name
         self._nc: nats.NATS = nats.NATS()
-        self._js: Optional[js_client.JetStreamContext] = None
+        self._js: js_client.JetStreamContext | None = None
         self._loop = loop or asyncio.get_event_loop()
         if tls_context is None and bus_url.startswith("tls://"):
             self._tls_context = ssl.create_default_context()
@@ -123,7 +122,7 @@ class BusHandler(ClientBusHandler):
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: Optional[ssl.SSLContext] = None,
+        tls_context: ssl.SSLContext | None = None,
         loop=None,
     ):
         super().__init__(
@@ -162,7 +161,7 @@ class BusHandler(ClientBusHandler):
     async def subscribe(
         self,
         subject: str,
-        durable_name: Optional[str] = None,
+        durable_name: str | None = None,
         start_at: str = "first",
         max_inflight: int = DEFAULT_MAX_INFLIGHT,
         ack_wait: int = DEFAULT_ACK_WAIT.seconds,

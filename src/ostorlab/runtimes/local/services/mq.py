@@ -6,12 +6,10 @@ import logging
 import os
 import pathlib
 import uuid
-from typing import Dict, Optional
 
 import docker
 import tenacity
-from docker import errors
-from docker import types
+from docker import errors, types
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -27,7 +25,7 @@ class LocalRabbitMQ:
         self,
         name: str,
         network: str,
-        exposed_ports: Optional[Dict[int, int]] = None,
+        exposed_ports: dict[int, int] | None = None,
         image: str = MQ_IMAGE,
     ) -> None:
         """Initialize the MQ service parameters.
@@ -60,7 +58,7 @@ class LocalRabbitMQ:
         return "/"
 
     @property
-    def service(self) -> Optional[services.Service]:
+    def service(self) -> services.Service | None:
         """The RabbitMQ corresponding docker service."""
         return self._mq_service
 

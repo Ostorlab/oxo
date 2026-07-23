@@ -2,7 +2,7 @@
 
 import dataclasses
 import io
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 from ostorlab.agent.schema import loader
 from ostorlab.utils import definitions
@@ -13,27 +13,27 @@ class AgentDefinition:
     """Data class holding attributes of an agent."""
 
     name: str
-    in_selectors: List[str] = dataclasses.field(default_factory=list)
-    out_selectors: List[str] = dataclasses.field(default_factory=list)
-    args: List[Dict[str, Any]] = dataclasses.field(default_factory=list)
-    constraints: List[str] = dataclasses.field(default_factory=list)
-    mounts: List[str] = dataclasses.field(default_factory=list)
-    volumes: List[definitions.Volume] = dataclasses.field(default_factory=list)
+    in_selectors: list[str] = dataclasses.field(default_factory=list)
+    out_selectors: list[str] = dataclasses.field(default_factory=list)
+    args: list[dict[str, Any]] = dataclasses.field(default_factory=list)
+    constraints: list[str] = dataclasses.field(default_factory=list)
+    mounts: list[str] = dataclasses.field(default_factory=list)
+    volumes: list[definitions.Volume] = dataclasses.field(default_factory=list)
     restart_policy: str = ""
-    mem_limit: Optional[int] = None
-    open_ports: List[definitions.PortMapping] = dataclasses.field(default_factory=list)
-    restrictions: List[str] = dataclasses.field(default_factory=list)
-    version: Optional[str] = None
-    description: Optional[str] = None
-    source: Optional[str] = None
-    license: Optional[str] = None
+    mem_limit: int | None = None
+    open_ports: list[definitions.PortMapping] = dataclasses.field(default_factory=list)
+    restrictions: list[str] = dataclasses.field(default_factory=list)
+    version: str | None = None
+    description: str | None = None
+    source: str | None = None
+    license: str | None = None
     durability: str = "published"
     docker_file_path: str = "Dockerfile"
     docker_build_root: str = "."
-    image: Optional[str] = None
-    service_name: Optional[str] = None
-    caps: Optional[List[str]] = None
-    supported_architectures: Optional[list[str]] = None
+    image: str | None = None
+    service_name: str | None = None
+    caps: list[str] | None = None
+    supported_architectures: list[str] | None = None
 
     @classmethod
     def from_yaml(cls, file: io.TextIOWrapper) -> "AgentDefinition":
@@ -45,7 +45,7 @@ class AgentDefinition:
         Returns:
             Agent definition.
         """
-        definition: Dict[str, Any] = loader.load_agent_yaml(file)
+        definition: dict[str, Any] = loader.load_agent_yaml(file)
         return cls(
             name=definition.get("name", ""),
             in_selectors=definition.get("in_selectors", []),

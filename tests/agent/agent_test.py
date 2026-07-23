@@ -5,12 +5,12 @@ import datetime
 import json
 import logging
 import multiprocessing as mp
+import os
 import pathlib
-import time
-import uuid
 import signal
 import sys
-import os
+import time
+import uuid
 
 import pytest
 from pytest_mock import plugin

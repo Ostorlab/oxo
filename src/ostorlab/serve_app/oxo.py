@@ -4,7 +4,6 @@ import ipaddress
 import pathlib
 import threading
 import uuid
-from typing import Optional, List
 
 import graphene
 import graphql
@@ -12,8 +11,7 @@ import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
-from ostorlab import configuration_manager
-from ostorlab import exceptions
+from ostorlab import configuration_manager, exceptions
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -29,9 +27,7 @@ from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common, export_utils
-from ostorlab.serve_app import import_utils
-from ostorlab.serve_app import types
+from ostorlab.serve_app import common, export_utils, import_utils, types
 from ostorlab.utils import definitions as utils_definitions
 
 DEFAULT_NUMBER_ELEMENTS = 15
@@ -67,12 +63,12 @@ class Query(graphene.ObjectType):
     def resolve_scans(
         self,
         info: graphql_base.ResolveInfo,
-        scan_ids: Optional[List[int]] = None,
-        page: Optional[int] = None,
+        scan_ids: list[int] | None = None,
+        page: int | None = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-        order_by: Optional[types.OxoScanOrderByEnum] = None,
-        sort: Optional[common.SortEnum] = None,
-    ) -> Optional[types.OxoScansType]:
+        order_by: types.OxoScanOrderByEnum | None = None,
+        sort: common.SortEnum | None = None,
+    ) -> types.OxoScansType | None:
         """Resolve scans query.
 
         Args:
@@ -152,10 +148,10 @@ class Query(graphene.ObjectType):
         search: str = None,
         page=None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
-        order_by: Optional[types.AgentGroupOrderByEnum] = None,
-        sort: Optional[common.SortEnum] = None,
-        agent_group_ids: Optional[List[int]] = None,
-        asset_type: Optional[types.OxoAssetTypeEnum] = None,
+        order_by: types.AgentGroupOrderByEnum | None = None,
+        sort: common.SortEnum | None = None,
+        agent_group_ids: list[int] | None = None,
+        asset_type: types.OxoAssetTypeEnum | None = None,
     ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
@@ -239,7 +235,7 @@ class ImportScanMutation(graphene.Mutation):
         root,
         info: graphql_base.ResolveInfo,
         file: scalars.Upload,
-        scan_id: Optional[int] = None,
+        scan_id: int | None = None,
     ) -> "ImportScanMutation":
         """Import scan mutation.
 
@@ -271,7 +267,7 @@ class ExportScanMutation(graphene.Mutation):
         root,
         info: graphql_base.ResolveInfo,
         scan_id: int,
-        export_ide: Optional[bool] = False,
+        export_ide: bool | None = False,
     ) -> "ExportScanMutation":
         """Export scan mutation.
 
@@ -381,7 +377,7 @@ class CreateAssetsMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root, info: graphql_base.ResolveInfo, assets: List[types.OxoAssetInputType]
+        root, info: graphql_base.ResolveInfo, assets: list[types.OxoAssetInputType]
     ):
         """Create asset mutation."""
         created_assets = []
@@ -403,7 +399,7 @@ class CreateAssetsMutation(graphene.Mutation):
                 for asset_android_apk_file in asset.android_apk_file:
                     content = asset_android_apk_file.file.read()
                     android_file_path = (
-                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                        config_manager.upload_path / f"android_{uuid.uuid4()!s}"
                     )
                     android_file_path.write_bytes(content)
                     new_asset = models.AndroidFile.create(
@@ -415,7 +411,7 @@ class CreateAssetsMutation(graphene.Mutation):
                 for asset_android_aab_file in asset.android_aab_file:
                     content = asset_android_aab_file.file.read()
                     android_file_path = (
-                        config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                        config_manager.upload_path / f"android_{uuid.uuid4()!s}"
                     )
                     android_file_path.write_bytes(content)
                     new_asset = models.AndroidFile.create(
@@ -434,7 +430,7 @@ class CreateAssetsMutation(graphene.Mutation):
                 for asset_ios_file in asset.ios_file:
                     content = asset_ios_file.file.read()
                     ios_file_path = (
-                        config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
+                        config_manager.upload_path / f"ios_{uuid.uuid4()!s}"
                     )
                     ios_file_path.write_bytes(content)
                     new_asset = models.IosFile.create(
@@ -458,7 +454,7 @@ class CreateAssetsMutation(graphene.Mutation):
         return CreateAssetsMutation(assets=created_assets)
 
     @staticmethod
-    def _validate(asset: types.OxoAssetInputType) -> Optional[str]:
+    def _validate(asset: types.OxoAssetInputType) -> str | None:
         """Validate asset API input & return corresponding error message."""
         assets = []
         if asset.android_store is not None:
@@ -646,7 +642,7 @@ class RunScanMutation(graphene.Mutation):
             return agent_group_instance
 
     @staticmethod
-    def _prepare_assets(asset_ids: List[int]) -> List[ostorlab_asset.Asset]:
+    def _prepare_assets(asset_ids: list[int]) -> list[ostorlab_asset.Asset]:
         """Prepare assets.
 
         Args:
@@ -850,7 +846,7 @@ class RunScanMutation(graphene.Mutation):
         runtime_instance: runtime.LocalRuntime,
         agent_group: definitions.AgentGroupDefinition,
         scan: types.OxoAgentScanInputType,
-        scan_assets: List[ostorlab_asset.Asset],
+        scan_assets: list[ostorlab_asset.Asset],
     ) -> None:
         """Run scan in background.
 

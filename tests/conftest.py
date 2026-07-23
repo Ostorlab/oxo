@@ -5,17 +5,17 @@ import io
 import pathlib
 import sys
 import time
-from typing import Any, List
+from typing import Any
 
 import docker
 import flask
 import pytest
 import redis
+from click import testing
 from docker.models import networks as networks_model
 from flask import testing as flask_testing
-from werkzeug import test as werkzeug_test
-from click import testing
 from pytest_mock import plugin
+from werkzeug import test as werkzeug_test
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
@@ -43,8 +43,7 @@ from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.serve_app import app
-from ostorlab.serve_app import types
+from ostorlab.serve_app import app, types
 from ostorlab.utils import risk_rating
 
 
@@ -956,7 +955,7 @@ def android_scan(
 @pytest.fixture
 def agent_groups(
     clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
-) -> List[models.AgentGroup]:
+) -> list[models.AgentGroup]:
     """Create dummy agent groups."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -1217,7 +1216,7 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
 @pytest.fixture
 def scan_with_agent_group(
     db_engine_path: str,
-    agent_groups: List[models.AgentGroup],
+    agent_groups: list[models.AgentGroup],
     clean_db: None,
 ) -> models.Scan:
     """Create dummy scan with agent group."""

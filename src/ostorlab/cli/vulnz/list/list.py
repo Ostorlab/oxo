@@ -1,7 +1,6 @@
 """Vulnz List command."""
 
 import logging
-from typing import Optional
 
 import click
 
@@ -34,8 +33,8 @@ logger = logging.getLogger(__name__)
 def list_cli(
     ctx: click.core.Context,
     scan_id: int,
-    risk_rating: Optional[str],
-    search: Optional[str],
+    risk_rating: str | None,
+    search: str | None,
     order_by: str,
 ) -> None:
     """CLI command to list vulnerabilities for a scan."""

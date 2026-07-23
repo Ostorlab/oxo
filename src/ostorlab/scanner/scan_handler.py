@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-import logging
 import asyncio
 import datetime
+import logging
 
 import docker
 from docker.models import services
-from nats.js import errors as jetstream_errors
 from nats import errors as nats_errors
+from nats.js import errors as jetstream_errors
 
 from ostorlab.apis import scanner_config
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.scanner import callbacks, scanner_conf
 from ostorlab.scanner import handler as scanner_handler
-from ostorlab.scanner import scanner_conf
-from ostorlab.scanner import callbacks
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -140,7 +139,7 @@ def _is_scan_running(client: docker.DockerClient, scan_id: str | None = None) ->
     if scan_id is None:
         return False
     scan_services: list[services.Service] = client.services.list(
-        filters={"label": f"ostorlab.universe={str(scan_id)}"}
+        filters={"label": f"ostorlab.universe={scan_id!s}"}
     )
     return len(scan_services) > 0
 

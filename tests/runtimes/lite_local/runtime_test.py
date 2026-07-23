@@ -6,8 +6,8 @@ from docker.models import services as services_model
 from pytest_mock import plugin
 
 import ostorlab
-from ostorlab.assets import ipv4
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.lite_local import runtime as lite_local_runtime

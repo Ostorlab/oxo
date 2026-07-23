@@ -5,10 +5,11 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
+import builtins
 import ipaddress
 import json
 import logging
-from typing import Any, List, Optional, Dict, Union
+from typing import Any
 
 import click
 import markdownify
@@ -16,25 +17,25 @@ import rich
 from rich import markdown, panel
 
 from ostorlab import configuration_manager
-from ostorlab.apis import agent_details
-from ostorlab.apis import agent_group
+from ostorlab.apis import (
+    agent_details,
+    agent_group,
+    create_agent_scan,
+    scan_list,
+    scan_stop,
+    vulnz_describe,
+    vulnz_list,
+)
 from ostorlab.apis import assets as api_assets
-from ostorlab.apis import create_agent_scan
-from ostorlab.apis import scan_list
-from ostorlab.apis import scan_stop
-from ostorlab.apis import vulnz_describe
-from ostorlab.apis import vulnz_list
-from ostorlab.apis.runners import authenticated_runner
-from ostorlab.apis.runners import runner
+from ostorlab.apis.runners import authenticated_runner, runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import link
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions, runtime
 from ostorlab.utils import styles
 
-AgentType = Dict[str, Union[str, List]]
+AgentType = dict[str, str | list]
 console = cli_console.Console()
 
 
@@ -74,9 +75,9 @@ class CloudRuntime(runtime.Runtime):
 
     def scan(
         self,
-        title: Optional[str],
+        title: str | None,
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: Optional[List[base_asset.Asset]],
+        assets: list[base_asset.Asset] | None,
     ) -> None:
         """Triggers a scan using the provided agent group definition and asset target.
 
@@ -142,8 +143,8 @@ class CloudRuntime(runtime.Runtime):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: Optional[str] = None,
-    ) -> List[runtime.Scan]:
+        state: str | None = None,
+    ) -> list[runtime.Scan]:
         """Lists scans managed by runtime.
 
         Args:
@@ -181,9 +182,8 @@ class CloudRuntime(runtime.Runtime):
         Returns:
             None
         """
-        pass
 
-    def _prepare_vuln_location_markdown(self, location: Dict[str, Any]) -> str:
+    def _prepare_vuln_location_markdown(self, location: dict[str, Any]) -> str:
         """Returns a markdown display of the exact target where the vulnerability was found."""
         location = location or {}
         asset_data = location.get("asset")
@@ -259,9 +259,9 @@ class CloudRuntime(runtime.Runtime):
         scan_id: int,
         page: int = 1,
         number_elements: int = 10,
-        filter_risk_rating: Optional[List[str]] = None,
-        search: Optional[str] = None,
-        order_by: Optional[str] = None,
+        filter_risk_rating: builtins.list[str] | None = None,
+        search: str | None = None,
+        order_by: str | None = None,
     ) -> None:
         """List vulnz from the cloud using and render them in a table.
 
@@ -358,8 +358,8 @@ class CloudRuntime(runtime.Runtime):
             console.error(f"scan with id {scan_id} does not exist.")
 
     def _prepare_references_markdown(
-        self, references: List[Dict[str, str]]
-    ) -> Optional[str]:
+        self, references: builtins.list[dict[str, str]]
+    ) -> str | None:
         """Returns a markdown display of the references of a vulnerability."""
         if references is None or len(references) == 0:
             return None
@@ -459,7 +459,7 @@ class CloudRuntime(runtime.Runtime):
     def describe_vuln(
         self,
         scan_id: int,
-        vuln_id: Optional[int],
+        vuln_id: int | None,
         page: int = 1,
         number_elements: int = 10,
     ):
@@ -593,7 +593,7 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
-    def _to_serialized(self, value) -> Union[bytes, memoryview, List[Any], str]:
+    def _to_serialized(self, value) -> bytes | memoryview | builtins.list[Any] | str:
         if isinstance(value, (bytes, memoryview)) is True:
             return value
         elif isinstance(value, (list, bool)) is True:
@@ -610,7 +610,7 @@ class CloudRuntime(runtime.Runtime):
         self,
         api_runner: runner.APIRunner,
         agent_group_definition: definitions.AgentGroupDefinition,
-    ) -> List[AgentType]:
+    ) -> builtins.list[AgentType]:
         """Creates list of agents dicts from an agent group definition."""
         agents = []
         for agent_def in agent_group_definition.agents:
@@ -642,7 +642,7 @@ class CloudRuntime(runtime.Runtime):
         api_runner: runner.APIRunner,
         name: str,
         description: str,
-        agents: List[AgentType],
+        agents: builtins.list[AgentType],
     ):
         """Sends an API request to create an agent group.
 
@@ -657,7 +657,7 @@ class CloudRuntime(runtime.Runtime):
     def _create_asset(
         self,
         api_runner: runner.APIRunner,
-        asset: Union[base_asset.Asset, List[link.Link]],
+        asset: base_asset.Asset | builtins.list[link.Link],
     ):
         """Sends an API request to create an asset.
 
@@ -693,13 +693,11 @@ class CloudRuntime(runtime.Runtime):
             scan: The scan object.
             agent_group_definition: The agent group definition.
         """
-        pass
 
-    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+    def link_assets_scan(self, scan_id: int, assets: builtins.list[base_asset.Asset]) -> None:
         """Link the assets to the scan in the database.
 
         Args:
             scan_id: The scan id.
             assets: The list of assets.
         """
-        pass

@@ -6,7 +6,6 @@ import ipaddress
 import json
 import uuid
 import zipfile
-from typing import Optional
 
 from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models, utils
@@ -19,7 +18,7 @@ VULNERABILITY_JSON = "vulnerability.json"
 
 def import_scan(
     file_data: bytes,
-    append_to_scan: Optional[models.Scan] = None,
+    append_to_scan: models.Scan | None = None,
 ) -> None:
     """Import the scan details from the given file data.
 
@@ -53,7 +52,7 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             if scan_dict.get("created_time") is not None
             else datetime.datetime.now()
         )
-        last_status: Optional[str] = None
+        last_status: str | None = None
         if scan.id is None:
             session.add(scan)
 
@@ -137,7 +136,7 @@ def _import_asset(
             if asset_dict["path"] in archive.namelist():
                 content = archive.read(asset_dict["path"])
                 android_file_path = (
-                    config_manager.upload_path / f"android_{str(uuid.uuid4())}"
+                    config_manager.upload_path / f"android_{uuid.uuid4()!s}"
                 )
                 android_file_path.write_bytes(content)
                 models.AndroidFile.create(
@@ -149,7 +148,7 @@ def _import_asset(
         elif "ios file" in asset_dict["type"].lower():
             if asset_dict["path"] in archive.namelist():
                 content = archive.read(asset_dict["path"])
-                ios_file_path = config_manager.upload_path / f"ios_{str(uuid.uuid4())}"
+                ios_file_path = config_manager.upload_path / f"ios_{uuid.uuid4()!s}"
                 ios_file_path.write_bytes(content)
                 models.IosFile.create(
                     bundle_id=utils.get_bundle_id(str(ios_file_path)),

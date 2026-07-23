@@ -4,14 +4,13 @@ from typing import Any
 
 import docker
 import pytest
-from docker.models import services as services_model
 from docker.models import networks as networks_model
+from docker.models import services as services_model
 from pytest_mock import plugin
 
 import ostorlab
 from ostorlab import exceptions
-from ostorlab.assets import android_apk
-from ostorlab.assets import ipv4
+from ostorlab.assets import android_apk, ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models

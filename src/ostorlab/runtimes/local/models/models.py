@@ -2,44 +2,45 @@
 
 import datetime
 import enum
+import ipaddress
 import json
 import logging
 import pathlib
 import struct
 import threading
-import uuid
 import types
-from typing import Any, Dict, List, Optional, Union
-import ipaddress
+import uuid
+from typing import Any
 
 import sqlalchemy
-from sqlalchemy import orm
-from sqlalchemy.ext import declarative
-from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.engine import base
-from alembic import config
-from alembic import script
 from alembic import command as alembic_command
+from alembic import config, script
 from alembic.runtime import migration
 from alembic.util import exc as alembic_exceptions
+from sqlalchemy import orm
+from sqlalchemy.engine import base
+from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy.ext import declarative
 
 from ostorlab import configuration_manager as config_manager
+from ostorlab.assets import (
+    android_aab,
+    android_apk,
+    android_store,
+    domain_name,
+    ios_ipa,
+    ios_store,
+    ip,
+    ipv4,
+    ipv6,
+    link,
+    multi_asset,
+)
+from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.models import utils
 from ostorlab.utils import risk_rating as risk_rating_utils
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
-from ostorlab.assets import link
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import ios_store
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import android_store
-from ostorlab.assets import ip
-from ostorlab.assets import domain_name
-from ostorlab.assets import asset as base_asset
-from ostorlab.assets import multi_asset
 
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
 OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
@@ -104,9 +105,9 @@ class Database:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_traceback: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_traceback: types.TracebackType | None,
     ) -> None:
         """Context manager exit method, responsible for closing the local database session"""
         if self._db_session is not None:
@@ -142,7 +143,7 @@ class Database:
                     ):
                         alembic_command.upgrade(self._alembic_cfg, "head")
         except (alembic_exceptions.CommandError, ValueError) as e:
-            console.error(f"Error while migrating the local database: {str(e)}")
+            console.error(f"Error while migrating the local database: {e!s}")
 
     def _prepare_db_session(self) -> orm.Session:
         """Returns a Session singleton to run queries on the db engine."""
@@ -182,7 +183,7 @@ class Scan(Base):
     @staticmethod
     def create(
         title: str = "",
-        agent_group_id: Optional[int] = None,
+        agent_group_id: int | None = None,
         progress: sqlalchemy.Enum(ScanProgress) = ScanProgress.NOT_STARTED,
     ) -> "Scan":
         """Persist the scan in the database.
@@ -229,7 +230,7 @@ class Vulnerability(Base):
     location = sqlalchemy.Column(sqlalchemy.Text)
 
     @staticmethod
-    def _prepare_references_markdown(references: List[Dict[str, str]]) -> str:
+    def _prepare_references_markdown(references: list[dict[str, str]]) -> str:
         """Returns a markdown display of the references of a vulnerability."""
         if references is None or len(references) == 0:
             return ""
@@ -244,7 +245,7 @@ class Vulnerability(Base):
         return references_markdwon_value
 
     @staticmethod
-    def _prepare_vuln_location_markdown(location: Dict[str, Any]) -> str:
+    def _prepare_vuln_location_markdown(location: dict[str, Any]) -> str:
         """Returns a markdown display of the exact target where the vulnerability was found."""
         if location is None:
             return ""
@@ -285,12 +286,12 @@ class Vulnerability(Base):
         recommendation: str,
         technical_detail: str,
         risk_rating: str,
-        exploitation_detail: Optional[str] = None,
-        post_exploitation_detail: Optional[str] = None,
-        cvss_v3_vector: Optional[str] = None,
-        dna: Optional[str] = None,
-        references: Optional[List[Dict[str, str]]] = None,
-        location: Optional[Dict[str, Any]] = None,
+        exploitation_detail: str | None = None,
+        post_exploitation_detail: str | None = None,
+        cvss_v3_vector: str | None = None,
+        dna: str | None = None,
+        references: list[dict[str, str]] | None = None,
+        location: dict[str, Any] | None = None,
     ):
         """Persist the vulnerability in the database.
 
@@ -456,8 +457,8 @@ class AgentArgument(Base):
         agent_id: int,
         name: str,
         type: str,
-        description: Optional[str] = None,
-        value: Optional[Union[bytes, int, float, str, bool, list, dict]] = None,
+        description: str | None = None,
+        value: bytes | float | str | bool | list | dict | None = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
@@ -487,7 +488,7 @@ class AgentArgument(Base):
 
     @staticmethod
     def to_bytes(
-        type: str, value: Optional[Union[int, float, str, bool, List, Dict]]
+        type: str, value: float | str | bool | list | dict | None
     ) -> bytes:
         """Convert the value to bytes."""
         if type == "string":
@@ -569,8 +570,8 @@ class AgentGroup(Base):
     def create(
         description: str,
         agents: Any,
-        name: Optional[str] = None,
-        asset_types: List[AssetTypeEnum] = [],
+        name: str | None = None,
+        asset_types: list[AssetTypeEnum] = [],
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
@@ -656,7 +657,7 @@ class AgentGroup(Base):
             return agent_group
 
     @staticmethod
-    def create_from_directory(agent_groups_path: pathlib.Path) -> List["AgentGroup"]:
+    def create_from_directory(agent_groups_path: pathlib.Path) -> list["AgentGroup"]:
         """Create agent groups from a directory.
 
         Args:
@@ -836,15 +837,15 @@ class Asset(Base):
 
     @staticmethod
     def _create_from_assets_definition(
-        assets: Optional[List[base_asset.Asset]], scan_id: Optional[int] = None
+        assets: list[base_asset.Asset] | None, scan_id: int | None = None
     ) -> None:
         """Create the assets from the asset definition without multi_asset handling."""
         if assets is None or len(assets) == 0:
             return
 
-        networks: List[Dict[str, Union[str, int]]] = []
-        links: List[Dict[str, str]] = []
-        domains: List[Dict[str, str]] = []
+        networks: list[dict[str, str | int]] = []
+        links: list[dict[str, str]] = []
+        domains: list[dict[str, str]] = []
         for asset in assets:
             if (
                 isinstance(asset, ip.IP)
@@ -927,7 +928,7 @@ class AndroidFile(Asset):
 
     @staticmethod
     def create(
-        package_name: str = "", path: str = "", scan_id: Optional[int] = None
+        package_name: str = "", path: str = "", scan_id: int | None = None
     ) -> "AndroidFile":
         """Persist the android file information in the database.
 
@@ -966,7 +967,7 @@ class AndroidStore(Asset):
     def create(
         package_name: str = "",
         application_name: str = "",
-        scan_id: Optional[int] = None,
+        scan_id: int | None = None,
     ) -> "AndroidStore":
         """Persist the android store information in the database.
 
@@ -1003,7 +1004,7 @@ class IosFile(Asset):
 
     @staticmethod
     def create(
-        bundle_id: str = "", path: str = "", scan_id: Optional[int] = None
+        bundle_id: str = "", path: str = "", scan_id: int | None = None
     ) -> "IosFile":
         """Persist the iOS file information in the database.
 
@@ -1040,7 +1041,7 @@ class IosStore(Asset):
 
     @staticmethod
     def create(
-        bundle_id: str = "", application_name: str = "", scan_id: Optional[int] = None
+        bundle_id: str = "", application_name: str = "", scan_id: int | None = None
     ) -> "IosStore":
         """Persist the iOS store information in the database.
 
@@ -1073,7 +1074,7 @@ class Link(Base):
     )
 
     @staticmethod
-    def create(url: str, method: str, urls_asset_id: Optional[int] = None) -> "Link":
+    def create(url: str, method: str, urls_asset_id: int | None = None) -> "Link":
         """Persist the link information in the database.
 
         Args:
@@ -1102,7 +1103,7 @@ class Urls(Asset):
     }
 
     @staticmethod
-    def create(links: List[dict[str, str]], scan_id: Optional[int] = None) -> "Urls":
+    def create(links: list[dict[str, str]], scan_id: int | None = None) -> "Urls":
         """Persist the URL information in the database.
 
         Args:
@@ -1153,7 +1154,7 @@ class IPRange(Base):
 
     @staticmethod
     def create(
-        host: str, mask: str, network_asset_id: Optional[int] = None
+        host: str, mask: str, network_asset_id: int | None = None
     ) -> "IPRange":
         """Persist the IP information in the database.
 
@@ -1184,7 +1185,7 @@ class Network(Asset):
 
     @staticmethod
     def create(
-        networks: List[Dict[str, Union[str, int]]], scan_id: Optional[int] = None
+        networks: list[dict[str, str | int]], scan_id: int | None = None
     ) -> "Network":
         """Persist the Network information in the database.
 
@@ -1236,7 +1237,7 @@ class DomainName(Base):
     )
 
     @staticmethod
-    def create(name: str, domain_asset_id: Optional[int] = None) -> "DomainName":
+    def create(name: str, domain_asset_id: int | None = None) -> "DomainName":
         """Persist the domain name information in the database.
 
         Args:
@@ -1265,7 +1266,7 @@ class DomainAsset(Asset):
 
     @staticmethod
     def create(
-        domains: List[Dict[str, str]], scan_id: Optional[int] = None
+        domains: list[dict[str, str]], scan_id: int | None = None
     ) -> "DomainAsset":
         """Persist the domain asset information in the database.
 

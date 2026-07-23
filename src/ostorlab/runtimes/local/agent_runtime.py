@@ -11,21 +11,16 @@ import io
 import logging
 import random
 import uuid
-from typing import List, Optional
 
 import docker
-from docker import constants
-from docker import errors
+from docker import constants, errors
 from docker.types import services as docker_types_services
 
-from ostorlab import configuration_manager
-from ostorlab import exceptions
+from ostorlab import configuration_manager, exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local.services import jaeger, mq, redis
 from ostorlab.utils import definitions as utils_definitions
-from ostorlab.runtimes.local.services import jaeger
-from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local.services import redis
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +150,7 @@ class AgentRuntime:
         mq_service: mq.LocalRabbitMQ,
         redis_service: redis.LocalRedis,
         jaeger_service: jaeger.LocalJaeger,
-        gcp_logging_credential: Optional[str] = None,
+        gcp_logging_credential: str | None = None,
         labels: dict[str, str] | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
@@ -289,7 +284,7 @@ class AgentRuntime:
         )
         return healthcheck
 
-    def replace_variable_mounts(self, mounts: List[str]):
+    def replace_variable_mounts(self, mounts: list[str]):
         """Replace path variables for the container mounts
 
         Args:
@@ -304,8 +299,8 @@ class AgentRuntime:
         return replaced_mounts
 
     def create_scan_volume_mounts(
-        self, volumes: List[utils_definitions.Volume]
-    ) -> List[docker.types.Mount]:
+        self, volumes: list[utils_definitions.Volume]
+    ) -> list[docker.types.Mount]:
         """Ensure each declared shared scan volume exists and build its mount.
 
         Agents declaring the same logical volume name share a single per-scan
@@ -341,8 +336,8 @@ class AgentRuntime:
     def create_agent_service(
         self,
         network_name: str,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
         replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.

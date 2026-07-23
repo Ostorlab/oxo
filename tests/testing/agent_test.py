@@ -3,9 +3,10 @@
 import datetime
 from abc import ABC
 
-from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.agent import agent, definitions as agent_definitions
+from ostorlab.agent import agent
+from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.mixins import agent_persist_mixin
+from ostorlab.runtimes import definitions as runtime_definitions
 
 
 class StartTestAgent(agent.Agent, ABC):

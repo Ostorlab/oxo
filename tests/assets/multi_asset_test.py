@@ -1,11 +1,9 @@
 """Unit tests for the MultiAsset asset class."""
 
-from ostorlab.assets import android_store
+from ostorlab.assets import android_store, ipv4, multi_asset
 from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import file as file_asset
-from ostorlab.assets import ipv4
 from ostorlab.assets import link as link_asset
-from ostorlab.assets import multi_asset
 from ostorlab.assets import repository as repository_asset
 
 

@@ -4,16 +4,15 @@ import collections
 import inspect
 import io
 import json
+import struct
 import zipfile
 from functools import cached_property
 from math import ceil
-import struct
-from typing import Optional, Union
 
 import cvss
 import graphene
-from graphql.language import ast
 from graphene.types import scalars
+from graphql.language import ast
 
 
 class PageInfo(graphene.ObjectType):
@@ -53,7 +52,7 @@ class Bytes(scalars.Scalar):
 
     @staticmethod
     def coerce_bytes(
-        value: Union[str, bytes, memoryview, list, float, int, dict, bool],
+        value: str | bytes | memoryview | list | float | dict | bool,
     ) -> bytes:
         """Coerce a value to bytes.
 
@@ -84,7 +83,7 @@ class Bytes(scalars.Scalar):
     parse_value = coerce_bytes
 
     @staticmethod
-    def parse_literal(asst: ast.Value) -> Optional[int]:
+    def parse_literal(asst: ast.Value) -> int | None:
         """Parse a literal value."""
         raise NotImplementedError("ast is not supported")
 
@@ -105,7 +104,7 @@ class Bytes(scalars.Scalar):
         return b"".join(outlist)
 
 
-def compute_cvss_v3_base_score(vector: Optional[str]) -> Optional[float]:
+def compute_cvss_v3_base_score(vector: str | None) -> float | None:
     """Compute the CVSS v3 base score from the vector.
 
     Args:
@@ -210,8 +209,7 @@ class Paginator:
         """
         bottom = (number - 1) * self.per_page
         top = bottom + self.per_page
-        if top >= self.count:
-            top = self.count
+        top = min(self.count, top)
         return Page(
             object_list=self.object_list[bottom:top], number=number, paginator=self
         )

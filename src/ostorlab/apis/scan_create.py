@@ -1,10 +1,10 @@
 """Create mobile scan API."""
 
+import dataclasses
 import enum
 import io
 import json
-import dataclasses
-from typing import Dict, Optional, BinaryIO, List, Any
+from typing import Any, BinaryIO
 
 from . import request
 
@@ -12,7 +12,7 @@ from . import request
 class CreateUIPromptsAPIRequest(request.APIRequest):
     """Create UI prompts API request with get_or_create logic."""
 
-    def __init__(self, ui_prompts: List[Dict[str, Any]]):
+    def __init__(self, ui_prompts: list[dict[str, Any]]):
         self._ui_prompts = ui_prompts
 
     @property
@@ -35,7 +35,7 @@ mutation CreateUIPrompts($uiPrompts: [UIAutomationRulesInputType]!) {
         """
 
     @property
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         """Sets the query and variables to create UI prompts.
 
         Returns:
@@ -61,9 +61,9 @@ class ScanSource:
     """Dataclass holding scan source related parameters."""
 
     source: str
-    repository: Optional[str] = None
-    pr_number: Optional[str] = None
-    branch: Optional[str] = None
+    repository: str | None = None
+    pr_number: str | None = None
+    branch: str | None = None
 
 
 SCAN_PROFILES = {
@@ -91,11 +91,11 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         asset_type: MobileAssetType,
         scan_profile: str,
         application: BinaryIO,
-        test_credential_ids: Optional[List[int]] = None,
-        scope_urls_regexes: Optional[List[str]] = None,
+        test_credential_ids: list[int] | None = None,
+        scope_urls_regexes: list[str] | None = None,
         sboms: list[io.FileIO] = None,
-        scan_source: Optional[ScanSource] = None,
-        ui_automation_rule_ids: List[int] = (),
+        scan_source: ScanSource | None = None,
+        ui_automation_rule_ids: list[int] = (),
     ):
         self._title = title
         self._asset_type = asset_type
@@ -108,7 +108,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         self._ui_automation_rule_ids = ui_automation_rule_ids
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to create a mobile scan.
 
         Returns:
@@ -126,7 +126,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict | None:
         """Sets the query and variables to create the scan.
 
         Returns:
@@ -172,7 +172,7 @@ mutation MobileScan($title: String!, $assetType: String!, $application: Upload!,
         return data
 
     @property
-    def files(self) -> Optional[Dict]:
+    def files(self) -> dict | None:
         """Sets the file for multipart upload to create the mobile scan.
 
         Returns:
@@ -190,15 +190,15 @@ class CreateWebScanAPIRequest(request.APIRequest):
     def __init__(
         self,
         title: str,
-        urls: List[str],
+        urls: list[str],
         scan_profile: str,
-        sboms: Optional[list[io.FileIO]] = None,
-        api_schema: Optional[io.FileIO] = None,
-        proxy: Optional[str] = None,
-        qps: Optional[int] = None,
-        filtered_url_regexes: Optional[List[str]] = None,
-        test_credential_ids: Optional[List[int]] = None,
-        ui_automation_rule_ids: List[int] = (),
+        sboms: list[io.FileIO] | None = None,
+        api_schema: io.FileIO | None = None,
+        proxy: str | None = None,
+        qps: int | None = None,
+        filtered_url_regexes: list[str] | None = None,
+        test_credential_ids: list[int] | None = None,
+        ui_automation_rule_ids: list[int] = (),
     ):
         self._title = title
         self._urls = urls
@@ -212,7 +212,7 @@ class CreateWebScanAPIRequest(request.APIRequest):
         self._ui_automation_rule_ids = ui_automation_rule_ids
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to create a web scan.
 
         Returns:
@@ -230,7 +230,7 @@ mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sbom
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict | None:
         """Sets the query and variables to create the scan.
 
         Returns:
@@ -298,7 +298,7 @@ mutation WebScan($title: String!, $urls: [String]!, $scanProfile: String!, $sbom
         return data
 
     @property
-    def files(self) -> Optional[Dict]:
+    def files(self) -> dict | None:
         """Sets the file for multipart upload to create the web scan.
 
         Returns:

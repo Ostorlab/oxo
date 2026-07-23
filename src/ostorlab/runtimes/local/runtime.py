@@ -4,11 +4,10 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 
+import builtins
 import logging
 import threading
 from concurrent import futures
-from typing import List
-from typing import Optional
 
 import click
 import docker
@@ -17,29 +16,24 @@ import sqlalchemy
 import tenacity
 from docker import errors as docker_errors
 from docker.models import services as docker_models_services
-from rich import markdown
-from rich import panel
+from rich import markdown, panel
 from sqlalchemy import case
 
-from ostorlab.utils import definitions as utils_definitions
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
+from ostorlab.cli import (
+    agent_fetcher,
+    docker_requirements_checker,
+    dumpers,
+    install_agent,
+)
 from ostorlab.cli import console as cli_console
-from ostorlab.cli import agent_fetcher
-from ostorlab.cli import docker_requirements_checker
-from ostorlab.cli import dumpers
-from ostorlab.cli import install_agent
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
-from ostorlab.runtimes.local import agent_runtime
-from ostorlab.runtimes.local import log_streamer
+from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes.local import agent_runtime, log_streamer
 from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local.services import jaeger
-from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local.services import redis
-from ostorlab.utils import risk_rating
-from ostorlab.utils import styles
-from ostorlab.utils import volumes
+from ostorlab.runtimes.local.services import jaeger, mq, redis
+from ostorlab.utils import definitions as utils_definitions
+from ostorlab.utils import risk_rating, styles, volumes
 
 NETWORK_PREFIX = "ostorlab_local_network"
 
@@ -100,11 +94,11 @@ class LocalRuntime(runtime.Runtime):
     def __init__(
         self,
         *args,
-        scan_id: Optional[str] = None,
+        scan_id: str | None = None,
         labels: dict[str, str] | None = None,
-        tracing: Optional[bool] = False,
+        tracing: bool | None = False,
         mq_exposed_ports: dict[int, int] | None = None,
-        gcp_logging_credential: Optional[str] = None,
+        gcp_logging_credential: str | None = None,
         run_default_agents: bool = True,
         **kwargs,
     ) -> None:
@@ -114,15 +108,15 @@ class LocalRuntime(runtime.Runtime):
         self._labels = labels if labels is not None else {}
         self.follow = []
         self._tracing = tracing
-        self._mq_service: Optional[mq.LocalRabbitMQ] = None
-        self._redis_service: Optional[redis.LocalRedis] = None
-        self._jaeger_service: Optional[jaeger.LocalJaeger] = None
-        self._scan_db: Optional[models.Scan] = None
+        self._mq_service: mq.LocalRabbitMQ | None = None
+        self._redis_service: redis.LocalRedis | None = None
+        self._jaeger_service: jaeger.LocalJaeger | None = None
+        self._scan_db: models.Scan | None = None
         self._mq_exposed_ports: dict[int, int] | None = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
-        self._log_streamer: Optional[log_streamer.LogStream] = None
-        self._docker_client: Optional[docker.DockerClient] = None
+        self._log_streamer: log_streamer.LogStream | None = None
+        self._docker_client: docker.DockerClient | None = None
 
     @property
     def name(self) -> str:
@@ -177,7 +171,7 @@ class LocalRuntime(runtime.Runtime):
         self._docker_client = docker.from_env(max_pool_size=100)
 
     def prepare_scan(
-        self, title: str, assets: Optional[List[base_asset.Asset]]
+        self, title: str, assets: list[base_asset.Asset] | None
     ) -> models.Scan:
         """Prepare scan entry in the database.
 
@@ -192,8 +186,8 @@ class LocalRuntime(runtime.Runtime):
         self,
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: Optional[List[base_asset.Asset]],
-    ) -> Optional[models.Scan]:
+        assets: list[base_asset.Asset] | None,
+    ) -> models.Scan | None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -453,8 +447,8 @@ class LocalRuntime(runtime.Runtime):
     def _start_agent(
         self,
         agent: definitions.AgentSettings,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -554,7 +548,7 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_assets(
         self,
-        assets: List[base_asset.Asset],
+        assets: list[base_asset.Asset],
         agent_settings: definitions.AgentSettings | None,
     ):
         """Injects the scan target assets."""
@@ -584,8 +578,8 @@ class LocalRuntime(runtime.Runtime):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: Optional[str] = None,
-    ) -> List[runtime.Scan]:
+        state: str | None = None,
+    ) -> list[runtime.Scan]:
         """Lists scans managed by runtime.
 
         Args:
@@ -662,7 +656,7 @@ class LocalRuntime(runtime.Runtime):
                         return False
         return True
 
-    def install(self, docker_client: Optional[docker.DockerClient] = None) -> None:
+    def install(self, docker_client: docker.DockerClient | None = None) -> None:
         """Installs the default agents.
 
         Args:
@@ -680,8 +674,8 @@ class LocalRuntime(runtime.Runtime):
     def list_vulnz(
         self,
         scan_id: int,
-        filter_risk_rating: Optional[List[str]] = None,
-        search: Optional[str] = None,
+        filter_risk_rating: builtins.list[str] | None = None,
+        search: str | None = None,
         order_by: str = "risk_rating",
     ) -> None:
         try:
@@ -894,7 +888,7 @@ class LocalRuntime(runtime.Runtime):
             session.commit()
 
     def link_assets_scan(
-        self, scan_id: int, assets: Optional[List[base_asset.Asset]] = None
+        self, scan_id: int, assets: builtins.list[base_asset.Asset] | None = None
     ) -> None:
         """Link the assets to the scan in the database.
 

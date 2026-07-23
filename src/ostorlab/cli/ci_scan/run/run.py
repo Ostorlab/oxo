@@ -6,18 +6,18 @@ Example of usage:
 
 import io
 import multiprocessing
-import click
 import time
-from typing import List, Optional
 
-from ostorlab.cli.ci_scan.ci_scan import ci_scan
+import click
+
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.cli.ci_scan.ci_scan import ci_scan
 from ostorlab.cli.ci_scan.run.ci_logger import (
+    circleci_logger,
     console_logger,
     github_logger,
-    circleci_logger,
     logger,
 )
 from ostorlab.utils import risk_rating
@@ -221,30 +221,30 @@ def run(
     break_on_risk_rating: str,
     max_wait_minutes: int,
     log_flavor: str,
-    test_credentials_login: List[str],
-    test_credentials_password: List[str],
-    test_credentials_url: List[str],
-    test_credentials_role: List[str],
-    test_credentials_name: List[str],
-    test_credentials_value: List[str],
-    email_2fa_sender_email_address: List[str],
-    email_2fa_email_address: List[str],
-    email_2fa_password: List[str],
-    sms_2fa_sender: List[str],
-    totp_2fa_seed: List[str],
-    sboms: List[io.FileIO],
+    test_credentials_login: list[str],
+    test_credentials_password: list[str],
+    test_credentials_url: list[str],
+    test_credentials_role: list[str],
+    test_credentials_name: list[str],
+    test_credentials_value: list[str],
+    email_2fa_sender_email_address: list[str],
+    email_2fa_email_address: list[str],
+    email_2fa_password: list[str],
+    sms_2fa_sender: list[str],
+    totp_2fa_seed: list[str],
+    sboms: list[io.FileIO],
     api_schema: io.FileIO,
-    filtered_url_regexes: List[str],
-    scope_urls_regexes: List[str],
+    filtered_url_regexes: list[str],
+    scope_urls_regexes: list[str],
     proxy: str,
     qps: int,
-    ui_prompt_ids: List[int],
-    ui_prompt_names: List[str],
-    ui_prompt_actions: List[str],
-    source: Optional[str] = None,
-    repository: Optional[str] = None,
-    pr_number: Optional[str] = None,
-    branch: Optional[str] = None,
+    ui_prompt_ids: list[int],
+    ui_prompt_names: list[str],
+    ui_prompt_actions: list[str],
+    source: str | None = None,
+    repository: str | None = None,
+    pr_number: str | None = None,
+    branch: str | None = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 

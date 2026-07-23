@@ -2,7 +2,7 @@
 
 import dataclasses
 import json
-from typing import Optional, Union, Any
+from typing import Any
 
 
 @dataclasses.dataclass
@@ -13,16 +13,16 @@ class Arg:
 
     name: str
     type: str
-    value: Optional[Union[bytes, int, float, str, bool]] = None
-    description: Optional[str] = None
+    value: bytes | int | float | str | bool | None = None
+    description: str | None = None
 
     @classmethod
     def build(
         cls,
         name: str,
         type: str,
-        value: Optional[Union[bytes, int, float, str, bool]] = None,
-        description: Optional[str] = None,
+        value: bytes | float | str | bool | None = None,
+        description: str | None = None,
     ) -> "Arg":
         if isinstance(value, bytes):
             if type == "binary":
@@ -100,10 +100,10 @@ class ScannerState:
     """Current scanner state."""
 
     scanner_id: str
-    scan_id: Optional[int]
+    scan_id: int | None
     cpu_load: float
     memory_load: float
-    total_cpu: Optional[int]
+    total_cpu: int | None
     total_memory: int
     hostname: str
     ip: str

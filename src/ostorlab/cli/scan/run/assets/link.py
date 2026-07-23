@@ -1,14 +1,13 @@
 """Asset of type Link."""
 
 import logging
-from typing import List
 
 import click
 
-from ostorlab.assets import link as link_asset
-from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
 from ostorlab import exceptions
+from ostorlab.assets import link as link_asset
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -18,7 +17,7 @@ console = cli_console.Console()
 @click.option("--url", help="List of Urls to scan.", required=True, multiple=True)
 @click.option("--method", help="List of HTTP methods.", required=True, multiple=True)
 @click.pass_context
-def link(ctx: click.core.Context, url: List[str], method: List[str]) -> None:
+def link(ctx: click.core.Context, url: list[str], method: list[str]) -> None:
     """Run scan for links."""
     runtime = ctx.obj["runtime"]
     if len(url) != len(method):

@@ -1,7 +1,7 @@
 """Add scanner state via an API Request."""
 
-from typing import Dict, Optional, Any
 import json
+from typing import Any
 
 from ostorlab.apis import request
 from ostorlab.utils import definitions
@@ -19,7 +19,7 @@ class AddScannerStateAPIRequest(request.APIRequest):
         self._state = state
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to report the scanner state.
 
         Returns:
@@ -39,7 +39,7 @@ class AddScannerStateAPIRequest(request.APIRequest):
     """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the variables to add the scanner state.
 
         Returns:

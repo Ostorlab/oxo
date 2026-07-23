@@ -1,7 +1,6 @@
 """Agent asset."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -12,10 +11,10 @@ class Agent(asset.Asset):
     """Agent asset."""
 
     key: str
-    version: Optional[str] = None
-    git_location: Optional[str] = None
-    docker_location: Optional[str] = None
-    yaml_file_location: Optional[str] = None
+    version: str | None = None
+    git_location: str | None = None
+    docker_location: str | None = None
+    yaml_file_location: str | None = None
 
     def __str__(self) -> str:
         if self.version is not None:

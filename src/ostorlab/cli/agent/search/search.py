@@ -1,14 +1,13 @@
 """Agent search command."""
 
 import logging
-from typing import Dict
 
 import click
 from rich import markdown
 
 from ostorlab import configuration_manager
 from ostorlab.apis import agent_search as agent_search_api
-from ostorlab.apis.runners import public_runner, authenticated_runner
+from ostorlab.apis.runners import authenticated_runner, public_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent import agent
@@ -65,7 +64,7 @@ def search_cli(keyword: str) -> None:
     console.table(columns=columns, data=agents, title=title)
 
 
-def search_agents(search: str) -> Dict:
+def search_agents(search: str) -> dict:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:

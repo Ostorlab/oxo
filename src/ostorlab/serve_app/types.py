@@ -3,13 +3,12 @@
 import collections
 import enum
 import io
-from typing import Optional, List
 
 import graphene
 import graphene_sqlalchemy
-from graphql.execution import base as graphql_base
-from graphene_file_upload import scalars
 import ruamel
+from graphene_file_upload import scalars
+from graphql.execution import base as graphql_base
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
@@ -135,7 +134,7 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_risk_rating(
         self: models.Vulnerability, info: graphql_base.ResolveInfo
-    ) -> Optional[OxoRiskRatingEnum]:
+    ) -> OxoRiskRatingEnum | None:
         """Resolve risk rating of vulnerability"""
         try:
             return OxoRiskRatingEnum[self.risk_rating.name]
@@ -165,7 +164,7 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         description="List of vulnerabilities.",
     )
 
-    def resolve_highest_risk_rating(self, info) -> Optional[OxoRiskRatingEnum]:
+    def resolve_highest_risk_rating(self, info) -> OxoRiskRatingEnum | None:
         try:
             return OxoRiskRatingEnum[self.highest_risk_rating.name]
         except KeyError:
@@ -174,8 +173,8 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
     def resolve_vulnerabilities(
         self: models.Scan,
         info: graphql_base.ResolveInfo,
-        detail_titles: Optional[List[str]] = None,
-        page: Optional[int] = None,
+        detail_titles: list[str] | None = None,
+        page: int | None = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> OxoVulnerabilitiesType:
         """Resolve vulnerabilities query.
@@ -305,7 +304,7 @@ class OxoUrlsAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.Urls
         only_fields = ("id",)
 
-    def resolve_links(self, info) -> List[OxoLinkAssetType]:
+    def resolve_links(self, info) -> list[OxoLinkAssetType]:
         with models.Database() as session:
             links = session.query(models.Link).filter_by(urls_asset_id=self.id).all()
             return [
@@ -326,7 +325,7 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.Network
         only_fields = ("id",)
 
-    def resolve_networks(self, info) -> List[OxoIPRangeAssetType]:
+    def resolve_networks(self, info) -> list[OxoIPRangeAssetType]:
         with models.Database() as session:
             ips = (
                 session.query(models.IPRange).filter_by(network_asset_id=self.id).all()
@@ -349,7 +348,7 @@ class OxoDomainNameAssetsType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_domain_names(
         self, info: graphql_base.ResolveInfo
-    ) -> List[OxoDomainNameAssetType]:
+    ) -> list[OxoDomainNameAssetType]:
         """Resolve domain names query.
 
         Args:
@@ -538,7 +537,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_asset_types(
         self: models.AgentGroup, info: graphql_base.ResolveInfo
-    ) -> List[str]:
+    ) -> list[str]:
         """Resolve asset types query.
         Args:
             self (models.AgentGroup): The agent group object.
@@ -714,7 +713,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_risk_rating(
         self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> Optional[str]:
+    ) -> str | None:
         """Resolve risk rating query.
         Args:
             self (models.Scan): The scan object.
@@ -744,9 +743,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_vulnerabilities(
         self: models.Scan,
         info: graphql_base.ResolveInfo,
-        detail_titles: Optional[List[str]] = None,
-        vuln_ids: Optional[List[int]] = None,
-        page: Optional[int] = None,
+        detail_titles: list[str] | None = None,
+        vuln_ids: list[int] | None = None,
+        page: int | None = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> OxoVulnerabilitiesType:
         """Resolve vulnerabilities query.
@@ -798,8 +797,8 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_kb_vulnerabilities(
         self: models.Scan,
         info: graphql_base.ResolveInfo,
-        detail_title: Optional[str] = None,
-        page: Optional[int] = None,
+        detail_title: str | None = None,
+        page: int | None = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
         """Resolve knowledge base vulnerabilities query.
@@ -839,7 +838,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     def resolve_agent_group(
         self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> Optional[OxoAgentGroupType]:
+    ) -> OxoAgentGroupType | None:
         """Resolve agent group.
 
         Args:
@@ -855,7 +854,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
     @staticmethod
     def _build_kb_vulnerabilities(
-        scan: models.Scan, detail_title: Optional[str] = None
+        scan: models.Scan, detail_title: str | None = None
     ) -> list[OxoAggregatedKnowledgeBaseVulnerabilityType]:
         """Build knowledge base vulnerabilities.
 

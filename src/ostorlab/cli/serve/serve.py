@@ -20,8 +20,9 @@ DEFAULT_SCANNER_NAME = "Local Scanner"
 def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) -> None:
     """Run the Flask serve with the specified host and port."""
     try:
-        from ostorlab.serve_app import app
         import werkzeug
+
+        from ostorlab.serve_app import app
 
         cli = sys.modules["flask.cli"]
         cli.show_server_banner = lambda *x: None

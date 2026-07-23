@@ -3,11 +3,11 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
-from typing import Tuple
 
 import click
-from ostorlab.cli.scan import scan
+
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan import scan
 
 console = cli_console.Console()
 
@@ -33,7 +33,7 @@ console = cli_console.Console()
 @click.pass_context
 def stop(
     ctx: click.core.Context,
-    scan_ids: Tuple[int, ...],
+    scan_ids: tuple[int, ...],
     stop_all: bool,
     stop_last: bool,
 ) -> None:

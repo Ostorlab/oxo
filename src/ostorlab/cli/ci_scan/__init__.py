@@ -3,4 +3,4 @@
 from ostorlab.cli.ci_scan import run
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
 
-__all__ = ["run", "ci_scan"]
+__all__ = ["ci_scan", "run"]
