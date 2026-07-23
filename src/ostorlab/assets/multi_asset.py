@@ -97,12 +97,12 @@ class MultiAsset(asset.Asset):
     def __str__(self) -> str:
         nested_assets = [
             str(nested_asset)
-            for nested_asset in self._nested_assets()
+            for nested_asset in self.nested_assets()
             if nested_asset is not None
         ]
         return f"MultiAsset: [{', '.join(nested_assets)}]"
 
-    def _nested_assets(self) -> list[asset.Asset | None]:
+    def nested_assets(self) -> list[asset.Asset | None]:
         return [
             *self.files,
             self.android_package_name,
