@@ -146,7 +146,11 @@ class ScanHandler:
         api_key: str | None,
     ) -> str | None:
         """Attempts to start the scan locally, rolling back the API state if it fails."""
-        scan_id_val = int(reserved_scan.get("id"))
+        raw_id = reserved_scan.get("id")
+        if raw_id is None:
+            logger.warning("Reserved scan is missing an 'id'. Skipping.")
+            return None
+        scan_id_val = int(raw_id)
 
         scan_key = (reserved_scan.get("agentGroup") or {}).get("key")
         if (
@@ -249,4 +253,7 @@ async def start_scan_loop(
         state_reporter,
         scan_resource_requirements=config.scan_resource_requirements,
     )
-    await scan_handler.handle_messages(runner=s_runner, api_key=api_key)
+    try:
+        await scan_handler.handle_messages(runner=s_runner, api_key=api_key)
+    finally:
+        await scan_handler.close()

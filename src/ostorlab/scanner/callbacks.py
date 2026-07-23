@@ -256,7 +256,8 @@ def start_scan(
     logger.debug("Triggering scan after receiving scan from API")
     docker_client = _connect_containers_registry()
 
-    agent_group_definition = _extract_agent_group_definition(request.get("agentGroup"))
+    agent_group_data = request.get("agentGroup") or {}
+    agent_group_definition = _extract_agent_group_definition(agent_group_data)
     assets = _extract_assets(request.get("asset"))
     scan_id = _extract_scan_id(request)
 
