@@ -2,11 +2,14 @@
 
 from pytest_mock import plugin
 
-from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating
-from ostorlab.assets import ios_ipa
 from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ipv4
+from ostorlab.assets import link
+from ostorlab.assets import multi_asset as multi_asset_asset
+from ostorlab.runtimes.local.models import models
+from ostorlab.utils import risk_rating
 
 
 def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
@@ -820,3 +823,37 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidAabUrl_androidFileC
         assert len(assets) == 1
         assert assets[0].path == "https://example.com/app.aab"
         assert assets[0].package_name == "N/A"
+
+
+def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Ensure MultiAsset is correctly decomposed and nested assets are created."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    ip_asset = ipv4.IPv4(host="10.0.0.1")
+    link_asset = link.Link(url="https://example.com/test", method="GET")
+    multi = multi_asset_asset.MultiAsset(ipv4s=[ip_asset], urls=[link_asset])
+
+    models.Asset.create_from_assets_definition([multi])
+
+    with models.Database() as session:
+        networks = session.query(models.Network).all()
+        urls = session.query(models.Urls).all()
+        assert len(networks) == 1
+        assert len(urls) == 1
+        network_id = networks[0].id
+        ips = (
+            session.query(models.IPRange)
+            .filter(models.IPRange.network_asset_id == network_id)
+            .all()
+        )
+        assert len(ips) == 1
+        assert ips[0].host == "10.0.0.1"
+        url_id = urls[0].id
+        links = (
+            session.query(models.Link).filter(models.Link.urls_asset_id == url_id).all()
+        )
+        assert len(links) == 1
+        assert links[0].url == "https://example.com/test"
+        assert links[0].method == "GET"
