@@ -157,3 +157,31 @@ def testScannerConfigFromJson_whenResourceRequirementsInvalidJson_shouldLogWarni
 
     assert scanner_conf_instance.scan_resource_requirements == {}
     warning.assert_called_once_with("Invalid JSON in scanResourceRequirements")
+
+
+def testScannerConfigFromJson_whenResourceRequirementsAbsent_returnsEmptyDict() -> None:
+    api_response_data = {
+        "data": {
+            "scanners": {
+                "scanners": [
+                    {
+                        "config": {
+                            "busUrl": "nats://localhost:4222",
+                            "busClusterId": "cluster_id",
+                            "busClientName": "client_name",
+                            "registryConfiguration": {
+                                "accountName": "robot_account",
+                                "credentials": "secret",
+                                "url": "https://ostorlab.store/",
+                            },
+                            "subjectBusConfigs": {"subjectBusConfigs": []},
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+
+    assert scanner_conf_instance.scan_resource_requirements == {}
