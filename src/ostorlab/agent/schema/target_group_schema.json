@@ -503,6 +503,18 @@
             }
           },
           "additionalProperties": false
+        },
+        "repository": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/repositoryType"
+          }
+        },
+        "repositoryArchive": {
+          "type": "array",
+          "items" : {
+            "$ref": "#/CustomTypes/repositoryArchiveType"
+          }
         }
       }
     }

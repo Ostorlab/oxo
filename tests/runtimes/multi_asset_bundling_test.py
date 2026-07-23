@@ -260,3 +260,24 @@ assets:
 
     assert len(targets) == 2
     assert all(target.selector != "v3.asset.multi_asset" for target in targets) is True
+
+
+def testFromYaml_whenStandaloneRepositoryAndArchive_shouldEmitStandaloneRepositoryAndArchive() -> (
+    None
+):
+    yaml_definition = io.StringIO("""
+kind: targetGroup
+assets:
+  repository:
+    - repository_url: https://bitbucket.org/mouad-osto/first_repo
+      commit_hash: b3bcad48ac9dda7583357e9e0657651dd1f9f032
+      provider: bitbucket
+  repositoryArchive:
+    - url: https://example.com/archive.zip
+""")
+
+    targets = definitions.AssetsDefinition.from_yaml(yaml_definition).targets
+
+    assert len(targets) == 2
+    assert targets[0].selector == "v3.asset.repository"
+    assert targets[1].selector == "v3.asset.file.repository_archive"
