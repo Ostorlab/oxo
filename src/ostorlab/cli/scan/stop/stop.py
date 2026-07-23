@@ -3,7 +3,6 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
-
 import click
 
 from ostorlab.cli import console as cli_console

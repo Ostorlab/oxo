@@ -487,9 +487,7 @@ class AgentArgument(Base):
             return agent_argument
 
     @staticmethod
-    def to_bytes(
-        type: str, value: float | str | bool | list | dict | None
-    ) -> bytes:
+    def to_bytes(type: str, value: float | str | bool | list | dict | None) -> bytes:
         """Convert the value to bytes."""
         if type == "string":
             return value.encode(encoding="utf-8")
@@ -1153,9 +1151,7 @@ class IPRange(Base):
     )
 
     @staticmethod
-    def create(
-        host: str, mask: str, network_asset_id: int | None = None
-    ) -> "IPRange":
+    def create(host: str, mask: str, network_asset_id: int | None = None) -> "IPRange":
         """Persist the IP information in the database.
 
         Args:

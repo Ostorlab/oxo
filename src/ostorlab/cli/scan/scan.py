@@ -1,6 +1,5 @@
 """Scan module that handles running a scan using a list of agent keys and a target asset."""
 
-
 import click
 
 from ostorlab.cli import input_validators

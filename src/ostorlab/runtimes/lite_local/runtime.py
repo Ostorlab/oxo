@@ -440,7 +440,9 @@ class LiteLocalRuntime(runtime.Runtime):
             agent_group_definition: The agent group definition.
         """
 
-    def link_assets_scan(self, scan_id: int, assets: builtins.list[base_asset.Asset]) -> None:
+    def link_assets_scan(
+        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+    ) -> None:
         """Link the assets to the scan in the database.
 
         Args:

@@ -154,9 +154,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hexists(hash_name, key)
 
-    def hash_get(
-        self, hash_name: bytes | str, key: bytes | str
-    ) -> bytes | None:
+    def hash_get(self, hash_name: bytes | str, key: bytes | str) -> bytes | None:
         """Return the value of key within the hash hash_name.
 
         Args:
@@ -205,7 +203,8 @@ class AgentPersistMixin:
         self,
         key: bytes | str,
         ip_range: ipaddress.IPv6Network | ipaddress.IPv4Network,
-        value: Callable[[ipaddress.IPv6Network | ipaddress.IPv4Network], bytes | str] | None = None,
+        value: Callable[[ipaddress.IPv6Network | ipaddress.IPv4Network], bytes | str]
+        | None = None,
     ) -> bool:
         """
         Returns True if a network have never been persisted before, else it's returns False
@@ -239,7 +238,8 @@ class AgentPersistMixin:
         self,
         key: bytes | str,
         ip_range: ipaddress.IPv6Network | ipaddress.IPv4Network,
-        value: Callable[[ipaddress.IPv6Network | ipaddress.IPv4Network], bytes | str] | None = None,
+        value: Callable[[ipaddress.IPv6Network | ipaddress.IPv4Network], bytes | str]
+        | None = None,
     ) -> bool:
         """
         Returns False if a network have never been persisted before, else it returns True.

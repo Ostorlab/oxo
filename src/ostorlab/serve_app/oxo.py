@@ -429,9 +429,7 @@ class CreateAssetsMutation(graphene.Mutation):
             if asset.ios_file is not None:
                 for asset_ios_file in asset.ios_file:
                     content = asset_ios_file.file.read()
-                    ios_file_path = (
-                        config_manager.upload_path / f"ios_{uuid.uuid4()!s}"
-                    )
+                    ios_file_path = config_manager.upload_path / f"ios_{uuid.uuid4()!s}"
                     ios_file_path.write_bytes(content)
                     new_asset = models.IosFile.create(
                         bundle_id=asset_ios_file.bundle_id,

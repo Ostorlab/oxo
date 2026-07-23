@@ -20,9 +20,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option("--scan-id", "-s", "scan_id", help="Id of the scan.", required=False)
 @click.pass_context
-def describe_cli(
-    ctx, vuln_id: int | None = None, scan_id: int | None = None
-) -> None:
+def describe_cli(ctx, vuln_id: int | None = None, scan_id: int | None = None) -> None:
     """Describe a vuln by id (--vuln-id) or all the vulnz for as specific scan.
     example of usage:
         - oxo vulnz --runtime cloud describe --scan-id 54821"""
