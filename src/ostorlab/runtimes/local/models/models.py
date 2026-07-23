@@ -569,7 +569,7 @@ class AgentGroup(Base):
         description: str,
         agents: Any,
         name: str | None = None,
-        asset_types: list[AssetTypeEnum] = [],
+        asset_types: list[AssetTypeEnum] | None = None,
     ) -> "AgentGroup":
         """Persist the agent group in the database.
 
@@ -581,6 +581,8 @@ class AgentGroup(Base):
         Returns:
             AgentGroup object.
         """
+        if asset_types is None:
+            asset_types = []
         created_asset_types = []
         with Database() as session:
             for asset_type in asset_types:
@@ -617,13 +619,15 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
-        asset_types: list[AssetTypeEnum] = [],
+        asset_types: list[AssetTypeEnum] | None = None,
     ) -> "AgentGroup":
         """Create an agent group from an agent group definition.
 
         Args:
             agent_group_definition: Agent group definition.
         """
+        if asset_types is None:
+            asset_types = []
         agents = []
         for agent in agent_group_definition.agents:
             created_agent = Agent.create(key=agent.key)
@@ -846,9 +850,7 @@ class Asset(Base):
         domains: list[dict[str, str]] = []
         for asset in assets:
             if (
-                isinstance(asset, ip.IP)
-                or isinstance(asset, ipv4.IPv4)
-                or isinstance(asset, ipv6.IPv6)
+                isinstance(asset, (ip.IP, ipv4.IPv4, ipv6.IPv6))
             ):
                 networks.append({"host": asset.host, "mask": asset.mask})
             elif isinstance(asset, link.Link):
@@ -865,9 +867,7 @@ class Asset(Base):
                 )
             elif isinstance(asset, ios_store.IOSStore):
                 IosStore.create(bundle_id=asset.bundle_id, scan_id=scan_id)
-            elif isinstance(asset, android_aab.AndroidAab) or isinstance(
-                asset, android_apk.AndroidApk
-            ):
+            elif isinstance(asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
                 AndroidFile.create(
                     path=asset.path or asset.content_url,
                     scan_id=scan_id,

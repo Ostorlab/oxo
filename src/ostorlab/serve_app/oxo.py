@@ -145,7 +145,7 @@ class Query(graphene.ObjectType):
     def resolve_agent_groups(
         self,
         info,
-        search: str = None,
+        search: str | None = None,
         page=None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
         order_by: types.AgentGroupOrderByEnum | None = None,

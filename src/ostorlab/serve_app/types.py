@@ -502,7 +502,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
     def resolve_agents(
         self: models.AgentGroup,
         info: graphql_base.ResolveInfo,
-        page: int = None,
+        page: int | None = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
     ) -> OxoAgentsType:
         """Resolve agents query.

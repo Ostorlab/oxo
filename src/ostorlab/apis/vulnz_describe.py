@@ -12,7 +12,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
     def __init__(
         self,
         scan_id: int,
-        vuln_id: int = None,
+        vuln_id: int | None = None,
         page: int = 1,
         number_elements: int = 10,
     ):

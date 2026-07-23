@@ -12,6 +12,7 @@ from nats import errors as nats_errors
 from nats.js import api as js_api
 from nats.js import client as js_client
 from nats.js import errors as jetstream_errors
+from typing_extensions import Self
 
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
@@ -49,7 +50,7 @@ class ClientBusHandler:
         else:
             self._tls_context = tls_context
 
-    async def __aenter__(self) -> "ClientBusHandler":
+    async def __aenter__(self) -> Self:
         await self.connect()
         return self
 

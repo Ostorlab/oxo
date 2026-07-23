@@ -70,7 +70,7 @@ class Bytes(scalars.Scalar):
             return Bytes._rawbytes(value)
         elif isinstance(value, list):
             return json.dumps(value).encode(encoding="utf-8")
-        elif isinstance(value, float) or isinstance(value, int):
+        elif isinstance(value, (float, int)):
             return struct.pack("d", value)
         elif isinstance(value, dict):
             return json.dumps(value).encode(encoding="utf-8")
@@ -138,7 +138,7 @@ class Page(collections.abc.Sequence):
 
     def __repr__(self):
         """Return the string representation of the page object."""
-        return "<Page %s of %s>" % (self.number, self.paginator.num_pages)
+        return f"<Page {self.number} of {self.paginator.num_pages}>"
 
     def __len__(self):
         """Return the number of objects in the page."""
@@ -148,8 +148,7 @@ class Page(collections.abc.Sequence):
         """Return the object at the given index in the page."""
         if isinstance(index, (int, slice)) is False:
             raise TypeError(
-                "Page indices must be integers or slices, not %s."
-                % type(index).__name__
+                f"Page indices must be integers or slices, not {type(index).__name__}."
             )
         if isinstance(self.object_list, list) is False:
             self.object_list = list(self.object_list)
@@ -231,9 +230,7 @@ def is_apk(file_content: bytes) -> bool:
 
     try:
         with zipfile.ZipFile(io.BytesIO(file_content)) as o:
-            if "AndroidManifest.xml" in o.namelist():
-                return True
-            return False
+            return "AndroidManifest.xml" in o.namelist()
     except zipfile.BadZipFile:
         return False
 
@@ -267,8 +264,6 @@ def is_aab(file_content: bytes) -> bool:
 
     try:
         with zipfile.ZipFile(io.BytesIO(file_content)) as o:
-            if "BundleConfig.pb" in o.namelist():
-                return True
-            return False
+            return "BundleConfig.pb" in o.namelist()
     except zipfile.BadZipFile:
         return False

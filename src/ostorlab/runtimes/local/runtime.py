@@ -615,7 +615,7 @@ class LocalRuntime(runtime.Runtime):
                     service_labels = s.attrs["Spec"]["Labels"]
                     ostorlab_universe_id = service_labels.get("ostorlab.universe")
                     if (
-                        "ostorlab.universe" in service_labels.keys()
+                        "ostorlab.universe" in service_labels
                         and ostorlab_universe_id not in universe_ids
                     ):
                         universe_ids.add(ostorlab_universe_id)

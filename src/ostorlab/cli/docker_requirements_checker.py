@@ -38,9 +38,7 @@ def is_sys_arch_supported() -> bool:
     Returns:
         True if the architecture is supported, else False
     """
-    if platform.machine() not in _SUPPORTED_ARCH_TYPES:
-        return False
-    return True
+    return platform.machine() in _SUPPORTED_ARCH_TYPES
 
 
 def is_user_permitted() -> bool:
@@ -90,10 +88,7 @@ def is_swarm_initialized() -> bool:
     """
     if is_user_permitted():
         docker_client = docker.from_env()
-        if docker_client.swarm.id is None:
-            return False
-        else:
-            return True
+        return docker_client.swarm.id is not None
     else:
         return False
 

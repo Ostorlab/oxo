@@ -37,7 +37,7 @@ def _image_name_from_key(agent_key: str) -> str:
     return agent_key.replace("/", "_").lower()
 
 
-def _parse_repository_tag(repo_name: str, tag: str = None) -> tuple:
+def _parse_repository_tag(repo_name: str, tag: str | None = None) -> tuple:
     """Get repo name and tag"""
     parts = repo_name.rsplit("@", 1)
     if len(parts) == 2:
@@ -59,12 +59,11 @@ def _pull_logs(
     pull_log = docker_client.api.pull(
         repository, tag=tag, stream=True, decode=True, auth_config=auth_config
     )
-    for log in pull_log:
-        yield log
+    yield from pull_log
 
 
 def _get_image(
-    docker_client: docker.DockerClient, repository: str, tag: str = None
+    docker_client: docker.DockerClient, repository: str, tag: str | None = None
 ) -> docker.models.images.Image:
     """Gets a docker image."""
     repository, tag = _parse_repository_tag(repository, tag)

@@ -277,9 +277,8 @@ class AgentMixin(
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
-        ):
-            if control_agents.count(self.name) >= self.cyclic_processing_limit:
-                raise MaximumCyclicProcessReachedError()
+        ) and control_agents.count(self.name) >= self.cyclic_processing_limit:
+            raise MaximumCyclicProcessReachedError()
 
         if self.depth_processing_limit is not None and self.depth_processing_limit != 0:
             if len(control_agents) >= self.depth_processing_limit:

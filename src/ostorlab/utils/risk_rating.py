@@ -22,7 +22,7 @@ class RiskRating(enum.Enum):
 
     @classmethod
     def values(cls) -> list[str]:
-        return [key.lower() for key in cls._member_map_.keys()]
+        return [key.lower() for key in cls._member_map_]
 
 
 RATINGS_ORDER = {

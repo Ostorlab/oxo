@@ -93,7 +93,7 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         application: BinaryIO,
         test_credential_ids: list[int] | None = None,
         scope_urls_regexes: list[str] | None = None,
-        sboms: list[io.FileIO] = None,
+        sboms: list[io.FileIO] | None = None,
         scan_source: ScanSource | None = None,
         ui_automation_rule_ids: list[int] = (),
     ):

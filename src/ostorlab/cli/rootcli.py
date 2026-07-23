@@ -34,7 +34,7 @@ def rootcli(
     tlsverify: bool | None = True,
     debug: bool = False,
     verbose: bool = False,
-    api_key: str = None,
+    api_key: str | None = None,
     gcp_logging_credential: str | None = None,
 ) -> None:
     """Oxo is an open-source project to help automate security testing.\n

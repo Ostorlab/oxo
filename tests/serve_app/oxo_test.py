@@ -3013,11 +3013,11 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
 
     re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
 
-    re_oxo_mutation_fields = [
+    re_oxo_mutation_fields = next(
         type_def
         for type_def in re_oxo_types
         if type_def["kind"] == "OBJECT" and type_def["name"] == "Mutations"
-    ][0]["fields"]
+    )["fields"]
 
     re_oxo_mutations = {
         mutation["name"]: mutation for mutation in re_oxo_mutation_fields
@@ -3025,11 +3025,11 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
 
     oxo_types = oxo_schema_dict["types"]
 
-    oxo_mutations_fields = [
+    oxo_mutations_fields = next(
         type_def
         for type_def in oxo_types
         if type_def["kind"] == "OBJECT" and type_def["name"] == "Mutations"
-    ][0]["fields"]
+    )["fields"]
 
     oxo_mutations = {mutation["name"]: mutation for mutation in oxo_mutations_fields}
 
@@ -3080,17 +3080,17 @@ def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     re_oxo_schema_dict = _get_re_oxo_schema(INTROSPECT_QUERIES_QUERY)
     re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
 
-    re_oxo_query_fields = [
+    re_oxo_query_fields = next(
         t for t in re_oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
-    ][0]["fields"]
+    )["fields"]
 
     re_oxo_queries = {query["name"]: query for query in re_oxo_query_fields}
 
     oxo_types = oxo_schema_dict["types"]
 
-    oxo_query_fields = [
+    oxo_query_fields = next(
         t for t in oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
-    ][0]["fields"]
+    )["fields"]
 
     oxo_queries = {query["name"]: query for query in oxo_query_fields}
 
