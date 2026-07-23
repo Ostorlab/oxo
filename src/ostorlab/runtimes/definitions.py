@@ -505,7 +505,7 @@ class AssetsDefinition:
             parsed_file = _parse_file_asset(asset)
             if parsed_file is None:
                 raise validator.ValidationError(
-                    "Repository archive requires either a valid path or a url."
+                    "Repository archive requires either a valid path or a content-url."
                 )
             assets_def.append(
                 repository_archive_asset.RepositoryArchive(

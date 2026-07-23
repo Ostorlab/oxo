@@ -890,7 +890,7 @@ class Asset(Base):
 
     @staticmethod
     def create_from_assets_definition(
-        assets: Optional[List[base_asset.Asset]], scan_id: Optional[int] = None
+        assets: list[base_asset.Asset] | None, scan_id: int | None = None
     ) -> None:
         """Create the assets from the asset definition.
 
@@ -903,7 +903,7 @@ class Asset(Base):
 
         flattened_assets = []
         queue = list(assets)
-        while queue:
+        while len(queue) > 0:
             asset = queue.pop(0)
             if isinstance(asset, multi_asset.MultiAsset):
                 queue.extend([a for a in asset.nested_assets() if a is not None])
