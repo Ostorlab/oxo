@@ -950,19 +950,3 @@ def _load_asset_from_file(path: str) -> Optional[bytes]:
         logger.error(f"Could not open {path}: {e}.")
         return None
     return content
-
-
-def _parse_repository_asset(entry: dict[str, Any]) -> repository_asset.Repository:
-    """Build a repository asset, omitting an unset provider."""
-    repository_url = str(entry.get("repository_url") or "")
-    commit_hash = str(entry.get("commit_hash") or "")
-    provider = entry.get("provider")
-    if provider is None:
-        return repository_asset.Repository(
-            repository_url=repository_url, commit_hash=commit_hash
-        )
-    return repository_asset.Repository(
-        repository_url=repository_url,
-        commit_hash=commit_hash,
-        provider=str(provider),
-    )
