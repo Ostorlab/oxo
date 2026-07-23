@@ -173,7 +173,7 @@ def start_scanner(
     loop = asyncio.new_event_loop()
     loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
     loop.run_until_complete(
-        scan_handler.subscribe_nats(
+        scan_handler.start_scan_loop(
             api_key=api_key,
             scanner_id=scanner_id,
             state_reporter=state_reporter,
