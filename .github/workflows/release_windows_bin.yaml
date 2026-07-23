@@ -48,6 +48,6 @@ jobs:
     - run: |
         pyinstaller --name oxo_${{ matrix.os }} --onefile --add-data="./*:." --collect-all pyaxmlparser --hidden-import alembic --hidden-import docker --hidden-import click src/ostorlab/main.py
     - name: Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
       with:
         files: dist/oxo_${{ matrix.os }}.exe
