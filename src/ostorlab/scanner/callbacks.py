@@ -245,7 +245,7 @@ def start_scan(
     request: dict[str, Any],
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
-) -> str:
+) -> str | None:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
 
     Args:
@@ -281,7 +281,7 @@ def start_scan(
                 title=None,
             )
         except exceptions.OstorlabError as e:
-            logger.error(f"An error was encountered while running the scan: {e}")
+            logger.error("An error was encountered while running the scan: %s", e)
             raise
 
         return runtime_instance.name

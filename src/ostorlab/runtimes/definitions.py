@@ -353,7 +353,7 @@ class AgentGroupDefinition:
                 val = arg.get("value")
                 if isinstance(val, str):
                     try:
-                        val = base64.b64decode(val)
+                        val = base64.b64decode(val, validate=True)
                     except binascii.Error:
                         val = val.encode()
 

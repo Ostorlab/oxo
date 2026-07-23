@@ -42,7 +42,7 @@ class ScanHandler:
         self._docker_client = docker.from_env()
 
     async def close(self) -> None:
-        pass
+        self._docker_client.close()
 
     async def handle_messages(
         self,
@@ -130,10 +130,11 @@ class ScanHandler:
                     return reserve_data.get("scan")
                 else:
                     logger.debug(
-                        f"Scan ID {candidate_id} reservation rejected by API (might be locked by another agent)."
+                        "Scan ID %s reservation rejected by API (might be locked by another agent).",
+                        candidate_id,
                     )
             except Exception as e:
-                logger.warning(f"Exception reserving scan {candidate_id}: {e}")
+                logger.warning("Exception reserving scan %s: %s", candidate_id, e)
 
         logger.info("Exhausted scan list. Could not reserve any scans.")
         return None
@@ -147,8 +148,12 @@ class ScanHandler:
         """Attempts to start the scan locally, rolling back the API state if it fails."""
         scan_id_val = int(reserved_scan.get("id"))
 
-        scan_key = reserved_scan.get("agentGroup", {}).get("key")
-        if scan_key is not None and self._scan_resource_requirements is not None:
+        scan_key = (reserved_scan.get("agentGroup") or {}).get("key")
+        if (
+            scan_key is not None
+            and self._scan_resource_requirements is not None
+            and self._scan_resource_requirements != {}
+        ):
             if (
                 resource_checker.can_run_scan(
                     scan_key=scan_key,
@@ -164,7 +169,7 @@ class ScanHandler:
                 self._rollback_scan_state(runner, scan_id_val)
                 return None
 
-        logger.info(f"Handing off scan ID {scan_id_val} to callbacks.start_scan...")
+        logger.info("Handing off scan ID %s to callbacks.start_scan...", scan_id_val)
 
         try:
             started_scan_id = callbacks.start_scan(
@@ -173,12 +178,16 @@ class ScanHandler:
                 api_key=api_key,
             )
             logger.info(
-                f"Scan {scan_id_val} successfully started. Local ID: {started_scan_id}"
+                "Scan %s successfully started. Local ID: %s",
+                scan_id_val,
+                started_scan_id,
             )
             return started_scan_id
         except Exception as e:
             logger.exception(
-                f"Failed to start scan {scan_id_val} locally: {e}. Initiating rollback..."
+                "Failed to start scan %s locally: %s. Initiating rollback...",
+                scan_id_val,
+                e,
             )
             self._rollback_scan_state(runner, scan_id_val)
             return None
@@ -194,15 +203,17 @@ class ScanHandler:
                 )
             )
             logger.info(
-                f"Successfully rolled back scan {scan_id_val} state to 'not_started'."
+                "Successfully rolled back scan %s state to 'not_started'.", scan_id_val
             )
         except Exception as rollback_err:
             logger.exception(
-                f"FATAL: Failed to rollback scan {scan_id_val}: {rollback_err}"
+                "FATAL: Failed to rollback scan %s: %s", scan_id_val, rollback_err
             )
 
-    def _is_scan_running(self, scan_id: str) -> bool:
+    def _is_scan_running(self, scan_id: str | None) -> bool:
         """Returns True if docker services with `ostorlab.universe` label exist."""
+        if scan_id is None:
+            return False
         scan_services: list[services.Service] = self._docker_client.services.list(
             filters={"label": f"ostorlab.universe={str(scan_id)}"}
         )
@@ -226,11 +237,12 @@ async def start_scan_loop(
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     data = runner.execute(scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id))
     config = scanner_conf.ScannerConfig.from_json(data)
-    s_runner = scanner_runner.ScannerAPIRunner(api_key=config.api_key)
 
     if config is None:
         logger.error("No config found to start the connection.")
         return
+
+    s_runner = scanner_runner.ScannerAPIRunner(api_key=config.api_key)
 
     logger.info("Starting scan loop via API.")
     scan_handler = ScanHandler(
