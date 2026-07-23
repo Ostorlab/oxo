@@ -842,3 +842,18 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCre
         urls = session.query(models.Urls).all()
         assert len(networks) == 1
         assert len(urls) == 1
+        network_id = networks[0].id
+        ips = (
+            session.query(models.IPRange)
+            .filter(models.IPRange.network_asset_id == network_id)
+            .all()
+        )
+        assert len(ips) == 1
+        assert ips[0].host == "10.0.0.1"
+        url_id = urls[0].id
+        links = (
+            session.query(models.Link).filter(models.Link.urls_asset_id == url_id).all()
+        )
+        assert len(links) == 1
+        assert links[0].url == "https://example.com/test"
+        assert links[0].method == "GET"
