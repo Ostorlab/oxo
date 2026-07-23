@@ -20,6 +20,7 @@ from ostorlab.apis import scans_discover
 from ostorlab.apis import scan_update_state
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner import callbacks
+from ostorlab.scanner import resource_checker
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -30,8 +31,14 @@ WAIT_CHECK_MESSAGES = datetime.timedelta(seconds=5)
 class ScanHandler:
     """Class responsible for handling the API scan loop."""
 
-    def __init__(self, state_reporter: scanner_state_reporter.ScannerStateReporter):
+    def __init__(
+        self,
+        state_reporter: scanner_state_reporter.ScannerStateReporter,
+        scan_resource_requirements: dict[str, scanner_conf.ScanResourceRequirements]
+        | None = None,
+    ):
         self._state_reporter = state_reporter
+        self._scan_resource_requirements = scan_resource_requirements or {}
         self._docker_client = docker.from_env()
 
     async def close(self) -> None:
@@ -139,6 +146,24 @@ class ScanHandler:
     ) -> str | None:
         """Attempts to start the scan locally, rolling back the API state if it fails."""
         scan_id_val = int(reserved_scan.get("id"))
+
+        scan_key = reserved_scan.get("agentGroup", {}).get("key")
+        if scan_key is not None and self._scan_resource_requirements is not None:
+            if (
+                resource_checker.can_run_scan(
+                    scan_key=scan_key,
+                    requirements=self._scan_resource_requirements,
+                )
+                is False
+            ):
+                logger.warning(
+                    "Insufficient host resources for scan %s (key: %s). Rolling back.",
+                    scan_id_val,
+                    scan_key,
+                )
+                self._rollback_scan_state(runner, scan_id_val)
+                return None
+
         logger.info(f"Handing off scan ID {scan_id_val} to callbacks.start_scan...")
 
         try:
@@ -208,5 +233,8 @@ async def start_scan_loop(
         return
 
     logger.info("Starting scan loop via API.")
-    scan_handler = ScanHandler(state_reporter)
+    scan_handler = ScanHandler(
+        state_reporter,
+        scan_resource_requirements=config.scan_resource_requirements,
+    )
     await scan_handler.handle_messages(runner=s_runner, api_key=api_key)
