@@ -43,7 +43,7 @@ class ScanResourceRequirements:
             return None
 
         resource_values = (
-            value.get("cpu_count"),
+            value.get("cpuCount"),
             value.get("memory"),
             value.get("disk"),
         )

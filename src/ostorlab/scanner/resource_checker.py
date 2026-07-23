@@ -1,6 +1,7 @@
 """Host resource checks for on-premise scans."""
 
 import logging
+import pathlib
 
 import psutil
 
@@ -13,9 +14,12 @@ logger = logging.getLogger(__name__)
 def can_run_scan(
     scan_key: str,
     requirements: dict[str, scanner_conf.ScanResourceRequirements],
-    disk_path: str = "/",
+    disk_path: str | None = None,
 ) -> bool:
     """Return whether the host has resources for ``scan_key`` at ``disk_path``."""
+    if disk_path is None:
+        disk_path = pathlib.Path.cwd().anchor
+
     scan_requirements = (
         requirements.get(scan_key)
         or requirements.get(scan_key.split("/")[-1])

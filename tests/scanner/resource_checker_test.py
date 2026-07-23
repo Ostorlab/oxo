@@ -135,3 +135,25 @@ def testCanRunScan_whenDiskPathProvided_checksConfiguredPath(
 
     assert can_run is True
     disk_usage.assert_called_once_with("/scan-data")
+
+
+def testCanRunScan_whenDiskPathMissing_checksCurrentFilesystemRoot(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch("psutil.cpu_count", return_value=8)
+    mocker.patch("psutil.virtual_memory", return_value=SimpleNamespace(total=20_000))
+    disk_usage = mocker.patch(
+        "psutil.disk_usage", return_value=SimpleNamespace(free=30_000)
+    )
+    current_path = mocker.patch.object(resource_checker.pathlib.Path, "cwd")
+    current_path.return_value.anchor = "C:\\"
+    requirements = {
+        "default": scanner_conf.ScanResourceRequirements(
+            cpu_count=4, memory=10_000, disk=20_000
+        )
+    }
+
+    can_run = resource_checker.can_run_scan("agentgroup/ostorlab/test", requirements)
+
+    assert can_run is True
+    disk_usage.assert_called_once_with("C:\\")
