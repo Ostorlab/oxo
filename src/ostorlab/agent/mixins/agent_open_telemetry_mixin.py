@@ -15,7 +15,6 @@ from typing import Any, Dict, Optional
 from urllib import parse
 
 from opentelemetry import trace
-from opentelemetry.exporter import cloud_trace
 import opentelemetry.exporter.otlp.proto.grpc.trace_exporter as otlp_exporter
 from opentelemetry.sdk import resources
 from opentelemetry.sdk import trace as trace_provider
@@ -90,12 +89,20 @@ class TraceExporter:
 
     def _get_gcp_exporter(
         self, parsed_url: parse.ParseResult
-    ) -> cloud_trace.CloudTraceSpanExporter:
-        """
-        Returns a CloudTraceSpan exporter instance.
+    ) -> sdk_export.SpanExporter:
+        """Returns a CloudTraceSpan exporter instance.
+
         The urls should respect the following format:
             project_id/service_account_json_base64_value
+
+        ``cloud_trace`` is imported lazily because recent
+        ``opentelemetry-resourcedetector-gcp`` releases moved the
+        ``opentelemetry.resourcedetector`` module that ``cloud_trace`` imports
+        eagerly; importing it at module scope breaks every ``ostorlab[agent]``
+        install. It is only needed when a ``gcp://`` tracing url is configured.
         """
+        from opentelemetry.exporter import cloud_trace
+
         project_id = parsed_url.netloc
         # write service account key to temp file
         with tempfile.NamedTemporaryFile(
