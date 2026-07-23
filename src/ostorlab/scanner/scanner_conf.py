@@ -1,7 +1,7 @@
 """Representations of nats configuration definitions."""
 
 import dataclasses
-from typing import Any
+from typing import Any, Optional
 
 
 @dataclasses.dataclass
@@ -33,7 +33,7 @@ class ScannerConfig:
     api_key: str | None = None
 
     @classmethod
-    def from_json(cls, config: dict[str, Any]) -> "ScannerConfig" | None:
+    def from_json(cls, config: dict[str, Any]) -> Optional["ScannerConfig"]:
         """Creates a ScannerConfig instance from a JSON configuration.
 
         Args:
