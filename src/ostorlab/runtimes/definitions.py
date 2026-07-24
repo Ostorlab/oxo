@@ -346,7 +346,7 @@ class AgentGroupDefinition:
 
         for agent in agent_group.get("agents", []):
             agents_names.append(agent.get("key"))
-            replicas = _process_agent_replicas(agent.get("replicas", 1))
+            replicas = _process_agent_replicas(agent.get("replicas") or 1)
 
             agent_args = []
             for arg in agent.get("args", []):

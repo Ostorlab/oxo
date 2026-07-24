@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import binascii
 import logging
 import ipaddress
 from typing import Any
@@ -89,7 +90,10 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
     kwargs = {k: v for k, v in asset_data.items() if k != "__typename"}
 
     if "content" in kwargs and isinstance(kwargs["content"], str) is True:
-        kwargs["content"] = base64.b64decode(kwargs["content"])
+        try:
+            kwargs["content"] = base64.b64decode(kwargs["content"], validate=True)
+        except binascii.Error:
+            kwargs["content"] = kwargs["content"].encode()
 
     if typename in ("Ipv4AssetType", "Ipv6AssetType", "IpAssetType"):
         return [_prepare_ip_asset(kwargs)]

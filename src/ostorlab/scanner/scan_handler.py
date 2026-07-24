@@ -181,6 +181,13 @@ class ScanHandler:
                 state_reporter=self._state_reporter,
                 api_key=api_key,
             )
+            if started_scan_id is None:
+                logger.warning(
+                    "Scan %s could not be started locally (runtime unsupported). Rolling back.",
+                    scan_id_val,
+                )
+                self._rollback_scan_state(runner, scan_id_val)
+                return None
             logger.info(
                 "Scan %s successfully started. Local ID: %s",
                 scan_id_val,
