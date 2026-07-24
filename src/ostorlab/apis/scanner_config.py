@@ -1,7 +1,7 @@
 """Receive scanner config (Nats creds, container registry creds ...)."""
 
-from typing import Dict, Optional, Any
 import json
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -13,7 +13,7 @@ class ScannerConfigAPIRequest(request.APIRequest):
         self._scanner_id = scanner_id
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to get the configs.
 
         Returns:
@@ -50,7 +50,7 @@ class ScannerConfigAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the query to get the configs.
 
         Returns:

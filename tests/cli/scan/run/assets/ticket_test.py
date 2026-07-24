@@ -3,9 +3,9 @@
 from click.testing import CliRunner
 from pytest_mock import plugin
 
-from ostorlab.cli import rootcli
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.assets import ticket
+from ostorlab.cli import rootcli
 
 
 def testScanRunTicket_whenValidArgumentsAreProvided_callScanWithValidSettings(

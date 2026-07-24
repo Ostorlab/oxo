@@ -9,7 +9,6 @@ from rich.markup import escape
 
 from ostorlab.cli import console as cli_console
 
-
 console = cli_console.Console()
 
 COLOR_POOL = [

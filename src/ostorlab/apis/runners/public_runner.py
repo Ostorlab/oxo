@@ -5,7 +5,7 @@ public_runner = PublicAPIRunner()
 public_runner.execute()
 """
 
-from typing import Dict, Any, Optional
+from typing import Any
 
 import httpx
 
@@ -23,7 +23,7 @@ class PublicAPIRunner(runner.APIRunner):
         """API endpoint."""
         return PUBLIC_GRAPHQL_ENDPOINT
 
-    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Public GraphQL API.
 
         Args:
@@ -40,7 +40,7 @@ class PublicAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = response.json()
+        data: dict[str, Any] = response.json()
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")
@@ -49,7 +49,7 @@ class PublicAPIRunner(runner.APIRunner):
             return data
 
     def _sent_request(
-        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+        self, request: api_request.APIRequest, headers: dict[str, str] | None = None
     ) -> httpx.Response:
         """Sends an API request."""
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:

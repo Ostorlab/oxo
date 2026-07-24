@@ -1,7 +1,7 @@
 """Lists full details of a single vulnerability or all the vulnerabilities for a specific scan."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -12,7 +12,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
     def __init__(
         self,
         scan_id: int,
-        vuln_id: int = None,
+        vuln_id: int | None = None,
         page: int = 1,
         number_elements: int = 10,
     ):
@@ -23,7 +23,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
         self._number_elements = number_elements
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to list the vulnz.
 
         Returns:
@@ -75,7 +75,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the query to list the vulnz.
 
         Returns:

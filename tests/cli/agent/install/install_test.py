@@ -3,18 +3,17 @@
 import logging
 import re
 
+import docker.errors
 import httpx
 import pytest
+import pytest_httpx
 import tenacity
-import docker.errors
 from click import testing
 from docker.models import images as images_model
-import pytest_httpx
 from pytest_mock import plugin
 
 from ostorlab.apis.runners import public_runner
-from ostorlab.cli import rootcli
-from ostorlab.cli import install_agent
+from ostorlab.cli import install_agent, rootcli
 
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage() -> None:

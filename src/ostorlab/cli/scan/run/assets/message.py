@@ -7,11 +7,12 @@ import logging
 import click
 from google.protobuf import message as proto_message_lib
 from google.protobuf import text_format
+
+from ostorlab import exceptions
 from ostorlab.agent.message import serializer
 from ostorlab.assets import message as message_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()

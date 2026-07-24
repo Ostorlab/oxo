@@ -2,7 +2,6 @@
 
 import dataclasses
 import ipaddress
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -13,8 +12,8 @@ class IP(asset.Asset):
     """IP Address target asset."""
 
     host: str
-    version: Optional[int] = None
-    mask: Optional[str] = None
+    version: int | None = None
+    mask: str | None = None
 
     def __post_init__(self) -> None:
         if self.version is None:

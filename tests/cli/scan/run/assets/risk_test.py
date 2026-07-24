@@ -2,16 +2,16 @@
 
 import pathlib
 
-from click import testing
 import pytest_mock
+from click import testing
 
-from ostorlab.cli import rootcli
 from ostorlab.agent.message import serializer
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import risk as risk_asset
+from ostorlab.cli import rootcli
 
 
 def testScanRunRisk_whenNoOptionsProvided_shouldShowUsageError(

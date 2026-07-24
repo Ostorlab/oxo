@@ -1,6 +1,7 @@
 """Tests for ostorlab root cli"""
 
 from click.testing import CliRunner
+
 from ostorlab.cli import rootcli
 
 

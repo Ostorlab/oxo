@@ -1,7 +1,6 @@
 """HarmonyOS store asset representation."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -11,7 +10,7 @@ from ostorlab.assets import asset
 class HarmonyOSStore(asset.Asset):
     """Represents a HarmonyOS store reference (bundle name)."""
 
-    bundle_name: Optional[str] = None
+    bundle_name: str | None = None
 
     def __str__(self) -> str:
         return f"Harmonyos Store: ({self.bundle_name})"

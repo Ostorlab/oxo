@@ -3,46 +3,50 @@
 from pytest_mock import plugin
 
 from ostorlab.assets import agent as agent_asset
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import android_store
-from ostorlab.assets import domain_name
-from ostorlab.assets import file
-from ostorlab.assets import harmonyos_hap
-from ostorlab.assets import harmonyos_apk
-from ostorlab.assets import harmonyos_aab
-from ostorlab.assets import harmonyos_rpk
-from ostorlab.assets import harmonyos_app
-from ostorlab.assets import harmonyos_store
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import ios_store
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
+from ostorlab.assets import (
+    android_aab,
+    android_apk,
+    android_store,
+    domain_name,
+    file,
+    harmonyos_aab,
+    harmonyos_apk,
+    harmonyos_app,
+    harmonyos_hap,
+    harmonyos_rpk,
+    harmonyos_store,
+    ios_ipa,
+    ios_store,
+    ipv4,
+    ipv6,
+)
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.scanner import callbacks
-from ostorlab.scanner.proto.assets import aab_pb2
-from ostorlab.scanner.proto.assets import agent_pb2
-from ostorlab.scanner.proto.assets import android_store_pb2
-from ostorlab.scanner.proto.assets import apk_pb2
-from ostorlab.scanner.proto.assets import domain_name_pb2
-from ostorlab.scanner.proto.assets import file_pb2
-from ostorlab.scanner.proto.assets import harmonyos_hap_pb2
-from ostorlab.scanner.proto.assets import harmonyos_apk_pb2
-from ostorlab.scanner.proto.assets import harmonyos_aab_pb2
-from ostorlab.scanner.proto.assets import harmonyos_rpk_pb2
-from ostorlab.scanner.proto.assets import harmonyos_app_pb2
-from ostorlab.scanner.proto.assets import harmonyos_store_pb2
-from ostorlab.scanner.proto.assets import ios_store_pb2
-from ostorlab.scanner.proto.assets import ip_pb2
-from ostorlab.scanner.proto.assets import ipa_pb2
-from ostorlab.scanner.proto.assets import link_pb2
-from ostorlab.scanner.proto.assets import network_pb2
-from ostorlab.scanner.proto.assets import repository_pb2
-from ostorlab.scanner.proto.assets import repository_archive_pb2
-from ostorlab.scanner.proto.assets import v4_pb2
-from ostorlab.scanner.proto.assets import v6_pb2
+from ostorlab.scanner.proto.assets import (
+    aab_pb2,
+    agent_pb2,
+    android_store_pb2,
+    apk_pb2,
+    domain_name_pb2,
+    file_pb2,
+    harmonyos_aab_pb2,
+    harmonyos_apk_pb2,
+    harmonyos_app_pb2,
+    harmonyos_hap_pb2,
+    harmonyos_rpk_pb2,
+    harmonyos_store_pb2,
+    ios_store_pb2,
+    ip_pb2,
+    ipa_pb2,
+    link_pb2,
+    network_pb2,
+    repository_archive_pb2,
+    repository_pb2,
+    v4_pb2,
+    v6_pb2,
+)
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
 

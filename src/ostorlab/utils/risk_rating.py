@@ -1,7 +1,6 @@
 """Utils to handle scan risk rating."""
 
 import enum
-from typing import List
 
 
 class RiskRating(enum.Enum):
@@ -22,8 +21,8 @@ class RiskRating(enum.Enum):
         return value in cls._member_map_
 
     @classmethod
-    def values(cls) -> List[str]:
-        return [key.lower() for key in cls._member_map_.keys()]
+    def values(cls) -> list[str]:
+        return [key.lower() for key in cls._member_map_]
 
 
 RATINGS_ORDER = {

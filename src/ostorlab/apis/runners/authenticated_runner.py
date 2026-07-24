@@ -7,17 +7,16 @@ authenticated_runner.authenticate()
 """
 
 import datetime
+import json
 import logging
-from typing import Dict, Optional, Any
+from typing import Any
 
 import click
 import httpx
 import ubjson
-import json
 
 from ostorlab.apis import request as api_request
-from ostorlab.apis.runners import login_runner
-from ostorlab.apis.runners import runner
+from ostorlab.apis.runners import login_runner, runner
 from ostorlab.cli import console as cli_console
 
 AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"
@@ -38,12 +37,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
 
     def __init__(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        token_duration: Optional[datetime.datetime] = None,
-        proxy: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        token_duration: datetime.datetime | None = None,
+        proxy: str | None = None,
         verify: bool = True,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """Constructs all the necessary attributes for the object.
 
@@ -61,8 +60,8 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._password = password
         self._token_duration = token_duration
         self._api_key = api_key or self._configuration_manager.api_key
-        self._token: Optional[str] = self._configuration_manager.authorization_token
-        self._otp_token: Optional[str] = None
+        self._token: str | None = self._configuration_manager.authorization_token
+        self._otp_token: str | None = None
 
     @property
     def endpoint(self) -> str:
@@ -112,7 +111,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._api_key = None
         self._token = None
 
-    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.
 
         Args:
@@ -140,7 +139,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = response.json()
+        data: dict[str, Any] = response.json()
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")
@@ -149,7 +148,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             return data
 
     def _sent_request(
-        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+        self, request: api_request.APIRequest, headers: dict[str, str] | None = None
     ) -> httpx.Response:
         """Sends an API request, handling JSON or form encoding."""
         headers = headers or {}
@@ -173,7 +172,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                     data=request.data,
                 )
 
-    def execute_ubjson_request(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute_ubjson_request(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.
 
         Args:
@@ -204,7 +203,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = json.loads(response.content.decode())
+        data: dict[str, Any] = json.loads(response.content.decode())
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")
@@ -213,7 +212,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             return data
 
     def _send_ubjson_request(
-        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+        self, request: api_request.APIRequest, headers: dict[str, str] | None = None
     ) -> httpx.Response:
         """Sends an API request."""
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:

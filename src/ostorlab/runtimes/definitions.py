@@ -2,42 +2,39 @@
 
 import dataclasses
 import io
-import pathlib
-import logging
-import json
-from typing import List, Dict, NamedTuple, Optional, Any
 import ipaddress
+import json
+import logging
+import pathlib
+from typing import Any, NamedTuple
 
-
-from ostorlab.agent.schema import loader
-from ostorlab.agent.schema import validator
-from ostorlab.cli import agent_fetcher
-from ostorlab.runtimes.proto import agent_instance_settings_pb2
-from ostorlab.utils import definitions
-from ostorlab.assets import android_apk as android_apk_asset
+from ostorlab.agent.schema import loader, validator
 from ostorlab.assets import android_aab as android_aab_asset
+from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import api_schema as api_schema_asset
+from ostorlab.assets import asset as base_asset
 from ostorlab.assets import domain_name as domain_name_asset
-from ostorlab.assets import harmonyos_store as harmonyos_store_asset
-from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
+from ostorlab.assets import file as file_asset
 from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
-from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
+from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
 from ostorlab.assets import harmonyos_app as harmonyos_app_asset
+from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
 from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
+from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.assets import file as file_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
-from ostorlab.assets import asset as base_asset
 from ostorlab.assets import ticket as ticket_asset
-
+from ostorlab.cli import agent_fetcher
+from ostorlab.runtimes.proto import agent_instance_settings_pb2
+from ostorlab.utils import definitions
 
 MAX_AGENT_REPLICAS = 100
 
@@ -126,28 +123,28 @@ class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
 
     key: str
-    version: Optional[str] = None
-    bus_url: Optional[str] = ""
-    bus_exchange_topic: Optional[str] = ""
-    bus_management_url: Optional[str] = ""
-    bus_vhost: Optional[str] = ""
-    args: List[definitions.Arg] = dataclasses.field(default_factory=list)
-    constraints: Optional[List[str]] = dataclasses.field(default_factory=list)
-    mounts: Optional[List[str]] = dataclasses.field(default_factory=list)
+    version: str | None = None
+    bus_url: str | None = ""
+    bus_exchange_topic: str | None = ""
+    bus_management_url: str | None = ""
+    bus_vhost: str | None = ""
+    args: list[definitions.Arg] = dataclasses.field(default_factory=list)
+    constraints: list[str] | None = dataclasses.field(default_factory=list)
+    mounts: list[str] | None = dataclasses.field(default_factory=list)
     restart_policy: str = ""
-    mem_limit: Optional[int] = None
-    open_ports: List[definitions.PortMapping] = dataclasses.field(default_factory=list)
+    mem_limit: int | None = None
+    open_ports: list[definitions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
     healthcheck_host: str = "0.0.0.0"
     healthcheck_port: int = 5000
-    redis_url: Optional[str] = None
-    tracing_collector_url: Optional[str] = None
-    caps: Optional[List[str]] = None
-    cyclic_processing_limit: Optional[int] = None
-    depth_processing_limit: Optional[int] = None
-    accepted_agents: Optional[List[str]] = None
-    in_selectors: Optional[List[str]] = dataclasses.field(default_factory=list)
-    service_name: Optional[str] = None
+    redis_url: str | None = None
+    tracing_collector_url: str | None = None
+    caps: list[str] | None = None
+    cyclic_processing_limit: int | None = None
+    depth_processing_limit: int | None = None
+    accepted_agents: list[str] | None = None
+    in_selectors: list[str] | None = dataclasses.field(default_factory=list)
+    service_name: str | None = None
 
     @property
     def container_image(self):
@@ -273,9 +270,9 @@ class AgentSettings:
 class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
 
-    agents: List[AgentSettings]
-    name: Optional[str] = None
-    description: Optional[str] = None
+    agents: list[AgentSettings]
+    name: str | None = None
+    description: str | None = None
     use_experimental_agents: bool = False
 
     @classmethod
@@ -380,9 +377,9 @@ class AgentGroupDefinition:
 
 @dataclasses.dataclass
 class AssetsDefinition:
-    targets: List[base_asset.Asset]
-    name: Optional[str] = None
-    description: Optional[str] = None
+    targets: list[base_asset.Asset]
+    name: str | None = None
+    description: str | None = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -407,7 +404,7 @@ class AssetsDefinition:
         repository_assets = assets.get("repository", [])
         repository_archive_assets = assets.get("repositoryArchive", [])
 
-        assets_def: List[assets.Asset] = []
+        assets_def: list[assets.Asset] = []
 
         for asset in android_aab_file_assets:
             parsed_file = _parse_file_asset(asset)
@@ -925,7 +922,7 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     return risk_asset.Risk(**risk_kwargs)
 
 
-def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
+def _parse_ip_asset(ip_asset: dict[str, Any]) -> base_asset.Asset | None:
     ip_string = ip_asset.get("host")
     try:
         ip = ipaddress.ip_address(ip_string)
@@ -942,7 +939,7 @@ def _parse_ip_asset(ip_asset: Dict[str, Any]) -> Optional[base_asset.Asset]:
     return None
 
 
-def _load_asset_from_file(path: str) -> Optional[bytes]:
+def _load_asset_from_file(path: str) -> bytes | None:
     path = pathlib.Path(path)
     try:
         content = path.read_bytes()

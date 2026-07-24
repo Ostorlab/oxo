@@ -4,8 +4,7 @@ from types import SimpleNamespace
 
 from pytest_mock import plugin
 
-from ostorlab.scanner import resource_checker
-from ostorlab.scanner import scanner_conf
+from ostorlab.scanner import resource_checker, scanner_conf
 
 
 def testCanRunScan_whenHostHasRequiredResources_returnsTrue(

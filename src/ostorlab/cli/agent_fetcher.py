@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-import logging
 import io
+import logging
 from typing import Any
 
 import docker
 import docker.errors
 
 from ostorlab import configuration_manager
+from ostorlab.agent import definitions as agent_definitions
 from ostorlab.apis import agent_details as agent_details_api
-from ostorlab.apis.runners import public_runner, authenticated_runner
+from ostorlab.apis.runners import authenticated_runner, public_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
-from ostorlab.agent import definitions as agent_definitions
 from ostorlab.utils import version as version_definition
 
 console = cli_console.Console()
@@ -120,19 +120,17 @@ def get_container_image(agent_key: str, version: str | None = None) -> str | Non
             else:
                 t_name = ":".join(splitted_tag[:-1])
                 t_tag = splitted_tag[-1]
-            if t_name == image and version in [None, ""]:
+            if (
+                t_name == image
+                and version in [None, ""]
+                or t_name == image
+                and version is not None
+                and t_tag[1:] == version
+            ):
                 try:
                     matching_tag_versions.append(version_definition.Version(t_tag[1:]))
                 except ValueError:
                     logger.warning("Invalid version %s", t_tag[1:])
-            elif t_name == image and version is not None:
-                if t_tag[1:] == version:
-                    try:
-                        matching_tag_versions.append(
-                            version_definition.Version(t_tag[1:])
-                        )
-                    except ValueError:
-                        logger.warning("Invalid version %s", t_tag[1:])
 
     if len(matching_tag_versions) == 0:
         return None

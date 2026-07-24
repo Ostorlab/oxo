@@ -6,13 +6,13 @@ import logging
 import ssl
 import sys
 import traceback
-from typing import Optional
+from typing import Self
 
-from nats.js import errors as jetstream_errors
-from nats import errors as nats_errors
 import nats
+from nats import errors as nats_errors
 from nats.js import api as js_api
 from nats.js import client as js_client
+from nats.js import errors as jetstream_errors
 
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 
@@ -36,21 +36,21 @@ class ClientBusHandler:
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: Optional[ssl.SSLContext] = None,
+        tls_context: ssl.SSLContext | None = None,
         loop=None,
     ):
         self._bus_url = bus_url
         self._cluster_id = cluster_id
         self._name = name
         self._nc: nats.NATS = nats.NATS()
-        self._js: Optional[js_client.JetStreamContext] = None
+        self._js: js_client.JetStreamContext | None = None
         self._loop = loop or asyncio.get_event_loop()
         if tls_context is None and bus_url.startswith("tls://"):
             self._tls_context = ssl.create_default_context()
         else:
             self._tls_context = tls_context
 
-    async def __aenter__(self) -> "ClientBusHandler":
+    async def __aenter__(self) -> Self:
         await self.connect()
         return self
 
@@ -123,7 +123,7 @@ class BusHandler(ClientBusHandler):
         bus_url: str,
         cluster_id: str,
         name: str,
-        tls_context: Optional[ssl.SSLContext] = None,
+        tls_context: ssl.SSLContext | None = None,
         loop=None,
     ):
         super().__init__(
@@ -134,7 +134,7 @@ class BusHandler(ClientBusHandler):
             loop=loop,
         )
         self._subjects_cb_map = {}
-        self._last_message_received_time = datetime.datetime.now()
+        self._last_message_received_time = datetime.datetime.now(datetime.timezone.utc)
         self._pull_subscription = None
 
     async def ensure_running_handler(self):
@@ -146,10 +146,9 @@ class BusHandler(ClientBusHandler):
                     self._last_message_received_time,
                 )
                 await asyncio.sleep(60)
-                if (
-                    datetime.datetime.now()
-                    > self._last_message_received_time + datetime.timedelta(hours=5)
-                ):
+                if datetime.datetime.now(
+                    datetime.timezone.utc
+                ) > self._last_message_received_time + datetime.timedelta(hours=5):
                     logger.debug(
                         "too long after receiving the last message, restarting all subscriptions"
                     )
@@ -162,7 +161,7 @@ class BusHandler(ClientBusHandler):
     async def subscribe(
         self,
         subject: str,
-        durable_name: Optional[str] = None,
+        durable_name: str | None = None,
         start_at: str = "first",
         max_inflight: int = DEFAULT_MAX_INFLIGHT,
         ack_wait: int = DEFAULT_ACK_WAIT.seconds,
@@ -226,7 +225,7 @@ class BusHandler(ClientBusHandler):
 
     async def parse_message(self, message):
         logger.debug("process received message %s", message)
-        self._last_message_received_time = datetime.datetime.now()
+        self._last_message_received_time = datetime.datetime.now(datetime.timezone.utc)
         request = startAgentScan_pb2.Message()
         request.ParseFromString(message.data)
         return request

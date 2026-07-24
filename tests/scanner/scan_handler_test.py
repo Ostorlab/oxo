@@ -6,8 +6,7 @@ from typing import Any
 import pytest
 from pytest_mock import plugin
 
-from ostorlab.scanner import scan_handler
-from ostorlab.scanner import scanner_conf
+from ostorlab.scanner import scan_handler, scanner_conf
 from ostorlab.utils import scanner_state_reporter
 
 

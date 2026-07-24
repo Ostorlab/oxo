@@ -11,12 +11,12 @@ import logging
 import os
 import tempfile
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib import parse
 
+import opentelemetry.exporter.otlp.proto.grpc.trace_exporter as otlp_exporter
 from opentelemetry import trace
 from opentelemetry.exporter import cloud_trace
-import opentelemetry.exporter.otlp.proto.grpc.trace_exporter as otlp_exporter
 from opentelemetry.sdk import resources
 from opentelemetry.sdk import trace as trace_provider
 from opentelemetry.sdk.trace import export as sdk_export
@@ -35,7 +35,7 @@ class TraceExporter:
     def __init__(self, tracing_collector_url: str):
         self._tracing_collector_url = tracing_collector_url
         # specialized fields for the different collectors.
-        self._file: Optional[io.IOBase] = None
+        self._file: io.IOBase | None = None
 
     def close(self) -> None:
         if self._file is not None:
@@ -66,7 +66,7 @@ class TraceExporter:
         self, parsed_url: parse.ParseResult
     ) -> sdk_export.SpanExporter:
         file_path = parsed_url.path
-        self._file = open(file_path, "w", encoding="utf-8")
+        self._file = open(file_path, "w", encoding="utf-8")  # noqa: SIM115
         file_exporter = sdk_export.ConsoleSpanExporter(out=self._file)
         logger.info("Configuring file exporter..")
         return file_exporter
@@ -118,8 +118,8 @@ class OpenTelemetryMixin:
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.
     """
 
-    _tracer: Optional[trace.Tracer] = None
-    _tracing_collector_url: Optional[str]
+    _tracer: trace.Tracer | None = None
+    _tracing_collector_url: str | None
 
     def __init__(
         self,
@@ -245,9 +245,9 @@ class OpenTelemetryMixin:
     def emit(
         self,
         selector: str,
-        data: Dict[str, Any],
-        message_id: Optional[str] = None,
-        message_priority: Optional[int] = None,
+        data: dict[str, Any],
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Overridden emit method of the agent to add OpenTelemetry traces.
         Sends a message to all listening agents on the specified selector.

@@ -7,7 +7,6 @@ import psutil
 
 from ostorlab.scanner import scanner_conf
 
-
 logger = logging.getLogger(__name__)
 
 

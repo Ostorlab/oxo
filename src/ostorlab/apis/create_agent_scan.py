@@ -1,7 +1,7 @@
 """Create Scan via an API Request."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -16,7 +16,7 @@ class CreateAgentScanAPIRequest(request.APIRequest):
         self._agent_group_id = agent_group_id
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Sets the query of the API request.
 
         Returns:
@@ -33,7 +33,7 @@ class CreateAgentScanAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the body of the API request.
 
         Returns:

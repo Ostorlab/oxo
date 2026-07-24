@@ -1,21 +1,22 @@
 """Create Asset via an API Request."""
 
 import json
-from typing import Dict, Optional
 
 from ostorlab.apis import request
+from ostorlab.assets import (
+    android_aab,
+    android_apk,
+    android_store,
+    domain_name,
+    file,
+    ios_ipa,
+    ios_store,
+    ip,
+    ipv4,
+    ipv6,
+    link,
+)
 from ostorlab.assets import asset as base_asset
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import file
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import domain_name
-from ostorlab.assets import link
-from ostorlab.assets import ip
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
-from ostorlab.assets import ios_store
-from ostorlab.assets import android_store
 
 
 class CreateAssetAPIRequest(request.APIRequest):
@@ -26,7 +27,7 @@ class CreateAssetAPIRequest(request.APIRequest):
         self._asset = asset
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Sets the query of the API request.
 
         Returns:
@@ -66,7 +67,7 @@ class CreateAssetAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict | None:
         """Sets the body of the API request.
 
         Returns:
@@ -97,7 +98,7 @@ class CreateAssetAPIRequest(request.APIRequest):
         return data
 
     @property
-    def files(self) -> Optional[Dict]:
+    def files(self) -> dict | None:
         """Sets the file for multipart upload of the API request.
 
         Returns:
@@ -116,7 +117,7 @@ class CreateAssetAPIRequest(request.APIRequest):
         else:
             return None
 
-    def __get_asset_variables(self) -> Dict[str, Dict]:
+    def __get_asset_variables(self) -> dict[str, dict]:
         """Creates asset variables for the API request, depending on the type of the asset."""
         asset_type_variables = {}
         if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):

@@ -4,14 +4,13 @@ This module takes care of preparing a risk message to be injected onto the messa
 import io
 import ipaddress
 import logging
-from typing import Optional
 
 import click
 
+from ostorlab import exceptions
 from ostorlab.assets import risk as risk_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
@@ -197,30 +196,30 @@ _RISK_RATINGS = [
 def risk_cli(
     ctx: click.core.Context,
     severity: str,
-    description: Optional[str],
-    description_file: Optional[io.TextIOWrapper],
-    ip_addr: Optional[str],
-    domain: Optional[str],
-    url: Optional[str],
+    description: str | None,
+    description_file: io.TextIOWrapper | None,
+    ip_addr: str | None,
+    domain: str | None,
+    url: str | None,
     link_method: str,
     link_headers: tuple,
-    android_store: Optional[str],
-    ios_store: Optional[str],
-    android_aab_file: Optional[io.RawIOBase],
-    android_aab_url: Optional[str],
-    android_apk_file: Optional[io.RawIOBase],
-    android_apk_url: Optional[str],
-    ios_ipa_file: Optional[io.RawIOBase],
-    ios_ipa_url: Optional[str],
-    api_schema_file: Optional[io.RawIOBase],
-    api_schema_url: Optional[str],
-    api_schema_endpoint: Optional[str],
-    api_schema_type: Optional[str],
+    android_store: str | None,
+    ios_store: str | None,
+    android_aab_file: io.RawIOBase | None,
+    android_aab_url: str | None,
+    android_apk_file: io.RawIOBase | None,
+    android_apk_url: str | None,
+    ios_ipa_file: io.RawIOBase | None,
+    ios_ipa_url: str | None,
+    api_schema_file: io.RawIOBase | None,
+    api_schema_url: str | None,
+    api_schema_endpoint: str | None,
+    api_schema_type: str | None,
     api_schema_headers: tuple,
-    repository_url: Optional[str],
-    commit_hash: Optional[str],
-    repository_archive_file: Optional[io.RawIOBase],
-    repository_archive_url: Optional[str],
+    repository_url: str | None,
+    commit_hash: str | None,
+    repository_archive_file: io.RawIOBase | None,
+    repository_archive_url: str | None,
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
     Example:\n

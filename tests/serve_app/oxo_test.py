@@ -5,14 +5,14 @@ import json
 import os
 import pathlib
 import sys
-from typing import Dict, Any
+from typing import Any
+from unittest import mock
 
 import httpx
 import ubjson
 from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
-from unittest import mock
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
@@ -2894,7 +2894,7 @@ def testRunScanMutation_whenAssetDoesNotExist_returnErrorMessage(
     assert response.get_json()["errors"][0]["message"] == "Assets not found."
 
 
-def _get_re_oxo_schema(query: str) -> Dict[str, Any]:
+def _get_re_oxo_schema(query: str) -> dict[str, Any]:
     """Introspect the oxo endpoint on RE, and fetch desired definitions."""
 
     with httpx.Client(verify=True) as client:
@@ -3013,11 +3013,11 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
 
     re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
 
-    re_oxo_mutation_fields = [
-        type_def
+    re_oxo_mutation_fields = next(
+        type_def["fields"]
         for type_def in re_oxo_types
         if type_def["kind"] == "OBJECT" and type_def["name"] == "Mutations"
-    ][0]["fields"]
+    )
 
     re_oxo_mutations = {
         mutation["name"]: mutation for mutation in re_oxo_mutation_fields
@@ -3025,11 +3025,11 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
 
     oxo_types = oxo_schema_dict["types"]
 
-    oxo_mutations_fields = [
-        type_def
+    oxo_mutations_fields = next(
+        type_def["fields"]
         for type_def in oxo_types
         if type_def["kind"] == "OBJECT" and type_def["name"] == "Mutations"
-    ][0]["fields"]
+    )
 
     oxo_mutations = {mutation["name"]: mutation for mutation in oxo_mutations_fields}
 
@@ -3080,17 +3080,19 @@ def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     re_oxo_schema_dict = _get_re_oxo_schema(INTROSPECT_QUERIES_QUERY)
     re_oxo_types = re_oxo_schema_dict["__schema"]["types"]
 
-    re_oxo_query_fields = [
-        t for t in re_oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
-    ][0]["fields"]
+    re_oxo_query_fields = next(
+        t["fields"]
+        for t in re_oxo_types
+        if t["kind"] == "OBJECT" and t["name"] == "Query"
+    )
 
     re_oxo_queries = {query["name"]: query for query in re_oxo_query_fields}
 
     oxo_types = oxo_schema_dict["types"]
 
-    oxo_query_fields = [
-        t for t in oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
-    ][0]["fields"]
+    oxo_query_fields = next(
+        t["fields"] for t in oxo_types if t["kind"] == "OBJECT" and t["name"] == "Query"
+    )
 
     oxo_queries = {query["name"]: query for query in oxo_query_fields}
 

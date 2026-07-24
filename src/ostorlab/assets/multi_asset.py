@@ -25,7 +25,6 @@ from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 
-
 MOBILE_ASSET_FIELDS: frozenset[str] = frozenset(
     {
         "android_package_name",
