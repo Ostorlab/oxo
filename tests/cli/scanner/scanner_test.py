@@ -35,7 +35,7 @@ class _FakeEventLoop:
 
 def _start_scanner_with_fake_loop(mocker: plugin.MockerFixture, **kwargs) -> None:
     mocker.patch("asyncio.new_event_loop", return_value=_FakeEventLoop())
-    mocker.patch("ostorlab.cli.scanner.scanner.scan_handler.subscribe_nats")
+    mocker.patch("ostorlab.cli.scanner.scanner.scan_handler.start_scan_loop")
 
     scanner_cli.start_scanner(
         api_key=None,

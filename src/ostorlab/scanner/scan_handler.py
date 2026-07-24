@@ -1,181 +1,243 @@
-"""Module Responsible for subscribing to nats for different subjects."""
+"""Module Responsible for handling scanner loop via API."""
 
 from __future__ import annotations
 
 import logging
 import asyncio
 import datetime
+import random
 
 import docker
 from docker.models import services
-from nats.js import errors as jetstream_errors
-from nats import errors as nats_errors
+
+from typing import Any
 
 from ostorlab.apis import scanner_config
 from ostorlab.apis.runners import authenticated_runner
-from ostorlab.scanner import handler as scanner_handler
+from ostorlab.apis.runners import scanner_runner
+from ostorlab.apis import scans_discover
+
+from ostorlab.apis import scan_update_state
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner import callbacks
+from ostorlab.scanner import resource_checker
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
 
-
 WAIT_CHECK_MESSAGES = datetime.timedelta(seconds=5)
-
-logger = logging.getLogger(__name__)
 
 
 class ScanHandler:
-    """Class responsible for handling the subscription to bus handler."""
+    """Class responsible for handling the API scan loop."""
 
-    def __init__(self, state_reporter: scanner_state_reporter.ScannerStateReporter):
-        self._bus_handlers = []
+    def __init__(
+        self,
+        state_reporter: scanner_state_reporter.ScannerStateReporter,
+        scan_resource_requirements: dict[str, scanner_conf.ScanResourceRequirements]
+        | None = None,
+    ):
         self._state_reporter = state_reporter
+        self._scan_resource_requirements = scan_resource_requirements or {}
         self._docker_client = docker.from_env()
 
     async def close(self) -> None:
-        for handler in self._bus_handlers:
-            await handler.close()
-
-    async def _subscribe(
-        self,
-        config: scanner_conf.ScannerConfig,
-        subject,
-        queue,
-        stream,
-        start_at="first",
-    ) -> scanner_handler.BusHandler:
-        bus_handler = await self._create_bus_handler(config)
-        asyncio.create_task(bus_handler.ensure_running_handler())
-        await bus_handler.connect()
-        await bus_handler.add_stream(name=stream, subjects=[subject])
-        await bus_handler.subscribe(
-            subject=subject,
-            start_at=start_at,
-            durable_name=queue,
-        )
-        self._bus_handlers.append(bus_handler)
-        return bus_handler
-
-    async def subscribe_all(
-        self, config: scanner_conf.ScannerConfig, api_key: str | None = None
-    ) -> None:
-        bus_handlers = []
-        for bus_conf in config.subject_bus_configs:
-            bus_handler = await self._subscribe(
-                config=config,
-                subject=bus_conf.subject,
-                queue=bus_conf.queue,
-                start_at="first",
-                stream=bus_conf.queue,
-            )
-            logger.info("subscribing to %s", bus_conf.subject)
-            bus_handlers.append(bus_handler)
-
-        for bus_handler in bus_handlers:
-            await self.handle_messages(bus_handler, api_key)
+        self._docker_client.close()
 
     async def handle_messages(
         self,
-        bus_handler: scanner_handler.BusHandler,
+        runner: scanner_runner.ScannerAPIRunner,
         api_key: str | None = None,
     ) -> None:
-        """Scan handler method responsible for fetching messages from the streaming server,
-        parse the messages and trigger the scan.
-        The message is acknowledged after the scan is created, and the scan handler can't fetch new messages,
-        until the current scan is no longer running.
-
-        Args:
-            bus_handler: instance for performing BUS operations.
-            api_key: Optional api key to fetch short-lived download tokens for agent images.
-        """
+        """Scan handler method responsible for fetching messages from the API and triggering the scan."""
         scan_id = None
+
+        logger.info("Starting main API polling loop.")
+
         while True:
-            if _is_scan_running(self._docker_client, scan_id=scan_id) is True:
+            if scan_id is not None and self._is_scan_running(scan_id=scan_id) is True:
+                logger.debug("Scan %s is still running. Sleeping...", scan_id)
                 await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
-            else:
-                try:
-                    scan_id = await self._handle_message(bus_handler, api_key)
-                except nats_errors.TimeoutError:
-                    # No available message to fetch.
-                    await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                continue
 
-    async def _handle_message(
+            if scan_id is not None:
+                logger.debug("Scan %s has finished. Ready for next.", scan_id)
+            scan_id = None
+
+            scans_list = self._fetch_available_scans(runner)
+            if scans_list is None or len(scans_list) == 0:
+                logger.debug("No scans available in the queue. Sleeping...")
+                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                continue
+
+            reserved_scan = self._reserve_single_scan(runner, scans_list)
+            if reserved_scan is None:
+                logger.debug(
+                    "Failed to reserve any scans from the current batch. Sleeping..."
+                )
+                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                continue
+
+            scan_id = self._trigger_scan_with_rollback(runner, reserved_scan, api_key)
+            if scan_id is None:
+                logger.warning("Trigger failed and rolled back. Sleeping...")
+                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+
+    def _fetch_available_scans(
+        self, runner: scanner_runner.ScannerAPIRunner
+    ) -> list[dict[str, Any]]:
+        """Fetches the list of discoverable scans from the API."""
+        logger.debug("Fetching available scans from Discover API...")
+        try:
+            response = runner.execute(scans_discover.ScansDiscoverAPIRequest())
+            scans_list = response.get("data", {}).get("scans", {}).get("scans", [])
+            logger.info("Discovered %s potential scans.", len(scans_list))
+            return scans_list
+        except Exception as e:
+            logger.exception("Exception while fetching scans: %s", e)
+            return []
+
+    def _reserve_single_scan(
         self,
-        bus_handler: scanner_handler.BusHandler,
-        api_key: str | None = None,
-    ) -> str:
-        """Fetch, parse a single message and trigger the corresponding scan."""
-        async for msg, request in bus_handler.process_message():
-            if request is not None and msg is not None:
-                try:
-                    scan_id = callbacks.start_scan(
-                        subject=msg.subject,
-                        request=request,
-                        state_reporter=self._state_reporter,
-                        api_key=api_key,
+        runner: scanner_runner.ScannerAPIRunner,
+        scans_list: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        """Shuffles the scan list and attempts to reserve them one by one until successful."""
+        logger.debug("Shuffling scan list to prevent lock contention.")
+        random.shuffle(scans_list)
+
+        for scan_item in scans_list:
+            candidate_id = scan_item.get("id")
+            if candidate_id is None:
+                continue
+
+            candidate_id = int(candidate_id)
+            logger.debug("Attempting to reserve candidate scan ID: %s...", candidate_id)
+
+            try:
+                reserve_response = runner.execute(
+                    scan_update_state.ScanUpdateStateAPIRequest(
+                        scan_id=candidate_id, progress="locked", full_details=True
                     )
-                    await msg.ack()
-                    return scan_id
-                except Exception as e:
-                    logger.exception("Exception: %s", e)
-                    await msg.nak()
+                )
+                reserve_data = reserve_response.get("data", {}).get("updateScan", {})
 
-    async def _create_bus_handler(
-        self, config: scanner_conf.ScannerConfig
-    ) -> scanner_handler.BusHandler:
-        bus_handler = scanner_handler.BusHandler(
-            bus_url=config.bus_url,
-            cluster_id=config.bus_cluster_id,
-            name=config.bus_client_name,
+                if reserve_data.get("success") is True:
+                    logger.info(
+                        "Successfully locked and reserved scan ID: %s.",
+                        candidate_id,
+                    )
+                    return reserve_data.get("scan")
+                else:
+                    logger.debug(
+                        "Scan ID %s reservation rejected by API (might be locked by another agent).",
+                        candidate_id,
+                    )
+            except Exception as e:
+                logger.warning("Exception reserving scan %s: %s", candidate_id, e)
+
+        logger.info("Exhausted scan list. Could not reserve any scans.")
+        return None
+
+    def _trigger_scan_with_rollback(
+        self,
+        runner: scanner_runner.ScannerAPIRunner,
+        reserved_scan: dict[str, Any],
+        api_key: str | None,
+    ) -> str | None:
+        """Attempts to start the scan locally, rolling back the API state if it fails."""
+        raw_id = reserved_scan.get("id")
+        if raw_id is None:
+            logger.warning("Reserved scan is missing an 'id'. Skipping.")
+            return None
+        scan_id_val = int(raw_id)
+
+        scan_key = (reserved_scan.get("agentGroup") or {}).get("key")
+        if (
+            scan_key is not None
+            and self._scan_resource_requirements is not None
+            and self._scan_resource_requirements != {}
+        ):
+            if (
+                resource_checker.can_run_scan(
+                    scan_key=scan_key,
+                    requirements=self._scan_resource_requirements,
+                )
+                is False
+            ):
+                logger.warning(
+                    "Insufficient host resources for scan %s (key: %s). Rolling back.",
+                    scan_id_val,
+                    scan_key,
+                )
+                self._rollback_scan_state(runner, scan_id_val)
+                return None
+
+        logger.info("Handing off scan ID %s to callbacks.start_scan...", scan_id_val)
+
+        try:
+            started_scan_id = callbacks.start_scan(
+                request=reserved_scan,
+                state_reporter=self._state_reporter,
+                api_key=api_key,
+            )
+            if started_scan_id is None:
+                logger.warning(
+                    "Scan %s could not be started locally (runtime unsupported). Rolling back.",
+                    scan_id_val,
+                )
+                self._rollback_scan_state(runner, scan_id_val)
+                return None
+            logger.info(
+                "Scan %s successfully started. Local ID: %s",
+                scan_id_val,
+                started_scan_id,
+            )
+            return started_scan_id
+        except Exception as e:
+            logger.exception(
+                "Failed to start scan %s locally: %s. Initiating rollback...",
+                scan_id_val,
+                e,
+            )
+            self._rollback_scan_state(runner, scan_id_val)
+            return None
+
+    def _rollback_scan_state(
+        self, runner: scanner_runner.ScannerAPIRunner, scan_id_val: Any
+    ) -> None:
+        """Reverts a scan's progress to not_started if local execution fails."""
+        try:
+            runner.execute(
+                scan_update_state.ScanUpdateStateAPIRequest(
+                    scan_id=scan_id_val, progress="not_started"
+                )
+            )
+            logger.info(
+                "Successfully rolled back scan %s state to 'not_started'.", scan_id_val
+            )
+        except Exception as rollback_err:
+            logger.exception(
+                "FATAL: Failed to rollback scan %s: %s", scan_id_val, rollback_err
+            )
+
+    def _is_scan_running(self, scan_id: str | None) -> bool:
+        """Returns True if docker services with `ostorlab.universe` label exist."""
+        if scan_id is None:
+            return False
+        scan_services: list[services.Service] = self._docker_client.services.list(
+            filters={"label": f"ostorlab.universe={str(scan_id)}"}
         )
-        return bus_handler
+        is_running = len(scan_services) > 0
+        return is_running
 
 
-def _is_scan_running(client: docker.DockerClient, scan_id: str | None = None) -> bool:
-    """Returns True, if docker services with `ostorlab.universe` label exist,
-    False otherwise.
-    """
-    if scan_id is None:
-        return False
-    scan_services: list[services.Service] = client.services.list(
-        filters={"label": f"ostorlab.universe={str(scan_id)}"}
-    )
-    return len(scan_services) > 0
-
-
-async def connect_nats(
-    config: scanner_conf.ScannerConfig,
-    scanner_id: str,
-    state_reporter: scanner_state_reporter.ScannerStateReporter,
-    api_key: str | None = None,
-) -> ScanHandler:
-    """connecting to nats.
-
-    Args:
-        config: The scanner configuration; holds credentials for the registry & streaming server.
-        scanner_id: The scanner identifier.
-        state_reporter: instance responsible for reporting the scanner state.
-        api_key: Optional api key to fetch short-lived download tokens for agent images.
-    """
-    try:
-        logger.info("starting bus runner for scanner %s", scanner_id)
-        scan_handler = ScanHandler(state_reporter)
-        logger.info("connected, subscribing to plans channels ...")
-        await scan_handler.subscribe_all(config, api_key)
-        logger.info("subscribed")
-        return scan_handler
-    except jetstream_errors.ServiceUnavailableError as e:
-        logger.exception("Failed to establish connection to NATs: %s", e)
-
-
-async def subscribe_nats(
-    api_key: str,
+async def start_scan_loop(
+    api_key: str | None,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
 ) -> None:
-    """Fetching the scanner configuration and subscribing to nats.
+    """Fetching the scanner configuration and starting the API polling loop.
 
     Args:
         api_key: The key to connect to ostorlab.
@@ -191,5 +253,14 @@ async def subscribe_nats(
         logger.error("No config found to start the connection.")
         return
 
-    logger.info("Connecting to nats.")
-    await connect_nats(config, scanner_id, state_reporter, api_key)
+    s_runner = scanner_runner.ScannerAPIRunner(api_key=config.api_key)
+
+    logger.info("Starting scan loop via API.")
+    scan_handler = ScanHandler(
+        state_reporter,
+        scan_resource_requirements=config.scan_resource_requirements,
+    )
+    try:
+        await scan_handler.handle_messages(runner=s_runner, api_key=api_key)
+    finally:
+        await scan_handler.close()

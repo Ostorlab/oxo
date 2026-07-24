@@ -49,8 +49,6 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on HarmonyOsRpkAssetType { path contentUrl }
                     ... on NetworkAssetType { networks }
                     ... on AgentAssetType { key agentVersion: version gitLocation dockerLocation yamlFileLocation }
-                    ... on RiskAssetType { description rating target risksGroup }
-                    ... on RisksAssetType { id }
                     ... on RepositoryAssetType { provider repositoryUrl commitHash }
                     ... on RepositoryArchiveAssetType { path contentUrl }
                   }

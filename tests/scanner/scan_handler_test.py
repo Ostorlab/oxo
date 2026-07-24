@@ -1,138 +1,224 @@
-"""Unit tests for start module."""
-
-import socket
-from typing import Any
+"""Unit tests for scan handler module."""
 
 import pytest
 from pytest_mock import plugin
 
 from ostorlab.scanner import scan_handler
-from ostorlab.scanner import scanner_conf
 from ostorlab.utils import scanner_state_reporter
-
-
-@pytest.mark.asyncio
-async def testConnectNats_whenScannerConfig_subscribeNatsWithStartAgentScan(
-    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
-) -> None:
-    nats_connect_mock = mocker.patch(
-        "ostorlab.scanner.handler.ClientBusHandler.connect"
-    )
-    mocker.patch(
-        "ostorlab.scanner.scan_handler.asyncio.events.AbstractEventLoop.run_forever",
-        side_effect=Exception,
-    )
-    nats_add_stream_mock = mocker.patch(
-        "ostorlab.scanner.handler.ClientBusHandler.add_stream"
-    )
-    mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
-    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_messages")
-    mocker.patch("docker.from_env")
-
-    config = scanner_conf.ScannerConfig.from_json(config=data_start_agent_scan)
-
-    state_reporter = scanner_state_reporter.ScannerStateReporter(
-        scanner_id="GGBD-DJJD-DKJK-DJDD",
-        hostname=socket.gethostname(),
-        ip="192.168.0.1",
-    )
-    await scan_handler.connect_nats(
-        config=config, scanner_id="GGBD-DJJD-DKJK-DJDD", state_reporter=state_reporter
-    )
-
-    assert nats_connect_mock.call_count == 1
-    assert nats_add_stream_mock.call_args.kwargs["subjects"][0] == "scan.startAgentScan"
-
-
-@pytest.mark.asyncio
-async def testBusHandler_always_createBusHandler(
-    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
-) -> None:
-    nats_subscribe_mock = mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
-    mocker.patch("ostorlab.scanner.handler.ClientBusHandler.connect", return_value=None)
-    mocker.patch("ostorlab.scanner.handler.ClientBusHandler.close", return_value=None)
-    mocker.patch(
-        "ostorlab.scanner.handler.ClientBusHandler.add_stream", return_value=None
-    )
-    mocker.patch("ostorlab.scanner.scan_handler.ScanHandler.handle_messages")
-    config = scanner_conf.ScannerConfig.from_json(
-        config=data_start_agent_scan,
-    )
-    state_reporter = scanner_state_reporter.ScannerStateReporter(
-        scanner_id="GGBD-DJJD-DKJK-DJDD",
-        hostname=socket.gethostname(),
-        ip="192.168.0.1",
-    )
-    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-
-    await scan_handler_instance.subscribe_all(config)
-
-    assert nats_subscribe_mock.call_count == 1
-    assert nats_subscribe_mock.await_args.kwargs["subject"] == "scan.startAgentScan"
-    assert nats_subscribe_mock.await_args.kwargs["durable_name"] == "1"
-
-
-@pytest.mark.asyncio
-async def testSubscribeAll_whenApiKeyProvided_forwardsApiKeyToHandleMessages(
-    mocker: plugin.MockerFixture, data_start_agent_scan: dict[str, Any]
-) -> None:
-    """subscribe_all should propagate api_key to handle_messages so it can
-    be passed all the way down to install_agent."""
-    mocker.patch("ostorlab.scanner.handler.BusHandler.subscribe")
-    mocker.patch("ostorlab.scanner.handler.ClientBusHandler.connect", return_value=None)
-    mocker.patch("ostorlab.scanner.handler.ClientBusHandler.close", return_value=None)
-    mocker.patch(
-        "ostorlab.scanner.handler.ClientBusHandler.add_stream", return_value=None
-    )
-    handle_messages_mock = mocker.patch(
-        "ostorlab.scanner.scan_handler.ScanHandler.handle_messages"
-    )
-    config = scanner_conf.ScannerConfig.from_json(config=data_start_agent_scan)
-    state_reporter = scanner_state_reporter.ScannerStateReporter(
-        scanner_id="GGBD-DJJD-DKJK-DJDD",
-        hostname=socket.gethostname(),
-        ip="192.168.0.1",
-    )
-    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-
-    await scan_handler_instance.subscribe_all(config, api_key="test_api_key")
-
-    assert handle_messages_mock.call_count == 1
-    assert handle_messages_mock.await_args.args[-1] == "test_api_key"
 
 
 @pytest.mark.asyncio
 async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """handle_messages should forward the api_key to callbacks.start_scan
+    """handle_messages should forward the api_key to _trigger_scan_with_rollback
     so the image pull uses a short-lived registry token."""
-    start_scan_mock = mocker.patch(
-        "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="scan-id"
+    trigger_mock = mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_trigger_scan_with_rollback",
+        return_value="scan-id",
+    )
+    mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_fetch_available_scans",
+        return_value=[{"id": 1}],
+    )
+    mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_reserve_single_scan",
+        return_value={"id": 42, "agentGroup": {"key": "test/group"}},
+    )
+    mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_is_scan_running",
+        return_value=True,
     )
     mocker.patch(
-        "ostorlab.scanner.scan_handler._is_scan_running", side_effect=[False, True]
+        "ostorlab.scanner.scan_handler.asyncio.sleep",
+        side_effect=RuntimeError("stop"),
     )
-    mocker.patch(
-        "ostorlab.scanner.scan_handler.asyncio.sleep", side_effect=RuntimeError("stop")
-    )
-
-    async def _fake_process_message():
-        msg = mocker.AsyncMock()
-        yield msg, mocker.MagicMock()
-
-    bus_handler = mocker.MagicMock()
-    bus_handler.process_message = _fake_process_message
 
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
-        hostname=socket.gethostname(),
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    runner = mocker.MagicMock()
+
+    with pytest.raises(RuntimeError, match="stop"):
+        await scan_handler_instance.handle_messages(runner, api_key="test_api_key")
+
+    trigger_mock.assert_called_once()
+    assert trigger_mock.call_args.args[2] == "test_api_key"
+
+
+def testIsScanRunning_whenScanIdIsNone_returnsFalse() -> None:
+    """_is_scan_running should return False when scan_id is None."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
-    with pytest.raises(RuntimeError, match="stop"):
-        await scan_handler_instance.handle_messages(bus_handler, api_key="test_api_key")
+    result = scan_handler_instance._is_scan_running(scan_id=None)
 
-    start_scan_mock.assert_called_once()
-    assert start_scan_mock.call_args.kwargs.get("api_key") == "test_api_key"
+    assert result is False
+
+
+def testReserveSingleScan_whenFirstScanSucceeds_returnsScanData(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_reserve_single_scan should return scan data when the first reservation succeeds."""
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {
+        "data": {
+            "updateScan": {
+                "success": True,
+                "scan": {"id": 42, "progress": "locked"},
+            }
+        }
+    }
+    scans_list = [{"id": 42}, {"id": 99}]
+
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._reserve_single_scan(runner, scans_list)
+
+    assert result == {"id": 42, "progress": "locked"}
+    runner.execute.assert_called_once()
+
+
+def testReserveSingleScan_whenReservationFails_skipsAndTriesNext(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_reserve_single_scan should try the next scan when reservation fails."""
+    mocker.patch.object(
+        scan_handler,
+        "random",
+    )
+    scan_handler.random.shuffle = lambda x: None
+
+    runner = mocker.MagicMock()
+    runner.execute.side_effect = [
+        {
+            "data": {
+                "updateScan": {
+                    "success": False,
+                    "scan": None,
+                }
+            }
+        },
+        {
+            "data": {
+                "updateScan": {
+                    "success": True,
+                    "scan": {"id": 99, "progress": "locked"},
+                }
+            }
+        },
+    ]
+    scans_list = [{"id": 42}, {"id": 99}]
+
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._reserve_single_scan(runner, scans_list)
+
+    assert result == {"id": 99, "progress": "locked"}
+    assert runner.execute.call_count == 2
+
+
+def testReserveSingleScan_whenAllFail_returnsNone(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_reserve_single_scan should return None when all reservations fail."""
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {
+        "data": {
+            "updateScan": {
+                "success": False,
+                "scan": None,
+            }
+        }
+    }
+    scans_list = [{"id": 42}, {"id": 99}]
+
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._reserve_single_scan(runner, scans_list)
+
+    assert result is None
+
+
+def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_trigger_scan_with_rollback should rollback when callbacks.start_scan raises."""
+    runner = mocker.MagicMock()
+    rollback_mock = mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_rollback_scan_state",
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan",
+        side_effect=Exception("scan failed"),
+    )
+    reserved_scan = {"id": 42, "agentGroup": {"key": "test/group"}}
+
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._trigger_scan_with_rollback(
+        runner, reserved_scan, api_key="test_key"
+    )
+
+    assert result is None
+    rollback_mock.assert_called_once_with(runner, 42)
+
+
+def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_reserve_single_scan should skip entries with no id."""
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {
+        "data": {
+            "updateScan": {
+                "success": True,
+                "scan": {"id": 99, "progress": "locked"},
+            }
+        }
+    }
+    scans_list = [{"no_id": True}, {"id": 99}]
+
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._reserve_single_scan(runner, scans_list)
+
+    assert result == {"id": 99, "progress": "locked"}
+    runner.execute.assert_called_once()
