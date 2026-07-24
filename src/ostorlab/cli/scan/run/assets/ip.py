@@ -3,15 +3,13 @@ This module takes care of preparing an IP asset, either single address, a range 
 
 import ipaddress
 import logging
-from typing import List
 
 import click
 
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
+from ostorlab import exceptions
+from ostorlab.assets import ipv4, ipv6
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +19,7 @@ console = cli_console.Console()
 @run.run.command(name="ip")
 @click.argument("ips", required=True, nargs=-1)
 @click.pass_context
-def ip_cli(ctx: click.core.Context, ips: List[str]) -> None:
+def ip_cli(ctx: click.core.Context, ips: list[str]) -> None:
     """Run scan for IP asset."""
     runtime = ctx.obj["runtime"]
     try:

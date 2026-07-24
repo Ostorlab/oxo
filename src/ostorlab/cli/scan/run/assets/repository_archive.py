@@ -6,10 +6,10 @@ import logging
 
 import click
 
+from ostorlab import exceptions
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)

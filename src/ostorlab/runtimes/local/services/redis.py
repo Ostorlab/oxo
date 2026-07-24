@@ -1,12 +1,10 @@
 """Redis service in charge of providing capabilities like QPS limiting, distributed locking and distributed storage."""
 
 import logging
-from typing import Dict, Optional
 
 import docker
 import tenacity
-from docker import errors
-from docker import types
+from docker import errors, types
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -21,7 +19,7 @@ class LocalRedis:
         self,
         name: str,
         network: str,
-        exposed_ports: Optional[Dict[int, int]] = None,
+        exposed_ports: dict[int, int] | None = None,
         image: str = REDIS_IMAGE,
     ) -> None:
         """Initialize the Redis service parameters.
@@ -48,7 +46,7 @@ class LocalRedis:
         return f"redis://{self._redis_host}:6379/"
 
     @property
-    def service(self) -> Optional[services.Service]:
+    def service(self) -> services.Service | None:
         return self._redis_service
 
     def start(self) -> None:
@@ -83,7 +81,7 @@ class LocalRedis:
                 check_duplicate=True,
             )
 
-    def _start_redis(self) -> Optional[services.Service]:
+    def _start_redis(self) -> services.Service | None:
         try:
             logger.info("starting Redis")
             endpoint_spec = types.services.EndpointSpec(

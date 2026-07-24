@@ -4,7 +4,6 @@ import json
 import sys
 import tempfile
 import uuid
-from typing import List
 
 import pytest
 
@@ -151,7 +150,7 @@ def testOpenTelemetryMixin_whenEmitMessageWithPriority_shouldForwardPriority(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
-    agent_mock: List[object],
+    agent_mock: list[object],
 ) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
@@ -201,7 +200,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInContext(
-    agent_mock: List[object],
+    agent_mock: list[object],
 ) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock

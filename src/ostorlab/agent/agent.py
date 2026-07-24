@@ -18,17 +18,16 @@ import signal
 import sys
 import threading
 import uuid
-from typing import Dict, Any, Optional, Type, List
+from typing import Any
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
-from ostorlab.agent.mixins import agent_healthcheck_mixin
-from ostorlab.agent.mixins import agent_mq_mixin
+from ostorlab.agent.mixins import agent_healthcheck_mixin, agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.utils import system
 from ostorlab.utils import strings as string_utils
+from ostorlab.utils import system
 
 GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
@@ -54,8 +53,8 @@ def _setup_logging(
     agent_key: str,
     agent_version: str,
     universe: str,
-    host_hostname: Optional[str] = None,
-    service_name: Optional[str] = None,
+    host_hostname: str | None = None,
+    service_name: str | None = None,
 ) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
@@ -112,7 +111,7 @@ class AgentMixin(
             asyncio.set_event_loop(self._loop)
         self._agent_definition = agent_definition
         self._agent_settings = agent_settings
-        self._control_message: Optional[agent_message.Message] = None
+        self._control_message: agent_message.Message | None = None
         self.name = agent_definition.name
         self.in_selectors = (
             agent_settings.in_selectors
@@ -158,7 +157,7 @@ class AgentMixin(
         return self._agent_settings
 
     @property
-    def args(self) -> Dict[str, Any]:
+    def args(self) -> dict[str, Any]:
         """Agent arguments as passed from definition and settings."""
         arguments = {}
         # First read the agent default values.
@@ -183,7 +182,7 @@ class AgentMixin(
         return arguments
 
     @property
-    def universe(self) -> Optional[str]:
+    def universe(self) -> str | None:
         """Returns the current scan universe.
 
         A universe is the group of agents and services in charge of running a scan. The universe is defined
@@ -242,22 +241,24 @@ class AgentMixin(
         # Validate the message before processing it.
         try:
             if self._is_valid_message() is False:
-                return None
+                return
         except MaximumCyclicProcessReachedError:
             self.on_max_cyclic_process_reached(object_message)
-            return None
+            return
         except MaximumDepthProcessReachedError:
             self.on_max_depth_process_reached(object_message)
-            return None
+            return
 
         try:
             logger.debug("Call to process with message= %s", raw_message)
             self.process(object_message)
-        except Exception as e:
+        except Exception:
             system_info = system.get_system_info()
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
-            logger.exception("Exception: %s", e)
+            logger.exception(
+                "Error processing message on selector %s", object_message.selector
+            )
             logger.error(
                 "Message of selector %s: %s",
                 object_message.selector,
@@ -278,18 +279,21 @@ class AgentMixin(
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
+            and control_agents.count(self.name) >= self.cyclic_processing_limit
         ):
-            if control_agents.count(self.name) >= self.cyclic_processing_limit:
-                raise MaximumCyclicProcessReachedError()
+            raise MaximumCyclicProcessReachedError()
 
-        if self.depth_processing_limit is not None and self.depth_processing_limit != 0:
-            if len(control_agents) >= self.depth_processing_limit:
-                agent_path = " -> ".join(control_agents)
-                error_message = (
-                    f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
-                    f"Agents path: {agent_path}"
-                )
-                raise MaximumDepthProcessReachedError(error_message)
+        if (
+            self.depth_processing_limit is not None
+            and self.depth_processing_limit != 0
+            and len(control_agents) >= self.depth_processing_limit
+        ):
+            agent_path = " -> ".join(control_agents)
+            error_message = (
+                f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
+                f"Agents path: {agent_path}"
+            )
+            raise MaximumDepthProcessReachedError(error_message)
 
         if (
             len(control_agents) > 0
@@ -352,9 +356,9 @@ class AgentMixin(
     def emit(
         self,
         selector: str,
-        data: Dict[str, Any],
-        message_id: Optional[str] = None,
-        message_priority: Optional[int] = None,
+        data: dict[str, Any],
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
@@ -396,8 +400,8 @@ class AgentMixin(
         self,
         selector: str,
         raw: bytes,
-        message_id: Optional[str] = None,
-        message_priority: Optional[int] = None,
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
@@ -450,7 +454,7 @@ class AgentMixin(
         return control_message.raw
 
     @classmethod
-    def main(cls: Type["AgentMixin"], args: Optional[List[str]] = None) -> None:
+    def main(cls: type["AgentMixin"], args: list[str] | None = None) -> None:
         """Prepares the agents class by reading the agent definition and runtime settings.
 
         By the default, the class main expects the definition file to be at `agent.yaml` and settings to be at
@@ -564,7 +568,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def process(self, message: agent_message.Message) -> None:
         """Overridable message processing method.
@@ -583,7 +586,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def at_exit(self) -> None:
         """Overridable at exit method to perform cleanup in the case of expected and unexpected agent termination.
@@ -591,7 +593,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max cyclic process reached.
@@ -599,8 +600,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max processing depth reached."""
-        pass

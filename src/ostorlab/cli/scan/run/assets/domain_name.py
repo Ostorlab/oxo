@@ -1,14 +1,13 @@
 """Asset of type Domain Name."""
 
 import logging
-from typing import List
 
 import click
 
-from ostorlab.assets import domain_name
-from ostorlab.cli.scan.run import run
 from ostorlab import exceptions
+from ostorlab.assets import domain_name
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="domain-name")
 @click.argument("names", required=True, nargs=-1)
 @click.pass_context
-def domain_name_cli(ctx: click.core.Context, names: List[str]) -> None:
+def domain_name_cli(ctx: click.core.Context, names: list[str]) -> None:
     """Run scan for Domain Name asset."""
     runtime = ctx.obj["runtime"]
     assets = []

@@ -12,15 +12,12 @@ import io
 import logging
 import random
 import uuid
-from typing import List, Optional
 
 import docker
-from docker import constants
-from docker import errors
+from docker import constants, errors
 from docker.types import services as docker_types_services
 
-from ostorlab import configuration_manager
-from ostorlab import exceptions
+from ostorlab import configuration_manager, exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.utils import definitions as utils_definitions
@@ -82,7 +79,7 @@ def _parse_mount_string_windows(string):
                 # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
                 source = f"/{source}"
                 mount_type = "bind"
-            read_only = not parts[2] == "rw"
+            read_only = parts[2] != "rw"
             return docker_types_services.Mount(
                 target, source, read_only=read_only, type=mount_type
             )
@@ -156,7 +153,7 @@ class AgentRuntime:
         bus_exchange_topic: str,
         redis_url: str,
         tracing_collector_url: str,
-        gcp_logging_credential: Optional[str] = None,
+        gcp_logging_credential: str | None = None,
         labels: dict[str, str] | None = None,
     ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
@@ -205,12 +202,10 @@ class AgentRuntime:
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
-            logging.warning(
-                "found existing config %s, config will removed", config_name
-            )
+            logger.warning("found existing config %s, config will removed", config_name)
             settings_config.remove()
         except docker.errors.NotFound:
-            logging.debug("all good, config %s is new", config_name)
+            logger.debug("all good, config %s is new", config_name)
 
         docker_config = self._docker_client.configs.create(
             name=config_name,
@@ -239,12 +234,10 @@ class AgentRuntime:
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
-            logging.warning(
-                "found existing config %s, config will removed", config_name
-            )
+            logger.warning("found existing config %s, config will removed", config_name)
             settings_config.remove()
         except docker.errors.NotFound:
-            logging.debug("all good, config %s is new", config_name)
+            logger.debug("all good, config %s is new", config_name)
 
         docker_config = self._docker_client.configs.create(
             name=config_name,
@@ -300,7 +293,7 @@ class AgentRuntime:
         )
         return healthcheck
 
-    def replace_variable_mounts(self, mounts: List[str]):
+    def replace_variable_mounts(self, mounts: list[str]):
         """Replace path variables for the container mounts
 
         Args:
@@ -315,8 +308,8 @@ class AgentRuntime:
         return replaced_mounts
 
     def create_scan_volume_mounts(
-        self, volumes: List[utils_definitions.Volume]
-    ) -> List[docker.types.Mount]:
+        self, volumes: list[utils_definitions.Volume]
+    ) -> list[docker.types.Mount]:
         """Ensure each declared shared scan volume exists and build its mount.
 
         Agents declaring the same logical volume name share a single per-scan
@@ -352,8 +345,8 @@ class AgentRuntime:
     def create_agent_service(
         self,
         network_name: str,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
         replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.

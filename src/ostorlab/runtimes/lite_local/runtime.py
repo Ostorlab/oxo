@@ -3,10 +3,9 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services.
 """
 
+import builtins
 import logging
 from concurrent import futures
-from typing import List
-from typing import Optional
 
 import click
 import docker
@@ -15,11 +14,9 @@ from docker.models import services as docker_models_services
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
-from ostorlab.cli import console as cli_console, dumpers
-from ostorlab.cli import docker_requirements_checker
-from ostorlab.cli import install_agent
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
+from ostorlab.cli import console as cli_console
+from ostorlab.cli import docker_requirements_checker, dumpers, install_agent
+from ostorlab.runtimes import definitions, runtime
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import volumes
@@ -79,7 +76,7 @@ class LiteLocalRuntime(runtime.Runtime):
         network: str,
         redis_url: str,
         tracing_collector_url: str,
-        gcp_logging_credential: Optional[str] = None,
+        gcp_logging_credential: str | None = None,
         **kwargs,
     ) -> None:
         """Set runtime attributes.
@@ -172,7 +169,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: Optional[List[base_asset.Asset]],
+        assets: list[base_asset.Asset] | None,
     ) -> None:
         """Start scan on asset using the provided agent run definition.
 
@@ -292,8 +289,8 @@ class LiteLocalRuntime(runtime.Runtime):
     def _start_agent(
         self,
         agent: definitions.AgentSettings,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -361,7 +358,7 @@ class LiteLocalRuntime(runtime.Runtime):
 
     def _inject_assets(
         self,
-        assets: List[base_asset.Asset],
+        assets: list[base_asset.Asset],
         agent_settings: definitions.AgentSettings | None,
     ) -> None:
         """Injects the scan target assets."""
@@ -397,8 +394,8 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: Optional[str] = None,
-    ) -> List[runtime.Scan]:
+        state: str | None = None,
+    ) -> list[runtime.Scan]:
         raise NotImplementedError()
 
     def _are_agents_ready(self, fail_fast=True) -> bool:
@@ -430,7 +427,6 @@ class LiteLocalRuntime(runtime.Runtime):
         Returns:
         None
         """
-        pass
 
     def link_agent_group_scan(
         self,
@@ -443,13 +439,13 @@ class LiteLocalRuntime(runtime.Runtime):
             scan: The scan object.
             agent_group_definition: The agent group definition.
         """
-        pass
 
-    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+    def link_assets_scan(
+        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+    ) -> None:
         """Link the assets to the scan in the database.
 
         Args:
             scan_id: The scan id.
             assets: The list of assets.
         """
-        pass

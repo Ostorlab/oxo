@@ -5,20 +5,19 @@ This module takes care of preparing the application file and calling the create 
 import io
 import itertools
 import json
-from typing import List, Optional
 
 import click
 
-from ostorlab.cli.ci_scan.run import run
-from ostorlab.apis.runners import authenticated_runner
-from ostorlab.apis.runners import runner as base_runner
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner as base_runner
+from ostorlab.cli.ci_scan.run import run
 
 
 def _prepare_test_credentials(
     ctx: click.core.Context,
-) -> List[test_credentials_create_api.TestCredential]:
+) -> list[test_credentials_create_api.TestCredential]:
     test_credentials_login = ctx.obj["test_credentials"]["test_credentials_login"]
     test_credentials_password = ctx.obj["test_credentials"]["test_credentials_password"]
     test_credentials_url = ctx.obj["test_credentials"]["test_credentials_url"]
@@ -119,7 +118,7 @@ def run_mobile_scan(
             else:
                 credential_ids = []
 
-            ui_automation_rule_ids: List[int] = []
+            ui_automation_rule_ids: list[int] = []
 
             if len(ui_prompt_ids) > 0:
                 ui_automation_rule_ids.extend(ui_prompt_ids)
@@ -203,12 +202,12 @@ def _create_scan(
     scan_profile: str,
     asset_type: scan_create_api.MobileAssetType,
     file: io.FileIO,
-    credential_ids: List[int],
+    credential_ids: list[int],
     runner: authenticated_runner.AuthenticatedAPIRunner,
-    sboms: List[io.FileIO],
-    scan_source: Optional[scan_create_api.ScanSource] = None,
-    scope_urls_regexes: Optional[List[str]] = None,
-    ui_automation_rule_ids: List[int] = (),
+    sboms: list[io.FileIO],
+    scan_source: scan_create_api.ScanSource | None = None,
+    scope_urls_regexes: list[str] | None = None,
+    ui_automation_rule_ids: list[int] = (),
 ) -> int:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(

@@ -1,6 +1,6 @@
 """Definition of the emitting protocol exposing the emit method."""
 
-from typing import Any, Dict, Protocol, Optional
+from typing import Any, Protocol
 
 
 class EmitProtocol(Protocol):
@@ -9,9 +9,9 @@ class EmitProtocol(Protocol):
     def emit(
         self,
         selector: str,
-        data: Dict[str, Any],
-        message_id: Optional[str] = None,
-        message_priority: Optional[int] = None,
+        data: dict[str, Any],
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
@@ -27,4 +27,3 @@ class EmitProtocol(Protocol):
         Returns:
             None
         """
-        pass

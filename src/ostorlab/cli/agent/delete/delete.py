@@ -2,13 +2,12 @@
 
 import logging
 import re
-from typing import Optional
 
 import click
 import docker
 
 from ostorlab.cli import console as cli_console
-from ostorlab.cli.agent import agent as agent_cli
+from ostorlab.cli.agent.agent import agent as agent_cli
 
 console = cli_console.Console()
 
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
     help="Agent version matching regular expression.",
     required=False,
 )
-def delete(agent: str, agent_version_regex: Optional[str] = None) -> None:
+def delete(agent: str, agent_version_regex: str | None = None) -> None:
     """CLI command to delete installed agents."""
     docker_client = docker.from_env()
     images = docker_client.images.list()

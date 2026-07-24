@@ -9,7 +9,7 @@ a backed up static code in order to complete the authentication process.
     login_request = login.UsernamePasswordLoginAPIRequest(username, password, otp_token)
 """
 
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -18,7 +18,7 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
     """Makes a request to log in the user."""
 
     def __init__(
-        self, username: str, password: str, otp_token: Optional[str] = None
+        self, username: str, password: str, otp_token: str | None = None
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -32,11 +32,11 @@ class UsernamePasswordLoginAPIRequest(request.APIRequest):
         self._otp_token = otp_token
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         return None
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Gets the user login credentials.
 
         Returns:

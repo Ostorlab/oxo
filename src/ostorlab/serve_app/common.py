@@ -4,16 +4,15 @@ import collections
 import inspect
 import io
 import json
+import struct
 import zipfile
 from functools import cached_property
 from math import ceil
-import struct
-from typing import Optional, Union
 
 import cvss
 import graphene
-from graphql.language import ast
 from graphene.types import scalars
+from graphql.language import ast
 
 
 class PageInfo(graphene.ObjectType):
@@ -53,7 +52,7 @@ class Bytes(scalars.Scalar):
 
     @staticmethod
     def coerce_bytes(
-        value: Union[str, bytes, memoryview, list, float, int, dict, bool],
+        value: str | bytes | memoryview | list | float | dict | bool,
     ) -> bytes:
         """Coerce a value to bytes.
 
@@ -71,7 +70,7 @@ class Bytes(scalars.Scalar):
             return Bytes._rawbytes(value)
         elif isinstance(value, list):
             return json.dumps(value).encode(encoding="utf-8")
-        elif isinstance(value, float) or isinstance(value, int):
+        elif isinstance(value, (float, int)):
             return struct.pack("d", value)
         elif isinstance(value, dict):
             return json.dumps(value).encode(encoding="utf-8")
@@ -84,7 +83,7 @@ class Bytes(scalars.Scalar):
     parse_value = coerce_bytes
 
     @staticmethod
-    def parse_literal(asst: ast.Value) -> Optional[int]:
+    def parse_literal(asst: ast.Value) -> int | None:
         """Parse a literal value."""
         raise NotImplementedError("ast is not supported")
 
@@ -105,7 +104,7 @@ class Bytes(scalars.Scalar):
         return b"".join(outlist)
 
 
-def compute_cvss_v3_base_score(vector: Optional[str]) -> Optional[float]:
+def compute_cvss_v3_base_score(vector: str | None) -> float | None:
     """Compute the CVSS v3 base score from the vector.
 
     Args:
@@ -139,7 +138,7 @@ class Page(collections.abc.Sequence):
 
     def __repr__(self):
         """Return the string representation of the page object."""
-        return "<Page %s of %s>" % (self.number, self.paginator.num_pages)
+        return f"<Page {self.number} of {self.paginator.num_pages}>"
 
     def __len__(self):
         """Return the number of objects in the page."""
@@ -149,8 +148,7 @@ class Page(collections.abc.Sequence):
         """Return the object at the given index in the page."""
         if isinstance(index, (int, slice)) is False:
             raise TypeError(
-                "Page indices must be integers or slices, not %s."
-                % type(index).__name__
+                f"Page indices must be integers or slices, not {type(index).__name__}."
             )
         if isinstance(self.object_list, list) is False:
             self.object_list = list(self.object_list)
@@ -210,8 +208,7 @@ class Paginator:
         """
         bottom = (number - 1) * self.per_page
         top = bottom + self.per_page
-        if top >= self.count:
-            top = self.count
+        top = min(self.count, top)
         return Page(
             object_list=self.object_list[bottom:top], number=number, paginator=self
         )
@@ -233,9 +230,7 @@ def is_apk(file_content: bytes) -> bool:
 
     try:
         with zipfile.ZipFile(io.BytesIO(file_content)) as o:
-            if "AndroidManifest.xml" in o.namelist():
-                return True
-            return False
+            return "AndroidManifest.xml" in o.namelist()
     except zipfile.BadZipFile:
         return False
 
@@ -269,8 +264,6 @@ def is_aab(file_content: bytes) -> bool:
 
     try:
         with zipfile.ZipFile(io.BytesIO(file_content)) as o:
-            if "BundleConfig.pb" in o.namelist():
-                return True
-            return False
+            return "BundleConfig.pb" in o.namelist()
     except zipfile.BadZipFile:
         return False

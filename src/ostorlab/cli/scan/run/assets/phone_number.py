@@ -1,14 +1,13 @@
 """Asset of type Phone Number."""
 
 import logging
-from typing import List
 
 import click
 
-from ostorlab.assets import phone_number
-from ostorlab.cli.scan.run import run
 from ostorlab import exceptions
+from ostorlab.assets import phone_number
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="phone-number")
 @click.argument("numbers", required=True, nargs=-1)
 @click.pass_context
-def phone_number_cli(ctx: click.core.Context, numbers: List[str]) -> None:
+def phone_number_cli(ctx: click.core.Context, numbers: list[str]) -> None:
     """Run scan for Phone Number asset."""
     runtime = ctx.obj["runtime"]
     assets = []

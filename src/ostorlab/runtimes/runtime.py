@@ -1,8 +1,8 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 
 import abc
+import builtins
 import dataclasses
-from typing import List, Optional
 
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import dumpers
@@ -15,17 +15,17 @@ class Scan:
 
     id: str
     created_time: str
-    progress: Optional[str]
-    asset: Optional[str] = None
-    risk_rating: Optional[str] = None
+    progress: str | None
+    asset: str | None = None
+    risk_rating: str | None = None
 
 
 class Runtime(abc.ABC):
     """Runtime is in charge of preparing the environment to trigger a scan."""
 
     follow: list
-    timeout: Optional[int] = None
-    init_sleep: Optional[int] = None
+    timeout: int | None = None
+    init_sleep: int | None = None
     has_tracker: bool = True
 
     @abc.abstractmethod
@@ -45,7 +45,7 @@ class Runtime(abc.ABC):
         self,
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: Optional[List[base_asset.Asset]],
+        assets: list[base_asset.Asset] | None,
     ) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
@@ -76,8 +76,8 @@ class Runtime(abc.ABC):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: Optional[str] = None,
-    ) -> List[Scan]:
+        state: str | None = None,
+    ) -> list[Scan]:
         """Lists scans managed by runtime.
 
         Args:
@@ -122,7 +122,9 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+    def link_assets_scan(
+        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+    ) -> None:
         """Link the assets to the scan in the database.
 
         Args:

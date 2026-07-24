@@ -4,11 +4,11 @@ import logging
 
 import click
 import sqlalchemy
-from ostorlab.apis.runners import runner
 
+from ostorlab.apis.runners import runner
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
-from ostorlab.cli.vulnz import vulnz
+from ostorlab.cli.vulnz.vulnz import vulnz
 
 console = cli_console.Console()
 

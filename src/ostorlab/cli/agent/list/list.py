@@ -5,7 +5,7 @@ import logging
 import docker
 
 from ostorlab.cli import console as cli_console
-from ostorlab.cli.agent import agent
+from ostorlab.cli.agent.agent import agent
 
 console = cli_console.Console()
 

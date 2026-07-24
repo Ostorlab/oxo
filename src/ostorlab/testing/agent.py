@@ -1,6 +1,5 @@
 """mock agent implements the required methods to test the agent's behavior without using external components."""
 
-from typing import List, Union
 import dataclasses
 
 import pytest
@@ -20,15 +19,15 @@ class RawMessage:
 class AgentRunInstance:
     """An instance run to collect all aspects of an agent instance."""
 
-    emitted_messages: List[msg.Message] = dataclasses.field(default_factory=lambda: [])
-    control_messages: List[msg.Message] = dataclasses.field(default_factory=lambda: [])
-    raw_messages: List[RawMessage] = dataclasses.field(default_factory=lambda: [])
+    emitted_messages: list[msg.Message] = dataclasses.field(default_factory=list)
+    control_messages: list[msg.Message] = dataclasses.field(default_factory=list)
+    raw_messages: list[RawMessage] = dataclasses.field(default_factory=list)
 
 
 @pytest.fixture(scope="function")
-def agent_mock(mocker) -> List[object]:
+def agent_mock(mocker) -> list[object]:
     """Fixture patches all the Agent components and returns the list of messages emitted"""
-    emitted_messages: List[msg.Message] = []
+    emitted_messages: list[msg.Message] = []
     mocker.patch(
         "ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_init", return_value=None
     )
@@ -94,13 +93,13 @@ def agent_persist_mock(mocker):
         if key in storage:
             return storage[key]
 
-    def _add(key: Union[str, bytes], value: bytes) -> None:
+    def _add(key: str | bytes, value: bytes) -> None:
         """Check values are present in the storage dict."""
         if isinstance(value, bytes) is False:
             value = str(value).encode()
         storage[key] = value
 
-    def _exists(key: Union[str, bytes]) -> bool:
+    def _exists(key: str | bytes) -> bool:
         """Check if thr key is present in the storage dict."""
         return key in storage
 

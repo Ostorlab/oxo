@@ -1,15 +1,15 @@
 """Unit tests for risk protobuf message with api_schema field."""
 
-from src.ostorlab.agent.message.proto.v3.report.risk import risk_pb2
 from src.ostorlab.agent.message.proto.v3.asset.file.api_schema import api_schema_pb2
-from src.ostorlab.agent.message.proto.v3.asset.phone_number import phone_number_pb2
-from src.ostorlab.agent.message.proto.v3.asset.repository import repository_pb2
 from src.ostorlab.agent.message.proto.v3.asset.file.repository_archive import (
     repository_archive_pb2,
 )
+from src.ostorlab.agent.message.proto.v3.asset.phone_number import phone_number_pb2
+from src.ostorlab.agent.message.proto.v3.asset.repository import repository_pb2
 from src.ostorlab.agent.message.proto.v3.asset.store.ios_testflight import (
     ios_testflight_pb2,
 )
+from src.ostorlab.agent.message.proto.v3.report.risk import risk_pb2
 
 
 def testMessage_whenCreateWithApiSchema_shouldSerializeAndDeserializeCorrectly():

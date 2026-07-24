@@ -2,12 +2,13 @@
 This module takes care of preparing a file of type .IPA before calling the create mobile scan API.
 """
 
-import click
 import io
 
+import click
+
+from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.cli.ci_scan.run.assets import mobile
-from ostorlab.apis import scan_create as scan_create_api
 
 
 @run.run.command()

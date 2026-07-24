@@ -109,7 +109,8 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Example:
   ```python
   from ostorlab import exceptions
-  
+
+
   class MissingTargetSelector(exceptions.OstorlabError):
       """Missing asset selector definition."""
   ```

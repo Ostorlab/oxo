@@ -6,8 +6,8 @@ from docker.models import services as services_model
 from pytest_mock import plugin
 
 import ostorlab
-from ostorlab.assets import ipv4
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
@@ -816,7 +816,7 @@ def testLiteLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(
 
     mock_create_volume.assert_called_once()
     mock_start_agent.assert_called_once()
-    args, kwargs = mock_start_agent.call_args
+    _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"] == agent_settings
     assert any(m["Target"] == "/asset" for m in kwargs["extra_mounts"])
 
@@ -865,6 +865,6 @@ def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
 
     mock_create_volume.assert_called_once()
     mock_start_agent.assert_called_once()
-    args, kwargs = mock_start_agent.call_args
+    _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none"

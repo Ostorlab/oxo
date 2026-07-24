@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
-import sys
-import socket
 import multiprocessing
-from typing import Optional
+import os
+import socket
+import sys
 
 import click
 
@@ -16,8 +15,7 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.scanner import scan_handler
-from ostorlab.utils import scanner_state_reporter
-from ostorlab.utils import ip
+from ostorlab.utils import ip, scanner_state_reporter
 
 console = cli_console.Console()
 
@@ -152,7 +150,7 @@ def scanner(
 
 
 def start_scanner(
-    api_key: Optional[str],
+    api_key: str | None,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     log_file: str | None = None,

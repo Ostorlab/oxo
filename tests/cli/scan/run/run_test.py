@@ -3,14 +3,14 @@
 import pathlib
 import warnings
 
-from pytest_mock import plugin
 import httpx
 import pytest
 from click.testing import CliRunner
+from pytest_mock import plugin
 
+from ostorlab import exceptions
 from ostorlab.agent import definitions
 from ostorlab.cli import rootcli
-from ostorlab import exceptions
 from ostorlab.cli.scan.run import run
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.models import models

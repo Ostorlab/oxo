@@ -1,7 +1,6 @@
 import functools
 import os
 import pathlib
-from typing import Optional
 
 import flask
 import flask_cors
@@ -61,7 +60,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
         return ubjson.loadb(request.data)
 
     @staticmethod
-    def authenticate() -> Optional[tuple[flask.Response, int]]:
+    def authenticate() -> tuple[flask.Response, int] | None:
         """Authenticate the request."""
         if flask.request.method == "OPTIONS":
             # CORS requires sending an initial OPTIONS that should return 200 OK.
@@ -74,7 +73,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
         # The request is authenticated. Continue.
         return None
 
-    def dispatch_request(self) -> Optional[tuple[flask.Response, int]]:
+    def dispatch_request(self) -> tuple[flask.Response, int] | None:
         auth_response = self.authenticate()
         if auth_response is not None:
             return auth_response

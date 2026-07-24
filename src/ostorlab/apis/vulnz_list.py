@@ -1,7 +1,7 @@
 """Lists the remote vulnz."""
 
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -20,7 +20,7 @@ class VulnzListAPIRequest(request.APIRequest):
         self._page = page
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to list the vulnz.
 
         Returns:
@@ -79,7 +79,7 @@ class VulnzListAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the query to list the vulnz.
 
         Returns:

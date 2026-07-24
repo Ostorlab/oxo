@@ -3,23 +3,21 @@ This module takes care of preparing a link before calling the create web scan AP
 """
 
 import io
+import itertools
 import json
 
 import click
-import itertools
 
-from typing import List, Optional
-
-from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
+from ostorlab.cli.ci_scan.run import run
 
 
 def _prepare_test_credentials(
     ctx: click.core.Context,
-) -> List[test_credentials_create_api.TestCredential]:
+) -> list[test_credentials_create_api.TestCredential]:
     test_credentials_login = ctx.obj["test_credentials"]["test_credentials_login"]
     test_credentials_password = ctx.obj["test_credentials"]["test_credentials_password"]
     test_credentials_url = ctx.obj["test_credentials"]["test_credentials_url"]
@@ -86,7 +84,7 @@ def _prepare_test_credentials(
     return credentials
 
 
-def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
+def run_link_scan(ctx: click.core.Context, url: list[str]) -> None:
     """Create scan for links."""
     ci_logger = ctx.obj["ci_logger"]
     if ctx.obj.get("api_key") is not None:
@@ -119,7 +117,7 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
                 f"creating Web scan `{title}` with profile `{scan_profile}`."
             )
 
-            ui_automation_rule_ids: List[int] = []
+            ui_automation_rule_ids: list[int] = []
 
             if len(ui_prompt_ids) > 0:
                 ui_automation_rule_ids.extend(ui_prompt_ids)
@@ -184,18 +182,18 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
 
 
 def _create_scan(
-    credential_ids: List[int],
+    credential_ids: list[int],
     runner: authenticated_runner.AuthenticatedAPIRunner,
     title: str,
-    urls: List[str],
+    urls: list[str],
     scan_profile: str,
-    sboms: Optional[list[io.FileIO]] = None,
-    api_schema: Optional[io.FileIO] = None,
-    proxy: Optional[str] = None,
-    qps: Optional[int] = None,
-    filtered_url_regexes: Optional[List[str]] = None,
-    test_credential_ids: Optional[List[int]] = None,
-    ui_automation_rule_ids: List[int] = (),
+    sboms: list[io.FileIO] | None = None,
+    api_schema: io.FileIO | None = None,
+    proxy: str | None = None,
+    qps: int | None = None,
+    filtered_url_regexes: list[str] | None = None,
+    test_credential_ids: list[int] | None = None,
+    ui_automation_rule_ids: list[int] = (),
 ):
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(
@@ -235,6 +233,6 @@ def _create_test_credentials(test_credentials, runner):
 @run.run.command()
 @click.option("--url", help="List of Urls to scan.", required=True, multiple=True)
 @click.pass_context
-def link(ctx: click.core.Context, url: List[str]):
+def link(ctx: click.core.Context, url: list[str]):
     """Run scan for links."""
     run_link_scan(ctx, url)

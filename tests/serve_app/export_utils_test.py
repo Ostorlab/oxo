@@ -6,8 +6,8 @@ import zipfile
 
 from pytest_mock import plugin
 
-from ostorlab.serve_app import export_utils, import_utils
 from ostorlab.runtimes.local.models import models
+from ostorlab.serve_app import export_utils, import_utils
 from ostorlab.utils import risk_rating
 
 
@@ -274,7 +274,9 @@ def testExportScan_whenScanHasNoVulz_exportRiskRatingAsNone(
 
     exported_bytes = export_utils.export_scan(scan=scan)
 
-    with zipfile.ZipFile(io.BytesIO(exported_bytes), "r") as zip_file:
-        with zip_file.open("scan.json") as scan_file:
-            scan_data = json.load(scan_file)
-            assert scan_data["risk_rating"] is None
+    with (
+        zipfile.ZipFile(io.BytesIO(exported_bytes), "r") as zip_file,
+        zip_file.open("scan.json") as scan_file,
+    ):
+        scan_data = json.load(scan_file)
+        assert scan_data["risk_rating"] is None

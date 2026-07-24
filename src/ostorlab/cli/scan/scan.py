@@ -1,12 +1,10 @@
 """Scan module that handles running a scan using a list of agent keys and a target asset."""
 
-from typing import Optional
-
 import click
 
+from ostorlab.cli import input_validators
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.runtimes import registry
-from ostorlab.cli import input_validators
 
 
 @rootcli.group()
@@ -100,18 +98,18 @@ from ostorlab.cli import input_validators
 def scan(
     ctx: click.core.Context,
     runtime: str,
-    bus_url: Optional[str] = None,
-    bus_vhost: Optional[str] = None,
-    bus_management_url: Optional[str] = None,
-    bus_exchange_topic: Optional[str] = None,
-    scan_id: Optional[str] = None,
+    bus_url: str | None = None,
+    bus_vhost: str | None = None,
+    bus_management_url: str | None = None,
+    bus_exchange_topic: str | None = None,
+    scan_id: str | None = None,
     labels: dict[str, str] | None = None,
     use_experimental_agents: bool = False,
-    network: Optional[str] = None,
-    redis_url: Optional[str] = None,
+    network: str | None = None,
+    redis_url: str | None = None,
     tracing: bool = False,
-    tracing_collector_url: Optional[str] = None,
-    mq_exposed_ports: Optional[str] = None,
+    tracing_collector_url: str | None = None,
+    mq_exposed_ports: str | None = None,
 ) -> None:
     """Use scan [subcommand] to list, start or stop a scan.\n
     Examples:\n

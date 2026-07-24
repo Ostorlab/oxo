@@ -1,9 +1,8 @@
 """Utils to handle IP operations."""
 
-from typing import Optional
 import socket
 
 
-def get_ip() -> Optional[str]:
+def get_ip() -> str | None:
     """Returns the machine IP address."""
     return socket.gethostbyname(socket.gethostname())

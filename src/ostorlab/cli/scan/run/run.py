@@ -5,7 +5,6 @@ Example of usage:
 
 import io
 import logging
-from typing import List, Optional
 
 import click
 import httpx
@@ -14,15 +13,11 @@ from ruamel.yaml import error
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
+from ostorlab.cli import agent_fetcher, install_agent, types
 from ostorlab.cli import console as cli_console
-from ostorlab.cli import install_agent
-from ostorlab.cli.scan import scan
-from ostorlab.cli import types
-from ostorlab.cli import agent_fetcher
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
+from ostorlab.cli.scan.scan import scan
+from ostorlab.runtimes import definitions, runtime
 from ostorlab.utils import definitions as utils_definitions
-
 
 console = cli_console.Console()
 
@@ -112,18 +107,18 @@ WAIT_BETWEEN_RETRIES = 5
 @click.pass_context
 def run(
     ctx: click.core.Context,
-    agent: List[str],
+    agent: list[str],
     arg: list[types.AgentArg],
     agent_group_definition: io.FileIO,
     assets: io.FileIO,
     title: str,
     install: bool,
-    follow: List[str],
+    follow: list[str],
     no_follow: bool,
     no_tracker: bool,
     no_asset: bool,
-    timeout: Optional[int] = None,
-    init_sleep: Optional[int] = None,
+    timeout: int | None = None,
+    init_sleep: int | None = None,
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
@@ -140,7 +135,7 @@ def run(
         raise click.exceptions.Exit(2)
 
     if agent:
-        agents_settings: List[definitions.AgentSettings] = []
+        agents_settings: list[definitions.AgentSettings] = []
         for agent_key in agent:
             agents_settings.append(definitions.AgentSettings(key=agent_key))
 
@@ -236,7 +231,7 @@ def run(
 @tenacity.retry(
     stop=tenacity.stop.stop_after_attempt(NUMBER_OF_RETRIES),
     wait=tenacity.wait.wait_fixed(WAIT_BETWEEN_RETRIES),
-    retry=tenacity.retry_if_exception_type((httpx.HTTPError)),
+    retry=tenacity.retry_if_exception_type(httpx.HTTPError),
     retry_error_callback=lambda retry_state: retry_state.outcome.result(),
 )
 def _install_agents_with_retry(
@@ -265,7 +260,7 @@ def _install_agents_with_retry(
 
 
 def prepare_agents_to_follow(
-    agent_keys: List[str], follow: List[str], no_follow: bool
+    agent_keys: list[str], follow: list[str], no_follow: bool
 ) -> set[str]:
     """
     Prepares the list of agents to follow based on the provided list of agents to follow and unfollow.

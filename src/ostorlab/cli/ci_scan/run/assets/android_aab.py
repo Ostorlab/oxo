@@ -3,11 +3,12 @@ This module takes care of preparing a file of type .AAB before calling the creat
 """
 
 import io
+
 import click
 
+from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.cli.ci_scan.run import run
 from ostorlab.cli.ci_scan.run.assets import mobile
-from ostorlab.apis import scan_create as scan_create_api
 
 
 @run.run.command()

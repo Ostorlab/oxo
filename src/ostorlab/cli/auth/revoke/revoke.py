@@ -2,12 +2,11 @@
 
 import logging
 
-from ostorlab.apis.runners import authenticated_runner
-from ostorlab.apis.runners import runner
-from ostorlab.apis import logout as logout_api
 from ostorlab import configuration_manager
-from ostorlab.cli.auth import auth
+from ostorlab.apis import logout as logout_api
+from ostorlab.apis.runners import authenticated_runner, runner
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.auth import auth
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()

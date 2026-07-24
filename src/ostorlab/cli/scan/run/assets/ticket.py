@@ -1,14 +1,13 @@
 """Asset of type ticket for scanning."""
 
 import logging
-from typing import Optional
 
 import click
 
-from ostorlab.assets import ticket as ticket_asset
-from ostorlab.cli.scan.run import run
 from ostorlab import exceptions
+from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -31,9 +30,9 @@ def ticket(
     ctx: click.core.Context,
     title: str,
     description: str,
-    ticket_id: Optional[str] = None,
-    ticket_key: Optional[str] = None,
-    comments: Optional[list[str]] = None,
+    ticket_id: str | None = None,
+    ticket_key: str | None = None,
+    comments: list[str] | None = None,
 ) -> None:
     """Run scan for ticket."""
     runtime = ctx.obj["runtime"]

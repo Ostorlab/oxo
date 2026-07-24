@@ -2,13 +2,13 @@
 
 import docker
 import pytest
+from pytest_mock import plugin
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.utils import definitions as utils_defintions
-from pytest_mock import plugin
 
 
 def container_name_mock(name):

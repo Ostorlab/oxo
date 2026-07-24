@@ -2,14 +2,13 @@
 
 import io
 import logging
-from typing import Optional
 
 import click
 
+from ostorlab import exceptions
 from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -40,9 +39,9 @@ logger = logging.getLogger(__name__)
 def api_schema(
     ctx: click.core.Context,
     url: str,
-    schema_file: Optional[io.FileIO] = None,
-    schema_url: Optional[str] = None,
-    schema_type: Optional[str] = None,
+    schema_file: io.FileIO | None = None,
+    schema_url: str | None = None,
+    schema_type: str | None = None,
 ) -> None:
     """Run scan for an API Schema asset.
 

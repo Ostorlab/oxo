@@ -1,14 +1,13 @@
 """This module triggers a scan using the harmonyos_store asset."""
 
 import logging
-from typing import Tuple, Optional
 
 import click
 
-from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
-from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab import exceptions
+from ostorlab.assets import harmonyos_store as harmonyos_store_asset
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 @click.option("--bundle-name", multiple=True, required=False)
 @click.pass_context
 def harmonyos_store(
-    ctx: click.core.Context, bundle_name: Optional[Tuple[str]] = ()
+    ctx: click.core.Context, bundle_name: tuple[str] | None = ()
 ) -> None:
     """Run scan for a bundle_name."""
     runtime = ctx.obj["runtime"]

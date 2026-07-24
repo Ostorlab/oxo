@@ -2,11 +2,7 @@
 
 from pytest_mock import plugin
 
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import ipv4
-from ostorlab.assets import link
+from ostorlab.assets import android_aab, android_apk, ios_ipa, ipv4, link
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import risk_rating
