@@ -7,8 +7,7 @@ from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter
 
 
-@pytest.mark.asyncio
-async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
+def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """handle_messages should forward the api_key to _trigger_scan_with_rollback
@@ -34,7 +33,7 @@ async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
         return_value=True,
     )
     mocker.patch(
-        "ostorlab.scanner.scan_handler.asyncio.sleep",
+        "ostorlab.scanner.scan_handler.time.sleep",
         side_effect=RuntimeError("stop"),
     )
 
@@ -47,7 +46,7 @@ async def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     runner = mocker.MagicMock()
 
     with pytest.raises(RuntimeError, match="stop"):
-        await scan_handler_instance.handle_messages(runner, api_key="test_api_key")
+        scan_handler_instance.handle_messages(runner, api_key="test_api_key")
 
     trigger_mock.assert_called_once()
     assert trigger_mock.call_args.args[2] == "test_api_key"

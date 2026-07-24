@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
 import datetime
 import logging
 import random
+import time
 from typing import Any
 
 import docker
@@ -36,10 +36,10 @@ class ScanHandler:
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._docker_client = docker.from_env()
 
-    async def close(self) -> None:
+    def close(self) -> None:
         self._docker_client.close()
 
-    async def handle_messages(
+    def handle_messages(
         self,
         runner: scanner_runner.ScannerAPIRunner,
         api_key: str | None = None,
@@ -52,7 +52,7 @@ class ScanHandler:
         while True:
             if scan_id is not None and self._is_scan_running(scan_id=scan_id) is True:
                 logger.debug("Scan %s is still running. Sleeping...", scan_id)
-                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                time.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
             if scan_id is not None:
@@ -62,7 +62,7 @@ class ScanHandler:
             scans_list = self._fetch_available_scans(runner)
             if scans_list is None or len(scans_list) == 0:
                 logger.debug("No scans available in the queue. Sleeping...")
-                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                time.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
             reserved_scan = self._reserve_single_scan(runner, scans_list)
@@ -70,13 +70,13 @@ class ScanHandler:
                 logger.debug(
                     "Failed to reserve any scans from the current batch. Sleeping..."
                 )
-                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                time.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
             scan_id = self._trigger_scan_with_rollback(runner, reserved_scan, api_key)
             if scan_id is None:
                 logger.warning("Trigger failed and rolled back. Sleeping...")
-                await asyncio.sleep(WAIT_CHECK_MESSAGES.seconds)
+                time.sleep(WAIT_CHECK_MESSAGES.seconds)
 
     def _fetch_available_scans(
         self, runner: scanner_runner.ScannerAPIRunner
@@ -223,7 +223,7 @@ class ScanHandler:
         return is_running
 
 
-async def start_scan_loop(
+def start_scan_loop(
     api_key: str | None,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
@@ -252,6 +252,6 @@ async def start_scan_loop(
         scan_resource_requirements=config.scan_resource_requirements,
     )
     try:
-        await scan_handler.handle_messages(runner=s_runner, api_key=api_key)
+        scan_handler.handle_messages(runner=s_runner, api_key=api_key)
     finally:
-        await scan_handler.close()
+        scan_handler.close()
