@@ -13,8 +13,8 @@ Typical usage:
 """
 
 import logging
+from collections.abc import Callable
 from threading import Thread
-from typing import Optional, Callable, List
 
 import flask
 from werkzeug import serving
@@ -42,7 +42,7 @@ class HealthcheckWebThread(Thread):
         self._server = serving.make_server(
             host=host, port=port, app=self._app, threaded=True
         )
-        self._healthcheck_callbacks: List[Callable[[], bool]] = []
+        self._healthcheck_callbacks: list[Callable[[], bool]] = []
         self._disable_verbose_logging()
 
     def _disable_verbose_logging(self) -> None:
@@ -120,7 +120,7 @@ class AgentHealthcheckMixin:
 
     def __init__(
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         host: str = DEFAULT_HOST,
         port: int = DEFAULT_PORT,
     ) -> None:

@@ -3,14 +3,13 @@ This module takes care of preparing a file of type .aab before injecting it to t
 
 import io
 import logging
-from typing import Tuple, Optional
 
 import click
 
-from ostorlab.assets import android_aab as android_aab_asset
-from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
 from ostorlab import exceptions
+from ostorlab.assets import android_aab as android_aab_asset
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -22,8 +21,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def android_aab(
     ctx: click.core.Context,
-    file: Optional[Tuple[io.FileIO]] = (),
-    url: Optional[Tuple[str]] = (),
+    file: tuple[io.FileIO] | None = (),
+    url: tuple[str] | None = (),
 ) -> None:
     """Run scan for android .AAB package file."""
     runtime = ctx.obj["runtime"]

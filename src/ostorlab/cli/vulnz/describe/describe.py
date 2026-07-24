@@ -1,12 +1,11 @@
 """Vulnz Describe command."""
 
 import logging
-from typing import Optional
 
 import click
 
 from ostorlab.cli import console as cli_console
-from ostorlab.cli.vulnz import vulnz
+from ostorlab.cli.vulnz.vulnz import vulnz
 from ostorlab.runtimes.cloud import runtime as cloud_runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 
@@ -21,9 +20,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option("--scan-id", "-s", "scan_id", help="Id of the scan.", required=False)
 @click.pass_context
-def describe_cli(
-    ctx, vuln_id: Optional[int] = None, scan_id: Optional[int] = None
-) -> None:
+def describe_cli(ctx, vuln_id: int | None = None, scan_id: int | None = None) -> None:
     """Describe a vuln by id (--vuln-id) or all the vulnz for as specific scan.
     example of usage:
         - oxo vulnz --runtime cloud describe --scan-id 54821"""

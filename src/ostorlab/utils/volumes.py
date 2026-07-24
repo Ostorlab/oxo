@@ -4,10 +4,9 @@ import io
 import tarfile
 import time
 
-from typing import Dict
 import docker
-from docker import types as docker_types
 from docker import errors as docker_errors
+from docker import types as docker_types
 
 from ostorlab.utils import strings
 
@@ -25,7 +24,7 @@ class VolumeWriter:
     def __init__(self) -> None:
         self._client = docker.from_env()
 
-    def write(self, volume_name: str, contents: Dict[str, bytes]) -> None:
+    def write(self, volume_name: str, contents: dict[str, bytes]) -> None:
         """Write content volume at path.
 
         Args:
@@ -50,7 +49,7 @@ class VolumeWriter:
             pass
         self._client.volumes.create(name)
 
-    def _prepare_tar(self, contents: Dict[str, bytes]) -> io.BytesIO:
+    def _prepare_tar(self, contents: dict[str, bytes]) -> io.BytesIO:
         """Copy API expects a tar, this api prepares one with the file content."""
         pw_tarstream = io.BytesIO()
         with tarfile.TarFile(fileobj=pw_tarstream, mode="w") as pw_tar:
@@ -62,7 +61,7 @@ class VolumeWriter:
         pw_tarstream.seek(0)
         return pw_tarstream
 
-    def _write_content(self, volume_name: str, contents: Dict[str, bytes]) -> None:
+    def _write_content(self, volume_name: str, contents: dict[str, bytes]) -> None:
         """Use the docker copy API to write content to target volume."""
         temp_container_name = strings.random_string(9)
         self._client.containers.run(
@@ -84,7 +83,7 @@ class VolumeWriter:
         container.stop(timeout=0)
 
 
-def create_volume(volume_name: str, contents: Dict[str, bytes]) -> None:
+def create_volume(volume_name: str, contents: dict[str, bytes]) -> None:
     """Poor man's API to create a volume and persist content.
 
     Docker do not provide an API to write directly to volume, most likely due to the plugin support, even though that

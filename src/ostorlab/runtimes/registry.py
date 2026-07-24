@@ -2,9 +2,9 @@
 
 from ostorlab import exceptions
 from ostorlab.runtimes import runtime
-from ostorlab.runtimes.local import runtime as local_runtime
-from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
 from ostorlab.runtimes.cloud import runtime as cloud_runtime
+from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
+from ostorlab.runtimes.local import runtime as local_runtime
 
 
 class RuntimeNotFoundError(exceptions.OstorlabError):

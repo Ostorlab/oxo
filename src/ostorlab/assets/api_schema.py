@@ -1,7 +1,6 @@
 """API Schema asset."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -15,9 +14,9 @@ class ApiSchema(asset.Asset):
     """API Schema target asset."""
 
     endpoint_url: str
-    content: Optional[bytes] = None
-    content_url: Optional[str] = None
-    schema_type: Optional[str] = None
+    content: bytes | None = None
+    content_url: str | None = None
+    schema_type: str | None = None
 
     def __str__(self) -> str:
         str_representation = CLASS_NAME

@@ -1,6 +1,6 @@
 """Unit test for the Client handler of the messaging queue."""
 
-from typing import Dict, Any
+from typing import Any
 
 import pytest
 
@@ -12,7 +12,7 @@ from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 @pytest.mark.nats
 @pytest.mark.asyncio
 async def testBusHandlerMessageParsing_whenPullingMessage_shouldParseAllAttributes(
-    data_start_agent_scan: Dict[str, Any],
+    data_start_agent_scan: dict[str, Any],
     apk_start_agent_scan_bus_msg: startAgentScan_pb2.Message,
 ) -> None:
     """Ensure the pulling & parsing of the messages is performed correctly."""

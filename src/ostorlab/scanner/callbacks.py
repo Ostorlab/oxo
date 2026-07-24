@@ -2,41 +2,39 @@
 
 from __future__ import annotations
 
-import logging
 import ipaddress
+import logging
 from typing import Any
 
 import docker
 
-from ostorlab.runtimes import registry
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
-from ostorlab.cli import install_agent
-from ostorlab.cli import agent_fetcher
-from ostorlab.assets import asset
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
-from ostorlab.assets import android_store
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import file
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import harmonyos_hap
-from ostorlab.assets import domain_name
-from ostorlab.assets import link as link_asset
-from ostorlab.assets import ios_store
+from ostorlab import exceptions
+from ostorlab.agent.message import proto_dict
 from ostorlab.assets import agent as agent_asset
-from ostorlab.assets import harmonyos_apk
-from ostorlab.assets import harmonyos_aab
-from ostorlab.assets import harmonyos_rpk
-from ostorlab.assets import harmonyos_app
-from ostorlab.assets import harmonyos_store
+from ostorlab.assets import (
+    android_aab,
+    android_apk,
+    android_store,
+    asset,
+    domain_name,
+    file,
+    harmonyos_aab,
+    harmonyos_apk,
+    harmonyos_app,
+    harmonyos_hap,
+    harmonyos_rpk,
+    harmonyos_store,
+    ios_ipa,
+    ios_store,
+    ipv4,
+    ipv6,
+)
+from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
-from ostorlab.agent.message import proto_dict
-from ostorlab import exceptions
-
 
 logger = logging.getLogger(__name__)
 

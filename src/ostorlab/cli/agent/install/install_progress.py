@@ -1,11 +1,10 @@
 """Display the agent install progress."""
 
-from typing import Dict, Iterator
+from collections.abc import Iterator
 
 from rich import progress
 
 from ostorlab.cli import console as cli_console
-
 
 console = cli_console.Console()
 
@@ -26,7 +25,7 @@ class AgentInstallProgress(progress.Progress):
             progress.TimeRemainingColumn(),
         )
 
-    def display(self, logs_generator: Iterator[Dict]) -> None:
+    def display(self, logs_generator: Iterator[dict]) -> None:
         """Display the progress of the agent install command.
 
         Args:

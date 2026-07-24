@@ -24,32 +24,32 @@ class Version:
         if isinstance(other, Version):
             return bool(self._semver.compare(other._version) < 0)
         else:
-            raise ValueError()
+            raise TypeError()
 
     def __le__(self, other: object) -> bool:
         """Pythonic comparison API."""
         if isinstance(other, Version):
             return bool(self._semver.compare(other._version) <= 0)
         else:
-            raise ValueError()
+            raise TypeError()
 
     def __gt__(self, other: object) -> bool:
         """Pythonic comparison API."""
         if isinstance(other, Version):
             return bool(self._semver.compare(other._version) > 0)
         else:
-            raise ValueError()
+            raise TypeError()
 
     def __ge__(self, other: object) -> bool:
         """Pythonic comparison API."""
         if isinstance(other, Version):
             return bool(self._semver.compare(other._version) >= 0)
         else:
-            raise ValueError()
+            raise TypeError()
 
     def __eq__(self, other: object) -> bool:
         """Pythonic comparison API."""
         if isinstance(other, Version):
             return bool(self._version == other._version)
         else:
-            raise ValueError()
+            raise TypeError()

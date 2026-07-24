@@ -1,7 +1,7 @@
 """Retrieve the scan info."""
 
-from typing import Dict, Optional, Any
 import json
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -13,7 +13,7 @@ class ScanInfoAPIRequest(request.APIRequest):
         self._scan_id = scan_id
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to get the scan info.
 
         Returns:
@@ -29,7 +29,7 @@ class ScanInfoAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict[str, Any]]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the query to scan info.
 
         Returns:

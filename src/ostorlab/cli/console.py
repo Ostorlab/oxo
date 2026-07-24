@@ -1,17 +1,16 @@
 """Pretty prints and logs console statements."""
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, ClassVar
 
 import rich
-from rich import box
-from rich import status
+from rich import box, status
 
 
 class Console:
     """Pretty prints and logs console statements."""
 
-    THEME = {
+    THEME: ClassVar[dict[str, str]] = {
         "success": "bold green",
         "error": "red",
         "warning": "yellow",
@@ -20,8 +19,8 @@ class Console:
 
     def __init__(
         self,
-        theme: Optional[Dict[str, str]] = None,
-        logger: Optional[logging.Logger] = None,
+        theme: dict[str, str] | None = None,
+        logger: logging.Logger | None = None,
     ) -> None:
         """Initializes the console with text styling.
 
@@ -88,7 +87,7 @@ class Console:
         return self._console.status(f"[info]{text}")
 
     def table(
-        self, columns: Dict[str, str], data: List[Dict[str, Any]], title: str
+        self, columns: dict[str, str], data: list[dict[str, Any]], title: str
     ) -> None:
         """Constructs a table to display a list of items.
 
@@ -100,7 +99,7 @@ class Console:
 
         table = self._table(title=f"\n[bold]{title}", show_lines=True)
 
-        for column in columns.keys():
+        for column in columns:
             table.add_column(column)
 
         for item in data:

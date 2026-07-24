@@ -1,12 +1,11 @@
 """Tests for scan run ip command."""
 
+import pytest
 from click.testing import CliRunner
 from pytest_mock import plugin
 
-import pytest
-
-from ostorlab.cli import rootcli
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.cli import rootcli
 
 
 def testScanRunIp_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):

@@ -1,13 +1,13 @@
 """Serializer handles matching of selector to the proper protobuf message definition."""
 
+import dataclasses
 import importlib
 import logging
 import os
 import pathlib
 import re
 import sys
-import dataclasses
-from typing import Dict, List, Any
+from typing import Any
 
 from google.protobuf import json_format
 
@@ -67,7 +67,7 @@ def _replace_module_proto(proto_path: str) -> str:
     return re.sub(r"_pb2\..*$", "_pb2", re.sub(r"^\.code\.", "", matching_package))
 
 
-def _list_message_proto_files() -> List[str]:
+def _list_message_proto_files() -> list[str]:
     """List all the proto files."""
     files = []
     # r=root, d=directories, f = files
@@ -96,7 +96,7 @@ def _selector_to_package_regex(subject: str) -> str:
         )
 
 
-def serialize(selector: str, values: Dict[str, Any]) -> Any:
+def serialize(selector: str, values: dict[str, Any]) -> Any:
     """Serializes a Request message using the proper format defined using the seelctor value.
     If the subject is a.b.c. The corresponding proto is located at message/a/b/c/xxx.proto.
 
@@ -113,7 +113,7 @@ def serialize(selector: str, values: Dict[str, Any]) -> Any:
         raise SerializationError("Error serializing message") from e
 
 
-def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
+def _serialize(selector: str, class_name: str, values: dict[str, Any]) -> Any:
     """Serializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
     class_object = getattr(importlib.import_module(package_name), class_name)

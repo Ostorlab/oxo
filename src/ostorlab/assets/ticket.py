@@ -1,7 +1,6 @@
 """Report asset."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -10,8 +9,8 @@ from ostorlab.assets import asset
 class Comment:
     """Comment message."""
 
-    author: Optional[str] = None
-    message: Optional[str] = None
+    author: str | None = None
+    message: str | None = None
 
 
 @dataclasses.dataclass
@@ -21,9 +20,9 @@ class Ticket(asset.Asset):
 
     title: str
     description: str
-    ticket_id: Optional[str] = None
+    ticket_id: str | None = None
     comments: list[Comment] = dataclasses.field(default_factory=list)
-    ticket_key: Optional[str] = None
+    ticket_key: str | None = None
 
     def __str__(self) -> str:
         return f"Ticket {self.title}"

@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
-import logging
 import asyncio
 import datetime
+import logging
 
 import docker
 from docker.models import services
-from nats.js import errors as jetstream_errors
 from nats import errors as nats_errors
+from nats.js import errors as jetstream_errors
 
 from ostorlab.apis import scanner_config
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.scanner import callbacks, scanner_conf
 from ostorlab.scanner import handler as scanner_handler
-from ostorlab.scanner import scanner_conf
-from ostorlab.scanner import callbacks
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -118,8 +117,8 @@ class ScanHandler:
                     )
                     await msg.ack()
                     return scan_id
-                except Exception as e:
-                    logger.exception("Exception: %s", e)
+                except Exception:
+                    logger.exception("Exception")
                     await msg.nak()
 
     async def _create_bus_handler(
@@ -140,7 +139,7 @@ def _is_scan_running(client: docker.DockerClient, scan_id: str | None = None) ->
     if scan_id is None:
         return False
     scan_services: list[services.Service] = client.services.list(
-        filters={"label": f"ostorlab.universe={str(scan_id)}"}
+        filters={"label": f"ostorlab.universe={scan_id!s}"}
     )
     return len(scan_services) > 0
 
@@ -166,8 +165,8 @@ async def connect_nats(
         await scan_handler.subscribe_all(config, api_key)
         logger.info("subscribed")
         return scan_handler
-    except jetstream_errors.ServiceUnavailableError as e:
-        logger.exception("Failed to establish connection to NATs: %s", e)
+    except jetstream_errors.ServiceUnavailableError:
+        logger.exception("Failed to establish connection to NATs")
 
 
 async def subscribe_nats(

@@ -1,12 +1,12 @@
 """Tests for MQMixin module."""
 
 import asyncio
-from unittest import mock
 import concurrent.futures
+from unittest import mock
 
 import pytest
-from pytest_mock import plugin
 from aiormq import exceptions as aiormq_exceptions
+from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.utils import strings

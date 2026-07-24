@@ -1,6 +1,5 @@
 """Module for sub-command of the command scan: run."""
 
-from ostorlab.cli.scan.run import run
-from ostorlab.cli.scan.run import assets
+from ostorlab.cli.scan.run import assets, run
 
-__all__ = ["run", "assets"]
+__all__ = ["assets", "run"]

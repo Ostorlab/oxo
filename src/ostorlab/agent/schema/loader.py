@@ -2,30 +2,29 @@
 
 import io
 import pathlib
+from typing import Any
 
 import ruamel.yaml
 
 from ostorlab.agent.schema import validator
-
-from typing import Dict, Any
 
 AGENT_SPEC_PATH = pathlib.Path(__file__).parent / "agent_schema.json"
 AGENT_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / "agent_group_schema.json"
 TARGET_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / "target_group_schema.json"
 
 
-def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> Dict[str, Any]:
+def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> dict[str, Any]:
     """Loads file based on spec"""
     with open(spec, "r", encoding="utf8") as schema_specs:
         yaml_def_validator = validator.Validator(schema_specs)
         yaml_def_validator.validate(file)
         file.seek(0)
         yaml = ruamel.yaml.YAML(typ="safe")
-        agent_def: Dict[str, Any] = yaml.load(file)
+        agent_def: dict[str, Any] = yaml.load(file)
         return agent_def
 
 
-def load_agent_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
+def load_agent_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
     """Loads and validates agent yaml definition file.
 
     Args:
@@ -39,7 +38,7 @@ def load_agent_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
     return _load_spec_yaml(file, spec)
 
 
-def load_agent_group_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
+def load_agent_group_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
     """Loads and validates agent group yaml definition file.
 
     Args:
@@ -52,7 +51,7 @@ def load_agent_group_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
     return _load_spec_yaml(file, spec)
 
 
-def load_target_group_yaml(file: io.TextIOWrapper) -> Dict[str, Any]:
+def load_target_group_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
     """Loads and validates target group yaml definition file.
 
     Args:
