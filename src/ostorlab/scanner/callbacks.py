@@ -97,10 +97,10 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
     if typename in ("Ipv4AssetType", "Ipv6AssetType", "IpAssetType"):
         return [_prepare_ip_asset(kwargs)]
     elif typename == "NetworkAssetType":
-        return [_prepare_ip_asset(ip) for ip in kwargs.get("networks", [])]
+        return [_prepare_ip_asset(ip) for ip in kwargs.get("networks") or []]
     elif typename == "UrlAssetType":
         return [
-            link_asset.Link(url=link, method="GET") for link in kwargs.get("urls", [])
+            link_asset.Link(url=link, method="GET") for link in kwargs.get("urls") or []
         ]
     elif typename == "AndroidPackageNameAssetType":
         return [android_store.AndroidStore(package_name=kwargs.get("packageName", ""))]
@@ -217,7 +217,7 @@ def _extract_agent_group_definition(
     request: dict[str, Any],
 ) -> definitions.AgentGroupDefinition:
     agent_group_definition = definitions.AgentGroupDefinition.from_api_response(request)
-    logger.info("Extracted agent group definition: %s.", agent_group_definition)
+    logger.debug("Extracted agent group definition: %s.", agent_group_definition)
     return agent_group_definition
 
 

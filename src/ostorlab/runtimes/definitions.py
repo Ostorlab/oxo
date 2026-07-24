@@ -342,12 +342,12 @@ class AgentGroupDefinition:
         agent_settings = []
         agents_names = []
 
-        for agent in agent_group.get("agents", []):
-            agents_names.append(agent.get("key"))
+        for agent in agent_group.get("agents") or []:
+            agents_names.append(agent.get("key") or "")
             replicas = _process_agent_replicas(agent.get("replicas") or 1)
 
             agent_args = []
-            for arg in agent.get("args", []):
+            for arg in agent.get("args") or []:
                 val = arg.get("value")
                 if isinstance(val, str):
                     try:
@@ -367,7 +367,7 @@ class AgentGroupDefinition:
                 definitions.PortMapping(
                     source_port=p.get("srcPort"), destination_port=p.get("destPort")
                 )
-                for p in agent.get("openPorts", [])
+                for p in agent.get("openPorts") or []
             ]
 
             agent_settings.append(

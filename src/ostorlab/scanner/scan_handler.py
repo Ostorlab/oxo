@@ -88,7 +88,7 @@ class ScanHandler:
             scans_list = response.get("data", {}).get("scans", {}).get("scans", [])
             logger.info("Discovered %s potential scans.", len(scans_list))
             return scans_list
-        except Exception:
+        except (base_runner.ResponseError, httpx.HTTPError):
             logger.exception("Exception while fetching scans")
             return []
 
