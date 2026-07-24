@@ -561,7 +561,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
         "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
         "asset": {
             "__typename": "NetworkAssetType",
-            "ips": [
+            "networks": [
                 {"host": "8.8.8.8"},
                 {"host": "127.0.0.1"},
                 {"host": "2001:db8::"},

@@ -170,10 +170,7 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
 ) -> None:
     """_trigger_scan_with_rollback should rollback when callbacks.start_scan raises."""
     runner = mocker.MagicMock()
-    rollback_mock = mocker.patch.object(
-        scan_handler.ScanHandler,
-        "_rollback_scan_state",
-    )
+    runner.execute.return_value = {"data": {"updateScan": {"success": True}}}
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         side_effect=Exception("scan failed"),
@@ -192,7 +189,9 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     )
 
     assert result is None
-    rollback_mock.assert_called_once_with(runner, 42)
+    assert runner.execute.call_count == 1
+    call_arg = runner.execute.call_args.args[0]
+    assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
 def testReserveSingleScan_whenEntryHasNoId_skipsEntry(

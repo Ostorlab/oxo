@@ -88,7 +88,7 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
 
     kwargs = {k: v for k, v in asset_data.items() if k != "__typename"}
 
-    if "content" in kwargs and isinstance(kwargs["content"], str) is True:
+    if "content" in kwargs and isinstance(kwargs["content"], str):
         try:
             kwargs["content"] = base64.b64decode(kwargs["content"], validate=True)
         except binascii.Error:
@@ -97,7 +97,7 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
     if typename in ("Ipv4AssetType", "Ipv6AssetType", "IpAssetType"):
         return [_prepare_ip_asset(kwargs)]
     elif typename == "NetworkAssetType":
-        return [_prepare_ip_asset(ip) for ip in kwargs.get("ips", [])]
+        return [_prepare_ip_asset(ip) for ip in kwargs.get("networks", [])]
     elif typename == "UrlAssetType":
         return [
             link_asset.Link(url=link, method="GET") for link in kwargs.get("urls", [])
