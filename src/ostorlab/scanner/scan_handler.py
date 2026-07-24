@@ -2,25 +2,20 @@
 
 from __future__ import annotations
 
-import logging
 import asyncio
 import datetime
+import logging
 import random
-
-import docker
-from docker.models import services
-
 from typing import Any
 
-from ostorlab.apis import scanner_config
-from ostorlab.apis.runners import authenticated_runner
-from ostorlab.apis.runners import scanner_runner
-from ostorlab.apis import scans_discover
+import docker
+import httpx
+from docker.models import services
 
-from ostorlab.apis import scan_update_state
-from ostorlab.scanner import scanner_conf
-from ostorlab.scanner import callbacks
-from ostorlab.scanner import resource_checker
+from ostorlab.apis import scan_update_state, scanner_config, scans_discover
+from ostorlab.apis.runners import authenticated_runner, scanner_runner
+from ostorlab.apis.runners import runner as base_runner
+from ostorlab.scanner import callbacks, resource_checker, scanner_conf
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -93,8 +88,8 @@ class ScanHandler:
             scans_list = response.get("data", {}).get("scans", {}).get("scans", [])
             logger.info("Discovered %s potential scans.", len(scans_list))
             return scans_list
-        except Exception as e:
-            logger.exception("Exception while fetching scans: %s", e)
+        except Exception:
+            logger.exception("Exception while fetching scans")
             return []
 
     def _reserve_single_scan(
@@ -133,7 +128,7 @@ class ScanHandler:
                         "Scan ID %s reservation rejected by API (might be locked by another agent).",
                         candidate_id,
                     )
-            except Exception as e:
+            except (base_runner.ResponseError, httpx.HTTPError) as e:
                 logger.warning("Exception reserving scan %s: %s", candidate_id, e)
 
         logger.info("Exhausted scan list. Could not reserve any scans.")
@@ -157,21 +152,20 @@ class ScanHandler:
             scan_key is not None
             and self._scan_resource_requirements is not None
             and self._scan_resource_requirements != {}
+        ) and (
+            resource_checker.can_run_scan(
+                scan_key=scan_key,
+                requirements=self._scan_resource_requirements,
+            )
+            is False
         ):
-            if (
-                resource_checker.can_run_scan(
-                    scan_key=scan_key,
-                    requirements=self._scan_resource_requirements,
-                )
-                is False
-            ):
-                logger.warning(
-                    "Insufficient host resources for scan %s (key: %s). Rolling back.",
-                    scan_id_val,
-                    scan_key,
-                )
-                self._rollback_scan_state(runner, scan_id_val)
-                return None
+            logger.warning(
+                "Insufficient host resources for scan %s (key: %s). Rolling back.",
+                scan_id_val,
+                scan_key,
+            )
+            self._rollback_scan_state(runner, scan_id_val)
+            return None
 
         logger.info("Handing off scan ID %s to callbacks.start_scan...", scan_id_val)
 
@@ -194,11 +188,10 @@ class ScanHandler:
                 started_scan_id,
             )
             return started_scan_id
-        except Exception as e:
+        except Exception:
             logger.exception(
-                "Failed to start scan %s locally: %s. Initiating rollback...",
+                "Failed to start scan %s locally. Initiating rollback...",
                 scan_id_val,
-                e,
             )
             self._rollback_scan_state(runner, scan_id_val)
             return None
@@ -216,17 +209,15 @@ class ScanHandler:
             logger.info(
                 "Successfully rolled back scan %s state to 'not_started'.", scan_id_val
             )
-        except Exception as rollback_err:
-            logger.exception(
-                "FATAL: Failed to rollback scan %s: %s", scan_id_val, rollback_err
-            )
+        except Exception:
+            logger.exception("FATAL: Failed to rollback scan %s", scan_id_val)
 
     def _is_scan_running(self, scan_id: str | None) -> bool:
         """Returns True if docker services with `ostorlab.universe` label exist."""
         if scan_id is None:
             return False
         scan_services: list[services.Service] = self._docker_client.services.list(
-            filters={"label": f"ostorlab.universe={str(scan_id)}"}
+            filters={"label": f"ostorlab.universe={scan_id!s}"}
         )
         is_running = len(scan_services) > 0
         return is_running

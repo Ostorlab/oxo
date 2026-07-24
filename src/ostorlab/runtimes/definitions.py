@@ -1,8 +1,8 @@
 """Agent and Agent group definitions and settings dataclasses."""
 
+import base64
 import binascii
 import dataclasses
-import base64
 import io
 import ipaddress
 import json
@@ -331,7 +331,7 @@ class AgentGroupDefinition:
         return cls(agent_settings, name, description, use_experimental_agents)
 
     @classmethod
-    def from_api_response(cls, agent_group: Dict[str, Any]) -> "AgentGroupDefinition":
+    def from_api_response(cls, agent_group: dict[str, Any]) -> "AgentGroupDefinition":
         """Construct AgentGroupDefinition directly from the GraphQL agentGroup response.
 
         Args:

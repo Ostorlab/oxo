@@ -6,9 +6,6 @@ import pytest
 from pytest_mock import plugin
 
 from ostorlab.agent.schema import validator
-from ostorlab.runtimes import definitions
-from ostorlab.utils import definitions as utils_definitions
-from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -29,8 +26,6 @@ from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import ticket as ticket_asset
 from ostorlab.runtimes import definitions
-from ostorlab.scanner.proto.assets import apk_pb2
-from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
 from ostorlab.utils import definitions as utils_definitions
 
 
