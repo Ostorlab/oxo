@@ -4,40 +4,39 @@ from __future__ import annotations
 
 import base64
 import binascii
-import logging
+import contextlib
 import ipaddress
+import logging
 from typing import Any
 
 import docker
 
-from ostorlab.runtimes import registry
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
-from ostorlab.cli import install_agent
-from ostorlab.cli import agent_fetcher
-from ostorlab.assets import asset
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
-from ostorlab.assets import android_store
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import file
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import harmonyos_hap
-from ostorlab.assets import domain_name
-from ostorlab.assets import link as link_asset
-from ostorlab.assets import ios_store
+from ostorlab import exceptions
 from ostorlab.assets import agent as agent_asset
-from ostorlab.assets import harmonyos_apk
-from ostorlab.assets import harmonyos_aab
-from ostorlab.assets import harmonyos_rpk
-from ostorlab.assets import harmonyos_app
-from ostorlab.assets import harmonyos_store
+from ostorlab.assets import (
+    android_aab,
+    android_apk,
+    android_store,
+    asset,
+    domain_name,
+    file,
+    harmonyos_aab,
+    harmonyos_apk,
+    harmonyos_app,
+    harmonyos_hap,
+    harmonyos_rpk,
+    harmonyos_store,
+    ios_ipa,
+    ios_store,
+    ipv4,
+    ipv6,
+)
+from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
-from ostorlab import exceptions
-
 
 logger = logging.getLogger(__name__)
 
@@ -258,39 +257,41 @@ def start_scan(
         api_key: Optional api key to fetch short-lived download tokens for agent images.
     """
     logger.debug("Triggering scan after receiving scan from API")
-    docker_client = _connect_containers_registry()
+    with contextlib.closing(_connect_containers_registry()) as docker_client:
+        agent_group_data = request.get("agentGroup") or {}
+        agent_group_definition = _extract_agent_group_definition(agent_group_data)
+        assets = _extract_assets(request.get("asset"))
+        scan_id = _extract_scan_id(request)
 
-    agent_group_data = request.get("agentGroup") or {}
-    agent_group_definition = _extract_agent_group_definition(agent_group_data)
-    assets = _extract_assets(request.get("asset"))
-    scan_id = _extract_scan_id(request)
+        state_reporter = _update_state_reporter(state_reporter, scan_id)
 
-    state_reporter = _update_state_reporter(state_reporter, scan_id)
-
-    runtime_instance = registry.select_runtime(
-        runtime_type="local", scan_id=str(scan_id), run_default_agents=False
-    )
-
-    if runtime_instance.can_run(agent_group_definition=agent_group_definition) is True:
-        _install_agents(
-            runtime_instance=runtime_instance,
-            agents=agent_group_definition.agents,
-            docker_client=docker_client,
-            api_key=api_key,
+        runtime_instance = registry.select_runtime(
+            runtime_type="local", scan_id=str(scan_id), run_default_agents=False
         )
 
-        try:
-            runtime_instance.scan(
-                agent_group_definition=agent_group_definition,
-                assets=assets,
-                title=None,
+        if (
+            runtime_instance.can_run(agent_group_definition=agent_group_definition)
+            is True
+        ):
+            _install_agents(
+                runtime_instance=runtime_instance,
+                agents=agent_group_definition.agents,
+                docker_client=docker_client,
+                api_key=api_key,
             )
-        except exceptions.OstorlabError as e:
-            logger.error("An error was encountered while running the scan: %s", e)
-            raise
 
-        return runtime_instance.name
-    else:
-        logger.error(
-            "The runtime does not support the provided agent list or group definition."
-        )
+            try:
+                runtime_instance.scan(
+                    agent_group_definition=agent_group_definition,
+                    assets=assets,
+                    title=None,
+                )
+            except exceptions.OstorlabError as e:
+                logger.error("An error was encountered while running the scan: %s", e)
+                raise
+
+            return runtime_instance.name
+        else:
+            logger.error(
+                "The runtime does not support the provided agent list or group definition."
+            )
