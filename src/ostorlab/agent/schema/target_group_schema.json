@@ -272,6 +272,9 @@
         "link": {
           "$ref": "#/CustomTypes/linkType"
         },
+        "apiSchema": {
+          "$ref": "#/CustomTypes/apiSchemaType"
+        },
         "androidStore": {
           "$ref": "#/CustomTypes/androidStoreType"
         },

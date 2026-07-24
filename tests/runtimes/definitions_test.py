@@ -706,6 +706,58 @@ assets:
     )
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsApiSchema_returnsRiskWithApiSchema() -> (
+    None
+):
+    """Tests parsing a risk asset embedding an api schema target."""
+    valid_yaml = """
+description: Risk with api schema
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Unauthenticated API operation
+        apiSchema:
+            url: https://example.com/openapi.json
+            endpoint_url: https://example.com/api/v1
+            schema_type: openapi
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert asset_group_def.targets[0].api_schema == api_schema_asset.ApiSchema(
+        endpoint_url="https://example.com/api/v1",
+        content_url="https://example.com/openapi.json",
+        schema_type="openapi",
+    )
+    assert isinstance(asset_group_def.targets[0].to_proto(), bytes)
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskApiSchemaHasNoEndpointUrl_raisesValidationError() -> (
+    None
+):
+    """Tests that an api schema target without an endpoint url is rejected by the target
+    group schema instead of building a risk whose target carries no endpoint."""
+    invalid_yaml = """
+description: Risk with an incomplete api schema
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Unauthenticated API operation
+        apiSchema:
+            url: https://example.com/openapi.json
+"""
+
+    with pytest.raises(
+        validator.ValidationError,
+        match="'endpoint_url' is a required property",
+    ):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskEmbedsAndroidStore_returnsRiskWithAndroidStore():
     """Tests parsing a risk asset embedding an android store target."""
     valid_yaml = """

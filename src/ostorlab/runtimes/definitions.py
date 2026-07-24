@@ -44,6 +44,7 @@ _RISK_TARGET_KEYS = (
     "ip",
     "domain",
     "link",
+    "apiSchema",
     "androidStore",
     "iosStore",
     "androidApkFile",
@@ -853,6 +854,17 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
         risk_kwargs["link"] = link_asset.Link(
             url=_resolve_risk_target_field(risk_entry, "link", "url"),
             method=risk_entry["link"].get("method") or "GET",
+        )
+
+    if risk_entry.get("apiSchema") is not None:
+        parsed_file = _parse_file_asset(risk_entry["apiSchema"])
+        risk_kwargs["api_schema"] = api_schema_asset.ApiSchema(
+            endpoint_url=_resolve_risk_target_field(
+                risk_entry, "apiSchema", "endpoint_url"
+            ),
+            content=parsed_file.content if parsed_file is not None else None,
+            content_url=parsed_file.url if parsed_file is not None else None,
+            schema_type=risk_entry["apiSchema"].get("schema_type"),
         )
 
     if risk_entry.get("androidStore") is not None:
