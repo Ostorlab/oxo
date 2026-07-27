@@ -19,22 +19,7 @@ def _remove_scanner_file_handlers() -> None:
             handler.close()
 
 
-class _FakeEventLoop:
-    def create_task(self, coroutine):
-        coroutine.close()
-
-    def run_until_complete(self, result):
-        return result
-
-    def run_forever(self):
-        return None
-
-    def close(self):
-        return None
-
-
-def _start_scanner_with_fake_loop(mocker: plugin.MockerFixture, **kwargs) -> None:
-    mocker.patch("asyncio.new_event_loop", return_value=_FakeEventLoop())
+def _start_scanner_sync(mocker: plugin.MockerFixture, **kwargs) -> None:
     mocker.patch("ostorlab.cli.scanner.scanner.scan_handler.start_scan_loop")
 
     scanner_cli.start_scanner(
@@ -128,7 +113,7 @@ def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
     log_file = tmp_path / "scanner.log"
 
     try:
-        _start_scanner_with_fake_loop(mocker, log_file=str(log_file))
+        _start_scanner_sync(mocker, log_file=str(log_file))
         logging.getLogger().info("scanner log message")
     finally:
         _remove_scanner_file_handlers()
@@ -149,9 +134,7 @@ def testConfigureFileLogging_whenDebugLevelIsProvided_persistsDebugLogs(
 
     try:
         root_logger.setLevel(logging.ERROR)
-        _start_scanner_with_fake_loop(
-            mocker, log_file=str(log_file), log_level=logging.DEBUG
-        )
+        _start_scanner_sync(mocker, log_file=str(log_file), log_level=logging.DEBUG)
         logging.getLogger().debug("scanner debug log message")
     finally:
         _remove_scanner_file_handlers()

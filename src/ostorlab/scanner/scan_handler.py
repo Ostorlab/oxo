@@ -85,7 +85,8 @@ class ScanHandler:
         logger.debug("Fetching available scans from Discover API...")
         try:
             response = runner.execute(scans_discover.ScansDiscoverAPIRequest())
-            scans_list = response.get("data", {}).get("scans", {}).get("scans", [])
+            data = response.get("data") or {}
+            scans_list = (data.get("scans") or {}).get("scans") or []
             logger.info("Discovered %s potential scans.", len(scans_list))
             return scans_list
         except (base_runner.ResponseError, httpx.HTTPError):
@@ -122,7 +123,8 @@ class ScanHandler:
                         scan_id=candidate_id, progress="locked", full_details=True
                     )
                 )
-                reserve_data = reserve_response.get("data", {}).get("updateScan", {})
+                data = reserve_response.get("data") or {}
+                reserve_data = data.get("updateScan") or {}
 
                 if reserve_data.get("success") is True:
                     logger.info(
