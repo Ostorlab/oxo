@@ -59,13 +59,15 @@ class ScanHandler:
                 logger.debug("Scan %s has finished. Ready for next.", scan_id)
             scan_id = None
 
-            scans_list = self._fetch_available_scans(runner)
+            scans_list = self._fetch_available_scans(runner=runner)
             if scans_list is None or len(scans_list) == 0:
                 logger.debug("No scans available in the queue. Sleeping...")
                 time.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
-            reserved_scan = self._reserve_single_scan(runner, scans_list)
+            reserved_scan = self._reserve_single_scan(
+                runner=runner, scans_list=scans_list
+            )
             if reserved_scan is None:
                 logger.debug(
                     "Failed to reserve any scans from the current batch. Sleeping..."
@@ -73,7 +75,9 @@ class ScanHandler:
                 time.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
-            scan_id = self._trigger_scan_with_rollback(runner, reserved_scan, api_key)
+            scan_id = self._trigger_scan_with_rollback(
+                runner=runner, reserved_scan=reserved_scan, api_key=api_key
+            )
             if scan_id is None:
                 logger.warning("Trigger failed and rolled back. Sleeping...")
                 time.sleep(WAIT_CHECK_MESSAGES.seconds)
@@ -84,7 +88,7 @@ class ScanHandler:
         """Fetches the list of discoverable scans from the API."""
         logger.debug("Fetching available scans from Discover API...")
         try:
-            response = runner.execute(scans_discover.ScansDiscoverAPIRequest())
+            response = runner.execute(request=scans_discover.ScansDiscoverAPIRequest())
             data = response.get("data") or {}
             scans_list = (data.get("scans") or {}).get("scans") or []
             logger.info("Discovered %s potential scans.", len(scans_list))
@@ -119,7 +123,7 @@ class ScanHandler:
 
             try:
                 reserve_response = runner.execute(
-                    scan_update_state.ScanUpdateStateAPIRequest(
+                    request=scan_update_state.ScanUpdateStateAPIRequest(
                         scan_id=candidate_id, progress="locked", full_details=True
                     )
                 )
@@ -181,7 +185,7 @@ class ScanHandler:
                 scan_id_val,
                 scan_key,
             )
-            self._rollback_scan_state(runner, scan_id_val)
+            self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
             return None
 
         logger.info("Handing off scan ID %s to callbacks.start_scan...", scan_id_val)
@@ -197,7 +201,7 @@ class ScanHandler:
                     "Scan %s could not be started locally (runtime unsupported). Rolling back.",
                     scan_id_val,
                 )
-                self._rollback_scan_state(runner, scan_id_val)
+                self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
                 return None
             logger.info(
                 "Scan %s successfully started. Local ID: %s",
@@ -210,7 +214,7 @@ class ScanHandler:
                 "Failed to start scan %s locally. Initiating rollback...",
                 scan_id_val,
             )
-            self._rollback_scan_state(runner, scan_id_val)
+            self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
             return None
 
     def _rollback_scan_state(
@@ -219,7 +223,7 @@ class ScanHandler:
         """Reverts a scan's progress to not_started if local execution fails."""
         try:
             runner.execute(
-                scan_update_state.ScanUpdateStateAPIRequest(
+                request=scan_update_state.ScanUpdateStateAPIRequest(
                     scan_id=scan_id_val, progress="not_started"
                 )
             )
@@ -260,8 +264,10 @@ def start_scan_loop(
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
-    data = runner.execute(scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id))
-    config = scanner_conf.ScannerConfig.from_json(data)
+    data = runner.execute(
+        request=scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id)
+    )
+    config = scanner_conf.ScannerConfig.from_json(config=data)
 
     if config is None:
         logger.error("No config found to start the connection.")
@@ -271,7 +277,7 @@ def start_scan_loop(
 
     logger.info("Starting scan loop via API.")
     scan_handler = ScanHandler(
-        state_reporter,
+        state_reporter=state_reporter,
         scan_resource_requirements=config.scan_resource_requirements,
     )
     try:

@@ -95,9 +95,11 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             kwargs["content"] = kwargs["content"].encode()
 
     if typename in ("Ipv4AssetType", "Ipv6AssetType", "IpAssetType"):
-        return [_prepare_ip_asset(kwargs)]
+        return [_prepare_ip_asset(ip_asset_value=kwargs)]
     elif typename == "NetworkAssetType":
-        return [_prepare_ip_asset(ip) for ip in kwargs.get("networks") or []]
+        return [
+            _prepare_ip_asset(ip_asset_value=ip) for ip in kwargs.get("networks") or []
+        ]
     elif typename == "UrlAssetType":
         return [
             link_asset.Link(url=link, method="GET") for link in kwargs.get("urls") or []
@@ -261,11 +263,15 @@ def start_scan(
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
         agent_group_data = request.get("agentGroup") or {}
-        agent_group_definition = _extract_agent_group_definition(agent_group_data)
-        assets = _extract_assets(request.get("asset"))
-        scan_id = _extract_scan_id(request)
+        agent_group_definition = _extract_agent_group_definition(
+            request=agent_group_data
+        )
+        assets = _extract_assets(asset_data=request.get("asset"))
+        scan_id = _extract_scan_id(request=request)
 
-        state_reporter = _update_state_reporter(state_reporter, scan_id)
+        state_reporter = _update_state_reporter(
+            state_reporter=state_reporter, scan_id=scan_id
+        )
 
         runtime_instance = registry.select_runtime(
             runtime_type="local", scan_id=str(scan_id), run_default_agents=False

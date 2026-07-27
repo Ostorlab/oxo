@@ -390,7 +390,12 @@ class AgentGroupDefinition:
         description = f"Agent group {name}: {','.join(agents_names)}"
         use_experimental_agents = agent_group.get("useExperimentalAgents", False)
 
-        return cls(agent_settings, name, description, use_experimental_agents)
+        return cls(
+            agents=agent_settings,
+            name=name,
+            description=description,
+            use_experimental_agents=use_experimental_agents,
+        )
 
 
 @dataclasses.dataclass
