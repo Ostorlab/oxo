@@ -269,6 +269,24 @@ class LocalRuntime(runtime.Runtime):
             )
             self.stop(str(self._scan_db.id))
             raise MissingAgentDefinition(message)
+        except Exception as e:
+            console.error(f"Scan failed at start: {e}")
+            self._cleanup_on_failure()
+            raise
+
+    def _cleanup_on_failure(self) -> None:
+        """Clean up the services, network, configs and volumes started by the scan when it fails.
+
+        This ensures the runtime services such as Redis, RabbitMQ and Jaeger, along with the docker
+        network and any started agents, do not leak when the scan fails to start unexpectedly.
+        """
+        if self._scan_db is None:
+            return
+        try:
+            self._update_scan_progress("ERROR")
+            self.stop(str(self._scan_db.id))
+        except Exception as cleanup_error:  # noqa: BLE001
+            logger.error("Error during scan failure cleanup: %s", cleanup_error)
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""

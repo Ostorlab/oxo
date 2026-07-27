@@ -662,3 +662,73 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+
+
+def testScanInLocalRuntime_whenUnexpectedExceptionRaised_cleansUpStartedServices(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """When an unexpected exception is raised during scan start, the runtime
+    services (Redis, MQ) and other started components must be cleaned up instead
+    of being left dangling."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    mocker.patch("ostorlab.runtimes.local.agent_runtime.AgentRuntime")
+    runtime = local_runtime.LocalRuntime(run_default_agents=False)
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
+    )
+
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_services")
+    mocker.patch.object(runtime, "_start_agents", side_effect=RuntimeError("boom"))
+    mock_stop = mocker.patch.object(runtime, "stop")
+    mocker.patch.object(runtime, "_check_services_healthy")
+    mocker.patch.object(runtime, "_check_agents_healthy")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        runtime.scan(
+            title="test local",
+            agent_group_definition=agent_group_definition,
+            assets=None,
+        )
+
+    mock_stop.assert_called_once()
+
+
+def testCleanupOnFailure_whenScanDbIsNone_doesNotStop(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """_cleanup_on_failure should be a no-op when no scan was prepared."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._scan_db = None
+    mock_stop = mocker.patch.object(runtime, "stop")
+
+    runtime._cleanup_on_failure()
+
+    mock_stop.assert_not_called()
