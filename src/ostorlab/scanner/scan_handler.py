@@ -106,7 +106,14 @@ class ScanHandler:
             if candidate_id is None:
                 continue
 
-            candidate_id = int(candidate_id)
+            try:
+                candidate_id = int(candidate_id)
+            except (ValueError, TypeError):
+                logger.warning(
+                    "Invalid scan ID format received from API: %s", candidate_id
+                )
+                continue
+
             logger.debug("Attempting to reserve candidate scan ID: %s...", candidate_id)
 
             try:
@@ -145,7 +152,15 @@ class ScanHandler:
         if raw_id is None:
             logger.warning("Reserved scan is missing an 'id'. Skipping.")
             return None
-        scan_id_val = int(raw_id)
+
+        try:
+            scan_id_val = int(raw_id)
+        except (ValueError, TypeError):
+            logger.warning(
+                "Invalid reserved scan ID format received from API: %s. Skipping.",
+                raw_id,
+            )
+            return None
 
         scan_key = (reserved_scan.get("agentGroup") or {}).get("key")
         if (
