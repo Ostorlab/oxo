@@ -19,6 +19,11 @@ class ScannerStateReporter:
         self._hostname = hostname
         self._ip = ip
 
+    @property
+    def scanner_id(self) -> str:
+        """The unique identifier of this scanner."""
+        return self._scanner_id
+
     def _capture_state(self) -> definitions.ScannerState:
         """Capture current scanner state."""
         try:
