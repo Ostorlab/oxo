@@ -25,6 +25,7 @@ from ostorlab.assets import (
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import risk as risk_asset
 from ostorlab.scanner import callbacks
 
 
@@ -763,8 +764,6 @@ def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
     callbacks.start_scan(reserved_scan, state_reporter)
 
     extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
-    from ostorlab.assets import risk as risk_asset
-
     assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
     assert extracted_risk_asset.description == "Exposed server"
     assert extracted_risk_asset.rating == "HIGH"
