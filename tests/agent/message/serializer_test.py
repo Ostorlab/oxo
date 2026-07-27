@@ -78,14 +78,10 @@ def testSerialize_whenDataclassValue_shouldRecurseIntoNestedFields() -> None:
     """A dataclass value is recursed into instead of being set directly."""
     serialized = serializer.serialize(
         "v3.asset.multi_asset",
-        {
-            "android_package_name": android_store_asset.AndroidStore(
-                package_name="com.a.b"
-            )
-        },
+        {"android_store": android_store_asset.AndroidStore(package_name="com.a.b")},
     )
 
-    assert serialized.android_package_name.package_name == "com.a.b"
+    assert serialized.android_store.package_name == "com.a.b"
 
 
 def testSerialize_whenListOfDataclasses_shouldRecurseIntoEachItem() -> None:
@@ -114,6 +110,4 @@ def testSerialize_whenDataclassWithInvalidField_shouldRaiseSerializationError() 
         not_a_proto_field: str = "value"
 
     with pytest.raises(serializer.SerializationError):
-        serializer.serialize(
-            "v3.asset.multi_asset", {"android_package_name": _InvalidAsset()}
-        )
+        serializer.serialize("v3.asset.multi_asset", {"android_store": _InvalidAsset()})

@@ -95,9 +95,9 @@ _MULTI_ASSET_STORE_CLASSES: dict[str, tuple[type[base_asset.Asset], str]] = {
 }
 
 _MULTI_ASSET_MOBILE_FIELDS: dict[type[base_asset.Asset], str] = {
-    android_store_asset.AndroidStore: "android_package_name",
-    ios_store_asset.IOSStore: "ios_bundle_id",
-    harmonyos_store_asset.HarmonyOSStore: "harmonyos_bundle_name",
+    android_store_asset.AndroidStore: "android_store",
+    ios_store_asset.IOSStore: "ios_store",
+    harmonyos_store_asset.HarmonyOSStore: "harmonyos_store",
     android_apk_asset.AndroidApk: "android_apk",
     android_aab_asset.AndroidAab: "android_aab",
     ios_ipa_asset.IOSIpa: "ios_ipa",

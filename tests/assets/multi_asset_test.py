@@ -11,9 +11,9 @@ def testMultiAsset_whenCreatedWithDefaults_hasEmptyNestedAssets() -> None:
     asset = multi_asset.MultiAsset()
 
     assert asset.files == []
-    assert asset.android_package_name is None
-    assert asset.ios_bundle_id is None
-    assert asset.harmonyos_bundle_name is None
+    assert asset.android_store is None
+    assert asset.ios_store is None
+    assert asset.harmonyos_store is None
     assert asset.android_apk is None
     assert asset.android_aab is None
     assert asset.ios_ipa is None
@@ -44,14 +44,14 @@ def testMultiAsset_whenCreatedWithNestedAssets_storesAllNestedAssets() -> None:
 
     asset = multi_asset.MultiAsset(
         files=[nested_file],
-        android_package_name=nested_android_store,
+        android_store=nested_android_store,
         repositories=[nested_repository],
         urls=[nested_link],
         ipv4s=[nested_ipv4],
     )
 
     assert asset.files == [nested_file]
-    assert asset.android_package_name == nested_android_store
+    assert asset.android_store == nested_android_store
     assert asset.repositories == [nested_repository]
     assert asset.urls == [nested_link]
     assert asset.ipv4s == [nested_ipv4]
@@ -92,7 +92,7 @@ def testMultiAsset_whenProtoFieldAccessed_returnsMultiAssetProtoField() -> None:
 
 def testMultiAsset_whenConvertedToString_listsNestedAssets() -> None:
     asset = multi_asset.MultiAsset(
-        android_package_name=android_store.AndroidStore(package_name="a.b.c"),
+        android_store=android_store.AndroidStore(package_name="a.b.c"),
         urls=[link_asset.Link(url="https://ostorlab.co", method="GET")],
     )
 

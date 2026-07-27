@@ -10,6 +10,8 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
     message.repositories.add(repository_url="https://example.com/repo.git")
     message.repository_archives.add(content_url="https://example.com/archive.tar.gz")
     message.urls.add(url="https://example.com")
+    network = message.networks.add()
+    network.ips.add(host="10.0.0.0", mask="24", version=4)
     message.ips.add(host="8.8.8.8")
     message.ipv4s.add(host="1.1.1.1")
     message.ipv6s.add(host="::1")
@@ -27,6 +29,10 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
         == "https://example.com/archive.tar.gz"
     )
     assert deserialized.urls[0].url == "https://example.com"
+    assert len(deserialized.networks) == 1
+    assert deserialized.networks[0].ips[0].host == "10.0.0.0"
+    assert deserialized.networks[0].ips[0].mask == "24"
+    assert deserialized.networks[0].ips[0].version == 4
     assert deserialized.ips[0].host == "8.8.8.8"
     assert deserialized.ipv4s[0].host == "1.1.1.1"
     assert deserialized.ipv6s[0].host == "::1"
@@ -53,7 +59,7 @@ def testSerializeAndDeserialize_whenMultipleOfSameType_preservesAllEntries() -> 
 
 def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> None:
     message = multi_asset_pb2.Message()
-    message.android_package_name.package_name = "com.example.app"
+    message.android_store.package_name = "com.example.app"
     message.ios_ipa.content = b"ipa-bytes"
 
     serialized = message.SerializeToString()
@@ -62,19 +68,19 @@ def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> No
 
     assert deserialized.WhichOneof("mobile_asset") == "ios_ipa"
     assert deserialized.ios_ipa.content == b"ipa-bytes"
-    assert deserialized.HasField("android_package_name") is False
+    assert deserialized.HasField("android_store") is False
 
 
 def testMobileAssetOneof_whenHarmonyosStoreSet_returnsBundleName() -> None:
     message = multi_asset_pb2.Message()
-    message.harmonyos_bundle_name.bundle_name = "com.example.harmony"
+    message.harmonyos_store.bundle_name = "com.example.harmony"
 
     serialized = message.SerializeToString()
     deserialized = multi_asset_pb2.Message()
     deserialized.ParseFromString(serialized)
 
-    assert deserialized.WhichOneof("mobile_asset") == "harmonyos_bundle_name"
-    assert deserialized.harmonyos_bundle_name.bundle_name == "com.example.harmony"
+    assert deserialized.WhichOneof("mobile_asset") == "harmonyos_store"
+    assert deserialized.harmonyos_store.bundle_name == "com.example.harmony"
 
 
 def testMobileAssetOneof_whenHarmonyosFileSet_returnsFileContent() -> None:
