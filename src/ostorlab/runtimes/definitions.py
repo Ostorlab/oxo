@@ -342,8 +342,8 @@ class AgentGroupDefinition:
         agent_settings = []
         agents_names = []
 
-        agents = agent_group.get("agents")
-        if not agents:
+        agents = agent_group.get("agents") or []
+        if len(agents) == 0:
             raise ValueError("Agent group must contain at least one agent.")
 
         for agent in agents:
