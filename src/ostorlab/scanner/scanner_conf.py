@@ -85,29 +85,26 @@ class ScannerConfig:
             ScannerConfig: An instance of ScannerConfig.
         """
 
-        subject_configs = config.get("data", {}).get("scanners", {}).get("scanners", [])
+        data = config.get("data") or {}
+        scanners_data = data.get("scanners") or {}
+        subject_configs = scanners_data.get("scanners") or []
 
         if len(subject_configs) == 0:
             return None
 
-        subject_configs = subject_configs[0].get("config", {})
+        conf = subject_configs[0].get("config") or {}
         bus_configs = []
-        for subject_config in subject_configs.get("subjectBusConfigs", {}).get(
-            "subjectBusConfigs", []
-        ):
+
+        subject_bus_configs = conf.get("subjectBusConfigs") or {}
+        for subject_config in subject_bus_configs.get("subjectBusConfigs") or []:
             bus_configs.append(
                 SubjectBusConfigs(
                     subject=subject_config.get("subject"),
                     queue=subject_config.get("queue"),
                 )
             )
-        conf = (
-            config.get("data", {})
-            .get("scanners", {})
-            .get("scanners", [])[0]
-            .get("config", {})
-        )
-        registry_conf = conf.get("registryConfiguration", {})
+
+        registry_conf = conf.get("registryConfiguration") or {}
         registry_conf_instance = RegistryConfig(
             username=registry_conf.get("accountName"),
             token=registry_conf.get("credentials"),
