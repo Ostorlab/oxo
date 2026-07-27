@@ -54,7 +54,7 @@ class ScannerStateReporter:
         runner = authenticated_runner.AuthenticatedAPIRunner()
         _ = runner.execute(add_scanner_state.AddScannerStateAPIRequest(state=state))
 
-    async def report(self) -> None:
+    def report(self) -> None:
         """Capture the current state of the scanner and persist it."""
         state = self._capture_state()
         self._report_state(state)

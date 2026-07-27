@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import multiprocessing
 import os
 import socket
 import sys
+import threading
+import time
 
 import click
 
@@ -57,13 +58,16 @@ def _configure_file_logging(
     logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
 
 
-async def _start_periodic_persist_state(
+def _start_periodic_persist_state(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
 ):
     while True:
-        await state_reporter.report()
-        logger.debug("Reporting the scanner state.")
-        await asyncio.sleep(WAIT_CAPTURE_INTERVAL)
+        try:
+            state_reporter.report()
+            logger.debug("Reporting the scanner state.")
+        except Exception:
+            logger.exception("Failed to report scanner state, will retry.")
+        time.sleep(WAIT_CAPTURE_INTERVAL)
 
 
 @rootcli.command()
@@ -168,18 +172,16 @@ def start_scanner(
     _configure_file_logging(log_file, log_level)
     if api_key is None:
         logger.error("No api key provided.")
-    loop = asyncio.new_event_loop()
-    loop.create_task(_start_periodic_persist_state(state_reporter=state_reporter))
-    loop.run_until_complete(
-        scan_handler.subscribe_nats(
-            api_key=api_key,
-            scanner_id=scanner_id,
-            state_reporter=state_reporter,
-        )
+
+    persist_thread = threading.Thread(
+        target=_start_periodic_persist_state,
+        args=(state_reporter,),
+        daemon=True,
     )
-    try:
-        logger.debug("Closing loop.")
-        loop.run_forever()
-    finally:
-        logger.debug("closing loop.")
-        loop.close()
+    persist_thread.start()
+
+    scan_handler.start_scan_loop(
+        api_key=api_key,
+        scanner_id=scanner_id,
+        state_reporter=state_reporter,
+    )

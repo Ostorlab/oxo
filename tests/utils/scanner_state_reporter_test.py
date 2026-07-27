@@ -1,6 +1,5 @@
 """Testing module for the scanner state reporter class."""
 
-import pytest
 import pytest_mock
 
 from ostorlab.utils import scanner_state_reporter
@@ -17,8 +16,7 @@ class Disk:
     total: int = 107374182400  # 100 GB in bytes
 
 
-@pytest.mark.asyncio
-async def testReportMethod_whenCalled_updateValuesCorrectly(
+def testReportMethod_whenCalled_updateValuesCorrectly(
     mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test the report method to ensure that the values filled from the private capture_state method are correct."""
@@ -50,6 +48,6 @@ async def testReportMethod_whenCalled_updateValuesCorrectly(
     report.scan_id = 1
     report.errors = ""
 
-    await report.report()
+    report.report()
 
     assert api_request_mock.call_args.kwargs["state"] == state

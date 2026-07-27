@@ -1,5 +1,7 @@
 """Agent and Agent group definitions and settings dataclasses."""
 
+import base64
+import binascii
 import dataclasses
 import io
 import ipaddress
@@ -330,50 +332,74 @@ class AgentGroupDefinition:
         return cls(agent_settings, name, description, use_experimental_agents)
 
     @classmethod
-    def from_bus_message(cls, request):
-        """Construct AgentGroupDefinition from a message received in the NATs.
+    def from_api_response(cls, agent_group: dict[str, Any]) -> "AgentGroupDefinition":
+        """Construct AgentGroupDefinition directly from the GraphQL agentGroup response.
 
         Args:
-            request : The received message.
+            agent_group: The raw GraphQL agentGroup dictionary.
         """
+
         agent_settings = []
         agents_names = []
-        for agent in request.agents:
-            agents_names.append(agent.key)
-            replicas = _process_agent_replicas(agent.replicas)
-            agent_args = []
-            for arg in agent.args:
-                agent_arg = definitions.Arg.build(
-                    name=arg.name,
-                    type=arg.type,
-                    value=arg.value,
-                )
-                agent_args.append(agent_arg)
 
-            agent_def = AgentSettings(
-                key=agent.key,
-                version=agent.version,
-                args=agent_args,
-                replicas=replicas,
-                caps=list(agent.caps),
-                cyclic_processing_limit=agent.cyclic_processing_limit,
-                depth_processing_limit=agent.depth_processing_limit,
-                in_selectors=list(agent.in_selectors),
-                open_ports=[
-                    definitions.PortMapping(
-                        source_port=p.src_port,
-                        destination_port=p.dest_port,
+        agents = agent_group.get("agents") or []
+        if len(agents) == 0:
+            raise ValueError("Agent group must contain at least one agent.")
+
+        for agent in agents:
+            agents_names.append(agent.get("key") or "")
+            replicas = _process_agent_replicas(agent.get("replicas") or 1)
+
+            agent_args = []
+            for arg in agent.get("args") or []:
+                val = arg.get("value")
+                if isinstance(val, str):
+                    try:
+                        val = base64.b64decode(val, validate=True)
+                    except binascii.Error:
+                        val = val.encode()
+
+                agent_args.append(
+                    definitions.Arg.build(
+                        name=arg.get("name"),
+                        type=arg.get("type"),
+                        value=val,
                     )
-                    for p in agent.open_ports
-                ],
-                service_name=agent.service_name or None,
+                )
+
+            port_mappings = [
+                definitions.PortMapping(
+                    source_port=p.get("srcPort"), destination_port=p.get("destPort")
+                )
+                for p in agent.get("openPorts") or []
+            ]
+
+            agent_settings.append(
+                AgentSettings(
+                    key=agent.get("key"),
+                    version=agent.get("version"),
+                    args=agent_args,
+                    replicas=replicas,
+                    caps=agent.get("caps") or [],
+                    cyclic_processing_limit=agent.get("cyclicProcessingLimit"),
+                    depth_processing_limit=agent.get("depthProcessingLimit"),
+                    in_selectors=agent.get("inSelectors") or [],
+                    open_ports=port_mappings,
+                    service_name=agent.get("serviceName"),
+                )
             )
 
-            agent_settings.append(agent_def)
+        name = (agent_group.get("key") or "").split("/")[-1]
 
-        name = request.key.split("/")[-1]
         description = f"Agent group {name}: {','.join(agents_names)}"
-        return cls(agent_settings, name, description)
+        use_experimental_agents = agent_group.get("useExperimentalAgents", False)
+
+        return cls(
+            agents=agent_settings,
+            name=name,
+            description=description,
+            use_experimental_agents=use_experimental_agents,
+        )
 
 
 @dataclasses.dataclass
