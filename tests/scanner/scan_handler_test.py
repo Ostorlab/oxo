@@ -49,7 +49,7 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
         scan_handler_instance.handle_messages(runner, api_key="test_api_key")
 
     trigger_mock.assert_called_once()
-    assert trigger_mock.call_args.args[2] == "test_api_key"
+    assert trigger_mock.call_args.kwargs["api_key"] == "test_api_key"
 
 
 def testIsScanRunning_whenScanIdIsNone_returnsFalse() -> None:
@@ -190,7 +190,7 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
 
     assert result is None
     assert runner.execute.call_count == 1
-    call_arg = runner.execute.call_args.args[0]
+    call_arg = runner.execute.call_args.kwargs["request"]
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
