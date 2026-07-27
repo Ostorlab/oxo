@@ -216,11 +216,17 @@ class ScanHandler:
         """Returns True if docker services with `ostorlab.universe` label exist."""
         if scan_id is None:
             return False
-        scan_services: list[services.Service] = self._docker_client.services.list(
-            filters={"label": f"ostorlab.universe={scan_id!s}"}
-        )
-        is_running = len(scan_services) > 0
-        return is_running
+        try:
+            scan_services: list[services.Service] = self._docker_client.services.list(
+                filters={"label": f"ostorlab.universe={scan_id!s}"}
+            )
+            is_running = len(scan_services) > 0
+            return is_running
+        except docker.errors.DockerException:
+            logger.exception(
+                "Docker error checking scan %s status, assuming still running.", scan_id
+            )
+            return True
 
 
 def start_scan_loop(

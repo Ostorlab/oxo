@@ -62,8 +62,11 @@ def _start_periodic_persist_state(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
 ):
     while True:
-        state_reporter.report()
-        logger.debug("Reporting the scanner state.")
+        try:
+            state_reporter.report()
+            logger.debug("Reporting the scanner state.")
+        except Exception:
+            logger.exception("Failed to report scanner state, will retry.")
         time.sleep(WAIT_CAPTURE_INTERVAL)
 
 

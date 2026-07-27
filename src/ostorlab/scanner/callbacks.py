@@ -139,7 +139,9 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             )
         ]
     elif typename == "HarmonyOsBundleNameAssetType":
-        return [harmonyos_store.HarmonyOSStore(bundle_name=kwargs.get("bundleName"))]
+        return [
+            harmonyos_store.HarmonyOSStore(bundle_name=kwargs.get("bundleName") or "")
+        ]
     elif typename == "HarmonyOsApkAssetType":
         return [
             harmonyos_apk.HarmonyOSApk(

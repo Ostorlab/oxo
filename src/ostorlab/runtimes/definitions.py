@@ -385,7 +385,7 @@ class AgentGroupDefinition:
                 )
             )
 
-        name = agent_group.get("key", "").split("/")[-1]
+        name = (agent_group.get("key") or "").split("/")[-1]
 
         description = f"Agent group {name}: {','.join(agents_names)}"
         use_experimental_agents = agent_group.get("useExperimentalAgents", False)
