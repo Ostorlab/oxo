@@ -39,7 +39,7 @@ assets:
     assert targets[0].selector == "v3.asset.multi_asset"
     assert len(targets[0].ipv4s) == 1
     assert targets[0].urls[0].method == "POST"
-    assert targets[0].android_package_name.package_name == "com.example.app"
+    assert targets[0].android_store.package_name == "com.example.app"
 
 
 def testFromYaml_whenMultiAssetAndStandaloneAssets_shouldEmitBoth() -> None:
@@ -147,9 +147,9 @@ assets:
 @pytest.mark.parametrize(
     "yaml_key,yaml_body,proto_field",
     [
-        ("androidStore", "package_name: com.a.b", "android_package_name"),
-        ("iosStore", "bundle_id: com.a.b", "ios_bundle_id"),
-        ("harmonyosStore", "bundle_name: com.a.b", "harmonyos_bundle_name"),
+        ("androidStore", "package_name: com.a.b", "android_store"),
+        ("iosStore", "bundle_id: com.a.b", "ios_store"),
+        ("harmonyosStore", "bundle_name: com.a.b", "harmonyos_store"),
         ("androidApkFile", "url: https://host/x.apk", "android_apk"),
         ("androidAabFile", "url: https://host/x.aab", "android_aab"),
         ("iosFile", "url: https://host/x.ipa", "ios_ipa"),

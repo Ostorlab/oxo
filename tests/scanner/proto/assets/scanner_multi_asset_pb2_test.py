@@ -54,7 +54,7 @@ def testSerializeAndDeserialize_whenMultipleOfSameType_preservesAllEntries() -> 
 
 def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> None:
     message = multi_asset_pb2.Message()
-    message.android_package_name.package_name = "com.example.app"
+    message.android_store.package_name = "com.example.app"
     message.ios_ipa.content = b"ipa-bytes"
 
     serialized = message.SerializeToString()
@@ -63,19 +63,19 @@ def testMobileAssetOneof_whenSecondAssetSet_keepsOnlyLastAndClearsOthers() -> No
 
     assert deserialized.WhichOneof("mobile_asset") == "ios_ipa"
     assert deserialized.ios_ipa.content == b"ipa-bytes"
-    assert deserialized.HasField("android_package_name") is False
+    assert deserialized.HasField("android_store") is False
 
 
 def testMobileAssetOneof_whenHarmonyosStoreSet_returnsBundleName() -> None:
     message = multi_asset_pb2.Message()
-    message.harmonyos_bundle_name.bundle_name = "com.example.harmony"
+    message.harmonyos_store.bundle_name = "com.example.harmony"
 
     serialized = message.SerializeToString()
     deserialized = multi_asset_pb2.Message()
     deserialized.ParseFromString(serialized)
 
-    assert deserialized.WhichOneof("mobile_asset") == "harmonyos_bundle_name"
-    assert deserialized.harmonyos_bundle_name.bundle_name == "com.example.harmony"
+    assert deserialized.WhichOneof("mobile_asset") == "harmonyos_store"
+    assert deserialized.harmonyos_store.bundle_name == "com.example.harmony"
 
 
 def testMobileAssetOneof_whenHarmonyosFileSet_returnsFileContent() -> None:
