@@ -342,7 +342,11 @@ class AgentGroupDefinition:
         agent_settings = []
         agents_names = []
 
-        for agent in agent_group.get("agents") or []:
+        agents = agent_group.get("agents")
+        if not agents:
+            raise ValueError("Agent group must contain at least one agent.")
+
+        for agent in agents:
             agents_names.append(agent.get("key") or "")
             replicas = _process_agent_replicas(agent.get("replicas") or 1)
 

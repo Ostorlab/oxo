@@ -47,7 +47,7 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for apk asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "AndroidApkAssetType",
             "content": base64.b64encode(b"dummy_apk").decode(),
@@ -71,7 +71,7 @@ def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for aab asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "AndroidAabAssetType",
             "content": base64.b64encode(b"dummy_aab").decode(),
@@ -95,7 +95,7 @@ def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for ipa asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "IosIpaAssetType",
             "content": base64.b64encode(b"dummy_ipa").decode(),
@@ -119,7 +119,7 @@ def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for harmonyos hap asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "HarmonyOsHapAssetType",
             "content": base64.b64encode(b"dummy_hap").decode(),
@@ -143,7 +143,7 @@ def testExtractAssets_whenHarmonyosApkAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for harmonyos apk asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "HarmonyOsApkAssetType",
             "content": base64.b64encode(b"dummy_hap_apk").decode(),
@@ -167,7 +167,7 @@ def testExtractAssets_whenHarmonyosAabAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for harmonyos aab asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "HarmonyOsAabAssetType",
             "content": base64.b64encode(b"dummy_hap_aab").decode(),
@@ -191,7 +191,7 @@ def testExtractAssets_whenHarmonyosRpkAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for harmonyos rpk asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "HarmonyOsRpkAssetType",
             "content": base64.b64encode(b"dummy_hap_rpk").decode(),
@@ -215,7 +215,7 @@ def testExtractAssets_whenHarmonyosAppAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for harmonyos .app asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "HarmonyOsAppAssetType",
             "content": base64.b64encode(b"dummy_hap_app").decode(),
@@ -239,7 +239,7 @@ def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for android_store asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "AndroidPackageNameAssetType",
             "packageName": "a.b.c",
@@ -261,7 +261,7 @@ def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for ios_store asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "IosBundleIdAssetType",
             "bundleId": "a.b.c",
@@ -283,7 +283,7 @@ def testExtractAssets_whenHarmonyosStoreAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for harmonyos_store asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "HarmonyOsBundleNameAssetType",
             "bundleName": "com.example.harmony",
@@ -305,7 +305,7 @@ def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for domain asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "DomainNameAssetType",
             "name": "ostorlab.co",
@@ -326,7 +326,7 @@ def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
 ) -> None:
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "AgentAssetType",
             "key": "agent/ostorlab/agent42",
@@ -356,7 +356,7 @@ def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for file asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "FileAssetType",
             "path": "/tmp/dummy_file",
@@ -380,7 +380,7 @@ def testExtractAssets_whenRepositoryAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for repository asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "RepositoryAssetType",
             "repositoryUrl": "https://github.com/org/repo.git",
@@ -409,7 +409,7 @@ def testExtractAssets_whenRepositoryArchiveAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for repository archive asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "RepositoryArchiveAssetType",
             "contentUrl": "https://example.com/source-archive.tar.gz",
@@ -433,7 +433,7 @@ def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for ip asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "IpAssetType",
             "host": "8.8.8.8",
@@ -457,7 +457,7 @@ def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for ipv4 asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "Ipv4AssetType",
             "host": "8.8.8.8",
@@ -482,7 +482,7 @@ def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for ipv6 without mask asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "Ipv6AssetType",
             "host": "2001:db8::",
@@ -506,7 +506,7 @@ def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for ipv6 with mask asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "Ipv6AssetType",
             "host": "2001:db8::",
@@ -531,7 +531,7 @@ def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for links asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "UrlAssetType",
             "urls": ["https://ostorlab.co", "https://google.com"],
@@ -558,7 +558,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
     """Ensure extract_assets returns correct asset for network asset."""
     reserved_scan = {
         "id": 42,
-        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": []},
+        "agentGroup": {"key": "agentgroup/ostorlab/agent_group42", "agents": [{"key": "agent/ostorlab/dummy"}]},
         "asset": {
             "__typename": "NetworkAssetType",
             "networks": [
