@@ -27,9 +27,9 @@ from ostorlab.assets import repository_archive as repository_archive_asset
 
 MOBILE_ASSET_FIELDS: frozenset[str] = frozenset(
     {
-        "android_package_name",
-        "ios_bundle_id",
-        "harmonyos_bundle_name",
+        "android_store",
+        "ios_store",
+        "harmonyos_store",
         "android_apk",
         "android_aab",
         "ios_ipa",
@@ -68,9 +68,9 @@ class MultiAsset(asset.Asset):
     """Multi-asset target grouping heterogeneous assets in a single scan target."""
 
     files: list[file_asset.File] = dataclasses.field(default_factory=list)
-    android_package_name: android_store_asset.AndroidStore | None = None
-    ios_bundle_id: ios_store_asset.IOSStore | None = None
-    harmonyos_bundle_name: harmonyos_store_asset.HarmonyOSStore | None = None
+    android_store: android_store_asset.AndroidStore | None = None
+    ios_store: ios_store_asset.IOSStore | None = None
+    harmonyos_store: harmonyos_store_asset.HarmonyOSStore | None = None
     android_apk: android_apk_asset.AndroidApk | None = None
     android_aab: android_aab_asset.AndroidAab | None = None
     ios_ipa: ios_ipa_asset.IOSIpa | None = None
@@ -104,9 +104,9 @@ class MultiAsset(asset.Asset):
     def nested_assets(self) -> list[asset.Asset | None]:
         return [
             *self.files,
-            self.android_package_name,
-            self.ios_bundle_id,
-            self.harmonyos_bundle_name,
+            self.android_store,
+            self.ios_store,
+            self.harmonyos_store,
             self.android_apk,
             self.android_aab,
             self.ios_ipa,
