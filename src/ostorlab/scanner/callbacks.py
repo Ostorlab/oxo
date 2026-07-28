@@ -34,6 +34,7 @@ from ostorlab.assets import (
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
@@ -210,6 +211,15 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
                 content=kwargs.get("content"),
                 path=kwargs.get("path"),
                 content_url=kwargs.get("contentUrl"),
+            )
+        ]
+    elif typename == "TicketAssetType":
+        return [
+            ticket_asset.Ticket(
+                title=kwargs.get("title", ""),
+                description=kwargs.get("description", ""),
+                ticket_id=kwargs.get("ticketId"),
+                ticket_key=kwargs.get("ticketKey"),
             )
         ]
     else:

@@ -25,6 +25,7 @@ from ostorlab.assets import (
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import ticket as ticket_asset
 from ostorlab.scanner import callbacks
 
 
@@ -734,3 +735,34 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
 
     install_agent_mock.assert_called_once()
     assert install_agent_mock.call_args.kwargs.get("api_key") is None
+
+
+def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for ticket asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "TicketAssetType",
+            "title": "Test Ticket",
+            "description": "This is a test ticket",
+            "ticketId": "123",
+            "ticketKey": "TICKET-123",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_ticket_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_ticket_asset, ticket_asset.Ticket) is True
+    assert extracted_ticket_asset.title == "Test Ticket"
+    assert extracted_ticket_asset.description == "This is a test ticket"
+    assert extracted_ticket_asset.ticket_id == "123"
+    assert extracted_ticket_asset.ticket_key == "TICKET-123"
