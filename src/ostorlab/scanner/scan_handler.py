@@ -124,7 +124,10 @@ class ScanHandler:
             try:
                 reserve_response = runner.execute(
                     request=scan_update_state.ScanUpdateStateAPIRequest(
-                        scan_id=candidate_id, progress="locked", full_details=True
+                        scan_id=candidate_id,
+                        progress="locked",
+                        full_details=True,
+                        scanner_id=self._state_reporter.scanner_id,
                     )
                 )
                 data = reserve_response.get("data") or {}
