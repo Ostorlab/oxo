@@ -6,4 +6,5 @@ package ostorlab.agent.message.proto.v3.asset.network;
 
 message Message {
   repeated ostorlab.agent.message.proto.v3.asset.ip.Message ips = 1;
+  optional string cidr = 2;
 }
