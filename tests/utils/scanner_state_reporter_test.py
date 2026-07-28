@@ -51,3 +51,12 @@ def testReportMethod_whenCalled_updateValuesCorrectly(
     report.report()
 
     assert api_request_mock.call_args.kwargs["state"] == state
+
+
+def testScannerIdProperty_whenAccessed_returnsConstructorValue() -> None:
+    """The scanner_id property should expose the value passed at construction."""
+    report = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD", hostname="", ip=""
+    )
+
+    assert report.scanner_id == "GGBD-DJJD-DKJK-DJDD"
