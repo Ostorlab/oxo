@@ -737,6 +737,43 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
     assert install_agent_mock.call_args.kwargs.get("api_key") is None
 
 
+
+def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for risk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RiskAssetType",
+            "description": "Exposed server",
+            "rating": "HIGH",
+            "target": {
+                "__typename": "Ipv4AssetType",
+                "host": "8.8.8.8",
+                "mask": "32",
+            },
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0] 
+    assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
+    assert extracted_risk_asset.description == "Exposed server"
+    assert extracted_risk_asset.rating == "HIGH"
+    assert extracted_risk_asset.ipv4 is not None
+    assert extracted_risk_asset.ipv4.host == "8.8.8.8"
+    assert extracted_risk_asset.ipv4.mask == "32"
+
+
+
 def testExtractAssets_whenRisksAsset_shouldReturnCorrectAssets(
     mocker: plugin.MockerFixture,
 ) -> None:
