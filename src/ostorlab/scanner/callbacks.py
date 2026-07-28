@@ -227,7 +227,7 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
 
             if target_dict is not None:
                 target_assets = _extract_assets(target_dict)
-                if target_assets:
+                if len(target_assets) > 0:
                     target_asset = target_assets[0]
                     if isinstance(target_asset, ipv4.IPv4):
                         risk_kwargs["ipv4"] = target_asset

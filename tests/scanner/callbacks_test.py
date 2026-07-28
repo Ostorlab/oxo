@@ -737,7 +737,6 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
     assert install_agent_mock.call_args.kwargs.get("api_key") is None
 
 
-
 def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -764,14 +763,13 @@ def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
 
     callbacks.start_scan(reserved_scan, state_reporter)
 
-    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0] 
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
     assert extracted_risk_asset.description == "Exposed server"
     assert extracted_risk_asset.rating == "HIGH"
     assert extracted_risk_asset.ipv4 is not None
     assert extracted_risk_asset.ipv4.host == "8.8.8.8"
     assert extracted_risk_asset.ipv4.mask == "32"
-
 
 
 def testExtractAssets_whenRisksAsset_shouldReturnCorrectAssets(
