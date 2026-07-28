@@ -92,6 +92,8 @@ def testReserveSingleScan_whenFirstScanSucceeds_returnsScanData(
 
     assert result == {"id": 42, "progress": "locked"}
     runner.execute.assert_called_once()
+    request_arg = runner.execute.call_args.kwargs["request"]
+    assert request_arg._scanner_id == "GGBD-DJJD-DKJK-DJDD"
 
 
 def testReserveSingleScan_whenReservationFails_skipsAndTriesNext(
@@ -136,6 +138,8 @@ def testReserveSingleScan_whenReservationFails_skipsAndTriesNext(
 
     assert result == {"id": 99, "progress": "locked"}
     assert runner.execute.call_count == 2
+    for call in runner.execute.call_args_list:
+        assert call.kwargs["request"]._scanner_id == "GGBD-DJJD-DKJK-DJDD"
 
 
 def testReserveSingleScan_whenAllFail_returnsNone(

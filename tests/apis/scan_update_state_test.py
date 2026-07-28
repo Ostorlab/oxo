@@ -17,6 +17,7 @@ def testScanUpdateStateAPIRequest_whenMinimal_queryContainsUpdateScanStateMutati
     assert "mutation UpdateScanState" in api_request.query
     assert "$scanId: Int!" in api_request.query
     assert "$progress: String!" in api_request.query
+    assert "$scannerId: String" in api_request.query
     assert "deviceId: null" in api_request.query
     assert "asset" not in api_request.query
     assert "agentGroup" not in api_request.query
@@ -56,6 +57,25 @@ def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorr
     variables = json.loads(data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "finished"
+    assert variables["scannerId"] is None
+
+
+def testScanUpdateStateAPIRequest_whenScannerIdProvided_dataContainsScannerId() -> None:
+    """Test scan update state API request data contains the scanner id when provided."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=42,
+        progress="locked",
+        full_details=True,
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+    )
+
+    data = api_request.data
+    assert data is not None
+    assert "variables" in data
+    variables = json.loads(data["variables"])
+    assert variables["scannerId"] == "GGBD-DJJD-DKJK-DJDD"
+    assert "$scannerId: String" in api_request.query
+    assert "scannerId: $scannerId" in api_request.query
 
 
 def testScanUpdateStateAPIRequest_whenFullDetails_dataContainsSameVariables() -> None:
@@ -71,3 +91,4 @@ def testScanUpdateStateAPIRequest_whenFullDetails_dataContainsSameVariables() ->
     variables = json.loads(data["variables"])
     assert variables["scanId"] == 7
     assert variables["progress"] == "locked"
+    assert variables["scannerId"] is None

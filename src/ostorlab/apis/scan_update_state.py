@@ -9,17 +9,24 @@ from ostorlab.apis import request
 class ScanUpdateStateAPIRequest(request.APIRequest):
     """State update mutation API request."""
 
-    def __init__(self, scan_id: int, progress: str, full_details: bool = False) -> None:
+    def __init__(
+        self,
+        scan_id: int,
+        progress: str,
+        full_details: bool = False,
+        scanner_id: str | None = None,
+    ) -> None:
         self._scan_id = scan_id
         self._progress = progress
         self._full_details = full_details
+        self._scanner_id = scanner_id
 
     @property
     def query(self) -> str | None:
         if self._full_details is True:
             return """
-            mutation UpdateScanState($scanId: Int!, $progress: String!) {
-              updateScan(scanId: $scanId, progress: $progress) {
+            mutation UpdateScanState($scanId: Int!, $progress: String!, $scannerId: String) {
+              updateScan(scanId: $scanId, progress: $progress, scannerId: $scannerId) {
                 success
                 message
                 scan {
@@ -80,8 +87,8 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
             """
         else:
             return """
-            mutation UpdateScanState($scanId: Int!, $progress: String!) {
-              updateScan(scanId: $scanId, progress: $progress, deviceId: null) {
+            mutation UpdateScanState($scanId: Int!, $progress: String!, $scannerId: String) {
+              updateScan(scanId: $scanId, progress: $progress, deviceId: null, scannerId: $scannerId) {
                 success
                 message
                 scan {
@@ -97,6 +104,10 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
         return {
             "query": self.query,
             "variables": json.dumps(
-                {"scanId": self._scan_id, "progress": self._progress}
+                {
+                    "scanId": self._scan_id,
+                    "progress": self._progress,
+                    "scannerId": self._scanner_id,
+                }
             ),
         }
