@@ -89,6 +89,8 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                           ... on RepositoryAssetType { provider repositoryUrl commitHash }
                           ... on RepositoryArchiveAssetType { path contentUrl }
                         }
+                      }
+                    }
                     ... on RiskAssetType { 
                       description 
                       rating 
