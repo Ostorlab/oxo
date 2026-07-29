@@ -269,42 +269,24 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             )
         ]
     elif typename == "RisksAssetType":
-        risks = []
-        for risk_item in kwargs.get("risks") or []:
-            description = risk_item.get("description", "")
-            rating = risk_item.get("rating", "")
-            target_dict = risk_item.get("target")
-
-            base_risk_kwargs = {
-                "description": description,
-                "rating": rating,
-            }
-
-            target_kwargs_list = _build_risk_kwargs(target_dict)
-            for target_kwargs in target_kwargs_list:
-                risk_kwargs = base_risk_kwargs.copy()
-                risk_kwargs.update(target_kwargs)
-                risks.append(risk_asset.Risk(**risk_kwargs))
-
-        return risks
+        return [
+            risk_asset.Risk(
+                description=risk_item.get("description", ""),
+                rating=risk_item.get("rating", ""),
+                **target_kwargs,
+            )
+            for risk_item in (kwargs.get("risks") or [])
+            for target_kwargs in _build_risk_kwargs(risk_item.get("target"))
+        ]
     elif typename == "RiskAssetType":
-        description = kwargs.get("description", "")
-        rating = kwargs.get("rating", "")
-        target_dict = kwargs.get("target")
-
-        base_risk_kwargs = {
-            "description": description,
-            "rating": rating,
-        }
-
-        risks = []
-        target_kwargs_list = _build_risk_kwargs(target_dict)
-        for target_kwargs in target_kwargs_list:
-            risk_kwargs = base_risk_kwargs.copy()
-            risk_kwargs.update(target_kwargs)
-            risks.append(risk_asset.Risk(**risk_kwargs))
-
-        return risks
+        return [
+            risk_asset.Risk(
+                description=kwargs.get("description", ""),
+                rating=kwargs.get("rating", ""),
+                **target_kwargs,
+            )
+            for target_kwargs in _build_risk_kwargs(kwargs.get("target"))
+        ]
 
     else:
         logger.error("%s not supported from scan asset payload", typename)
