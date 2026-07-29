@@ -80,59 +80,62 @@ def _prepare_ip_asset(ip_asset_value: dict[str, Any]) -> asset.Asset:
         raise ValueError(f"Invalid Ip address {host}")
 
 
-def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> list[dict[str, Any]]:
-    """Builds a list of risk kwargs for each resolved target asset."""
+def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
+    """Builds risk kwargs for the first resolved target asset."""
     if target_dict is None:
-        return [{}]
+        return {}
 
     target_assets = _extract_assets(target_dict)
-    if not target_assets:
-        return [{}]
+    if len(target_assets) > 1:
+        logger.warning(
+            "Risk target has multiple assets, Risk will only associate with the first asset."
+        )
 
-    risk_kwargs_list = []
-    for target_asset in target_assets:
-        kwargs = {}
-        if isinstance(target_asset, ipv4.IPv4):
-            kwargs["ipv4"] = target_asset
-        elif isinstance(target_asset, ipv6.IPv6):
-            kwargs["ipv6"] = target_asset
-        elif isinstance(target_asset, link_asset.Link):
-            kwargs["link"] = target_asset
-        elif isinstance(target_asset, domain_name.DomainName):
-            kwargs["domain_name"] = target_asset
-        elif isinstance(target_asset, android_store.AndroidStore):
-            kwargs["android_store"] = target_asset
-        elif isinstance(target_asset, ios_store.IOSStore):
-            kwargs["ios_store"] = target_asset
-        elif isinstance(target_asset, android_aab.AndroidAab):
-            kwargs["android_aab"] = target_asset
-        elif isinstance(target_asset, android_apk.AndroidApk):
-            kwargs["android_apk"] = target_asset
-        elif isinstance(target_asset, ios_ipa.IOSIpa):
-            kwargs["ios_ipa"] = target_asset
-        elif isinstance(target_asset, repository_asset.Repository):
-            kwargs["repository"] = target_asset
-        elif isinstance(target_asset, repository_archive_asset.RepositoryArchive):
-            kwargs["repository_archive"] = target_asset
-        elif isinstance(target_asset, harmonyos_store.HarmonyOSStore):
-            kwargs["harmonyos_store"] = target_asset
-        elif isinstance(target_asset, harmonyos_apk.HarmonyOSApk):
-            kwargs["harmonyos_apk"] = target_asset
-        elif isinstance(target_asset, harmonyos_aab.HarmonyOSAab):
-            kwargs["harmonyos_aab"] = target_asset
-        elif isinstance(target_asset, harmonyos_hap.HarmonyOSHap):
-            kwargs["harmonyos_hap"] = target_asset
-        elif isinstance(target_asset, harmonyos_app.HarmonyOSApp):
-            kwargs["harmonyos_app"] = target_asset
-        elif isinstance(target_asset, harmonyos_rpk.HarmonyOSRpk):
-            kwargs["harmonyos_rpk"] = target_asset
-        else:
-            logger.warning(
-                "Risk target asset %s is not fully mapped in Risk.",
-                type(target_asset).__name__,
-            )
-        risk_kwargs_list.append(kwargs)
-    return risk_kwargs_list
+    if len(target_assets) == 0:
+        return {}
+
+    target_asset = target_assets[0]
+    kwargs = {}
+    if isinstance(target_asset, ipv4.IPv4):
+        kwargs["ipv4"] = target_asset
+    elif isinstance(target_asset, ipv6.IPv6):
+        kwargs["ipv6"] = target_asset
+    elif isinstance(target_asset, link_asset.Link):
+        kwargs["link"] = target_asset
+    elif isinstance(target_asset, domain_name.DomainName):
+        kwargs["domain_name"] = target_asset
+    elif isinstance(target_asset, android_store.AndroidStore):
+        kwargs["android_store"] = target_asset
+    elif isinstance(target_asset, ios_store.IOSStore):
+        kwargs["ios_store"] = target_asset
+    elif isinstance(target_asset, android_aab.AndroidAab):
+        kwargs["android_aab"] = target_asset
+    elif isinstance(target_asset, android_apk.AndroidApk):
+        kwargs["android_apk"] = target_asset
+    elif isinstance(target_asset, ios_ipa.IOSIpa):
+        kwargs["ios_ipa"] = target_asset
+    elif isinstance(target_asset, repository_asset.Repository):
+        kwargs["repository"] = target_asset
+    elif isinstance(target_asset, repository_archive_asset.RepositoryArchive):
+        kwargs["repository_archive"] = target_asset
+    elif isinstance(target_asset, harmonyos_store.HarmonyOSStore):
+        kwargs["harmonyos_store"] = target_asset
+    elif isinstance(target_asset, harmonyos_apk.HarmonyOSApk):
+        kwargs["harmonyos_apk"] = target_asset
+    elif isinstance(target_asset, harmonyos_aab.HarmonyOSAab):
+        kwargs["harmonyos_aab"] = target_asset
+    elif isinstance(target_asset, harmonyos_hap.HarmonyOSHap):
+        kwargs["harmonyos_hap"] = target_asset
+    elif isinstance(target_asset, harmonyos_app.HarmonyOSApp):
+        kwargs["harmonyos_app"] = target_asset
+    elif isinstance(target_asset, harmonyos_rpk.HarmonyOSRpk):
+        kwargs["harmonyos_rpk"] = target_asset
+    else:
+        logger.warning(
+            "Risk target asset %s is not fully mapped in Risk.",
+            type(target_asset).__name__,
+        )
+    return kwargs
 
 
 def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
@@ -273,24 +276,16 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             risk_asset.Risk(
                 description=risk_item.get("description", ""),
                 rating=risk_item.get("rating", ""),
-                **target_kwargs,
+                **_build_risk_kwargs(risk_item.get("target")),
             )
             for risk_item in (kwargs.get("risks") or [])
-            for target_kwargs in _build_risk_kwargs(risk_item.get("target"))
         ]
     elif typename == "RiskAssetType":
-        target_kwargs_list = _build_risk_kwargs(kwargs.get("target"))
-        if len(target_kwargs_list) > 1:
-            logger.warning(
-                "Risk target has multiple assets, Risk will only associate with the first asset."
-            )
-        
-        target_kwargs = target_kwargs_list[0] if target_kwargs_list else {}
         return [
             risk_asset.Risk(
                 description=kwargs.get("description", ""),
                 rating=kwargs.get("rating", ""),
-                **target_kwargs,
+                **_build_risk_kwargs(kwargs.get("target")),
             )
         ]
 
