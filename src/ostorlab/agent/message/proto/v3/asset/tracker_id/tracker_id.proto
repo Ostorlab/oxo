@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.asset.tracker_id;
+
+message Message {
+  optional string id = 1;
+  optional string source = 2;
+}
