@@ -34,8 +34,8 @@ from ostorlab.assets import (
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
-from ostorlab.assets import ticket as ticket_asset
 from ostorlab.assets import risk as risk_asset
+from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
