@@ -57,6 +57,12 @@ def testNetwork_whenStr_returnsCidrValue() -> None:
     assert str(asset) == "45.237.228.0/22"
 
 
+def testNetwork_whenNonCanonicalCidr_normalizesToNetworkAddress() -> None:
+    asset = network.Network(cidr="192.168.1.100/24")
+
+    assert asset.cidr == "192.168.1.0/24"
+
+
 def testNetwork_whenCreated_doesNotExposeIpEnumerationFields() -> None:
     asset = network.Network(cidr="45.237.228.0/22")
 

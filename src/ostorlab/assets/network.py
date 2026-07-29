@@ -19,7 +19,7 @@ class Network(asset.Asset):
     cidr: str
 
     def __post_init__(self) -> None:
-        ipaddress.ip_network(self.cidr, strict=False)
+        self.cidr = str(ipaddress.ip_network(self.cidr, strict=False))
 
     def __str__(self) -> str:
         return self.cidr
