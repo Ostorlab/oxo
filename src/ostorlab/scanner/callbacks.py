@@ -279,13 +279,19 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             for target_kwargs in _build_risk_kwargs(risk_item.get("target"))
         ]
     elif typename == "RiskAssetType":
+        target_kwargs_list = _build_risk_kwargs(kwargs.get("target"))
+        if len(target_kwargs_list) > 1:
+            logger.warning(
+                "Risk target has multiple assets, Risk will only associate with the first asset."
+            )
+        
+        target_kwargs = target_kwargs_list[0] if target_kwargs_list else {}
         return [
             risk_asset.Risk(
                 description=kwargs.get("description", ""),
                 rating=kwargs.get("rating", ""),
                 **target_kwargs,
             )
-            for target_kwargs in _build_risk_kwargs(kwargs.get("target"))
         ]
 
     else:
