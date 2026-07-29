@@ -215,12 +215,21 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             )
         ]
     elif typename == "TicketAssetType":
+        parsed_comments = []
+        for comment in kwargs.get("ticketComments") or []:
+            parsed_comments.append(
+                ticket_asset.Comment(
+                    author=comment.get("author"),
+                    message=comment.get("message"),
+                )
+            )
         return [
             ticket_asset.Ticket(
                 title=kwargs.get("title", ""),
                 description=kwargs.get("description", ""),
                 ticket_id=kwargs.get("ticketId"),
                 ticket_key=kwargs.get("ticketKey"),
+                comments=parsed_comments,
             )
         ]
     elif typename == "RiskAssetType":

@@ -789,6 +789,10 @@ def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
             "description": "This is a test ticket",
             "ticketId": "123",
             "ticketKey": "TICKET-123",
+            "ticketComments": [
+                {"author": "sec-ops", "message": "confirmed reproduction"},
+                {"author": "dev-team", "message": "fix in progress"},
+            ],
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
@@ -802,3 +806,8 @@ def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
     assert extracted_ticket_asset.description == "This is a test ticket"
     assert extracted_ticket_asset.ticket_id == "123"
     assert extracted_ticket_asset.ticket_key == "TICKET-123"
+    assert len(extracted_ticket_asset.comments) == 2
+    assert extracted_ticket_asset.comments[0].author == "sec-ops"
+    assert extracted_ticket_asset.comments[0].message == "confirmed reproduction"
+    assert extracted_ticket_asset.comments[1].author == "dev-team"
+    assert extracted_ticket_asset.comments[1].message == "fix in progress"
