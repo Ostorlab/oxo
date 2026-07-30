@@ -34,6 +34,7 @@ from ostorlab.assets import (
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import risk as risk_asset
 from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
@@ -212,6 +213,64 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
                 content_url=kwargs.get("contentUrl"),
             )
         ]
+    elif typename == "RiskAssetType":
+        description = kwargs.get("description", "")
+        rating = kwargs.get("rating", "")
+        target_dict = kwargs.get("target")
+
+        risk_kwargs = {
+            "description": description,
+            "rating": rating,
+        }
+
+        if target_dict is not None:
+            target_assets = _extract_assets(target_dict)
+            if len(target_assets) > 0:
+                target_asset = target_assets[0]
+                if isinstance(target_asset, ipv4.IPv4):
+                    risk_kwargs["ipv4"] = target_asset
+                elif isinstance(target_asset, ipv6.IPv6):
+                    risk_kwargs["ipv6"] = target_asset
+                elif isinstance(target_asset, link_asset.Link):
+                    risk_kwargs["link"] = target_asset
+                elif isinstance(target_asset, domain_name.DomainName):
+                    risk_kwargs["domain_name"] = target_asset
+                elif isinstance(target_asset, android_store.AndroidStore):
+                    risk_kwargs["android_store"] = target_asset
+                elif isinstance(target_asset, ios_store.IOSStore):
+                    risk_kwargs["ios_store"] = target_asset
+                elif isinstance(target_asset, android_aab.AndroidAab):
+                    risk_kwargs["android_aab"] = target_asset
+                elif isinstance(target_asset, android_apk.AndroidApk):
+                    risk_kwargs["android_apk"] = target_asset
+                elif isinstance(target_asset, ios_ipa.IOSIpa):
+                    risk_kwargs["ios_ipa"] = target_asset
+                elif isinstance(target_asset, repository_asset.Repository):
+                    risk_kwargs["repository"] = target_asset
+                elif isinstance(
+                    target_asset, repository_archive_asset.RepositoryArchive
+                ):
+                    risk_kwargs["repository_archive"] = target_asset
+                elif isinstance(target_asset, harmonyos_store.HarmonyOSStore):
+                    risk_kwargs["harmonyos_store"] = target_asset
+                elif isinstance(target_asset, harmonyos_apk.HarmonyOSApk):
+                    risk_kwargs["harmonyos_apk"] = target_asset
+                elif isinstance(target_asset, harmonyos_aab.HarmonyOSAab):
+                    risk_kwargs["harmonyos_aab"] = target_asset
+                elif isinstance(target_asset, harmonyos_hap.HarmonyOSHap):
+                    risk_kwargs["harmonyos_hap"] = target_asset
+                elif isinstance(target_asset, harmonyos_app.HarmonyOSApp):
+                    risk_kwargs["harmonyos_app"] = target_asset
+                elif isinstance(target_asset, harmonyos_rpk.HarmonyOSRpk):
+                    risk_kwargs["harmonyos_rpk"] = target_asset
+                else:
+                    logger.warning(
+                        "Risk target asset %s is not fully mapped in Risk.",
+                        type(target_asset).__name__,
+                    )
+
+        return [risk_asset.Risk(**risk_kwargs)]
+
     else:
         logger.error("%s not supported from scan asset payload", typename)
         return []
