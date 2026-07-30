@@ -22,15 +22,16 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from ostorlab.agent.message.proto.v3.asset.ip import ip_pb2 as ostorlab_dot_agent_dot_message_dot_proto_dot_v3_dot_asset_dot_ip_dot_ip__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;ostorlab/agent/message/proto/v3/asset/network/network.proto\x12-ostorlab.agent.message.proto.v3.asset.network\"\x17\n\x07Message\x12\x0c\n\x04\x63idr\x18\x01 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;ostorlab/agent/message/proto/v3/asset/network/network.proto\x12-ostorlab.agent.message.proto.v3.asset.network\x1a\x31ostorlab/agent/message/proto/v3/asset/ip/ip.proto\"W\n\x07Message\x12>\n\x03ips\x18\x01 \x03(\x0b\x32\x31.ostorlab.agent.message.proto.v3.asset.ip.Message\x12\x0c\n\x04\x63idr\x18\x02 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.asset.network.network_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_MESSAGE']._serialized_start=110
-  _globals['_MESSAGE']._serialized_end=133
+  _globals['_MESSAGE']._serialized_start=161
+  _globals['_MESSAGE']._serialized_end=248
 # @@protoc_insertion_point(module_scope)

@@ -10,7 +10,8 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
     message.repositories.add(repository_url="https://example.com/repo.git")
     message.repository_archives.add(content_url="https://example.com/archive.tar.gz")
     message.urls.add(url="https://example.com")
-    message.networks.add(cidr="10.0.0.0/24")
+    network = message.networks.add()
+    network.ips.add(host="10.0.0.0", mask="24", version=4)
     message.ips.add(host="8.8.8.8")
     message.ipv4s.add(host="1.1.1.1")
     message.ipv6s.add(host="::1")
@@ -29,7 +30,9 @@ def testSerializeAndDeserialize_whenAllAssetTypesSet_returnsEquivalentMessage() 
     )
     assert deserialized.urls[0].url == "https://example.com"
     assert len(deserialized.networks) == 1
-    assert deserialized.networks[0].cidr == "10.0.0.0/24"
+    assert deserialized.networks[0].ips[0].host == "10.0.0.0"
+    assert deserialized.networks[0].ips[0].mask == "24"
+    assert deserialized.networks[0].ips[0].version == 4
     assert deserialized.ips[0].host == "8.8.8.8"
     assert deserialized.ipv4s[0].host == "1.1.1.1"
     assert deserialized.ipv6s[0].host == "::1"
