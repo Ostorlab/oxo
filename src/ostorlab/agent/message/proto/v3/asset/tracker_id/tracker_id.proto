@@ -3,6 +3,13 @@ syntax = "proto2";
 package ostorlab.agent.message.proto.v3.asset.tracker_id;
 
 message Message {
+  // Tracking identifier value emitted by the SDK, such as the Google
+  // Advertising ID, Apple IDFA, TikTok device id, or Meta advertiser id.
   optional string id = 1;
+  // Reverse-search source that discovered the identifier, identifying the
+  // tracker vendor / SDK it belongs to (for example "google", "tiktok",
+  // "meta"). Together `source` + `id` describe any single tracker: `source`
+  // classifies the tracker type and `id` carries its value, so the two fields
+  // are sufficient across all supported tracker vendors.
   optional string source = 2;
 }
