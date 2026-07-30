@@ -47,7 +47,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on IosIpaAssetType { path contentUrl }
                     ... on SourceCodeAssetType { path contentUrl language }
                     ... on FileAssetType { path contentUrl }
-                    ... on TicketAssetType { ticketId ticketKey title description }
+                    ... on TicketAssetType { ticketId ticketKey title description ticketComments }
                     ... on HarmonyOsBundleNameAssetType { bundleName }
                     ... on HarmonyOsApkAssetType { path contentUrl }
                     ... on HarmonyOsAabAssetType { path contentUrl }
@@ -76,7 +76,6 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                         ... on IosIpaAssetType { path contentUrl }
                         ... on SourceCodeAssetType { path contentUrl language }
                         ... on FileAssetType { path contentUrl }
-                        ... on TicketAssetType { ticketId ticketKey title description }
                         ... on HarmonyOsBundleNameAssetType { bundleName }
                         ... on HarmonyOsApkAssetType { path contentUrl }
                         ... on HarmonyOsAabAssetType { path contentUrl }
