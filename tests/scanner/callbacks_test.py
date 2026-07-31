@@ -432,6 +432,7 @@ def testExtractAssets_whenRepositoryAsset_shouldReturnCorrectAsset(
             "__typename": "RepositoryAssetType",
             "repositoryUrl": "https://github.com/org/repo.git",
             "commitHash": "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
+            "provider": "GITHUB",
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
@@ -448,6 +449,52 @@ def testExtractAssets_whenRepositoryAsset_shouldReturnCorrectAsset(
         extracted_repository_asset.commit_hash
         == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
     )
+    assert extracted_repository_asset.provider == "GITHUB"
+
+
+def testExtractAssets_whenRiskAssetWithRepositoryTarget_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets maps a repository target onto a risk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RiskAssetType",
+            "description": "Vulnerable dependency",
+            "rating": "MEDIUM",
+            "target": {
+                "__typename": "RepositoryAssetType",
+                "repositoryUrl": "https://github.com/org/repo.git",
+                "commitHash": "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
+                "provider": "GITLAB",
+            },
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
+    assert extracted_risk_asset.description == "Vulnerable dependency"
+    assert extracted_risk_asset.rating == "MEDIUM"
+    assert (
+        isinstance(extracted_risk_asset.repository, repository_asset.Repository) is True
+    )
+    assert (
+        extracted_risk_asset.repository.repository_url
+        == "https://github.com/org/repo.git"
+    )
+    assert (
+        extracted_risk_asset.repository.commit_hash
+        == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    )
+    assert extracted_risk_asset.repository.provider == "GITLAB"
 
 
 def testExtractAssets_whenRepositoryArchiveAsset_shouldReturnCorrectAsset(
