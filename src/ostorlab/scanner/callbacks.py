@@ -220,7 +220,7 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             parsed_comments.append(
                 ticket_asset.Comment(
                     author=comment.get("author"),
-                    message=comment.get("message"),
+                    message=comment.get("value"),
                 )
             )
         return [
