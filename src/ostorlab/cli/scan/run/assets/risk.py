@@ -268,6 +268,11 @@ def risk_cli(
             "Provide --provider together with --repository-url and --commit-hash."
         )
         raise click.exceptions.Exit(2)
+    if repository_url is None and provider is not None:
+        console.error(
+            "Provide --repository-url and --commit-hash together with --provider."
+        )
+        raise click.exceptions.Exit(2)
     if repository_archive_file is not None and repository_archive_url is not None:
         console.error(
             "Provide either --repository-archive or --repository-archive-url, not both."

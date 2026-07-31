@@ -230,6 +230,30 @@ def testScanRunRisk_whenRepositoryProvidedWithoutProvider_shouldExitWithError(
     )
 
 
+def testScanRunRisk_whenProviderProvidedWithoutRepository_shouldExitWithError(
+    scan_run_cli_runner: testing.CliRunner,
+) -> None:
+    """Test oxo scan run risk command rejects --provider given without a repository."""
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=LOW",
+            "--description=Repository risk",
+            "--provider=github",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert (
+        "Provide --repository-url and --commit-hash together with --provider."
+        in result.output
+    )
+
+
 def testScanRunRisk_whenRuntimeCannotRun_shouldExitWithError(
     mocker: pytest_mock.MockerFixture,
 ) -> None:
