@@ -35,6 +35,7 @@ from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
+from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher, install_agent
 from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
@@ -271,14 +272,23 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
                 content_url=kwargs.get("contentUrl"),
             )
         ]
-    elif typename == "RisksAssetType":
-        return [
-            risk_asset.Risk(
-                description=risk_item.get("description", ""),
-                rating=risk_item.get("rating", ""),
-                **_build_risk_kwargs(risk_item.get("target")),
+    elif typename == "TicketAssetType":
+        parsed_comments = []
+        for comment in kwargs.get("ticketComments") or []:
+            parsed_comments.append(
+                ticket_asset.Comment(
+                    author=comment.get("author"),
+                    message=comment.get("message"),
+                )
             )
-            for risk_item in (kwargs.get("risks") or [])
+        return [
+            ticket_asset.Ticket(
+                title=kwargs.get("title", ""),
+                description=kwargs.get("description", ""),
+                ticket_id=kwargs.get("ticketId"),
+                ticket_key=kwargs.get("ticketKey"),
+                comments=parsed_comments,
+            )
         ]
     elif typename == "RiskAssetType":
         return [
@@ -287,6 +297,15 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
                 rating=kwargs.get("rating", ""),
                 **_build_risk_kwargs(kwargs.get("target")),
             )
+        ]
+    elif typename == "RisksAssetType":
+        return [
+            risk_asset.Risk(
+                description=risk_item.get("description", ""),
+                rating=risk_item.get("rating", ""),
+                **_build_risk_kwargs(risk_item.get("target")),
+            )
+            for risk_item in (kwargs.get("risks") or [])
         ]
 
     else:
