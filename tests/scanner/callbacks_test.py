@@ -790,8 +790,8 @@ def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
             "ticketId": "123",
             "ticketKey": "TICKET-123",
             "ticketComments": [
-                {"author": "sec-ops", "message": "confirmed reproduction"},
-                {"author": "dev-team", "message": "fix in progress"},
+                {"author": "sec-ops", "value": "confirmed reproduction"},
+                {"author": "dev-team", "value": "fix in progress"},
             ],
         },
     }

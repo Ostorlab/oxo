@@ -47,7 +47,16 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on IosIpaAssetType { path contentUrl }
                     ... on SourceCodeAssetType { path contentUrl language }
                     ... on FileAssetType { path contentUrl }
-                    ... on TicketAssetType { ticketId ticketKey title description ticketComments }
+                    ... on TicketAssetType {
+                      ticketId
+                      ticketKey
+                      title
+                      description
+                      ticketComments {
+                        author
+                        value
+                      }
+                    }
                     ... on HarmonyOsBundleNameAssetType { bundleName }
                     ... on HarmonyOsApkAssetType { path contentUrl }
                     ... on HarmonyOsAabAssetType { path contentUrl }
