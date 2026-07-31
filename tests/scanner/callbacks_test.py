@@ -790,8 +790,8 @@ def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
             "ticketId": "123",
             "ticketKey": "TICKET-123",
             "ticketComments": [
-                {"author": "sec-ops", "message": "confirmed reproduction"},
-                {"author": "dev-team", "message": "fix in progress"},
+                {"author": "sec-ops", "value": "confirmed reproduction"},
+                {"author": "dev-team", "value": "fix in progress"},
             ],
         },
     }
@@ -811,3 +811,57 @@ def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
     assert extracted_ticket_asset.comments[0].message == "confirmed reproduction"
     assert extracted_ticket_asset.comments[1].author == "dev-team"
     assert extracted_ticket_asset.comments[1].message == "fix in progress"
+
+
+def testExtractAssets_whenRisksAsset_shouldReturnCorrectAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct assets for risks asset (plural)."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RisksAssetType",
+            "risks": [
+                {
+                    "description": "Exposed server",
+                    "rating": "HIGH",
+                    "target": {
+                        "__typename": "Ipv4AssetType",
+                        "host": "8.8.8.8",
+                        "mask": "32",
+                    },
+                },
+                {
+                    "description": "Weak password",
+                    "rating": "MEDIUM",
+                    "target": {
+                        "__typename": "DomainNameAssetType",
+                        "name": "example.com",
+                    },
+                },
+            ],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 2
+
+    assert isinstance(assets[0], risk_asset.Risk) is True
+    assert assets[0].description == "Exposed server"
+    assert assets[0].rating == "HIGH"
+    assert assets[0].ipv4 is not None
+    assert assets[0].ipv4.host == "8.8.8.8"
+
+    assert isinstance(assets[1], risk_asset.Risk) is True
+    assert assets[1].description == "Weak password"
+    assert assets[1].rating == "MEDIUM"
+    assert assets[1].domain_name is not None
+    assert assets[1].domain_name.name == "example.com"

@@ -47,7 +47,16 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on IosIpaAssetType { path contentUrl }
                     ... on SourceCodeAssetType { path contentUrl language }
                     ... on FileAssetType { path contentUrl }
-                    ... on TicketAssetType { ticketId ticketKey title description ticketComments }
+                    ... on TicketAssetType {
+                      ticketId
+                      ticketKey
+                      title
+                      description
+                      ticketComments {
+                        author
+                        value
+                      }
+                    }
                     ... on HarmonyOsBundleNameAssetType { bundleName }
                     ... on HarmonyOsApkAssetType { path contentUrl }
                     ... on HarmonyOsAabAssetType { path contentUrl }
@@ -58,6 +67,38 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on AgentAssetType { key agentVersion: version gitLocation dockerLocation yamlFileLocation }
                     ... on RepositoryAssetType { provider repositoryUrl commitHash }
                     ... on RepositoryArchiveAssetType { path contentUrl }
+                    ... on RisksAssetType {
+                      risks {
+                        description
+                        rating
+                        target {
+                          __typename
+                          ... on UrlAssetType { urls apiSchema }
+                          ... on Ipv4AssetType { host version mask }
+                          ... on Ipv6AssetType { host version mask }
+                          ... on IpAssetType { host version mask }
+                          ... on AndroidApkAssetType { path contentUrl }
+                          ... on DomainNameAssetType { name }
+                          ... on AndroidPackageNameAssetType { packageName }
+                          ... on IosBundleIdAssetType { bundleId }
+                          ... on IosTestflightAssetType { applicationUrl }
+                          ... on AndroidAabAssetType { path contentUrl }
+                          ... on IosIpaAssetType { path contentUrl }
+                          ... on SourceCodeAssetType { path contentUrl language }
+                          ... on FileAssetType { path contentUrl }
+                          ... on HarmonyOsBundleNameAssetType { bundleName }
+                          ... on HarmonyOsApkAssetType { path contentUrl }
+                          ... on HarmonyOsAabAssetType { path contentUrl }
+                          ... on HarmonyOsHapAssetType { path contentUrl }
+                          ... on HarmonyOsAppAssetType { path contentUrl }
+                          ... on HarmonyOsRpkAssetType { path contentUrl }
+                          ... on NetworkAssetType { networks }
+                          ... on AgentAssetType { key agentVersion: version gitLocation dockerLocation yamlFileLocation }
+                          ... on RepositoryAssetType { provider repositoryUrl commitHash }
+                          ... on RepositoryArchiveAssetType { path contentUrl }
+                        }
+                      }
+                    }
                     ... on RiskAssetType { 
                       description 
                       rating 
