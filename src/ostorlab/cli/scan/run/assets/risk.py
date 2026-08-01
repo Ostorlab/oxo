@@ -179,6 +179,16 @@ _RISK_RATINGS = [
     help="Commit hash for the source code repository.",
 )
 @click.option(
+    "--provider",
+    required=False,
+    default=None,
+    type=click.Choice(
+        ["github", "gitlab", "azure", "bitbucket", "git"],
+        case_sensitive=False,
+    ),
+    help="Provider hosting the source code repository the risk applies to.",
+)
+@click.option(
     "--repository-archive",
     "repository_archive_file",
     type=click.File(mode="rb"),
@@ -218,6 +228,7 @@ def risk_cli(
     api_schema_headers: tuple,
     repository_url: str | None,
     commit_hash: str | None,
+    provider: str | None,
     repository_archive_file: io.RawIOBase | None,
     repository_archive_url: str | None,
 ) -> None:
@@ -225,7 +236,7 @@ def risk_cli(
     Example:\n
         - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Server exposed" --ip 8.8.8.8\n
         - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description-file report.txt --ip 8.8.8.8\n
-        - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Hardcoded secret" --repository-url https://github.com/org/repo --commit-hash abc123\n
+        - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Hardcoded secret" --repository-url https://github.com/org/repo --commit-hash abc123 --provider github\n
         - oxo scan run --agent=agent/ostorlab/nmap risk --severity HIGH --description "Hardcoded secret" --repository-archive-url https://example.com/repo.zip
     """
     if description is None and description_file is None:
@@ -251,6 +262,16 @@ def risk_cli(
         raise click.exceptions.Exit(2)
     if (repository_url is None) != (commit_hash is None):
         console.error("Provide both --repository-url and --commit-hash together.")
+        raise click.exceptions.Exit(2)
+    if repository_url is not None and provider is None:
+        console.error(
+            "Provide --provider together with --repository-url and --commit-hash."
+        )
+        raise click.exceptions.Exit(2)
+    if repository_url is None and provider is not None:
+        console.error(
+            "Provide --repository-url and --commit-hash together with --provider."
+        )
         raise click.exceptions.Exit(2)
     if repository_archive_file is not None and repository_archive_url is not None:
         console.error(
@@ -360,10 +381,11 @@ def risk_cli(
             schema_dict["extra_headers"] = parsed_schema_headers
         risk_kwargs["api_schema"] = schema_dict
 
-    if repository_url is not None and commit_hash is not None:
+    if repository_url is not None and commit_hash is not None and provider is not None:
         risk_kwargs["repository"] = {
             "repository_url": repository_url,
             "commit_hash": commit_hash,
+            "provider": provider.upper(),
         }
 
     if repository_archive_file is not None:
