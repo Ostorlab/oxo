@@ -6,6 +6,7 @@ import pytest
 
 from ostorlab.agent.message import serializer
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import link as link_asset
 
 
@@ -111,3 +112,33 @@ def testSerialize_whenDataclassWithInvalidField_shouldRaiseSerializationError() 
 
     with pytest.raises(serializer.SerializationError):
         serializer.serialize("v3.asset.multi_asset", {"android_store": _InvalidAsset()})
+
+
+def testSerialize_whenVulnerabilityLocationIsApiSchema_shouldSerializeAsset() -> None:
+    """An api_schema vulnerability location serializes instead of raising.
+
+    Regression test for the ``SerializationError: invalid attribute api_schema``
+    crash: the VulnerabilityLocation message must accept an api_schema asset.
+    """
+    serialized = serializer.serialize(
+        "v3.report.vulnerability",
+        {
+            "title": "API vuln",
+            "risk_rating": "HIGH",
+            "technical_detail": "detail",
+            "vulnerability_location": {
+                "api_schema": api_schema_asset.ApiSchema(
+                    endpoint_url="https://api.example.com/graphql",
+                    schema_type="graphql",
+                    content_url="https://api.example.com/schema.json",
+                ).__dict__,
+            },
+        },
+    )
+
+    assert serialized.vulnerability_location.WhichOneof("asset") == "api_schema"
+    assert (
+        serialized.vulnerability_location.api_schema.endpoint_url
+        == "https://api.example.com/graphql"
+    )
+    assert serialized.vulnerability_location.api_schema.schema_type == "graphql"
