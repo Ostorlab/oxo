@@ -152,11 +152,10 @@ class AgentMQMixin:
                         message.routing_key,
                         message.body,
                     )
-                except serializer.NoMatchingPackageNameError as e:
+                except serializer.NoMatchingPackageNameError:
                     logger.warning(
-                        "Skipping message with unsupported selector %s: %s",
+                        "Skipping message with unsupported selector %s",
                         message.routing_key,
-                        e,
                     )
         except aio_pika.exceptions.ChannelInvalidStateError:
             logger.warning("The channel is closed unexpectedly.")
