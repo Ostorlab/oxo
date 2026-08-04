@@ -13,11 +13,13 @@ class ScannerStateReporter:
         scanner_id: str,
         hostname: str,
         ip: str,
+        reporting_engine_api_key: str | None = None,
     ):
         self._scanner_id = scanner_id
         self.scan_id = None
         self._hostname = hostname
         self._ip = ip
+        self._reporting_engine_api_key = reporting_engine_api_key
 
     @property
     def scanner_id(self) -> str:
@@ -56,7 +58,9 @@ class ScannerStateReporter:
         return state
 
     def _report_state(self, state: definitions.ScannerState) -> None:
-        runner = authenticated_runner.AuthenticatedAPIRunner()
+        runner = authenticated_runner.AuthenticatedAPIRunner(
+            api_key=self._reporting_engine_api_key
+        )
         _ = runner.execute(add_scanner_state.AddScannerStateAPIRequest(state=state))
 
     def report(self) -> None:

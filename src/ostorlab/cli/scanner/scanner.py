@@ -126,7 +126,10 @@ def scanner(
     import daemon as dm
 
     state_reporter = scanner_state_reporter.ScannerStateReporter(
-        scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
+        scanner_id=scanner_id,
+        hostname=socket.gethostname(),
+        ip=ip.get_ip(),
+        reporting_engine_api_key=api_key,
     )
     nb_parallel_scans = parallel
     processes = []
