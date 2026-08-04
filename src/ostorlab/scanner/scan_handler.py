@@ -31,9 +31,11 @@ class ScanHandler:
         state_reporter: scanner_state_reporter.ScannerStateReporter,
         scan_resource_requirements: dict[str, scanner_conf.ScanResourceRequirements]
         | None = None,
+        gcp_logging_credential: str | None = None,
     ):
         self._state_reporter = state_reporter
         self._scan_resource_requirements = scan_resource_requirements or {}
+        self._gcp_logging_credential = gcp_logging_credential
         self._docker_client = docker.from_env()
 
     def close(self) -> None:
@@ -198,6 +200,7 @@ class ScanHandler:
                 request=reserved_scan,
                 state_reporter=self._state_reporter,
                 api_key=api_key,
+                gcp_logging_credential=self._gcp_logging_credential,
             )
             if started_scan_id is None:
                 logger.warning(
@@ -257,6 +260,7 @@ def start_scan_loop(
     api_key: str | None,
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
+    gcp_logging_credential: str | None = None,
 ) -> None:
     """Fetching the scanner configuration and starting the API polling loop.
 
@@ -264,6 +268,7 @@ def start_scan_loop(
         api_key: The key to connect to ostorlab.
         scanner_id: The scanner identifier.
         state_reporter: instance responsible for reporting the scanner state.
+        gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
@@ -282,6 +287,7 @@ def start_scan_loop(
     scan_handler = ScanHandler(
         state_reporter=state_reporter,
         scan_resource_requirements=config.scan_resource_requirements,
+        gcp_logging_credential=gcp_logging_credential,
     )
     try:
         scan_handler.handle_messages(runner=s_runner, api_key=api_key)

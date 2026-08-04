@@ -348,6 +348,7 @@ def start_scan(
     request: dict[str, Any],
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
+    gcp_logging_credential: str | None = None,
 ) -> str | None:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
 
@@ -355,6 +356,7 @@ def start_scan(
         request: API response data for the scan.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         api_key: Optional api key to fetch short-lived download tokens for agent images.
+        gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
@@ -370,7 +372,10 @@ def start_scan(
         )
 
         runtime_instance = registry.select_runtime(
-            runtime_type="local", scan_id=str(scan_id), run_default_agents=False
+            runtime_type="local",
+            scan_id=str(scan_id),
+            run_default_agents=False,
+            gcp_logging_credential=gcp_logging_credential,
         )
 
         if (
