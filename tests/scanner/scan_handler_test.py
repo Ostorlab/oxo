@@ -198,6 +198,35 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
+def testTriggerScanWithRollback_whenGcpCredentialProvided_forwardsItToStartScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward GCP logging credentials when starting a reserved scan."""
+    start_scan_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="42"
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(
+        state_reporter=state_reporter,
+        gcp_logging_credential="gcp-credential",
+    )
+
+    result = scan_handler_instance._trigger_scan_with_rollback(
+        mocker.MagicMock(),
+        {"id": 42, "agentGroup": {"key": "test/group"}},
+        api_key="test-key",
+    )
+
+    assert result == "42"
+    assert (
+        start_scan_mock.call_args.kwargs["gcp_logging_credential"] == "gcp-credential"
+    )
+
+
 def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
     mocker: plugin.MockerFixture,
 ) -> None:

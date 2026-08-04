@@ -117,6 +117,7 @@ def scanner(
         raise click.exceptions.Exit(2)
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
+    gcp_logging_credential = ctx.obj.get("gcp_logging_credential")
     scanner_log_file = log_file if persist_logs is True else None
     scanner_log_level = getattr(logging, log_level.upper())
     _configure_file_logging(scanner_log_file, scanner_log_level)
@@ -142,6 +143,7 @@ def scanner(
                 state_reporter,
                 scanner_log_file,
                 scanner_log_level,
+                gcp_logging_credential,
             ),
         )
         process.start()
@@ -162,6 +164,7 @@ def start_scanner(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     log_file: str | None = None,
     log_level: int = logging.INFO,
+    gcp_logging_credential: str | None = None,
 ) -> None:
     """Run subscription to nats in event loop.
 
@@ -171,6 +174,7 @@ def start_scanner(
         state_reporter: instance responsible for reporting the scanner state.
         log_file: Optional path to persist scanner logs.
         log_level: Logging level used for persisted scanner logs.
+        gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     _configure_file_logging(log_file, log_level)
     if api_key is None:
@@ -187,4 +191,5 @@ def start_scanner(
         api_key=api_key,
         scanner_id=scanner_id,
         state_reporter=state_reporter,
+        gcp_logging_credential=gcp_logging_credential,
     )
