@@ -67,6 +67,38 @@ def testScannerCommandInvocation_whenDaemonCommandIsDisabled_runsConnection(
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenGcpCredentialProvided_forwardsItToProcess(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward GCP logging credentials to every scanner process."""
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    create_process_mock = mocker.patch("multiprocessing.Process")
+    mocker.patch(
+        "ostorlab.cli.rootcli.open",
+        mocker.mock_open(read_data='{"project_id": "test-project"}'),
+    )
+    mocker.patch("google.oauth2.service_account.Credentials.from_service_account_info")
+    mocker.patch("google.cloud.logging.Client")
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--gcp-logging-credential",
+            __file__,
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+        ],
+    )
+
+    assert result.exit_code == 0
+    process_args = create_process_mock.call_args.kwargs["args"]
+    assert process_args[-1] == '{"project_id": "test-project"}'
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorrespondingProcesses(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -172,7 +204,7 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level = (
+    _, _, _, scanner_log_file, scanner_log_level, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
@@ -210,7 +242,7 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level = (
+    _, _, _, scanner_log_file, scanner_log_level, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
