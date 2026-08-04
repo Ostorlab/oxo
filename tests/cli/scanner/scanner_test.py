@@ -67,6 +67,43 @@ def testScannerCommandInvocation_whenDaemonCommandIsDisabled_runsConnection(
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenApiKeyProvided_passesItToStateReporter(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The state reporter must authenticate RE requests with the CLI API key."""
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    mocker.patch(
+        "ostorlab.cli.scanner.scanner.start_scanner",
+        return_value=None,
+    )
+    mocker.patch("multiprocessing.Process")
+    state_reporter_mock = mocker.patch(
+        "ostorlab.cli.scanner.scanner.scanner_state_reporter.ScannerStateReporter"
+    )
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "--api-key",
+            "reporting-engine-api-key",
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+        ],
+    )
+
+    assert result.exit_code == 0
+    state_reporter_mock.assert_called_once_with(
+        scanner_id="11226DS",
+        hostname=mocker.ANY,
+        ip=mocker.ANY,
+        reporting_engine_api_key="reporting-engine-api-key",
+    )
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorrespondingProcesses(
     mocker: plugin.MockerFixture,
 ) -> None:

@@ -20,8 +20,8 @@ def testReportMethod_whenCalled_updateValuesCorrectly(
     mocker: pytest_mock.MockerFixture,
 ) -> None:
     """Test the report method to ensure that the values filled from the private capture_state method are correct."""
-    mocker.patch(
-        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute"
+    runner_mock = mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner"
     )
     mocker.patch("psutil.cpu_percent", return_value=10)
     mocker.patch("psutil.cpu_count", return_value=10)
@@ -43,13 +43,18 @@ def testReportMethod_whenCalled_updateValuesCorrectly(
         total_disk=100,
     )
     report = scanner_state_reporter.ScannerStateReporter(
-        scanner_id="GGBD-DJJD-DKJK-DJDD", hostname="", ip=""
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="",
+        ip="",
+        reporting_engine_api_key="reporting-engine-api-key",
     )
     report.scan_id = 1
     report.errors = ""
 
     report.report()
 
+    runner_mock.assert_called_once_with(api_key="reporting-engine-api-key")
+    runner_mock.return_value.execute.assert_called_once()
     assert api_request_mock.call_args.kwargs["state"] == state
 
 
