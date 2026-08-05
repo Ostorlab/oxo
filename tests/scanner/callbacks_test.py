@@ -70,6 +70,43 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     assert apk_asset.content_url is None
 
 
+def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward GCP logging credentials to the local runtime."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.scanner.callbacks.install_agent.install")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    select_runtime_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime",
+        return_value=runtime_mock,
+    )
+    callbacks.start_scan(
+        reserved_scan,
+        mocker.MagicMock(),
+        gcp_logging_credential="gcp-credential",
+    )
+
+    select_runtime_mock.assert_called_once_with(
+        runtime_type="local",
+        scan_id="42",
+        run_default_agents=False,
+        gcp_logging_credential="gcp-credential",
+    )
+
+
 def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
