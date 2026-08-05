@@ -85,16 +85,14 @@ def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
             "content": base64.b64encode(b"dummy_apk").decode(),
         },
     }
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.scanner.callbacks.install_agent.install")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
     select_runtime_mock = mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime",
         return_value=runtime_mock,
     )
-    mocker.patch("ostorlab.scanner.callbacks._install_agents")
-
     callbacks.start_scan(
         reserved_scan,
         mocker.MagicMock(),
