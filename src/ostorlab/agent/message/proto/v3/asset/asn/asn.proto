@@ -4,5 +4,4 @@ package ostorlab.agent.message.proto.v3.asset.asn;
 
 message Message {
   optional string asn = 1;
-  optional string description = 2;
 }
