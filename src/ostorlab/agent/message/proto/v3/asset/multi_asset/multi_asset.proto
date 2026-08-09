@@ -19,7 +19,6 @@ import "ostorlab/agent/message/proto/v3/asset/link/link.proto";
 import "ostorlab/agent/message/proto/v3/asset/ip/ip.proto";
 import "ostorlab/agent/message/proto/v3/asset/ip/v4/v4.proto";
 import "ostorlab/agent/message/proto/v3/asset/ip/v6/v6.proto";
-import "ostorlab/agent/message/proto/v3/asset/network/network.proto";
 
 package ostorlab.agent.message.proto.v3.asset.multi_asset;
 
@@ -44,6 +43,5 @@ message Message {
   repeated ostorlab.agent.message.proto.v3.asset.ip.Message ips = 16;
   repeated ostorlab.agent.message.proto.v3.asset.ip.v4.Message ipv4s = 17;
   repeated ostorlab.agent.message.proto.v3.asset.ip.v6.Message ipv6s = 18;
-  repeated ostorlab.agent.message.proto.v3.asset.network.Message networks = 19;
   repeated ostorlab.agent.message.proto.v3.asset.file.api_schema.Message api_schemas = 20;
 }

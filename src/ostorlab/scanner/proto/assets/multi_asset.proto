@@ -16,7 +16,6 @@ import "ostorlab/scanner/proto/assets/api_schema.proto";
 import "ostorlab/scanner/proto/assets/repository.proto";
 import "ostorlab/scanner/proto/assets/repository_archive.proto";
 import "ostorlab/scanner/proto/assets/link.proto";
-import "ostorlab/scanner/proto/assets/network.proto";
 import "ostorlab/scanner/proto/assets/ip.proto";
 import "ostorlab/scanner/proto/assets/v4.proto";
 import "ostorlab/scanner/proto/assets/v6.proto";
@@ -44,6 +43,5 @@ message Message {
   repeated ostorlab.scanner.proto.assets.ip.Message ips = 16;
   repeated ostorlab.scanner.proto.assets.v4.Message ipv4s = 17;
   repeated ostorlab.scanner.proto.assets.v6.Message ipv6s = 18;
-  repeated ostorlab.scanner.proto.assets.network.Message networks = 19;
   repeated ostorlab.scanner.proto.assets.api_schema.Message api_schemas = 20;
 }
