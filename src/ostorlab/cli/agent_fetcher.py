@@ -29,13 +29,16 @@ class AgentDetailsNotFound(Error):
     """Agent not found error."""
 
 
-def get_details(agent_key: str, use_experimental: bool = False) -> dict[str, Any]:
+def get_details(
+    agent_key: str, use_experimental: bool = False, api_key: str | None = None
+) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:
         agent_key: the agent key in the form : agent/org/name
         use_experimental: when True, the server includes experimental (prerelease)
             versions in the result set for this agent.
+        api_key: the API key for RE authentication
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
@@ -47,6 +50,8 @@ def get_details(agent_key: str, use_experimental: bool = False) -> dict[str, Any
 
     if config_manager.is_authenticated is True:
         runner = authenticated_runner.AuthenticatedAPIRunner()
+    elif api_key is not None:
+        runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
     else:
         runner = public_runner.PublicAPIRunner()
 
