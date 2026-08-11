@@ -38,6 +38,7 @@ def get_details(
         agent_key: the agent key in the form : agent/org/name
         use_experimental: when True, the server includes experimental (prerelease)
             versions in the result set for this agent.
+        api_key: the API key for RE authentication
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
