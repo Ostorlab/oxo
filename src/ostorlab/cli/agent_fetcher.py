@@ -29,7 +29,9 @@ class AgentDetailsNotFound(Error):
     """Agent not found error."""
 
 
-def get_details(agent_key: str, use_experimental: bool = False, api_key: str | None = None) -> dict[str, Any]:
+def get_details(
+    agent_key: str, use_experimental: bool = False, api_key: str | None = None
+) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:
