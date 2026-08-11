@@ -71,9 +71,7 @@ def testGetDetails_whenResponseHasNoErrors_returnsAgentDetails() -> None:
             assert result == {"key": "agent/ostorlab/nmap"}
 
 
-def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> (
-    None
-):
+def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> None:
     """Test that get_details builds the AuthenticatedAPIRunner with the provided api_key."""
     with mock.patch(
         "ostorlab.cli.agent_fetcher.configuration_manager.ConfigurationManager"
@@ -88,7 +86,9 @@ def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> (
             with mock.patch(
                 "ostorlab.cli.agent_fetcher.agent_details_api.AgentDetailsAPIRequest"
             ) as mock_request_cls:
-                result = agent_fetcher.get_details("agent/ostorlab/nmap", api_key="test-api-key")
+                result = agent_fetcher.get_details(
+                    "agent/ostorlab/nmap", api_key="test-api-key"
+                )
 
                 mock_runner_cls.assert_called_once_with(api_key="test-api-key")
                 mock_request_cls.assert_called_once_with(
