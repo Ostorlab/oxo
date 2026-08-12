@@ -6,6 +6,7 @@ import sys
 
 import pytest
 from click import testing as click_testing
+from google.cloud.logging import handlers as gcp_logging_handlers
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
@@ -314,3 +315,45 @@ def testStartScanner_whenNoGcpCredential_doesNotSetUpCloudLogging(
     _start_scanner_sync(mocker, gcp_logging_credential=None)
 
     assert client_mock.call_count == 0
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testStartScanner_whenInheritedCloudLoggingHandlerExists_removesItBeforeSetup(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The handler inherited from the forked parent has a dead transport and must be dropped."""
+    mocker.patch("google.oauth2.service_account.Credentials.from_service_account_info")
+    mocker.patch("google.cloud.logging.Client")
+    inherited_handler = gcp_logging_handlers.CloudLoggingHandler(
+        mocker.Mock(), transport=mocker.Mock()
+    )
+    root_logger = logging.getLogger()
+    root_logger.addHandler(inherited_handler)
+
+    try:
+        _start_scanner_sync(
+            mocker, gcp_logging_credential='{"project_id": "test-project"}'
+        )
+    finally:
+        root_logger.removeHandler(inherited_handler)
+
+    assert inherited_handler not in root_logger.handlers
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testStartScanner_whenGcpCredentialIsMalformed_doesNotCrashWorker(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A bad credential must not kill the worker process before the scan loop starts."""
+    start_scan_loop_mock = mocker.patch(
+        "ostorlab.cli.scanner.scanner.scan_handler.start_scan_loop"
+    )
+
+    scanner_cli.start_scanner(
+        api_key=None,
+        scanner_id="11226DS",
+        state_reporter=mocker.Mock(),
+        gcp_logging_credential="not-json",
+    )
+
+    assert start_scan_loop_mock.call_count == 1
