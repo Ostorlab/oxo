@@ -1,6 +1,7 @@
 """Unit tests for the ostorlab scanner subcommand."""
 
 import logging
+import os
 import sys
 
 import pytest
@@ -284,3 +285,32 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
     )
     assert scanner_log_file == str(log_file)
     assert scanner_log_level == logging.DEBUG
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testStartScanner_whenGcpCredentialProvided_setsUpLabeledCloudLoggingInWorker(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The worker process must set up its own Cloud Logging handler since the parent's does not survive the fork."""
+    mocker.patch("google.oauth2.service_account.Credentials.from_service_account_info")
+    client_mock = mocker.patch("google.cloud.logging.Client")
+
+    _start_scanner_sync(mocker, gcp_logging_credential='{"project_id": "test-project"}')
+
+    setup_logging_mock = client_mock.return_value.setup_logging
+    assert setup_logging_mock.call_count == 1
+    labels = setup_logging_mock.call_args.kwargs["labels"]
+    assert labels["scanner_id"] == "11226DS"
+    assert labels["pid"] == str(os.getpid())
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testStartScanner_whenNoGcpCredential_doesNotSetUpCloudLogging(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """No Cloud Logging setup should happen when no credential is passed down to the worker."""
+    client_mock = mocker.patch("google.cloud.logging.Client")
+
+    _start_scanner_sync(mocker, gcp_logging_credential=None)
+
+    assert client_mock.call_count == 0

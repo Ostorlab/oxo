@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import multiprocessing
 import os
@@ -56,6 +57,44 @@ def _configure_file_logging(
     if root_logger.level > log_level:
         root_logger.setLevel(log_level)
     logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
+
+
+def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) -> None:
+    """Attach a labeled Cloud Logging handler to the calling process.
+
+    The root CLI already sets up Cloud Logging, but its background transport thread does not survive the fork
+    performed to spawn the scan workers, so every worker must set up its own handler.
+    """
+    if gcp_logging_credential is None:
+        return
+
+    try:
+        import google.cloud.logging
+        from google.cloud.logging import handlers as gcp_handlers
+        from google.oauth2 import service_account
+    except ImportError:
+        logger.error(
+            "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
+        )
+        return
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        if isinstance(handler, gcp_handlers.CloudLoggingHandler):
+            root_logger.removeHandler(handler)
+
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(gcp_logging_credential)
+    )
+    client = google.cloud.logging.Client(credentials=credentials)
+    client.setup_logging(
+        labels={
+            "scanner_id": scanner_id,
+            "hostname": socket.gethostname(),
+            "pid": str(os.getpid()),
+        }
+    )
+    logger.info("Cloud Logging configured for scanner %s.", scanner_id)
 
 
 def _start_periodic_persist_state(
@@ -177,6 +216,7 @@ def start_scanner(
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     _configure_file_logging(log_file, log_level)
+    _configure_gcp_logging(gcp_logging_credential, scanner_id)
     if api_key is None:
         logger.error("No api key provided.")
 
