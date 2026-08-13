@@ -303,6 +303,7 @@ def testStartScanner_whenGcpCredentialProvided_setsUpLabeledCloudLoggingInWorker
     labels = setup_logging_mock.call_args.kwargs["labels"]
     assert labels["scanner_id"] == "11226DS"
     assert labels["pid"] == str(os.getpid())
+    assert client_mock.call_args.kwargs["_use_grpc"] is False
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
