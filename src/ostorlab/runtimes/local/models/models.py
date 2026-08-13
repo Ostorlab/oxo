@@ -97,6 +97,7 @@ class Database:
             pathlib.Path(__file__).parent.absolute() / "alembic.ini"
         )
         self._alembic_cfg = config.Config(str(self._alembic_ini_path))
+        self._alembic_cfg.attributes["configure_logger"] = False
 
     def __enter__(self) -> orm.Session:
         """Context manager enter method, responsible for migrating the local database and returning a session object."""
