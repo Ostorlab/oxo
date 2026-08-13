@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import multiprocessing
 import os
@@ -11,6 +12,19 @@ import threading
 import time
 
 import click
+
+try:
+    from google.api_core import exceptions as google_api_exceptions
+    from google.auth import exceptions as google_auth_exceptions
+    from google.cloud import logging as gcp_logging
+    from google.cloud.logging import handlers as gcp_logging_handlers
+    from google.oauth2 import service_account
+except ImportError:
+    google_api_exceptions = None
+    google_auth_exceptions = None
+    gcp_logging = None
+    gcp_logging_handlers = None
+    service_account = None
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
@@ -56,6 +70,57 @@ def _configure_file_logging(
     if root_logger.level > log_level:
         root_logger.setLevel(log_level)
     logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
+
+
+def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) -> None:
+    """Attach a labeled Cloud Logging handler to the calling process.
+
+    The root CLI already sets up Cloud Logging, but its background transport thread does not survive the fork
+    performed to spawn the scan workers, so every worker must set up its own handler.
+    """
+    if gcp_logging_credential is None:
+        return
+
+    if (
+        gcp_logging is None
+        or gcp_logging_handlers is None
+        or service_account is None
+        or google_api_exceptions is None
+        or google_auth_exceptions is None
+    ):
+        logger.error(
+            "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
+        )
+        return
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        if isinstance(handler, gcp_logging_handlers.CloudLoggingHandler):
+            root_logger.removeHandler(handler)
+
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(gcp_logging_credential)
+        )
+        client = gcp_logging.Client(credentials=credentials)
+        client.setup_logging(
+            labels={
+                "scanner_id": scanner_id,
+                "hostname": socket.gethostname(),
+                "pid": str(os.getpid()),
+            }
+        )
+    except (
+        ValueError,
+        google_auth_exceptions.GoogleAuthError,
+        google_api_exceptions.GoogleAPIError,
+    ):
+        logger.exception(
+            "Could not configure Cloud Logging, scanner logs will only be persisted locally."
+        )
+        return
+
+    logger.info("Cloud Logging configured for scanner %s.", scanner_id)
 
 
 def _start_periodic_persist_state(
@@ -177,6 +242,7 @@ def start_scanner(
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     _configure_file_logging(log_file, log_level)
+    _configure_gcp_logging(gcp_logging_credential, scanner_id)
     if api_key is None:
         logger.error("No api key provided.")
 
