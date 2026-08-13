@@ -40,6 +40,8 @@ class Console:
             text: The success text to show.
         """
         self._console.print(f":heavy_check_mark: {text}", style="success")
+        if self._logger is not None:
+            self._logger.info(text)
 
     def error(self, text: str) -> None:
         """Shows error message.
