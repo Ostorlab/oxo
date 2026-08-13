@@ -671,3 +671,11 @@ def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(caplog) -> None:
         local_runtime.console.info("Creating network")
 
     assert "Creating network" in caplog.text
+
+
+def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(caplog) -> None:
+    """Terminal lifecycle messages are reported as success and must reach the logging handlers too."""
+    with caplog.at_level(logging.INFO):
+        local_runtime.console.success("Scan created successfully")
+
+    assert "Scan created successfully" in caplog.text
