@@ -46,7 +46,7 @@ ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sq
 OSTORLAB_BASE_MIGRATION_ID = "35cd577ef0e5"
 
 logger = logging.getLogger(__name__)
-console = cli_console.Console()
+console = cli_console.Console(logger=logger)
 MIGRATION_LOCK = threading.Lock()
 
 convention = {

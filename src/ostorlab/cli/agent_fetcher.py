@@ -17,8 +17,8 @@ from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.utils import version as version_definition
 
-console = cli_console.Console()
 logger = logging.getLogger(__name__)
+console = cli_console.Console(logger=logger)
 
 
 class Error(Exception):

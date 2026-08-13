@@ -1,5 +1,6 @@
 """Unittest for local runtime."""
 
+import logging
 from typing import Any
 
 import docker
@@ -662,3 +663,11 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+
+
+def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(caplog) -> None:
+    """Scan lifecycle messages must reach the logging handlers, not only stdout."""
+    with caplog.at_level(logging.INFO):
+        local_runtime.console.info("Creating network")
+
+    assert "Creating network" in caplog.text
