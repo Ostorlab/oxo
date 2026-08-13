@@ -38,7 +38,7 @@ from ostorlab.utils import risk_rating, styles, volumes
 NETWORK_PREFIX = "ostorlab_local_network"
 
 logger = logging.getLogger(__name__)
-console = cli_console.Console()
+console = cli_console.Console(logger=logger)
 
 ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
