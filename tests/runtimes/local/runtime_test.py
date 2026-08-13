@@ -665,8 +665,18 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
 
 
+def _enable_runtime_logger() -> None:
+    """Re-enable the runtime logger.
+
+    Running migrations in-process lets alembic's `fileConfig` disable the already existing loggers, so any earlier
+    test touching the local database leaves this one disabled.
+    """
+    logging.getLogger(local_runtime.__name__).disabled = False
+
+
 def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(caplog) -> None:
     """Scan lifecycle messages must reach the logging handlers, not only stdout."""
+    _enable_runtime_logger()
     with caplog.at_level(logging.INFO):
         local_runtime.console.info("Creating network")
 
@@ -675,6 +685,7 @@ def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(caplog) -> None:
 
 def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(caplog) -> None:
     """Terminal lifecycle messages are reported as success and must reach the logging handlers too."""
+    _enable_runtime_logger()
     with caplog.at_level(logging.INFO):
         local_runtime.console.success("Scan created successfully")
 
