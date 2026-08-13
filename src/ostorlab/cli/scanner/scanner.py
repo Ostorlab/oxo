@@ -102,7 +102,9 @@ def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) 
         credentials = service_account.Credentials.from_service_account_info(
             json.loads(gcp_logging_credential)
         )
-        client = gcp_logging.Client(credentials=credentials)
+        # The gRPC channel opened by the parent process does not survive the fork, and reusing it silently
+        # drops every record, so workers ship over HTTP instead.
+        client = gcp_logging.Client(credentials=credentials, _use_grpc=False)
         client.setup_logging(
             labels={
                 "scanner_id": scanner_id,
