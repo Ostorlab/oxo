@@ -714,10 +714,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
         "asset": {
             "__typename": "NetworkAssetType",
             "networks": [
-                {"host": "8.8.8.8"},
-                {"host": "127.0.0.1"},
-                {"host": "2001:db8::"},
-                {"host": "192.168.1.1", "mask": "24"},
+               "18.2.46.129/32", "13.8.98.58/32"
             ],
         },
     }
