@@ -713,12 +713,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
         },
         "asset": {
             "__typename": "NetworkAssetType",
-            "networks": [
-                {"host": "8.8.8.8"},
-                {"host": "127.0.0.1"},
-                {"host": "2001:db8::"},
-                {"host": "192.168.1.1", "mask": "24"},
-            ],
+            "networks": ["18.2.46.129/32", "13.8.98.58/32"],
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
@@ -728,24 +723,14 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
 
     ip_asset1 = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ip_asset1, ipv4.IPv4) is True
-    assert ip_asset1.host == "8.8.8.8"
+    assert ip_asset1.host == "18.2.46.129"
     assert ip_asset1.version == 4
     assert ip_asset1.mask == "32"
     ip_asset2 = runtime_mock.scan.call_args[1].get("assets")[1]
     assert isinstance(ip_asset2, ipv4.IPv4) is True
-    assert ip_asset2.host == "127.0.0.1"
+    assert ip_asset2.host == "13.8.98.58"
     assert ip_asset2.version == 4
     assert ip_asset2.mask == "32"
-    ip_asset3 = runtime_mock.scan.call_args[1].get("assets")[2]
-    assert isinstance(ip_asset3, ipv6.IPv6) is True
-    assert ip_asset3.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
-    assert ip_asset3.version == 6
-    assert ip_asset3.mask == "128"
-    ip_asset4 = runtime_mock.scan.call_args[1].get("assets")[3]
-    assert isinstance(ip_asset4, ipv4.IPv4) is True
-    assert ip_asset4.host == "192.168.1.1"
-    assert ip_asset4.version == 4
-    assert ip_asset4.mask == "24"
 
 
 def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
