@@ -175,7 +175,8 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
         return [_prepare_ip_asset(ip_asset_value=kwargs)]
     elif typename == "NetworkAssetType":
         return [
-            _prepare_network_asset(netwrok_asset_value=network) for network in kwargs.get("networks") or []
+            _prepare_network_asset(netwrok_asset_value=network)
+            for network in kwargs.get("networks") or []
         ]
     elif typename == "UrlAssetType":
         return [
