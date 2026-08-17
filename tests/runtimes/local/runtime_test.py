@@ -1,5 +1,6 @@
 """Unittest for local runtime."""
 
+import logging
 from typing import Any
 
 import docker
@@ -662,3 +663,37 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+
+
+@pytest.fixture
+def runtime_logger() -> Any:
+    """Yield the runtime logger enabled, and restore its state afterwards.
+
+    Running migrations in-process lets alembic's `fileConfig` disable the already existing loggers, so the state of
+    this logger depends on whether an earlier test touched the local database.
+    """
+    logger = logging.getLogger(local_runtime.__name__)
+    was_disabled = logger.disabled
+    logger.disabled = False
+    yield logger
+    logger.disabled = was_disabled
+
+
+def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(
+    caplog, runtime_logger
+) -> None:
+    """Scan lifecycle messages must reach the logging handlers, not only stdout."""
+    with caplog.at_level(logging.INFO):
+        local_runtime.console.info("Creating network")
+
+    assert "Creating network" in caplog.text
+
+
+def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(
+    caplog, runtime_logger
+) -> None:
+    """Terminal lifecycle messages are reported as success and must reach the logging handlers too."""
+    with caplog.at_level(logging.INFO):
+        local_runtime.console.success("Scan created successfully")
+
+    assert "Scan created successfully" in caplog.text

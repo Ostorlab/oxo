@@ -1,11 +1,13 @@
 """Unit tests for the ostorlab scanner subcommand."""
 
+import inspect
 import logging
 import os
 import sys
 
 import pytest
 from click import testing as click_testing
+from google.cloud import logging as gcp_logging
 from google.cloud.logging import handlers as gcp_logging_handlers
 from pytest_mock import plugin
 
@@ -303,6 +305,7 @@ def testStartScanner_whenGcpCredentialProvided_setsUpLabeledCloudLoggingInWorker
     labels = setup_logging_mock.call_args.kwargs["labels"]
     assert labels["scanner_id"] == "11226DS"
     assert labels["pid"] == str(os.getpid())
+    assert client_mock.call_args.kwargs["_use_grpc"] is False
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
@@ -357,3 +360,15 @@ def testStartScanner_whenGcpCredentialIsMalformed_doesNotCrashWorker(
     )
 
     assert start_scan_loop_mock.call_count == 1
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testCloudLoggingClient_always_acceptsDisablingGrpcTransport() -> None:
+    """Workers disable the fork-unsafe gRPC transport through a private parameter of the client.
+
+    The client is mocked in the tests above, so a mock would happily accept a parameter the library no longer
+    supports. Assert against the real signature instead, to fail on upgrade rather than silently dropping logs.
+    """
+    parameters = inspect.signature(gcp_logging.Client.__init__).parameters
+
+    assert "_use_grpc" in parameters
