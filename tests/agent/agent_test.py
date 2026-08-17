@@ -553,6 +553,176 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
     assert "Hello, can you hear me?" in logger_error.call_args_list[1][0][2]
 
 
+def testProcessMessage_whenTransientNetworkError_shouldRetryAndRecover(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A transient network error is retried and the message is processed when the error clears."""
+
+    import httpx
+
+    mocker.patch("time.sleep")
+    logger_error = mocker.patch("logging.Logger.error")
+    logger_warning = mocker.patch("logging.Logger.warning")
+
+    call_count = 0
+
+    class TestAgent(agent.Agent):
+        """Helper class to test transient error retry."""
+
+        def process(self, message: agent_message.Message) -> None:
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise httpx.ConnectError("Name or service not known")
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {"body": "Hello, can you hear me?"},
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert call_count == 3
+    assert logger_error.call_count == 0
+    assert logger_warning.call_count == 2
+
+
+def testProcessMessage_whenTransientNetworkErrorPersists_shouldLogErrorAfterRetries(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A persistent transient network error is retried then logged and dropped, keeping the agent alive."""
+
+    import httpx
+
+    mocker.patch("time.sleep")
+    logger_error = mocker.patch("logging.Logger.error")
+
+    call_count = 0
+
+    class TestAgent(agent.Agent):
+        """Helper class to test persistent transient error handling."""
+
+        def process(self, message: agent_message.Message) -> None:
+            nonlocal call_count
+            call_count += 1
+            raise httpx.ConnectError("Name or service not known")
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {"body": "Hello, can you hear me?"},
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert call_count == agent.PROCESS_TRANSIENT_RETRY_ATTEMPTS
+    assert any(
+        "Error processing message on selector %s" in c[0][0]
+        for c in logger_error.call_args_list
+    )
+
+
+def testProcessMessage_whenLLMSdkWrapsConnectionError_shouldRetry(
+    agent_run_mock: agent_testing.AgentRunInstance,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An LLM SDK wrapping a connection error in its own exception (chained via __cause__) is treated as transient."""
+
+    import httpx
+
+    mocker.patch("time.sleep")
+
+    class LiteLLMConnectionError(Exception):
+        """Mimics litellm.APIError wrapping an openai.APIConnectionError."""
+
+    call_count = 0
+
+    class TestAgent(agent.Agent):
+        """Helper class to test chained-cause transient detection."""
+
+        def process(self, message: agent_message.Message) -> None:
+            nonlocal call_count
+            call_count += 1
+            if call_count < 2:
+                try:
+                    raise httpx.ConnectError("[Errno -2] Name or service not known")
+                except httpx.ConnectError as exc:
+                    raise LiteLLMConnectionError("Connection error.") from exc
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="agentX",
+        out_selectors=["v3.report.vulnerability"],
+    )
+    agent_settings = runtime_definitions.AgentSettings.from_proto(
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ).to_raw_proto()
+    )
+    test_agent = TestAgent(
+        agent_definition=agent_definition, agent_settings=agent_settings
+    )
+    actual_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping",
+        {"body": "Hello, can you hear me?"},
+    )
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": ["agentY"]},
+            "message": actual_message.raw,
+        },
+    )
+
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
+
+    assert call_count == 2
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="Does not run on windows")
 def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtExistAndExit(
     agent_run_mock: agent_testing.AgentRunInstance,
