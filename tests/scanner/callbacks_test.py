@@ -713,9 +713,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
         },
         "asset": {
             "__typename": "NetworkAssetType",
-            "networks": [
-               "18.2.46.129/32", "13.8.98.58/32"
-            ],
+            "networks": ["18.2.46.129/32", "13.8.98.58/32"],
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
