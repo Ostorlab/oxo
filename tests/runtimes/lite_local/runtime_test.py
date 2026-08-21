@@ -463,6 +463,59 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
     assert f"SERVICE_NAME={service_name}" in kwargs["env"]
 
 
+def testLiteLocalCreateAgentService_whenFireworksApiKeyIsSet_envVarPassedToService(
+    mocker,
+) -> None:
+    """FIREWORKS_API_KEY set in the host environment is forwarded to the agent container."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        service_name="my_explicit_service",
+        mounts=[],
+        mem_limit=420000,
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    docker_client = mocker.MagicMock()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+        labels={},
+    )
+    mocker.patch.dict("os.environ", {"FIREWORKS_API_KEY": "fw-test-key"}, clear=False)
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = docker_client.services.create.call_args.kwargs
+    assert "FIREWORKS_API_KEY=fw-test-key" in kwargs["env"]
+
+
 def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUniverseToEnv(
     mocker: plugin.MockerFixture,
 ):
