@@ -10,6 +10,7 @@ import base64
 import hashlib
 import io
 import logging
+import os
 import random
 import uuid
 
@@ -35,6 +36,22 @@ HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = 60 * SECOND
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
+
+PASSTHROUGH_ENV_VARS = ("FIREWORKS_API_KEY",)
+
+
+def _passthrough_env_vars() -> list[str]:
+    """Build the list of host environment variables forwarded to agent containers.
+
+    Returns:
+        List of ``NAME=value`` entries for every standard pass-through variable set in the
+        host environment, e.g. the Fireworks AI API key used by LLM agents.
+    """
+    return [
+        f"{env_var}={value}"
+        for env_var in PASSTHROUGH_ENV_VARS
+        if (value := os.environ.get(env_var)) is not None
+    ]
 
 
 class Error(exceptions.OstorlabError):
@@ -423,6 +440,7 @@ class AgentRuntime:
             f"SERVICE_NAME={docker_service_name}",
             f"HOST_HOSTNAME={self._host_hostname}",
         ]
+        env.extend(_passthrough_env_vars())
 
         if self._gcp_logging_credential is not None:
             env.append(

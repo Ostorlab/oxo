@@ -10,6 +10,7 @@ import abc
 import argparse
 import asyncio
 import base64
+import functools
 import json
 import logging
 import os
@@ -19,6 +20,9 @@ import sys
 import threading
 import uuid
 from typing import Any
+
+import httpx
+import tenacity
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
@@ -33,7 +37,98 @@ GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
 
 AGENT_DEFINITION_PATH = "/tmp/ostorlab.yaml"
 
+PROCESS_TRANSIENT_RETRY_ATTEMPTS = 3
+PROCESS_TRANSIENT_RETRY_MIN_WAIT = 1.0
+PROCESS_TRANSIENT_RETRY_MAX_WAIT = 10.0
+
+TRANSIENT_NETWORK_ERRORS: tuple[type[BaseException], ...] = (
+    httpx.ConnectError,
+    httpx.ReadError,
+    httpx.WriteError,
+    httpx.RemoteProtocolError,
+    httpx.ConnectTimeout,
+    httpx.ReadTimeout,
+    httpx.WriteTimeout,
+    httpx.PoolTimeout,
+    ConnectionError,
+    OSError,
+    TimeoutError,
+    asyncio.TimeoutError,
+)
+
+TRANSIENT_HTTP_STATUS_CODES = frozenset({httpx.codes.TOO_MANY_REQUESTS, 503})
+
 logger = logging.getLogger(__name__)
+
+
+def _exception_http_status_code(exception: BaseException) -> int | None:
+    """Return the HTTP status code carried by an exception, or ``None``.
+
+    LLM SDKs (openai, litellm, pydantic_ai) expose the HTTP status of a failed call either
+    as a ``status_code`` attribute or through the attached httpx ``response``. Duck-typing
+    keeps the detection working for every OpenAI-compatible provider (Fireworks, OpenRouter,
+    ...) without depending on those SDKs.
+
+    Args:
+        exception: Exception possibly carrying an HTTP status code.
+
+    Returns:
+        The HTTP status code or ``None`` when the exception carries none.
+    """
+    if isinstance(exception, httpx.HTTPStatusError):
+        return exception.response.status_code
+    status_code = getattr(exception, "status_code", None)
+    if isinstance(status_code, int):
+        return status_code
+    response = getattr(exception, "response", None)
+    response_status_code = getattr(response, "status_code", None)
+    if isinstance(response_status_code, int):
+        return response_status_code
+    return None
+
+
+def _is_transient_network_error(exception: BaseException) -> bool:
+    """Return ``True`` when the exception or any exception in its chain is transient.
+
+    LLM SDKs (litellm, openai, pydantic_ai) and HTTP libraries wrap low-level connection
+    failures in their own exception types while chaining the original httpx/socket error via
+    ``__cause__``. Walking that chain lets the framework detect transient connection errors
+    without depending on every wrapping library.
+
+    Transient errors include connection failures, timeouts, and rate limits or server errors
+    reported by LLM providers such as Fireworks (HTTP 429 and 503) through their
+    OpenAI-compatible APIs.
+
+    Args:
+        exception: Exception raised while processing a message.
+
+    Returns:
+        ``True`` if the exception is a transient network error, ``False`` otherwise.
+    """
+    seen: set[int] = set()
+    current: BaseException | None = exception
+    while current is not None and id(current) not in seen:
+        if isinstance(current, TRANSIENT_NETWORK_ERRORS):
+            return True
+        if _exception_http_status_code(current) in TRANSIENT_HTTP_STATUS_CODES:
+            return True
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def _log_transient_retry(selector: str, retry_state: tenacity.RetryCallState) -> None:
+    """Log a transient network error retry attempt before sleeping."""
+    outcome = retry_state.outcome
+    exception = outcome.exception() if outcome is not None else None
+    logger.warning(
+        "Transient network error processing message on selector %s, "
+        "retrying (attempt %s/%s): %s",
+        selector,
+        retry_state.attempt_number,
+        PROCESS_TRANSIENT_RETRY_ATTEMPTS,
+        exception,
+    )
 
 
 class NonListedMessageSelectorError(exceptions.OstorlabError):
@@ -251,7 +346,21 @@ class AgentMixin(
 
         try:
             logger.debug("Call to process with message= %s", raw_message)
-            self.process(object_message)
+            for attempt in tenacity.Retrying(
+                stop=tenacity.stop_after_attempt(PROCESS_TRANSIENT_RETRY_ATTEMPTS),
+                wait=tenacity.wait_exponential(
+                    multiplier=1,
+                    min=PROCESS_TRANSIENT_RETRY_MIN_WAIT,
+                    max=PROCESS_TRANSIENT_RETRY_MAX_WAIT,
+                ),
+                retry=tenacity.retry_if_exception(_is_transient_network_error),
+                before_sleep=functools.partial(
+                    _log_transient_retry, object_message.selector
+                ),
+                reraise=True,
+            ):
+                with attempt:
+                    self.process(object_message)
         except Exception:
             system_info = system.get_system_info()
             if system_info is not None:
