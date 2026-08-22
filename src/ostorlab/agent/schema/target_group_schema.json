@@ -65,6 +65,33 @@
         }
       }
     },
+    "iosTestflightType": {
+      "description": "[Optional] - Ios Testflight app Store asset.",
+      "type": "object",
+      "properties": {
+        "application_url": {
+          "description": "[Required] - TestFlight application link.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "application_url"
+      ]
+    },
+    "fileType": {
+      "description": "[Optional] - Generic file asset.",
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "[Optional] - File path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "[Optional] - File link.",
+          "type": "string"
+        }
+      }
+    },
     "linkType": {
       "description": "[Optional] - Link asset.",
       "type": "object",
@@ -280,6 +307,12 @@
         },
         "iosStore": {
           "$ref": "#/CustomTypes/iosStoreType"
+        },
+        "iosTestflight": {
+          "$ref": "#/CustomTypes/iosTestflightType"
+        },
+        "file": {
+          "$ref": "#/CustomTypes/fileType"
         },
         "androidApkFile": {
           "$ref": "#/CustomTypes/androidApkFileType"

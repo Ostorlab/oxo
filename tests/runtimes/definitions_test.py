@@ -11,6 +11,7 @@ from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import file as file_asset
 from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
 from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
 from ostorlab.assets import harmonyos_app as harmonyos_app_asset
@@ -19,6 +20,7 @@ from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ios_testflight as ios_testflight_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import repository as repository_asset
@@ -571,7 +573,6 @@ assets:
     assert assets == asset_group_def.targets
 
 
-
 def testAssetGroupDefinitionFromYaml_whenRiskAssetsProvided_returnsRiskAssets():
     """Tests parsing a target group with multiple risk assets embedding different targets."""
     valid_yaml = """
@@ -1032,6 +1033,89 @@ assets:
     assert risk.harmonyos_rpk == harmonyos_rpk_asset.HarmonyOSRpk(
         content=None, path=None, content_url="https://storage.example.com/app.rpk"
     )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsIosTestflight_parsesIosTestflightTarget():
+    """Tests that a risk embedding an iOS TestFlight link is parsed into an ios_testflight target."""
+    valid_yaml = """
+description: Target group with an iOS TestFlight risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable TestFlight app
+        iosTestflight:
+            application_url: https://testflight.apple.com/join/abc123
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.ios_testflight == ios_testflight_asset.IOSTestflight(
+        application_url="https://testflight.apple.com/join/abc123"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsFile_parsesFileTarget():
+    """Tests that a risk embedding a generic file by url is parsed into a file target."""
+    valid_yaml = """
+description: Target group with a generic file risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: MEDIUM
+        description: Vulnerable generic file
+        file:
+            url: https://storage.example.com/data.bin
+"""
+
+    asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    risk = asset_group_def.targets[0]
+    assert risk.file == file_asset.File(
+        content=None, path=None, content_url="https://storage.example.com/data.bin"
+    )
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskIosTestflightMissingUrl_raisesValidationError():
+    """Tests that an iOS TestFlight risk with no application_url is rejected."""
+    invalid_yaml = """
+description: Target group with an empty iOS TestFlight risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable app
+        iosTestflight: {}
+"""
+
+    with pytest.raises(
+        validator.ValidationError,
+        match="requires a application_url|is a required property",
+    ):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAssetGroupDefinitionFromYaml_whenRiskFileMissingPathAndUrl_raisesValidationError():
+    """Tests that a file risk with neither path nor url is rejected."""
+    invalid_yaml = """
+description: Target group with an empty file risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable file
+        file: {}
+"""
+
+    with pytest.raises(
+        validator.ValidationError, match="requires either a valid path or a url"
+    ):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
 def testAssetGroupDefinitionFromYaml_whenRiskHarmonyosStoreMissingBundle_raisesValidationError():

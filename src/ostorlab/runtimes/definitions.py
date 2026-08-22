@@ -48,6 +48,8 @@ _RISK_TARGET_KEYS = (
     "apiSchema",
     "androidStore",
     "iosStore",
+    "iosTestflight",
+    "file",
     "androidApkFile",
     "androidAabFile",
     "iosFile",
@@ -886,6 +888,19 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     if risk_entry.get("iosStore") is not None:
         risk_kwargs["ios_store"] = ios_store_asset.IOSStore(
             bundle_id=_resolve_risk_target_field(risk_entry, "iosStore", "bundle_id")
+        )
+
+    if risk_entry.get("iosTestflight") is not None:
+        risk_kwargs["ios_testflight"] = ios_testflight_asset.IOSTestflight(
+            application_url=_resolve_risk_target_field(
+                risk_entry, "iosTestflight", "application_url"
+            )
+        )
+
+    if risk_entry.get("file") is not None:
+        content, path, url = _resolve_risk_file_asset(risk_entry, "file")
+        risk_kwargs["file"] = file_asset.File(
+            content=content, path=path, content_url=url
         )
 
     if risk_entry.get("androidApkFile") is not None:
