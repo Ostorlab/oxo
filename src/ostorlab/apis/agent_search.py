@@ -1,7 +1,6 @@
 """Search agent API request."""
 
 import json
-from typing import Dict, Optional
 
 from ostorlab.apis import request
 
@@ -14,7 +13,7 @@ class AgentSearchAPIRequest(request.APIRequest):
         self._search = search
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """The query to fetch the agent details with an agent key.
 
         Returns:
@@ -41,7 +40,7 @@ class AgentSearchAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict | None:
         """Sets the body of the API request, to fetch the specific agent.
 
         Returns:

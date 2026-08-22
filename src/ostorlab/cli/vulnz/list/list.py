@@ -1,12 +1,11 @@
 """Vulnz List command."""
 
 import logging
-from typing import Optional
 
 import click
 
 from ostorlab.cli import console as cli_console
-from ostorlab.cli.vulnz import vulnz
+from ostorlab.cli.vulnz.vulnz import vulnz
 
 console = cli_console.Console()
 
@@ -34,8 +33,8 @@ logger = logging.getLogger(__name__)
 def list_cli(
     ctx: click.core.Context,
     scan_id: int,
-    risk_rating: Optional[str],
-    search: Optional[str],
+    risk_rating: str | None,
+    search: str | None,
     order_by: str,
 ) -> None:
     """CLI command to list vulnerabilities for a scan."""

@@ -3,12 +3,15 @@
 import docker
 import pytest
 from docker.models import services as services_model
+from pytest_mock import plugin
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
+from ostorlab.utils import definitions as utils_definitions
 
 
 def container_name_mock(name):
@@ -120,6 +123,79 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     docker_service_remove.assert_not_called()
 
 
+@pytest.mark.docker
+def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(mocker):
+    """Stopping a scan should remove only volumes labeled for that scan."""
+    matching_volume = mocker.MagicMock(
+        name="matching_volume",
+        attrs={"Labels": {"ostorlab.universe": "1"}},
+    )
+    other_volume = mocker.MagicMock(
+        name="other_volume",
+        attrs={"Labels": {"ostorlab.universe": "9999"}},
+    )
+
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch(
+        "docker.models.volumes.VolumeCollection.list",
+        return_value=[matching_volume, other_volume],
+    )
+
+    lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    ).stop(scan_id="1")
+
+    matching_volume.remove.assert_called_once_with(force=True)
+    other_volume.remove.assert_not_called()
+
+
+def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(mocker):
+    """Ensure LiteLocalRuntime.list() accepts the state parameter without TypeError."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+    with pytest.raises(NotImplementedError):
+        runtime.list(state="done")
+
+
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreatedWithAgentSettings(
     mocker,
 ):
@@ -178,6 +254,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -190,6 +267,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     assert (
         kwargs["name"] == "complex_long_name_special_duplicate_duplicate_name_agent_def"
     )
+    assert kwargs["container_labels"] == {"ostorlab.scan_id": "42"}
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
@@ -251,6 +329,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        labels={},
     )
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
@@ -259,7 +338,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
     assert kwargs["resources"]["Limits"]["MemoryBytes"] == 700000
     assert kwargs["mounts"] == ["settings_mount1"]
     assert kwargs["restart_policy"]["Condition"] == "on-failure"
-    assert "my_service_" in kwargs["name"]
+    assert "my_service" in kwargs["name"]
     assert kwargs["cap_add"] == ["NET_ADMIN"]
 
 
@@ -321,6 +400,7 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
         bus_exchange_topic="topic",
         redis_url="redis://redis",
         tracing_collector_url="jaeger://localhost/",
+        labels={},
     )
     runtime_agent.create_agent_service(
         network_name="test", extra_configs=[], replicas=3
@@ -328,3 +408,463 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
 
     kwargs = create_service_mock.call_args.kwargs
     assert kwargs["mode"] == {"replicated": {"Replicas": 3}}
+
+
+def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
+    mocker,
+) -> None:
+    """SERVICE_NAME env var must equal the docker service name so agents can label GCP logs."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        service_name="my_explicit_service",
+        mounts=[],
+        mem_limit=420000,
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    docker_client = mocker.MagicMock()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+        labels={},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = docker_client.services.create.call_args.kwargs
+    service_name = kwargs["name"]
+    assert f"SERVICE_NAME={service_name}" in kwargs["env"]
+
+
+def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUniverseToEnv(
+    mocker: plugin.MockerFixture,
+):
+    """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
+    mock_host_hostname = "test-mocked-hostname"
+    mocker.patch("docker.DockerClient.info", return_value={"Name": mock_host_hostname})
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=["def_mount1"],
+        mem_limit=420000,
+        service_name="test",
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        new_callable=mocker.PropertyMock,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+    mock_docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        mock_docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+
+    runtime_agent.create_agent_service(
+        network_name="test", extra_configs=[], replicas=3
+    )
+
+    create_service_mock.assert_called_once()
+    kwargs = create_service_mock.call_args.kwargs
+    env_vars = kwargs.get("env", [])
+    assert kwargs.get("mode") == {"replicated": {"Replicas": 3}}
+    assert any(env.startswith("UNIVERSE") for env in env_vars), (
+        "UNIVERSE not found in env variables"
+    )
+    assert f"HOST_HOSTNAME={mock_host_hostname}" in env_vars
+
+
+def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContainerLabels(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Container labels should be merged into the container_labels dict when provided."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config"
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config"
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+        labels={"ostorlab.reference_scan_id": "ref-123"},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["container_labels"]["ostorlab.reference_scan_id"] == "ref-123"
+    assert kwargs["container_labels"]["ostorlab.scan_id"] == "42"
+
+
+def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Missing shared scan volumes should be created and mounted per scan."""
+    mock_docker_client = mocker.MagicMock()
+    mock_docker_client.info.return_value = {"Name": "host"}
+    mock_docker_client.volumes.get.side_effect = [
+        docker.errors.NotFound("missing"),
+        mocker.MagicMock(),
+    ]
+    create_volume_mock = mock_docker_client.volumes.create
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mount_mock = mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.docker_types_services.Mount",
+        side_effect=["mount-1", "mount-2"],
+    )
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        ostorlab.runtimes.definitions.AgentSettings(key="agent/org/name"),
+        "scan-42",
+        mock_docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+        labels={},
+    )
+
+    mounts = runtime_agent.create_scan_volume_mounts(
+        [
+            utils_definitions.Volume(
+                name="repository_code", path="/code", read_only=False
+            ),
+            utils_definitions.Volume(name="shared_cache", path="/cache"),
+        ]
+    )
+
+    assert mounts == ["mount-1", "mount-2"]
+    mock_docker_client.volumes.get.assert_any_call("repository_code_scan-42")
+    mock_docker_client.volumes.get.assert_any_call("shared_cache_scan-42")
+    create_volume_mock.assert_called_once_with(
+        name="repository_code_scan-42",
+        labels={"ostorlab.universe": "scan-42"},
+    )
+    assert mount_mock.call_args_list[0].kwargs == {
+        "target": "/code",
+        "source": "repository_code_scan-42",
+        "type": "volume",
+        "read_only": False,
+    }
+
+
+def testLiteLocalRuntimeInit_always_setsMaxPoolSize(mocker):
+    """Test LiteLocalRuntime initializes docker client with increased pool size."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mock_from_env = mocker.patch("docker.from_env")
+
+    lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+    mock_from_env.assert_called_once_with(max_pool_size=100)
+
+
+def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettings(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that scan calls _inject_assets with None when assets are provided but cloud_inject_asset is missing."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once()
+    _, kwargs = mock_inject.call_args
+    assert kwargs["agent_settings"] is None
+
+
+def testLiteLocalRuntimeScan_whenAssetsProvidedAndAgentPresent_callsInjectAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that scan calls _inject_assets when assets and cloud_inject_asset are provided."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    agent_group = definitions.AgentGroupDefinition(agents=[agent_settings])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once_with(assets=assets, agent_settings=agent_settings)
+
+
+def testLiteLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that _inject_assets creates a volume and starts the agent."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent")
+
+    runtime._inject_assets(assets=assets, agent_settings=agent_settings)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    _args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"] == agent_settings
+    assert any(m["Target"] == "/asset" for m in kwargs["extra_mounts"])
+
+
+def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that _inject_assets uses default settings when agent_settings is None."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent")
+
+    runtime._inject_assets(assets=assets, agent_settings=None)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    _args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+    assert kwargs["agent"].restart_policy == "none"

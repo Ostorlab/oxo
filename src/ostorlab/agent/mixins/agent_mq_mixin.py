@@ -6,7 +6,6 @@ Definition of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
-from typing import List, Optional
 
 import aio_pika
 import tenacity
@@ -15,6 +14,7 @@ from aiormq import exceptions as aiormq_exceptions
 logger = logging.getLogger(__name__)
 NUMBER_RETRIES = 6
 WAIT_FIXED_TIME = 5
+DEFAULT_MAX_PRIORITY = 255
 
 
 class AgentMQMixin:
@@ -23,11 +23,10 @@ class AgentMQMixin:
     def __init__(
         self,
         name: str,
-        keys: List[str],
+        keys: list[str],
         url: str,
         topic: str,
-        max_priority: Optional[int] = None,
-        loop: Optional[asyncio.AbstractEventLoop] = None,
+        loop: asyncio.AbstractEventLoop | None = None,
     ):
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
         Args:
@@ -35,24 +34,33 @@ class AgentMQMixin:
             keys: Selectors that the queue listens to.
             url: string for the MQ url might contain ssl parameters e.g.`amqps://user:pass@host//`
             topic: string with exchange name
-            max_priority: Optional To declare a priority queue, it is a positive int [1, 255],
-             indicating the max priority the queue supports.
         """
         self._name = name
         self._keys = keys
         self._queue_name = f"{self._name}_queue"
         self._url = url
         self._topic = topic
-        self._loop = loop or asyncio.get_event_loop()
-        self._max_priority = max_priority
+        if loop is not None:
+            self._loop = loop
+        else:
+            try:
+                self._loop = asyncio.get_event_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-        self._queue: Optional[aio_pika.Queue] = None
+        self._queue: aio_pika.Queue | None = None
         self._connection_pool: aio_pika.pool.Pool[aio_pika.Connection] = (
             aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
         )
         self._channel_pool: aio_pika.pool.Pool[aio_pika.Channel] = aio_pika.pool.Pool(
             self._get_channel, max_size=64, loop=self._loop
         )
+
+    @property
+    def mq_name(self) -> str:
+        """Queue base name used for RabbitMQ queue registration."""
+        return self._name
 
     async def _get_connection(self) -> aio_pika.abc.AbstractRobustConnection:
         return await aio_pika.connect_robust(
@@ -114,17 +122,12 @@ class AgentMQMixin:
         if delete_queue_first:
             await channel.queue_delete(self._queue_name)
 
-        if self._max_priority is not None:
-            self._queue = await channel.declare_queue(
-                self._queue_name,
-                auto_delete=False,
-                durable=True,
-                arguments={"x-max-priority": self._max_priority},
-            )
-        else:
-            self._queue = await channel.declare_queue(
-                self._queue_name, auto_delete=False, durable=True
-            )
+        self._queue = await channel.declare_queue(
+            self._queue_name,
+            auto_delete=False,
+            durable=True,
+            arguments={"x-max-priority": DEFAULT_MAX_PRIORITY},
+        )
 
         if self._queue is None:
             raise ValueError("queue not declared.")
@@ -154,7 +157,7 @@ class AgentMQMixin:
         raise NotImplementedError()
 
     async def async_mq_send_message(
-        self, key: str, message: bytes, message_priority: Optional[int] = None
+        self, key: str, message: bytes, message_priority: int | None = None
     ) -> None:
         """Async Send the message to the provided routing key and its priority.
         Args:
@@ -187,7 +190,7 @@ class AgentMQMixin:
         reraise=True,
     )
     def mq_send_message(
-        self, key: str, message: bytes, message_priority: Optional[int] = None
+        self, key: str, message: bytes, message_priority: int | None = None
     ) -> None:
         """The method sends the message to the selected key with the defined priority in async mode .
         Args:

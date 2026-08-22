@@ -1,12 +1,10 @@
 """Jaeger service to collect Agent traces."""
 
 import logging
-from typing import Dict, Optional
 
 import docker
 import tenacity
-from docker import errors
-from docker import types
+from docker import errors, types
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -17,11 +15,14 @@ DEFAULT_EXPOSED_PORTS = {
     6831: 6831,
     6832: 6832,
     5778: 5778,
+    4317: 4317,
+    4318: 4318,
     16686: 16686,
     14268: 14268,
     9411: 9411,
 }
-DEFAULT_JAEGER_PORT = 6831
+# OTLP gRPC port for agent tracing exporter.
+DEFAULT_JAEGER_PORT = 4317
 DEFAULT_JAEGER_UI_PORT = 16686
 
 
@@ -32,7 +33,7 @@ class LocalJaeger:
         self,
         name: str,
         network: str,
-        exposed_ports: Dict[int, int] = None,
+        exposed_ports: dict[int, int] | None = None,
         image: str = JAEGER_IMAGE,
     ) -> None:
         """Initialize the Jaeger service parameters.
@@ -72,7 +73,7 @@ class LocalJaeger:
         self._create_network()
         self._jaeger_service = self._start_jaeger()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the local Jaeger instance."""
         for service in self._docker_client.services.list():
             universe = service.attrs["Spec"]["Labels"].get("ostorlab.universe")
@@ -99,7 +100,7 @@ class LocalJaeger:
                 check_duplicate=True,
             )
 
-    def _start_jaeger(self) -> Optional[services.Service]:
+    def _start_jaeger(self) -> services.Service | None:
         try:
             logger.info("starting Jaeger")
             endpoint_spec = types.services.EndpointSpec(

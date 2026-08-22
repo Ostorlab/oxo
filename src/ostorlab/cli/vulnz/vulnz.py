@@ -33,4 +33,3 @@ def vulnz(ctx, runtime: str = "local") -> None:
         raise click.ClickException(
             f"The selected runtime {runtime} is not supported."
         ) from e
-    pass

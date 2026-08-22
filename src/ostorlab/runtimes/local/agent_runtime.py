@@ -11,20 +11,16 @@ import io
 import logging
 import random
 import uuid
-from typing import List, Optional
 
 import docker
-from docker import constants
-from docker import errors
+from docker import constants, errors
 from docker.types import services as docker_types_services
 
-from ostorlab import configuration_manager
-from ostorlab import exceptions
+from ostorlab import configuration_manager, exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
-from ostorlab.runtimes.local.services import jaeger
-from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local.services import redis
+from ostorlab.runtimes.local.services import jaeger, mq, redis
+from ostorlab.utils import definitions as utils_definitions
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +44,10 @@ class Error(exceptions.OstorlabError):
 class MissingAgentDefinitionLabel(Error):
     """Agent definition label is missing from the agent image. This is likely due to the agent built directly with a
     docker command and not agent build."""
+
+
+class ServiceNameTooLong(Error):
+    """Raised when the agent definition service_name exceeds the maximum allowed length."""
 
 
 def _parse_mount_string_windows(string):
@@ -79,7 +79,7 @@ def _parse_mount_string_windows(string):
                 # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
                 source = f"/{source}"
                 mount_type = "bind"
-            read_only = not parts[2] == "rw"
+            read_only = parts[2] != "rw"
             return docker_types_services.Mount(
                 target, source, read_only=read_only, type=mount_type
             )
@@ -150,7 +150,8 @@ class AgentRuntime:
         mq_service: mq.LocalRabbitMQ,
         redis_service: redis.LocalRedis,
         jaeger_service: jaeger.LocalJaeger,
-        gcp_logging_credential: Optional[str] = None,
+        gcp_logging_credential: str | None = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -165,10 +166,12 @@ class AgentRuntime:
         self.agent = agent_settings
         self.image_name = agent_settings.container_image.split(":", maxsplit=1)[0]
         self.runtime_name = runtime_name
+        self.labels = labels if labels is not None else {}
         self.mq_service = mq_service
         self.redis_service = redis_service
         self.jaeger_service = jaeger_service
         self._gcp_logging_credential = gcp_logging_credential
+        self._host_hostname = self._docker_client.info().get("Name")
         self.update_agent_settings()
 
     def create_settings_config(self) -> docker.types.ConfigReference:
@@ -185,12 +188,10 @@ class AgentRuntime:
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
-            logging.warning(
-                "found existing config %s, config will removed", config_name
-            )
+            logger.warning("found existing config %s, config will removed", config_name)
             settings_config.remove()
         except docker.errors.NotFound:
-            logging.debug("all good, config %s is new", config_name)
+            logger.debug("all good, config %s is new", config_name)
 
         docker_config = self._docker_client.configs.create(
             name=config_name,
@@ -219,12 +220,10 @@ class AgentRuntime:
 
         try:
             settings_config = self._docker_client.configs.get(config_name)
-            logging.warning(
-                "found existing config %s, config will removed", config_name
-            )
+            logger.warning("found existing config %s, config will removed", config_name)
             settings_config.remove()
         except docker.errors.NotFound:
-            logging.debug("all good, config %s is new", config_name)
+            logger.debug("all good, config %s is new", config_name)
 
         docker_config = self._docker_client.configs.create(
             name=config_name,
@@ -281,7 +280,7 @@ class AgentRuntime:
         )
         return healthcheck
 
-    def replace_variable_mounts(self, mounts: List[str]):
+    def replace_variable_mounts(self, mounts: list[str]):
         """Replace path variables for the container mounts
 
         Args:
@@ -295,11 +294,46 @@ class AgentRuntime:
             replaced_mounts.append(mount)
         return replaced_mounts
 
+    def create_scan_volume_mounts(
+        self, volumes: list[utils_definitions.Volume]
+    ) -> list[docker.types.Mount]:
+        """Ensure each declared shared scan volume exists and build its mount.
+
+        Agents declaring the same logical volume name share a single per-scan
+        Docker volume, named `{name}_{runtime_name}`. The volume is created
+        empty on first use; later writes by any agent are visible to all.
+
+        Args:
+            volumes: Shared scan volumes declared in the agent definition.
+
+        Returns:
+            List of docker Mounts for the declared volumes.
+        """
+        volume_mounts = []
+        for volume in volumes:
+            volume_name = f"{volume.name}_{self.runtime_name}"
+            try:
+                self._docker_client.volumes.get(volume_name)
+            except errors.NotFound:
+                self._docker_client.volumes.create(
+                    name=volume_name,
+                    labels={"ostorlab.universe": self.runtime_name},
+                )
+            volume_mounts.append(
+                docker_types_services.Mount(
+                    target=volume.path,
+                    source=volume_name,
+                    type="volume",
+                    read_only=volume.read_only,
+                )
+            )
+        return volume_mounts
+
     def create_agent_service(
         self,
         network_name: str,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
         replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
@@ -329,6 +363,7 @@ class AgentRuntime:
 
         mounts = self.agent.mounts or agent_definition.mounts
         mounts = self.replace_variable_mounts(mounts)
+        mounts.extend(self.create_scan_volume_mounts(agent_definition.volumes))
         if extra_mounts is not None:
             mounts.extend(extra_mounts)
 
@@ -339,20 +374,42 @@ class AgentRuntime:
         )
         caps = self.agent.caps or agent_definition.caps or []
 
-        service_name = (
-            agent_definition.service_name
-            or self.agent.container_image.split(":")[0].replace(".", "")
-            + "_"
-            + self.runtime_name
-        )
+        group_service_name = self.agent.service_name
+        definition_service_name = agent_definition.service_name
+        if group_service_name is not None:
+            service_name = group_service_name
+        elif definition_service_name is not None:
+            service_name = definition_service_name
+        else:
+            service_name = None
 
-        # We apply the random str only if it will not break the max docker service name characters (63)
-        if len(service_name) + MAX_RANDOM_NAME_LEN < MAX_SERVICE_NAME_LEN:
-            service_name = service_name + "_" + str(random.randrange(0, 9999))
+        if service_name is not None:
+            if len(service_name) > MAX_SERVICE_NAME_LEN:
+                raise ServiceNameTooLong(
+                    f'service name "{service_name}" exceeds max length of {MAX_SERVICE_NAME_LEN}'
+                )
+            docker_service_name = service_name
+        else:
+            base_service_name = (
+                self.agent.container_image.split(":")[0].replace(".", "")
+                + "_"
+                + self.runtime_name
+            )
+            random_suffix = "_" + str(random.randrange(0, 9999))
+            if len(base_service_name) + len(random_suffix) <= MAX_SERVICE_NAME_LEN:
+                docker_service_name = base_service_name + random_suffix
+            else:
+                docker_service_name = (
+                    base_service_name[: MAX_SERVICE_NAME_LEN - len(random_suffix)]
+                    + random_suffix
+                )
 
         env = [
             f"UNIVERSE={self.runtime_name}",
+            f"SERVICE_NAME={docker_service_name}",
+            f"HOST_HOSTNAME={self._host_hostname}",
         ]
+
         if self._gcp_logging_credential is not None:
             env.append(
                 f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
@@ -362,13 +419,23 @@ class AgentRuntime:
             image=self.agent.container_image,
             networks=[network_name],
             env=env,
-            name=service_name,
+            name=docker_service_name,
             restart_policy=docker_types_services.RestartPolicy(
                 condition=restart_policy
             ),
             mounts=mounts,
             healthcheck=self.create_docker_healthchek(),
-            labels={"ostorlab.universe": self.runtime_name},
+            labels={
+                "ostorlab.universe": self.runtime_name,
+                ## queue_name is used by the autoscaler to identify agent queues and to decide on exclusion/inclusion.
+                "ostorlab.queue_name": service_name
+                if service_name is not None
+                else agent_definition.name,
+            },
+            container_labels=self.labels
+            | {
+                "ostorlab.scan_id": self.runtime_name,
+            },
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,

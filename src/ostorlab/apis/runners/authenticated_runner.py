@@ -7,18 +7,16 @@ authenticated_runner.authenticate()
 """
 
 import datetime
+import json
 import logging
-from typing import Dict, Optional, Any
+from typing import Any
 
 import click
 import httpx
 import ubjson
-import json
 
-from ostorlab.apis import create_api_key
 from ostorlab.apis import request as api_request
-from ostorlab.apis.runners import login_runner
-from ostorlab.apis.runners import runner
+from ostorlab.apis.runners import login_runner, runner
 from ostorlab.cli import console as cli_console
 
 AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"
@@ -39,12 +37,12 @@ class AuthenticatedAPIRunner(runner.APIRunner):
 
     def __init__(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        token_duration: Optional[datetime.datetime] = None,
-        proxy: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        token_duration: datetime.datetime | None = None,
+        proxy: str | None = None,
         verify: bool = True,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         """Constructs all the necessary attributes for the object.
 
@@ -62,8 +60,8 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self._password = password
         self._token_duration = token_duration
         self._api_key = api_key or self._configuration_manager.api_key
-        self._token: Optional[str] = None
-        self._otp_token: Optional[str] = None
+        self._token: str | None = self._configuration_manager.authorization_token
+        self._otp_token: str | None = None
 
     @property
     def endpoint(self) -> str:
@@ -101,30 +99,19 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                 raise AuthenticationError(response.status_code)
         else:
             self._token = response.json().get("token")
-            with console.status("Generating API key"):
-                api_key_response = self.execute(
-                    create_api_key.CreateAPIKeyAPIRequest(self._token_duration)
-                )
-                console.success("API key generated")
 
-            api_data = api_key_response["data"]["createApiKey"]["apiKey"]
-            secret_key = api_data["secretKey"]
-            api_key_id = api_data["apiKey"]["id"]
-            expiry_date = api_data["apiKey"]["expiryDate"]
-
-            self._api_key = secret_key
-            with console.status("Persisting API key"):
-                self._configuration_manager.set_api_data(
-                    secret_key, api_key_id, expiry_date
+            with console.status("Persisting Authorization Token"):
+                self._configuration_manager.set_authorization_token(
+                    authorization_token=self._token
                 )
-                console.success("API key persisted")
-            self._token = None
+                console.success("Authorization Token persisted")
             console.success(":white_check_mark: Authentication successful")
 
     def unauthenticate(self) -> None:
         self._api_key = None
+        self._token = None
 
-    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.
 
         Args:
@@ -136,10 +123,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         Returns:
             The API response
         """
-        if self._token is not None:
-            headers = {"Authorization": f"Token {self._token}"}
-        elif self._api_key is not None:
+        if self._api_key is not None:
             headers = {"X-Api-Key": f"{self._api_key}"}
+        elif self._token is not None:
+            headers = {"Authorization": f"Token {self._token}"}
         else:
             headers = None
             console.warning("No authentication credentials were provided.")
@@ -152,7 +139,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = response.json()
+        data: dict[str, Any] = response.json()
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")
@@ -161,19 +148,31 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             return data
 
     def _sent_request(
-        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+        self, request: api_request.APIRequest, headers: dict[str, str] | None = None
     ) -> httpx.Response:
-        """Sends an API request."""
-        with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
-            return client.post(
-                self.endpoint,
-                data=request.data,
-                files=request.files,
-                headers=headers,
-                timeout=runner.REQUEST_TIMEOUT,
-            )
+        """Sends an API request, handling JSON or form encoding."""
+        headers = headers or {}
 
-    def execute_ubjson_request(self, request: api_request.APIRequest) -> Dict[str, Any]:
+        with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
+            if request.is_json is True:
+                headers["Content-Type"] = "application/json"
+                return client.post(
+                    self.endpoint,
+                    files=request.files,
+                    headers=headers,
+                    timeout=runner.REQUEST_TIMEOUT,
+                    json=request.data,
+                )
+            else:
+                return client.post(
+                    self.endpoint,
+                    files=request.files,
+                    headers=headers,
+                    timeout=runner.REQUEST_TIMEOUT,
+                    data=request.data,
+                )
+
+    def execute_ubjson_request(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Authenticated GraphQL API.
 
         Args:
@@ -185,10 +184,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         Returns:
             The API response
         """
-        if self._token is not None:
-            headers = {"Authorization": f"Token {self._token}"}
-        elif self._api_key is not None:
+        if self._api_key is not None:
             headers = {"X-Api-Key": f"{self._api_key}"}
+        elif self._token is not None:
+            headers = {"Authorization": f"Token {self._token}"}
         else:
             headers = None
             console.warning("No authentication credentials were provided.")
@@ -204,7 +203,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = json.loads(response.content.decode())
+        data: dict[str, Any] = json.loads(response.content.decode())
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")
@@ -213,7 +212,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             return data
 
     def _send_ubjson_request(
-        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+        self, request: api_request.APIRequest, headers: dict[str, str] | None = None
     ) -> httpx.Response:
         """Sends an API request."""
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:

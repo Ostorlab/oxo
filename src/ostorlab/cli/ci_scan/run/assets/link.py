@@ -2,27 +2,35 @@
 This module takes care of preparing a link before calling the create web scan API.
 """
 
-import click
+import io
 import itertools
+import json
 
-from typing import List
+import click
 
-from ostorlab.cli.ci_scan.run import run
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import test_credentials_create as test_credentials_create_api
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
+from ostorlab.cli.ci_scan.run import run
 
 
 def _prepare_test_credentials(
     ctx: click.core.Context,
-) -> List[test_credentials_create_api.TestCredential]:
+) -> list[test_credentials_create_api.TestCredential]:
     test_credentials_login = ctx.obj["test_credentials"]["test_credentials_login"]
     test_credentials_password = ctx.obj["test_credentials"]["test_credentials_password"]
     test_credentials_url = ctx.obj["test_credentials"]["test_credentials_url"]
     test_credentials_role = ctx.obj["test_credentials"]["test_credentials_role"]
     test_credentials_name = ctx.obj["test_credentials"]["test_credentials_name"]
     test_credentials_value = ctx.obj["test_credentials"]["test_credentials_value"]
+    email_2fa_sender_email_address = ctx.obj["test_credentials"][
+        "email_2fa_sender_email_address"
+    ]
+    email_2fa_email_address = ctx.obj["test_credentials"]["email_2fa_email_address"]
+    email_2fa_password = ctx.obj["test_credentials"]["email_2fa_password"]
+    sms_2fa_sender = ctx.obj["test_credentials"]["sms_2fa_sender"]
+    totp_2fa_seed = ctx.obj["test_credentials"]["totp_2fa_seed"]
 
     credentials = []
     for login, password, role, url in itertools.zip_longest(
@@ -31,11 +39,38 @@ def _prepare_test_credentials(
         test_credentials_role,
         test_credentials_url,
     ):
-        credentials.append(
-            test_credentials_create_api.TestCredentialLogin(
-                login=login, password=password, role=role, url=url
+        if login is not None and password is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialLogin(
+                    login=login, password=password, role=role, url=url
+                )
             )
-        )
+
+    for sender, email, password in itertools.zip_longest(
+        email_2fa_sender_email_address, email_2fa_email_address, email_2fa_password
+    ):
+        if sender is not None and email is not None and password is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialEmail2FA(
+                    sender_email_address=sender,
+                    email_address=email,
+                    password=password,
+                )
+            )
+
+    for sender in sms_2fa_sender:
+        if sender is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialSMS2FA(
+                    sender_phone_number=sender
+                )
+            )
+
+    for seed in totp_2fa_seed:
+        if seed is not None:
+            credentials.append(
+                test_credentials_create_api.TestCredentialTOTP2FA(totp_seed=seed)
+            )
 
     if test_credentials_name:
         credentials.append(
@@ -49,7 +84,7 @@ def _prepare_test_credentials(
     return credentials
 
 
-def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
+def run_link_scan(ctx: click.core.Context, url: list[str]) -> None:
     """Create scan for links."""
     ci_logger = ctx.obj["ci_logger"]
     if ctx.obj.get("api_key") is not None:
@@ -62,6 +97,9 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
         filtered_url_regexes = ctx.obj["filtered_url_regexes"]
         proxy = ctx.obj["proxy"]
         qps = ctx.obj["qps"]
+        ui_prompt_ids = ctx.obj.get("ui_prompt_ids") or []
+        ui_prompt_names = ctx.obj.get("ui_prompt_names") or []
+        ui_prompt_actions = ctx.obj.get("ui_prompt_actions") or []
         runner = authenticated_runner.AuthenticatedAPIRunner(
             api_key=ctx.obj.get("api_key")
         )
@@ -78,17 +116,50 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
             ci_logger.info(
                 f"creating Web scan `{title}` with profile `{scan_profile}`."
             )
+
+            ui_automation_rule_ids: list[int] = []
+
+            if len(ui_prompt_ids) > 0:
+                ui_automation_rule_ids.extend(ui_prompt_ids)
+                ci_logger.info(f"Using existing UI prompts with IDs: {ui_prompt_ids}")
+
+            if len(ui_prompt_names) > 0 and len(ui_prompt_actions) > 0:
+                ui_prompts_json = [
+                    {"name": name, "code": action}
+                    for name, action in zip(ui_prompt_names, ui_prompt_actions)
+                ]
+                try:
+                    ci_logger.info("Creating UI prompts...")
+                    prompts_result = runner.execute(
+                        scan_create_api.CreateUIPromptsAPIRequest(
+                            ui_prompts=ui_prompts_json
+                        )
+                    )
+                    created_prompt_ids = [
+                        int(prompt["id"])
+                        for prompt in prompts_result["data"]["createUiPrompts"][
+                            "uiPrompts"
+                        ]
+                    ]
+                    ui_automation_rule_ids.extend(created_prompt_ids)
+                    ci_logger.info(f"Created UI prompts with IDs: {created_prompt_ids}")
+                except (json.JSONDecodeError, KeyError) as e:
+                    ci_logger.error(
+                        f"Invalid UI prompts format: {e}. Continuing without UI prompts."
+                    )
+
             scan_id = _create_scan(
-                title,
-                scan_profile,
-                url,
-                credential_ids,
-                runner,
-                sboms,
-                api_schema,
-                filtered_url_regexes,
-                proxy,
-                qps,
+                title=title,
+                scan_profile=scan_profile,
+                urls=url,
+                credential_ids=credential_ids,
+                runner=runner,
+                sboms=sboms,
+                api_schema=api_schema,
+                filtered_url_regexes=filtered_url_regexes,
+                proxy=proxy,
+                qps=qps,
+                ui_automation_rule_ids=ui_automation_rule_ids,
             )
 
             ci_logger.output(name="scan_id", value=scan_id)
@@ -111,16 +182,18 @@ def run_link_scan(ctx: click.core.Context, url: List[str]) -> None:
 
 
 def _create_scan(
-    title,
-    scan_profile,
-    urls,
-    credential_ids,
-    runner,
-    sboms,
-    api_schema,
-    filtered_url_regexes,
-    proxy,
-    qps,
+    credential_ids: list[int],
+    runner: authenticated_runner.AuthenticatedAPIRunner,
+    title: str,
+    urls: list[str],
+    scan_profile: str,
+    sboms: list[io.FileIO] | None = None,
+    api_schema: io.FileIO | None = None,
+    proxy: str | None = None,
+    qps: int | None = None,
+    filtered_url_regexes: list[str] | None = None,
+    test_credential_ids: list[int] | None = None,
+    ui_automation_rule_ids: list[int] = (),
 ):
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(
@@ -133,6 +206,7 @@ def _create_scan(
             filtered_url_regexes=filtered_url_regexes,
             proxy=proxy,
             qps=qps,
+            ui_automation_rule_ids=ui_automation_rule_ids,
         )
     )
     scan_id = scan_result.get("data").get("createWebScan").get("scan").get("id")
@@ -159,6 +233,6 @@ def _create_test_credentials(test_credentials, runner):
 @run.run.command()
 @click.option("--url", help="List of Urls to scan.", required=True, multiple=True)
 @click.pass_context
-def link(ctx: click.core.Context, url: List[str]):
+def link(ctx: click.core.Context, url: list[str]):
     """Run scan for links."""
     run_link_scan(ctx, url)

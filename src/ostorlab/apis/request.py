@@ -2,8 +2,7 @@
 
 import abc
 import logging
-from typing import Dict, Optional
-
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -13,17 +12,22 @@ class APIRequest(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Query to the GraphQL API."""
         raise NotImplementedError("Missing implementation")
 
     @property
     @abc.abstractmethod
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict[str, Any] | None:
         """Body of the API request, containing the query & any additional data."""
         raise NotImplementedError("Missing implementation")
 
     @property
-    def files(self) -> Optional[Dict]:
+    def files(self) -> dict[str, Any] | None:
         """Files of the API request, containing the binary data."""
         return None
+
+    @property
+    def is_json(self) -> bool:
+        """Indicates if the request should be sent as JSON (default False)."""
+        return False

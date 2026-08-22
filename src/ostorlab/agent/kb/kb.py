@@ -4,8 +4,6 @@ import dataclasses
 import json
 import pathlib
 
-from typing import Dict, Optional, Union
-
 KB_FOLDER = "KB"
 META_JSON = "meta.json"
 DESCRIPTION = "description.md"
@@ -18,7 +16,7 @@ class Entry:
 
     title: str
     risk_rating: str
-    references: Dict[str, str]
+    references: dict[str, str]
     short_description: str = ""
     description: str = ""
     recommendation: str = ""
@@ -30,7 +28,7 @@ class Entry:
     targeted_by_nation_state: bool = False
     cvss_v3_vector: str = ""
     cvss_v4_vector: str = ""
-    category_groups: Optional[list[dict[str, Union[str, list[str]]]]] = None
+    category_groups: list[dict[str, str | list[str]]] | None = None
 
 
 class MetaKB(type):
@@ -74,5 +72,5 @@ class MetaKB(type):
             )
 
 
-class KB(object, metaclass=MetaKB):
+class KB(metaclass=MetaKB):
     """Vulnerability knowledge base dispatcher."""

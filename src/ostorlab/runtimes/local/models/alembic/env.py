@@ -5,13 +5,11 @@ The lines 11-15, 31 & 86 were manually added.
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
 from alembic import context
+from sqlalchemy import engine_from_config, pool
 
-from ostorlab.runtimes.local.models.models import Base
 from ostorlab.runtimes.local.models import models as local_models
-
+from ostorlab.runtimes.local.models.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

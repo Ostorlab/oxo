@@ -1,7 +1,7 @@
 """Unit tests for customized click types."""
 
-import pytest
 import click
+import pytest
 
 from ostorlab.cli import types
 

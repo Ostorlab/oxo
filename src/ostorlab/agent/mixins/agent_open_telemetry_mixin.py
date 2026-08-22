@@ -9,15 +9,14 @@ import io
 import json
 import logging
 import os
-import sys
 import tempfile
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib import parse
 
+import opentelemetry.exporter.otlp.proto.grpc.trace_exporter as otlp_exporter
 from opentelemetry import trace
 from opentelemetry.exporter import cloud_trace
-from opentelemetry.exporter.jaeger import thrift as jaeger
 from opentelemetry.sdk import resources
 from opentelemetry.sdk import trace as trace_provider
 from opentelemetry.sdk.trace import export as sdk_export
@@ -36,9 +35,9 @@ class TraceExporter:
     def __init__(self, tracing_collector_url: str):
         self._tracing_collector_url = tracing_collector_url
         # specialized fields for the different collectors.
-        self._file: Optional[io.IOBase] = None
+        self._file: io.IOBase | None = None
 
-    def close(self):
+    def close(self) -> None:
         if self._file is not None:
             self._file.close()
 
@@ -47,15 +46,15 @@ class TraceExporter:
         Returns a span exporter instance depending on the OpenTelemtry collector url argument.
         The urls are customized to respect the following format:
             name_of_the_tracing_tool:hostname:port
-            eg: jaeger:jaeger-host:8631
+            eg: otlp://otel-collector-host:4317
             for gcp the format is:
             name_of_the_tracing_tool://project_id/service_account_json_base64
             eg: gcp://project_1/service_account_json_base64
         """
         parsed_url = parse.urlparse(self._tracing_collector_url)
         scheme = parsed_url.scheme
-        if scheme == "jaeger":
-            return self._get_jaeger_exporter(parsed_url)
+        if scheme in ("otlp", "jaeger"):
+            return self._get_otlp_exporter(parsed_url)
         elif scheme == "file":
             return self._get_file_exporter(parsed_url)
         elif scheme == "gcp":
@@ -63,25 +62,35 @@ class TraceExporter:
         else:
             raise NotImplementedError(f"Invalid tracer type {scheme}")
 
-    def _get_file_exporter(self, parsed_url):
+    def _get_file_exporter(
+        self, parsed_url: parse.ParseResult
+    ) -> sdk_export.SpanExporter:
         file_path = parsed_url.path
-        self._file = open(file_path, "w", encoding="utf-8")
+        self._file = open(file_path, "w", encoding="utf-8")  # noqa: SIM115
         file_exporter = sdk_export.ConsoleSpanExporter(out=self._file)
         logger.info("Configuring file exporter..")
         return file_exporter
 
-    def _get_jaeger_exporter(self, parsed_url):
+    def _get_otlp_exporter(
+        self, parsed_url: parse.ParseResult
+    ) -> sdk_export.SpanExporter:
         netloc = parsed_url.netloc
-        hostname, port = netloc.split(":")[0], int(netloc.split(":")[1])
-        jaeger_exporter = jaeger.JaegerExporter(
-            agent_host_name=hostname,
-            agent_port=port,
-            udp_split_oversized_batches=True,
-        )
-        logger.info("Configuring jaeger exporter..")
-        return jaeger_exporter
+        if ":" in netloc:
+            host, port = netloc.split(":", 1)
+        else:
+            host, port = netloc, "4317"
+        endpoint = f"{host}:{port}"
 
-    def _get_gcp_exporter(self, parsed_url) -> cloud_trace.CloudTraceSpanExporter:
+        exporter = otlp_exporter.OTLPSpanExporter(
+            endpoint=endpoint,
+            insecure=True,
+        )
+        logger.info("Configuring OTLP exporter with endpoint %s", endpoint)
+        return exporter
+
+    def _get_gcp_exporter(
+        self, parsed_url: parse.ParseResult
+    ) -> cloud_trace.CloudTraceSpanExporter:
         """
         Returns a CloudTraceSpan exporter instance.
         The urls should respect the following format:
@@ -109,7 +118,8 @@ class OpenTelemetryMixin:
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.
     """
 
-    _tracer: Optional[trace.Tracer] = None
+    _tracer: trace.Tracer | None = None
+    _tracing_collector_url: str | None
 
     def __init__(
         self,
@@ -122,7 +132,8 @@ class OpenTelemetryMixin:
             agent_settings: Agent runtime settings.
         """
         super().__init__(
-            agent_definition=agent_definition, agent_settings=agent_settings
+            agent_definition=agent_definition,
+            agent_settings=agent_settings,
         )
         self._agent_settings = agent_settings
         if (
@@ -142,17 +153,9 @@ class OpenTelemetryMixin:
             )
             trace.set_tracer_provider(provider)
 
-            # NOTE: We have experienced crashes with BatchSpan processor on python version 3.9. The error is linked to
-            # threading in the Python runtime. This warrants more investigation, this is a temporary fix until the
-            # root cause is clearly identified.
-            if sys.version_info >= (3, 10):
-                self._span_processor = sdk_export.BatchSpanProcessor(
-                    self._exporter.get_trace_exporter()
-                )
-            else:
-                self._span_processor = sdk_export.SimpleSpanProcessor(
-                    self._exporter.get_trace_exporter()
-                )
+            self._span_processor = sdk_export.BatchSpanProcessor(
+                self._exporter.get_trace_exporter()
+            )
             trace.get_tracer_provider().add_span_processor(self._span_processor)
             self._tracer = trace.get_tracer(__name__)
 
@@ -174,7 +177,7 @@ class OpenTelemetryMixin:
         """Ensures persistence of the span details in the file for the case of the file Span exporters."""
         self._span_processor.force_flush()
 
-    def _stringify_bytes_values(self, value: bytes):
+    def _stringify_bytes_values(self, value: bytes) -> str:
         """Method that will be used as a handler to json dump the message dictionary values."""
         if isinstance(value, bytes):
             return value.decode(errors="replace")
@@ -240,7 +243,11 @@ class OpenTelemetryMixin:
             super().process_message(selector, message)
 
     def emit(
-        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+        self,
+        selector: str,
+        data: dict[str, Any],
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Overridden emit method of the agent to add OpenTelemetry traces.
         Sends a message to all listening agents on the specified selector.
@@ -262,7 +269,10 @@ class OpenTelemetryMixin:
                 trace_id = emit_span.get_span_context().trace_id
                 span_id = emit_span.get_span_context().span_id
                 super().emit(
-                    selector, data, f"{message_id or uuid.uuid4()}-{trace_id}-{span_id}"
+                    selector,
+                    data,
+                    f"{message_id or uuid.uuid4()}-{trace_id}-{span_id}",
+                    message_priority=message_priority,
                 )
 
                 emit_span.set_attribute("agent.name", self.name)
@@ -272,4 +282,9 @@ class OpenTelemetryMixin:
                 )
                 emit_span.set_attribute("message.data", json.dumps(minified_msg_data))
         else:
-            super().emit(selector, data)
+            super().emit(
+                selector,
+                data,
+                message_id=message_id,
+                message_priority=message_priority,
+            )

@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.report.keyword;
+
+message Message {
+    optional string keyword = 1;
+}

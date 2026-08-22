@@ -1,7 +1,7 @@
 """Reporter logic to read the scanner state periodically and send it to the backend."""
 
-from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis import add_scanner_state
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.utils import definitions
 
 
@@ -13,11 +13,18 @@ class ScannerStateReporter:
         scanner_id: str,
         hostname: str,
         ip: str,
+        reporting_engine_api_key: str | None = None,
     ):
         self._scanner_id = scanner_id
         self.scan_id = None
         self._hostname = hostname
         self._ip = ip
+        self._reporting_engine_api_key = reporting_engine_api_key
+
+    @property
+    def scanner_id(self) -> str:
+        """The unique identifier of this scanner."""
+        return self._scanner_id
 
     def _capture_state(self) -> definitions.ScannerState:
         """Capture current scanner state."""
@@ -33,6 +40,8 @@ class ScannerStateReporter:
                 total_memory=psutil.virtual_memory().total >> 30,  # total memory in GB
                 hostname=self._hostname,
                 ip=self._ip,
+                disk_usage=psutil.disk_usage("/").percent,
+                total_disk=psutil.disk_usage("/").total >> 30,  # total disk in GB
             )
         except ImportError:
             state = definitions.ScannerState(
@@ -49,10 +58,12 @@ class ScannerStateReporter:
         return state
 
     def _report_state(self, state: definitions.ScannerState) -> None:
-        runner = authenticated_runner.AuthenticatedAPIRunner()
+        runner = authenticated_runner.AuthenticatedAPIRunner(
+            api_key=self._reporting_engine_api_key
+        )
         _ = runner.execute(add_scanner_state.AddScannerStateAPIRequest(state=state))
 
-    async def report(self) -> None:
+    def report(self) -> None:
         """Capture the current state of the scanner and persist it."""
         state = self._capture_state()
         self._report_state(state)

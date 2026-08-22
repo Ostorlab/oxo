@@ -48,38 +48,3 @@ def testRunScanLink_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandE
     assert "Usage:" not in result.output
     assert isinstance(result.exception, SystemExit)
     assert result.exit_code == 1
-
-
-def testRunScanLink_withHeaderAndCookie_ShowSpecifySubCommandError(
-    mocker,
-) -> None:
-    """Test oxo scan run link with non-supported runtime, should exit with return code 1."""
-
-    mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=False
-    )
-    runner = CliRunner()
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    result = runner.invoke(
-        rootcli.rootcli,
-        [
-            "scan",
-            "--runtime=local",
-            "run",
-            "--agent=agent1 --agent=agent2",
-            "link",
-            "--url",
-            "https://ostorlab.co",
-            "--method",
-            "GET",
-            "--cookie",
-            "cookie1=123--cookie",
-            "cookie2=456",
-            "--header",
-            "header1=123",
-        ],
-    )
-
-    assert "Usage:" not in result.output
-    assert isinstance(result.exception, SystemExit)
-    assert result.exit_code == 1

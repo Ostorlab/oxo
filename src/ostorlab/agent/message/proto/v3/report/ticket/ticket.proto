@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.report.ticket;
+
+message Comments {
+  required string author = 1;
+  required string message = 2;
+}
+
+message Message {
+  optional string ticket_id = 1;
+  required string title = 2;
+  required string description = 3;
+  repeated Comments comments = 4;
+  optional string ticket_key = 5;
+}

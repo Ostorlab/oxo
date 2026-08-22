@@ -8,12 +8,20 @@ import "ostorlab/scanner/proto/assets/file.proto";
 import "ostorlab/scanner/proto/assets/aab.proto";
 import "ostorlab/scanner/proto/assets/apk.proto";
 import "ostorlab/scanner/proto/assets/ipa.proto";
+import "ostorlab/scanner/proto/assets/harmonyos_hap.proto";
+import "ostorlab/scanner/proto/assets/harmonyos_apk.proto";
+import "ostorlab/scanner/proto/assets/harmonyos_aab.proto";
+import "ostorlab/scanner/proto/assets/harmonyos_rpk.proto";
+import "ostorlab/scanner/proto/assets/harmonyos_app.proto";
 import "ostorlab/scanner/proto/assets/source.proto";
 import "ostorlab/scanner/proto/assets/agent.proto";
 import "ostorlab/scanner/proto/assets/network.proto";
 import "ostorlab/scanner/proto/assets/link.proto";
 import "ostorlab/scanner/proto/assets/android_store.proto";
 import "ostorlab/scanner/proto/assets/ios_store.proto";
+import "ostorlab/scanner/proto/assets/harmonyos_store.proto";
+import "ostorlab/scanner/proto/assets/repository.proto";
+import "ostorlab/scanner/proto/assets/repository_archive.proto";
 
 package  ostorlab.scanner.proto.scan._location.startAgentScan;
 
@@ -25,6 +33,11 @@ message Arg{
 }
 
 
+message PortMapping {
+    optional uint32 src_port = 1;
+    optional uint32 dest_port = 2;
+}
+
 message Agent{
     required string key = 1;
     optional string version = 2;
@@ -33,8 +46,9 @@ message Agent{
     repeated string caps = 5;
     optional uint32 cyclic_processing_limit=6;
     optional uint32 depth_processing_limit=7;
-    repeated string accepted_agents = 8;
-    repeated string in_selectors = 9;
+    repeated string in_selectors = 8;
+    repeated PortMapping open_ports = 9;
+    optional string service_name = 10;
 }
 
 message Links {
@@ -62,6 +76,14 @@ message Message {
         Links links = 14;
         ostorlab.scanner.proto.assets.android_store.Message android_store = 15;
         ostorlab.scanner.proto.assets.ios_store.Message ios_store = 16;
+        ostorlab.scanner.proto.assets.harmonyos_store.Message harmonyos_store = 24;
+        ostorlab.scanner.proto.assets.harmonyos_hap.Message harmonyos_hap = 19;
+        ostorlab.scanner.proto.assets.harmonyos_apk.Message harmonyos_apk = 20;
+        ostorlab.scanner.proto.assets.harmonyos_aab.Message harmonyos_aab = 21;
+        ostorlab.scanner.proto.assets.harmonyos_rpk.Message harmonyos_rpk = 22;
+        ostorlab.scanner.proto.assets.harmonyos_app.Message harmonyos_app = 23;
+        ostorlab.scanner.proto.assets.repository.Message repository = 29;
+        ostorlab.scanner.proto.assets.repository_archive.Message repository_archive = 30;
     }
     optional int32 scan_id = 18;
 }

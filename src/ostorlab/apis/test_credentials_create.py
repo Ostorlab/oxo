@@ -3,7 +3,7 @@
 import abc
 import dataclasses
 import json
-from typing import Dict, Optional, Any
+from typing import Any
 
 from . import request
 
@@ -12,9 +12,8 @@ class TestCredential(abc.ABC):
     """Base abstract test credentials."""
 
     @abc.abstractmethod
-    def to_variables(self) -> Dict[str, Any]:
+    def to_variables(self) -> dict[str, Any]:
         """Generate query variables."""
-        pass
 
 
 @dataclasses.dataclass
@@ -23,10 +22,10 @@ class TestCredentialLogin(TestCredential):
 
     login: str
     password: str
-    role: Optional[str] = None
-    url: Optional[str] = None
+    role: str | None = None
+    url: str | None = None
 
-    def to_variables(self) -> Dict[str, Any]:
+    def to_variables(self) -> dict[str, Any]:
         """Generate query variables."""
         return {
             "testCredentials": {
@@ -47,9 +46,9 @@ class TestCredentialLogin(TestCredential):
 class TestCredentialCustom(TestCredential):
     """Custom test credentials with variable number of a pair of name and value."""
 
-    values: Dict[str, str]
+    values: dict[str, str]
 
-    def to_variables(self) -> Dict[str, Any]:
+    def to_variables(self) -> dict[str, Any]:
         """Generate query variables."""
         return {
             "testCredentials": {
@@ -62,6 +61,61 @@ class TestCredentialCustom(TestCredential):
         }
 
 
+@dataclasses.dataclass
+class TestCredentialEmail2FA(TestCredential):
+    """Email 2FA test credentials."""
+
+    sender_email_address: str
+    email_address: str
+    password: str
+
+    def to_variables(self) -> dict[str, Any]:
+        """Generate query variables."""
+        return {
+            "testCredentials": {
+                "email2fa": {
+                    "emailSender": self.sender_email_address,
+                    "email": self.email_address,
+                    "password": self.password,
+                }
+            }
+        }
+
+
+@dataclasses.dataclass
+class TestCredentialSMS2FA(TestCredential):
+    """SMS 2FA test credentials."""
+
+    sender_phone_number: str
+
+    def to_variables(self) -> dict[str, Any]:
+        """Generate query variables."""
+        return {
+            "testCredentials": {
+                "sms2fa": {
+                    "phoneSender": self.sender_phone_number,
+                }
+            }
+        }
+
+
+@dataclasses.dataclass
+class TestCredentialTOTP2FA(TestCredential):
+    """TOTP 2FA test credentials."""
+
+    totp_seed: str
+
+    def to_variables(self) -> dict[str, Any]:
+        """Generate query variables."""
+        return {
+            "testCredentials": {
+                "totp2fa": {
+                    "totpSecret": self.totp_seed,
+                }
+            }
+        }
+
+
 class CreateTestCredentialAPIRequest(request.APIRequest):
     """Create mobile scan API from a file."""
 
@@ -69,7 +123,7 @@ class CreateTestCredentialAPIRequest(request.APIRequest):
         self._test_credential = test_credential
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to create test credentials.
 
         Returns:
@@ -86,13 +140,22 @@ mutation TestCredentials($testCredentials: TestCredentialsInput!) {
       ... on LoginPasswordTestCredentials {
         id
       }
+      ... on Email2FATestCredentials {
+        id
+      }
+      ... on Sms2FATestCredentials {
+        id
+      }
+      ... on Totp2FATestCredentials {
+        id
+      }
     }
   }
 }
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the query and variables to create test credentials.
 
         Returns:

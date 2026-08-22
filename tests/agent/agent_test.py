@@ -1,15 +1,16 @@
 """Agent class unit tests."""
 
+import base64
 import datetime
 import json
 import logging
 import multiprocessing as mp
+import os
 import pathlib
-import time
-import uuid
 import signal
 import sys
-import os
+import time
+import uuid
 
 import pytest
 from pytest_mock import plugin
@@ -23,6 +24,38 @@ from ostorlab.utils import definitions as utils_definitions
 from ostorlab.utils import system
 
 logger = logging.getLogger(__name__)
+
+
+def _run_agent_until_signal(
+    agent_definition: agent_definitions.AgentDefinition,
+    agent_settings_proto: bytes,
+    message: agent_message.Message,
+    mp_event,
+) -> None:
+    """Run the test agent in a separate process until it is terminated."""
+
+    agent_settings = runtime_definitions.AgentSettings.from_proto(agent_settings_proto)
+
+    class TestAgent(agent.Agent):
+        """Helper class to test Agent at exit implementation."""
+
+        def __init__(self, agent_definition, agent_settings, mp_event) -> None:
+            super().__init__(agent_definition, agent_settings)
+            self.mp_event = mp_event
+
+        def process(self, message: agent_message.Message) -> None:
+            del message
+            time.sleep(2000)
+
+        def at_exit(self) -> None:
+            self.mp_event.set()
+
+    test_agent = TestAgent(
+        agent_definition=agent_definition,
+        agent_settings=agent_settings,
+        mp_event=mp_event,
+    )
+    test_agent.process(message)
 
 
 @pytest.mark.timeout(60)
@@ -47,7 +80,9 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
         def start(self) -> None:
             self.emit(
                 "v3.healthcheck.ping",
-                {"body": f"from test agent at {datetime.datetime.now()}"},
+                {
+                    "body": f"from test agent at {datetime.datetime.now(datetime.timezone.utc)}"
+                },
             )
 
     class ProcessTestAgent(agent.Agent):
@@ -158,6 +193,71 @@ def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(agent_mock):
     )
 
     assert test_agent.args == {"color": "red", "speed": b"slow"}
+
+
+def testAgent_whenMaxPriorityProvided_raisesTypeError(mocker):
+    """Test agent init rejects unsupported explicit queue priority override."""
+
+    mq_init = mocker.patch("ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.__init__")
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
+        return_value=None,
+    )
+    mocker.patch("ostorlab.agent.agent.signal.signal", return_value=None)
+
+    class TestAgent(agent.Agent):
+        """Test Agent"""
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="priority_test_agent",
+        in_selectors=["v3.healthcheck.ping"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/priority_test_agent",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_exchange_topic="ostorlab_test",
+        healthcheck_port=5301,
+    )
+
+    with pytest.raises(TypeError):
+        TestAgent(agent_definition, agent_settings, max_priority=4)
+
+    mq_init.assert_not_called()
+
+
+def testAgent_whenMaxPriorityNotProvided_defaultsToMqPriorityQueue(mocker):
+    """Test agent init always configures the MQ mixin with the hardcoded priority queue."""
+
+    mq_init = mocker.patch("ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.__init__")
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
+        return_value=None,
+    )
+    mocker.patch("ostorlab.agent.agent.signal.signal", return_value=None)
+
+    class TestAgent(agent.Agent):
+        """Test Agent"""
+
+    agent_definition = agent_definitions.AgentDefinition(
+        name="priority_test_agent",
+        in_selectors=["v3.healthcheck.ping"],
+    )
+    agent_settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/priority_test_agent",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_exchange_topic="ostorlab_test",
+        healthcheck_port=5301,
+    )
+
+    TestAgent(agent_definition, agent_settings)
+
+    mq_init.assert_called_once_with(
+        mocker.ANY,
+        name="priority_test_agent",
+        keys=["v3.healthcheck.ping.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="ostorlab_test",
+    )
 
 
 @pytest.mark.xfail(reason="OS-5119: Awaiting deprecation.")
@@ -386,14 +486,14 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         isinstance(logger_error.call_args_list[0][0][1], system.SystemLoadInfo) is True
     )
     assert (
-        isinstance(logger_error.call_args_list[1][0][1], agent_message.Message) is True
+        logger_error.call_args_list[1][0][0]
+        == "Error processing message on selector %s"
     )
-    assert logger_error.call_args_list[1][0][1].selector == "v3.healthcheck.ping"
-    assert (
-        logger_error.call_args_list[1][0][1].data["body"] == "Hello, can you hear me?"
-    )
-    assert isinstance(logger_error.call_args_list[2][0][1], ValueError) is True
-    assert "some error" in logger_error.call_args_list[2][0][1].args[0]
+    assert logger_error.call_args_list[1][0][1] == "v3.healthcheck.ping"
+    assert logger_error.call_args_list[1].kwargs["exc_info"] is True
+    assert "Message of selector %s: %s" in logger_error.call_args_list[2][0][0]
+    assert logger_error.call_args_list[2][0][1] == "v3.healthcheck.ping"
+    assert "Hello, can you hear me?" in logger_error.call_args_list[2][0][2]
 
 
 def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWithMessageAndNoSystemLoad(
@@ -443,14 +543,14 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
 
     assert logger_error.call_count == 2
     assert (
-        isinstance(logger_error.call_args_list[0][0][1], agent_message.Message) is True
+        logger_error.call_args_list[0][0][0]
+        == "Error processing message on selector %s"
     )
-    assert logger_error.call_args_list[0][0][1].selector == "v3.healthcheck.ping"
-    assert (
-        logger_error.call_args_list[0][0][1].data["body"] == "Hello, can you hear me?"
-    )
-    assert isinstance(logger_error.call_args_list[1][0][1], ValueError) is True
-    assert "some error" in logger_error.call_args_list[1][0][1].args[0]
+    assert logger_error.call_args_list[0][0][1] == "v3.healthcheck.ping"
+    assert logger_error.call_args_list[0].kwargs["exc_info"] is True
+    assert "Message of selector %s: %s" in logger_error.call_args_list[1][0][0]
+    assert logger_error.call_args_list[1][0][1] == "v3.healthcheck.ping"
+    assert "Hello, can you hear me?" in logger_error.call_args_list[1][0][2]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Does not run on windows")
@@ -486,20 +586,11 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
         ).to_raw_proto()
     )
 
-    def run_agent(agent_definition, agent_settings, message, mp_event):
-        """method responsible for running the test agent inside a process."""
-        test_agent = TestAgent(
-            agent_definition=agent_definition,
-            agent_settings=agent_settings,
-            mp_event=mp_event,
-        )
-        test_agent.process(message)
-
     agent_process = mp.Process(
-        target=run_agent,
+        target=_run_agent_until_signal,
         args=(
             agent_definition,
-            agent_settings,
+            agent_settings.to_raw_proto(),
             ping_message,
             mp_event,
         ),
@@ -975,6 +1066,55 @@ def testEmit_whenOutSelectorIsNotExact_emitsMessage(
     assert agent_run_mock.control_messages[0].data["control"]["agents"] == ["some_name"]
 
 
+def testAgentMixin_whenServiceNameInSettings_usesItAsName(
+    agent_mock,
+) -> None:
+    """When service_name is set in AgentSettings, it must be used as the MQ queue name so each
+    named instance gets its own queue and receives all published messages instead of competing
+    with sibling instances on a shared queue."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="test_agent", in_selectors=["v3.asset.link"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/test_agent",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+            service_name="named_instance_1",
+        ),
+    )
+
+    assert test_agent.mq_name == "named_instance_1"
+
+
+def testAgentMixin_whenServiceNameNotInSettings_usesAgentDefinitionNameAsFallback(
+    agent_mock,
+) -> None:
+    """Without service_name in AgentSettings the queue name falls back to the agent definition name."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="test_agent", in_selectors=["v3.asset.link"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/test_agent",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_port=5301,
+        ),
+    )
+
+    assert test_agent.mq_name == "test_agent"
+
+
 def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
     agent_run_mock: agent_testing.AgentRunInstance,
 ) -> None:
@@ -1005,3 +1145,143 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
                 "risk_rating": "MEDIUM",
             },
         )
+
+
+def testEmitRaw_whenMessagePriorityIsProvided_forwardsPriorityToMqSendMessage(
+    mocker,
+) -> None:
+    """Test that emit_raw forwards the message priority to MQ publishing."""
+
+    class TestAgent(agent.Agent):
+        """Test agent."""
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(
+            name="some_name", out_selectors=["v3.report.vulnerability"]
+        ),
+        runtime_definitions.AgentSettings(
+            key="some_key",
+        ),
+    )
+    mock_send_message = mocker.patch.object(test_agent, "mq_send_message")
+
+    test_agent.emit_raw(
+        "v3.report.vulnerability",
+        b"some raw payload",
+        message_priority=7,
+    )
+
+    mock_send_message.assert_called_once()
+    assert mock_send_message.call_args.kwargs["message_priority"] == 7
+    assert mock_send_message.call_args.args[0].startswith("v3.report.vulnerability.")
+    assert mock_send_message.call_args.args[1] is not None
+
+
+def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
+    """Test the _setup_logging directly."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="test_host",
+        host_hostname="test_machine",
+        agent_key="test_key",
+        agent_version="test_version",
+        universe="test_universe",
+    )
+
+    mock_client_instance.setup_logging.assert_called_once()
+    call_args = mock_client_instance.setup_logging.call_args
+    labels = call_args.kwargs.get("labels", {})
+    assert labels["host_hostname"] == "test_machine"
+    assert labels["hostname"] == "test_host"
+    assert labels["universe"] == "test_universe"
+    assert labels["agent_key"] == "test_key"
+    assert labels["agent_version"] == "test_version"
+
+
+def testSetupLogging_whenServiceNameIsProvided_labelIncludesServiceName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """service_name must appear in GCP logging labels when set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+        service_name="my_swarm_service",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert labels["service_name"] == "my_swarm_service"
+
+
+def testSetupLogging_whenServiceNameIsNotProvided_labelDoesNotIncludeServiceName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """service_name label must be absent when not set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert "service_name" not in labels
+
+
+def testSetupLogging_whenMachineNameIsNotProvided_labelDoesNotIncludeMachineName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """host_hostname label must be absent when not set."""
+    mock_client_instance = mocker.MagicMock()
+    mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)
+    mocker.patch(
+        "google.oauth2.service_account.Credentials.from_service_account_info",
+        return_value=mocker.MagicMock(),
+    )
+    fake_cred = base64.b64encode(
+        json.dumps({"type": "service_account"}).encode()
+    ).decode()
+    mocker.patch.dict("os.environ", {"GCP_LOGGING_CREDENTIAL": fake_cred})
+
+    agent._setup_logging(
+        hostname="host1",
+        agent_key="agent/org/test",
+        agent_version="1.0",
+        universe="universe42",
+    )
+
+    labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
+    assert "host_hostname" not in labels

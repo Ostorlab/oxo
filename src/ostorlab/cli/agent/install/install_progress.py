@@ -1,11 +1,10 @@
 """Display the agent install progress."""
 
-from typing import Dict, Iterator
+from collections.abc import Iterator
 
 from rich import progress
 
 from ostorlab.cli import console as cli_console
-
 
 console = cli_console.Console()
 
@@ -26,7 +25,7 @@ class AgentInstallProgress(progress.Progress):
             progress.TimeRemainingColumn(),
         )
 
-    def display(self, logs_generator: Iterator[Dict]) -> None:
+    def display(self, logs_generator: Iterator[dict]) -> None:
         """Display the progress of the agent install command.
 
         Args:
@@ -42,11 +41,11 @@ class AgentInstallProgress(progress.Progress):
                     if task_id not in download_tasks:
                         task = prg.add_task(
                             f"[red]Download : {task_id}",
-                            total=log.get("progressDetail", {}).get("total"),
+                            total=(log.get("progressDetail") or {}).get("total"),
                         )
                         download_tasks[task_id] = task
                     task = download_tasks[task_id]
-                    current_progress = log.get("progressDetail", {}).get("current")
+                    current_progress = (log.get("progressDetail") or {}).get("current")
                     prg.update(task, completed=current_progress)
 
                 elif "Download complete" in log.get("status", []):
@@ -60,11 +59,11 @@ class AgentInstallProgress(progress.Progress):
                     if task_id not in extract_tasks:
                         task = prg.add_task(
                             f"[red]Extract : {task_id}",
-                            total=log.get("progressDetail", {}).get("total"),
+                            total=(log.get("progressDetail") or {}).get("total"),
                         )
                         extract_tasks[task_id] = task
                     task = extract_tasks[task_id]
-                    current_progress = log.get("progressDetail", {}).get("current")
+                    current_progress = (log.get("progressDetail") or {}).get("current")
                     prg.update(task, completed=current_progress)
 
         console.success("Installation successful")

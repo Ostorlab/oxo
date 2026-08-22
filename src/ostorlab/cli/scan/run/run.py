@@ -5,7 +5,6 @@ Example of usage:
 
 import io
 import logging
-from typing import List, Optional
 
 import click
 import httpx
@@ -14,15 +13,11 @@ from ruamel.yaml import error
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
+from ostorlab.cli import agent_fetcher, install_agent, types
 from ostorlab.cli import console as cli_console
-from ostorlab.cli import install_agent
-from ostorlab.cli.scan import scan
-from ostorlab.cli import types
-from ostorlab.cli import agent_fetcher
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
+from ostorlab.cli.scan.scan import scan
+from ostorlab.runtimes import definitions, runtime
 from ostorlab.utils import definitions as utils_definitions
-
 
 console = cli_console.Console()
 
@@ -84,6 +79,13 @@ WAIT_BETWEEN_RETRIES = 5
     required=False,
 )
 @click.option(
+    "--no-tracker",
+    help="Start the scan without tracker in charge of handling scan completion tracking.",
+    is_flag=True,
+    default=False,
+    required=False,
+)
+@click.option(
     "--no-asset",
     help="Start the environment without injecting assets",
     is_flag=True,
@@ -91,24 +93,32 @@ WAIT_BETWEEN_RETRIES = 5
 )
 @click.option(
     "--timeout",
-    "-t",
+    "-T",
     type=int,
     help="Timeout for the scan in seconds",
+    required=False,
+)
+@click.option(
+    "--init-sleep",
+    type=int,
+    help="Init sleep for tracker before checking the queues",
     required=False,
 )
 @click.pass_context
 def run(
     ctx: click.core.Context,
-    agent: List[str],
+    agent: list[str],
     arg: list[types.AgentArg],
     agent_group_definition: io.FileIO,
     assets: io.FileIO,
     title: str,
     install: bool,
-    follow: List[str],
+    follow: list[str],
     no_follow: bool,
+    no_tracker: bool,
     no_asset: bool,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
+    init_sleep: int | None = None,
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
@@ -125,7 +135,7 @@ def run(
         raise click.exceptions.Exit(2)
 
     if agent:
-        agents_settings: List[definitions.AgentSettings] = []
+        agents_settings: list[definitions.AgentSettings] = []
         for agent_key in agent:
             agents_settings.append(definitions.AgentSettings(key=agent_key))
 
@@ -154,8 +164,15 @@ def run(
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
     runtime_instance: runtime.Runtime = ctx.obj["runtime"]
+
+    if no_tracker is True:
+        runtime_instance.has_tracker = False
+
     if timeout is not None:
         runtime_instance.timeout = timeout
+
+    if init_sleep is not None:
+        runtime_instance.init_sleep = init_sleep
 
     # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]
@@ -172,7 +189,15 @@ def run(
         ctx.obj["title"] = title
         if install is True:
             try:
-                _install_agents_with_retry(runtime_instance, agent_group)
+                use_experimental = (
+                    ctx.obj.get("use_experimental_agents", False) is True
+                    or agent_group.use_experimental_agents is True
+                )
+                _install_agents_with_retry(
+                    runtime_instance,
+                    agent_group,
+                    use_experimental=use_experimental,
+                )
             except httpx.HTTPError as e:
                 console.error(f"Could not install the agents: {e}")
                 raise click.exceptions.Exit(1)
@@ -206,23 +231,36 @@ def run(
 @tenacity.retry(
     stop=tenacity.stop.stop_after_attempt(NUMBER_OF_RETRIES),
     wait=tenacity.wait.wait_fixed(WAIT_BETWEEN_RETRIES),
-    retry=tenacity.retry_if_exception_type((httpx.HTTPError)),
+    retry=tenacity.retry_if_exception_type(httpx.HTTPError),
     retry_error_callback=lambda retry_state: retry_state.outcome.result(),
 )
 def _install_agents_with_retry(
-    runtime_instance: runtime.Runtime, agent_group: definitions.AgentGroupDefinition
+    runtime_instance: runtime.Runtime,
+    agent_group: definitions.AgentGroupDefinition,
+    use_experimental: bool = False,
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
     for ag in agent_group.agents:
         try:
+            if ag.version is None:
+                try:
+                    agent_details = agent_fetcher.get_details(
+                        ag.key, use_experimental=use_experimental
+                    )
+                    ag.version = agent_details["versions"]["versions"][0]["version"]
+                except agent_fetcher.AgentDetailsNotFound:
+                    logger.warning(
+                        "agent %s not found on the store, skipping version fetch",
+                        ag.key,
+                    )
             install_agent.install(ag.key, ag.version)
         except agent_fetcher.AgentDetailsNotFound:
             console.warning(f"agent {ag.key} not found on the store")
 
 
 def prepare_agents_to_follow(
-    agent_keys: List[str], follow: List[str], no_follow: bool
+    agent_keys: list[str], follow: list[str], no_follow: bool
 ) -> set[str]:
     """
     Prepares the list of agents to follow based on the provided list of agents to follow and unfollow.
@@ -265,7 +303,9 @@ def _add_cli_args_to_agent_settings(
     """
     for agent_setting in agents_settings:
         try:
-            agent_definition = agent_fetcher.get_definition(agent_setting.key)
+            agent_definition = agent_fetcher.get_definition(
+                agent_key=agent_setting.key, version=agent_setting.version
+            )
         except agent_fetcher.AgentDetailsNotFound:
             console.error(f"Agent {agent_setting.key} not found.")
             raise click.exceptions.Exit(2)

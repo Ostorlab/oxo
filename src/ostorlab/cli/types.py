@@ -1,7 +1,6 @@
 """This module contains custom types for the CLI commands."""
 
 import dataclasses
-from typing import Optional
 
 import click
 
@@ -24,8 +23,8 @@ class AgentArgType(click.ParamType):
     def convert(
         self,
         arg_value: str,
-        param: Optional[click.Parameter],
-        ctx: Optional[click.Context],
+        param: click.Parameter | None,
+        ctx: click.Context | None,
     ) -> AgentArg:
         """Override convert method from ParamType class to parse command line arguments of agents in the format
         'arg_name:arg_value' and convert them into AgentArg objects.
@@ -61,8 +60,8 @@ class AgentKeyType(click.ParamType):
     def convert(
         self,
         cli_value: str,
-        param: Optional[click.Parameter],
-        ctx: Optional[click.Context],
+        param: click.Parameter | None,
+        ctx: click.Context | None,
     ) -> str:
         """Override convert method from ParamType class to parse agent keys and convert them into the right key if
         applicable.

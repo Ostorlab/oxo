@@ -4,7 +4,7 @@ to access the different features.
 This module also has classes for authentication errors, API response errors, etc"""
 
 import abc
-from typing import Dict, Optional, Any
+from typing import Any
 
 import httpx
 
@@ -25,7 +25,7 @@ class ResponseError(Error):
 class APIRunner(abc.ABC):
     """Handles API calls and behind the scenes operations."""
 
-    def __init__(self, proxy: Optional[str] = None, verify: bool = True):
+    def __init__(self, proxy: str | None = None, verify: bool = True):
         """Constructs the necessary attributes for the object.
 
         Args:
@@ -44,7 +44,7 @@ class APIRunner(abc.ABC):
         raise NotImplementedError("Missing implementation")
 
     @abc.abstractmethod
-    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the GraphQL API.
 
         Args:
@@ -59,7 +59,7 @@ class APIRunner(abc.ABC):
         raise NotImplementedError("Missing implementation")
 
     def _sent_request(
-        self, request: api_request.APIRequest, headers: Optional[Dict[str, str]] = None
+        self, request: api_request.APIRequest, headers: dict[str, str] | None = None
     ) -> httpx.Response:
         """Sends an API request."""
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:

@@ -6,9 +6,12 @@ This code is credited to protobuf-to-dict. The app is written and maintained by 
 contributions from Nino Walker, Jonathan Klaassen, and Tristram Gräbener.
 """
 
+from collections.abc import Callable
+from typing import Any
+
 from google.protobuf.descriptor import FieldDescriptor
+
 from ostorlab import exceptions
-from typing import Dict, Callable, Any
 
 
 class UnrecognisedTypeError(exceptions.OstorlabError):
@@ -67,7 +70,7 @@ def _get_field_value_adaptor(
     )
 
 
-def protobuf_to_dict(pb: Any, use_enum_labels: bool = False) -> Dict[Any, Any]:
+def protobuf_to_dict(pb: Any, use_enum_labels: bool = False) -> dict[Any, Any]:
     """Transforms Protobuf message to dict.
 
     The Method maintains bytes format and do not use intermediary representation like JSON.

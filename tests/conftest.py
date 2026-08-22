@@ -5,16 +5,17 @@ import io
 import pathlib
 import sys
 import time
-from typing import Any, List
+from typing import Any
 
 import docker
 import flask
 import pytest
 import redis
+from click import testing
 from docker.models import networks as networks_model
 from flask import testing as flask_testing
-from werkzeug import test as werkzeug_test
 from pytest_mock import plugin
+from werkzeug import test as werkzeug_test
 
 import ostorlab
 from ostorlab.agent import definitions as agent_definitions
@@ -25,6 +26,12 @@ from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import file as file_asset
+from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
+from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
+from ostorlab.assets import harmonyos_app as harmonyos_app_asset
+from ostorlab.assets import harmonyos_hap as harmonyos_hap_asset
+from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
+from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
@@ -36,8 +43,7 @@ from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.serve_app import app
-from ostorlab.serve_app import types
+from ostorlab.serve_app import app, types
 from ostorlab.utils import risk_rating
 
 
@@ -367,6 +373,96 @@ def vulnerability_location_ios_ipa(
 
 
 @pytest.fixture()
+def vulnerability_location_harmonyos_store(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=harmonyos_store_asset.HarmonyOSStore(bundle_name="a.b.c"),
+    )
+
+
+@pytest.fixture()
+def vulnerability_location_harmonyos_aab(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=harmonyos_aab_asset.HarmonyOSAab(content=b"aab"),
+    )
+
+
+@pytest.fixture()
+def vulnerability_location_harmonyos_apk(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=harmonyos_apk_asset.HarmonyOSApk(content=b"apk"),
+    )
+
+
+@pytest.fixture()
+def vulnerability_location_harmonyos_app(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=harmonyos_app_asset.HarmonyOSApp(content=b"app"),
+    )
+
+
+@pytest.fixture()
+def vulnerability_location_harmonyos_hap(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=harmonyos_hap_asset.HarmonyOSHap(content=b"hap"),
+    )
+
+
+@pytest.fixture()
+def vulnerability_location_harmonyos_rpk(
+    metadata_file_path, metadata_code_location, metadata_port, metadata_url
+):
+    return agent_report_vulnerability_mixin.VulnerabilityLocation(
+        metadata=[
+            metadata_file_path,
+            metadata_code_location,
+            metadata_port,
+            metadata_url,
+        ],
+        asset=harmonyos_rpk_asset.HarmonyOSRpk(content=b"rpk"),
+    )
+
+
+@pytest.fixture()
 def vulnerability_location_link_asset(
     metadata_file_path, metadata_code_location, metadata_port, metadata_url
 ):
@@ -596,7 +692,7 @@ def web_scan(
         scan = models.Scan(
             title="Web Scan",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(scan)
         session.commit()
@@ -649,13 +745,13 @@ def ios_scans(
         scan1 = models.Scan(
             title="iOS Scan 1 ",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
             risk_rating=risk_rating.RiskRating.HIGH,
         )
         scan2 = models.Scan(
             title="iOS Scan 2",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
             risk_rating=risk_rating.RiskRating.MEDIUM,
         )
         session.add(scan1)
@@ -781,7 +877,7 @@ def android_scan(
         scan = models.Scan(
             title="Android Scan 1 ",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(scan)
         session.commit()
@@ -793,7 +889,7 @@ def android_scan(
         session.add(asset)
         session.commit()
         scan_status = models.ScanStatus(
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
             key="dummy-key",
             value="dummy-value",
             scan_id=scan.id,
@@ -859,7 +955,7 @@ def android_scan(
 @pytest.fixture
 def agent_groups(
     clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
-) -> List[models.AgentGroup]:
+) -> list[models.AgentGroup]:
     """Create dummy agent groups."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
@@ -892,12 +988,16 @@ def agent_groups(
         agent_group1 = models.AgentGroup(
             name="Agent Group 1",
             description="Agent Group 1",
-            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+            created_time=datetime.datetime(
+                2024, 5, 30, 12, 0, 0, tzinfo=datetime.timezone.utc
+            ),
         )
         agent_group2 = models.AgentGroup(
             name="Agent Group 2",
             description="Agent Group 2",
-            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0),
+            created_time=datetime.datetime(
+                2024, 5, 30, 12, 0, 0, tzinfo=datetime.timezone.utc
+            ),
         )
         session.add(agent_group1)
         session.add(agent_group2)
@@ -963,7 +1063,7 @@ def agent_group_multiple_agents(
         agent_group = models.AgentGroup(
             name="Agent Group 1",
             description="Agent Group 1 description",
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(agent_group)
         session.commit()
@@ -989,7 +1089,7 @@ def multiple_assets_scan(
         scan = models.Scan(
             title="Multiple Assets Scan",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
             risk_rating=risk_rating.RiskRating.HIGH,
         )
         session.add(scan)
@@ -1027,7 +1127,7 @@ def agent_group_nmap(
         agent_group = models.AgentGroup(
             name="Agent Group Nmap",
             description="Agent Group Nmap",
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(agent_group)
         session.commit()
@@ -1054,7 +1154,7 @@ def agent_group_trufflehog(
         agent_group = models.AgentGroup(
             name="Agent Group Trufflehog",
             description="Agent Group Trufflehog",
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(agent_group)
         session.commit()
@@ -1081,7 +1181,7 @@ def agent_group_inject_asset(
         agent_group = models.AgentGroup(
             name="Agent Group Inject Asset",
             description="Agent Group Inject Asset",
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(agent_group)
         session.commit()
@@ -1110,7 +1210,7 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
         scan = models.Scan(
             title="Scan 1",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(),
+            created_time=datetime.datetime.now(datetime.timezone.utc),
         )
         session.add(scan)
         session.commit()
@@ -1120,7 +1220,7 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
 @pytest.fixture
 def scan_with_agent_group(
     db_engine_path: str,
-    agent_groups: List[models.AgentGroup],
+    agent_groups: list[models.AgentGroup],
     clean_db: None,
 ) -> models.Scan:
     """Create dummy scan with agent group."""
@@ -1239,10 +1339,10 @@ def nmap_agent_def() -> agent_definitions.AgentDefinition:
                 "value": ["banner"],
             },
             {
-                "name": "float_arg",
+                "name": "arg",
                 "type": "number",
-                "description": "Float argument.",
-                "value": 3.14,
+                "description": "argument.",
+                "value": 3,
             },
         ],
     )
@@ -1619,3 +1719,11 @@ def call_trace() -> agent_report_vulnerability_mixin.CallTrace:
     return agent_report_vulnerability_mixin.CallTrace(
         frames=[frame1, frame2],
     )
+
+
+@pytest.fixture
+def scan_run_cli_runner(mocker):
+    """Fixture providing a CliRunner with mocked local runtime."""
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+    return testing.CliRunner()

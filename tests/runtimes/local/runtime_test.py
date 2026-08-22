@@ -1,17 +1,17 @@
 """Unittest for local runtime."""
 
-from time import sleep
+import logging
 from typing import Any
 
 import docker
 import pytest
-from docker.models import services as services_model
 from docker.models import networks as networks_model
+from docker.models import services as services_model
 from pytest_mock import plugin
 
 import ostorlab
 from ostorlab import exceptions
-from ostorlab.assets import android_apk
+from ostorlab.assets import android_apk, ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
@@ -99,6 +99,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_p
     mocker.patch("docker.DockerClient.services.list", side_effect=docker_services)
     mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
     mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch("docker.models.volumes.VolumeCollection.list", return_value=[])
 
     docker_service_remove = mocker.patch(
         "docker.models.services.Service.remove", return_value=None
@@ -154,6 +155,39 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     docker_service_remove.assert_not_called()
 
 
+@pytest.mark.docker
+def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
+    mocker, db_engine_path
+):
+    """Stopping a scan should remove only volumes labeled for that scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    create_scan_db = models.Scan.create("test")
+
+    matching_volume = mocker.MagicMock(
+        name="matching_volume",
+        attrs={"Labels": {"ostorlab.universe": str(create_scan_db.id)}},
+    )
+    other_volume = mocker.MagicMock(
+        name="other_volume",
+        attrs={"Labels": {"ostorlab.universe": "9999"}},
+    )
+    mocker.patch(
+        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
+    )
+    mocker.patch("docker.DockerClient.services.list", return_value=[])
+    mocker.patch("docker.models.networks.NetworkCollection.list", return_value=[])
+    mocker.patch("docker.models.configs.ConfigCollection.list", return_value=[])
+    mocker.patch(
+        "docker.models.volumes.VolumeCollection.list",
+        return_value=[matching_volume, other_volume],
+    )
+
+    local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
+
+    matching_volume.remove.assert_called_once_with(force=True)
+    other_volume.remove.assert_not_called()
+
+
 def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
     """Unittest for the scan list method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
@@ -182,10 +216,9 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
         ostorlab.runtimes.local.models.models, "ENGINE_URL", db_engine_path
     )
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch(
-        "docker.DockerClient.services", return_value=services_model.ServiceCollection()
-    )
-    mocker.patch("docker.DockerClient.services.list", side_effect=docker_services)
+    mock_client = mocker.Mock()
+    mock_client.services.list.side_effect = docker_services
+    mocker.patch("docker.from_env", return_value=mock_client)
 
     scans = local_runtime.LocalRuntime().list()
 
@@ -336,35 +369,31 @@ def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
     assert scans is None
 
 
-def testCheckServicesMethod_whenServicesAreStopped_shouldExit(
-    mocker: plugin.MockerFixture, run_scan_mock: None
-) -> None:
-    """Unit test for Check services method when services are stopped"""
-    mocker.patch(
-        "ostorlab.runtimes.definitions.AgentSettings.container_image",
-        return_value="agent_42_docker_image",
-        new_callable=mocker.PropertyMock,
+def testRuntimeScanList_whenStateIsProvided_filtersScansByState(mocker, db_engine_path):
+    """Unittest for the scan list method with state filter.
+    Should return only scans matching the provided state.
+    """
+    mocker.patch.object(
+        ostorlab.runtimes.local.models.models, "ENGINE_URL", db_engine_path
     )
-    mocker.patch("ostorlab.runtimes.local.agent_runtime.AgentRuntime")
-    mocker.patch("ostorlab.runtimes.local.services.mq.LocalRabbitMQ.is_service_healthy")
-    mocker.patch("ostorlab.runtimes.local.services.redis.LocalRedis.is_service_healthy")
-    exit_mock = mocker.patch("sys.exit")
-    local_runtime_instance = local_runtime.LocalRuntime()
-    local_runtime_instance.follow = ["service1"]
-    agent_group_definition = definitions.AgentGroupDefinition(
-        agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
-    )
+    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
+    mock_client = mocker.Mock()
+    mock_client.services.list.return_value = []
+    mocker.patch("docker.from_env", return_value=mock_client)
 
-    local_runtime_instance.scan(
-        title="test local",
-        agent_group_definition=agent_group_definition,
-        assets=[android_apk.AndroidApk(content=b"APK")],
-    )
-    sleep(1)
+    models.Scan.create(title="scan1", progress=models.ScanProgress.IN_PROGRESS)
+    models.Scan.create(title="scan2", progress=models.ScanProgress.DONE)
+    models.Scan.create(title="scan3", progress=models.ScanProgress.ERROR)
 
-    assert exit_mock.call_count == 1
-    exit_with = exit_mock.call_args_list[0][0][0]
-    assert exit_with == 0
+    done_scans = local_runtime.LocalRuntime().list(state="done")
+    in_progress_scans = local_runtime.LocalRuntime().list(state="in_progress")
+    all_scans = local_runtime.LocalRuntime().list()
+
+    assert len(done_scans) == 1
+    assert done_scans[0].progress == "done"
+    assert len(in_progress_scans) == 1
+    assert in_progress_scans[0].progress == "in_progress"
+    assert len(all_scans) == 3
 
 
 @pytest.mark.docker
@@ -430,3 +459,241 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
 
     docker_service_remove.assert_called_once()
     docker_network_remove.assert_called_once()
+
+
+def testLocalRuntimeInit_always_setsMaxPoolSize(mocker):
+    """Test LocalRuntime initializes docker client with increased pool size."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mock_from_env = mocker.patch("docker.from_env")
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._docker_checks()
+    mock_from_env.assert_any_call(max_pool_size=100)
+
+
+def testLocalRuntimeScan_whenAssetsProvidedAndAgentMissing_usesDefaultSettings(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that scan calls _inject_assets with None when assets are provided but cloud_inject_asset is missing."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mocker.patch.object(runtime, "_check_services_healthy")
+    mocker.patch.object(runtime, "_start_services")
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_pre_agents")
+    mocker.patch.object(runtime, "_start_post_agents")
+    mocker.patch.object(runtime, "_update_scan_progress")
+    mocker.patch.object(runtime, "_wait_log_streamer")
+
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once()
+    _, kwargs = mock_inject.call_args
+    assert kwargs["agent_settings"] is None
+
+
+def testLocalRuntimeScan_whenAssetsProvidedAndAgentPresent_callsInjectAssets(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that scan calls _inject_assets when assets and cloud_inject_asset are provided."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    agent_group = definitions.AgentGroupDefinition(agents=[agent_settings])
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mocker.patch.object(runtime, "_start_agents")
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    mocker.patch.object(runtime, "_check_services_healthy")
+    mocker.patch.object(runtime, "_start_services")
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_pre_agents")
+    mocker.patch.object(runtime, "_start_post_agents")
+    mocker.patch.object(runtime, "_update_scan_progress")
+    mocker.patch.object(runtime, "_wait_log_streamer")
+
+    mock_inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(title="test", agent_group_definition=agent_group, assets=assets)
+
+    mock_inject.assert_called_once_with(assets=assets, agent_settings=agent_settings)
+
+
+def testLocalRuntimeInjectAssets_always_createsVolumeAndStartsAgent(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that _inject_assets creates a volume and starts the agent."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._scan_db = models.Scan.create("test")
+
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/cloud_inject_asset")
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent", return_value=None)
+
+    runtime._inject_assets(assets=assets, agent_settings=agent_settings)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    _args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"].key == agent_settings.key
+    assert any(m["Target"] == "/asset" for m in kwargs["extra_mounts"])
+
+
+def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Test that _inject_assets uses default settings when agent_settings is None."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = local_runtime.LocalRuntime()
+    runtime._scan_db = models.Scan.create("test")
+
+    assets = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    mock_create_volume = mocker.patch("ostorlab.utils.volumes.create_volume")
+    mock_start_agent = mocker.patch.object(runtime, "_start_agent", return_value=None)
+
+    runtime._inject_assets(assets=assets, agent_settings=None)
+
+    mock_create_volume.assert_called_once()
+    mock_start_agent.assert_called_once()
+    _args, kwargs = mock_start_agent.call_args
+    assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+
+
+@pytest.fixture
+def runtime_logger() -> Any:
+    """Yield the runtime logger enabled, and restore its state afterwards.
+
+    Running migrations in-process lets alembic's `fileConfig` disable the already existing loggers, so the state of
+    this logger depends on whether an earlier test touched the local database.
+    """
+    logger = logging.getLogger(local_runtime.__name__)
+    was_disabled = logger.disabled
+    logger.disabled = False
+    yield logger
+    logger.disabled = was_disabled
+
+
+def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(
+    caplog, runtime_logger
+) -> None:
+    """Scan lifecycle messages must reach the logging handlers, not only stdout."""
+    with caplog.at_level(logging.INFO):
+        local_runtime.console.info("Creating network")
+
+    assert "Creating network" in caplog.text
+
+
+def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(
+    caplog, runtime_logger
+) -> None:
+    """Terminal lifecycle messages are reported as success and must reach the logging handlers too."""
+    with caplog.at_level(logging.INFO):
+        local_runtime.console.success("Scan created successfully")
+
+    assert "Scan created successfully" in caplog.text

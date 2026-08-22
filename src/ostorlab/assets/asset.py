@@ -1,7 +1,8 @@
 """Abstract Asset class to define the scan target and its properties."""
 
 import abc
-from typing import Callable, Any, Type
+from collections.abc import Callable
+from typing import Any
 
 from ostorlab import exceptions
 from ostorlab.agent.message import serializer
@@ -26,7 +27,7 @@ class Asset(abc.ABC):
         return "asset"
 
 
-def selector(target: str) -> Callable[[Type[Asset]], Type[Asset]]:
+def selector(target: str) -> Callable[[type[Asset]], type[Asset]]:
     """Decorator to define an asset selector for serialization.
 
     Args:
@@ -36,7 +37,7 @@ def selector(target: str) -> Callable[[Type[Asset]], Type[Asset]]:
         Selector initializer function.
     """
 
-    def _selector_initializer(asset: Type[Asset]) -> Type[Asset]:
+    def _selector_initializer(asset: type[Asset]) -> type[Asset]:
         """Set asset selector."""
         asset.selector = target
         return asset

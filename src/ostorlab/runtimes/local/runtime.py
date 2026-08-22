@@ -4,12 +4,10 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 
+import builtins
 import logging
-import sys
 import threading
 from concurrent import futures
-from typing import Dict, List
-from typing import Optional
 
 import click
 import docker
@@ -18,35 +16,31 @@ import sqlalchemy
 import tenacity
 from docker import errors as docker_errors
 from docker.models import services as docker_models_services
-from rich import markdown
-from rich import panel
+from rich import markdown, panel
 from sqlalchemy import case
 
-from ostorlab.utils import definitions as utils_definitions
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
+from ostorlab.cli import (
+    agent_fetcher,
+    docker_requirements_checker,
+    dumpers,
+    install_agent,
+)
 from ostorlab.cli import console as cli_console
-from ostorlab.cli import agent_fetcher
-from ostorlab.cli import docker_requirements_checker
-from ostorlab.cli import dumpers
-from ostorlab.cli import install_agent
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
-from ostorlab.runtimes.local import agent_runtime
-from ostorlab.runtimes.local import log_streamer
+from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes.local import agent_runtime, log_streamer
 from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local.services import jaeger
-from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local.services import redis
-from ostorlab.utils import risk_rating
-from ostorlab.utils import styles
-from ostorlab.utils import volumes
+from ostorlab.runtimes.local.services import jaeger, mq, redis
+from ostorlab.utils import definitions as utils_definitions
+from ostorlab.utils import risk_rating, styles, volumes
 
 NETWORK_PREFIX = "ostorlab_local_network"
 
 logger = logging.getLogger(__name__)
-console = cli_console.Console()
+console = cli_console.Console(logger=logger)
 
+ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
@@ -100,26 +94,29 @@ class LocalRuntime(runtime.Runtime):
     def __init__(
         self,
         *args,
-        scan_id: Optional[str] = None,
-        tracing: Optional[bool] = False,
-        mq_exposed_ports: Optional[Dict[int, int]] = None,
-        gcp_logging_credential: Optional[str] = None,
+        scan_id: str | None = None,
+        labels: dict[str, str] | None = None,
+        tracing: bool | None = False,
+        mq_exposed_ports: dict[int, int] | None = None,
+        gcp_logging_credential: str | None = None,
         run_default_agents: bool = True,
         **kwargs,
     ) -> None:
         super().__init__()
         del args, kwargs
         self._scan_id = scan_id
+        self._labels = labels if labels is not None else {}
         self.follow = []
         self._tracing = tracing
-        self._mq_service: Optional[mq.LocalRabbitMQ] = None
-        self._redis_service: Optional[redis.LocalRedis] = None
-        self._jaeger_service: Optional[jaeger.LocalJaeger] = None
-        self._log_streamer = log_streamer.LogStream()
-        self._scan_db: Optional[models.Scan] = None
-        self._mq_exposed_ports: Optional[Dict[int, int]] = mq_exposed_ports
+        self._mq_service: mq.LocalRabbitMQ | None = None
+        self._redis_service: redis.LocalRedis | None = None
+        self._jaeger_service: jaeger.LocalJaeger | None = None
+        self._scan_db: models.Scan | None = None
+        self._mq_exposed_ports: dict[int, int] | None = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
+        self._log_streamer: log_streamer.LogStream | None = None
+        self._docker_client: docker.DockerClient | None = None
 
     @property
     def name(self) -> str:
@@ -171,10 +168,10 @@ class LocalRuntime(runtime.Runtime):
             if not docker_requirements_checker.is_swarm_initialized():
                 docker_requirements_checker.init_swarm()
 
-        self._docker_client = docker.from_env()
+        self._docker_client = docker.from_env(max_pool_size=100)
 
     def prepare_scan(
-        self, title: str, assets: Optional[List[base_asset.Asset]]
+        self, title: str, assets: list[base_asset.Asset] | None
     ) -> models.Scan:
         """Prepare scan entry in the database.
 
@@ -189,8 +186,8 @@ class LocalRuntime(runtime.Runtime):
         self,
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: Optional[List[base_asset.Asset]],
-    ) -> Optional[models.Scan]:
+        assets: list[base_asset.Asset] | None,
+    ) -> models.Scan | None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -200,11 +197,11 @@ class LocalRuntime(runtime.Runtime):
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             assets: the target asset to scan.
-            timeout: The timeout in seconds for the tracker agent to wait for all agents to finish.
 
         Returns:
             The scan object.
         """
+        self._log_streamer = log_streamer.LogStream(self._docker_client)
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title, assets=assets)
@@ -232,14 +229,25 @@ class LocalRuntime(runtime.Runtime):
                 raise AgentNotHealthy()
 
             if assets is not None:
-                self._inject_assets(assets)
+                inject_asset_agent_settings = next(
+                    (
+                        agent
+                        for agent in agent_group_definition.agents
+                        if agent.key == ASSET_CLOUD_INJECTION_AGENT
+                    ),
+                    None,
+                )
+                console.info("Injecting assets")
+                self._inject_assets(
+                    assets=assets,
+                    agent_settings=inject_asset_agent_settings,
+                )
             console.info("Updating scan status")
             self._update_scan_progress("IN_PROGRESS")
             console.success("Scan created successfully")
-            scan_complete_thread = threading.Thread(
-                target=self._check_services_running, daemon=False
-            )
-            scan_complete_thread.start()
+
+            self._wait_log_streamer()
+
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
@@ -262,35 +270,17 @@ class LocalRuntime(runtime.Runtime):
             self.stop(str(self._scan_db.id))
             raise MissingAgentDefinition(message)
 
-    def _check_services_running(self) -> None:
-        """Check if the services are still running."""
-        if len(self.follow) == 0:
-            return
+    def _wait_log_streamer(self) -> None:
+        """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
+        threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-        stop_event = threading.Event()
-        while stop_event.is_set() is False:
-            for service_id in list(self._log_streamer.services):
-                try:
-                    self._docker_client.services.get(service_id)
-                except docker_errors.NotFound:
-                    self._log_streamer.services.remove(service_id)
-            if len(self._log_streamer.services) == 0:
-                console.success("Scan done.")
-                stop_event.set()
-        sys.exit(0)
-
-    def stop(self, scan_id: str) -> None:
-        """Remove a service (scan) belonging to universe with scan_id(Universe Id).
+    def stop(self, scan_id: int) -> None:
+        """Remove a service belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop.
         """
-        try:
-            int_scan_id = int(scan_id)
-        except ValueError as e:
-            console.error("Scan id must be an integer.")
-            raise click.exceptions.Exit(2) from e
-
+        scan_id_str = str(scan_id)
         logger.info("stopping scan id %s", scan_id)
         stopped_services = []
         stopped_network = []
@@ -299,12 +289,8 @@ class LocalRuntime(runtime.Runtime):
         services = self._docker_client.services.list()
         for service in services:
             service_labels = service.attrs["Spec"]["Labels"]
-            logger.info(
-                "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
-            )
-            if service_labels.get("ostorlab.universe") is not None and int(
-                service_labels.get("ostorlab.universe")
-            ) == int(scan_id):
+            if service_labels.get("ostorlab.universe") == scan_id_str:
+                logger.info("Removing service: %s", service.name)
                 stopped_services.append(service)
                 service.remove()
 
@@ -314,30 +300,36 @@ class LocalRuntime(runtime.Runtime):
             if network_labels is None:
                 logger.debug("Skipping network with no labels")
                 continue
-            if isinstance(network_labels, dict):
-                universe = network_labels.get("ostorlab.universe")
-                if universe is not None and int(universe) == scan_id:
-                    logger.info("removing network %s", network_labels)
-                    stopped_network.append(network)
-                    network.remove()
+            if (
+                isinstance(network_labels, dict)
+                and network_labels.get("ostorlab.universe") == scan_id_str
+            ):
+                logger.info("removing network %s", network_labels)
+                stopped_network.append(network)
+                network.remove()
 
         configs = self._docker_client.configs.list()
         for config in configs:
             config_labels = config.attrs["Spec"]["Labels"]
-            if (
-                config_labels.get("ostorlab.universe") is not None
-                and config_labels.get("ostorlab.universe") == scan_id
-            ):
+            if config_labels.get("ostorlab.universe") == scan_id_str:
                 logger.info("removing config %s", config_labels)
                 stopped_configs.append(config)
                 config.remove()
 
-        if stopped_services or stopped_network or stopped_configs:
+        stopped_volumes = []
+        for volume in self._docker_client.volumes.list():
+            volume_labels = volume.attrs.get("Labels") or {}
+            if volume_labels.get("ostorlab.universe") == scan_id_str:
+                logger.info("removing volume %s", volume.name)
+                stopped_volumes.append(volume)
+                volume.remove(force=True)
+
+        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
 
         with models.Database() as session:
-            scan = session.query(models.Scan).get(int_scan_id)
-            if scan:
+            scan = session.query(models.Scan).get(scan_id)
+            if scan is not None:
                 scan.progress = "STOPPED"
                 session.commit()
                 console.success("Scan stopped successfully.")
@@ -431,12 +423,15 @@ class LocalRuntime(runtime.Runtime):
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
-    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
+    def _start_agents(
+        self, agent_group_definition: definitions.AgentGroupDefinition
+    ) -> None:
         """Starts all the agents as list in the agent run definition."""
         with futures.ThreadPoolExecutor() as executor:
             future_to_agent = {
                 executor.submit(self._start_agent, agent, extra_configs=[]): agent
                 for agent in agent_group_definition.agents
+                if agent.key != ASSET_CLOUD_INJECTION_AGENT
             }
             for future in futures.as_completed(future_to_agent):
                 future.result()
@@ -454,8 +449,8 @@ class LocalRuntime(runtime.Runtime):
     def _start_agent(
         self,
         agent: definitions.AgentSettings,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -475,6 +470,7 @@ class LocalRuntime(runtime.Runtime):
             redis_service=self._redis_service,
             jaeger_service=self._jaeger_service,
             gcp_logging_credential=self._gcp_logging_credential,
+            labels=self._labels,
         )
         agent_service = runtime_agent.create_agent_service(
             network_name=self.network,
@@ -521,15 +517,25 @@ class LocalRuntime(runtime.Runtime):
 
     def _start_tracker_agent(self):
         """Start the tracker agent to handle the scan lifecycle."""
+        if self.has_tracker is False:
+            return
+
         tracker_agent_settings = definitions.AgentSettings(
             key=TRACKER_AGENT_DEFAULT,
         )
-
         if self.timeout is not None:
             tracker_agent_settings.args.extend(
                 [
                     utils_definitions.Arg(
                         name="scan_done_timeout_sec", type="number", value=self.timeout
+                    ),
+                ]
+            )
+        if self.init_sleep is not None:
+            tracker_agent_settings.args.extend(
+                [
+                    utils_definitions.Arg(
+                        name="init_sleep_seconds", type="number", value=self.init_sleep
                     ),
                 ]
             )
@@ -542,7 +548,11 @@ class LocalRuntime(runtime.Runtime):
         )
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
 
-    def _inject_assets(self, assets: List[base_asset.Asset]):
+    def _inject_assets(
+        self,
+        assets: list[base_asset.Asset],
+        agent_settings: definitions.AgentSettings | None,
+    ):
         """Injects the scan target assets."""
         contents = {}
         for i, asset in enumerate(assets):
@@ -552,11 +562,13 @@ class LocalRuntime(runtime.Runtime):
 
         volumes.create_volume(f"asset_{self.name}", contents)
 
-        inject_asset_agent_settings = definitions.AgentSettings(
-            key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
-        )
+        if agent_settings is None:
+            agent_settings = definitions.AgentSettings(
+                key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
+            )
+
         self._start_agent(
-            agent=inject_asset_agent_settings,
+            agent=agent_settings,
             extra_mounts=[
                 docker.types.Mount(
                     target="/asset", source=f"asset_{self.name}", type="volume"
@@ -564,12 +576,18 @@ class LocalRuntime(runtime.Runtime):
             ],
         )
 
-    def list(self, page: int = 1, number_elements: int = 10) -> List[runtime.Scan]:
+    def list(
+        self,
+        page: int = 1,
+        number_elements: int = 10,
+        state: str | None = None,
+    ) -> list[runtime.Scan]:
         """Lists scans managed by runtime.
 
         Args:
             page: Page number for list pagination (default 1).
             number_elements: count of elements to show in the listed page (default 10).
+            state: Filter scans by state.
 
         Returns:
             List of scan objects.
@@ -579,7 +597,10 @@ class LocalRuntime(runtime.Runtime):
 
         scans = {}
         with models.Database() as session:
-            for scan in session.query(models.Scan):
+            query = session.query(models.Scan)
+            if state is not None:
+                query = query.filter(models.Scan.progress == models.ScanProgress(state))
+            for scan in query:
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
                     created_time=scan.created_time,
@@ -596,7 +617,7 @@ class LocalRuntime(runtime.Runtime):
                     service_labels = s.attrs["Spec"]["Labels"]
                     ostorlab_universe_id = service_labels.get("ostorlab.universe")
                     if (
-                        "ostorlab.universe" in service_labels.keys()
+                        "ostorlab.universe" in service_labels
                         and ostorlab_universe_id not in universe_ids
                     ):
                         universe_ids.add(ostorlab_universe_id)
@@ -637,7 +658,7 @@ class LocalRuntime(runtime.Runtime):
                         return False
         return True
 
-    def install(self, docker_client: Optional[docker.DockerClient] = None) -> None:
+    def install(self, docker_client: docker.DockerClient | None = None) -> None:
         """Installs the default agents.
 
         Args:
@@ -655,8 +676,8 @@ class LocalRuntime(runtime.Runtime):
     def list_vulnz(
         self,
         scan_id: int,
-        filter_risk_rating: Optional[List[str]] = None,
-        search: Optional[str] = None,
+        filter_risk_rating: builtins.list[str] | None = None,
+        search: str | None = None,
         order_by: str = "risk_rating",
     ) -> None:
         try:
@@ -869,7 +890,7 @@ class LocalRuntime(runtime.Runtime):
             session.commit()
 
     def link_assets_scan(
-        self, scan_id: int, assets: Optional[List[base_asset.Asset]] = None
+        self, scan_id: int, assets: builtins.list[base_asset.Asset] | None = None
     ) -> None:
         """Link the assets to the scan in the database.
 

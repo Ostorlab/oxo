@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.asset.file.repository_archive;
+
+message Message {
+  optional bytes content = 1;
+  optional string path = 2;
+  optional string content_url = 3;
+}

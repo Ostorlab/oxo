@@ -4,7 +4,6 @@ import json
 import sys
 import tempfile
 import uuid
-from typing import List
 
 import pytest
 
@@ -115,8 +114,43 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldNotTruncateOriginalMessage(
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testOpenTelemetryMixin_whenEmitMessageWithPriority_shouldForwardPriority(
+    mocker,
+) -> None:
+    """Test that emit forwards message priority through the OpenTelemetry wrapper."""
+    with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file_obj:
+        mocker.patch(
+            "ostorlab.agent.mixins.agent_healthcheck_mixin.AgentHealthcheckMixin.__init__",
+            return_value=None,
+        )
+        agent_definition = agent_definitions.AgentDefinition(
+            name="some_name", out_selectors=["v3.report.vulnerability"]
+        )
+        agent_settings = runtime_definitions.AgentSettings(
+            key="some_key", tracing_collector_url=f"file://{tmp_file_obj.name}"
+        )
+        test_agent = TestAgent(
+            agent_definition=agent_definition, agent_settings=agent_settings
+        )
+        mock_send_message = mocker.patch.object(test_agent, "mq_send_message")
+
+        test_agent.emit(
+            "v3.report.vulnerability",
+            {
+                "title": "some_title",
+                "technical_detail": "some_details",
+                "risk_rating": "MEDIUM",
+            },
+            message_priority=6,
+        )
+
+        mock_send_message.assert_called_once()
+        assert mock_send_message.call_args.kwargs["message_priority"] == 6
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
-    agent_mock: List[object],
+    agent_mock: list[object],
 ) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
@@ -166,7 +200,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInContext(
-    agent_mock: List[object],
+    agent_mock: list[object],
 ) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock

@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n(ostorlab/scanner/proto/assets/file.proto\x12\"ostorlab.scanner.proto.assets.file\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"\xe9\x01\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0b\x63ontent_url\x18\x03 \x01(\t\x12O\n\x10\x61ndroid_metadata\x18\x04 \x01(\x0b\x32\x33.ostorlab.scanner.proto.assets.file.AndroidMetadataH\x00\x12G\n\x0cios_metadata\x18\x05 \x01(\x0b\x32/.ostorlab.scanner.proto.assets.file.IOSMetadataH\x00\x42\x10\n\x0emetadata_oneof')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n(ostorlab/scanner/proto/assets/file.proto\x12\"ostorlab.scanner.proto.assets.file\"\'\n\x0f\x41ndroidMetadata\x12\x14\n\x0cpackage_name\x18\x01 \x01(\t\" \n\x0bIOSMetadata\x12\x11\n\tbundle_id\x18\x01 \x01(\t\"(\n\x11HarmonyOSMetadata\x12\x13\n\x0b\x62undle_name\x18\x01 \x01(\t\"\xbe\x02\n\x07Message\x12\x0f\n\x07\x63ontent\x18\x01 \x01(\x0c\x12\x0c\n\x04path\x18\x02 \x01(\t\x12\x13\n\x0b\x63ontent_url\x18\x03 \x01(\t\x12O\n\x10\x61ndroid_metadata\x18\x04 \x01(\x0b\x32\x33.ostorlab.scanner.proto.assets.file.AndroidMetadataH\x00\x12G\n\x0cios_metadata\x18\x05 \x01(\x0b\x32/.ostorlab.scanner.proto.assets.file.IOSMetadataH\x00\x12S\n\x12harmonyos_metadata\x18\x06 \x01(\x0b\x32\x35.ostorlab.scanner.proto.assets.file.HarmonyOSMetadataH\x00\x42\x10\n\x0emetadata_oneof')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.scanner.proto.assets.file_pb2', globals())
@@ -24,6 +24,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _ANDROIDMETADATA._serialized_end=119
   _IOSMETADATA._serialized_start=121
   _IOSMETADATA._serialized_end=153
-  _MESSAGE._serialized_start=156
-  _MESSAGE._serialized_end=389
+  _HARMONYOSMETADATA._serialized_start=155
+  _HARMONYOSMETADATA._serialized_end=195
+  _MESSAGE._serialized_start=198
+  _MESSAGE._serialized_end=516
 # @@protoc_insertion_point(module_scope)

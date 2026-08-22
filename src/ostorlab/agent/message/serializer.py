@@ -1,12 +1,13 @@
 """Serializer handles matching of selector to the proper protobuf message definition."""
 
+import dataclasses
 import importlib
 import logging
 import os
 import pathlib
 import re
 import sys
-from typing import Dict, List, Any
+from typing import Any
 
 from google.protobuf import json_format
 
@@ -66,7 +67,7 @@ def _replace_module_proto(proto_path: str) -> str:
     return re.sub(r"_pb2\..*$", "_pb2", re.sub(r"^\.code\.", "", matching_package))
 
 
-def _list_message_proto_files() -> List[str]:
+def _list_message_proto_files() -> list[str]:
     """List all the proto files."""
     files = []
     # r=root, d=directories, f = files
@@ -95,7 +96,7 @@ def _selector_to_package_regex(subject: str) -> str:
         )
 
 
-def serialize(selector: str, values: Dict[str, Any]) -> Any:
+def serialize(selector: str, values: dict[str, Any]) -> Any:
     """Serializes a Request message using the proper format defined using the seelctor value.
     If the subject is a.b.c. The corresponding proto is located at message/a/b/c/xxx.proto.
 
@@ -112,7 +113,7 @@ def serialize(selector: str, values: Dict[str, Any]) -> Any:
         raise SerializationError("Error serializing message") from e
 
 
-def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
+def _serialize(selector: str, class_name: str, values: dict[str, Any]) -> Any:
     """Serializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
     class_object = getattr(importlib.import_module(package_name), class_name)
@@ -123,11 +124,17 @@ def _serialize(selector: str, class_name: str, values: Dict[str, Any]) -> Any:
 
 def _parse_list(values: Any, message: Any) -> None:
     """Parse list to protobuf message."""
-    if len(values) > 0 and isinstance(
-        values[0], dict
+    if len(values) > 0 and (
+        isinstance(values[0], dict) or dataclasses.is_dataclass(values[0])
     ):  # value needs to be further parsed
         for v in values:
             cmd = message.add()
+            if dataclasses.is_dataclass(v) is True:
+                v = v.__dict__
+            elif isinstance(v, dict) is False:
+                raise ValueError(
+                    f"Unexpected type {type(v)} in list, expected dict or dataclass."
+                )
             _parse_dict(v, cmd)
     else:  # value can be set
         message.extend(values)
@@ -136,10 +143,21 @@ def _parse_list(values: Any, message: Any) -> None:
 def _parse_dict(values: Any, message: Any) -> None:
     """Parse dict to protobuf message."""
     for k, v in values.items():
-        if isinstance(v, dict):  # value needs to be further parsed
-            _parse_dict(v, getattr(message, k))
+        if dataclasses.is_dataclass(v) is True:  # nested asset, parse recursively
+            try:
+                _parse_dict(v.__dict__, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
+        elif isinstance(v, dict):  # value needs to be further parsed
+            try:
+                _parse_dict(v, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         elif isinstance(v, list):
-            _parse_list(v, getattr(message, k))
+            try:
+                _parse_list(v, getattr(message, k))
+            except AttributeError as e:
+                raise SerializationError(f"invalid attribute {k}") from e
         else:
             try:
                 # if is of type ENUM.

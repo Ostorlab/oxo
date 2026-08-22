@@ -5,13 +5,13 @@ public_runner = LoginAPIRunner(username, password, otp_token)
 public_runner.login_user()
 """
 
+from typing import Any
+
 import httpx
-from typing import Dict, Optional, Any
 
-from ostorlab.apis.runners import runner
-from ostorlab.apis import request as api_request
 from ostorlab.apis import login
-
+from ostorlab.apis import request as api_request
+from ostorlab.apis.runners import runner
 
 TOKEN_ENDPOINT = "https://api.ostorlab.co/apis/token/"
 
@@ -21,10 +21,10 @@ class LoginAPIRunner(runner.APIRunner):
 
     def __init__(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        otp_token: Optional[str] = None,
-        proxy: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        otp_token: str | None = None,
+        proxy: str | None = None,
         verify: bool = True,
     ):
         """Constructs all the necessary attributes for the object.
@@ -60,7 +60,7 @@ class LoginAPIRunner(runner.APIRunner):
 
         return self._sent_request(login_request)
 
-    def execute(self, request: api_request.APIRequest) -> Dict[str, Any]:
+    def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Token GraphQL API.
 
         Args:
@@ -77,7 +77,7 @@ class LoginAPIRunner(runner.APIRunner):
             raise runner.ResponseError(
                 f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
             )
-        data: Dict[str, Any] = response.json()
+        data: dict[str, Any] = response.json()
         errors = data.get("errors")
         if errors is not None and isinstance(errors, list):
             error = errors[0].get("message")

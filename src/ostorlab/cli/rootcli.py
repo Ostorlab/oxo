@@ -1,8 +1,7 @@
 """This module is the entry point for OXO CLI."""
 
-import logging
 import json
-from typing import Optional
+import logging
 
 import click
 
@@ -31,12 +30,12 @@ logger = logging.getLogger("CLI")
 )
 def rootcli(
     ctx: click.core.Context,
-    proxy: Optional[str] = None,
-    tlsverify: Optional[bool] = True,
+    proxy: str | None = None,
+    tlsverify: bool | None = True,
     debug: bool = False,
     verbose: bool = False,
-    api_key: str = None,
-    gcp_logging_credential: Optional[str] = None,
+    api_key: str | None = None,
+    gcp_logging_credential: str | None = None,
 ) -> None:
     """Oxo is an open-source project to help automate security testing.\n
     Oxo standardizes interoperability between tools in a consistent, scalable, and performant way.

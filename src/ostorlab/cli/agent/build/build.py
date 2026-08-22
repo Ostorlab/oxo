@@ -11,7 +11,7 @@ from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker
-from ostorlab.cli.agent import agent
+from ostorlab.cli.agent.agent import agent
 from ostorlab.cli.agent.build import build_progress
 
 console = cli_console.Console()

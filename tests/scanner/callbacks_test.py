@@ -1,84 +1,133 @@
 """Unit tests for ostorlab.scanner.callbacks module."""
 
+import base64
+
 from pytest_mock import plugin
 
 from ostorlab.assets import agent as agent_asset
-from ostorlab.assets import android_aab
-from ostorlab.assets import android_apk
-from ostorlab.assets import android_store
-from ostorlab.assets import domain_name
-from ostorlab.assets import file
-from ostorlab.assets import ios_ipa
-from ostorlab.assets import ios_store
-from ostorlab.assets import ipv4
-from ostorlab.assets import ipv6
+from ostorlab.assets import (
+    android_aab,
+    android_apk,
+    android_store,
+    domain_name,
+    file,
+    harmonyos_aab,
+    harmonyos_apk,
+    harmonyos_app,
+    harmonyos_hap,
+    harmonyos_rpk,
+    harmonyos_store,
+    ios_ipa,
+    ios_store,
+    ipv4,
+    ipv6,
+)
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import repository as repository_asset
+from ostorlab.assets import repository_archive as repository_archive_asset
+from ostorlab.assets import risk as risk_asset
+from ostorlab.assets import ticket as ticket_asset
 from ostorlab.scanner import callbacks
-from ostorlab.scanner import scanner_conf
-from ostorlab.scanner.proto.assets import aab_pb2
-from ostorlab.scanner.proto.assets import agent_pb2
-from ostorlab.scanner.proto.assets import android_store_pb2
-from ostorlab.scanner.proto.assets import apk_pb2
-from ostorlab.scanner.proto.assets import domain_name_pb2
-from ostorlab.scanner.proto.assets import file_pb2
-from ostorlab.scanner.proto.assets import ios_store_pb2
-from ostorlab.scanner.proto.assets import ip_pb2
-from ostorlab.scanner.proto.assets import ipa_pb2
-from ostorlab.scanner.proto.assets import link_pb2
-from ostorlab.scanner.proto.assets import network_pb2
-from ostorlab.scanner.proto.assets import v4_pb2
-from ostorlab.scanner.proto.assets import v6_pb2
-from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
+
+
+def _setup_start_scan_mocks(mocker):
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    mocker.patch("ostorlab.scanner.callbacks._install_agents")
+    return runtime_mock
 
 
 def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for apk asset."""
-    apk_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        apk=apk_pb2.Message(content=b"dummy_apk"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", apk_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    apk_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    apk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(apk_asset, android_apk.AndroidApk) is True
     assert apk_asset.content == b"dummy_apk"
     assert apk_asset.path is None
     assert apk_asset.content_url is None
 
 
+def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward GCP logging credentials to the local runtime."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.scanner.callbacks.install_agent.install")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    select_runtime_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime",
+        return_value=runtime_mock,
+    )
+    callbacks.start_scan(
+        reserved_scan,
+        mocker.MagicMock(),
+        gcp_logging_credential="gcp-credential",
+    )
+
+    select_runtime_mock.assert_called_once_with(
+        runtime_type="local",
+        scan_id="42",
+        run_default_agents=False,
+        gcp_logging_credential="gcp-credential",
+    )
+
+
 def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for aab asset."""
-    aab_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        aab=aab_pb2.Message(content=b"dummy_aab"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AndroidAabAssetType",
+            "content": base64.b64encode(b"dummy_aab").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", aab_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    aab_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    aab_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(aab_asset, android_aab.AndroidAab) is True
     assert aab_asset.content == b"dummy_aab"
     assert aab_asset.path is None
@@ -87,140 +136,290 @@ def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpaAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipa asset."""
-    ipa_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        ipa=ipa_pb2.Message(content=b"dummy_ipa"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IosIpaAssetType",
+            "content": base64.b64encode(b"dummy_ipa").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", ipa_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    ipa_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    ipa_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ipa_asset, ios_ipa.IOSIpa) is True
     assert ipa_asset.content == b"dummy_ipa"
     assert ipa_asset.path is None
     assert ipa_asset.content_url is None
 
 
+def testExtractAssets_whenHarmonyosHapAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos hap asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "HarmonyOsHapAssetType",
+            "content": base64.b64encode(b"dummy_hap").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    hap_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(hap_asset, harmonyos_hap.HarmonyOSHap) is True
+    assert hap_asset.content == b"dummy_hap"
+    assert hap_asset.path is None
+    assert hap_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosApkAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos apk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "HarmonyOsApkAssetType",
+            "content": base64.b64encode(b"dummy_hap_apk").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    apk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(apk_asset, harmonyos_apk.HarmonyOSApk) is True
+    assert apk_asset.content == b"dummy_hap_apk"
+    assert apk_asset.path is None
+    assert apk_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosAabAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos aab asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "HarmonyOsAabAssetType",
+            "content": base64.b64encode(b"dummy_hap_aab").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    aab_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(aab_asset, harmonyos_aab.HarmonyOSAab) is True
+    assert aab_asset.content == b"dummy_hap_aab"
+    assert aab_asset.path is None
+    assert aab_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosRpkAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos rpk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "HarmonyOsRpkAssetType",
+            "content": base64.b64encode(b"dummy_hap_rpk").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    rpk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(rpk_asset, harmonyos_rpk.HarmonyOSRpk) is True
+    assert rpk_asset.content == b"dummy_hap_rpk"
+    assert rpk_asset.path is None
+    assert rpk_asset.content_url is None
+
+
+def testExtractAssets_whenHarmonyosAppAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos .app asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "HarmonyOsAppAssetType",
+            "content": base64.b64encode(b"dummy_hap_app").decode(),
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    app_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(app_asset, harmonyos_app.HarmonyOSApp) is True
+    assert app_asset.content == b"dummy_hap_app"
+    assert app_asset.path is None
+    assert app_asset.content_url is None
+
+
 def testExtractAssets_whenAndroidStoreAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for android_store asset."""
-    android_store_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        android_store=android_store_pb2.Message(package_name="a.b.c"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AndroidPackageNameAssetType",
+            "packageName": "a.b.c",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan(
-        "some_subject", android_store_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    android_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    android_store_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(android_store_asset, android_store.AndroidStore) is True
     assert android_store_asset.package_name == "a.b.c"
 
 
 def testExtractAssets_whenIosStoreAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ios_store asset."""
-    ios_store_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        ios_store=ios_store_pb2.Message(bundle_id="a.b.c"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IosBundleIdAssetType",
+            "bundleId": "a.b.c",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan(
-        "some_subject", ios_store_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    ios_store_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    ios_store_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ios_store_asset, ios_store.IOSStore) is True
     assert ios_store_asset.bundle_id == "a.b.c"
 
 
+def testExtractAssets_whenHarmonyosStoreAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for harmonyos_store asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "HarmonyOsBundleNameAssetType",
+            "bundleName": "com.example.harmony",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    store_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(store_asset, harmonyos_store.HarmonyOSStore) is True
+    assert store_asset.bundle_name == "com.example.harmony"
+
+
 def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for domain asset."""
-    domain_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        domain_name=domain_name_pb2.Message(name="ostorlab.co"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "DomainNameAssetType",
+            "name": "ostorlab.co",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan(
-        "some_subject", domain_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    domain_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    domain_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(domain_asset, domain_name.DomainName) is True
     assert domain_asset.name == "ostorlab.co"
 
 
 def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
-    agent_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        agent=agent_pb2.Message(
-            key="agent/ostorlab/agent42",
-            version="0.0.1",
-            git_location="git@github.com:Ostorlab/agent_42.git",
-            yaml_file_location=".",
-            docker_location=".",
-        ),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AgentAssetType",
+            "key": "agent/ostorlab/agent42",
+            "version": "0.0.1",
+            "gitLocation": "git@github.com:Ostorlab/agent_42.git",
+            "yamlFileLocation": ".",
+            "dockerLocation": ".",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan(
-        "some_subject", agent_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    agnt_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    agnt_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(agnt_asset, agent_asset.Agent) is True
     assert agnt_asset.key == "agent/ostorlab/agent42"
     assert agnt_asset.version == "0.0.1"
@@ -231,80 +430,186 @@ def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenFileAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for file asset."""
-    file_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        file=file_pb2.Message(path="/tmp/dummy_file"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "FileAssetType",
+            "path": "/tmp/dummy_file",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", file_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    file_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    file_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(file_asset, file.File) is True
     assert file_asset.path == "/tmp/dummy_file"
     assert file_asset.content is None
     assert file_asset.content_url is None
 
 
+def testExtractAssets_whenRepositoryAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for repository asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RepositoryAssetType",
+            "repositoryUrl": "https://github.com/org/repo.git",
+            "commitHash": "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
+            "provider": "GITHUB",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_repository_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_repository_asset, repository_asset.Repository) is True
+    assert (
+        extracted_repository_asset.repository_url == "https://github.com/org/repo.git"
+    )
+    assert (
+        extracted_repository_asset.commit_hash
+        == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    )
+    assert extracted_repository_asset.provider == "GITHUB"
+
+
+def testExtractAssets_whenRiskAssetWithRepositoryTarget_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets maps a repository target onto a risk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RiskAssetType",
+            "description": "Vulnerable dependency",
+            "rating": "MEDIUM",
+            "target": {
+                "__typename": "RepositoryAssetType",
+                "repositoryUrl": "https://github.com/org/repo.git",
+                "commitHash": "a1a10cdbc6551ba359169a3033f193b7f8c1b95d",
+                "provider": "GITLAB",
+            },
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
+    assert extracted_risk_asset.description == "Vulnerable dependency"
+    assert extracted_risk_asset.rating == "MEDIUM"
+    assert (
+        isinstance(extracted_risk_asset.repository, repository_asset.Repository) is True
+    )
+    assert (
+        extracted_risk_asset.repository.repository_url
+        == "https://github.com/org/repo.git"
+    )
+    assert (
+        extracted_risk_asset.repository.commit_hash
+        == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
+    )
+    assert extracted_risk_asset.repository.provider == "GITLAB"
+
+
+def testExtractAssets_whenRepositoryArchiveAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for repository archive asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RepositoryArchiveAssetType",
+            "contentUrl": "https://example.com/source-archive.tar.gz",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert (
+        isinstance(extracted_asset, repository_archive_asset.RepositoryArchive) is True
+    )
+    assert extracted_asset.content_url == "https://example.com/source-archive.tar.gz"
+
+
 def testExtractAssets_whenIpAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ip asset."""
-    ip_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        ip=ip_pb2.Message(host="8.8.8.8", version=4),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IpAssetType",
+            "host": "8.8.8.8",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", ip_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    ip_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    ip_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ip_asset, ipv4.IPv4) is True
     assert ip_asset.host == "8.8.8.8"
     assert ip_asset.version == 4
-    # mask is set with ip_network.prefixlen in _prepare_ip_asset
     assert ip_asset.mask == "32"
 
 
 def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipv4 asset."""
-    ipv4_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        ipv4=v4_pb2.Message(host="8.8.8.8", version=4, mask="24"),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "Ipv4AssetType",
+            "host": "8.8.8.8",
+            "mask": "24",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", ipv4_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    ipv4_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    ipv4_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ipv4_asset, ipv4.IPv4) is True
     assert ipv4_asset.host == "8.8.8.8"
     assert ipv4_asset.version == 4
@@ -313,53 +618,53 @@ def testExtractAssets_whenIpv4Asset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenIpv6WithoutMaskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipv6 without mask asset."""
-    ipv6_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        ipv6=v6_pb2.Message(host="2001:db8::", version=6),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "Ipv6AssetType",
+            "host": "2001:db8::",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    ipv6_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    ipv6_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ipv6_asset, ipv6.IPv6) is True
     assert ipv6_asset.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
     assert ipv6_asset.version == 6
-    # mask is set with ip_network.prefixlen in _prepare_ip_asset
     assert ipv6_asset.mask == "128"
 
 
 def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for ipv6 with mask asset."""
-    ipv6_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        ipv6=v6_pb2.Message(host="2001:db8::", version=6, mask="64"),
-        agents=[],
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "Ipv6AssetType",
+            "host": "2001:db8::",
+            "mask": "64",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan("some_subject", ipv6_start_agent_scan_msg, None, registry_conf)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    ipv6_asset = runtime_scan_mock.call_args[1].get("assets")[0]
+    ipv6_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ipv6_asset, ipv6.IPv6) is True
     assert ipv6_asset.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
     assert ipv6_asset.version == 6
@@ -368,87 +673,264 @@ def testExtractAssets_whenIpv6WithMaskAsset_shouldReturnCorrectAsset(
 
 def testExtractAssets_whenLinksAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for links asset."""
-    links_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        links=startAgentScan_pb2.Links(
-            links=[
-                link_pb2.Message(url="https://ostorlab.co", method="GET"),
-                link_pb2.Message(url="https://google.com", method="POST"),
-            ]
-        ),
-    )
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
-    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://ostorlab.co", "https://google.com"],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
 
-    callbacks.start_scan(
-        "some_subject", links_start_agent_scan_msg, None, registry_conf
-    )
+    callbacks.start_scan(reserved_scan, state_reporter)
 
-    link_asst1 = runtime_scan_mock.call_args[1].get("assets")[0]
+    link_asst1 = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(link_asst1, link_asset.Link) is True
     assert link_asst1.url == "https://ostorlab.co"
     assert link_asst1.method == "GET"
-    link_asst2 = runtime_scan_mock.call_args[1].get("assets")[1]
+    link_asst2 = runtime_mock.scan.call_args[1].get("assets")[1]
     assert isinstance(link_asst2, link_asset.Link) is True
     assert link_asst2.url == "https://google.com"
-    assert link_asst2.method == "POST"
+    assert link_asst2.method == "GET"
 
 
 def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
-    registry_conf: scanner_conf.RegistryConfig,
 ) -> None:
     """Ensure extract_assets returns correct asset for network asset."""
-    network_start_agent_scan_msg = startAgentScan_pb2.Message(
-        reference_scan_id=42,
-        key="agentgroup/ostorlab/agent_group42",
-        agents=[],
-        network=network_pb2.Message(
-            ips=[
-                ip_pb2.Message(host="8.8.8.8", version=4),
-                ip_pb2.Message(host="127.0.0.1", version=4),
-                ip_pb2.Message(host="2001:db8::", version=6),
-                ip_pb2.Message(host="192.168.1.1", mask="24", version=4),
-            ]
-        ),
-    )
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "NetworkAssetType",
+            "networks": ["18.2.46.129/32", "13.8.98.58/32"],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    ip_asset1 = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(ip_asset1, ipv4.IPv4) is True
+    assert ip_asset1.host == "18.2.46.129"
+    assert ip_asset1.version == 4
+    assert ip_asset1.mask == "32"
+    ip_asset2 = runtime_mock.scan.call_args[1].get("assets")[1]
+    assert isinstance(ip_asset2, ipv4.IPv4) is True
+    assert ip_asset2.host == "13.8.98.58"
+    assert ip_asset2.version == 4
+    assert ip_asset2.mask == "32"
+
+
+def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure start_scan forwards the api_key down to install_agent.install
+    so the agent image is pulled with a short-lived registry token."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [
+                {"key": "agent/ostorlab/agent42", "version": "0.0.1"},
+            ],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.scan"
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
     )
 
-    callbacks.start_scan(
-        "some_subject", network_start_agent_scan_msg, None, registry_conf
+    state_reporter = mocker.MagicMock()
+    callbacks.start_scan(reserved_scan, state_reporter, api_key="test_api_key")
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("api_key") == "test_api_key"
+
+
+def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When start_scan is invoked without an api_key, install_agent.install
+    is called with api_key=None (anonymous pull)."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [
+                {"key": "agent/ostorlab/agent42", "version": "0.0.1"},
+            ],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
     )
 
-    ip_asset1 = runtime_scan_mock.call_args[1].get("assets")[0]
-    assert isinstance(ip_asset1, ipv4.IPv4) is True
-    assert ip_asset1.host == "8.8.8.8"
-    assert ip_asset1.version == 4
-    assert ip_asset1.mask == "32"
-    ip_asset2 = runtime_scan_mock.call_args[1].get("assets")[1]
-    assert isinstance(ip_asset2, ipv4.IPv4) is True
-    assert ip_asset2.host == "127.0.0.1"
-    assert ip_asset2.version == 4
-    assert ip_asset2.mask == "32"
-    ip_asset3 = runtime_scan_mock.call_args[1].get("assets")[2]
-    assert isinstance(ip_asset3, ipv6.IPv6) is True
-    assert ip_asset3.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
-    assert ip_asset3.version == 6
-    assert ip_asset3.mask == "128"
-    ip_asset4 = runtime_scan_mock.call_args[1].get("assets")[3]
-    assert isinstance(ip_asset4, ipv4.IPv4) is True
-    assert ip_asset4.host == "192.168.1.1"
-    assert ip_asset4.version == 4
-    assert ip_asset4.mask == "24"
+    state_reporter = mocker.MagicMock()
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("api_key") is None
+
+
+def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for risk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RiskAssetType",
+            "description": "Exposed server",
+            "rating": "HIGH",
+            "target": {
+                "__typename": "Ipv4AssetType",
+                "host": "8.8.8.8",
+                "mask": "32",
+            },
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
+    assert extracted_risk_asset.description == "Exposed server"
+    assert extracted_risk_asset.rating == "HIGH"
+    assert extracted_risk_asset.ipv4 is not None
+    assert extracted_risk_asset.ipv4.host == "8.8.8.8"
+    assert extracted_risk_asset.ipv4.mask == "32"
+
+
+def testExtractAssets_whenTicketAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for ticket asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "TicketAssetType",
+            "title": "Test Ticket",
+            "description": "This is a test ticket",
+            "ticketId": "123",
+            "ticketKey": "TICKET-123",
+            "ticketComments": [
+                {"author": "sec-ops", "value": "confirmed reproduction"},
+                {"author": "dev-team", "value": "fix in progress"},
+            ],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_ticket_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_ticket_asset, ticket_asset.Ticket) is True
+    assert extracted_ticket_asset.title == "Test Ticket"
+    assert extracted_ticket_asset.description == "This is a test ticket"
+    assert extracted_ticket_asset.ticket_id == "123"
+    assert extracted_ticket_asset.ticket_key == "TICKET-123"
+    assert len(extracted_ticket_asset.comments) == 2
+    assert extracted_ticket_asset.comments[0].author == "sec-ops"
+    assert extracted_ticket_asset.comments[0].message == "confirmed reproduction"
+    assert extracted_ticket_asset.comments[1].author == "dev-team"
+    assert extracted_ticket_asset.comments[1].message == "fix in progress"
+
+
+def testExtractAssets_whenRisksAsset_shouldReturnCorrectAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct assets for risks asset (plural)."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RisksAssetType",
+            "risks": [
+                {
+                    "description": "Exposed server",
+                    "rating": "HIGH",
+                    "target": {
+                        "__typename": "Ipv4AssetType",
+                        "host": "8.8.8.8",
+                        "mask": "32",
+                    },
+                },
+                {
+                    "description": "Weak password",
+                    "rating": "MEDIUM",
+                    "target": {
+                        "__typename": "DomainNameAssetType",
+                        "name": "example.com",
+                    },
+                },
+            ],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 2
+
+    assert isinstance(assets[0], risk_asset.Risk) is True
+    assert assets[0].description == "Exposed server"
+    assert assets[0].rating == "HIGH"
+    assert assets[0].ipv4 is not None
+    assert assets[0].ipv4.host == "8.8.8.8"
+
+    assert isinstance(assets[1], risk_asset.Risk) is True
+    assert assets[1].description == "Weak password"
+    assert assets[1].rating == "MEDIUM"
+    assert assets[1].domain_name is not None
+    assert assets[1].domain_name.name == "example.com"

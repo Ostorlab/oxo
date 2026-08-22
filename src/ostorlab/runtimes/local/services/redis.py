@@ -1,12 +1,10 @@
 """Redis service in charge of providing capabilities like QPS limiting, distributed locking and distributed storage."""
 
 import logging
-from typing import Dict
 
 import docker
 import tenacity
-from docker import errors
-from docker import types
+from docker import errors, types
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -21,7 +19,7 @@ class LocalRedis:
         self,
         name: str,
         network: str,
-        exposed_ports: Dict[int, int] = None,
+        exposed_ports: dict[int, int] | None = None,
         image: str = REDIS_IMAGE,
     ) -> None:
         """Initialize the Redis service parameters.
@@ -48,7 +46,7 @@ class LocalRedis:
         return f"redis://{self._redis_host}:6379/"
 
     @property
-    def service(self):
+    def service(self) -> services.Service | None:
         return self._redis_service
 
     def start(self) -> None:
@@ -56,7 +54,7 @@ class LocalRedis:
         self._create_network()
         self._redis_service = self._start_redis()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the local Redis instance."""
         for service in self._docker_client.services.list():
             universe = service.attrs["Spec"]["Labels"].get("ostorlab.universe")
@@ -67,7 +65,7 @@ class LocalRedis:
             ):
                 service.remove()
 
-    def _create_network(self):
+    def _create_network(self) -> None:
         if any(
             network.name == self._network
             for network in self._docker_client.networks.list()
@@ -83,7 +81,7 @@ class LocalRedis:
                 check_duplicate=True,
             )
 
-    def _start_redis(self) -> services.Service:
+    def _start_redis(self) -> services.Service | None:
         try:
             logger.info("starting Redis")
             endpoint_spec = types.services.EndpointSpec(
@@ -102,7 +100,7 @@ class LocalRedis:
         except docker.errors.APIError as e:
             error_message = f"Redis service could not be started. Reason: {e}."
             logger.error(error_message)
-            return
+            return None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),

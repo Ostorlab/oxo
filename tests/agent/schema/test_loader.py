@@ -5,8 +5,7 @@ import pathlib
 
 import pytest
 
-from ostorlab.agent.schema import loader
-from ostorlab.agent.schema import validator
+from ostorlab.agent.schema import loader, validator
 
 
 def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:
@@ -217,9 +216,11 @@ def testAgentSpecValidation_whenDefinitionHasInvalidArgType_raiseValidationError
     """
     invalid_agent_definition_path = pathlib.Path(__file__).parent / "invalid_agent.yaml"
 
-    with open(invalid_agent_definition_path, "r") as invalid_agent:
-        with pytest.raises(validator.ValidationError):
-            loader.load_agent_yaml(invalid_agent)
+    with (
+        open(invalid_agent_definition_path, "r") as invalid_agent,
+        pytest.raises(validator.ValidationError),
+    ):
+        loader.load_agent_yaml(invalid_agent)
 
 
 def testAgentGroupSpecValidation_whenDefinitionHasInvalidArgType_raiseValidationError() -> (
@@ -232,6 +233,8 @@ def testAgentGroupSpecValidation_whenDefinitionHasInvalidArgType_raiseValidation
         pathlib.Path(__file__).parent / "invalid_agent_group.yaml"
     )
 
-    with open(invalid_agent_group_definition_path, "r") as invalid_agent_group:
-        with pytest.raises(validator.ValidationError):
-            loader.load_agent_group_yaml(invalid_agent_group)
+    with (
+        open(invalid_agent_group_definition_path, "r") as invalid_agent_group,
+        pytest.raises(validator.ValidationError),
+    ):
+        loader.load_agent_group_yaml(invalid_agent_group)

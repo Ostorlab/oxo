@@ -1,7 +1,6 @@
 """IPv6 address asset."""
 
 import dataclasses
-from typing import Optional
 
 from ostorlab.assets import asset
 
@@ -13,7 +12,7 @@ class IPv6(asset.Asset):
 
     host: str
     version: int = 6
-    mask: Optional[str] = None
+    mask: str | None = None
 
     def __str__(self) -> str:
         return f"{self.host}/{self.mask}"

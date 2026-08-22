@@ -2,7 +2,7 @@
 
 import dataclasses
 import json
-from typing import Optional, Union, Any
+from typing import Any
 
 
 @dataclasses.dataclass
@@ -13,22 +13,20 @@ class Arg:
 
     name: str
     type: str
-    value: Optional[Union[bytes, int, float, str, bool]] = None
-    description: Optional[str] = None
+    value: bytes | int | float | str | bool | None = None
+    description: str | None = None
 
     @classmethod
     def build(
         cls,
         name: str,
         type: str,
-        value: Optional[Union[bytes, int, float, str, bool]] = None,
-        description: Optional[str] = None,
+        value: bytes | float | str | bool | None = None,
+        description: str | None = None,
     ) -> "Arg":
         if isinstance(value, bytes):
-            if type == "binary":
-                value = value
             # When the value comes from a message received in the NATS.
-            else:
+            if type != "binary":
                 value = Arg.convert_str(value_str=value.decode(), target_type=type)
 
         # When the value comes from the CLI arguments using --arg.
@@ -60,10 +58,8 @@ class Arg:
         """
         if target_type == "string":
             return value_str
-        elif target_type == "int":
+        elif target_type in ("number", "int"):
             return int(value_str)
-        elif target_type == "number":
-            return float(value_str)
         elif target_type == "boolean":
             return value_str.lower() == "true"
         elif target_type == "array":
@@ -86,14 +82,28 @@ class PortMapping:
 
 
 @dataclasses.dataclass
+class Volume:
+    """Data class defining a shared scan volume declared by an agent.
+
+    Agents declaring the same `name` share a single per-scan Docker volume,
+    enabling out-of-band data exchange (e.g. a cloned source repository)."""
+
+    name: str
+    path: str
+    read_only: bool = True
+
+
+@dataclasses.dataclass
 class ScannerState:
     """Current scanner state."""
 
     scanner_id: str
-    scan_id: Optional[int]
+    scan_id: int | None
     cpu_load: float
     memory_load: float
-    total_cpu: Optional[int]
+    total_cpu: int | None
     total_memory: int
     hostname: str
     ip: str
+    disk_usage: float = 0.0
+    total_disk: int = 0

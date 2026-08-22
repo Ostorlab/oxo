@@ -1,7 +1,7 @@
 """Lists the remote scans."""
 
-from typing import Dict, Optional
 import json
+from typing import Any
 
 from ostorlab.apis import request
 
@@ -9,20 +9,21 @@ from ostorlab.apis import request
 class ScansListAPIRequest(request.APIRequest):
     """Lists the remote scans."""
 
-    def __init__(self, page: int, elements: int):
+    def __init__(self, page: int, elements: int, state: str | None = None):
         self._page = page
         self._elements = elements
+        self._state = state
 
     @property
-    def query(self) -> Optional[str]:
+    def query(self) -> str | None:
         """Defines the query to list the scans.
 
         Returns:
             The query to list the scans.
         """
         return """
-         query Scans($page: Int, $numberElements: Int) {
-            scans(page: $page, numberElements: $numberElements) {
+         query Scans($page: Int, $numberElements: Int, $state: String) {
+            scans(page: $page, numberElements: $numberElements, state: $state) {
                 pageInfo {
                     hasNext
                     hasPrevious
@@ -44,16 +45,20 @@ class ScansListAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> Optional[Dict]:
+    def data(self) -> dict[str, Any] | None:
         """Sets the query to list the scans.
 
         Returns:
               The query to list the scans.
         """
+        variables: dict[str, Any] = {
+            "page": self._page,
+            "numberElements": self._elements,
+        }
+        if self._state is not None:
+            variables["state"] = self._state
         data = {
             "query": self.query,
-            "variables": json.dumps(
-                {"page": self._page, "numberElements": self._elements}
-            ),
+            "variables": json.dumps(variables),
         }
         return data

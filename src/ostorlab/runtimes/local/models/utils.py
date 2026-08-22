@@ -1,9 +1,9 @@
 """Utilities for the local runtime models."""
 
+import plistlib
 import zipfile
 
 import pyaxmlparser
-import plistlib
 
 
 def get_package_name(path: str) -> str:

@@ -3,14 +3,13 @@ This module takes care of preparing a generic file of type before injecting it t
 
 import io
 import logging
-from typing import Optional, Tuple
 
 import click
 
+from ostorlab import exceptions
 from ostorlab.assets import file as file_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
-from ostorlab import exceptions
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -22,8 +21,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def file_cli(
     ctx: click.core.Context,
-    file: Optional[Tuple[io.FileIO]] = None,
-    url: Optional[Tuple[str]] = None,
+    file: tuple[io.FileIO] | None = None,
+    url: tuple[str] | None = None,
 ) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj["runtime"]

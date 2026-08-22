@@ -1,16 +1,22 @@
 """Unit tests for the CLI agent install command."""
 
+import logging
 import re
 
+import docker.errors
 import httpx
+import pytest
+import pytest_httpx
+import tenacity
 from click import testing
 from docker.models import images as images_model
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import public_runner
-from ostorlab.cli import rootcli
+from ostorlab.cli import install_agent, rootcli
 
 
-def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
+def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage() -> None:
     """Test oxo agent install CLI command without the required agent_key option.
     Should show help message, and confirm the --agent option is missing.
     """
@@ -23,7 +29,9 @@ def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage():
     assert "Error: Missing argument" in result.output
 
 
-def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(httpx_mock, mocker):
+def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
+    httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
+) -> None:
     """Test oxo agent install CLI command with a wrong agent_key value.
     Should show message.
     """
@@ -58,7 +66,9 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(httpx_mock, 
     assert result.exit_code == 2
 
 
-def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, httpx_mock):
+def testAgentInstallCLI_whenAgentExists_installsAgent(
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test oxo agent install CLI command with a valid agent_key value should install the agent."""
 
     image_pull_mock = mocker.patch("docker.api.client.APIClient.pull", autospec=True)
@@ -103,3 +113,196 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(mocker, httpx_mock):
     image_get_mock.assert_called()
     tag_image_mock.assert_called()
     assert "Installation successful" in result.output
+
+
+def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(
+    mocker: plugin.MockerFixture, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Ensure existing-agent install messages are available to persisted logging."""
+    mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_details",
+        return_value={
+            "dockerLocation": "ostorlab.store/library/busybox",
+            "key": "agent/ostorlab/dependency_confusion",
+            "versions": {"versions": [{"version": "1.0.0"}]},
+        },
+    )
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=True)
+
+    with caplog.at_level(logging.INFO, logger="ostorlab.cli.install_agent"):
+        install_agent.install(
+            agent_key="agent/ostorlab/dependency_confusion",
+            docker_client=mocker.MagicMock(),
+        )
+
+    assert "agent/ostorlab/dependency_confusion already exist." in caplog.text
+
+
+def testAgentInstallCLI_whenPullFails_retries(
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
+    """Test agent install retries on pull failure."""
+
+    api_call_response = {
+        "data": {
+            "agent": {
+                "name": "some_agent",
+                "dockerLocation": "ostorlab.store/some_agent",
+                "key": "agent/org/some_agent",
+                "versions": {"versions": [{"version": "1.0.0"}]},
+            }
+        }
+    }
+    httpx_mock.add_response(
+        url=public_runner.PUBLIC_GRAPHQL_ENDPOINT, json=api_call_response
+    )
+
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
+
+    # Mock docker to raise an error
+    pull_mock = mocker.MagicMock(
+        side_effect=docker.errors.APIError("some connection error")
+    )
+    mock_client = mocker.MagicMock()
+    mock_client.api.pull = pull_mock
+    mocker.patch("docker.from_env", return_value=mock_client)
+
+    # Patch wait to be fast
+    mocker.patch.object(install_agent._do_install.retry, "wait", tenacity.wait_fixed(0))
+
+    runner = testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli, ["agent", "install", "agent/org/some_agent"]
+    )
+
+    # tenacity should have tried RETRY_ATTEMPTS times
+    assert pull_mock.call_count == install_agent.RETRY_ATTEMPTS
+    assert result.exit_code == 2
+
+
+def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
+    """Test agent install succeeds if a retry eventually works."""
+
+    api_call_response = {
+        "data": {
+            "agent": {
+                "name": "some_agent",
+                "dockerLocation": "ostorlab.store/some_agent",
+                "key": "agent/org/some_agent",
+                "versions": {"versions": [{"version": "1.0.0"}]},
+            }
+        }
+    }
+    httpx_mock.add_response(
+        url=public_runner.PUBLIC_GRAPHQL_ENDPOINT, json=api_call_response
+    )
+
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
+
+    pull_mock = mocker.MagicMock()
+    # First call raises error, second call returns successful log
+    pull_mock.side_effect = [
+        docker.errors.APIError("temporary error"),
+        [{"status": "Download complete", "id": "123"}],
+    ]
+    mock_client = mocker.MagicMock()
+    mock_client.api.pull = pull_mock
+    mocker.patch("docker.from_env", return_value=mock_client)
+
+    mock_image = mocker.MagicMock()
+    mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
+
+    mocker.patch.object(install_agent._do_install.retry, "wait", tenacity.wait_fixed(0))
+
+    runner = testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli, ["agent", "install", "agent/org/some_agent"]
+    )
+
+    assert pull_mock.call_count == 2
+    assert "Installation successful" in result.output
+    assert result.exit_code == 0
+
+
+def testInstallAgent_whenApiKeyProvided_passesTokenAsAuthConfigToPull(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When api_key is provided, the token is fetched and forwarded as auth_config
+    to docker_client.api.pull through the public install interface."""
+    agent_details = {
+        "dockerLocation": "registry.ostorlab.co/agent_ot1_bigfuzzer",
+        "key": "agent/ot1/bigFuzzer",
+        "versions": {"versions": [{"version": "1.0.0"}]},
+    }
+    mocker.patch("ostorlab.cli.agent_fetcher.get_details", return_value=agent_details)
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
+
+    mock_client = mocker.MagicMock()
+    mock_client.api.pull.return_value = iter([])
+
+    token_response = {
+        "data": {"generateAgentImageDownloadToken": {"token": "test.jwt.token"}}
+    }
+    mock_runner = mocker.MagicMock()
+    mock_runner.execute.return_value = token_response
+    mocker.patch(
+        "ostorlab.cli.install_agent.authenticated_runner.AuthenticatedAPIRunner",
+        return_value=mock_runner,
+    )
+
+    install_agent.install(
+        agent_key="agent/ot1/bigFuzzer",
+        docker_client=mock_client,
+        api_key="test_api_key",
+    )
+
+    mock_runner.execute.assert_called_once()
+    mock_client.login.assert_not_called()
+    mock_client.api.pull.assert_called_once()
+    _, pull_kwargs = mock_client.api.pull.call_args
+    assert pull_kwargs.get("auth_config") == {"registrytoken": "test.jwt.token"}
+    mock_client.images.get.assert_called()
+
+
+def testInstallAgent_whenApiKeyIsNone_skipsTokenFetchAndPullsAnonymously(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When api_key is None, no token is fetched and docker_client.api.pull
+    is called with auth_config=None."""
+    agent_details = {
+        "dockerLocation": "registry.ostorlab.co/agent_ot1_bigfuzzer",
+        "key": "agent/ot1/bigFuzzer",
+        "versions": {"versions": [{"version": "1.0.0"}]},
+    }
+    mocker.patch("ostorlab.cli.agent_fetcher.get_details", return_value=agent_details)
+    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=False)
+
+    mock_client = mocker.MagicMock()
+    mock_client.api.pull.return_value = iter([])
+
+    mock_runner = mocker.MagicMock()
+    mocker.patch(
+        "ostorlab.cli.install_agent.authenticated_runner.AuthenticatedAPIRunner",
+        return_value=mock_runner,
+    )
+
+    install_agent.install(
+        agent_key="agent/ot1/bigFuzzer",
+        docker_client=mock_client,
+        api_key=None,
+    )
+
+    mock_runner.execute.assert_not_called()
+    mock_client.login.assert_not_called()
+    mock_client.api.pull.assert_called_once()
+    _, pull_kwargs = mock_client.api.pull.call_args
+    assert pull_kwargs.get("auth_config") is None
+    mock_client.images.get.assert_called()

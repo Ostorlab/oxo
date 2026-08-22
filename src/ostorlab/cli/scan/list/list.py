@@ -3,14 +3,12 @@ This module takes care of listing all the remote or local scans.
 Example of usage:
     - ostorlab scan list --source=source."""
 
-from typing import Union
-
 import click
 
 from ostorlab.cli import console as cli_console
-from ostorlab.cli.scan import scan
+from ostorlab.cli.scan.scan import scan
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import styles, risk_rating
+from ostorlab.utils import risk_rating, styles
 
 console = cli_console.Console()
 
@@ -20,15 +18,26 @@ console = cli_console.Console()
     "--page", "-p", help="Page number of scans you would like to see.", default=1
 )
 @click.option("--elements", "-e", help="Number of scans to show per page.", default=10)
+@click.option(
+    "--state",
+    "-s",
+    type=click.Choice(
+        [e.value for e in models.ScanProgress],
+        case_sensitive=False,
+    ),
+    help="Filter scans by state.",
+)
 @click.pass_context
-def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
+def list_scans(
+    ctx: click.core.Context, page: int, elements: int, state: str | None
+) -> None:
     """List all your scans.\n
     Usage:\n
         - ostorlab scan --runtime=runtime list
     """
     runtime_instance = ctx.obj["runtime"]
     with console.status("Fetching scans"):
-        scans = runtime_instance.list(page=page, number_elements=elements)
+        scans = runtime_instance.list(page=page, number_elements=elements, state=state)
         if scans is not None:
             console.success("Scans listed successfully.")
             columns = {
@@ -55,7 +64,7 @@ def list_scans(ctx: click.core.Context, page: int, elements: int) -> None:
             console.error("Error fetching scan list.")
 
 
-def _get_risk_rating(risk: Union[risk_rating.RiskRating, str, None]) -> str:
+def _get_risk_rating(risk: risk_rating.RiskRating | str | None) -> str:
     """Get the risk rating string."""
     if risk is None:
         return "UNKNOWN"

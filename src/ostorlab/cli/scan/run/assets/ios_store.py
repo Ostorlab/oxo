@@ -1,14 +1,13 @@
 """This module triggers a scan using the ios_store asset."""
 
 import logging
-from typing import Tuple, Optional
 
 import click
 
-from ostorlab.cli.scan.run import run
-from ostorlab.cli import console as cli_console
-from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab import exceptions
+from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="ios-store")
 @click.option("--bundle-id", multiple=True, required=False)
 @click.pass_context
-def ios_store(ctx: click.core.Context, bundle_id: Optional[Tuple[str]] = ()) -> None:
+def ios_store(ctx: click.core.Context, bundle_id: tuple[str] | None = ()) -> None:
     """Run scan for a bundle_id."""
     runtime = ctx.obj["runtime"]
     assets = []

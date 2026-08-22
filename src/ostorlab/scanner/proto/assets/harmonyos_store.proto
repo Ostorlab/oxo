@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.harmonyos_store;
+
+message Message {
+  optional string bundle_name = 1;
+}

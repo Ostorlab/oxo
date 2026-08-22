@@ -2,14 +2,15 @@
 by truncating its string & bytes values to a specific configurable size.
 """
 
-from typing import Any, Callable, Dict, List, Union
+from collections.abc import Callable
+from typing import Any
 
 TRUNCATE_SIZE = 256
 
 
 def truncate_str(
-    value: Union[str, bytes],
-) -> Union[str, bytes]:
+    value: str | bytes,
+) -> str | bytes:
     """Truncate a string or bytes value.
 
     Args:
@@ -27,7 +28,7 @@ def truncate_str(
 
 def minify_dict(
     value: Any, handler: Callable[[object], object]
-) -> Union[Dict[object, object], List[object], object]:
+) -> dict[object, object] | list[object] | object:
     """Recursive approach to minify dictionary values.
 
     Args:
@@ -47,7 +48,7 @@ def minify_dict(
         return handler(value)
 
 
-def _nested_set(dic: Any, keys: List[object], value: Any) -> None:
+def _nested_set(dic: Any, keys: list[object], value: Any) -> None:
     """Populates value in the correct place following the path."""
     for key in keys[:-1]:
         dic = dic.setdefault(key, {})

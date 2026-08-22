@@ -85,3 +85,30 @@ def testAgentDefinitionFromYaml_withOpenPorts_correctlyParseTheSourceAndDestinat
             destination_port=4242,
         )
     ]
+
+
+def testAgentDefinitionFromYaml_withVolumes_correctlyParsesSharedScanVolumes() -> None:
+    """Ensure the volumes field is parsed into Volume objects with defaults applied."""
+    valid_yaml_data = """
+            kind: Agent
+            name: "agent42"
+            description: "Agent 42, not 41."
+            in_selectors:
+            - "in_selector1"
+            out_selectors:
+            - "out_selector1"
+            volumes:
+              - name: "repository_code"
+                path: "/code"
+                read_only: false
+              - name: "shared_cache"
+                path: "/cache"
+        """
+    yaml_data_file = io.StringIO(valid_yaml_data)
+
+    agent_definition = definitions.AgentDefinition.from_yaml(yaml_data_file)
+
+    assert agent_definition.volumes == [
+        utils_defintions.Volume(name="repository_code", path="/code", read_only=False),
+        utils_defintions.Volume(name="shared_cache", path="/cache", read_only=True),
+    ]

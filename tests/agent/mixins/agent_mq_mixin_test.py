@@ -1,10 +1,11 @@
 """Tests for MQMixin module."""
 
 import asyncio
-from unittest import mock
 import concurrent.futures
+from unittest import mock
 
 import pytest
+from aiormq import exceptions as aiormq_exceptions
 from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_mq_mixin
@@ -55,11 +56,17 @@ async def testConnection_whenConnectionException_reconnectIsCalled(mocker):
     client = Agent.create(
         stub, name="test1", keys=["d.#"], url="amqp://wrong:wrong@localhost:5672/"
     )
+
+    async def connect_robust_fail(*args, **kwargs):
+        raise aiormq_exceptions.AMQPConnectionError("connection refused")
+
+    mocker.patch("aio_pika.connect_robust", side_effect=connect_robust_fail)
+
     task = asyncio.create_task(client.mq_init())
 
     try:
         await asyncio.wait_for(task, timeout=10)
-    except asyncio.TimeoutError:
+    except aiormq_exceptions.AMQPConnectionError:
         pass
 
     assert task.done() is True
@@ -148,6 +155,43 @@ def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
     assert mock_send_message.call_count == 6
 
 
+def testAgentMqMixin_whenNoCurrentLoop_shouldCreateEventLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin creates a loop when none is available."""
+    mocker.patch("asyncio.get_event_loop", side_effect=RuntimeError)
+    new_event_loop = mocker.patch("asyncio.new_event_loop")
+    set_event_loop = mocker.patch("asyncio.set_event_loop")
+
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    assert agent._loop is new_event_loop.return_value
+    set_event_loop.assert_called_once_with(new_event_loop.return_value)
+
+
+def testAgentMqMixin_whenLoopIsProvided_usesProvidedLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin uses the explicitly provided event loop."""
+    provided_loop = asyncio.new_event_loop()
+    get_event_loop = mocker.patch("asyncio.get_event_loop")
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+        loop=provided_loop,
+    )
+    assert agent._loop is provided_loop
+    get_event_loop.assert_not_called()
+    provided_loop.close()
+
+
 def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -165,3 +209,31 @@ def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
         agent.mq_send_message(key="a.1.2", message=b"test message")
 
     assert mock_send_message.call_count == 6
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_declaresQueueWithDefaultPriority(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that AgentMQMixin always declares a priority queue with the default max priority."""
+    channel = mocker.AsyncMock()
+    exchange = mocker.AsyncMock()
+    queue = mocker.AsyncMock()
+    channel.declare_queue.return_value = queue
+
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+    mocker.patch.object(agent, "_get_exchange", return_value=exchange)
+
+    await agent._declare_mq_queue(channel)
+
+    channel.declare_queue.assert_awaited_once_with(
+        "test_queue",
+        auto_delete=False,
+        durable=True,
+        arguments={"x-max-priority": agent_mq_mixin.DEFAULT_MAX_PRIORITY},
+    )

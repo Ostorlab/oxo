@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package ostorlab.scanner.proto.assets.harmonyos_hap;
+
+import "ostorlab/scanner/proto/assets/harmonyos_metadata.proto";
+
+message Message {
+  optional bytes content = 1;
+  optional string path = 2;
+  optional string content_url = 3;
+  oneof metadata_oneof {
+    AndroidMetadata android_metadata = 4;
+    IOSMetadata ios_metadata = 5;
+    HarmonyOSMetadata harmonyos_metadata = 6;
+  }
+}

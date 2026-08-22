@@ -3,10 +3,9 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services.
 """
 
+import builtins
 import logging
 from concurrent import futures
-from typing import List
-from typing import Optional
 
 import click
 import docker
@@ -15,11 +14,9 @@ from docker.models import services as docker_models_services
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
-from ostorlab.cli import console as cli_console, dumpers
-from ostorlab.cli import docker_requirements_checker
-from ostorlab.cli import install_agent
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import runtime
+from ostorlab.cli import console as cli_console
+from ostorlab.cli import docker_requirements_checker, dumpers, install_agent
+from ostorlab.runtimes import definitions, runtime
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import volumes
@@ -29,6 +26,7 @@ NETWORK_PREFIX = "ostorlab_lite_local_network"
 logger = logging.getLogger(__name__)
 console = cli_console.Console(logger=logger)
 
+ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 
 
@@ -70,6 +68,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         *args,
         scan_id: str,
+        labels: dict[str, str] | None = None,
         bus_url: str,
         bus_vhost: str,
         bus_management_url: str,
@@ -77,13 +76,14 @@ class LiteLocalRuntime(runtime.Runtime):
         network: str,
         redis_url: str,
         tracing_collector_url: str,
-        gcp_logging_credential: Optional[str] = None,
+        gcp_logging_credential: str | None = None,
         **kwargs,
     ) -> None:
         """Set runtime attributes.
 
         Args:
             scan_id: Provided scan identifier, will be used to define the runtime name.
+            labels: Optional additional container labels.
             bus_url: Bus URL, may contain credentials.
             bus_vhost: Bus virtual host, common default is / but none is provided here.
             bus_management_url: Bus management URL, typically runs on a separate port over https.
@@ -112,6 +112,7 @@ class LiteLocalRuntime(runtime.Runtime):
             raise ValueError("Missing required fields.")
 
         self.scan_id = scan_id
+        self._labels = labels if labels is not None else {}
         self._bus_url = bus_url
         self._bus_vhost = bus_vhost
         self._bus_management_url = bus_management_url
@@ -136,7 +137,7 @@ class LiteLocalRuntime(runtime.Runtime):
         else:
             if not docker_requirements_checker.is_swarm_initialized():
                 docker_requirements_checker.init_swarm()
-            self._docker_client = docker.from_env()
+            self._docker_client = docker.from_env(max_pool_size=100)
 
     @property
     def name(self) -> str:
@@ -168,7 +169,7 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: Optional[List[base_asset.Asset]],
+        assets: list[base_asset.Asset] | None,
     ) -> None:
         """Start scan on asset using the provided agent run definition.
 
@@ -191,8 +192,19 @@ class LiteLocalRuntime(runtime.Runtime):
             if is_healthy is False:
                 raise AgentNotHealthy()
             if assets is not None:
+                inject_asset_agent_settings = next(
+                    (
+                        agent
+                        for agent in agent_group_definition.agents
+                        if agent.key == ASSET_CLOUD_INJECTION_AGENT
+                    ),
+                    None,
+                )
                 console.info("Injecting assets")
-                self._inject_assets(assets=assets)
+                self._inject_assets(
+                    assets=assets,
+                    agent_settings=inject_asset_agent_settings,
+                )
         except AgentNotHealthy:
             console.error("Agent not starting")
             self.stop(self.scan_id)
@@ -246,19 +258,30 @@ class LiteLocalRuntime(runtime.Runtime):
                 stopped_configs.append(config)
                 config.remove()
 
-        if stopped_services or stopped_network or stopped_configs:
+        stopped_volumes = []
+        for volume in client.volumes.list():
+            volume_labels = volume.attrs.get("Labels") or {}
+            if volume_labels.get("ostorlab.universe") == scan_id:
+                logger.debug("removing volume %s", volume.name)
+                stopped_volumes.append(volume)
+                volume.remove(force=True)
+
+        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
-    def _start_agents(self, agent_group_definition: definitions.AgentGroupDefinition):
+    def _start_agents(
+        self, agent_group_definition: definitions.AgentGroupDefinition
+    ) -> None:
         """Starts all the agents as list in the agent run definition."""
         with futures.ThreadPoolExecutor() as executor:
             future_to_agent = {
                 executor.submit(self._start_agent, agent, extra_configs=[]): agent
                 for agent in agent_group_definition.agents
+                if agent.key != ASSET_CLOUD_INJECTION_AGENT
             }
             for future in futures.as_completed(future_to_agent):
                 future.result()
@@ -266,8 +289,8 @@ class LiteLocalRuntime(runtime.Runtime):
     def _start_agent(
         self,
         agent: definitions.AgentSettings,
-        extra_configs: Optional[List[docker.types.ConfigReference]] = None,
-        extra_mounts: Optional[List[docker.types.Mount]] = None,
+        extra_configs: list[docker.types.ConfigReference] | None = None,
+        extra_mounts: list[docker.types.Mount] | None = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -290,6 +313,7 @@ class LiteLocalRuntime(runtime.Runtime):
             self._redis_url,
             self._tracing_collector_url,
             self._gcp_logging_credential,
+            labels=self._labels,
         )
         runtime_agent.create_agent_service(
             network_name=self.network,
@@ -332,7 +356,11 @@ class LiteLocalRuntime(runtime.Runtime):
             if service.name.startswith("agent_"):
                 yield service
 
-    def _inject_assets(self, assets: List[base_asset.Asset]):
+    def _inject_assets(
+        self,
+        assets: list[base_asset.Asset],
+        agent_settings: definitions.AgentSettings | None,
+    ) -> None:
         """Injects the scan target assets."""
 
         contents = {}
@@ -342,11 +370,12 @@ class LiteLocalRuntime(runtime.Runtime):
 
         volumes.create_volume(f"asset_{self.name}", contents)
 
-        inject_asset_agent_settings = definitions.AgentSettings(
-            key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
-        )
+        if agent_settings is None:
+            agent_settings = definitions.AgentSettings(
+                key=ASSET_INJECTION_AGENT_DEFAULT, restart_policy="none"
+            )
         self._start_agent(
-            agent=inject_asset_agent_settings,
+            agent=agent_settings,
             extra_mounts=[
                 docker.types.Mount(
                     target="/asset", source=f"asset_{self.name}", type="volume"
@@ -361,7 +390,12 @@ class LiteLocalRuntime(runtime.Runtime):
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def list(self, **kwargs):
+    def list(
+        self,
+        page: int = 1,
+        number_elements: int = 10,
+        state: str | None = None,
+    ) -> list[runtime.Scan]:
         raise NotImplementedError()
 
     def _are_agents_ready(self, fail_fast=True) -> bool:
@@ -393,7 +427,6 @@ class LiteLocalRuntime(runtime.Runtime):
         Returns:
         None
         """
-        pass
 
     def link_agent_group_scan(
         self,
@@ -406,13 +439,13 @@ class LiteLocalRuntime(runtime.Runtime):
             scan: The scan object.
             agent_group_definition: The agent group definition.
         """
-        pass
 
-    def link_assets_scan(self, scan_id: int, assets: List[base_asset.Asset]) -> None:
+    def link_assets_scan(
+        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+    ) -> None:
         """Link the assets to the scan in the database.
 
         Args:
             scan_id: The scan id.
             assets: The list of assets.
         """
-        pass

@@ -1,14 +1,14 @@
 """Tests for AgentPersistMixin module."""
 
 import ipaddress
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from pytest_mock import plugin
-from ostorlab.runtimes.local.services import redis as local_redis_service
 
 from ostorlab.agent.mixins import agent_persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.runtimes.local.services import redis as local_redis_service
 
 
 @pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)

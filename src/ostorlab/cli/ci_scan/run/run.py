@@ -6,18 +6,18 @@ Example of usage:
 
 import io
 import multiprocessing
-import click
 import time
-from typing import List, Optional
 
-from ostorlab.cli.ci_scan.ci_scan import ci_scan
+import click
+
 from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.cli.ci_scan.ci_scan import ci_scan
 from ostorlab.cli.ci_scan.run.ci_logger import (
+    circleci_logger,
     console_logger,
     github_logger,
-    circleci_logger,
     logger,
 )
 from ostorlab.utils import risk_rating
@@ -91,6 +91,36 @@ CI_LOGGER = {
     multiple=True,
 )
 @click.option(
+    "--email-2fa-sender-email-address",
+    help="Email 2FA sender email address.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--email-2fa-email-address",
+    help="Email 2FA email address.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--email-2fa-password",
+    help="Email 2FA password.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--sms-2fa-sender",
+    help="SMS 2FA sender.",
+    required=False,
+    multiple=True,
+)
+@click.option(
+    "--totp-2fa-seed",
+    help="TOTP 2FA seed.",
+    required=False,
+    multiple=True,
+)
+@click.option(
     "--sbom",
     "sboms",
     help="Path to sbom file.",
@@ -158,6 +188,31 @@ CI_LOGGER = {
     required=False,
     default=None,
 )
+@click.option(
+    "--ui-prompt-id",
+    "ui_prompt_ids",
+    help="IDs of existing UI prompts to use during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
+    type=int,
+)
+@click.option(
+    "--ui-prompt-name",
+    "ui_prompt_names",
+    help="Names for UI prompts to create during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
+)
+@click.option(
+    "--ui-prompt-action",
+    "ui_prompt_actions",
+    help="Actions/scripts for UI prompts to create during the scan.",
+    required=False,
+    multiple=True,
+    default=[],
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -166,22 +221,30 @@ def run(
     break_on_risk_rating: str,
     max_wait_minutes: int,
     log_flavor: str,
-    test_credentials_login: List[str],
-    test_credentials_password: List[str],
-    test_credentials_url: List[str],
-    test_credentials_role: List[str],
-    test_credentials_name: List[str],
-    test_credentials_value: List[str],
-    sboms: List[io.FileIO],
+    test_credentials_login: list[str],
+    test_credentials_password: list[str],
+    test_credentials_url: list[str],
+    test_credentials_role: list[str],
+    test_credentials_name: list[str],
+    test_credentials_value: list[str],
+    email_2fa_sender_email_address: list[str],
+    email_2fa_email_address: list[str],
+    email_2fa_password: list[str],
+    sms_2fa_sender: list[str],
+    totp_2fa_seed: list[str],
+    sboms: list[io.FileIO],
     api_schema: io.FileIO,
-    filtered_url_regexes: List[str],
-    scope_urls_regexes: List[str],
+    filtered_url_regexes: list[str],
+    scope_urls_regexes: list[str],
     proxy: str,
     qps: int,
-    source: Optional[str] = None,
-    repository: Optional[str] = None,
-    pr_number: Optional[str] = None,
-    branch: Optional[str] = None,
+    ui_prompt_ids: list[int],
+    ui_prompt_names: list[str],
+    ui_prompt_actions: list[str],
+    source: str | None = None,
+    repository: str | None = None,
+    pr_number: str | None = None,
+    branch: str | None = None,
 ) -> None:
     """Start a scan based on a scan profile in the CI.\n"""
 
@@ -200,6 +263,16 @@ def run(
 
     if len(test_credentials_name) != len(test_credentials_value):
         ci_logger.error("Name and value credentials are not matching count.")
+        raise click.exceptions.Exit(2)
+
+    if len(email_2fa_sender_email_address) != len(email_2fa_email_address) or len(
+        email_2fa_sender_email_address
+    ) != len(email_2fa_password):
+        ci_logger.error("Email 2FA credentials are not matching count.")
+        raise click.exceptions.Exit(2)
+
+    if len(ui_prompt_names) != len(ui_prompt_actions):
+        ci_logger.error("UI prompt names and actions are not matching count.")
         raise click.exceptions.Exit(2)
 
     if not ctx.obj.get("api_key"):
@@ -225,6 +298,11 @@ def run(
         "test_credentials_role": test_credentials_role,
         "test_credentials_name": test_credentials_name,
         "test_credentials_value": test_credentials_value,
+        "email_2fa_sender_email_address": email_2fa_sender_email_address,
+        "email_2fa_email_address": email_2fa_email_address,
+        "email_2fa_password": email_2fa_password,
+        "sms_2fa_sender": sms_2fa_sender,
+        "totp_2fa_seed": totp_2fa_seed,
     }
     ctx.obj["sboms"] = sboms
     ctx.obj["api_schema"] = api_schema
@@ -236,6 +314,9 @@ def run(
     ctx.obj["repository"] = repository
     ctx.obj["pr_number"] = pr_number
     ctx.obj["branch"] = branch
+    ctx.obj["ui_prompt_ids"] = ui_prompt_ids
+    ctx.obj["ui_prompt_names"] = ui_prompt_names
+    ctx.obj["ui_prompt_actions"] = ui_prompt_actions
 
 
 def apply_break_scan_risk_rating(

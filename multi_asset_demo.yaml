@@ -1,0 +1,35 @@
+kind: targetGroup
+assets:
+  # --- Standalone (non multi-asset) assets, emitted as individual targets ---
+  androidApkFile:
+    - url: https://example.com/app-release.apk
+  link:
+    - url: https://standalone.example.com
+      method: GET
+
+  # --- One big heterogeneous multi_asset bundle ---
+  multi_asset:
+    ip:
+      - host: 1.1.1.1
+    ipv4:
+      - host: 8.8.8.8
+      - host: 9.9.9.9
+        mask: 24
+    ipv6:
+      - host: "2001:4860:4860::8888"
+    link:
+      - url: https://example.com/login
+        method: POST
+      - url: https://example.com/admin
+    repository:
+      - repository_url: https://github.com/ostorlab/oxo
+        commit_hash: deadbeef
+    repositoryArchive:
+      - url: https://example.com/src.zip
+    apiSchema:
+      - endpoint_url: https://api.example.com/graphql
+        url: https://example.com/schema.json
+        schema_type: openapi
+    # A multi_asset bundle accepts at most ONE mobile asset (store id / apk / aab / ipa / harmonyos).
+    androidApkFile:
+      url: https://example.com/bundled-app.apk

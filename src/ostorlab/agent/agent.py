@@ -18,15 +18,15 @@ import signal
 import sys
 import threading
 import uuid
-from typing import Dict, Any, Optional, Type, List
+from typing import Any
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
-from ostorlab.agent.mixins import agent_healthcheck_mixin
-from ostorlab.agent.mixins import agent_mq_mixin
+from ostorlab.agent.mixins import agent_healthcheck_mixin, agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import strings as string_utils
 from ostorlab.utils import system
 
 GCP_LOGGING_CREDENTIAL_ENV = "GCP_LOGGING_CREDENTIAL"
@@ -48,7 +48,14 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
     """The processing depth limit is enforced and reached the limit."""
 
 
-def _setup_logging(agent_key: str, agent_version: str, universe: str) -> None:
+def _setup_logging(
+    hostname: str,
+    agent_key: str,
+    agent_version: str,
+    universe: str,
+    host_hostname: str | None = None,
+    service_name: str | None = None,
+) -> None:
     gcp_logging_credential = os.environ.get(GCP_LOGGING_CREDENTIAL_ENV)
     if gcp_logging_credential is not None:
         try:
@@ -60,13 +67,17 @@ def _setup_logging(agent_key: str, agent_version: str, universe: str) -> None:
             )
             credentials = service_account.Credentials.from_service_account_info(info)
             client = google.cloud.logging.Client(credentials=credentials)
-            client.setup_logging(
-                labels={
-                    "agent_key": agent_key,
-                    "agent_version": agent_version,
-                    "universe": universe,
-                }
-            )
+            labels = {
+                "agent_key": agent_key,
+                "agent_version": agent_version,
+                "universe": universe,
+                "hostname": hostname,
+            }
+            if service_name is not None:
+                labels["service_name"] = service_name
+            if host_hostname is not None:
+                labels["host_hostname"] = host_hostname
+            client.setup_logging(labels=labels)
         except ImportError:
             logger.error(
                 "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
@@ -93,10 +104,14 @@ class AgentMixin(
             agent_settings: The running instance definition dictating custom settings of the agent like bus
              URL.
         """
-        self._loop = asyncio.get_event_loop()
+        try:
+            self._loop = asyncio.get_event_loop()
+        except RuntimeError:
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         self._agent_definition = agent_definition
         self._agent_settings = agent_settings
-        self._control_message: Optional[agent_message.Message] = None
+        self._control_message: agent_message.Message | None = None
         self.name = agent_definition.name
         self.in_selectors = (
             agent_settings.in_selectors
@@ -115,11 +130,10 @@ class AgentMixin(
         self.bus_exchange_topic = agent_settings.bus_exchange_topic
         self.bus_managment_url = agent_settings.bus_management_url
         self.bus_vhost = agent_settings.bus_vhost
+        queue_name = agent_settings.service_name or agent_definition.name
         agent_mq_mixin.AgentMQMixin.__init__(
             self,
-            name=agent_definition.name,
-            # Selectors are mapped to queue binding that listen to all
-            # sub-routing keys.
+            name=queue_name,
             keys=[f"{s}.#" for s in self.in_selectors],
             url=self.bus_url,
             topic=self.bus_exchange_topic,
@@ -143,7 +157,7 @@ class AgentMixin(
         return self._agent_settings
 
     @property
-    def args(self) -> Dict[str, Any]:
+    def args(self) -> dict[str, Any]:
         """Agent arguments as passed from definition and settings."""
         arguments = {}
         # First read the agent default values.
@@ -168,7 +182,7 @@ class AgentMixin(
         return arguments
 
     @property
-    def universe(self) -> Optional[str]:
+    def universe(self) -> str | None:
         """Returns the current scan universe.
 
         A universe is the group of agents and services in charge of running a scan. The universe is defined
@@ -227,23 +241,29 @@ class AgentMixin(
         # Validate the message before processing it.
         try:
             if self._is_valid_message() is False:
-                return None
+                return
         except MaximumCyclicProcessReachedError:
             self.on_max_cyclic_process_reached(object_message)
-            return None
+            return
         except MaximumDepthProcessReachedError:
             self.on_max_depth_process_reached(object_message)
-            return None
+            return
 
         try:
             logger.debug("Call to process with message= %s", raw_message)
             self.process(object_message)
-        except Exception as e:
+        except Exception:
             system_info = system.get_system_info()
             if system_info is not None:
                 logger.error("System Info: %s", system_info)
-            logger.error("Message: %s", object_message)
-            logger.exception("Exception: %s", e)
+            logger.exception(
+                "Error processing message on selector %s", object_message.selector
+            )
+            logger.error(
+                "Message of selector %s: %s",
+                object_message.selector,
+                string_utils.format_dict(object_message.data),
+            )
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
@@ -259,18 +279,21 @@ class AgentMixin(
         if (
             self.cyclic_processing_limit is not None
             and self.cyclic_processing_limit != 0
+            and control_agents.count(self.name) >= self.cyclic_processing_limit
         ):
-            if control_agents.count(self.name) >= self.cyclic_processing_limit:
-                raise MaximumCyclicProcessReachedError()
+            raise MaximumCyclicProcessReachedError()
 
-        if self.depth_processing_limit is not None and self.depth_processing_limit != 0:
-            if len(control_agents) >= self.depth_processing_limit:
-                agent_path = " -> ".join(control_agents)
-                error_message = (
-                    f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
-                    f"Agents path: {agent_path}"
-                )
-                raise MaximumDepthProcessReachedError(error_message)
+        if (
+            self.depth_processing_limit is not None
+            and self.depth_processing_limit != 0
+            and len(control_agents) >= self.depth_processing_limit
+        ):
+            agent_path = " -> ".join(control_agents)
+            error_message = (
+                f"The maximum depth processing limit of {self.depth_processing_limit} agents is reached. "
+                f"Agents path: {agent_path}"
+            )
+            raise MaximumDepthProcessReachedError(error_message)
 
         if (
             len(control_agents) > 0
@@ -331,7 +354,11 @@ class AgentMixin(
         raise NotImplementedError("Missing process method implementation.")
 
     def emit(
-        self, selector: str, data: Dict[str, Any], message_id: Optional[str] = None
+        self,
+        selector: str,
+        data: dict[str, Any],
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector.
 
@@ -339,6 +366,8 @@ class AgentMixin(
             selector: target selector.
             data: message data to be serialized.
             message_id: An id that will be added to the tail of the message.
+            message_priority: Optional priority for the message, used by priority queues.
+                Defaults to None.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
@@ -346,7 +375,12 @@ class AgentMixin(
             None
         """
         message = agent_message.Message.from_data(selector, data)
-        self.emit_raw(selector, message.raw, message_id=message_id)
+        self.emit_raw(
+            selector,
+            message.raw,
+            message_id=message_id,
+            message_priority=message_priority,
+        )
 
     @abc.abstractmethod
     def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
@@ -363,7 +397,11 @@ class AgentMixin(
         raise NotImplementedError()
 
     def emit_raw(
-        self, selector: str, raw: bytes, message_id: Optional[str] = None
+        self,
+        selector: str,
+        raw: bytes,
+        message_id: str | None = None,
+        message_priority: int | None = None,
     ) -> None:
         """Sends a message to all listening agents on the specified selector with no serialization.
 
@@ -371,6 +409,8 @@ class AgentMixin(
             selector: target selector.
             raw: raw message to send.
             message_id: An id that will be added to the tail of the message.
+            message_priority: Optional priority for the message, used by priority queues.
+                Defaults to None.
         Raises:
             NonListedMessageSelectorError: when selector is not part of listed out selectors.
 
@@ -398,7 +438,9 @@ class AgentMixin(
             selector = f"{selector}.{message_id}"
 
         control_message = self._prepare_message(raw)
-        self.mq_send_message(selector, control_message)
+        self.mq_send_message(
+            selector, control_message, message_priority=message_priority
+        )
         logger.debug("done call to send_message")
 
     def _prepare_message(self, raw: bytes) -> bytes:
@@ -412,7 +454,7 @@ class AgentMixin(
         return control_message.raw
 
     @classmethod
-    def main(cls: Type["AgentMixin"], args: Optional[List[str]] = None) -> None:
+    def main(cls: type["AgentMixin"], args: list[str] | None = None) -> None:
         """Prepares the agents class by reading the agent definition and runtime settings.
 
         By the default, the class main expects the definition file to be at `agent.yaml` and settings to be at
@@ -472,9 +514,12 @@ class AgentMixin(
             )
 
             _setup_logging(
+                hostname=os.getenv("HOSTNAME"),
+                host_hostname=os.environ.get("HOST_HOSTNAME"),
                 agent_key=agent_settings.key,
                 agent_version=agent_definition.version or "latest",
                 universe=os.environ.get("UNIVERSE"),
+                service_name=os.environ.get("SERVICE_NAME"),
             )
 
             instance = cls(
@@ -523,7 +568,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def process(self, message: agent_message.Message) -> None:
         """Overridable message processing method.
@@ -542,7 +586,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def at_exit(self) -> None:
         """Overridable at exit method to perform cleanup in the case of expected and unexpected agent termination.
@@ -550,7 +593,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max cyclic process reached.
@@ -558,8 +600,6 @@ class Agent(open_telemetry_mixin.OpenTelemetryMixin, AgentMixin):
         Returns:
             None
         """
-        pass
 
     def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
         """Overridable method triggered on max processing depth reached."""
-        pass

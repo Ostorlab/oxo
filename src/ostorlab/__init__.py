@@ -3,9 +3,10 @@
 import logging
 
 import click
-from ostorlab.cli.rootcli import rootcli
 from rich import console
 from rich import logging as rich_logging
+
+from ostorlab.cli.rootcli import rootcli
 
 FORMAT = "%(message)s"
 logging.basicConfig(

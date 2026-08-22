@@ -1,14 +1,13 @@
 """Asset of type agent for meta-scanning."""
 
 import logging
-from typing import Optional
 
 import click
 
-from ostorlab.assets import agent as agent_asset
-from ostorlab.cli.scan.run import run
 from ostorlab import exceptions
+from ostorlab.assets import agent as agent_asset
 from ostorlab.cli import console as cli_console
+from ostorlab.cli.scan.run import run
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -28,10 +27,10 @@ logger = logging.getLogger(__name__)
 def agent(
     ctx: click.core.Context,
     key: str,
-    version: Optional[str] = None,
-    git_location: Optional[str] = None,
-    docker_location: Optional[str] = None,
-    yaml_file_location: Optional[str] = None,
+    version: str | None = None,
+    git_location: str | None = None,
+    docker_location: str | None = None,
+    yaml_file_location: str | None = None,
 ) -> None:
     """Run scan for agent."""
     runtime = ctx.obj["runtime"]
