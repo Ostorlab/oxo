@@ -22,6 +22,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import asset as base_asset
 
 MAX_AGENT_REPLICAS = 100
@@ -367,6 +368,59 @@ class AssetsDefinition:
         for asset in link_assets:
             assets_def.append(
                 link_asset.Link(url=asset.get("url"), method=asset.get("method"))
+            )
+
+        risk_assets = assets.get("risk", [])
+        for asset in risk_assets:
+            target = None
+            if asset.get("domain") is not None:
+                target = domain_name_asset.DomainName(name=asset["domain"].get("name"))
+            elif asset.get("ip") is not None:
+                target = _parse_ip_asset(asset["ip"])
+            elif asset.get("link") is not None:
+                target = link_asset.Link(
+                    url=asset["link"].get("url"),
+                    method=asset["link"].get("method", "GET"),
+                )
+            elif asset.get("androidStore") is not None:
+                target = android_store_asset.AndroidStore(
+                    package_name=asset["androidStore"].get("package_name")
+                )
+            elif asset.get("iosStore") is not None:
+                target = ios_store_asset.IOSStore(
+                    bundle_id=asset["iosStore"].get("bundle_id")
+                )
+            elif asset.get("androidApkFile") is not None:
+                apk = asset["androidApkFile"]
+                path = apk.get("path")
+                url = apk.get("url")
+                content = _load_asset_from_file(path) if path is not None else None
+                target = android_apk_asset.AndroidApk(
+                    content=content, path=path, content_url=url
+                )
+            elif asset.get("androidAabFile") is not None:
+                aab = asset["androidAabFile"]
+                path = aab.get("path")
+                url = aab.get("url")
+                content = _load_asset_from_file(path) if path is not None else None
+                target = android_aab_asset.AndroidAab(
+                    content=content, path=path, content_url=url
+                )
+            elif asset.get("iosFile") is not None:
+                ipa = asset["iosFile"]
+                path = ipa.get("path") or ipa.get("paths")
+                url = ipa.get("url")
+                content = _load_asset_from_file(path) if path is not None else None
+                target = ios_ipa_asset.IOSIpa(
+                    content=content, path=path, content_url=url
+                )
+
+            assets_def.append(
+                risk_asset.Risk(
+                    rating=asset.get("rating"),
+                    description=asset.get("description"),
+                    target=target,
+                )
             )
 
         return cls(

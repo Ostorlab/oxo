@@ -23,6 +23,9 @@ from ostorlab.assets import domain_name
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import ios_store
 from ostorlab.assets import agent as agent_asset
+from ostorlab.assets import ios_testflight
+from ostorlab.assets import api_schema
+from ostorlab.assets import risk
 from ostorlab.utils import scanner_state_reporter
 from ostorlab.scanner import scanner_conf
 from ostorlab.agent.message import proto_dict
@@ -78,6 +81,12 @@ def _extract_assets(request: Any) -> list[asset.Asset]:
         assets.append(android_store.AndroidStore(**asset_value))
     elif asset_type == "ios_store":
         assets.append(ios_store.IOSStore(**asset_value))
+    elif asset_type == "ios_testflight":
+        assets.append(ios_testflight.IOSTestflight(**asset_value))
+    elif asset_type == "api_schema":
+        assets.append(api_schema.ApiSchema(**asset_value))
+    elif asset_type == "risk":
+        assets.append(risk.Risk(**asset_value))
     elif asset_type == "ipa":
         assets.append(ios_ipa.IOSIpa(**asset_value))
     elif asset_type == "apk":

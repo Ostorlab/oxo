@@ -17,6 +17,7 @@ from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import risk as risk_asset
 
 
 def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
@@ -436,3 +437,38 @@ assets:
 
     assert len(asset_group_def.targets) == 16
     assert assets == asset_group_def.targets
+
+
+def testAssetsDefinitionFromYaml_whenRiskAssetsProvided_returnsValidAssetsDefinition():
+    """Tests the creation of an asset group definition with risk assets."""
+    yaml_content = """
+    kind: "targetGroup"
+    description: "Target group with risk assets"
+    assets:
+      risk:
+        - rating: "HIGH"
+          description: "Vulnerable service"
+          domain:
+            name: "example.com"
+        - rating: "MEDIUM"
+          description: "Open SSH port"
+          ip:
+            host: "192.168.1.1"
+            mask: 32
+    """
+    yaml_file = io.StringIO(yaml_content)
+    asset_group = definitions.AssetsDefinition.from_yaml(yaml_file)
+
+    assert len(asset_group.targets) == 2
+    assert isinstance(asset_group.targets[0], risk_asset.Risk)
+    assert asset_group.targets[0].rating == "HIGH"
+    assert asset_group.targets[0].description == "Vulnerable service"
+    assert isinstance(asset_group.targets[0].target, domain_name_asset.DomainName)
+    assert asset_group.targets[0].target.name == "example.com"
+
+    assert isinstance(asset_group.targets[1], risk_asset.Risk)
+    assert asset_group.targets[1].rating == "MEDIUM"
+    assert asset_group.targets[1].description == "Open SSH port"
+    assert isinstance(asset_group.targets[1].target, ipv4_asset.IPv4)
+    assert asset_group.targets[1].target.host == "192.168.1.1"
+
