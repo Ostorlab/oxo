@@ -11,12 +11,14 @@ from typing import Any
 
 import docker
 
+
 from ostorlab import exceptions
 from ostorlab.assets import agent as agent_asset
 from ostorlab.assets import (
     android_aab,
     android_apk,
     android_store,
+    api_schema,
     asset,
     domain_name,
     file,
@@ -28,6 +30,7 @@ from ostorlab.assets import (
     harmonyos_store,
     ios_ipa,
     ios_store,
+    ios_testflight,
     ipv4,
     ipv6,
 )
@@ -136,6 +139,12 @@ def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
         kwargs["repository"] = target_asset
     elif isinstance(target_asset, repository_archive_asset.RepositoryArchive):
         kwargs["repository_archive"] = target_asset
+    elif isinstance(target_asset, ios_testflight.IOSTestflight):
+        kwargs["ios_testflight"] = target_asset
+    elif isinstance(target_asset, file.File):
+        kwargs["file"] = target_asset
+    elif isinstance(target_asset, api_schema.ApiSchema):
+        kwargs["api_schema"] = target_asset
     elif isinstance(target_asset, harmonyos_store.HarmonyOSStore):
         kwargs["harmonyos_store"] = target_asset
     elif isinstance(target_asset, harmonyos_apk.HarmonyOSApk):
@@ -186,6 +195,22 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
         return [android_store.AndroidStore(package_name=kwargs.get("packageName", ""))]
     elif typename == "IosBundleIdAssetType":
         return [ios_store.IOSStore(bundle_id=kwargs.get("bundleId", ""))]
+    elif typename == "IosTestflightAssetType":
+        return [
+            ios_testflight.IOSTestflight(
+                application_url=kwargs.get("applicationUrl", "")
+            )
+        ]
+    elif typename == "ApiSchemaAssetType":
+        return [
+            api_schema.ApiSchema(
+                endpoint_url=kwargs.get("endpointUrl", ""),
+                content=kwargs.get("content"),
+                path=kwargs.get("path"),
+                content_url=kwargs.get("contentUrl"),
+                schema_type=kwargs.get("schemaType"),
+            )
+        ]
     elif typename == "AndroidAabAssetType":
         return [
             android_aab.AndroidAab(

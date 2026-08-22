@@ -29,6 +29,7 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import ios_testflight as ios_testflight_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
@@ -547,7 +548,6 @@ class AssetsDefinition:
             bundled_asset = _parse_multi_asset(multi_asset_group)
             if bundled_asset is not None:
                 assets_def.append(bundled_asset)
-
         return cls(
             targets=assets_def,
             name=target_group_def.get("name"),

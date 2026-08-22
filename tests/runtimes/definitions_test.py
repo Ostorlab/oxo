@@ -571,6 +571,7 @@ assets:
     assert assets == asset_group_def.targets
 
 
+
 def testAssetGroupDefinitionFromYaml_whenRiskAssetsProvided_returnsRiskAssets():
     """Tests parsing a target group with multiple risk assets embedding different targets."""
     valid_yaml = """

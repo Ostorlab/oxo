@@ -1,6 +1,8 @@
 """Asset of type Risk.
 This module takes care of preparing a risk message to be injected onto the message bus."""
 
+from __future__ import annotations
+
 import io
 import ipaddress
 import logging
@@ -31,6 +33,8 @@ _RISK_RATINGS = [
 @run.run.command(name="risk")
 @click.option(
     "--severity",
+    "--rating",
+    "severity",
     required=True,
     type=click.Choice(_RISK_RATINGS, case_sensitive=False),
     help="Risk severity.",
@@ -93,6 +97,12 @@ _RISK_RATINGS = [
     help="iOS bundle ID the risk applies to.",
 )
 @click.option(
+    "--ios-testflight",
+    required=False,
+    default=None,
+    help="iOS TestFlight URL the risk applies to.",
+)
+@click.option(
     "--android-aab",
     "android_aab_file",
     type=click.File(mode="rb"),
@@ -133,6 +143,20 @@ _RISK_RATINGS = [
     required=False,
     default=None,
     help="URL of the iOS IPA the risk applies to.",
+)
+@click.option(
+    "--file",
+    "file_file",
+    type=click.File(mode="rb"),
+    required=False,
+    default=None,
+    help="File the risk applies to.",
+)
+@click.option(
+    "--file-url",
+    required=False,
+    default=None,
+    help="URL of the file the risk applies to.",
 )
 @click.option(
     "--api-schema-file",
@@ -215,12 +239,15 @@ def risk_cli(
     link_headers: tuple,
     android_store: str | None,
     ios_store: str | None,
+    ios_testflight: str | None,
     android_aab_file: io.RawIOBase | None,
     android_aab_url: str | None,
     android_apk_file: io.RawIOBase | None,
     android_apk_url: str | None,
     ios_ipa_file: io.RawIOBase | None,
     ios_ipa_url: str | None,
+    file_file: io.RawIOBase | None,
+    file_url: str | None,
     api_schema_file: io.RawIOBase | None,
     api_schema_url: str | None,
     api_schema_endpoint: str | None,
@@ -256,6 +283,9 @@ def risk_cli(
         raise click.exceptions.Exit(2)
     if ios_ipa_file is not None and ios_ipa_url is not None:
         console.error("Provide either --ios-ipa or --ios-ipa-url, not both.")
+        raise click.exceptions.Exit(2)
+    if file_file is not None and file_url is not None:
+        console.error("Provide either --file or --file-url, not both.")
         raise click.exceptions.Exit(2)
     if api_schema_file is not None and api_schema_url is not None:
         console.error("Provide either --api-schema-file or --api-schema-url, not both.")
@@ -329,6 +359,9 @@ def risk_cli(
     if ios_store is not None:
         risk_kwargs["ios_store"] = {"bundle_id": ios_store}
 
+    if ios_testflight is not None:
+        risk_kwargs["ios_testflight"] = {"application_url": ios_testflight}
+
     if android_aab_file is not None:
         risk_kwargs["android_aab"] = {
             "content": android_aab_file.read(),
@@ -352,6 +385,14 @@ def risk_cli(
         }
     elif ios_ipa_url is not None:
         risk_kwargs["ios_ipa"] = {"content_url": ios_ipa_url}
+
+    if file_file is not None:
+        risk_kwargs["file"] = {
+            "content": file_file.read(),
+            "path": file_file.name,
+        }
+    elif file_url is not None:
+        risk_kwargs["file"] = {"content_url": file_url}
 
     if (
         api_schema_file is not None

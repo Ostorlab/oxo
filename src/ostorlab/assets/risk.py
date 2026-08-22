@@ -1,5 +1,7 @@
 """Risk message asset for injecting risk reports onto the message bus."""
 
+from __future__ import annotations
+
 import dataclasses
 
 from ostorlab.agent.message import serializer
@@ -9,6 +11,7 @@ from ostorlab.assets import android_store as android_store_asset
 from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import asset
 from ostorlab.assets import domain_name as domain_name_asset
+from ostorlab.assets import file as file_asset
 from ostorlab.assets import harmonyos_aab as harmonyos_aab_asset
 from ostorlab.assets import harmonyos_apk as harmonyos_apk_asset
 from ostorlab.assets import harmonyos_app as harmonyos_app_asset
@@ -17,10 +20,12 @@ from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ios_testflight as ios_testflight_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
+from ostorlab.assets import phone_number as phone_number_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 
@@ -38,10 +43,13 @@ class Risk(asset.Asset):
     link: link_asset.Link | None = None
     android_store: android_store_asset.AndroidStore | None = None
     ios_store: ios_store_asset.IOSStore | None = None
+    ios_testflight: ios_testflight_asset.IOSTestflight | None = None
     android_aab: android_aab_asset.AndroidAab | None = None
     android_apk: android_apk_asset.AndroidApk | None = None
     ios_ipa: ios_ipa_asset.IOSIpa | None = None
+    file: file_asset.File | None = None
     api_schema: api_schema_asset.ApiSchema | None = None
+    phone_number: phone_number_asset.PhoneNumber | None = None
     repository: repository_asset.Repository | None = None
     repository_archive: repository_archive_asset.RepositoryArchive | None = None
     harmonyos_store: harmonyos_store_asset.HarmonyOSStore | None = None
