@@ -934,3 +934,302 @@ def testScanRunRisk_whenApiSchemaFileAndUrlBothProvided_shouldShowError(
     )
 
     assert result.exit_code == 2
+
+
+def testScanRunRisk_whenAndroidStoreProvided_shouldCallScanWithRiskAssetContainingAndroidStore(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """Test oxo scan run risk command with --android-store flag."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Store app risk",
+            "--android-store=com.example.app",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].android_store == {"package_name": "com.example.app"}
+
+
+def testScanRunRisk_whenIosStoreProvided_shouldCallScanWithRiskAssetContainingIosStore(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """Test oxo scan run risk command with --ios-store flag."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=iOS store app risk",
+            "--ios-store=com.example.iosapp",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].ios_store == {"bundle_id": "com.example.iosapp"}
+
+
+def testScanRunRisk_whenIosTestflightProvided_shouldCallScanWithRiskAssetContainingIosTestflight(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """Test oxo scan run risk command with --ios-testflight flag."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=MEDIUM",
+            "--description=TestFlight app risk",
+            "--ios-testflight=https://testflight.apple.com/join/xyz123",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].ios_testflight == {
+        "application_url": "https://testflight.apple.com/join/xyz123"
+    }
+
+
+def testScanRunRisk_whenAndroidAabFileProvided_shouldCallScanWithContentAndPath(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk command with --android-aab file."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+    aab_file = tmp_path / "app.aab"
+    aab_file.write_bytes(b"aab content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Vulnerable AAB file",
+            f"--android-aab={aab_file}",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].android_aab["content"] == b"aab content"
+    assert assets[0].android_aab["path"] == str(aab_file)
+
+
+def testScanRunRisk_whenAndroidAabFileAndUrlBothProvided_shouldShowError(
+    scan_run_cli_runner: testing.CliRunner,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk with both --android-aab and --android-aab-url shows error."""
+    aab_file = tmp_path / "app.aab"
+    aab_file.write_bytes(b"aab content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Test",
+            f"--android-aab={aab_file}",
+            "--android-aab-url=https://example.com/app.aab",
+        ],
+    )
+
+    assert result.exit_code == 2
+
+
+def testScanRunRisk_whenIosIpaFileProvided_shouldCallScanWithContentAndPath(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk command with --ios-ipa file."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+    ipa_file = tmp_path / "app.ipa"
+    ipa_file.write_bytes(b"ipa content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Vulnerable IPA file",
+            f"--ios-ipa={ipa_file}",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].ios_ipa["content"] == b"ipa content"
+    assert assets[0].ios_ipa["path"] == str(ipa_file)
+
+
+def testScanRunRisk_whenIosIpaFileAndUrlBothProvided_shouldShowError(
+    scan_run_cli_runner: testing.CliRunner,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk with both --ios-ipa and --ios-ipa-url shows error."""
+    ipa_file = tmp_path / "app.ipa"
+    ipa_file.write_bytes(b"ipa content")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Test",
+            f"--ios-ipa={ipa_file}",
+            "--ios-ipa-url=https://example.com/app.ipa",
+        ],
+    )
+
+    assert result.exit_code == 2
+
+
+def testScanRunRisk_whenFileProvided_shouldCallScanWithContentAndPath(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk command with --file populates content and path."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+    test_file = tmp_path / "secret.key"
+    test_file.write_bytes(b"secret key data")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=CRITICAL",
+            "--description=Exposed key file",
+            f"--file={test_file}",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].file["content"] == b"secret key data"
+    assert assets[0].file["path"] == str(test_file)
+
+
+def testScanRunRisk_whenFileUrlProvided_shouldCallScanWithContentUrl(
+    scan_run_cli_runner: testing.CliRunner,
+    mocker: pytest_mock.MockerFixture,
+) -> None:
+    """Test oxo scan run risk command with --file-url populates content_url."""
+    scan_mocked = mocker.patch(
+        "ostorlab.runtimes.local.LocalRuntime.scan", return_value=None
+    )
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Remote vulnerable binary",
+            "--file-url=https://example.com/bin/vuln",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert scan_mocked.call_count == 1
+    assets = scan_mocked.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], risk_asset.Risk)
+    assert assets[0].file == {"content_url": "https://example.com/bin/vuln"}
+
+
+def testScanRunRisk_whenFileAndFileUrlBothProvided_shouldShowError(
+    scan_run_cli_runner: testing.CliRunner,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Test oxo scan run risk with both --file and --file-url shows error."""
+    test_file = tmp_path / "secret.key"
+    test_file.write_bytes(b"secret")
+
+    result = scan_run_cli_runner.invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "run",
+            "--agent=agent1",
+            "risk",
+            "--severity=HIGH",
+            "--description=Test",
+            f"--file={test_file}",
+            "--file-url=https://example.com/bin/vuln",
+        ],
+    )
+
+    assert result.exit_code == 2

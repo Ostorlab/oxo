@@ -9,6 +9,7 @@ from ostorlab.assets import (
     android_aab,
     android_apk,
     android_store,
+    api_schema,
     domain_name,
     file,
     harmonyos_aab,
@@ -19,6 +20,7 @@ from ostorlab.assets import (
     harmonyos_store,
     ios_ipa,
     ios_store,
+    ios_testflight,
     ipv4,
     ipv6,
 )
@@ -934,3 +936,101 @@ def testExtractAssets_whenRisksAsset_shouldReturnCorrectAssets(
     assert assets[1].rating == "MEDIUM"
     assert assets[1].domain_name is not None
     assert assets[1].domain_name.name == "example.com"
+
+
+def testExtractAssets_whenApiSchemaAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for ApiSchemaAssetType."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "ApiSchemaAssetType",
+            "endpointUrl": "https://api.example.com",
+            "contentUrl": "https://example.com/schema.json",
+            "content": base64.b64encode(b'{"swagger": "2.0"}').decode(),
+            "schemaType": "openapi",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    schema_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(schema_asset, api_schema.ApiSchema) is True
+    assert schema_asset.endpoint_url == "https://api.example.com"
+    assert schema_asset.content_url == "https://example.com/schema.json"
+    assert schema_asset.content == b'{"swagger": "2.0"}'
+    assert schema_asset.schema_type == "openapi"
+
+
+def testExtractAssets_whenRiskAssetWithApiSchemaTarget_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct risk asset when target is ApiSchemaAssetType."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RiskAssetType",
+            "description": "Vulnerable API Endpoint",
+            "rating": "HIGH",
+            "target": {
+                "__typename": "ApiSchemaAssetType",
+                "endpointUrl": "https://api.example.com/v1",
+                "contentUrl": "https://example.com/openapi.yaml",
+                "content": base64.b64encode(b"openapi: 3.0.0").decode(),
+                "schemaType": "openapi",
+            },
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
+    assert extracted_risk_asset.description == "Vulnerable API Endpoint"
+    assert extracted_risk_asset.rating == "HIGH"
+    assert extracted_risk_asset.api_schema is not None
+    assert extracted_risk_asset.api_schema.endpoint_url == "https://api.example.com/v1"
+    assert (
+        extracted_risk_asset.api_schema.content_url
+        == "https://example.com/openapi.yaml"
+    )
+    assert extracted_risk_asset.api_schema.content == b"openapi: 3.0.0"
+    assert extracted_risk_asset.api_schema.schema_type == "openapi"
+
+
+def testExtractAssets_whenIosTestflightAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns correct asset for IosTestflightAssetType."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IosTestflightAssetType",
+            "applicationUrl": "https://testflight.apple.com/join/xyz123",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_asset, ios_testflight.IOSTestflight) is True
+    assert extracted_asset.application_url == "https://testflight.apple.com/join/xyz123"
