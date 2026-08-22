@@ -1,11 +1,8 @@
 """Unit tests for Risk asset."""
 
 from ostorlab.agent.message import serializer
-from ostorlab.assets import domain_name
+from ostorlab.assets import domain_name, ios_testflight, ipv4, risk
 from ostorlab.assets import file as file_asset
-from ostorlab.assets import ios_testflight
-from ostorlab.assets import ipv4
-from ostorlab.assets import risk
 
 
 def testRiskAssetToProto_whenDomainTarget_generatesProto():
