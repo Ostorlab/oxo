@@ -810,6 +810,12 @@ def _resolve_risk_file_asset(risk_entry: dict[str, Any], key: str) -> ParsedFile
         raise validator.ValidationError(
             f"Risk {key} requires either a valid path or a url."
         )
+    if parsed_file.content is None and (
+        parsed_file.url is None or parsed_file.url.strip() == ""
+    ):
+        raise validator.ValidationError(
+            f"Risk {key} requires either a valid path or a url."
+        )
     return parsed_file
 
 

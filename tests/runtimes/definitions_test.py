@@ -1118,6 +1118,26 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
+def testAssetGroupDefinitionFromYaml_whenRiskFileBlankUrl_raisesValidationError():
+    """Tests that a file risk with a blank/empty url is rejected."""
+    invalid_yaml = """
+description: Target group with a blank url file risk
+kind: targetGroup
+name: risk_scan
+assets:
+  risk:
+      - severity: HIGH
+        description: Vulnerable file
+        file:
+            url: ""
+"""
+
+    with pytest.raises(
+        validator.ValidationError, match="requires either a valid path or a url"
+    ):
+        definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
 def testAssetGroupDefinitionFromYaml_whenRiskHarmonyosStoreMissingBundle_raisesValidationError():
     """Tests that a HarmonyOS store risk with no bundle_name is rejected instead of
     building a target with a None identifier."""

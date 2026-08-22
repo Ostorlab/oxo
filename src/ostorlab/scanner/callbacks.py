@@ -204,7 +204,6 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             api_schema.ApiSchema(
                 endpoint_url=kwargs.get("endpointUrl", ""),
                 content=kwargs.get("content"),
-                path=kwargs.get("path"),
                 content_url=kwargs.get("contentUrl"),
                 schema_type=kwargs.get("schemaType"),
             )
