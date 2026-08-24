@@ -103,7 +103,7 @@ def testCleanupScanDockerResources_whenServiceRemovalFails_continuesAndReturnsFa
     success = docker_cleanup.cleanup_scan_docker_resources(mock_client, 100)
 
     assert success is False
-    failing_service.remove.assert_called_once()
+    assert failing_service.remove.call_count == 3
     succeeding_network.remove.assert_called_once()
 
 

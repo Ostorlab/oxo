@@ -865,7 +865,7 @@ def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItem
 
     success = runtime.cleanup(scan_id="100")
 
-    service_failing.remove.assert_called_once()
+    assert service_failing.remove.call_count == 3
     service_succeeding.remove.assert_called_once()
     assert success is False
 

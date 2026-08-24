@@ -20,6 +20,21 @@ console = cli_console.Console()
     ),
     reraise=True,
 )
+def _remove_service_with_retry(service: Any) -> None:
+    try:
+        service.remove()
+    except docker_errors.NotFound:
+        pass
+
+
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(3),
+    wait=tenacity.wait_fixed(0.2),
+    retry=tenacity.retry_if_exception_type(
+        (docker_errors.DockerException, docker_errors.APIError)
+    ),
+    reraise=True,
+)
 def _remove_network_with_retry(network: Any) -> None:
     try:
         network.remove()
@@ -115,7 +130,7 @@ def cleanup_scan_docker_resources(
                 )
                 logger.info("Removing service: %s", service_name)
                 stopped_services.append(service)
-                service.remove()
+                _remove_service_with_retry(service)
         except docker_errors.NotFound:
             logger.debug("Service already removed: %s", service)
         except (docker_errors.DockerException, docker_errors.APIError) as e:

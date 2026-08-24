@@ -185,7 +185,7 @@ class LocalRuntime(runtime.Runtime):
     def _handle_scan_error(self) -> None:
         """Update scan progress to ERROR and trigger cleanup gracefully."""
         try:
-            self._update_scan_progress("ERROR")
+            self._update_scan_progress(models.ScanProgress.ERROR)
         except (
             sqlalchemy.exc.SQLAlchemyError,
             exceptions.OstorlabError,
@@ -267,7 +267,7 @@ class LocalRuntime(runtime.Runtime):
                     agent_settings=inject_asset_agent_settings,
                 )
             console.info("Updating scan status")
-            self._update_scan_progress("IN_PROGRESS")
+            self._update_scan_progress(models.ScanProgress.IN_PROGRESS)
             console.success("Scan created successfully")
 
             self._wait_log_streamer()
@@ -365,7 +365,7 @@ class LocalRuntime(runtime.Runtime):
                     else None
                 )
                 if scan is not None:
-                    scan.progress = "STOPPED"
+                    scan.progress = models.ScanProgress.STOPPED
                     session.commit()
                     console.success("Scan stopped successfully.")
                 else:
@@ -380,14 +380,20 @@ class LocalRuntime(runtime.Runtime):
         """Persist the scan in the database"""
         return models.Scan.create(title=title)
 
-    def _update_scan_progress(self, progress: str):
+    def _update_scan_progress(self, progress: models.ScanProgress | str):
         """Update scan status to in progress"""
         if self._scan_db is None:
             return
+        if isinstance(progress, str):
+            try:
+                progress = models.ScanProgress[progress.upper()]
+            except (KeyError, ValueError):
+                pass
         with models.Database() as session:
             scan = session.query(models.Scan).get(self._scan_db.id)
-            scan.progress = progress
-            session.commit()
+            if scan is not None:
+                scan.progress = progress
+                session.commit()
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicate."""
