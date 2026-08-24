@@ -236,8 +236,12 @@ class ScanHandler:
         """Cleans up any Docker services and resources created for the scan."""
         try:
             runtime = local_runtime.LocalRuntime()
-            runtime.cleanup(scan_id=scan_id)
-        except (docker.errors.DockerException, Exception):
+            cleanup_success = runtime.cleanup(scan_id=scan_id)
+            if cleanup_success is False:
+                logger.warning(
+                    "Failed to clean up all scan services for scan %s", scan_id
+                )
+        except Exception:
             logger.exception("Failed to cleanup scan services for scan %s", scan_id)
 
     def _rollback_scan_state(

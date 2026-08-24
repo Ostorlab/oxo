@@ -1012,3 +1012,32 @@ def testLiteLocalRuntimeScan_whenStopRaises_stillReraisesOriginalScanException(
             agent_group_definition=agent_group,
             assets=None,
         )
+
+
+def testLiteLocalRuntimeStop_whenServicesListRaisesDockerException_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When services.list() raises DockerException, stop catches it, records error, and returns False."""
+    mock_docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=mock_docker_client)
+    mock_docker_client.services.list.side_effect = docker.errors.DockerException(
+        "Daemon error"
+    )
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan_stop_list_error",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+
+    success = runtime.stop("test_scan_stop_list_error")
+
+    assert success is False

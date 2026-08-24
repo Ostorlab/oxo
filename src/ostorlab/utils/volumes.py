@@ -56,8 +56,8 @@ class VolumeWriter:
             self._client.volumes.get(name).remove(force=True)
         except docker_errors.NotFound:
             pass
-        except docker_errors.DockerException:
-            pass
+        except docker_errors.DockerException as e:
+            logger.warning("Failed to remove existing volume %s: %s", name, e)
         str_labels = {str(k): str(v) for k, v in (labels or {}).items()}
         self._client.volumes.create(name=name, labels=str_labels)
 

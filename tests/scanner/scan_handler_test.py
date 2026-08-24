@@ -173,14 +173,30 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     mocker: plugin.MockerFixture,
 ) -> None:
     """_trigger_scan_with_rollback should cleanup services and rollback when callbacks.start_scan raises."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    service_mock = mocker.MagicMock()
+    service_mock.attrs = {"Spec": {"Labels": {"ostorlab.universe": "42"}}}
+    docker_client.services.list.return_value = [service_mock]
+    docker_client.networks.list.return_value = []
+    docker_client.configs.list.return_value = []
+    docker_client.volumes.list.return_value = []
+
     runner = mocker.MagicMock()
     runner.execute.return_value = {"data": {"updateScan": {"success": True}}}
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         side_effect=Exception("scan failed"),
-    )
-    mock_cleanup = mocker.patch.object(
-        scan_handler.ScanHandler, "_cleanup_scan_services"
     )
     reserved_scan = {"id": 42, "agentGroup": {"key": "test/group"}}
 
@@ -196,7 +212,7 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     )
 
     assert result is None
-    mock_cleanup.assert_called_once_with(scan_id="42")
+    service_mock.remove.assert_called_once()
     assert runner.execute.call_count == 1
     call_arg = runner.execute.call_args.kwargs["request"]
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
@@ -205,9 +221,34 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
 def testCleanupScanServices_always_callsRuntimeCleanup(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_cleanup_scan_services creates LocalRuntime and invokes cleanup with scan_id."""
-    mock_runtime_cls = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime")
-    mock_runtime_instance = mock_runtime_cls.return_value
+    """_cleanup_scan_services removes Docker services, networks, configs, and volumes for scan_id."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    service_mock = mocker.MagicMock()
+    service_mock.attrs = {"Spec": {"Labels": {"ostorlab.universe": "42"}}}
+    docker_client.services.list.return_value = [service_mock]
+
+    network_mock = mocker.MagicMock()
+    network_mock.attrs = {"Labels": {"ostorlab.universe": "42"}}
+    docker_client.networks.list.return_value = [network_mock]
+
+    config_mock = mocker.MagicMock()
+    config_mock.attrs = {"Spec": {"Labels": {"ostorlab.universe": "42"}}}
+    docker_client.configs.list.return_value = [config_mock]
+
+    volume_mock = mocker.MagicMock()
+    volume_mock.attrs = {"Labels": {"ostorlab.universe": "42"}}
+    docker_client.volumes.list.return_value = [volume_mock]
 
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
@@ -217,7 +258,10 @@ def testCleanupScanServices_always_callsRuntimeCleanup(
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
     scan_handler_instance._cleanup_scan_services(scan_id="42")
 
-    mock_runtime_instance.cleanup.assert_called_once_with(scan_id="42")
+    service_mock.remove.assert_called_once()
+    network_mock.remove.assert_called_once()
+    config_mock.remove.assert_called_once()
+    volume_mock.remove.assert_called_once_with(force=True)
 
 
 def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(

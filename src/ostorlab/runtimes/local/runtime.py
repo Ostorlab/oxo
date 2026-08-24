@@ -256,7 +256,9 @@ class LocalRuntime(runtime.Runtime):
                 self.cleanup()
             except (
                 docker_errors.DockerException,
+                click.exceptions.Exit,
                 exceptions.OstorlabError,
+                ValueError,
             ) as cleanup_err:
                 logger.warning(
                     "Failed to clean up scan resources after error: %s", cleanup_err
@@ -269,7 +271,9 @@ class LocalRuntime(runtime.Runtime):
                 self.cleanup()
             except (
                 docker_errors.DockerException,
+                click.exceptions.Exit,
                 exceptions.OstorlabError,
+                ValueError,
             ) as cleanup_err:
                 logger.warning(
                     "Failed to clean up scan resources after error: %s", cleanup_err
@@ -282,7 +286,9 @@ class LocalRuntime(runtime.Runtime):
                 self.cleanup()
             except (
                 docker_errors.DockerException,
+                click.exceptions.Exit,
                 exceptions.OstorlabError,
+                ValueError,
             ) as cleanup_err:
                 logger.warning(
                     "Failed to clean up scan resources after error: %s", cleanup_err
@@ -298,7 +304,9 @@ class LocalRuntime(runtime.Runtime):
                 self.cleanup()
             except (
                 docker_errors.DockerException,
+                click.exceptions.Exit,
                 exceptions.OstorlabError,
+                ValueError,
             ) as cleanup_err:
                 logger.warning(
                     "Failed to clean up scan resources after error: %s", cleanup_err
@@ -311,7 +319,9 @@ class LocalRuntime(runtime.Runtime):
                 self.cleanup()
             except (
                 docker_errors.DockerException,
+                click.exceptions.Exit,
                 exceptions.OstorlabError,
+                ValueError,
             ) as cleanup_err:
                 logger.warning(
                     "Failed to clean up scan resources after error: %s", cleanup_err
@@ -359,7 +369,9 @@ class LocalRuntime(runtime.Runtime):
 
         try:
             services = self._docker_client.services.list()
-        except docker.errors.DockerException:
+        except docker.errors.DockerException as e:
+            had_errors = True
+            logger.warning("Failed to list Docker services: %s", e)
             services = []
         for service in services:
             try:
@@ -394,7 +406,9 @@ class LocalRuntime(runtime.Runtime):
 
         try:
             networks = self._docker_client.networks.list()
-        except docker.errors.DockerException:
+        except docker.errors.DockerException as e:
+            had_errors = True
+            logger.warning("Failed to list Docker networks: %s", e)
             networks = []
         for network in networks:
             try:
@@ -416,7 +430,9 @@ class LocalRuntime(runtime.Runtime):
 
         try:
             configs = self._docker_client.configs.list()
-        except docker.errors.DockerException:
+        except docker.errors.DockerException as e:
+            had_errors = True
+            logger.warning("Failed to list Docker configs: %s", e)
             configs = []
         for config in configs:
             try:
@@ -446,7 +462,9 @@ class LocalRuntime(runtime.Runtime):
 
         try:
             volumes = self._docker_client.volumes.list()
-        except (docker.errors.DockerException, KeyError, AttributeError):
+        except (docker.errors.DockerException, KeyError, AttributeError) as e:
+            had_errors = True
+            logger.warning("Failed to list Docker volumes: %s", e)
             volumes = []
         for volume in volumes:
             try:

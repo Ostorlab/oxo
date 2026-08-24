@@ -901,3 +901,24 @@ def testLocalRuntimeStop_whenCleanupHasErrors_doesNotUpdateScanProgressToStopped
     with models.Database() as session:
         scan_in_db = session.query(models.Scan).get(scan_id)
         assert scan_in_db.progress == models.ScanProgress.IN_PROGRESS
+
+
+def testLocalRuntimeCleanup_whenServicesListRaisesDockerException_returnsFalse(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When services.list() raises DockerException, cleanup catches it, records error, and returns False."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime()
+    mocker.patch.object(runtime, "_docker_checks")
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
+    mock_docker_client.services.list.side_effect = docker.errors.DockerException(
+        "Daemon error"
+    )
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
+
+    success = runtime.cleanup(scan_id="100")
+
+    assert success is False
