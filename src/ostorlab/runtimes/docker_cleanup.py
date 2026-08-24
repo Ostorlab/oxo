@@ -1,6 +1,7 @@
 """Helper module for cleaning up Docker resources belonging to a scan universe."""
 
 import logging
+from collections.abc import Callable
 from typing import Any
 
 import tenacity
@@ -20,56 +21,121 @@ console = cli_console.Console()
     ),
     reraise=True,
 )
-def _remove_service_with_retry(service: Any) -> None:
+def _remove_resource_with_retry(resource: Any) -> None:
+    """Removes a Docker resource with retry on transient errors, ignoring NotFound."""
     try:
-        service.remove()
+        resource.remove()
     except docker_errors.NotFound:
         pass
 
 
-@tenacity.retry(
-    stop=tenacity.stop_after_attempt(3),
-    wait=tenacity.wait_fixed(0.2),
-    retry=tenacity.retry_if_exception_type(
-        (docker_errors.DockerException, docker_errors.APIError)
-    ),
-    reraise=True,
-)
-def _remove_network_with_retry(network: Any) -> None:
+def _extract_labels(resource: Any) -> dict[str, Any]:
+    """Extract labels from resource attributes."""
+    attrs = getattr(resource, "attrs", None) or {}
+    if not isinstance(attrs, dict):
+        return {}
+    spec = attrs.get("Spec")
+    if isinstance(spec, dict):
+        labels = spec.get("Labels")
+        if isinstance(labels, dict):
+            return labels
+    labels = attrs.get("Labels")
+    if isinstance(labels, dict):
+        return labels
+    return {}
+
+
+def _extract_name(resource: Any) -> str:
+    """Extract display name or ID from resource."""
+    attrs = getattr(resource, "attrs", None) or {}
+    if isinstance(attrs, dict):
+        spec = attrs.get("Spec")
+        if isinstance(spec, dict) and spec.get("Name"):
+            return str(spec["Name"])
+        if attrs.get("Name"):
+            return str(attrs["Name"])
+        if attrs.get("ID"):
+            return str(attrs["ID"])
+        if attrs.get("Id"):
+            return str(attrs["Id"])
     try:
-        network.remove()
-    except docker_errors.NotFound:
+        name = getattr(resource, "name", None)
+        if name:
+            return str(name)
+    except Exception:
         pass
-
-
-@tenacity.retry(
-    stop=tenacity.stop_after_attempt(3),
-    wait=tenacity.wait_fixed(0.2),
-    retry=tenacity.retry_if_exception_type(
-        (docker_errors.DockerException, docker_errors.APIError)
-    ),
-    reraise=True,
-)
-def _remove_config_with_retry(config: Any) -> None:
     try:
-        config.remove()
-    except docker_errors.NotFound:
+        res_id = getattr(resource, "id", None)
+        if res_id:
+            return str(res_id)
+    except Exception:
         pass
+    return ""
 
 
-@tenacity.retry(
-    stop=tenacity.stop_after_attempt(3),
-    wait=tenacity.wait_fixed(0.2),
-    retry=tenacity.retry_if_exception_type(
-        (docker_errors.DockerException, docker_errors.APIError)
-    ),
-    reraise=True,
-)
-def _remove_volume_with_retry(volume: Any) -> None:
+def _cleanup_resource_collection(
+    collection: Any,
+    resource_type: str,
+    scan_id_str: str,
+    scan_id: int | str | None = None,
+    extra_items: list[Any] | None = None,
+    extra_matcher: Callable[[Any], bool] | None = None,
+) -> tuple[list[Any], bool]:
+    """Lists, filters, and removes Docker resources belonging to universe.
+
+    Returns:
+        tuple[list[Any], bool]: (stopped_resources, had_errors)
+    """
+    if collection is None:
+        return [], False
+
+    stopped = []
+    had_errors = False
+    items: list[Any] = []
+
     try:
-        volume.remove()
-    except docker_errors.NotFound:
-        pass
+        items = list(
+            collection.list(filters={"label": f"ostorlab.universe={scan_id_str}"})
+        )
+    except (
+        docker_errors.DockerException,
+        docker_errors.APIError,
+        KeyError,
+        AttributeError,
+    ) as e:
+        had_errors = True
+        logger.warning("Failed to list Docker %ss: %s", resource_type, e)
+
+    if extra_items:
+        for item in extra_items:
+            if item not in items:
+                items.append(item)
+
+    for item in items:
+        try:
+            labels = _extract_labels(item)
+            universe_label = labels.get("ostorlab.universe")
+            is_match = (
+                universe_label == scan_id
+                or universe_label == scan_id_str
+                or str(universe_label) == scan_id_str
+                or (extra_matcher is not None and extra_matcher(item))
+            )
+            if is_match:
+                item_name = _extract_name(item)
+                logger.info("Removing %s: %s", resource_type, item_name)
+                stopped.append(item)
+                _remove_resource_with_retry(item)
+        except (
+            docker_errors.DockerException,
+            docker_errors.APIError,
+            KeyError,
+            AttributeError,
+        ) as e:
+            had_errors = True
+            logger.warning("Failed to remove %s: %s", resource_type, e)
+
+    return stopped, had_errors
 
 
 def cleanup_scan_docker_resources(
@@ -90,179 +156,70 @@ def cleanup_scan_docker_resources(
 
     scan_id_str = str(scan_id).strip()
     logger.info("Cleaning up scan resources for universe %s", scan_id_str)
-    stopped_services = []
-    stopped_network = []
-    stopped_configs = []
-    stopped_volumes = []
     had_errors = False
+    stopped_components: list[Any] = []
 
-    try:
-        services = docker_client.services.list(
-            filters={"label": f"ostorlab.universe={scan_id_str}"}
-        )
-    except (docker_errors.DockerException, docker_errors.APIError) as e:
-        had_errors = True
-        logger.warning("Failed to list Docker services: %s", e)
-        services = []
-    for service in services:
-        try:
-            service_attrs = getattr(service, "attrs", None) or {}
-            service_spec = (
-                service_attrs.get("Spec")
-                if isinstance(service_attrs.get("Spec"), dict)
-                else {}
-            )
-            service_labels = (
-                service_spec.get("Labels")
-                if isinstance(service_spec.get("Labels"), dict)
-                else {}
-            ) or {}
-            universe_label = service_labels.get("ostorlab.universe")
-            if (
-                universe_label == scan_id
-                or universe_label == scan_id_str
-                or str(universe_label) == scan_id_str
-            ):
-                service_name = (
-                    service_spec.get("Name")
-                    or service_attrs.get("Name")
-                    or getattr(service, "id", "")
-                )
-                logger.info("Removing service: %s", service_name)
-                stopped_services.append(service)
-                _remove_service_with_retry(service)
-        except (docker_errors.DockerException, docker_errors.APIError) as e:
-            had_errors = True
-            logger.warning("Failed to remove service: %s", e)
+    stopped, err = _cleanup_resource_collection(
+        collection=getattr(docker_client, "services", None),
+        resource_type="service",
+        scan_id_str=scan_id_str,
+        scan_id=scan_id,
+    )
+    stopped_components.extend(stopped)
+    had_errors = had_errors or err
 
-    try:
-        networks = docker_client.networks.list(
-            filters={"label": f"ostorlab.universe={scan_id_str}"}
-        )
-    except (docker_errors.DockerException, docker_errors.APIError) as e:
-        had_errors = True
-        logger.warning("Failed to list Docker networks: %s", e)
-        networks = []
-    for network in networks:
-        try:
-            network_attrs = getattr(network, "attrs", None) or {}
-            network_labels = network_attrs.get("Labels") or {}
-            if isinstance(network_labels, dict):
-                universe_label = network_labels.get("ostorlab.universe")
-                if (
-                    universe_label == scan_id
-                    or universe_label == scan_id_str
-                    or str(universe_label) == scan_id_str
-                ):
-                    logger.debug("Removing network: %s", network_labels)
-                    stopped_network.append(network)
-                    _remove_network_with_retry(network)
-        except (docker_errors.DockerException, docker_errors.APIError) as e:
-            had_errors = True
-            logger.warning("Failed to remove network: %s", e)
+    stopped, err = _cleanup_resource_collection(
+        collection=getattr(docker_client, "networks", None),
+        resource_type="network",
+        scan_id_str=scan_id_str,
+        scan_id=scan_id,
+    )
+    stopped_components.extend(stopped)
+    had_errors = had_errors or err
 
-    try:
-        configs = docker_client.configs.list(
-            filters={"label": f"ostorlab.universe={scan_id_str}"}
-        )
-    except (docker_errors.DockerException, docker_errors.APIError) as e:
-        had_errors = True
-        logger.warning("Failed to list Docker configs: %s", e)
-        configs = []
-    for config in configs:
-        try:
-            config_attrs = getattr(config, "attrs", None) or {}
-            config_spec = (
-                config_attrs.get("Spec")
-                if isinstance(config_attrs.get("Spec"), dict)
-                else {}
-            )
-            config_labels = (
-                config_spec.get("Labels")
-                if isinstance(config_spec.get("Labels"), dict)
-                else {}
-            ) or {}
-            universe_label = config_labels.get("ostorlab.universe")
-            if (
-                universe_label == scan_id
-                or universe_label == scan_id_str
-                or str(universe_label) == scan_id_str
-            ):
-                logger.info("Removing config: %s", config_labels)
-                stopped_configs.append(config)
-                _remove_config_with_retry(config)
-        except (docker_errors.DockerException, docker_errors.APIError) as e:
-            had_errors = True
-            logger.warning("Failed to remove config: %s", e)
+    stopped, err = _cleanup_resource_collection(
+        collection=getattr(docker_client, "configs", None),
+        resource_type="config",
+        scan_id_str=scan_id_str,
+        scan_id=scan_id,
+    )
+    stopped_components.extend(stopped)
+    had_errors = had_errors or err
 
-    try:
-        volumes = docker_client.volumes.list(
-            filters={"label": f"ostorlab.universe={scan_id_str}"}
-        )
-    except (
-        docker_errors.DockerException,
-        docker_errors.APIError,
-        KeyError,
-        AttributeError,
-    ) as e:
-        had_errors = True
-        logger.warning("Failed to list Docker volumes: %s", e)
-        volumes = []
+    named_volumes = []
+    named_volume_targets = (f"asset_{scan_id_str}", f"{scan_id_str}_mq_data")
+    vol_collection = getattr(docker_client, "volumes", None)
+    if vol_collection is not None:
+        vol_getter = getattr(vol_collection, "get", None)
+        if callable(vol_getter):
+            for named_vol in named_volume_targets:
+                try:
+                    vol = vol_getter(named_vol)
+                    if vol is not None:
+                        named_volumes.append(vol)
+                except docker_errors.NotFound:
+                    pass
+                except (docker_errors.DockerException, docker_errors.APIError) as e:
+                    had_errors = True
+                    logger.warning("Failed to get named volume %s: %s", named_vol, e)
 
-    for named_vol in (f"asset_{scan_id_str}", f"{scan_id_str}_mq_data"):
-        try:
-            vol_getter = getattr(docker_client.volumes, "get", None)
-            if callable(vol_getter):
-                vol = vol_getter(named_vol)
-                if vol is not None and vol not in volumes:
-                    volumes.append(vol)
-        except docker_errors.NotFound:
-            pass
-        except (
-            docker_errors.DockerException,
-            docker_errors.APIError,
-        ) as e:
-            had_errors = True
-            logger.warning("Failed to get named volume %s: %s", named_vol, e)
+    def _volume_name_matcher(vol: Any) -> bool:
+        vol_name = _extract_name(vol)
+        return vol_name in named_volume_targets
 
-    for volume in volumes:
-        try:
-            volume_attrs = getattr(volume, "attrs", None) or {}
-            volume_name = (
-                getattr(volume, "name", None)
-                or volume_attrs.get("Name", "")
-                or getattr(volume, "id", "")
-            )
-            volume_labels = volume_attrs.get("Labels") or {}
-            universe_label = (
-                volume_labels.get("ostorlab.universe")
-                if isinstance(volume_labels, dict)
-                else None
-            )
-            if (
-                universe_label == scan_id
-                or universe_label == scan_id_str
-                or str(universe_label) == scan_id_str
-                or (
-                    volume_name
-                    and volume_name
-                    in (f"asset_{scan_id_str}", f"{scan_id_str}_mq_data")
-                )
-            ):
-                logger.info("Removing volume: %s", volume_name)
-                stopped_volumes.append(volume)
-                _remove_volume_with_retry(volume)
-        except (
-            docker_errors.DockerException,
-            docker_errors.APIError,
-            KeyError,
-            AttributeError,
-        ) as e:
-            had_errors = True
-            logger.warning("Failed to remove volume: %s", e)
+    stopped, err = _cleanup_resource_collection(
+        collection=vol_collection,
+        resource_type="volume",
+        scan_id_str=scan_id_str,
+        scan_id=scan_id,
+        extra_items=named_volumes,
+        extra_matcher=_volume_name_matcher,
+    )
+    stopped_components.extend(stopped)
+    had_errors = had_errors or err
 
     if had_errors is False:
-        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
+        if stopped_components:
             console.success("All scan components stopped.")
     else:
         logger.warning(

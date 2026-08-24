@@ -37,10 +37,10 @@ def testCreateVolume_whenVolumeNotFound_createsNewVolume(mocker):
     """When existing volume is not found, creates new volume without error."""
     mock_client = mocker.MagicMock()
     mock_client.volumes.get.side_effect = docker.errors.NotFound("Volume not found")
-    writer = volumes.VolumeWriter()
-    writer._client = mock_client
+    mocker.patch("docker.from_env", return_value=mock_client)
+    mocker.patch.object(volumes.VolumeWriter, "_write_content")
 
-    writer._create_volume("test_vol", labels={"a": "b"})
+    volumes.create_volume("test_vol", {"test": b"data"}, labels={"a": "b"})
 
     mock_client.volumes.create.assert_called_once_with(
         name="test_vol", labels={"a": "b"}
@@ -53,10 +53,10 @@ def testCreateVolume_whenVolumeRemovalRaisesAPIError_raisesException(mocker):
     mock_volume = mocker.MagicMock()
     mock_volume.remove.side_effect = docker.errors.APIError("Volume in use")
     mock_client.volumes.get.return_value = mock_volume
-    writer = volumes.VolumeWriter()
-    writer._client = mock_client
+    mocker.patch("docker.from_env", return_value=mock_client)
+    mocker.patch.object(volumes.VolumeWriter, "_write_content")
 
     with pytest.raises(docker.errors.APIError):
-        writer._create_volume("test_vol")
+        volumes.create_volume("test_vol", {"test": b"data"})
 
     mock_client.volumes.create.assert_not_called()
