@@ -1,0 +1,122 @@
+"""Unit tests for shared docker_cleanup module."""
+
+from unittest import mock
+
+from docker import errors as docker_errors
+
+from ostorlab.runtimes import docker_cleanup
+
+
+def testCleanupScanDockerResources_whenScanIdNoneOrEmpty_returnsTrue() -> None:
+    """When scan_id is None or empty string, cleanup immediately returns True without querying client."""
+    mock_client = mock.MagicMock()
+
+    assert docker_cleanup.cleanup_scan_docker_resources(mock_client, None) is True
+    assert docker_cleanup.cleanup_scan_docker_resources(mock_client, "") is True
+    assert docker_cleanup.cleanup_scan_docker_resources(mock_client, "   ") is True
+
+    mock_client.services.list.assert_not_called()
+    mock_client.networks.list.assert_not_called()
+    mock_client.configs.list.assert_not_called()
+    mock_client.volumes.list.assert_not_called()
+
+
+def testCleanupScanDockerResources_whenResourcesMatch_removesMatchingOnlyAndReturnsTrue() -> (
+    None
+):
+    """Matching services, networks, configs, and volumes are removed and returns True."""
+    mock_client = mock.MagicMock()
+
+    matching_service = mock.MagicMock(
+        attrs={"Spec": {"Labels": {"ostorlab.universe": "scan_42"}}}
+    )
+    non_matching_service = mock.MagicMock(
+        attrs={"Spec": {"Labels": {"ostorlab.universe": "other_scan"}}}
+    )
+    mock_client.services.list.return_value = [matching_service, non_matching_service]
+
+    matching_network = mock.MagicMock(
+        attrs={"Labels": {"ostorlab.universe": "scan_42"}}
+    )
+    non_matching_network = mock.MagicMock(
+        attrs={"Labels": {"ostorlab.universe": "other_scan"}}
+    )
+    mock_client.networks.list.return_value = [matching_network, non_matching_network]
+
+    matching_config = mock.MagicMock(
+        attrs={"Spec": {"Labels": {"ostorlab.universe": "scan_42"}}}
+    )
+    non_matching_config = mock.MagicMock(
+        attrs={"Spec": {"Labels": {"ostorlab.universe": "other_scan"}}}
+    )
+    mock_client.configs.list.return_value = [matching_config, non_matching_config]
+
+    matching_volume = mock.MagicMock(
+        attrs={"Labels": {"ostorlab.universe": "scan_42"}, "Name": "vol1"}
+    )
+    matching_named_volume = mock.MagicMock(
+        attrs={"Labels": {}, "Name": "asset_scan_42"}
+    )
+    matching_named_volume.name = "asset_scan_42"
+    non_matching_volume = mock.MagicMock(
+        attrs={"Labels": {"ostorlab.universe": "other"}, "Name": "vol2"}
+    )
+    non_matching_volume.name = "vol2"
+    mock_client.volumes.list.return_value = [
+        matching_volume,
+        matching_named_volume,
+        non_matching_volume,
+    ]
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "scan_42")
+
+    assert success is True
+    matching_service.remove.assert_called_once()
+    non_matching_service.remove.assert_not_called()
+    matching_network.remove.assert_called_once()
+    non_matching_network.remove.assert_not_called()
+    matching_config.remove.assert_called_once()
+    non_matching_config.remove.assert_not_called()
+    matching_volume.remove.assert_called_once_with(force=True)
+    matching_named_volume.remove.assert_called_once_with(force=True)
+    non_matching_volume.remove.assert_not_called()
+
+
+def testCleanupScanDockerResources_whenServiceRemovalFails_continuesAndReturnsFalse() -> (
+    None
+):
+    """When a service removal fails with DockerException, other resources are still cleaned up and False is returned."""
+    mock_client = mock.MagicMock()
+
+    failing_service = mock.MagicMock(
+        attrs={"Spec": {"Labels": {"ostorlab.universe": "100"}}}
+    )
+    failing_service.remove.side_effect = docker_errors.DockerException("removal failed")
+
+    succeeding_network = mock.MagicMock(attrs={"Labels": {"ostorlab.universe": "100"}})
+
+    mock_client.services.list.return_value = [failing_service]
+    mock_client.networks.list.return_value = [succeeding_network]
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, 100)
+
+    assert success is False
+    failing_service.remove.assert_called_once()
+    succeeding_network.remove.assert_called_once()
+
+
+def testCleanupScanDockerResources_whenListRaisesDockerException_returnsFalse() -> None:
+    """When services.list() raises DockerException, cleanup catches it and returns False."""
+    mock_client = mock.MagicMock()
+    mock_client.services.list.side_effect = docker_errors.DockerException(
+        "daemon error"
+    )
+    mock_client.networks.list.return_value = []
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
+
+    assert success is False
