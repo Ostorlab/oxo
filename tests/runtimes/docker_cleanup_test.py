@@ -168,3 +168,21 @@ def testCleanupScanDockerResources_whenResourceRaisesAPIError_handlesErrorAndRet
     success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
 
     assert success is False
+
+
+def testCleanupScanDockerResources_whenNamedVolumeGetRaisesAPIError_handlesErrorAndReturnsFalse() -> (
+    None
+):
+    """When volumes.get raises APIError for named volumes, cleanup catches it and returns False."""
+    mock_client = mock.MagicMock()
+    mock_client.services.list.return_value = []
+    mock_client.networks.list.return_value = []
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+    mock_client.volumes.get.side_effect = docker_errors.DockerException(
+        "Failed to get volume"
+    )
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
+
+    assert success is False

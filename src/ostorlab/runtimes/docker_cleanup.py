@@ -131,8 +131,6 @@ def cleanup_scan_docker_resources(
                 logger.info("Removing service: %s", service_name)
                 stopped_services.append(service)
                 _remove_service_with_retry(service)
-        except docker_errors.NotFound:
-            logger.debug("Service already removed: %s", service)
         except (docker_errors.DockerException, docker_errors.APIError) as e:
             had_errors = True
             logger.warning("Failed to remove service: %s", e)
@@ -159,8 +157,6 @@ def cleanup_scan_docker_resources(
                     logger.debug("Removing network: %s", network_labels)
                     stopped_network.append(network)
                     _remove_network_with_retry(network)
-        except docker_errors.NotFound:
-            logger.debug("Network already removed: %s", network)
         except (docker_errors.DockerException, docker_errors.APIError) as e:
             had_errors = True
             logger.warning("Failed to remove network: %s", e)
@@ -195,8 +191,6 @@ def cleanup_scan_docker_resources(
                 logger.info("Removing config: %s", config_labels)
                 stopped_configs.append(config)
                 _remove_config_with_retry(config)
-        except docker_errors.NotFound:
-            logger.debug("Config already removed: %s", config)
         except (docker_errors.DockerException, docker_errors.APIError) as e:
             had_errors = True
             logger.warning("Failed to remove config: %s", e)
@@ -222,12 +216,14 @@ def cleanup_scan_docker_resources(
                 vol = vol_getter(named_vol)
                 if vol is not None and vol not in volumes:
                     volumes.append(vol)
+        except docker_errors.NotFound:
+            pass
         except (
-            docker_errors.NotFound,
             docker_errors.DockerException,
             docker_errors.APIError,
-        ):
-            pass
+        ) as e:
+            had_errors = True
+            logger.warning("Failed to get named volume %s: %s", named_vol, e)
 
     for volume in volumes:
         try:
@@ -256,8 +252,6 @@ def cleanup_scan_docker_resources(
                 logger.info("Removing volume: %s", volume_name)
                 stopped_volumes.append(volume)
                 _remove_volume_with_retry(volume)
-        except docker_errors.NotFound:
-            logger.debug("Volume already removed: %s", volume)
         except (
             docker_errors.DockerException,
             docker_errors.APIError,
