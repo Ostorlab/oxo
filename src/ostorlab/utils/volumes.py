@@ -53,10 +53,10 @@ class VolumeWriter:
     def _create_volume(self, name: str, labels: dict[str, str] | None = None) -> None:
         """Override existing images."""
         try:
-            self._client.volumes.get(name).remove(force=True)
+            self._client.volumes.get(name).remove()
         except docker_errors.NotFound:
             pass
-        except docker_errors.DockerException as e:
+        except (docker_errors.APIError, docker_errors.DockerException) as e:
             logger.warning("Failed to remove existing volume %s: %s", name, e)
         str_labels = {str(k): str(v) for k, v in (labels or {}).items()}
         self._client.volumes.create(name=name, labels=str_labels)

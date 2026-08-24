@@ -120,3 +120,33 @@ def testCleanupScanDockerResources_whenListRaisesDockerException_returnsFalse() 
     success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
 
     assert success is False
+
+
+def testCleanupScanDockerResources_whenResourceRaisesNotFound_returnsTrue() -> None:
+    """When a resource removal raises NotFound (already removed), it is not treated as an error and returns True."""
+    mock_client = mock.MagicMock()
+
+    service = mock.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "100"}}})
+    service.remove.side_effect = docker_errors.NotFound("service not found")
+
+    network = mock.MagicMock(attrs={"Labels": {"ostorlab.universe": "100"}})
+    network.remove.side_effect = docker_errors.NotFound("network not found")
+
+    config = mock.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "100"}}})
+    config.remove.side_effect = docker_errors.NotFound("config not found")
+
+    volume = mock.MagicMock(attrs={"Labels": {"ostorlab.universe": "100"}})
+    volume.remove.side_effect = docker_errors.NotFound("volume not found")
+
+    mock_client.services.list.return_value = [service]
+    mock_client.networks.list.return_value = [network]
+    mock_client.configs.list.return_value = [config]
+    mock_client.volumes.list.return_value = [volume]
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
+
+    assert success is True
+    service.remove.assert_called_once()
+    network.remove.assert_called_once()
+    config.remove.assert_called_once()
+    volume.remove.assert_called_once_with(force=True)

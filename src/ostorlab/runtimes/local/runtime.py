@@ -342,8 +342,10 @@ class LocalRuntime(runtime.Runtime):
             bool: True if cleanup completed without error, False otherwise.
         """
         if scan_id is None:
-            scan_id = self._scan_id or (
-                self._scan_db.id if self._scan_db is not None else None
+            scan_id = (
+                self._scan_id
+                if self._scan_id is not None
+                else (self._scan_db.id if self._scan_db is not None else None)
             )
 
         if scan_id is None or str(scan_id).strip() == "":
@@ -359,13 +361,6 @@ class LocalRuntime(runtime.Runtime):
                 exceptions.OstorlabError,
             ) as e:
                 logger.warning("Docker checks failed during cleanup: %s", e)
-                return False
-
-        if self._docker_client is None:
-            try:
-                self._docker_client = docker.from_env(max_pool_size=100)
-            except docker.errors.DockerException as e:
-                logger.warning("Failed to connect to Docker daemon: %s", e)
                 return False
 
         return docker_cleanup.cleanup_scan_docker_resources(

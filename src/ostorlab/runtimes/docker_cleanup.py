@@ -68,6 +68,8 @@ def cleanup_scan_docker_resources(
                 logger.info("Removing service: %s", service_name)
                 stopped_services.append(service)
                 service.remove()
+        except docker_errors.NotFound:
+            logger.debug("Service already removed: %s", service)
         except docker_errors.DockerException as e:
             had_errors = True
             logger.warning("Failed to remove service: %s", e)
@@ -92,6 +94,8 @@ def cleanup_scan_docker_resources(
                     logger.debug("Removing network: %s", network_labels)
                     stopped_network.append(network)
                     network.remove()
+        except docker_errors.NotFound:
+            logger.debug("Network already removed: %s", network)
         except docker_errors.DockerException as e:
             had_errors = True
             logger.warning("Failed to remove network: %s", e)
@@ -124,6 +128,8 @@ def cleanup_scan_docker_resources(
                 logger.info("Removing config: %s", config_labels)
                 stopped_configs.append(config)
                 config.remove()
+        except docker_errors.NotFound:
+            logger.debug("Config already removed: %s", config)
         except docker_errors.DockerException as e:
             had_errors = True
             logger.warning("Failed to remove config: %s", e)
@@ -161,6 +167,8 @@ def cleanup_scan_docker_resources(
                 logger.info("Removing volume: %s", volume_name)
                 stopped_volumes.append(volume)
                 volume.remove(force=True)
+        except docker_errors.NotFound:
+            logger.debug("Volume already removed: %s", volume)
         except (docker_errors.DockerException, KeyError, AttributeError) as e:
             had_errors = True
             logger.warning("Failed to remove volume: %s", e)
