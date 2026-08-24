@@ -904,7 +904,6 @@ def testLiteLocalRuntimeScan_whenExceptionRaised_stopsScanAndReraises(
         redis_url="redis://localhost:6379",
         tracing_collector_url="http://localhost:14268/api/traces",
     )
-    mocker.patch.object(runtime, "_docker_checks")
     mocker.patch.object(
         runtime, "_start_agents", side_effect=RuntimeError("Agent launch error")
     )
@@ -957,7 +956,6 @@ def testLiteLocalRuntimeStop_whenScanIdNone_usesRuntimeScanId(
         redis_url="redis://localhost:6379",
         tracing_collector_url="http://localhost:14268/api/traces",
     )
-    mocker.patch.object(runtime, "_docker_checks")
 
     service_mock = mocker.MagicMock()
     service_mock.attrs = {

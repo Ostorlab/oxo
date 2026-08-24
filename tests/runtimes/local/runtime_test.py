@@ -697,7 +697,9 @@ def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsS
 ) -> None:
     """When an unhandled exception occurs during scan(), progress is set to ERROR and stop() is called."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime(name="test_error_universe")
+    runtime = local_runtime.LocalRuntime(scan_id="test_error_universe")
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
     mocker.patch.object(runtime, "_docker_checks")
     mocker.patch.object(
         runtime, "_create_network", side_effect=RuntimeError("Docker swarm error")
@@ -718,7 +720,7 @@ def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsS
     with models.Database() as session:
         scan = session.query(models.Scan).first()
         assert scan is not None
-        assert scan.progress == models.ScanStatus.ERROR.value
+        assert scan.progress == models.ScanProgress.ERROR
 
 
 def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorAndStopsScan(
@@ -726,7 +728,9 @@ def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorA
 ) -> None:
     """When KeyboardInterrupt occurs during scan(), progress is set to ERROR and stop() is called."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime(name="test_interrupt_universe")
+    runtime = local_runtime.LocalRuntime(scan_id="test_interrupt_universe")
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
     mocker.patch.object(runtime, "_docker_checks")
     mocker.patch.object(runtime, "_create_network")
     mocker.patch.object(runtime, "_start_services", side_effect=KeyboardInterrupt())
@@ -746,7 +750,7 @@ def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorA
     with models.Database() as session:
         scan = session.query(models.Scan).first()
         assert scan is not None
-        assert scan.progress == models.ScanStatus.ERROR.value
+        assert scan.progress == models.ScanProgress.ERROR
 
 
 def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(
@@ -754,7 +758,9 @@ def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(
 ) -> None:
     """When stop() is called with scan_id=None, it uses self.name to find and remove services."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime(name="universe_123")
+    runtime = local_runtime.LocalRuntime(scan_id="universe_123")
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
     mocker.patch.object(runtime, "_docker_checks")
 
     service_mock = mocker.MagicMock()
@@ -764,12 +770,10 @@ def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(
             "Labels": {"ostorlab.universe": "universe_123"},
         }
     }
-    mocker.patch.object(
-        runtime._docker_client.services, "list", return_value=[service_mock]
-    )
-    mocker.patch.object(runtime._docker_client.networks, "list", return_value=[])
-    mocker.patch.object(runtime._docker_client.configs, "list", return_value=[])
-    mocker.patch.object(runtime._docker_client.volumes, "list", return_value=[])
+    mock_docker_client.services.list.return_value = [service_mock]
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
 
     runtime.stop()
 
@@ -782,6 +786,8 @@ def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItem
     """When an error occurs removing one service, stop() catches it and continues removing the rest."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     runtime = local_runtime.LocalRuntime()
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
     mocker.patch.object(runtime, "_docker_checks")
 
     service_failing = mocker.MagicMock()
@@ -801,14 +807,13 @@ def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItem
         }
     }
 
-    mocker.patch.object(
-        runtime._docker_client.services,
-        "list",
-        return_value=[service_failing, service_succeeding],
-    )
-    mocker.patch.object(runtime._docker_client.networks, "list", return_value=[])
-    mocker.patch.object(runtime._docker_client.configs, "list", return_value=[])
-    mocker.patch.object(runtime._docker_client.volumes, "list", return_value=[])
+    mock_docker_client.services.list.return_value = [
+        service_failing,
+        service_succeeding,
+    ]
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
 
     runtime.stop(scan_id="100")
 

@@ -289,9 +289,10 @@ class LocalRuntime(runtime.Runtime):
             scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
         """
         if scan_id is None:
-            scan_id = self.name or (
-                self._scan_db.id if self._scan_db is not None else None
-            )
+            try:
+                scan_id = self.name
+            except ValueError:
+                scan_id = self._scan_db.id if self._scan_db is not None else None
 
         if scan_id is None or str(scan_id).strip() == "":
             logger.warning("No valid scan_id provided to stop.")
