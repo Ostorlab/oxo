@@ -257,29 +257,33 @@ class LiteLocalRuntime(runtime.Runtime):
                 )
             raise
 
-    def stop(self, scan_id: str | None = None) -> None:
+    def stop(self, scan_id: str | None = None) -> bool:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
 
         Args:
             scan_id: The id of the scan to stop.
+
+        Returns:
+            bool: True if cleanup completed without error, False otherwise.
         """
         if scan_id is None:
             scan_id = self.scan_id
 
         if scan_id is None or str(scan_id).strip() == "":
             logger.warning("No valid scan_id provided to stop.")
-            return
+            return True
 
         scan_id_str = str(scan_id)
         stopped_services = []
         stopped_network = []
         stopped_configs = []
         stopped_volumes = []
+        had_errors = False
         try:
             client = docker.from_env()
         except docker.errors.DockerException as e:
             logger.warning("Failed to connect to Docker daemon: %s", e)
-            return
+            return False
 
         try:
             services = client.services.list()
@@ -307,6 +311,7 @@ class LiteLocalRuntime(runtime.Runtime):
                     stopped_services.append(service)
                     service.remove()
             except docker.errors.DockerException as e:
+                had_errors = True
                 logger.warning("Failed to remove service: %s", e)
 
         try:
@@ -328,6 +333,7 @@ class LiteLocalRuntime(runtime.Runtime):
                         stopped_network.append(network)
                         network.remove()
             except docker.errors.DockerException as e:
+                had_errors = True
                 logger.warning("Failed to remove network: %s", e)
 
         try:
@@ -357,6 +363,7 @@ class LiteLocalRuntime(runtime.Runtime):
                     stopped_configs.append(config)
                     config.remove()
             except docker.errors.DockerException as e:
+                had_errors = True
                 logger.warning("Failed to remove config: %s", e)
 
         try:
@@ -389,10 +396,12 @@ class LiteLocalRuntime(runtime.Runtime):
                     stopped_volumes.append(volume)
                     volume.remove(force=True)
             except (docker.errors.DockerException, KeyError, AttributeError) as e:
+                had_errors = True
                 logger.warning("Failed to remove volume: %s", e)
 
         if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
+        return not had_errors
 
     cleanup = stop
 

@@ -322,11 +322,14 @@ class LocalRuntime(runtime.Runtime):
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
         threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-    def cleanup(self, scan_id: int | str | None = None) -> None:
+    def cleanup(self, scan_id: int | str | None = None) -> bool:
         """Remove all Docker services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
+
+        Returns:
+            bool: True if cleanup completed without error, False otherwise.
         """
         if scan_id is None:
             scan_id = self._scan_id or (
@@ -335,7 +338,7 @@ class LocalRuntime(runtime.Runtime):
 
         if scan_id is None or str(scan_id).strip() == "":
             logger.warning("No valid scan_id provided to cleanup.")
-            return
+            return True
 
         scan_id_str = str(scan_id)
         logger.info("cleaning up scan resources for id %s", scan_id)
@@ -343,11 +346,16 @@ class LocalRuntime(runtime.Runtime):
         stopped_network = []
         stopped_configs = []
         stopped_volumes = []
+        had_errors = False
         try:
             self._docker_checks()
-        except docker.errors.DockerException as e:
+        except (
+            docker.errors.DockerException,
+            click.exceptions.Exit,
+            exceptions.OstorlabError,
+        ) as e:
             logger.warning("Docker checks failed during cleanup: %s", e)
-            return
+            return False
 
         try:
             services = self._docker_client.services.list()
@@ -381,6 +389,7 @@ class LocalRuntime(runtime.Runtime):
                     stopped_services.append(service)
                     service.remove()
             except docker.errors.DockerException as e:
+                had_errors = True
                 logger.warning("Failed to remove service: %s", e)
 
         try:
@@ -402,6 +411,7 @@ class LocalRuntime(runtime.Runtime):
                         stopped_network.append(network)
                         network.remove()
             except docker.errors.DockerException as e:
+                had_errors = True
                 logger.warning("Failed to remove network: %s", e)
 
         try:
@@ -431,6 +441,7 @@ class LocalRuntime(runtime.Runtime):
                     stopped_configs.append(config)
                     config.remove()
             except docker.errors.DockerException as e:
+                had_errors = True
                 logger.warning("Failed to remove config: %s", e)
 
         try:
@@ -461,10 +472,12 @@ class LocalRuntime(runtime.Runtime):
                     stopped_volumes.append(volume)
                     volume.remove(force=True)
             except (docker.errors.DockerException, KeyError, AttributeError) as e:
+                had_errors = True
                 logger.warning("Failed to remove volume: %s", e)
 
         if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
+        return not had_errors
 
     def stop(
         self,
@@ -477,9 +490,9 @@ class LocalRuntime(runtime.Runtime):
             scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
             update_scan_status: Whether to update the scan progress to STOPPED in the local database.
         """
-        self.cleanup(scan_id=scan_id)
+        cleanup_success = self.cleanup(scan_id=scan_id)
 
-        if update_scan_status is True:
+        if update_scan_status is True and cleanup_success is True:
             target_db_id = None
             if isinstance(scan_id, int):
                 target_db_id = scan_id
@@ -500,6 +513,11 @@ class LocalRuntime(runtime.Runtime):
                     console.success("Scan stopped successfully.")
                 else:
                     console.info(f"Scan {scan_id} was not found.")
+        elif update_scan_status is True and cleanup_success is False:
+            logger.warning(
+                "Cleanup had errors for scan %s; not updating scan progress to STOPPED.",
+                scan_id,
+            )
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""

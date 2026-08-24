@@ -37,10 +37,17 @@ class ScanHandler:
         self._state_reporter = state_reporter
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
-        self._docker_client = docker.from_env()
+        try:
+            self._docker_client = docker.from_env()
+        except docker.errors.DockerException:
+            self._docker_client = None
 
     def close(self) -> None:
-        self._docker_client.close()
+        if self._docker_client is not None:
+            try:
+                self._docker_client.close()
+            except docker.errors.DockerException:
+                pass
 
     def handle_messages(
         self,
@@ -230,7 +237,7 @@ class ScanHandler:
         try:
             runtime = local_runtime.LocalRuntime()
             runtime.cleanup(scan_id=scan_id)
-        except Exception:
+        except (docker.errors.DockerException, Exception):
             logger.exception("Failed to cleanup scan services for scan %s", scan_id)
 
     def _rollback_scan_state(
@@ -254,6 +261,8 @@ class ScanHandler:
         if scan_id is None:
             return False
         try:
+            if self._docker_client is None:
+                self._docker_client = docker.from_env()
             scan_services: list[services.Service] = self._docker_client.services.list(
                 filters={"label": f"ostorlab.universe={scan_id!s}"}
             )

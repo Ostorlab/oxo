@@ -230,11 +230,8 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
         return_value=None,
     )
-    create_service_mock = mocker.patch(
-        "docker.models.services.ServiceCollection.create", return_value=None
-    )
-
-    docker_client = docker.from_env()
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    create_service_mock = docker_client.services.create
 
     agent_settings = definitions.AgentSettings(
         key="agent/org/name",
@@ -305,11 +302,8 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
         return_value=None,
     )
-    create_service_mock = mocker.patch(
-        "docker.models.services.ServiceCollection.create", return_value=None
-    )
-
-    docker_client = docker.from_env()
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    create_service_mock = docker_client.services.create
 
     agent_settings = definitions.AgentSettings(
         key="agent/org/name",
@@ -376,11 +370,8 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
         "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
         return_value=None,
     )
-    create_service_mock = mocker.patch(
-        "docker.models.services.ServiceCollection.create", return_value=None
-    )
-
-    docker_client = docker.from_env()
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    create_service_mock = docker_client.services.create
 
     agent_settings = definitions.AgentSettings(
         key="agent/org/name",
@@ -493,10 +484,9 @@ def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUn
         "ostorlab.runtimes.definitions.AgentSettings.container_image",
         new_callable=mocker.PropertyMock,
     )
-    create_service_mock = mocker.patch(
-        "docker.models.services.ServiceCollection.create", return_value=None
-    )
-    mock_docker_client = docker.from_env()
+    mock_docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    mock_docker_client.info.return_value = {"Name": mock_host_hostname}
+    create_service_mock = mock_docker_client.services.create
     agent_settings = definitions.AgentSettings(key="agent/org/name")
     runtime_agent = agent_runtime.AgentRuntime(
         agent_settings,
@@ -552,11 +542,8 @@ def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContai
     mocker.patch(
         "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config"
     )
-    create_service_mock = mocker.patch(
-        "docker.models.services.ServiceCollection.create", return_value=None
-    )
-
-    docker_client = docker.from_env()
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    create_service_mock = docker_client.services.create
     agent_settings = definitions.AgentSettings(key="agent/org/name")
     runtime_agent = agent_runtime.AgentRuntime(
         agent_settings,

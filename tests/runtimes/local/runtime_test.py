@@ -3,6 +3,7 @@
 import logging
 from typing import Any
 
+import click
 import docker
 import pytest
 from docker.models import networks as networks_model
@@ -862,7 +863,41 @@ def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItem
     mock_docker_client.configs.list.return_value = []
     mock_docker_client.volumes.list.return_value = []
 
-    runtime.stop(scan_id="100")
+    success = runtime.cleanup(scan_id="100")
 
     service_failing.remove.assert_called_once()
     service_succeeding.remove.assert_called_once()
+    assert success is False
+
+
+def testLocalRuntimeCleanup_whenDockerChecksRaisesClickExit_catchesAndReturnsFalse(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When _docker_checks raises click.exceptions.Exit, cleanup catches it and returns False without raising."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime()
+    mocker.patch.object(runtime, "_docker_checks", side_effect=click.exceptions.Exit(2))
+
+    result = runtime.cleanup(scan_id="100")
+
+    assert result is False
+
+
+def testLocalRuntimeStop_whenCleanupHasErrors_doesNotUpdateScanProgressToStopped(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When cleanup fails or has errors, stop() does not set the DB scan progress to STOPPED."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="test scan", progress=models.ScanProgress.IN_PROGRESS
+    )
+    scan_id = scan.id
+
+    runtime = local_runtime.LocalRuntime()
+    mocker.patch.object(runtime, "cleanup", return_value=False)
+
+    runtime.stop(scan_id=scan_id, update_scan_status=True)
+
+    with models.Database() as session:
+        scan_in_db = session.query(models.Scan).get(scan_id)
+        assert scan_in_db.progress == models.ScanProgress.IN_PROGRESS
