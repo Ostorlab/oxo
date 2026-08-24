@@ -234,7 +234,7 @@ class LiteLocalRuntime(runtime.Runtime):
                 f" docker instead of `oxo agent build` command"
             )
             self._handle_scan_error()
-            raise agent_runtime.MissingAgentDefinitionLabel(str(e))
+            raise
         except (Exception, KeyboardInterrupt) as e:
             logger.error("Unhandled error during lite local scan execution: %s", e)
             self._handle_scan_error()
@@ -260,6 +260,7 @@ class LiteLocalRuntime(runtime.Runtime):
         if client is None:
             try:
                 client = docker.from_env(max_pool_size=100)
+                self._docker_client = client
             except docker.errors.DockerException as e:
                 logger.warning("Failed to connect to Docker daemon: %s", e)
                 return False
