@@ -422,27 +422,24 @@ class LocalRuntime(runtime.Runtime):
         if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
 
-        try:
-            with models.Database() as session:
-                target_db_id = self._scan_db.id if self._scan_db is not None else None
-                if target_db_id is None and isinstance(scan_id, int):
-                    target_db_id = scan_id
-                elif target_db_id is None and str(scan_id).isdigit():
-                    target_db_id = int(scan_id)
+        with models.Database() as session:
+            target_db_id = self._scan_db.id if self._scan_db is not None else None
+            if target_db_id is None and isinstance(scan_id, int):
+                target_db_id = scan_id
+            elif target_db_id is None and str(scan_id).isdigit():
+                target_db_id = int(scan_id)
 
-                scan = (
-                    session.query(models.Scan).get(target_db_id)
-                    if target_db_id is not None
-                    else None
-                )
-                if scan is not None:
-                    scan.progress = "STOPPED"
-                    session.commit()
-                    console.success("Scan stopped successfully.")
-                else:
-                    console.info(f"Scan {scan_id} was not found.")
-        except Exception as e:
-            logger.warning("Failed to update scan status in DB: %s", e)
+            scan = (
+                session.query(models.Scan).get(target_db_id)
+                if target_db_id is not None
+                else None
+            )
+            if scan is not None:
+                scan.progress = "STOPPED"
+                session.commit()
+                console.success("Scan stopped successfully.")
+            else:
+                console.info(f"Scan {scan_id} was not found.")
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""

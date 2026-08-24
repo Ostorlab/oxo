@@ -1,6 +1,7 @@
 """Utils API to play with Docker Volumes."""
 
 import io
+import logging
 import tarfile
 import time
 
@@ -9,6 +10,8 @@ from docker import errors as docker_errors
 from docker import types as docker_types
 
 from ostorlab.utils import strings
+
+logger = logging.getLogger(__name__)
 
 TEMP_IMAGE = "busybox:latest"
 TEMP_DESTINATION = "/dst"
@@ -91,8 +94,8 @@ class VolumeWriter:
         finally:
             try:
                 container.stop(timeout=0)
-            except (docker_errors.DockerException, Exception):
-                pass
+            except docker_errors.DockerException as e:
+                logger.debug("Failed to stop container: %s", e)
 
 
 def create_volume(
