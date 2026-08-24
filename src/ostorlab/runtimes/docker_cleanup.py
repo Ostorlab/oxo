@@ -65,18 +65,12 @@ def _extract_name(resource: Any) -> str:
             return str(attrs["ID"])
         if attrs.get("Id"):
             return str(attrs["Id"])
-    try:
-        name = getattr(resource, "name", None)
-        if name:
-            return str(name)
-    except (KeyError, AttributeError, TypeError) as e:
-        logger.debug("Could not resolve resource name: %s", e)
-    try:
-        res_id = getattr(resource, "id", None)
-        if res_id:
-            return str(res_id)
-    except (KeyError, AttributeError, TypeError) as e:
-        logger.debug("Could not resolve resource id: %s", e)
+    name = getattr(resource, "name", None)
+    if name is not None:
+        return str(name)
+    res_id = getattr(resource, "id", None)
+    if res_id is not None:
+        return str(res_id)
     return ""
 
 
