@@ -15,7 +15,7 @@ from docker.models import services
 from ostorlab.apis import scan_update_state, scanner_config, scans_discover
 from ostorlab.apis.runners import authenticated_runner, scanner_runner
 from ostorlab.apis.runners import runner as base_runner
-from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes import docker_cleanup
 from ostorlab.scanner import callbacks, resource_checker, scanner_conf
 from ostorlab.utils import scanner_state_reporter
 
@@ -235,8 +235,12 @@ class ScanHandler:
     def _cleanup_scan_services(self, scan_id: str) -> None:
         """Cleans up any Docker services and resources created for the scan."""
         try:
-            runtime = local_runtime.LocalRuntime()
-            cleanup_success = runtime.cleanup(scan_id=scan_id)
+            client = self._docker_client
+            if client is None:
+                client = docker.from_env()
+            cleanup_success = docker_cleanup.cleanup_scan_docker_resources(
+                client, scan_id
+            )
             if cleanup_success is False:
                 logger.warning(
                     "Failed to clean up all scan services for scan %s", scan_id
