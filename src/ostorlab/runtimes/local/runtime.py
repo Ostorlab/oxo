@@ -182,6 +182,30 @@ class LocalRuntime(runtime.Runtime):
         self._scan_db = self._create_scan_db(title=title)
         return self._scan_db
 
+    def _handle_scan_error(self) -> None:
+        """Update scan progress to ERROR and trigger cleanup gracefully."""
+        try:
+            self._update_scan_progress("ERROR")
+        except (
+            sqlalchemy.exc.SQLAlchemyError,
+            exceptions.OstorlabError,
+            AttributeError,
+            ValueError,
+        ) as update_err:
+            logger.warning("Failed to update scan progress to ERROR: %s", update_err)
+        try:
+            self.cleanup()
+        except (
+            docker_errors.DockerException,
+            docker_errors.APIError,
+            click.exceptions.Exit,
+            exceptions.OstorlabError,
+            ValueError,
+        ) as cleanup_err:
+            logger.warning(
+                "Failed to clean up scan resources after error: %s", cleanup_err
+            )
+
     def scan(
         self,
         title: str,
@@ -251,81 +275,26 @@ class LocalRuntime(runtime.Runtime):
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
-            self._update_scan_progress("ERROR")
-            try:
-                self.cleanup()
-            except (
-                docker_errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
             message = f"Agent {e} not installed"
-            self._update_scan_progress("ERROR")
-            try:
-                self.cleanup()
-            except (
-                docker_errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise AgentNotInstalled(message)
         except UnhealthyService as e:
             message = f"Unhealthy service {e}"
-            self._update_scan_progress("ERROR")
-            try:
-                self.cleanup()
-            except (
-                docker_errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise UnhealthyService(message)
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
-            self._update_scan_progress("ERROR")
-            try:
-                self.cleanup()
-            except (
-                docker_errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise MissingAgentDefinition(message)
         except (Exception, KeyboardInterrupt) as e:
             logger.error("Unhandled error during scan execution: %s", e)
-            self._update_scan_progress("ERROR")
-            try:
-                self.cleanup()
-            except (
-                docker_errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise
 
     def _wait_log_streamer(self) -> None:

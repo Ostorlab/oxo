@@ -3,12 +3,43 @@
 import logging
 from typing import Any
 
+import tenacity
 from docker import errors as docker_errors
 
 from ostorlab.cli import console as cli_console
 
 logger = logging.getLogger(__name__)
 console = cli_console.Console()
+
+
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(3),
+    wait=tenacity.wait_fixed(0.2),
+    retry=tenacity.retry_if_exception_type(
+        (docker_errors.DockerException, docker_errors.APIError)
+    ),
+    reraise=True,
+)
+def _remove_network_with_retry(network: Any) -> None:
+    try:
+        network.remove()
+    except docker_errors.NotFound:
+        pass
+
+
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(3),
+    wait=tenacity.wait_fixed(0.2),
+    retry=tenacity.retry_if_exception_type(
+        (docker_errors.DockerException, docker_errors.APIError)
+    ),
+    reraise=True,
+)
+def _remove_config_with_retry(config: Any) -> None:
+    try:
+        config.remove()
+    except docker_errors.NotFound:
+        pass
 
 
 def cleanup_scan_docker_resources(
@@ -37,7 +68,7 @@ def cleanup_scan_docker_resources(
 
     try:
         services = docker_client.services.list()
-    except docker_errors.DockerException as e:
+    except (docker_errors.DockerException, docker_errors.APIError) as e:
         had_errors = True
         logger.warning("Failed to list Docker services: %s", e)
         services = []
@@ -70,13 +101,13 @@ def cleanup_scan_docker_resources(
                 service.remove()
         except docker_errors.NotFound:
             logger.debug("Service already removed: %s", service)
-        except docker_errors.DockerException as e:
+        except (docker_errors.DockerException, docker_errors.APIError) as e:
             had_errors = True
             logger.warning("Failed to remove service: %s", e)
 
     try:
         networks = docker_client.networks.list()
-    except docker_errors.DockerException as e:
+    except (docker_errors.DockerException, docker_errors.APIError) as e:
         had_errors = True
         logger.warning("Failed to list Docker networks: %s", e)
         networks = []
@@ -93,16 +124,16 @@ def cleanup_scan_docker_resources(
                 ):
                     logger.debug("Removing network: %s", network_labels)
                     stopped_network.append(network)
-                    network.remove()
+                    _remove_network_with_retry(network)
         except docker_errors.NotFound:
             logger.debug("Network already removed: %s", network)
-        except docker_errors.DockerException as e:
+        except (docker_errors.DockerException, docker_errors.APIError) as e:
             had_errors = True
             logger.warning("Failed to remove network: %s", e)
 
     try:
         configs = docker_client.configs.list()
-    except docker_errors.DockerException as e:
+    except (docker_errors.DockerException, docker_errors.APIError) as e:
         had_errors = True
         logger.warning("Failed to list Docker configs: %s", e)
         configs = []
@@ -127,16 +158,21 @@ def cleanup_scan_docker_resources(
             ):
                 logger.info("Removing config: %s", config_labels)
                 stopped_configs.append(config)
-                config.remove()
+                _remove_config_with_retry(config)
         except docker_errors.NotFound:
             logger.debug("Config already removed: %s", config)
-        except docker_errors.DockerException as e:
+        except (docker_errors.DockerException, docker_errors.APIError) as e:
             had_errors = True
             logger.warning("Failed to remove config: %s", e)
 
     try:
         volumes = docker_client.volumes.list()
-    except (docker_errors.DockerException, KeyError, AttributeError) as e:
+    except (
+        docker_errors.DockerException,
+        docker_errors.APIError,
+        KeyError,
+        AttributeError,
+    ) as e:
         had_errors = True
         logger.warning("Failed to list Docker volumes: %s", e)
         volumes = []
@@ -169,7 +205,12 @@ def cleanup_scan_docker_resources(
                 volume.remove(force=True)
         except docker_errors.NotFound:
             logger.debug("Volume already removed: %s", volume)
-        except (docker_errors.DockerException, KeyError, AttributeError) as e:
+        except (
+            docker_errors.DockerException,
+            docker_errors.APIError,
+            KeyError,
+            AttributeError,
+        ) as e:
             had_errors = True
             logger.warning("Failed to remove volume: %s", e)
 

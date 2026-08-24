@@ -150,3 +150,21 @@ def testCleanupScanDockerResources_whenResourceRaisesNotFound_returnsTrue() -> N
     network.remove.assert_called_once()
     config.remove.assert_called_once()
     volume.remove.assert_called_once_with(force=True)
+
+
+def testCleanupScanDockerResources_whenResourceRaisesAPIError_handlesErrorAndReturnsFalse() -> (
+    None
+):
+    """When a resource list or removal raises APIError, cleanup catches it and returns False."""
+    mock_client = mock.MagicMock()
+    mock_response = mock.MagicMock(status_code=500, content=b"Server error")
+    mock_client.services.list.side_effect = docker_errors.APIError(
+        "API error", response=mock_response
+    )
+    mock_client.networks.list.return_value = []
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
+
+    assert success is False

@@ -165,6 +165,21 @@ class LiteLocalRuntime(runtime.Runtime):
         del agent_group_definition
         return True
 
+    def _handle_scan_error(self) -> None:
+        """Trigger cleanup gracefully on error."""
+        try:
+            self.stop(self.scan_id)
+        except (
+            docker.errors.DockerException,
+            docker.errors.APIError,
+            click.exceptions.Exit,
+            exceptions.OstorlabError,
+            ValueError,
+        ) as cleanup_err:
+            logger.warning(
+                "Failed to clean up scan resources after error: %s", cleanup_err
+            )
+
     def scan(
         self,
         title: str,
@@ -207,62 +222,22 @@ class LiteLocalRuntime(runtime.Runtime):
                 )
         except AgentNotHealthy:
             console.error("Agent not starting")
-            try:
-                self.stop(self.scan_id)
-            except (
-                docker.errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise
         except AgentNotInstalled as e:
             console.error(f"Agent {e} not installed")
-            try:
-                self.stop(self.scan_id)
-            except (
-                docker.errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise
         except agent_runtime.MissingAgentDefinitionLabel as e:
             console.error(
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
-            try:
-                self.stop(self.scan_id)
-            except (
-                docker.errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise agent_runtime.MissingAgentDefinitionLabel(str(e))
         except (Exception, KeyboardInterrupt) as e:
             logger.error("Unhandled error during lite local scan execution: %s", e)
-            try:
-                self.stop(self.scan_id)
-            except (
-                docker.errors.DockerException,
-                click.exceptions.Exit,
-                exceptions.OstorlabError,
-                ValueError,
-            ) as cleanup_err:
-                logger.warning(
-                    "Failed to clean up scan resources after error: %s", cleanup_err
-                )
+            self._handle_scan_error()
             raise
 
     def stop(self, scan_id: str | None = None) -> bool:

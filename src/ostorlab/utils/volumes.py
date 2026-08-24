@@ -94,7 +94,7 @@ class VolumeWriter:
         finally:
             try:
                 container.stop(timeout=0)
-            except docker_errors.DockerException as e:
+            except (docker_errors.DockerException, docker_errors.APIError) as e:
                 logger.debug("Failed to stop container: %s", e)
 
 
