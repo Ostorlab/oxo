@@ -165,6 +165,12 @@ def cleanup_scan_docker_resources(
             had_errors = True
             logger.warning("Failed to remove volume: %s", e)
 
-    if stopped_services or stopped_network or stopped_configs or stopped_volumes:
-        console.success("All scan components stopped.")
+    if had_errors is False:
+        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
+            console.success("All scan components stopped.")
+    else:
+        logger.warning(
+            "Some scan services, networks, configs, or volumes could not be cleaned up for scan %s.",
+            scan_id,
+        )
     return not had_errors

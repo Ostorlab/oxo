@@ -350,19 +350,20 @@ class LocalRuntime(runtime.Runtime):
             logger.warning("No valid scan_id provided to cleanup.")
             return True
 
-        try:
-            self._docker_checks()
-        except (
-            docker.errors.DockerException,
-            click.exceptions.Exit,
-            exceptions.OstorlabError,
-        ) as e:
-            logger.warning("Docker checks failed during cleanup: %s", e)
-            return False
+        if self._docker_client is None:
+            try:
+                self._docker_checks()
+            except (
+                docker.errors.DockerException,
+                click.exceptions.Exit,
+                exceptions.OstorlabError,
+            ) as e:
+                logger.warning("Docker checks failed during cleanup: %s", e)
+                return False
 
         if self._docker_client is None:
             try:
-                self._docker_client = docker.from_env()
+                self._docker_client = docker.from_env(max_pool_size=100)
             except docker.errors.DockerException as e:
                 logger.warning("Failed to connect to Docker daemon: %s", e)
                 return False
