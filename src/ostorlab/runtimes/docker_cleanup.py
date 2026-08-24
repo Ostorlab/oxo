@@ -62,14 +62,14 @@ def _extract_name(resource: Any) -> str:
         name = getattr(resource, "name", None)
         if name:
             return str(name)
-    except Exception:
-        pass
+    except (KeyError, AttributeError, TypeError) as e:
+        logger.debug("Could not resolve resource name: %s", e)
     try:
         res_id = getattr(resource, "id", None)
         if res_id:
             return str(res_id)
-    except Exception:
-        pass
+    except (KeyError, AttributeError, TypeError) as e:
+        logger.debug("Could not resolve resource id: %s", e)
     return ""
 
 
