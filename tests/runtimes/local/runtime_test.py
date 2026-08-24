@@ -695,16 +695,20 @@ def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(
 def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsScan(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
-    """When an unhandled exception occurs during scan(), progress is set to ERROR and stop() is called."""
+    """When an unhandled exception occurs during scan(), progress is set to ERROR and cleanup() is called without overwriting status."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     runtime = local_runtime.LocalRuntime(scan_id="test_error_universe")
     mock_docker_client = mocker.MagicMock()
     runtime._docker_client = mock_docker_client
     mocker.patch.object(runtime, "_docker_checks")
+    mock_docker_client.services.list.return_value = []
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
     mocker.patch.object(
         runtime, "_create_network", side_effect=RuntimeError("Docker swarm error")
     )
-    mock_stop = mocker.patch.object(runtime, "stop")
+    cleanup_spy = mocker.spy(runtime, "cleanup")
 
     agent_group = definitions.AgentGroupDefinition(agents=[])
     asset = android_apk.AndroidApk(content=b"APK")
@@ -716,7 +720,7 @@ def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsS
             assets=[asset],
         )
 
-    mock_stop.assert_called_once_with("test_error_universe")
+    cleanup_spy.assert_called_once()
     with models.Database() as session:
         scan = session.query(models.Scan).first()
         assert scan is not None
@@ -726,15 +730,19 @@ def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsS
 def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorAndStopsScan(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
-    """When KeyboardInterrupt occurs during scan(), progress is set to ERROR and stop() is called."""
+    """When KeyboardInterrupt occurs during scan(), progress is set to ERROR and cleanup() is called."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     runtime = local_runtime.LocalRuntime(scan_id="test_interrupt_universe")
     mock_docker_client = mocker.MagicMock()
     runtime._docker_client = mock_docker_client
     mocker.patch.object(runtime, "_docker_checks")
+    mock_docker_client.services.list.return_value = []
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
     mocker.patch.object(runtime, "_create_network")
     mocker.patch.object(runtime, "_start_services", side_effect=KeyboardInterrupt())
-    mock_stop = mocker.patch.object(runtime, "stop")
+    cleanup_spy = mocker.spy(runtime, "cleanup")
 
     agent_group = definitions.AgentGroupDefinition(agents=[])
     asset = android_apk.AndroidApk(content=b"APK")
@@ -746,11 +754,50 @@ def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorA
             assets=[asset],
         )
 
-    mock_stop.assert_called_once_with("test_interrupt_universe")
+    cleanup_spy.assert_called_once()
     with models.Database() as session:
         scan = session.query(models.Scan).first()
         assert scan is not None
         assert scan.progress == models.ScanProgress.ERROR
+
+
+def testLocalRuntimeCleanup_whenFreshRuntimeWithNoScan_doesNotRaise(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When cleanup() is called on a fresh LocalRuntime with no scan created, it safely returns without error."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime()
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
+    mocker.patch.object(runtime, "_docker_checks")
+
+    runtime.cleanup()
+
+
+def testLocalRuntimeStop_whenCallerProvidesNumericScanId_updatesTargetScanInDb(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When stop() is called with an explicit scan_id, it updates that specific scan record in the database."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    with models.Database() as session:
+        scan = models.Scan.create(title="target_scan")
+        target_id = scan.id
+
+    runtime = local_runtime.LocalRuntime()
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
+    mocker.patch.object(runtime, "_docker_checks")
+    mock_docker_client.services.list.return_value = []
+    mock_docker_client.networks.list.return_value = []
+    mock_docker_client.configs.list.return_value = []
+    mock_docker_client.volumes.list.return_value = []
+
+    runtime.stop(scan_id=target_id)
+
+    with models.Database() as session:
+        updated_scan = session.query(models.Scan).get(target_id)
+        assert updated_scan is not None
+        assert updated_scan.progress == models.ScanProgress.STOPPED
 
 
 def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(

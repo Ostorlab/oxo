@@ -207,22 +207,54 @@ class LiteLocalRuntime(runtime.Runtime):
                 )
         except AgentNotHealthy:
             console.error("Agent not starting")
-            self.stop(self.scan_id)
+            try:
+                self.stop(self.scan_id)
+            except (
+                docker.errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise
         except AgentNotInstalled as e:
             console.error(f"Agent {e} not installed")
-            self.stop(self.scan_id)
+            try:
+                self.stop(self.scan_id)
+            except (
+                docker.errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise
         except agent_runtime.MissingAgentDefinitionLabel as e:
             console.error(
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
-            self.stop(self.scan_id)
+            try:
+                self.stop(self.scan_id)
+            except (
+                docker.errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise agent_runtime.MissingAgentDefinitionLabel(str(e))
         except (Exception, KeyboardInterrupt) as e:
             logger.error("Unhandled error during lite local scan execution: %s", e)
-            self.stop(self.scan_id)
+            try:
+                self.stop(self.scan_id)
+            except (
+                docker.errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise
 
     def stop(self, scan_id: str | None = None) -> None:
@@ -243,7 +275,11 @@ class LiteLocalRuntime(runtime.Runtime):
         stopped_network = []
         stopped_configs = []
         stopped_volumes = []
-        client = docker.from_env()
+        try:
+            client = docker.from_env()
+        except docker.errors.DockerException as e:
+            logger.warning("Failed to connect to Docker daemon: %s", e)
+            return
 
         try:
             services = client.services.list()
@@ -357,6 +393,8 @@ class LiteLocalRuntime(runtime.Runtime):
 
         if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
+
+    cleanup = stop
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""

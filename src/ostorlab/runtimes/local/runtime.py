@@ -252,17 +252,41 @@ class LocalRuntime(runtime.Runtime):
         except AgentNotHealthy:
             message = "Agent not starting"
             self._update_scan_progress("ERROR")
-            self.stop(self.name)
+            try:
+                self.cleanup()
+            except (
+                docker_errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
             message = f"Agent {e} not installed"
             self._update_scan_progress("ERROR")
-            self.stop(self.name)
+            try:
+                self.cleanup()
+            except (
+                docker_errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise AgentNotInstalled(message)
         except UnhealthyService as e:
             message = f"Unhealthy service {e}"
             self._update_scan_progress("ERROR")
-            self.stop(self.name)
+            try:
+                self.cleanup()
+            except (
+                docker_errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise UnhealthyService(message)
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
@@ -270,41 +294,60 @@ class LocalRuntime(runtime.Runtime):
                 f" docker instead of `oxo agent build` command"
             )
             self._update_scan_progress("ERROR")
-            self.stop(self.name)
+            try:
+                self.cleanup()
+            except (
+                docker_errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise MissingAgentDefinition(message)
         except (Exception, KeyboardInterrupt) as e:
             logger.error("Unhandled error during scan execution: %s", e)
             self._update_scan_progress("ERROR")
-            self.stop(self.name)
+            try:
+                self.cleanup()
+            except (
+                docker_errors.DockerException,
+                exceptions.OstorlabError,
+            ) as cleanup_err:
+                logger.warning(
+                    "Failed to clean up scan resources after error: %s", cleanup_err
+                )
             raise
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
         threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-    def stop(self, scan_id: int | str | None = None) -> None:
-        """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
+    def cleanup(self, scan_id: int | str | None = None) -> None:
+        """Remove all Docker services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
         """
         if scan_id is None:
-            try:
-                scan_id = self.name
-            except ValueError:
-                scan_id = self._scan_db.id if self._scan_db is not None else None
+            scan_id = self._scan_id or (
+                self._scan_db.id if self._scan_db is not None else None
+            )
 
         if scan_id is None or str(scan_id).strip() == "":
-            logger.warning("No valid scan_id provided to stop.")
+            logger.warning("No valid scan_id provided to cleanup.")
             return
 
         scan_id_str = str(scan_id)
-        logger.info("stopping scan id %s", scan_id)
+        logger.info("cleaning up scan resources for id %s", scan_id)
         stopped_services = []
         stopped_network = []
         stopped_configs = []
         stopped_volumes = []
-        self._docker_checks()
+        try:
+            self._docker_checks()
+        except docker.errors.DockerException as e:
+            logger.warning("Docker checks failed during cleanup: %s", e)
+            return
 
         try:
             services = self._docker_client.services.list()
@@ -423,24 +466,40 @@ class LocalRuntime(runtime.Runtime):
         if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
 
-        with models.Database() as session:
-            target_db_id = self._scan_db.id if self._scan_db is not None else None
-            if target_db_id is None and isinstance(scan_id, int):
-                target_db_id = scan_id
-            elif target_db_id is None and str(scan_id).isdigit():
-                target_db_id = int(scan_id)
+    def stop(
+        self,
+        scan_id: int | str | None = None,
+        update_scan_status: bool = True,
+    ) -> None:
+        """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
-            scan = (
-                session.query(models.Scan).get(target_db_id)
-                if target_db_id is not None
-                else None
-            )
-            if scan is not None:
-                scan.progress = "STOPPED"
-                session.commit()
-                console.success("Scan stopped successfully.")
-            else:
-                console.info(f"Scan {scan_id} was not found.")
+        Args:
+            scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
+            update_scan_status: Whether to update the scan progress to STOPPED in the local database.
+        """
+        self.cleanup(scan_id=scan_id)
+
+        if update_scan_status is True:
+            target_db_id = None
+            if isinstance(scan_id, int):
+                target_db_id = scan_id
+            elif isinstance(scan_id, str) and scan_id.isdigit():
+                target_db_id = int(scan_id)
+            elif scan_id is None and self._scan_db is not None:
+                target_db_id = self._scan_db.id
+
+            with models.Database() as session:
+                scan = (
+                    session.query(models.Scan).get(target_db_id)
+                    if target_db_id is not None
+                    else None
+                )
+                if scan is not None:
+                    scan.progress = "STOPPED"
+                    session.commit()
+                    console.success("Scan stopped successfully.")
+                else:
+                    console.info(f"Scan {scan_id} was not found.")
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""

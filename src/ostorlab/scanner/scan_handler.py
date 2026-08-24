@@ -229,7 +229,7 @@ class ScanHandler:
         """Cleans up any Docker services and resources created for the scan."""
         try:
             runtime = local_runtime.LocalRuntime()
-            runtime.stop(scan_id=scan_id)
+            runtime.cleanup(scan_id=scan_id)
         except Exception:
             logger.exception("Failed to cleanup scan services for scan %s", scan_id)
 

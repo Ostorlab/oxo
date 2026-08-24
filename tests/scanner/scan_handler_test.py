@@ -202,10 +202,10 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
-def testCleanupScanServices_always_callsRuntimeStop(
+def testCleanupScanServices_always_callsRuntimeCleanup(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_cleanup_scan_services creates LocalRuntime and invokes stop with scan_id."""
+    """_cleanup_scan_services creates LocalRuntime and invokes cleanup with scan_id."""
     mock_runtime_cls = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime")
     mock_runtime_instance = mock_runtime_cls.return_value
 
@@ -217,7 +217,7 @@ def testCleanupScanServices_always_callsRuntimeStop(
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
     scan_handler_instance._cleanup_scan_services(scan_id="42")
 
-    mock_runtime_instance.stop.assert_called_once_with(scan_id="42")
+    mock_runtime_instance.cleanup.assert_called_once_with(scan_id="42")
 
 
 def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
