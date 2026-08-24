@@ -27,7 +27,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
     Removes the scan service matching the provided id.
     """
 
-    def docker_services():
+    def docker_services(*args, **kwargs):
         """Method for mocking the services list response."""
 
         services = [
@@ -80,7 +80,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     Does not remove any service.
     """
 
-    def docker_services():
+    def docker_services(*args, **kwargs):
         """Method for mocking the services list response."""
 
         services = [
@@ -157,7 +157,7 @@ def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(mocker):
         tracing_collector_url="jaeger://localhost/",
     ).stop(scan_id="1")
 
-    matching_volume.remove.assert_called_once_with(force=True)
+    matching_volume.remove.assert_called_once_with()
     other_volume.remove.assert_not_called()
 
 

@@ -74,7 +74,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_p
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
 
-    def docker_services():
+    def docker_services(*args, **kwargs):
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -120,7 +120,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     Does not remove any service.
     """
 
-    def docker_services():
+    def docker_services(*args, **kwargs):
         """Method for mocking the services list response."""
 
         services = [
@@ -182,7 +182,7 @@ def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
 
     local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
 
-    matching_volume.remove.assert_called_once_with(force=True)
+    matching_volume.remove.assert_called_once_with()
     other_volume.remove.assert_not_called()
 
 
@@ -398,7 +398,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
 
-    def docker_services() -> list[services_model.Service]:
+    def docker_services(*args, **kwargs) -> list[services_model.Service]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -417,7 +417,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
 
         return [services_model.Service(attrs=service) for service in services]
 
-    def docker_networks() -> list[networks_model.Network]:
+    def docker_networks(*args, **kwargs) -> list[networks_model.Network]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()

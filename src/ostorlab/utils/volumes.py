@@ -95,7 +95,14 @@ class VolumeWriter:
             try:
                 container.stop(timeout=0)
             except (docker_errors.DockerException, docker_errors.APIError) as e:
-                logger.debug("Failed to stop container: %s", e)
+                logger.warning("Failed to stop container: %s", e)
+                try:
+                    container.remove(force=True)
+                except (
+                    docker_errors.DockerException,
+                    docker_errors.APIError,
+                ) as rem_err:
+                    logger.warning("Failed to force remove container: %s", rem_err)
 
 
 def create_volume(

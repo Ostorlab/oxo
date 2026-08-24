@@ -42,6 +42,21 @@ def _remove_config_with_retry(config: Any) -> None:
         pass
 
 
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(3),
+    wait=tenacity.wait_fixed(0.2),
+    retry=tenacity.retry_if_exception_type(
+        (docker_errors.DockerException, docker_errors.APIError)
+    ),
+    reraise=True,
+)
+def _remove_volume_with_retry(volume: Any) -> None:
+    try:
+        volume.remove()
+    except docker_errors.NotFound:
+        pass
+
+
 def cleanup_scan_docker_resources(
     docker_client: Any, scan_id: int | str | None
 ) -> bool:
@@ -58,7 +73,7 @@ def cleanup_scan_docker_resources(
         logger.warning("No valid scan_id provided for Docker resource cleanup.")
         return True
 
-    scan_id_str = str(scan_id)
+    scan_id_str = str(scan_id).strip()
     logger.info("Cleaning up scan resources for universe %s", scan_id_str)
     stopped_services = []
     stopped_network = []
@@ -67,7 +82,9 @@ def cleanup_scan_docker_resources(
     had_errors = False
 
     try:
-        services = docker_client.services.list()
+        services = docker_client.services.list(
+            filters={"label": f"ostorlab.universe={scan_id_str}"}
+        )
     except (docker_errors.DockerException, docker_errors.APIError) as e:
         had_errors = True
         logger.warning("Failed to list Docker services: %s", e)
@@ -106,7 +123,9 @@ def cleanup_scan_docker_resources(
             logger.warning("Failed to remove service: %s", e)
 
     try:
-        networks = docker_client.networks.list()
+        networks = docker_client.networks.list(
+            filters={"label": f"ostorlab.universe={scan_id_str}"}
+        )
     except (docker_errors.DockerException, docker_errors.APIError) as e:
         had_errors = True
         logger.warning("Failed to list Docker networks: %s", e)
@@ -132,7 +151,9 @@ def cleanup_scan_docker_resources(
             logger.warning("Failed to remove network: %s", e)
 
     try:
-        configs = docker_client.configs.list()
+        configs = docker_client.configs.list(
+            filters={"label": f"ostorlab.universe={scan_id_str}"}
+        )
     except (docker_errors.DockerException, docker_errors.APIError) as e:
         had_errors = True
         logger.warning("Failed to list Docker configs: %s", e)
@@ -166,7 +187,9 @@ def cleanup_scan_docker_resources(
             logger.warning("Failed to remove config: %s", e)
 
     try:
-        volumes = docker_client.volumes.list()
+        volumes = docker_client.volumes.list(
+            filters={"label": f"ostorlab.universe={scan_id_str}"}
+        )
     except (
         docker_errors.DockerException,
         docker_errors.APIError,
@@ -176,6 +199,21 @@ def cleanup_scan_docker_resources(
         had_errors = True
         logger.warning("Failed to list Docker volumes: %s", e)
         volumes = []
+
+    for named_vol in (f"asset_{scan_id_str}", f"{scan_id_str}_mq_data"):
+        try:
+            vol_getter = getattr(docker_client.volumes, "get", None)
+            if callable(vol_getter):
+                vol = vol_getter(named_vol)
+                if vol is not None and vol not in volumes:
+                    volumes.append(vol)
+        except (
+            docker_errors.NotFound,
+            docker_errors.DockerException,
+            docker_errors.APIError,
+        ):
+            pass
+
     for volume in volumes:
         try:
             volume_attrs = getattr(volume, "attrs", None) or {}
@@ -202,7 +240,7 @@ def cleanup_scan_docker_resources(
             ):
                 logger.info("Removing volume: %s", volume_name)
                 stopped_volumes.append(volume)
-                volume.remove(force=True)
+                _remove_volume_with_retry(volume)
         except docker_errors.NotFound:
             logger.debug("Volume already removed: %s", volume)
         except (

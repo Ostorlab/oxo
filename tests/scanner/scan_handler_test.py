@@ -261,7 +261,7 @@ def testCleanupScanServices_always_callsRuntimeCleanup(
     service_mock.remove.assert_called_once()
     network_mock.remove.assert_called_once()
     config_mock.remove.assert_called_once()
-    volume_mock.remove.assert_called_once_with(force=True)
+    volume_mock.remove.assert_called_once_with()
 
 
 def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(

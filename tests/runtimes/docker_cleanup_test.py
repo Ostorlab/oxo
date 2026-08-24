@@ -77,8 +77,8 @@ def testCleanupScanDockerResources_whenResourcesMatch_removesMatchingOnlyAndRetu
     non_matching_network.remove.assert_not_called()
     matching_config.remove.assert_called_once()
     non_matching_config.remove.assert_not_called()
-    matching_volume.remove.assert_called_once_with(force=True)
-    matching_named_volume.remove.assert_called_once_with(force=True)
+    matching_volume.remove.assert_called_once_with()
+    matching_named_volume.remove.assert_called_once_with()
     non_matching_volume.remove.assert_not_called()
 
 
@@ -149,7 +149,7 @@ def testCleanupScanDockerResources_whenResourceRaisesNotFound_returnsTrue() -> N
     service.remove.assert_called_once()
     network.remove.assert_called_once()
     config.remove.assert_called_once()
-    volume.remove.assert_called_once_with(force=True)
+    volume.remove.assert_called_once_with()
 
 
 def testCleanupScanDockerResources_whenResourceRaisesAPIError_handlesErrorAndReturnsFalse() -> (
