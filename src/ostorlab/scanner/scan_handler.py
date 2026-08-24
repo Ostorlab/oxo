@@ -15,7 +15,6 @@ from docker.models import services
 from ostorlab.apis import scan_update_state, scanner_config, scans_discover
 from ostorlab.apis.runners import authenticated_runner, scanner_runner
 from ostorlab.apis.runners import runner as base_runner
-from ostorlab.runtimes import docker_cleanup
 from ostorlab.scanner import callbacks, resource_checker, scanner_conf
 from ostorlab.utils import scanner_state_reporter
 
@@ -225,28 +224,11 @@ class ScanHandler:
             return started_scan_id
         except Exception:
             logger.exception(
-                "Failed to start scan %s locally. Initiating cleanup and rollback...",
+                "Failed to start scan %s locally. Initiating rollback...",
                 scan_id_val,
             )
-            self._cleanup_scan_services(scan_id=str(scan_id_val))
             self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
             return None
-
-    def _cleanup_scan_services(self, scan_id: str) -> None:
-        """Cleans up any Docker services and resources created for the scan."""
-        try:
-            client = self._docker_client
-            if client is None:
-                client = docker.from_env()
-            cleanup_success = docker_cleanup.cleanup_scan_docker_resources(
-                client, scan_id
-            )
-            if cleanup_success is False:
-                logger.warning(
-                    "Failed to clean up all scan services for scan %s", scan_id
-                )
-        except Exception:
-            logger.exception("Failed to cleanup scan services for scan %s", scan_id)
 
     def _rollback_scan_state(
         self, runner: scanner_runner.ScannerAPIRunner, scan_id_val: Any
