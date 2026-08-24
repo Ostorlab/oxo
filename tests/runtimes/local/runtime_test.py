@@ -828,6 +828,23 @@ def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(
     service_mock.remove.assert_called_once()
 
 
+def testLocalRuntimeStop_whenNoScanIdAndNoScanDb_doesNotQueryDatabase(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When stop() is called with scan_id=None and no scan_db exists, it cleans up without attempting DB update."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime()
+    mock_docker_client = mocker.MagicMock()
+    runtime._docker_client = mock_docker_client
+    mocker.patch.object(runtime, "_docker_checks")
+
+    mock_db = mocker.patch("ostorlab.runtimes.local.models.models.Database")
+
+    runtime.stop()
+
+    mock_db.assert_not_called()
+
+
 def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItems(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:

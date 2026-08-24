@@ -351,25 +351,29 @@ class LocalRuntime(runtime.Runtime):
 
         if update_scan_status is True and cleanup_success is True:
             target_db_id = None
-            if isinstance(scan_id, int):
-                target_db_id = scan_id
-            elif isinstance(scan_id, str) and scan_id.isdigit():
-                target_db_id = int(scan_id)
-            elif scan_id is None and self._scan_db is not None:
+            if self._scan_db is not None and (
+                scan_id is None
+                or scan_id == self._scan_id
+                or str(scan_id) == str(self._scan_id)
+                or scan_id == self._scan_db.id
+            ):
                 target_db_id = self._scan_db.id
+            elif isinstance(scan_id, int):
+                target_db_id = scan_id
+            elif (
+                isinstance(scan_id, str) and scan_id.isdigit() and self._scan_id is None
+            ):
+                target_db_id = int(scan_id)
 
-            with models.Database() as session:
-                scan = (
-                    session.query(models.Scan).get(target_db_id)
-                    if target_db_id is not None
-                    else None
-                )
-                if scan is not None:
-                    scan.progress = models.ScanProgress.STOPPED
-                    session.commit()
-                    console.success("Scan stopped successfully.")
-                else:
-                    console.info(f"Scan {scan_id} was not found.")
+            if target_db_id is not None:
+                with models.Database() as session:
+                    scan = session.query(models.Scan).get(target_db_id)
+                    if scan is not None:
+                        scan.progress = models.ScanProgress.STOPPED
+                        session.commit()
+                        console.success("Scan stopped successfully.")
+                    else:
+                        console.info(f"Scan {target_db_id} was not found.")
         elif update_scan_status is True and cleanup_success is False:
             logger.warning(
                 "Cleanup had errors for scan %s; not updating scan progress to STOPPED.",
