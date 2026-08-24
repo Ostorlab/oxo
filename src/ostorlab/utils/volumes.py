@@ -8,6 +8,8 @@ import time
 import docker
 from docker import errors as docker_errors
 from docker import types as docker_types
+from requests import exceptions as requests_exceptions
+from urllib3 import exceptions as urllib3_exceptions
 
 from ostorlab.utils import strings
 
@@ -92,13 +94,20 @@ class VolumeWriter:
         finally:
             try:
                 container.stop(timeout=0)
-            except (docker_errors.DockerException, docker_errors.APIError) as e:
+            except (
+                docker_errors.DockerException,
+                docker_errors.APIError,
+                requests_exceptions.RequestException,
+                urllib3_exceptions.HTTPError,
+            ) as e:
                 logger.warning("Failed to stop container: %s", e)
                 try:
                     container.remove(force=True)
                 except (
                     docker_errors.DockerException,
                     docker_errors.APIError,
+                    requests_exceptions.RequestException,
+                    urllib3_exceptions.HTTPError,
                 ) as rem_err:
                     logger.warning("Failed to force remove container: %s", rem_err)
 

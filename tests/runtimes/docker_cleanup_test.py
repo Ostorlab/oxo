@@ -186,3 +186,60 @@ def testCleanupScanDockerResources_whenNamedVolumeGetRaisesAPIError_handlesError
     success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
 
     assert success is False
+
+
+def testCleanupScanDockerResources_whenScanIdIsLiteralNoneString_returnsTrueWithoutQueryingClient() -> (
+    None
+):
+    """When scan_id is literal 'None', cleanup immediately returns True without querying client."""
+    mock_client = mock.MagicMock()
+
+    assert docker_cleanup.cleanup_scan_docker_resources(mock_client, "None") is True
+
+    mock_client.services.list.assert_not_called()
+    mock_client.networks.list.assert_not_called()
+    mock_client.configs.list.assert_not_called()
+    mock_client.volumes.list.assert_not_called()
+
+
+def testCleanupScanDockerResources_whenResourceHasNoUniverseLabel_isNotRemoved() -> (
+    None
+):
+    """Resources without universe label are not removed even if returned by list."""
+    mock_client = mock.MagicMock()
+    service_without_label = mock.MagicMock(attrs={"Spec": {"Labels": None}})
+    service_with_other_label = mock.MagicMock(
+        attrs={"Spec": {"Labels": {"other": "label"}}}
+    )
+    mock_client.services.list.return_value = [
+        service_without_label,
+        service_with_other_label,
+    ]
+    mock_client.networks.list.return_value = []
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "123")
+
+    assert success is True
+    service_without_label.remove.assert_not_called()
+    service_with_other_label.remove.assert_not_called()
+
+
+def testCleanupScanDockerResources_whenRequestExceptionRaised_handlesErrorAndReturnsFalse() -> (
+    None
+):
+    """When a requests ConnectionError/RequestException occurs, cleanup catches it and returns False."""
+    import requests.exceptions as req_exc
+
+    mock_client = mock.MagicMock()
+    mock_client.services.list.side_effect = req_exc.ConnectionError(
+        "Connection refused"
+    )
+    mock_client.networks.list.return_value = []
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+
+    success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
+
+    assert success is False

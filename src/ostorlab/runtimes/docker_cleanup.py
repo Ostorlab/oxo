@@ -6,6 +6,8 @@ from typing import Any
 
 import tenacity
 from docker import errors as docker_errors
+from requests import exceptions as requests_exceptions
+from urllib3 import exceptions as urllib3_exceptions
 
 from ostorlab.cli import console as cli_console
 
@@ -17,7 +19,12 @@ console = cli_console.Console()
     stop=tenacity.stop_after_attempt(3),
     wait=tenacity.wait_fixed(0.2),
     retry=tenacity.retry_if_exception_type(
-        (docker_errors.DockerException, docker_errors.APIError)
+        (
+            docker_errors.DockerException,
+            docker_errors.APIError,
+            requests_exceptions.RequestException,
+            urllib3_exceptions.HTTPError,
+        )
     ),
     reraise=True,
 )
@@ -100,6 +107,8 @@ def _cleanup_resource_collection(
     except (
         docker_errors.DockerException,
         docker_errors.APIError,
+        requests_exceptions.RequestException,
+        urllib3_exceptions.HTTPError,
         KeyError,
         AttributeError,
     ) as e:
@@ -116,11 +125,13 @@ def _cleanup_resource_collection(
             labels = _extract_labels(item)
             universe_label = labels.get("ostorlab.universe")
             is_match = (
-                universe_label == scan_id
-                or universe_label == scan_id_str
-                or str(universe_label) == scan_id_str
-                or (extra_matcher is not None and extra_matcher(item))
-            )
+                universe_label is not None
+                and (
+                    universe_label == scan_id
+                    or universe_label == scan_id_str
+                    or str(universe_label) == scan_id_str
+                )
+            ) or (extra_matcher is not None and extra_matcher(item))
             if is_match:
                 item_name = _extract_name(item)
                 logger.info("Removing %s: %s", resource_type, item_name)
@@ -129,6 +140,8 @@ def _cleanup_resource_collection(
         except (
             docker_errors.DockerException,
             docker_errors.APIError,
+            requests_exceptions.RequestException,
+            urllib3_exceptions.HTTPError,
             KeyError,
             AttributeError,
         ) as e:
@@ -150,7 +163,7 @@ def cleanup_scan_docker_resources(
     Returns:
         bool: True if cleanup completed without error, False otherwise.
     """
-    if scan_id is None or str(scan_id).strip() == "":
+    if scan_id is None or str(scan_id).strip() in ("", "None"):
         logger.warning("No valid scan_id provided for Docker resource cleanup.")
         return True
 
@@ -199,7 +212,12 @@ def cleanup_scan_docker_resources(
                         named_volumes.append(vol)
                 except docker_errors.NotFound:
                     pass
-                except (docker_errors.DockerException, docker_errors.APIError) as e:
+                except (
+                    docker_errors.DockerException,
+                    docker_errors.APIError,
+                    requests_exceptions.RequestException,
+                    urllib3_exceptions.HTTPError,
+                ) as e:
                     had_errors = True
                     logger.warning("Failed to get named volume %s: %s", named_vol, e)
 

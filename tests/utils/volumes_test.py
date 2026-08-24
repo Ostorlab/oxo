@@ -60,3 +60,25 @@ def testCreateVolume_whenVolumeRemovalRaisesAPIError_raisesException(mocker):
         volumes.create_volume("test_vol", {"test": b"data"})
 
     mock_client.volumes.create.assert_not_called()
+
+
+def testWriteContent_whenContainerStopRaisesRequestException_forceRemovesContainer(
+    mocker,
+):
+    """When container.stop raises RequestException/ConnectionError, force remove is attempted and original exception from put_archive is preserved."""
+    import requests.exceptions as req_exc
+
+    mock_client = mocker.MagicMock()
+    mock_container = mocker.MagicMock()
+    mock_container.stop.side_effect = req_exc.ConnectionError("Connection lost")
+    mock_client.containers.run.return_value = mock_container
+    mocker.patch("docker.from_env", return_value=mock_client)
+
+    writer = volumes.VolumeWriter()
+    mocker.patch.object(writer, "_prepare_tar")
+
+    # Should not raise exception from finally block
+    writer._write_content("test_vol", {"file": b"data"})
+
+    mock_container.stop.assert_called_once_with(timeout=0)
+    mock_container.remove.assert_called_once_with(force=True)
