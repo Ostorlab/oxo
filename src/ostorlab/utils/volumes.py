@@ -24,30 +24,39 @@ class VolumeWriter:
     def __init__(self) -> None:
         self._client = docker.from_env()
 
-    def write(self, volume_name: str, contents: dict[str, bytes]) -> None:
+    def write(
+        self,
+        volume_name: str,
+        contents: dict[str, bytes],
+        labels: dict[str, str] | None = None,
+    ) -> None:
         """Write content volume at path.
 
         Args:
             volume_name: The volume name to create. This command will override existing volumes with the same name.
             contents: Dict of path where the content will written to in the volume and content in bytes format.
+            labels: Optional volume labels.
         Returns:
             None
         """
         self._install_image()
-        self._create_volume(volume_name)
+        self._create_volume(volume_name, labels=labels)
         self._write_content(volume_name, contents)
 
     def _install_image(self) -> None:
         """Installs a busybox image for the form."""
         self._client.images.pull(TEMP_IMAGE)
 
-    def _create_volume(self, name: str) -> None:
+    def _create_volume(self, name: str, labels: dict[str, str] | None = None) -> None:
         """Override existing images."""
         try:
-            self._client.volumes.get(name).remove()
+            self._client.volumes.get(name).remove(force=True)
         except docker_errors.NotFound:
             pass
-        self._client.volumes.create(name)
+        except docker_errors.DockerException:
+            pass
+        str_labels = {str(k): str(v) for k, v in (labels or {}).items()}
+        self._client.volumes.create(name=name, labels=str_labels)
 
     def _prepare_tar(self, contents: dict[str, bytes]) -> io.BytesIO:
         """Copy API expects a tar, this api prepares one with the file content."""
@@ -64,7 +73,7 @@ class VolumeWriter:
     def _write_content(self, volume_name: str, contents: dict[str, bytes]) -> None:
         """Use the docker copy API to write content to target volume."""
         temp_container_name = strings.random_string(9)
-        self._client.containers.run(
+        container = self._client.containers.run(
             TEMP_IMAGE,
             name=temp_container_name,
             command="sleep infinity",
@@ -76,14 +85,21 @@ class VolumeWriter:
                 )
             ],
         )
-        pw_tarstream = self._prepare_tar(contents)
+        try:
+            pw_tarstream = self._prepare_tar(contents)
+            container.put_archive(TEMP_DESTINATION, pw_tarstream)
+        finally:
+            try:
+                container.stop(timeout=0)
+            except (docker_errors.DockerException, Exception):
+                pass
 
-        container = self._client.containers.get(temp_container_name)
-        container.put_archive(TEMP_DESTINATION, pw_tarstream)
-        container.stop(timeout=0)
 
-
-def create_volume(volume_name: str, contents: dict[str, bytes]) -> None:
+def create_volume(
+    volume_name: str,
+    contents: dict[str, bytes],
+    labels: dict[str, str] | None = None,
+) -> None:
     """Poor man's API to create a volume and persist content.
 
     Docker do not provide an API to write directly to volume, most likely due to the plugin support, even though that
@@ -94,8 +110,9 @@ def create_volume(volume_name: str, contents: dict[str, bytes]) -> None:
     Args:
         volume_name: The volume name to create. This command will override existing volumes with the same name.
         contents: Dict of path where the content will written to in the volume and content in bytes format.
+        labels: Optional volume labels.
 
     Returns:
         None
     """
-    VolumeWriter().write(volume_name, contents)
+    VolumeWriter().write(volume_name, contents, labels=labels)

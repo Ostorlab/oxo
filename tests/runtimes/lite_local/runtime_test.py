@@ -868,3 +868,109 @@ def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none"
+
+
+def testLiteLocalRuntimeScan_whenExceptionRaised_stopsScanAndReraises(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When an unhandled exception occurs during scan(), stop() is called and the exception is re-raised."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_scan_error",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+    mocker.patch.object(runtime, "_docker_checks")
+    mocker.patch.object(
+        runtime, "_start_agents", side_effect=RuntimeError("Agent launch error")
+    )
+    mock_stop = mocker.patch.object(runtime, "stop")
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+
+    with pytest.raises(RuntimeError, match="Agent launch error"):
+        runtime.scan(
+            title="test_scan",
+            agent_group_definition=agent_group,
+            assets=None,
+        )
+
+    mock_stop.assert_called_once_with("test_scan_error")
+
+
+def testLiteLocalRuntimeStop_whenScanIdNone_usesRuntimeScanId(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When stop() is called with scan_id=None, it uses self.scan_id."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mock_client = mocker.Mock()
+    mocker.patch("docker.from_env", return_value=mock_client)
+
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="test_universe_lite",
+        bus_url="amqp://guest:guest@localhost:5672/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="ostorlab_test",
+        network="test_network",
+        redis_url="redis://localhost:6379",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+    mocker.patch.object(runtime, "_docker_checks")
+
+    service_mock = mocker.MagicMock()
+    service_mock.attrs = {
+        "Spec": {
+            "Name": "agent_lite",
+            "Labels": {"ostorlab.universe": "test_universe_lite"},
+        }
+    }
+    mock_client.services.list.return_value = [service_mock]
+    mock_client.networks.list.return_value = []
+    mock_client.configs.list.return_value = []
+    mock_client.volumes.list.return_value = []
+
+    runtime.stop()
+
+    service_mock.remove.assert_called_once()

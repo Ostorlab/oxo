@@ -172,12 +172,15 @@ def testReserveSingleScan_whenAllFail_returnsNone(
 def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_trigger_scan_with_rollback should rollback when callbacks.start_scan raises."""
+    """_trigger_scan_with_rollback should cleanup services and rollback when callbacks.start_scan raises."""
     runner = mocker.MagicMock()
     runner.execute.return_value = {"data": {"updateScan": {"success": True}}}
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         side_effect=Exception("scan failed"),
+    )
+    mock_cleanup = mocker.patch.object(
+        scan_handler.ScanHandler, "_cleanup_scan_services"
     )
     reserved_scan = {"id": 42, "agentGroup": {"key": "test/group"}}
 
@@ -193,9 +196,28 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     )
 
     assert result is None
+    mock_cleanup.assert_called_once_with(scan_id="42")
     assert runner.execute.call_count == 1
     call_arg = runner.execute.call_args.kwargs["request"]
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
+
+
+def testCleanupScanServices_always_callsRuntimeStop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_cleanup_scan_services creates LocalRuntime and invokes stop with scan_id."""
+    mock_runtime_cls = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime")
+    mock_runtime_instance = mock_runtime_cls.return_value
+
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._cleanup_scan_services(scan_id="42")
+
+    mock_runtime_instance.stop.assert_called_once_with(scan_id="42")
 
 
 def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(

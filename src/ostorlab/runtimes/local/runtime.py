@@ -252,89 +252,197 @@ class LocalRuntime(runtime.Runtime):
         except AgentNotHealthy:
             message = "Agent not starting"
             self._update_scan_progress("ERROR")
-            self.stop(str(self._scan_db.id))
+            self.stop(self.name)
             raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
             message = f"Agent {e} not installed"
-            self.stop(str(self._scan_db.id))
+            self._update_scan_progress("ERROR")
+            self.stop(self.name)
             raise AgentNotInstalled(message)
         except UnhealthyService as e:
             message = f"Unhealthy service {e}"
-            self.stop(str(self._scan_db.id))
+            self._update_scan_progress("ERROR")
+            self.stop(self.name)
             raise UnhealthyService(message)
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
-            self.stop(str(self._scan_db.id))
+            self._update_scan_progress("ERROR")
+            self.stop(self.name)
             raise MissingAgentDefinition(message)
+        except (Exception, KeyboardInterrupt) as e:
+            logger.error("Unhandled error during scan execution: %s", e)
+            self._update_scan_progress("ERROR")
+            self.stop(self.name)
+            raise
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
         threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-    def stop(self, scan_id: int) -> None:
-        """Remove a service belonging to universe with scan_id (Universe Id).
+    def stop(self, scan_id: int | str | None = None) -> None:
+        """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
-            scan_id: The id of the scan to stop.
+            scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
         """
+        if scan_id is None:
+            scan_id = self.name or (
+                self._scan_db.id if self._scan_db is not None else None
+            )
+
+        if scan_id is None or str(scan_id).strip() == "":
+            logger.warning("No valid scan_id provided to stop.")
+            return
+
         scan_id_str = str(scan_id)
         logger.info("stopping scan id %s", scan_id)
         stopped_services = []
         stopped_network = []
         stopped_configs = []
-        self._docker_checks()
-        services = self._docker_client.services.list()
-        for service in services:
-            service_labels = service.attrs["Spec"]["Labels"]
-            if service_labels.get("ostorlab.universe") == scan_id_str:
-                logger.info("Removing service: %s", service.name)
-                stopped_services.append(service)
-                service.remove()
-
-        networks = self._docker_client.networks.list()
-        for network in networks:
-            network_labels = network.attrs["Labels"]
-            if network_labels is None:
-                logger.debug("Skipping network with no labels")
-                continue
-            if (
-                isinstance(network_labels, dict)
-                and network_labels.get("ostorlab.universe") == scan_id_str
-            ):
-                logger.info("removing network %s", network_labels)
-                stopped_network.append(network)
-                network.remove()
-
-        configs = self._docker_client.configs.list()
-        for config in configs:
-            config_labels = config.attrs["Spec"]["Labels"]
-            if config_labels.get("ostorlab.universe") == scan_id_str:
-                logger.info("removing config %s", config_labels)
-                stopped_configs.append(config)
-                config.remove()
-
         stopped_volumes = []
-        for volume in self._docker_client.volumes.list():
-            volume_labels = volume.attrs.get("Labels") or {}
-            if volume_labels.get("ostorlab.universe") == scan_id_str:
-                logger.info("removing volume %s", volume.name)
-                stopped_volumes.append(volume)
-                volume.remove(force=True)
+        self._docker_checks()
+
+        try:
+            services = self._docker_client.services.list()
+        except docker.errors.DockerException:
+            services = []
+        for service in services:
+            try:
+                service_attrs = getattr(service, "attrs", None) or {}
+                service_spec = (
+                    service_attrs.get("Spec")
+                    if isinstance(service_attrs.get("Spec"), dict)
+                    else {}
+                )
+                service_labels = (
+                    service_spec.get("Labels")
+                    if isinstance(service_spec.get("Labels"), dict)
+                    else {}
+                ) or {}
+                universe_label = service_labels.get("ostorlab.universe")
+                if (
+                    universe_label == scan_id
+                    or universe_label == scan_id_str
+                    or str(universe_label) == scan_id_str
+                ):
+                    service_name = (
+                        service_spec.get("Name")
+                        or service_attrs.get("Name")
+                        or getattr(service, "id", "")
+                    )
+                    logger.info("Removing service: %s", service_name)
+                    stopped_services.append(service)
+                    service.remove()
+            except docker.errors.DockerException as e:
+                logger.warning("Failed to remove service: %s", e)
+
+        try:
+            networks = self._docker_client.networks.list()
+        except docker.errors.DockerException:
+            networks = []
+        for network in networks:
+            try:
+                network_attrs = getattr(network, "attrs", None) or {}
+                network_labels = network_attrs.get("Labels") or {}
+                if isinstance(network_labels, dict):
+                    universe_label = network_labels.get("ostorlab.universe")
+                    if (
+                        universe_label == scan_id
+                        or universe_label == scan_id_str
+                        or str(universe_label) == scan_id_str
+                    ):
+                        logger.info("removing network %s", network_labels)
+                        stopped_network.append(network)
+                        network.remove()
+            except docker.errors.DockerException as e:
+                logger.warning("Failed to remove network: %s", e)
+
+        try:
+            configs = self._docker_client.configs.list()
+        except docker.errors.DockerException:
+            configs = []
+        for config in configs:
+            try:
+                config_attrs = getattr(config, "attrs", None) or {}
+                config_spec = (
+                    config_attrs.get("Spec")
+                    if isinstance(config_attrs.get("Spec"), dict)
+                    else {}
+                )
+                config_labels = (
+                    config_spec.get("Labels")
+                    if isinstance(config_spec.get("Labels"), dict)
+                    else {}
+                ) or {}
+                universe_label = config_labels.get("ostorlab.universe")
+                if (
+                    universe_label == scan_id
+                    or universe_label == scan_id_str
+                    or str(universe_label) == scan_id_str
+                ):
+                    logger.info("removing config %s", config_labels)
+                    stopped_configs.append(config)
+                    config.remove()
+            except docker.errors.DockerException as e:
+                logger.warning("Failed to remove config: %s", e)
+
+        try:
+            volumes = self._docker_client.volumes.list()
+        except (docker.errors.DockerException, KeyError, AttributeError):
+            volumes = []
+        for volume in volumes:
+            try:
+                volume_attrs = getattr(volume, "attrs", None) or {}
+                volume_name = volume_attrs.get("Name") or getattr(volume, "id", "")
+                volume_labels = volume_attrs.get("Labels") or {}
+                universe_label = (
+                    volume_labels.get("ostorlab.universe")
+                    if isinstance(volume_labels, dict)
+                    else None
+                )
+                if (
+                    universe_label == scan_id
+                    or universe_label == scan_id_str
+                    or str(universe_label) == scan_id_str
+                    or (
+                        volume_name
+                        and volume_name
+                        in (f"asset_{scan_id_str}", f"{scan_id_str}_mq_data")
+                    )
+                ):
+                    logger.info("removing volume %s", volume_name)
+                    stopped_volumes.append(volume)
+                    volume.remove(force=True)
+            except (docker.errors.DockerException, KeyError, AttributeError) as e:
+                logger.warning("Failed to remove volume: %s", e)
 
         if stopped_services or stopped_network or stopped_configs or stopped_volumes:
             console.success("All scan components stopped.")
 
-        with models.Database() as session:
-            scan = session.query(models.Scan).get(scan_id)
-            if scan is not None:
-                scan.progress = "STOPPED"
-                session.commit()
-                console.success("Scan stopped successfully.")
-            else:
-                console.info(f"Scan {scan_id} was not found.")
+        try:
+            with models.Database() as session:
+                target_db_id = self._scan_db.id if self._scan_db is not None else None
+                if target_db_id is None and isinstance(scan_id, int):
+                    target_db_id = scan_id
+                elif target_db_id is None and str(scan_id).isdigit():
+                    target_db_id = int(scan_id)
+
+                scan = (
+                    session.query(models.Scan).get(target_db_id)
+                    if target_db_id is not None
+                    else None
+                )
+                if scan is not None:
+                    scan.progress = "STOPPED"
+                    session.commit()
+                    console.success("Scan stopped successfully.")
+                else:
+                    console.info(f"Scan {scan_id} was not found.")
+        except Exception as e:
+            logger.warning("Failed to update scan status in DB: %s", e)
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""
@@ -342,6 +450,8 @@ class LocalRuntime(runtime.Runtime):
 
     def _update_scan_progress(self, progress: str):
         """Update scan status to in progress"""
+        if self._scan_db is None:
+            return
         with models.Database() as session:
             scan = session.query(models.Scan).get(self._scan_db.id)
             scan.progress = progress
@@ -560,7 +670,11 @@ class LocalRuntime(runtime.Runtime):
             contents[f"asset.binproto_{i}"] = asset.to_proto()
             contents[f"selector.txt_{i}"] = asset.selector.encode()
 
-        volumes.create_volume(f"asset_{self.name}", contents)
+        volumes.create_volume(
+            f"asset_{self.name}",
+            contents,
+            labels={"ostorlab.universe": self.name},
+        )
 
         if agent_settings is None:
             agent_settings = definitions.AgentSettings(

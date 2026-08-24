@@ -147,9 +147,6 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
         "docker.models.services.Service.remove", return_value=None
     )
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    create_scan_db = models.Scan.create("test")
-    local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
-
     local_runtime.LocalRuntime().stop(scan_id="9999")
 
     docker_service_remove.assert_not_called()
@@ -322,7 +319,6 @@ def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelI
 @pytest.mark.docker
 def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
     mocker: plugin.MockerFixture,
-    httpx_mock,
 ) -> None:
     """Ensure the runtime retries to init swarm if it fails the first time."""
     mocker.patch(
@@ -340,13 +336,10 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
         return_value=False,
     )
     mocker.patch("time.sleep")
-    httpx_mock.get(
-        "http+docker://localhost/version", [{"json": {"ApiVersion": "1.35"}}]
-    )
-    httpx_mock.get("http+docker://localhost/v1.35/swarm", json={"ID": "1234"})
-    mock_swarm_init = httpx_mock.add_response(
-        method="POST", url="http+docker://localhost/v1.35/swarm/init", status_code=400
-    )
+    mock_docker = mocker.MagicMock()
+    mock_docker.swarm.init.side_effect = docker.errors.DockerException("error")
+    mocker.patch("docker.from_env", return_value=mock_docker)
+
     local_runtime_instance = local_runtime.LocalRuntime(run_default_agents=False)
 
     with pytest.raises(exceptions.OstorlabError):
@@ -354,7 +347,7 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
             agent_group_definition=definitions.AgentGroupDefinition(agents=[])
         )
 
-    assert mock_swarm_init.call_count == 3
+    assert mock_docker.swarm.init.call_count == 10
 
 
 def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
@@ -697,3 +690,127 @@ def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(
         local_runtime.console.success("Scan created successfully")
 
     assert "Scan created successfully" in caplog.text
+
+
+def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsScan(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When an unhandled exception occurs during scan(), progress is set to ERROR and stop() is called."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime(name="test_error_universe")
+    mocker.patch.object(runtime, "_docker_checks")
+    mocker.patch.object(
+        runtime, "_create_network", side_effect=RuntimeError("Docker swarm error")
+    )
+    mock_stop = mocker.patch.object(runtime, "stop")
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+    asset = android_apk.AndroidApk(content=b"APK")
+
+    with pytest.raises(RuntimeError, match="Docker swarm error"):
+        runtime.scan(
+            title="test_error_scan",
+            agent_group_definition=agent_group,
+            assets=[asset],
+        )
+
+    mock_stop.assert_called_once_with("test_error_universe")
+    with models.Database() as session:
+        scan = session.query(models.Scan).first()
+        assert scan is not None
+        assert scan.progress == models.ScanStatus.ERROR.value
+
+
+def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorAndStopsScan(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When KeyboardInterrupt occurs during scan(), progress is set to ERROR and stop() is called."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime(name="test_interrupt_universe")
+    mocker.patch.object(runtime, "_docker_checks")
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_services", side_effect=KeyboardInterrupt())
+    mock_stop = mocker.patch.object(runtime, "stop")
+
+    agent_group = definitions.AgentGroupDefinition(agents=[])
+    asset = android_apk.AndroidApk(content=b"APK")
+
+    with pytest.raises(KeyboardInterrupt):
+        runtime.scan(
+            title="test_interrupt_scan",
+            agent_group_definition=agent_group,
+            assets=[asset],
+        )
+
+    mock_stop.assert_called_once_with("test_interrupt_universe")
+    with models.Database() as session:
+        scan = session.query(models.Scan).first()
+        assert scan is not None
+        assert scan.progress == models.ScanStatus.ERROR.value
+
+
+def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When stop() is called with scan_id=None, it uses self.name to find and remove services."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime(name="universe_123")
+    mocker.patch.object(runtime, "_docker_checks")
+
+    service_mock = mocker.MagicMock()
+    service_mock.attrs = {
+        "Spec": {
+            "Name": "agent_test",
+            "Labels": {"ostorlab.universe": "universe_123"},
+        }
+    }
+    mocker.patch.object(
+        runtime._docker_client.services, "list", return_value=[service_mock]
+    )
+    mocker.patch.object(runtime._docker_client.networks, "list", return_value=[])
+    mocker.patch.object(runtime._docker_client.configs, "list", return_value=[])
+    mocker.patch.object(runtime._docker_client.volumes, "list", return_value=[])
+
+    runtime.stop()
+
+    service_mock.remove.assert_called_once()
+
+
+def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItems(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """When an error occurs removing one service, stop() catches it and continues removing the rest."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    runtime = local_runtime.LocalRuntime()
+    mocker.patch.object(runtime, "_docker_checks")
+
+    service_failing = mocker.MagicMock()
+    service_failing.attrs = {
+        "Spec": {
+            "Name": "failing_service",
+            "Labels": {"ostorlab.universe": "100"},
+        }
+    }
+    service_failing.remove.side_effect = docker.errors.DockerException("cannot remove")
+
+    service_succeeding = mocker.MagicMock()
+    service_succeeding.attrs = {
+        "Spec": {
+            "Name": "succeeding_service",
+            "Labels": {"ostorlab.universe": "100"},
+        }
+    }
+
+    mocker.patch.object(
+        runtime._docker_client.services,
+        "list",
+        return_value=[service_failing, service_succeeding],
+    )
+    mocker.patch.object(runtime._docker_client.networks, "list", return_value=[])
+    mocker.patch.object(runtime._docker_client.configs, "list", return_value=[])
+    mocker.patch.object(runtime._docker_client.volumes, "list", return_value=[])
+
+    runtime.stop(scan_id="100")
+
+    service_failing.remove.assert_called_once()
+    service_succeeding.remove.assert_called_once()

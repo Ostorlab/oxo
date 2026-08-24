@@ -110,6 +110,8 @@ class LocalRedis:
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def is_service_healthy(self) -> bool:
+        if self._redis_service is None:
+            return False
         logger.info("checking service %s", self._redis_service.name)
         return self.is_healthy
 
