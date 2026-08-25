@@ -148,7 +148,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
         "docker.models.services.Service.remove", return_value=None
     )
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    local_runtime.LocalRuntime().stop(scan_id="9999")
+    local_runtime.LocalRuntime().stop(scan_id=9999)
 
     docker_service_remove.assert_not_called()
 

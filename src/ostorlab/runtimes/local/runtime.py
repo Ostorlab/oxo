@@ -340,7 +340,7 @@ class LocalRuntime(runtime.Runtime):
 
     def stop(
         self,
-        scan_id: int | str | None = None,
+        scan_id: int | None = None,
         update_scan_status: bool = True,
     ) -> None:
         """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
@@ -354,18 +354,11 @@ class LocalRuntime(runtime.Runtime):
         if update_scan_status is True and cleanup_success is True:
             target_db_id = None
             if self._scan_db is not None and (
-                scan_id is None
-                or scan_id == self._scan_id
-                or str(scan_id) == str(self._scan_id)
-                or scan_id == self._scan_db.id
+                scan_id is None or scan_id == self._scan_db.id
             ):
                 target_db_id = self._scan_db.id
             elif isinstance(scan_id, int):
                 target_db_id = scan_id
-            elif (
-                isinstance(scan_id, str) and scan_id.isdigit() and self._scan_id is None
-            ):
-                target_db_id = int(scan_id)
 
             if target_db_id is not None:
                 with models.Database() as session:

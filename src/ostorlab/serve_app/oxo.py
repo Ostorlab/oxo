@@ -510,7 +510,7 @@ class StopScansMutation(graphene.Mutation):
             if len(scans) == 0:
                 raise graphql.GraphQLError("No scan is found.")
             for scan_id in scan_ids:
-                local_runtime.LocalRuntime().stop(scan_id=str(scan_id))
+                local_runtime.LocalRuntime().stop(scan_id=scan_id)
             return StopScansMutation(scans=scans)
 
 
