@@ -36,17 +36,10 @@ class ScanHandler:
         self._state_reporter = state_reporter
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
-        try:
-            self._docker_client = docker.from_env()
-        except docker.errors.DockerException:
-            self._docker_client = None
+        self._docker_client = docker.from_env()
 
     def close(self) -> None:
-        if self._docker_client is not None:
-            try:
-                self._docker_client.close()
-            except docker.errors.DockerException:
-                pass
+        self._docker_client.close()
 
     def handle_messages(
         self,
@@ -249,11 +242,6 @@ class ScanHandler:
     def _is_scan_running(self, scan_id: str | None) -> bool:
         """Returns True if docker services with `ostorlab.universe` label exist."""
         if scan_id is None:
-            return False
-        if self._docker_client is None:
-            logger.warning(
-                "Docker client not available; assuming scan %s is not running.", scan_id
-            )
             return False
         try:
             scan_services: list[services.Service] = self._docker_client.services.list(

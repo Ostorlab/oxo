@@ -172,8 +172,6 @@ class LocalRabbitMQ:
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def is_service_healthy(self) -> bool:
-        if self._mq_service is None:
-            return False
         logger.info("checking service %s", self._mq_service.name)
         return self.is_healthy
 
