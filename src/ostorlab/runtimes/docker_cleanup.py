@@ -4,6 +4,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+import docker
 import tenacity
 from docker import errors as docker_errors
 from requests import exceptions as requests_exceptions
@@ -146,7 +147,7 @@ def _cleanup_resource_collection(
 
 
 def cleanup_scan_docker_resources(
-    docker_client: Any, scan_id: int | str | None
+    docker_client: docker.DockerClient, scan_id: int | str | None
 ) -> bool:
     """Remove all Docker services, networks, configs, and volumes belonging to universe with scan_id.
 
