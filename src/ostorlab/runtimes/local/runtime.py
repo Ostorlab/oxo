@@ -386,15 +386,9 @@ class LocalRuntime(runtime.Runtime):
         """Persist the scan in the database"""
         return models.Scan.create(title=title)
 
-    def _update_scan_progress(self, progress: models.ScanProgress | str):
-        """Update scan status to in progress"""
+    def _update_scan_progress(self, progress: models.ScanProgress):
         if self._scan_db is None:
             return
-        if isinstance(progress, str):
-            try:
-                progress = models.ScanProgress[progress.upper()]
-            except (KeyError, ValueError):
-                pass
         with models.Database() as session:
             scan = session.query(models.Scan).get(self._scan_db.id)
             if scan is not None:
