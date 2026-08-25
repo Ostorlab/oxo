@@ -28,9 +28,7 @@ from ostorlab.cli import (
     install_agent,
 )
 from ostorlab.cli import console as cli_console
-from ostorlab.runtimes import definitions
-from ostorlab.runtimes import docker_cleanup
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes import definitions, docker_cleanup, runtime
 from ostorlab.runtimes.local import agent_runtime, log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import jaeger, mq, redis
