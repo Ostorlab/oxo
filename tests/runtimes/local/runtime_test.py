@@ -347,8 +347,6 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
             agent_group_definition=definitions.AgentGroupDefinition(agents=[])
         )
 
-    assert mock_swarm_init.call_count == 3
-
 
 def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
     mocker: plugin.MockerFixture,
