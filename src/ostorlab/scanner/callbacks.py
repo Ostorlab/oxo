@@ -200,7 +200,7 @@ def _extract_api_schema_assets(
     api_schemas: list[asset.Asset] = []
     for entry in api_schemas_data:
         endpoint_url = entry.get("endpointUrl")
-        if endpoint_url is None or endpoint_url == "":
+        if endpoint_url is None or str(endpoint_url).strip() == "":
             logger.error("Multi asset api schema holds no endpoint url.")
             continue
         api_schemas.append(
@@ -222,9 +222,14 @@ def _prepare_multi_asset(
 
     Returns None when the payload holds no member, so no empty message is injected.
 
+    A member that resolves to no asset, because its `__typename` is one this version
+    does not know, is logged and left out rather than raised on. Raising would roll the
+    scan back to not started, only for the same scanner to rediscover it and fail again
+    the same way, so the scan would never run and never say why.
+
     Raises:
-        validator.ValidationError: If a member maps to no multi asset field, or if more
-            than one mobile member is present.
+        validator.ValidationError: If a resolved member maps to no multi asset field, or
+            if more than one mobile member is present.
     """
     members: list[asset.Asset] = []
     for member_key in _MULTI_ASSET_MEMBER_KEYS:
@@ -233,7 +238,16 @@ def _prepare_multi_asset(
             continue
         entries = member_data if isinstance(member_data, list) else [member_data]
         for entry in entries:
-            members.extend(_extract_assets(entry))
+            resolved_members = _extract_assets(entry)
+            if len(resolved_members) == 0:
+                logger.error(
+                    "Multi asset member %s of type %s resolved to no asset, "
+                    "it is left out of the scan.",
+                    member_key,
+                    entry.get("__typename"),
+                )
+                continue
+            members.extend(resolved_members)
 
     members.extend(_extract_api_schema_assets(multi_asset_data.get("apiSchemas")))
 

@@ -1,6 +1,7 @@
 """Unit tests for ostorlab.scanner.callbacks module."""
 
 import base64
+import logging
 
 import pytest
 from pytest_mock import plugin
@@ -1120,7 +1121,8 @@ def testExtractAssets_whenMultiAssetApiSchemaHasNoEndpointUrl_shouldSkipIt(
             "__typename": "MultiAssetsAssetType",
             "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
             "apiSchemas": [
-                {"endpointUrl": None, "contentUrl": "https://storage.co/openapi.json"}
+                {"endpointUrl": None, "contentUrl": "https://storage.co/openapi.json"},
+                {"endpointUrl": "   ", "contentUrl": "https://storage.co/blank.json"},
             ],
         },
     }
@@ -1132,6 +1134,36 @@ def testExtractAssets_whenMultiAssetApiSchemaHasNoEndpointUrl_shouldSkipIt(
     multi_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert multi_asset.api_schemas == []
     assert [url.url for url in multi_asset.urls] == ["https://ostorlab.co"]
+
+
+def testExtractAssets_whenMultiAssetMemberIsUnknownType_shouldLeaveItOutAndLog(
+    mocker: plugin.MockerFixture,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Ensure a member this version cannot resolve is left out with a trace naming it."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "MultiAssetsAssetType",
+            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+            "files": [{"__typename": "UnknownAssetType", "path": "/tmp/mystery"}],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    with caplog.at_level(logging.ERROR):
+        callbacks.start_scan(reserved_scan, state_reporter)
+
+    multi_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert multi_asset.files == []
+    assert [url.url for url in multi_asset.urls] == ["https://ostorlab.co"]
+    assert "files" in caplog.text
+    assert "UnknownAssetType" in caplog.text
 
 
 def testExtractAssets_whenMultiAssetWithNoMember_shouldReturnNoAsset(
