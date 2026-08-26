@@ -622,10 +622,18 @@ def local_runtime_mocks(mocker, db_engine_path):
         return_value=True,
     )
     mocker.patch(
+        "ostorlab.runtimes.local.services.mq.LocalRabbitMQ.is_service_healthy",
+        return_value=True,
+    )
+    mocker.patch(
         "ostorlab.runtimes.local.services.redis.LocalRedis.start", return_value=None
     )
     mocker.patch(
         "ostorlab.runtimes.local.services.redis.LocalRedis.is_healthy",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.services.redis.LocalRedis.is_service_healthy",
         return_value=True,
     )
     mocker.patch(

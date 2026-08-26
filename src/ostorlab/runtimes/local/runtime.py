@@ -28,7 +28,7 @@ from ostorlab.cli import (
     install_agent,
 )
 from ostorlab.cli import console as cli_console
-from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes import definitions, docker_cleanup, runtime
 from ostorlab.runtimes.local import agent_runtime, log_streamer
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import jaeger, mq, redis
@@ -182,6 +182,30 @@ class LocalRuntime(runtime.Runtime):
         self._scan_db = self._create_scan_db(title=title)
         return self._scan_db
 
+    def _handle_scan_error(self) -> None:
+        """Update scan progress to ERROR and trigger cleanup gracefully."""
+        try:
+            self._update_scan_progress(models.ScanProgress.ERROR)
+        except (
+            sqlalchemy.exc.SQLAlchemyError,
+            exceptions.OstorlabError,
+            AttributeError,
+            ValueError,
+        ) as update_err:
+            logger.warning("Failed to update scan progress to ERROR: %s", update_err)
+        try:
+            self.cleanup()
+        except (
+            docker_errors.DockerException,
+            docker_errors.APIError,
+            click.exceptions.Exit,
+            exceptions.OstorlabError,
+            ValueError,
+        ) as cleanup_err:
+            logger.warning(
+                "Failed to clean up scan resources after error: %s", cleanup_err
+            )
+
     def scan(
         self,
         title: str,
@@ -243,7 +267,7 @@ class LocalRuntime(runtime.Runtime):
                     agent_settings=inject_asset_agent_settings,
                 )
             console.info("Updating scan status")
-            self._update_scan_progress("IN_PROGRESS")
+            self._update_scan_progress(models.ScanProgress.IN_PROGRESS)
             console.success("Scan created successfully")
 
             self._wait_log_streamer()
@@ -251,101 +275,128 @@ class LocalRuntime(runtime.Runtime):
             return self._scan_db
         except AgentNotHealthy:
             message = "Agent not starting"
-            self._update_scan_progress("ERROR")
-            self.stop(str(self._scan_db.id))
+            self._handle_scan_error()
             raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
             message = f"Agent {e} not installed"
-            self.stop(str(self._scan_db.id))
+            self._handle_scan_error()
             raise AgentNotInstalled(message)
         except UnhealthyService as e:
             message = f"Unhealthy service {e}"
-            self.stop(str(self._scan_db.id))
+            self._handle_scan_error()
             raise UnhealthyService(message)
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
-            self.stop(str(self._scan_db.id))
+            self._handle_scan_error()
             raise MissingAgentDefinition(message)
+        except (Exception, KeyboardInterrupt) as e:
+            logger.error("Unhandled error during scan execution: %s", e)
+            self._handle_scan_error()
+            raise
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
         threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-    def stop(self, scan_id: int) -> None:
-        """Remove a service belonging to universe with scan_id (Universe Id).
+    def cleanup(self, scan_id: int | None = None) -> bool:
+        """Remove all Docker services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
-            scan_id: The id of the scan to stop.
+            scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
+
+        Returns:
+            bool: True if cleanup completed without error, False otherwise.
         """
-        scan_id_str = str(scan_id)
-        logger.info("stopping scan id %s", scan_id)
-        stopped_services = []
-        stopped_network = []
-        stopped_configs = []
-        self._docker_checks()
-        services = self._docker_client.services.list()
-        for service in services:
-            service_labels = service.attrs["Spec"]["Labels"]
-            if service_labels.get("ostorlab.universe") == scan_id_str:
-                logger.info("Removing service: %s", service.name)
-                stopped_services.append(service)
-                service.remove()
+        if scan_id is None:
+            scan_id = (
+                self._scan_id
+                if self._scan_id is not None
+                else (self._scan_db.id if self._scan_db is not None else None)
+            )
 
-        networks = self._docker_client.networks.list()
-        for network in networks:
-            network_labels = network.attrs["Labels"]
-            if network_labels is None:
-                logger.debug("Skipping network with no labels")
-                continue
-            if (
-                isinstance(network_labels, dict)
-                and network_labels.get("ostorlab.universe") == scan_id_str
+        if scan_id is None:
+            logger.warning("No valid scan_id provided to cleanup.")
+            return True
+
+        if self._docker_client is None:
+            try:
+                self._docker_checks()
+            except (
+                docker.errors.DockerException,
+                click.exceptions.Exit,
+                exceptions.OstorlabError,
+            ) as e:
+                logger.warning("Docker checks failed during cleanup: %s", e)
+                return False
+
+        return docker_cleanup.cleanup_scan_docker_resources(
+            self._docker_client, scan_id
+        )
+
+    def stop(
+        self,
+        scan_id: int | None = None,
+        update_scan_status: bool = True,
+    ) -> None:
+        """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
+
+        Args:
+            scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
+            update_scan_status: Whether to update the scan progress to STOPPED in the local database.
+        """
+        if scan_id is None:
+            scan_id = (
+                self._scan_id
+                if self._scan_id is not None
+                else (self._scan_db.id if self._scan_db is not None else None)
+            )
+
+        if scan_id is None:
+            logger.warning("No valid scan_id provided to stop.")
+            return
+
+        cleanup_success = self.cleanup(scan_id=scan_id)
+
+        if update_scan_status is True and cleanup_success is True:
+            target_db_id = None
+            if self._scan_db is not None and (
+                scan_id is None or scan_id == self._scan_db.id
             ):
-                logger.info("removing network %s", network_labels)
-                stopped_network.append(network)
-                network.remove()
+                target_db_id = self._scan_db.id
+            elif isinstance(scan_id, int):
+                target_db_id = scan_id
 
-        configs = self._docker_client.configs.list()
-        for config in configs:
-            config_labels = config.attrs["Spec"]["Labels"]
-            if config_labels.get("ostorlab.universe") == scan_id_str:
-                logger.info("removing config %s", config_labels)
-                stopped_configs.append(config)
-                config.remove()
-
-        stopped_volumes = []
-        for volume in self._docker_client.volumes.list():
-            volume_labels = volume.attrs.get("Labels") or {}
-            if volume_labels.get("ostorlab.universe") == scan_id_str:
-                logger.info("removing volume %s", volume.name)
-                stopped_volumes.append(volume)
-                volume.remove(force=True)
-
-        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
-            console.success("All scan components stopped.")
-
-        with models.Database() as session:
-            scan = session.query(models.Scan).get(scan_id)
-            if scan is not None:
-                scan.progress = "STOPPED"
-                session.commit()
-                console.success("Scan stopped successfully.")
-            else:
-                console.info(f"Scan {scan_id} was not found.")
+            if target_db_id is not None:
+                with models.Database() as session:
+                    scan = session.query(models.Scan).get(target_db_id)
+                    if scan is not None:
+                        scan.progress = models.ScanProgress.STOPPED
+                        session.commit()
+                        console.success("Scan stopped successfully.")
+                    else:
+                        console.info(f"Scan {target_db_id} was not found.")
+        elif update_scan_status is True and cleanup_success is False:
+            logger.warning(
+                "Cleanup had errors for scan %s; not updating scan progress to STOPPED.",
+                scan_id,
+            )
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""
         return models.Scan.create(title=title)
 
-    def _update_scan_progress(self, progress: str):
+    def _update_scan_progress(self, progress: models.ScanProgress) -> None:
         """Update scan status to in progress"""
+        if self._scan_db is None:
+            return
         with models.Database() as session:
             scan = session.query(models.Scan).get(self._scan_db.id)
-            scan.progress = progress
-            session.commit()
+            if scan is not None:
+                scan.progress = progress
+                session.commit()
 
     def _create_network(self):
         """Creates a docker swarm network where all services and agents can communicate."""
@@ -560,7 +611,11 @@ class LocalRuntime(runtime.Runtime):
             contents[f"asset.binproto_{i}"] = asset.to_proto()
             contents[f"selector.txt_{i}"] = asset.selector.encode()
 
-        volumes.create_volume(f"asset_{self.name}", contents)
+        volumes.create_volume(
+            f"asset_{self.name}",
+            contents,
+            labels={"ostorlab.universe": self.name},
+        )
 
         if agent_settings is None:
             agent_settings = definitions.AgentSettings(

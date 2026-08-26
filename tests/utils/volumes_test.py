@@ -31,3 +31,54 @@ def testWriteContentVolume_always_contentIsPersistedToVolume():
     )
 
     assert out == b"Cat is alive! :)"
+
+
+def testCreateVolume_whenVolumeNotFound_createsNewVolume(mocker):
+    """When existing volume is not found, creates new volume without error."""
+    mock_client = mocker.MagicMock()
+    mock_client.volumes.get.side_effect = docker.errors.NotFound("Volume not found")
+    mocker.patch("docker.from_env", return_value=mock_client)
+    mocker.patch.object(volumes.VolumeWriter, "_write_content")
+
+    volumes.create_volume("test_vol", {"test": b"data"}, labels={"a": "b"})
+
+    mock_client.volumes.create.assert_called_once_with(
+        name="test_vol", labels={"a": "b"}
+    )
+
+
+def testCreateVolume_whenVolumeRemovalRaisesAPIError_raisesException(mocker):
+    """When existing volume removal fails with APIError, exception is raised and volume is not created."""
+    mock_client = mocker.MagicMock()
+    mock_volume = mocker.MagicMock()
+    mock_volume.remove.side_effect = docker.errors.APIError("Volume in use")
+    mock_client.volumes.get.return_value = mock_volume
+    mocker.patch("docker.from_env", return_value=mock_client)
+    mocker.patch.object(volumes.VolumeWriter, "_write_content")
+
+    with pytest.raises(docker.errors.APIError):
+        volumes.create_volume("test_vol", {"test": b"data"})
+
+    mock_client.volumes.create.assert_not_called()
+
+
+def testWriteContent_whenContainerStopRaisesRequestException_forceRemovesContainer(
+    mocker,
+):
+    """When container.stop raises RequestException/ConnectionError, force remove is attempted and original exception from put_archive is preserved."""
+    import requests.exceptions as req_exc
+
+    mock_client = mocker.MagicMock()
+    mock_container = mocker.MagicMock()
+    mock_container.stop.side_effect = req_exc.ConnectionError("Connection lost")
+    mock_client.containers.run.return_value = mock_container
+    mocker.patch("docker.from_env", return_value=mock_client)
+
+    writer = volumes.VolumeWriter()
+    mocker.patch.object(writer, "_prepare_tar")
+
+    # Should not raise exception from finally block
+    writer._write_content("test_vol", {"file": b"data"})
+
+    mock_container.stop.assert_called_once_with(timeout=0)
+    mock_container.remove.assert_called_once_with(force=True)

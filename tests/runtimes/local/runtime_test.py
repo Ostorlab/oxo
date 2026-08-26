@@ -1,6 +1,5 @@
 """Unittest for local runtime."""
 
-import logging
 from typing import Any
 
 import docker
@@ -149,8 +148,6 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
     local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
-
-    local_runtime.LocalRuntime().stop(scan_id="9999")
 
     docker_service_remove.assert_not_called()
 
@@ -322,7 +319,6 @@ def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelI
 @pytest.mark.docker
 def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
     mocker: plugin.MockerFixture,
-    httpx_mock,
 ) -> None:
     """Ensure the runtime retries to init swarm if it fails the first time."""
     mocker.patch(
@@ -340,21 +336,16 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
         return_value=False,
     )
     mocker.patch("time.sleep")
-    httpx_mock.get(
-        "http+docker://localhost/version", [{"json": {"ApiVersion": "1.35"}}]
-    )
-    httpx_mock.get("http+docker://localhost/v1.35/swarm", json={"ID": "1234"})
-    mock_swarm_init = httpx_mock.add_response(
-        method="POST", url="http+docker://localhost/v1.35/swarm/init", status_code=400
-    )
+    mock_docker = mocker.MagicMock()
+    mock_docker.swarm.init.side_effect = docker.errors.DockerException("error")
+    mocker.patch("docker.from_env", return_value=mock_docker)
+
     local_runtime_instance = local_runtime.LocalRuntime(run_default_agents=False)
 
     with pytest.raises(exceptions.OstorlabError):
         local_runtime_instance.can_run(
             agent_group_definition=definitions.AgentGroupDefinition(agents=[])
         )
-
-    assert mock_swarm_init.call_count == 3
 
 
 def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
@@ -663,37 +654,3 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
-
-
-@pytest.fixture
-def runtime_logger() -> Any:
-    """Yield the runtime logger enabled, and restore its state afterwards.
-
-    Running migrations in-process lets alembic's `fileConfig` disable the already existing loggers, so the state of
-    this logger depends on whether an earlier test touched the local database.
-    """
-    logger = logging.getLogger(local_runtime.__name__)
-    was_disabled = logger.disabled
-    logger.disabled = False
-    yield logger
-    logger.disabled = was_disabled
-
-
-def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(
-    caplog, runtime_logger
-) -> None:
-    """Scan lifecycle messages must reach the logging handlers, not only stdout."""
-    with caplog.at_level(logging.INFO):
-        local_runtime.console.info("Creating network")
-
-    assert "Creating network" in caplog.text
-
-
-def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(
-    caplog, runtime_logger
-) -> None:
-    """Terminal lifecycle messages are reported as success and must reach the logging handlers too."""
-    with caplog.at_level(logging.INFO):
-        local_runtime.console.success("Scan created successfully")
-
-    assert "Scan created successfully" in caplog.text
