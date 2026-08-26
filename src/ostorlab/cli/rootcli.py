@@ -9,19 +9,19 @@ from ostorlab import configuration_manager
 
 logger = logging.getLogger("CLI")
 
-# Third-party loggers that drown the output at INFO: SQLAlchemy echoes every statement and every PRAGMA, and the
-# HTTP clients log a line per request. Verbosity flags target oxo's own loggers instead.
-NOISY_LOGGERS = ("sqlalchemy", "httpx", "httpcore", "docker", "urllib3")
+# Namespaces of oxo's own loggers. Raising every registered logger instead buries the output: SQLAlchemy echoes
+# each statement and PRAGMA at INFO, and the HTTP clients log a line per request.
+OXO_LOGGERS = ("ostorlab", "CLI")
 
 
 def _set_loggers_level(level: int) -> None:
-    """Raise the verbosity of oxo's loggers, leaving the noisy third-party ones untouched.
+    """Raise the verbosity of oxo's own loggers, leaving third-party ones at their configured level.
 
     Args:
         level: The logging level to apply.
     """
     for name in list(logging.root.manager.loggerDict):
-        if name.startswith(NOISY_LOGGERS) is True:
+        if name.startswith(OXO_LOGGERS) is False:
             continue
         logging.getLogger(name).setLevel(level)
 

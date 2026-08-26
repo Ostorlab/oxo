@@ -1,32 +1,52 @@
 """Unit tests for the oxo root CLI."""
 
 import logging
+from collections.abc import Iterator
 
+import pytest
 from click import testing as click_testing
 
 from ostorlab.cli import rootcli
 
+OXO_LOGGER = "ostorlab.runtimes.local.runtime"
+THIRD_PARTY_LOGGERS = ("sqlalchemy.engine.Engine", "httpx")
 
-def testRootCli_whenVerboseIsEnabled_raisesOxoLoggersVerbosity() -> None:
+
+@pytest.fixture
+def restored_logger_levels() -> Iterator[None]:
+    """Restore the level of every registered logger, since the verbosity flags mutate process global state."""
+    levels = {
+        name: logging.getLogger(name).level
+        for name in list(logging.root.manager.loggerDict)
+    }
+    yield
+    for name, level in levels.items():
+        logging.getLogger(name).setLevel(level)
+
+
+def testRootCli_whenVerboseIsEnabled_raisesOxoLoggersVerbosity(
+    restored_logger_levels,
+) -> None:
     """`-v` must surface oxo's own logs."""
-    oxo_logger = logging.getLogger("ostorlab.runtimes.local.runtime")
-    oxo_logger.setLevel(logging.NOTSET)
-
+    logging.getLogger(OXO_LOGGER).setLevel(logging.NOTSET)
     runner = click_testing.CliRunner()
-    runner.invoke(rootcli.rootcli, ["-v", "scan", "--help"])
 
-    assert oxo_logger.level == logging.INFO
+    result = runner.invoke(rootcli.rootcli, ["-v", "scan", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert logging.getLogger(OXO_LOGGER).level == logging.INFO
 
 
-def testRootCli_whenVerboseIsEnabled_keepsThirdPartyLoggersQuiet() -> None:
+def testRootCli_whenVerboseIsEnabled_keepsThirdPartyLoggersQuiet(
+    restored_logger_levels,
+) -> None:
     """SQLAlchemy echoes every statement and PRAGMA at INFO, which drowns the oxo logs `-v` is asked for."""
-    sqlalchemy_logger = logging.getLogger("sqlalchemy.engine.Engine")
-    httpx_logger = logging.getLogger("httpx")
-    sqlalchemy_logger.setLevel(logging.NOTSET)
-    httpx_logger.setLevel(logging.NOTSET)
-
+    for name in THIRD_PARTY_LOGGERS:
+        logging.getLogger(name).setLevel(logging.NOTSET)
     runner = click_testing.CliRunner()
-    runner.invoke(rootcli.rootcli, ["-v", "scan", "--help"])
 
-    assert sqlalchemy_logger.level == logging.NOTSET
-    assert httpx_logger.level == logging.NOTSET
+    result = runner.invoke(rootcli.rootcli, ["-v", "scan", "--help"])
+
+    assert result.exit_code == 0, result.output
+    for name in THIRD_PARTY_LOGGERS:
+        assert logging.getLogger(name).level == logging.NOTSET
