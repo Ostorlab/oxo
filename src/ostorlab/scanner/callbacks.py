@@ -457,7 +457,10 @@ def start_scan(
         agent_group_definition = _extract_agent_group_definition(
             request=agent_group_data
         )
-        assets = _extract_assets(asset_data=request.get("asset"))
+        extracted_assets = _extract_assets(asset_data=request.get("asset"))
+        # The runtime skips asset injection only on None. An empty list still creates an
+        # empty asset volume and starts the injection agent with nothing to inject.
+        assets = extracted_assets if len(extracted_assets) > 0 else None
         scan_id = _extract_scan_id(request=request)
 
         state_reporter = _update_state_reporter(

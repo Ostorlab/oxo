@@ -1129,4 +1129,24 @@ def testExtractAssets_whenMultiAssetWithNoMember_shouldReturnNoAsset(
 
     callbacks.start_scan(reserved_scan, state_reporter)
 
-    assert runtime_mock.scan.call_args[1].get("assets") == []
+    assert runtime_mock.scan.call_args[1].get("assets") is None
+
+
+def testStartScan_whenNoAssetExtracted_shouldPassNoneToRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure an unresolved asset injects nothing rather than an empty asset volume."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {"__typename": "UnknownAssetType"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assert runtime_mock.scan.call_args[1].get("assets") is None

@@ -42,6 +42,44 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGrou
     assert "... on IosIpaAssetType" in api_request.query
 
 
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsMultiAssetMembers() -> (
+    None
+):
+    """Test full details query selects every multi asset member.
+
+    Each member carries its own __typename, since that is what it is resolved by, and
+    the api schemas are selected with the url of the schema document they hold.
+    """
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    assert "... on MultiAssetsAssetType" in api_request.query
+    assert "files { __typename path contentUrl }" in api_request.query
+    assert "androidPackageName { __typename packageName }" in api_request.query
+    assert "iosBundleId { __typename bundleId }" in api_request.query
+    assert "androidApk { __typename path contentUrl }" in api_request.query
+    assert "androidAab { __typename path contentUrl }" in api_request.query
+    assert "iosIpa { __typename path contentUrl }" in api_request.query
+    assert "harmonyosBundleName { __typename bundleName }" in api_request.query
+    assert "harmonyosApk { __typename path contentUrl }" in api_request.query
+    assert "harmonyosAab { __typename path contentUrl }" in api_request.query
+    assert "harmonyosHap { __typename path contentUrl }" in api_request.query
+    assert "harmonyosApp { __typename path contentUrl }" in api_request.query
+    assert "harmonyosRpk { __typename path contentUrl }" in api_request.query
+    assert (
+        "repositories { __typename provider repositoryUrl commitHash }"
+        in api_request.query
+    )
+    assert "repositoryArchives { __typename path contentUrl }" in api_request.query
+    assert "urls { __typename urls }" in api_request.query
+    assert "ips { __typename host version mask }" in api_request.query
+    assert "ipv4s { __typename host version mask }" in api_request.query
+    assert "ipv6s { __typename host version mask }" in api_request.query
+    assert "apiSchemas { urls apiSchemaUrl }" in api_request.query
+
+
 def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorrectVariables() -> (
     None
 ):
