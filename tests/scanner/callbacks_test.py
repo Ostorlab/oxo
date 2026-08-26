@@ -1,7 +1,6 @@
 """Unit tests for ostorlab.scanner.callbacks module."""
 
 import base64
-import logging
 
 import pytest
 from pytest_mock import plugin
@@ -1138,7 +1137,6 @@ def testExtractAssets_whenMultiAssetApiSchemaHasNoEndpointUrl_shouldSkipIt(
 
 def testExtractAssets_whenMultiAssetMemberIsUnknownType_shouldLeaveItOutAndLog(
     mocker: plugin.MockerFixture,
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Ensure a member this version cannot resolve is left out with a trace naming it."""
     reserved_scan = {
@@ -1154,16 +1152,19 @@ def testExtractAssets_whenMultiAssetMemberIsUnknownType_shouldLeaveItOutAndLog(
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
+    # The logger is asserted on directly: the root logger configuration caplog reads
+    # through is global, and earlier tests in the suite leave it capturing nothing.
+    logger_mock = mocker.patch.object(callbacks.logger, "error")
     state_reporter = mocker.MagicMock()
 
-    with caplog.at_level(logging.ERROR):
-        callbacks.start_scan(reserved_scan, state_reporter)
+    callbacks.start_scan(reserved_scan, state_reporter)
 
     multi_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert multi_asset.files == []
     assert [url.url for url in multi_asset.urls] == ["https://ostorlab.co"]
-    assert "files" in caplog.text
-    assert "UnknownAssetType" in caplog.text
+    assert ("files", "UnknownAssetType") in [
+        call.args[1:] for call in logger_mock.call_args_list
+    ]
 
 
 def testExtractAssets_whenMultiAssetWithNoMember_shouldReturnNoAsset(
