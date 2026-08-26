@@ -86,7 +86,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                       ips { __typename host version mask }
                       ipv4s { __typename host version mask }
                       ipv6s { __typename host version mask }
-                      apiSchemas { urls apiSchemaUrl }
+                      apiSchemas { endpointUrl contentUrl }
                     }
                     ... on RisksAssetType {
                       risks {

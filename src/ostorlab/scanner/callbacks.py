@@ -45,10 +45,9 @@ from ostorlab.utils import scanner_state_reporter
 logger = logging.getLogger(__name__)
 
 # Fields of the multi asset payload holding nested assets, each resolved through
-# `_extract_assets` by its own `__typename`. `apiSchemas` is deliberately absent: an api
-# schema comes back as a url asset, so it carries the `UrlAssetType` typename and would
-# be mistaken for a plain url. It is read from its own key instead, by
-# `_extract_api_schema_assets`.
+# `_extract_assets` by its own `__typename`. `apiSchemas` is deliberately absent: it
+# carries no asset `__typename`, naming its endpoint url and its document instead, and
+# is read from its own key by `_extract_api_schema_assets`.
 _MULTI_ASSET_MEMBER_KEYS = (
     "files",
     "androidPackageName",
@@ -189,9 +188,8 @@ def _extract_api_schema_assets(
 ) -> list[asset.Asset]:
     """Build the api schema assets of a multi asset payload.
 
-    An api schema comes back as a url asset holding the single endpoint url it
-    documents, plus the schema document itself. Both are read from the same entry,
-    since the endpoint alone leaves the agents without the schema.
+    An api schema carries the endpoint url it documents and the schema document, and
+    both are read, since the endpoint alone leaves the agents without the schema.
 
     An entry with no endpoint url is skipped: `ApiSchema` requires one, and the schema
     document on its own names no target to scan.
@@ -201,14 +199,14 @@ def _extract_api_schema_assets(
 
     api_schemas: list[asset.Asset] = []
     for entry in api_schemas_data:
-        endpoint_urls = entry.get("urls") or []
-        if len(endpoint_urls) == 0:
+        endpoint_url = entry.get("endpointUrl")
+        if endpoint_url is None or endpoint_url == "":
             logger.error("Multi asset api schema holds no endpoint url.")
             continue
         api_schemas.append(
             api_schema_asset.ApiSchema(
-                endpoint_url=endpoint_urls[0],
-                content_url=entry.get("apiSchemaUrl"),
+                endpoint_url=endpoint_url,
+                content_url=entry.get("contentUrl"),
             )
         )
     return api_schemas

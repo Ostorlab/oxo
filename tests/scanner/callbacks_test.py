@@ -1010,8 +1010,8 @@ def testExtractAssets_whenMultiAsset_shouldReturnOneMultiAsset(
             ],
             "apiSchemas": [
                 {
-                    "urls": ["https://ostorlab.co/v1"],
-                    "apiSchemaUrl": "https://storage.co/openapi.json",
+                    "endpointUrl": "https://ostorlab.co/v1",
+                    "contentUrl": "https://storage.co/openapi.json",
                 }
             ],
         },
@@ -1120,7 +1120,7 @@ def testExtractAssets_whenMultiAssetApiSchemaHasNoEndpointUrl_shouldSkipIt(
             "__typename": "MultiAssetsAssetType",
             "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
             "apiSchemas": [
-                {"urls": [], "apiSchemaUrl": "https://storage.co/openapi.json"}
+                {"endpointUrl": None, "contentUrl": "https://storage.co/openapi.json"}
             ],
         },
     }

@@ -77,7 +77,7 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsMultiAssetMembers
     assert "ips { __typename host version mask }" in api_request.query
     assert "ipv4s { __typename host version mask }" in api_request.query
     assert "ipv6s { __typename host version mask }" in api_request.query
-    assert "apiSchemas { urls apiSchemaUrl }" in api_request.query
+    assert "apiSchemas { endpointUrl contentUrl }" in api_request.query
 
 
 def testScanUpdateStateAPIRequest_whenScanIdAndProgressProvided_dataContainsCorrectVariables() -> (
