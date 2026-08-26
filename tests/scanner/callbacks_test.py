@@ -2,8 +2,10 @@
 
 import base64
 
+import pytest
 from pytest_mock import plugin
 
+from ostorlab.agent.schema import validator
 from ostorlab.assets import agent as agent_asset
 from ostorlab.assets import (
     android_aab,
@@ -23,6 +25,7 @@ from ostorlab.assets import (
     ipv6,
 )
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
@@ -934,3 +937,271 @@ def testExtractAssets_whenRisksAsset_shouldReturnCorrectAssets(
     assert assets[1].rating == "MEDIUM"
     assert assets[1].domain_name is not None
     assert assets[1].domain_name.name == "example.com"
+
+
+def testExtractAssets_whenMultiAsset_shouldReturnOneMultiAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets returns one multi asset holding every member."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "MultiAssetsAssetType",
+            "files": [
+                {
+                    "__typename": "FileAssetType",
+                    "path": "/tmp/dump.bin",
+                    "contentUrl": "https://storage.co/dump.bin",
+                }
+            ],
+            "androidApk": {
+                "__typename": "AndroidApkAssetType",
+                "path": "/tmp/app.apk",
+                "contentUrl": "https://storage.co/app.apk",
+            },
+            "repositories": [
+                {
+                    "__typename": "RepositoryAssetType",
+                    "provider": "github",
+                    "repositoryUrl": "https://github.com/Ostorlab/oxo",
+                    "commitHash": "deadbeef",
+                }
+            ],
+            "repositoryArchives": [
+                {
+                    "__typename": "RepositoryArchiveAssetType",
+                    "path": "/tmp/archive.zip",
+                    "contentUrl": "https://storage.co/archive.zip",
+                }
+            ],
+            "urls": [
+                {
+                    "__typename": "UrlAssetType",
+                    "urls": ["https://ostorlab.co", "https://google.com"],
+                }
+            ],
+            "ips": [
+                {
+                    "__typename": "IpAssetType",
+                    "host": "8.8.8.8",
+                    "version": 4,
+                    "mask": "32",
+                }
+            ],
+            "ipv4s": [
+                {
+                    "__typename": "Ipv4AssetType",
+                    "host": "192.168.1.1",
+                    "version": 4,
+                    "mask": "24",
+                }
+            ],
+            "ipv6s": [
+                {
+                    "__typename": "Ipv6AssetType",
+                    "host": "2001:db8::",
+                    "version": 6,
+                    "mask": "64",
+                }
+            ],
+            "apiSchemas": [
+                {
+                    "endpointUrl": "https://ostorlab.co/v1",
+                    "contentUrl": "https://storage.co/openapi.json",
+                }
+            ],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    multi_asset = assets[0]
+    assert isinstance(multi_asset, multi_asset_asset.MultiAsset) is True
+    assert multi_asset.android_apk.path == "/tmp/app.apk"
+    assert [file_member.path for file_member in multi_asset.files] == ["/tmp/dump.bin"]
+    assert [repository.repository_url for repository in multi_asset.repositories] == [
+        "https://github.com/Ostorlab/oxo"
+    ]
+    assert [archive.path for archive in multi_asset.repository_archives] == [
+        "/tmp/archive.zip"
+    ]
+    assert [url.url for url in multi_asset.urls] == [
+        "https://ostorlab.co",
+        "https://google.com",
+    ]
+    assert [(ip.host, ip.mask) for ip in multi_asset.ipv4s] == [
+        ("8.8.8.8", "32"),
+        ("192.168.1.1", "24"),
+    ]
+    assert [ip.host for ip in multi_asset.ipv6s] == [
+        "2001:0db8:0000:0000:0000:0000:0000:0000"
+    ]
+    assert [
+        (schema.endpoint_url, schema.content_url) for schema in multi_asset.api_schemas
+    ] == [("https://ostorlab.co/v1", "https://storage.co/openapi.json")]
+
+
+def testExtractAssets_whenMultiAssetWithStoreMember_shouldReturnStoreAsMobileMember(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a store member of a multi asset lands on its mobile field."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "MultiAssetsAssetType",
+            "androidPackageName": {
+                "__typename": "AndroidPackageNameAssetType",
+                "packageName": "com.ostorlab.app",
+            },
+            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    multi_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(multi_asset, multi_asset_asset.MultiAsset) is True
+    assert multi_asset.android_store.package_name == "com.ostorlab.app"
+    assert multi_asset.android_apk is None
+
+
+def testExtractAssets_whenMultiAssetWithTwoMobileMembers_shouldRaiseValidationError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a multi asset with two mobile members is rejected, since the proto oneof
+    would silently drop one of them."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "MultiAssetsAssetType",
+            "androidApk": {
+                "__typename": "AndroidApkAssetType",
+                "path": "/tmp/app.apk",
+            },
+            "iosIpa": {"__typename": "IosIpaAssetType", "path": "/tmp/app.ipa"},
+        },
+    }
+    _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    with pytest.raises(validator.ValidationError):
+        callbacks.start_scan(reserved_scan, state_reporter)
+
+
+def testExtractAssets_whenMultiAssetApiSchemaHasNoEndpointUrl_shouldSkipIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure an api schema with no endpoint url is skipped rather than failing the scan."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "MultiAssetsAssetType",
+            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+            "apiSchemas": [
+                {"endpointUrl": None, "contentUrl": "https://storage.co/openapi.json"},
+                {"endpointUrl": "   ", "contentUrl": "https://storage.co/blank.json"},
+            ],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    multi_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert multi_asset.api_schemas == []
+    assert [url.url for url in multi_asset.urls] == ["https://ostorlab.co"]
+
+
+def testExtractAssets_whenMultiAssetMemberIsUnknownType_shouldLeaveItOutAndLog(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a member this version cannot resolve is left out with a trace naming it."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "MultiAssetsAssetType",
+            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+            "files": [{"__typename": "UnknownAssetType", "path": "/tmp/mystery"}],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    # The logger is asserted on directly: the root logger configuration caplog reads
+    # through is global, and earlier tests in the suite leave it capturing nothing.
+    logger_mock = mocker.patch.object(callbacks.logger, "error")
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    multi_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert multi_asset.files == []
+    assert [url.url for url in multi_asset.urls] == ["https://ostorlab.co"]
+    assert ("files", "UnknownAssetType") in [
+        call.args[1:] for call in logger_mock.call_args_list
+    ]
+
+
+def testExtractAssets_whenMultiAssetWithNoMember_shouldReturnNoAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure an empty multi asset payload injects no empty message."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {"__typename": "MultiAssetsAssetType", "androidApk": None},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assert runtime_mock.scan.call_args[1].get("assets") is None
+
+
+def testStartScan_whenNoAssetExtracted_shouldPassNoneToRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure an unresolved asset injects nothing rather than an empty asset volume."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {"__typename": "UnknownAssetType"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assert runtime_mock.scan.call_args[1].get("assets") is None

@@ -31,7 +31,9 @@ from ostorlab.assets import (
     ipv4,
     ipv6,
 )
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
@@ -41,6 +43,31 @@ from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
+
+# Fields of the multi asset payload holding nested assets, each resolved through
+# `_extract_assets` by its own `__typename`. `apiSchemas` is deliberately absent: it
+# carries no asset `__typename`, naming its endpoint url and its document instead, and
+# is read from its own key by `_extract_api_schema_assets`.
+_MULTI_ASSET_MEMBER_KEYS = (
+    "files",
+    "androidPackageName",
+    "iosBundleId",
+    "androidApk",
+    "androidAab",
+    "iosIpa",
+    "harmonyosBundleName",
+    "harmonyosApk",
+    "harmonyosAab",
+    "harmonyosHap",
+    "harmonyosApp",
+    "harmonyosRpk",
+    "repositories",
+    "repositoryArchives",
+    "urls",
+    "ips",
+    "ipv4s",
+    "ipv6s",
+)
 
 
 def _install_agents(
@@ -154,6 +181,76 @@ def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
             type(target_asset).__name__,
         )
     return kwargs
+
+
+def _extract_api_schema_assets(
+    api_schemas_data: list[dict[str, Any]] | None,
+) -> list[asset.Asset]:
+    """Build the api schema assets of a multi asset payload.
+
+    An api schema carries the endpoint url it documents and the schema document, and
+    both are read, since the endpoint alone leaves the agents without the schema.
+
+    An entry with no endpoint url is skipped: `ApiSchema` requires one, and the schema
+    document on its own names no target to scan.
+    """
+    if api_schemas_data is None:
+        return []
+
+    api_schemas: list[asset.Asset] = []
+    for entry in api_schemas_data:
+        endpoint_url = entry.get("endpointUrl")
+        if endpoint_url is None or str(endpoint_url).strip() == "":
+            logger.error("Multi asset api schema holds no endpoint url.")
+            continue
+        api_schemas.append(
+            api_schema_asset.ApiSchema(
+                endpoint_url=endpoint_url,
+                content_url=entry.get("contentUrl"),
+            )
+        )
+    return api_schemas
+
+
+def _prepare_multi_asset(
+    multi_asset_data: dict[str, Any],
+) -> multi_asset_asset.MultiAsset | None:
+    """Build the multi asset described by a multi asset payload.
+
+    Each member is resolved through `_extract_assets`, so it is parsed by the exact
+    same rules as when it is scanned on its own. A member of an unknown type is logged
+    and left out: raising would roll the scan back for the same scanner to rediscover
+    and fail again. Returns None when no member is left, injecting no empty message.
+
+    Raises:
+        validator.ValidationError: If a resolved member maps to no multi asset field, or
+            if more than one mobile member is present.
+    """
+    members: list[asset.Asset] = []
+    for member_key in _MULTI_ASSET_MEMBER_KEYS:
+        member_data = multi_asset_data.get(member_key)
+        if member_data is None:
+            continue
+        entries = member_data if isinstance(member_data, list) else [member_data]
+        for entry in entries:
+            resolved_members = _extract_assets(entry)
+            if len(resolved_members) == 0:
+                logger.error(
+                    "Multi asset member %s of type %s resolved to no asset, "
+                    "it is left out of the scan.",
+                    member_key,
+                    entry.get("__typename"),
+                )
+                continue
+            members.extend(resolved_members)
+
+    members.extend(_extract_api_schema_assets(multi_asset_data.get("apiSchemas")))
+
+    if len(members) == 0:
+        logger.error("Multi asset payload holds no member asset.")
+        return None
+
+    return definitions.build_multi_asset(members)
 
 
 def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
@@ -325,6 +422,11 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             )
             for risk_item in (kwargs.get("risks") or [])
         ]
+    elif typename == "MultiAssetsAssetType":
+        multi_asset = _prepare_multi_asset(kwargs)
+        if multi_asset is None:
+            return []
+        return [multi_asset]
 
     else:
         logger.error("%s not supported from scan asset payload", typename)
@@ -382,7 +484,10 @@ def start_scan(
         agent_group_definition = _extract_agent_group_definition(
             request=agent_group_data
         )
-        assets = _extract_assets(asset_data=request.get("asset"))
+        extracted_assets = _extract_assets(asset_data=request.get("asset"))
+        # The runtime skips asset injection only on None. An empty list still creates an
+        # empty asset volume and starts the injection agent with nothing to inject.
+        assets = extracted_assets if len(extracted_assets) > 0 else None
         scan_id = _extract_scan_id(request=request)
 
         state_reporter = _update_state_reporter(
