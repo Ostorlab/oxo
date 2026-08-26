@@ -1,5 +1,7 @@
 """Tests for Models class."""
 
+import logging
+
 from pytest_mock import plugin
 
 from ostorlab.assets import android_aab, android_apk, ios_ipa, ipv4, link
@@ -853,3 +855,24 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCre
         assert len(links) == 1
         assert links[0].url == "https://example.com/test"
         assert links[0].method == "GET"
+
+
+def testDatabaseMigration_always_keepsCallerLoggingHandlers(mocker, db_engine_path):
+    """Running migrations embedded must not let alembic's `fileConfig` reconfigure the caller's logging."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    caller_handler = logging.NullHandler()
+    root_logger = logging.getLogger()
+    root_logger.addHandler(caller_handler)
+    root_level = root_logger.level
+    caller_logger = logging.getLogger("ostorlab.runtimes.local.runtime")
+    caller_logger.disabled = False
+
+    try:
+        with models.Database() as session:
+            assert session.query(models.Scan).count() == 0
+
+        assert caller_handler in root_logger.handlers
+        assert root_logger.level == root_level
+        assert caller_logger.disabled is False
+    finally:
+        root_logger.removeHandler(caller_handler)
