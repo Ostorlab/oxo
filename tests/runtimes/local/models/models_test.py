@@ -865,6 +865,7 @@ def testDatabaseMigration_always_keepsCallerLoggingHandlers(mocker, db_engine_pa
     root_logger.addHandler(caller_handler)
     root_level = root_logger.level
     caller_logger = logging.getLogger("ostorlab.runtimes.local.runtime")
+    caller_was_disabled = caller_logger.disabled
     caller_logger.disabled = False
 
     try:
@@ -876,3 +877,4 @@ def testDatabaseMigration_always_keepsCallerLoggingHandlers(mocker, db_engine_pa
         assert caller_logger.disabled is False
     finally:
         root_logger.removeHandler(caller_handler)
+        caller_logger.disabled = caller_was_disabled
