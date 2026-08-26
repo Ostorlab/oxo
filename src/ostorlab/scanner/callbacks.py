@@ -218,14 +218,9 @@ def _prepare_multi_asset(
     """Build the multi asset described by a multi asset payload.
 
     Each member is resolved through `_extract_assets`, so it is parsed by the exact
-    same rules as when it is scanned on its own.
-
-    Returns None when the payload holds no member, so no empty message is injected.
-
-    A member that resolves to no asset, because its `__typename` is one this version
-    does not know, is logged and left out rather than raised on. Raising would roll the
-    scan back to not started, only for the same scanner to rediscover it and fail again
-    the same way, so the scan would never run and never say why.
+    same rules as when it is scanned on its own. A member of an unknown type is logged
+    and left out: raising would roll the scan back for the same scanner to rediscover
+    and fail again. Returns None when no member is left, injecting no empty message.
 
     Raises:
         validator.ValidationError: If a resolved member maps to no multi asset field, or
