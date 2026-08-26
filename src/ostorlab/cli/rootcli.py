@@ -9,6 +9,22 @@ from ostorlab import configuration_manager
 
 logger = logging.getLogger("CLI")
 
+# Third-party loggers that drown the output at INFO: SQLAlchemy echoes every statement and every PRAGMA, and the
+# HTTP clients log a line per request. Verbosity flags target oxo's own loggers instead.
+NOISY_LOGGERS = ("sqlalchemy", "httpx", "httpcore", "docker", "urllib3")
+
+
+def _set_loggers_level(level: int) -> None:
+    """Raise the verbosity of oxo's loggers, leaving the noisy third-party ones untouched.
+
+    Args:
+        level: The logging level to apply.
+    """
+    for name in list(logging.root.manager.loggerDict):
+        if name.startswith(NOISY_LOGGERS) is True:
+            continue
+        logging.getLogger(name).setLevel(level)
+
 
 @click.group()
 @click.pass_context
@@ -50,13 +66,9 @@ def rootcli(
     ctx.obj["config_manager"] = conf_manager
 
     if verbose is True:
-        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for current_logger in loggers:
-            current_logger.setLevel(logging.INFO)
+        _set_loggers_level(logging.INFO)
     if debug is True:
-        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for current_logger in loggers:
-            current_logger.setLevel(logging.DEBUG)
+        _set_loggers_level(logging.DEBUG)
     if gcp_logging_credential is not None:
         try:
             import google.cloud.logging
