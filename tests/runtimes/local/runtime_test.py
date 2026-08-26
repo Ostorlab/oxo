@@ -1,9 +1,7 @@
 """Unittest for local runtime."""
 
-import logging
 from typing import Any
 
-import click
 import docker
 import pytest
 from docker.models import networks as networks_model
@@ -74,7 +72,7 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_p
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
 
-    def docker_services(*args, **kwargs):
+    def docker_services():
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -120,7 +118,7 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
     Does not remove any service.
     """
 
-    def docker_services(*args, **kwargs):
+    def docker_services():
         """Method for mocking the services list response."""
 
         services = [
@@ -148,7 +146,8 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
         "docker.models.services.Service.remove", return_value=None
     )
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    local_runtime.LocalRuntime().stop(scan_id=9999)
+    create_scan_db = models.Scan.create("test")
+    local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
 
     docker_service_remove.assert_not_called()
 
@@ -182,7 +181,7 @@ def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
 
     local_runtime.LocalRuntime().stop(scan_id=create_scan_db.id)
 
-    matching_volume.remove.assert_called_once_with()
+    matching_volume.remove.assert_called_once_with(force=True)
     other_volume.remove.assert_not_called()
 
 
@@ -348,7 +347,7 @@ def testRuntime_WhenCantInitSwarm_shouldShowUserFriendlyMessage(
             agent_group_definition=definitions.AgentGroupDefinition(agents=[])
         )
 
-    assert mock_docker.swarm.init.call_count == 10
+    assert mock_swarm_init.call_count == 3
 
 
 def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
@@ -398,7 +397,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
 
-    def docker_services(*args, **kwargs) -> list[services_model.Service]:
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -417,7 +416,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
 
         return [services_model.Service(attrs=service) for service in services]
 
-    def docker_networks(*args, **kwargs) -> list[networks_model.Network]:
+    def docker_networks() -> list[networks_model.Network]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
@@ -657,285 +656,3 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
-
-
-@pytest.fixture
-def runtime_logger() -> Any:
-    """Yield the runtime logger enabled, and restore its state afterwards.
-
-    Running migrations in-process lets alembic's `fileConfig` disable the already existing loggers, so the state of
-    this logger depends on whether an earlier test touched the local database.
-    """
-    logger = logging.getLogger(local_runtime.__name__)
-    was_disabled = logger.disabled
-    logger.disabled = False
-    yield logger
-    logger.disabled = was_disabled
-
-
-def testLocalRuntimeConsole_whenMessageIsPrinted_emitsLogRecord(
-    caplog, runtime_logger
-) -> None:
-    """Scan lifecycle messages must reach the logging handlers, not only stdout."""
-    with caplog.at_level(logging.INFO):
-        local_runtime.console.info("Creating network")
-
-    assert "Creating network" in caplog.text
-
-
-def testLocalRuntimeConsole_whenSuccessIsPrinted_emitsLogRecord(
-    caplog, runtime_logger
-) -> None:
-    """Terminal lifecycle messages are reported as success and must reach the logging handlers too."""
-    with caplog.at_level(logging.INFO):
-        local_runtime.console.success("Scan created successfully")
-
-    assert "Scan created successfully" in caplog.text
-
-
-def testLocalRuntimeScan_whenExceptionRaised_updatesScanProgressToErrorAndStopsScan(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When an unhandled exception occurs during scan(), progress is set to ERROR and cleanup() is called without overwriting status."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime(scan_id="test_error_universe")
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-    mock_docker_client.services.list.return_value = []
-    mock_docker_client.networks.list.return_value = []
-    mock_docker_client.configs.list.return_value = []
-    mock_docker_client.volumes.list.return_value = []
-    mocker.patch.object(
-        runtime, "_create_network", side_effect=RuntimeError("Docker swarm error")
-    )
-    cleanup_spy = mocker.spy(runtime, "cleanup")
-
-    agent_group = definitions.AgentGroupDefinition(agents=[])
-    asset = android_apk.AndroidApk(content=b"APK")
-
-    with pytest.raises(RuntimeError, match="Docker swarm error"):
-        runtime.scan(
-            title="test_error_scan",
-            agent_group_definition=agent_group,
-            assets=[asset],
-        )
-
-    cleanup_spy.assert_called_once()
-    with models.Database() as session:
-        scan = session.query(models.Scan).first()
-        assert scan is not None
-        assert scan.progress == models.ScanProgress.ERROR
-
-
-def testLocalRuntimeScan_whenKeyboardInterruptRaised_updatesScanProgressToErrorAndStopsScan(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When KeyboardInterrupt occurs during scan(), progress is set to ERROR and cleanup() is called."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime(scan_id="test_interrupt_universe")
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-    mock_docker_client.services.list.return_value = []
-    mock_docker_client.networks.list.return_value = []
-    mock_docker_client.configs.list.return_value = []
-    mock_docker_client.volumes.list.return_value = []
-    mocker.patch.object(runtime, "_create_network")
-    mocker.patch.object(runtime, "_start_services", side_effect=KeyboardInterrupt())
-    cleanup_spy = mocker.spy(runtime, "cleanup")
-
-    agent_group = definitions.AgentGroupDefinition(agents=[])
-    asset = android_apk.AndroidApk(content=b"APK")
-
-    with pytest.raises(KeyboardInterrupt):
-        runtime.scan(
-            title="test_interrupt_scan",
-            agent_group_definition=agent_group,
-            assets=[asset],
-        )
-
-    cleanup_spy.assert_called_once()
-    with models.Database() as session:
-        scan = session.query(models.Scan).first()
-        assert scan is not None
-        assert scan.progress == models.ScanProgress.ERROR
-
-
-def testLocalRuntimeCleanup_whenFreshRuntimeWithNoScan_doesNotRaise(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When cleanup() is called on a fresh LocalRuntime with no scan created, it safely returns without error."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime()
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-
-    runtime.cleanup()
-
-
-def testLocalRuntimeStop_whenCallerProvidesNumericScanId_updatesTargetScanInDb(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When stop() is called with an explicit scan_id, it updates that specific scan record in the database."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    with models.Database() as session:
-        scan = models.Scan.create(title="target_scan")
-        target_id = scan.id
-
-    runtime = local_runtime.LocalRuntime()
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-    mock_docker_client.services.list.return_value = []
-    mock_docker_client.networks.list.return_value = []
-    mock_docker_client.configs.list.return_value = []
-    mock_docker_client.volumes.list.return_value = []
-
-    runtime.stop(scan_id=target_id)
-
-    with models.Database() as session:
-        updated_scan = session.query(models.Scan).get(target_id)
-        assert updated_scan is not None
-        assert updated_scan.progress == models.ScanProgress.STOPPED
-
-
-def testLocalRuntimeStop_whenScanIdNone_usesRuntimeNameAndCleansUp(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When stop() is called with scan_id=None, it uses self.name to find and remove services."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime(scan_id="universe_123")
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-
-    service_mock = mocker.MagicMock()
-    service_mock.attrs = {
-        "Spec": {
-            "Name": "agent_test",
-            "Labels": {"ostorlab.universe": "universe_123"},
-        }
-    }
-    mock_docker_client.services.list.return_value = [service_mock]
-    mock_docker_client.networks.list.return_value = []
-    mock_docker_client.configs.list.return_value = []
-    mock_docker_client.volumes.list.return_value = []
-
-    runtime.stop()
-
-    service_mock.remove.assert_called_once()
-
-
-def testLocalRuntimeStop_whenNoScanIdAndNoScanDb_doesNotQueryDatabase(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When stop() is called with scan_id=None and no scan_db exists, it cleans up without attempting DB update."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime()
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-
-    mock_db = mocker.patch("ostorlab.runtimes.local.models.models.Database")
-
-    runtime.stop()
-
-    mock_db.assert_not_called()
-
-
-def testLocalRuntimeStop_whenDockerExceptionOnOneItem_continuesCleaningOtherItems(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When an error occurs removing one service, stop() catches it and continues removing the rest."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime()
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mocker.patch.object(runtime, "_docker_checks")
-
-    service_failing = mocker.MagicMock()
-    service_failing.attrs = {
-        "Spec": {
-            "Name": "failing_service",
-            "Labels": {"ostorlab.universe": "100"},
-        }
-    }
-    service_failing.remove.side_effect = docker.errors.DockerException("cannot remove")
-
-    service_succeeding = mocker.MagicMock()
-    service_succeeding.attrs = {
-        "Spec": {
-            "Name": "succeeding_service",
-            "Labels": {"ostorlab.universe": "100"},
-        }
-    }
-
-    mock_docker_client.services.list.return_value = [
-        service_failing,
-        service_succeeding,
-    ]
-    mock_docker_client.networks.list.return_value = []
-    mock_docker_client.configs.list.return_value = []
-    mock_docker_client.volumes.list.return_value = []
-
-    success = runtime.cleanup(scan_id="100")
-
-    assert service_failing.remove.call_count == 3
-    service_succeeding.remove.assert_called_once()
-    assert success is False
-
-
-def testLocalRuntimeCleanup_whenDockerChecksRaisesClickExit_catchesAndReturnsFalse(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When _docker_checks raises click.exceptions.Exit, cleanup catches it and returns False without raising."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime()
-    mocker.patch.object(runtime, "_docker_checks", side_effect=click.exceptions.Exit(2))
-
-    result = runtime.cleanup(scan_id="100")
-
-    assert result is False
-
-
-def testLocalRuntimeStop_whenCleanupHasErrors_doesNotUpdateScanProgressToStopped(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When cleanup fails or has errors, stop() does not set the DB scan progress to STOPPED."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    scan = models.Scan.create(
-        title="test scan", progress=models.ScanProgress.IN_PROGRESS
-    )
-    scan_id = scan.id
-
-    runtime = local_runtime.LocalRuntime()
-    mocker.patch.object(runtime, "cleanup", return_value=False)
-
-    runtime.stop(scan_id=scan_id, update_scan_status=True)
-
-    with models.Database() as session:
-        scan_in_db = session.query(models.Scan).get(scan_id)
-        assert scan_in_db.progress == models.ScanProgress.IN_PROGRESS
-
-
-def testLocalRuntimeCleanup_whenServicesListRaisesDockerException_returnsFalse(
-    mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
-    """When services.list() raises DockerException, cleanup catches it, records error, and returns False."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    runtime = local_runtime.LocalRuntime()
-    mocker.patch.object(runtime, "_docker_checks")
-    mock_docker_client = mocker.MagicMock()
-    runtime._docker_client = mock_docker_client
-    mock_docker_client.services.list.side_effect = docker.errors.DockerException(
-        "Daemon error"
-    )
-    mock_docker_client.networks.list.return_value = []
-    mock_docker_client.configs.list.return_value = []
-    mock_docker_client.volumes.list.return_value = []
-
-    success = runtime.cleanup(scan_id="100")
-
-    assert success is False

@@ -3,6 +3,7 @@
 from unittest import mock
 
 from docker import errors as docker_errors
+from requests import exceptions as requests_exceptions
 
 from ostorlab.runtimes import docker_cleanup
 
@@ -230,10 +231,8 @@ def testCleanupScanDockerResources_whenRequestExceptionRaised_handlesErrorAndRet
     None
 ):
     """When a requests ConnectionError/RequestException occurs, cleanup catches it and returns False."""
-    import requests.exceptions as req_exc
-
     mock_client = mock.MagicMock()
-    mock_client.services.list.side_effect = req_exc.ConnectionError(
+    mock_client.services.list.side_effect = requests_exceptions.ConnectionError(
         "Connection refused"
     )
     mock_client.networks.list.return_value = []

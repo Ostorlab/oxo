@@ -301,7 +301,7 @@ class LocalRuntime(runtime.Runtime):
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
         threading.Thread(target=self._log_streamer.wait, daemon=False).start()
 
-    def cleanup(self, scan_id: int | str | None = None) -> bool:
+    def cleanup(self, scan_id: int | None = None) -> bool:
         """Remove all Docker services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
@@ -317,7 +317,7 @@ class LocalRuntime(runtime.Runtime):
                 else (self._scan_db.id if self._scan_db is not None else None)
             )
 
-        if scan_id is None or str(scan_id).strip() == "":
+        if scan_id is None:
             logger.warning("No valid scan_id provided to cleanup.")
             return True
 
@@ -347,6 +347,17 @@ class LocalRuntime(runtime.Runtime):
             scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
             update_scan_status: Whether to update the scan progress to STOPPED in the local database.
         """
+        if scan_id is None:
+            scan_id = (
+                self._scan_id
+                if self._scan_id is not None
+                else (self._scan_db.id if self._scan_db is not None else None)
+            )
+
+        if scan_id is None:
+            logger.warning("No valid scan_id provided to stop.")
+            return
+
         cleanup_success = self.cleanup(scan_id=scan_id)
 
         if update_scan_status is True and cleanup_success is True:
@@ -377,7 +388,8 @@ class LocalRuntime(runtime.Runtime):
         """Persist the scan in the database"""
         return models.Scan.create(title=title)
 
-    def _update_scan_progress(self, progress: models.ScanProgress):
+    def _update_scan_progress(self, progress: models.ScanProgress) -> None:
+        """Update scan status to in progress"""
         if self._scan_db is None:
             return
         with models.Database() as session:
