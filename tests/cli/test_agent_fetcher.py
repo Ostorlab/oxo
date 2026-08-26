@@ -71,6 +71,32 @@ def testGetDetails_whenResponseHasNoErrors_returnsAgentDetails() -> None:
             assert result == {"key": "agent/ostorlab/nmap"}
 
 
+def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> None:
+    """Test that get_details builds the AuthenticatedAPIRunner with the provided api_key."""
+    with mock.patch(
+        "ostorlab.cli.agent_fetcher.configuration_manager.ConfigurationManager"
+    ) as mock_config_manager:
+        mock_config_manager.return_value.is_authenticated = False
+        with mock.patch(
+            "ostorlab.cli.agent_fetcher.authenticated_runner.AuthenticatedAPIRunner"
+        ) as mock_runner_cls:
+            mock_runner = mock.Mock()
+            mock_runner_cls.return_value = mock_runner
+            mock_runner.execute.return_value = {"data": {"agent": {"key": "value"}}}
+            with mock.patch(
+                "ostorlab.cli.agent_fetcher.agent_details_api.AgentDetailsAPIRequest"
+            ) as mock_request_cls:
+                result = agent_fetcher.get_details(
+                    "agent/ostorlab/nmap", api_key="test-api-key"
+                )
+
+                mock_runner_cls.assert_called_once_with(api_key="test-api-key")
+                mock_request_cls.assert_called_once_with(
+                    "agent/ostorlab/nmap", use_experimental=False
+                )
+                assert result == {"key": "value"}
+
+
 def testGetContainerImage_whenExactVersionRequested_shouldReturnExactMatch() -> None:
     """Test that version matching is exact, not regex-based."""
     with mock.patch("ostorlab.cli.agent_fetcher.docker.from_env") as mock_docker:

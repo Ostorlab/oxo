@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import multiprocessing
 import os
@@ -11,6 +12,19 @@ import threading
 import time
 
 import click
+
+try:
+    from google.api_core import exceptions as google_api_exceptions
+    from google.auth import exceptions as google_auth_exceptions
+    from google.cloud import logging as gcp_logging
+    from google.cloud.logging import handlers as gcp_logging_handlers
+    from google.oauth2 import service_account
+except ImportError:
+    google_api_exceptions = None
+    google_auth_exceptions = None
+    gcp_logging = None
+    gcp_logging_handlers = None
+    service_account = None
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
@@ -56,6 +70,59 @@ def _configure_file_logging(
     if root_logger.level > log_level:
         root_logger.setLevel(log_level)
     logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
+
+
+def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) -> None:
+    """Attach a labeled Cloud Logging handler to the calling process.
+
+    The root CLI already sets up Cloud Logging, but its background transport thread does not survive the fork
+    performed to spawn the scan workers, so every worker must set up its own handler.
+    """
+    if gcp_logging_credential is None:
+        return
+
+    if (
+        gcp_logging is None
+        or gcp_logging_handlers is None
+        or service_account is None
+        or google_api_exceptions is None
+        or google_auth_exceptions is None
+    ):
+        logger.error(
+            "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
+        )
+        return
+
+    root_logger = logging.getLogger()
+    for handler in list(root_logger.handlers):
+        if isinstance(handler, gcp_logging_handlers.CloudLoggingHandler):
+            root_logger.removeHandler(handler)
+
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(gcp_logging_credential)
+        )
+        # The gRPC channel opened by the parent process does not survive the fork, and reusing it silently
+        # drops every record, so workers ship over HTTP instead.
+        client = gcp_logging.Client(credentials=credentials, _use_grpc=False)
+        client.setup_logging(
+            labels={
+                "scanner_id": scanner_id,
+                "hostname": socket.gethostname(),
+                "pid": str(os.getpid()),
+            }
+        )
+    except (
+        ValueError,
+        google_auth_exceptions.GoogleAuthError,
+        google_api_exceptions.GoogleAPIError,
+    ):
+        logger.exception(
+            "Could not configure Cloud Logging, scanner logs will only be persisted locally."
+        )
+        return
+
+    logger.info("Cloud Logging configured for scanner %s.", scanner_id)
 
 
 def _start_periodic_persist_state(
@@ -117,6 +184,7 @@ def scanner(
         raise click.exceptions.Exit(2)
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
+    gcp_logging_credential = ctx.obj.get("gcp_logging_credential")
     scanner_log_file = log_file if persist_logs is True else None
     scanner_log_level = getattr(logging, log_level.upper())
     _configure_file_logging(scanner_log_file, scanner_log_level)
@@ -125,7 +193,10 @@ def scanner(
     import daemon as dm
 
     state_reporter = scanner_state_reporter.ScannerStateReporter(
-        scanner_id=scanner_id, hostname=socket.gethostname(), ip=ip.get_ip()
+        scanner_id=scanner_id,
+        hostname=socket.gethostname(),
+        ip=ip.get_ip(),
+        reporting_engine_api_key=api_key,
     )
     nb_parallel_scans = parallel
     processes = []
@@ -139,6 +210,7 @@ def scanner(
                 state_reporter,
                 scanner_log_file,
                 scanner_log_level,
+                gcp_logging_credential,
             ),
         )
         process.start()
@@ -159,6 +231,7 @@ def start_scanner(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     log_file: str | None = None,
     log_level: int = logging.INFO,
+    gcp_logging_credential: str | None = None,
 ) -> None:
     """Run subscription to nats in event loop.
 
@@ -168,8 +241,10 @@ def start_scanner(
         state_reporter: instance responsible for reporting the scanner state.
         log_file: Optional path to persist scanner logs.
         log_level: Logging level used for persisted scanner logs.
+        gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     _configure_file_logging(log_file, log_level)
+    _configure_gcp_logging(gcp_logging_credential, scanner_id)
     if api_key is None:
         logger.error("No api key provided.")
 
@@ -184,4 +259,5 @@ def start_scanner(
         api_key=api_key,
         scanner_id=scanner_id,
         state_reporter=state_reporter,
+        gcp_logging_credential=gcp_logging_credential,
     )

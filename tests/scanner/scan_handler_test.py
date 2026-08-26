@@ -198,6 +198,54 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
+def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward GCP logging credentials when starting a reserved scan."""
+    docker_client = mocker.patch(
+        "ostorlab.scanner.scan_handler.docker.from_env"
+    ).return_value
+    docker_client.services.list.return_value = [mocker.MagicMock()]
+    start_scan_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="42"
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.time.sleep",
+        side_effect=RuntimeError("stop"),
+    )
+    runner = mocker.MagicMock()
+    runner.execute.side_effect = [
+        {"data": {"scans": {"scans": [{"id": 42}]}}},
+        {
+            "data": {
+                "updateScan": {
+                    "success": True,
+                    "scan": {"id": 42, "agentGroup": {"key": "test/group"}},
+                }
+            }
+        },
+    ]
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(
+        state_reporter=state_reporter,
+        gcp_logging_credential="gcp-credential",
+    )
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test-key")
+
+    start_scan_mock.assert_called_once_with(
+        request={"id": 42, "agentGroup": {"key": "test/group"}},
+        state_reporter=state_reporter,
+        api_key="test-key",
+        gcp_logging_credential="gcp-credential",
+    )
+
+
 def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
     mocker: plugin.MockerFixture,
 ) -> None:

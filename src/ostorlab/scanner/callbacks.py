@@ -109,6 +109,23 @@ def _prepare_ip_asset(ip_asset_value: dict[str, Any]) -> asset.Asset:
         raise ValueError(f"Invalid Ip address {host}")
 
 
+def _prepare_network_asset(netwrok_asset_value: str) -> asset.Asset:
+    """Return IP assets from network_asset_value str."""
+    ip_network = ipaddress.ip_network(netwrok_asset_value, strict=False)
+    if ip_network.version == 4:
+        return ipv4.IPv4(
+            host=ip_network.network_address.exploded,
+            mask=str(ip_network.prefixlen),
+        )
+    elif ip_network.version == 6:
+        return ipv6.IPv6(
+            host=ip_network.network_address.exploded,
+            mask=str(ip_network.prefixlen),
+        )
+    else:
+        raise ValueError(f"Invalid Network address {netwrok_asset_value}")
+
+
 def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
     """Builds risk kwargs for the first resolved target asset."""
     if target_dict is None:
@@ -248,7 +265,8 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
         return [_prepare_ip_asset(ip_asset_value=kwargs)]
     elif typename == "NetworkAssetType":
         return [
-            _prepare_ip_asset(ip_asset_value=ip) for ip in kwargs.get("networks") or []
+            _prepare_network_asset(netwrok_asset_value=network)
+            for network in kwargs.get("networks") or []
         ]
     elif typename == "UrlAssetType":
         return [
@@ -443,6 +461,7 @@ def start_scan(
     request: dict[str, Any],
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
+    gcp_logging_credential: str | None = None,
 ) -> str | None:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
 
@@ -450,6 +469,7 @@ def start_scan(
         request: API response data for the scan.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         api_key: Optional api key to fetch short-lived download tokens for agent images.
+        gcp_logging_credential: GCP Logging JSON credentials for agent containers.
     """
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
@@ -468,7 +488,10 @@ def start_scan(
         )
 
         runtime_instance = registry.select_runtime(
-            runtime_type="local", scan_id=str(scan_id), run_default_agents=False
+            runtime_type="local",
+            scan_id=str(scan_id),
+            run_default_agents=False,
+            gcp_logging_credential=gcp_logging_credential,
         )
 
         if (

@@ -73,6 +73,43 @@ def testExtractAssets_whenApkAsset_shouldReturnCorrectAsset(
     assert apk_asset.content_url is None
 
 
+def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward GCP logging credentials to the local runtime."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.scanner.callbacks.install_agent.install")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    select_runtime_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime",
+        return_value=runtime_mock,
+    )
+    callbacks.start_scan(
+        reserved_scan,
+        mocker.MagicMock(),
+        gcp_logging_credential="gcp-credential",
+    )
+
+    select_runtime_mock.assert_called_once_with(
+        runtime_type="local",
+        scan_id="42",
+        run_default_agents=False,
+        gcp_logging_credential="gcp-credential",
+    )
+
+
 def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -679,12 +716,7 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
         },
         "asset": {
             "__typename": "NetworkAssetType",
-            "networks": [
-                {"host": "8.8.8.8"},
-                {"host": "127.0.0.1"},
-                {"host": "2001:db8::"},
-                {"host": "192.168.1.1", "mask": "24"},
-            ],
+            "networks": ["18.2.46.129/32", "13.8.98.58/32"],
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
@@ -694,24 +726,14 @@ def testExtractAssets_whenNetworkAsset_shouldReturnCorrectAsset(
 
     ip_asset1 = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(ip_asset1, ipv4.IPv4) is True
-    assert ip_asset1.host == "8.8.8.8"
+    assert ip_asset1.host == "18.2.46.129"
     assert ip_asset1.version == 4
     assert ip_asset1.mask == "32"
     ip_asset2 = runtime_mock.scan.call_args[1].get("assets")[1]
     assert isinstance(ip_asset2, ipv4.IPv4) is True
-    assert ip_asset2.host == "127.0.0.1"
+    assert ip_asset2.host == "13.8.98.58"
     assert ip_asset2.version == 4
     assert ip_asset2.mask == "32"
-    ip_asset3 = runtime_mock.scan.call_args[1].get("assets")[2]
-    assert isinstance(ip_asset3, ipv6.IPv6) is True
-    assert ip_asset3.host == "2001:0db8:0000:0000:0000:0000:0000:0000"
-    assert ip_asset3.version == 6
-    assert ip_asset3.mask == "128"
-    ip_asset4 = runtime_mock.scan.call_args[1].get("assets")[3]
-    assert isinstance(ip_asset4, ipv4.IPv4) is True
-    assert ip_asset4.host == "192.168.1.1"
-    assert ip_asset4.version == 4
-    assert ip_asset4.mask == "24"
 
 
 def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
