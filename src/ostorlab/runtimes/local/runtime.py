@@ -508,7 +508,7 @@ class LocalRuntime(runtime.Runtime):
         Args:
             agent: An agent definition containing all the settings of how agent should run and what arguments to pass.
         """
-        logger.info("starting agent %s with %s", agent.key, agent.args)
+        logger.info("starting agent %s", agent.key)
 
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
