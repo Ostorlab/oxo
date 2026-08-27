@@ -63,7 +63,10 @@ _MULTI_ASSET_MEMBER_KEYS = (
     "harmonyosRpk",
     "repositories",
     "repositoryArchives",
-    "urls",
+    # The url members are aliased in the query: a plain `urls` would share its response
+    # name with `UrlAssetType.urls`, which returns strings rather than url assets, and
+    # the two shapes cannot merge into one selection set.
+    "urlAssets",
     "ips",
     "ipv4s",
     "ipv6s",
