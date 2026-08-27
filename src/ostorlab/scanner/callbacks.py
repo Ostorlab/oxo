@@ -178,6 +178,8 @@ def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
         kwargs["harmonyos_app"] = target_asset
     elif isinstance(target_asset, harmonyos_rpk.HarmonyOSRpk):
         kwargs["harmonyos_rpk"] = target_asset
+    elif isinstance(target_asset, api_schema_asset.ApiSchema):
+        kwargs["api_schema"] = target_asset
     else:
         logger.warning(
             "Risk target asset %s is not fully mapped in Risk.",
@@ -279,6 +281,15 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             for network in kwargs.get("networks") or []
         ]
     elif typename == "UrlAssetType":
+        api_schema_url = kwargs.get("apiSchema")
+        if api_schema_url is not None and str(api_schema_url).strip() != "":
+            endpoint_url = kwargs.get("urls", [""])[0] if kwargs.get("urls") else ""
+            return [
+                api_schema_asset.ApiSchema(
+                    endpoint_url=endpoint_url,
+                    content_url=api_schema_url,
+                )
+            ]
         return [
             link_asset.Link(url=link, method="GET") for link in kwargs.get("urls") or []
         ]
