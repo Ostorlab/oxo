@@ -1,7 +1,9 @@
 """Tests for Models class."""
 
 import logging
+from collections.abc import Iterator
 
+import pytest
 from pytest_mock import plugin
 
 from ostorlab.assets import android_aab, android_apk, ios_ipa, ipv4, link
@@ -857,29 +859,42 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCre
         assert links[0].method == "GET"
 
 
-def testDatabaseMigration_always_keepsCallerLoggingHandlers(mocker, db_engine_path):
+@pytest.fixture
+def restored_logging_state() -> Iterator[None]:
+    """Restore the process global logging state.
+
+    `fileConfig` replaces the root handlers, lowers the root level and disables every logger that already exists,
+    so a regression would otherwise leak all of that into the rest of the session.
+    """
+    root_logger = logging.getLogger()
+    root_handlers = list(root_logger.handlers)
+    root_level = root_logger.level
+    disabled_flags = {
+        name: logging.getLogger(name).disabled
+        for name in list(logging.root.manager.loggerDict)
+    }
+    yield
+    root_logger.handlers = root_handlers
+    root_logger.setLevel(root_level)
+    for name, disabled in disabled_flags.items():
+        logging.getLogger(name).disabled = disabled
+
+
+def testDatabaseMigration_always_keepsCallerLoggingHandlers(
+    mocker, db_engine_path, restored_logging_state
+):
     """Running migrations embedded must not let alembic's `fileConfig` reconfigure the caller's logging."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     caller_handler = logging.NullHandler()
     root_logger = logging.getLogger()
     root_logger.addHandler(caller_handler)
     root_level = root_logger.level
-    # A regression replaces the root handlers and lowers the root level, so both are restored below to keep the
-    # failure contained in this test.
-    root_handlers = list(root_logger.handlers)
     caller_logger = logging.getLogger("ostorlab.runtimes.local.runtime")
-    caller_was_disabled = caller_logger.disabled
     caller_logger.disabled = False
 
-    try:
-        with models.Database() as session:
-            assert session.query(models.Scan).count() == 0
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 0
 
-        assert caller_handler in root_logger.handlers
-        assert root_logger.level == root_level
-        assert caller_logger.disabled is False
-    finally:
-        root_logger.handlers = root_handlers
-        root_logger.removeHandler(caller_handler)
-        root_logger.setLevel(root_level)
-        caller_logger.disabled = caller_was_disabled
+    assert caller_handler in root_logger.handlers
+    assert root_logger.level == root_level
+    assert caller_logger.disabled is False
