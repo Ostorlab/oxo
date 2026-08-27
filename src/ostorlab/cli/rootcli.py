@@ -9,6 +9,22 @@ from ostorlab import configuration_manager
 
 logger = logging.getLogger("CLI")
 
+# Namespaces of oxo's own loggers. Raising every registered logger instead buries the output: SQLAlchemy echoes
+# each statement and PRAGMA at INFO, and the HTTP clients log a line per request.
+OXO_LOGGERS = ("ostorlab", "CLI")
+
+
+def _set_loggers_level(level: int) -> None:
+    """Raise the verbosity of oxo's own loggers, leaving third-party ones at their configured level.
+
+    Args:
+        level: The logging level to apply.
+    """
+    for name in list(logging.root.manager.loggerDict):
+        if name.startswith(OXO_LOGGERS) is False:
+            continue
+        logging.getLogger(name).setLevel(level)
+
 
 @click.group()
 @click.pass_context
@@ -50,13 +66,9 @@ def rootcli(
     ctx.obj["config_manager"] = conf_manager
 
     if verbose is True:
-        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for current_logger in loggers:
-            current_logger.setLevel(logging.INFO)
+        _set_loggers_level(logging.INFO)
     if debug is True:
-        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-        for current_logger in loggers:
-            current_logger.setLevel(logging.DEBUG)
+        _set_loggers_level(logging.DEBUG)
     if gcp_logging_credential is not None:
         try:
             import google.cloud.logging
