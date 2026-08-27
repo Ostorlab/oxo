@@ -24,6 +24,7 @@ from ostorlab.assets import (
     ipv4,
     ipv6,
 )
+from ostorlab.assets import api_schema as api_schema_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
@@ -1211,3 +1212,60 @@ def testStartScan_whenNoAssetExtracted_shouldPassNoneToRuntime(
     callbacks.start_scan(reserved_scan, state_reporter)
 
     assert runtime_mock.scan.call_args[1].get("assets") is None
+
+
+def testExtractAssets_whenUrlAssetWithApiSchema_shouldReturnApiSchemaAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with apiSchema returns an ApiSchema asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://api.example.com/graphql"],
+            "apiSchema": "https://storage.ostorlab.co/uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    schema_asset = assets[0]
+    assert isinstance(schema_asset, api_schema_asset.ApiSchema) is True
+    assert schema_asset.endpoint_url == "https://api.example.com/graphql"
+    assert schema_asset.content_url == "https://storage.ostorlab.co/uploads/schema.json"
+
+
+def testExtractAssets_whenUrlAssetWithoutApiSchema_shouldReturnLinks(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType without apiSchema returns Link assets."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://ostorlab.co"],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    link = assets[0]
+    assert isinstance(link, link_asset.Link) is True
+    assert link.url == "https://ostorlab.co"
+    assert link.method == "GET"
