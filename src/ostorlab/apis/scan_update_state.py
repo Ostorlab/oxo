@@ -82,7 +82,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                       harmonyosRpk { __typename path contentUrl }
                       repositories { __typename provider repositoryUrl commitHash }
                       repositoryArchives { __typename path contentUrl }
-                      urls { __typename urls }
+                      urlAssets: urls { __typename urls }
                       ips { __typename host version mask }
                       ipv4s { __typename host version mask }
                       ipv6s { __typename host version mask }
