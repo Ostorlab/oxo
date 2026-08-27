@@ -864,6 +864,9 @@ def testDatabaseMigration_always_keepsCallerLoggingHandlers(mocker, db_engine_pa
     root_logger = logging.getLogger()
     root_logger.addHandler(caller_handler)
     root_level = root_logger.level
+    # A regression replaces the root handlers and lowers the root level, so both are restored below to keep the
+    # failure contained in this test.
+    root_handlers = list(root_logger.handlers)
     caller_logger = logging.getLogger("ostorlab.runtimes.local.runtime")
     caller_was_disabled = caller_logger.disabled
     caller_logger.disabled = False
@@ -876,5 +879,7 @@ def testDatabaseMigration_always_keepsCallerLoggingHandlers(mocker, db_engine_pa
         assert root_logger.level == root_level
         assert caller_logger.disabled is False
     finally:
+        root_logger.handlers = root_handlers
         root_logger.removeHandler(caller_handler)
+        root_logger.setLevel(root_level)
         caller_logger.disabled = caller_was_disabled
