@@ -172,7 +172,7 @@ def testReserveSingleScan_whenAllFail_returnsNone(
 def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_trigger_scan_with_rollback should rollback when callbacks.start_scan raises."""
+    """_trigger_scan_with_rollback should rollback scan state when callbacks.start_scan raises."""
     runner = mocker.MagicMock()
     runner.execute.return_value = {"data": {"updateScan": {"success": True}}}
     mocker.patch(
