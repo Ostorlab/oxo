@@ -978,7 +978,7 @@ def testExtractAssets_whenMultiAsset_shouldReturnOneMultiAsset(
                     "contentUrl": "https://storage.co/archive.zip",
                 }
             ],
-            "urls": [
+            "urlAssets": [
                 {
                     "__typename": "UrlAssetType",
                     "urls": ["https://ostorlab.co", "https://google.com"],
@@ -1065,7 +1065,9 @@ def testExtractAssets_whenMultiAssetWithStoreMember_shouldReturnStoreAsMobileMem
                 "__typename": "AndroidPackageNameAssetType",
                 "packageName": "com.ostorlab.app",
             },
-            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+            "urlAssets": [
+                {"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}
+            ],
         },
     }
     runtime_mock = _setup_start_scan_mocks(mocker)
@@ -1118,7 +1120,9 @@ def testExtractAssets_whenMultiAssetApiSchemaHasNoEndpointUrl_shouldSkipIt(
         },
         "asset": {
             "__typename": "MultiAssetsAssetType",
-            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+            "urlAssets": [
+                {"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}
+            ],
             "apiSchemas": [
                 {"endpointUrl": None, "contentUrl": "https://storage.co/openapi.json"},
                 {"endpointUrl": "   ", "contentUrl": "https://storage.co/blank.json"},
@@ -1147,7 +1151,9 @@ def testExtractAssets_whenMultiAssetMemberIsUnknownType_shouldLeaveItOutAndLog(
         },
         "asset": {
             "__typename": "MultiAssetsAssetType",
-            "urls": [{"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}],
+            "urlAssets": [
+                {"__typename": "UrlAssetType", "urls": ["https://ostorlab.co"]}
+            ],
             "files": [{"__typename": "UnknownAssetType", "path": "/tmp/mystery"}],
         },
     }
