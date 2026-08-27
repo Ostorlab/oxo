@@ -17,13 +17,7 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-# `fileConfig` is process-global: it replaces the root handlers and disables the existing loggers. That is correct
-# for the `alembic` CLI, which owns a short-lived process, but destructive when migrations run embedded in a
-# long-lived one, so such callers opt out with the `configure_logger` attribute.
-if (
-    config.config_file_name is not None
-    and config.attributes.get("configure_logger", True) is True
-):
+if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # add your model's MetaData object here

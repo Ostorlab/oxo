@@ -1,9 +1,5 @@
 """Tests for Models class."""
 
-import logging
-from collections.abc import Iterator
-
-import pytest
 from pytest_mock import plugin
 
 from ostorlab.assets import android_aab, android_apk, ios_ipa, ipv4, link
@@ -857,44 +853,3 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithMultiAsset_nestedAssetsCre
         assert len(links) == 1
         assert links[0].url == "https://example.com/test"
         assert links[0].method == "GET"
-
-
-@pytest.fixture
-def restored_logging_state() -> Iterator[None]:
-    """Restore the process global logging state.
-
-    `fileConfig` replaces the root handlers, lowers the root level and disables every logger that already exists,
-    so a regression would otherwise leak all of that into the rest of the session.
-    """
-    root_logger = logging.getLogger()
-    root_handlers = list(root_logger.handlers)
-    root_level = root_logger.level
-    disabled_flags = {
-        name: logging.getLogger(name).disabled
-        for name in list(logging.root.manager.loggerDict)
-    }
-    yield
-    root_logger.handlers = root_handlers
-    root_logger.setLevel(root_level)
-    for name, disabled in disabled_flags.items():
-        logging.getLogger(name).disabled = disabled
-
-
-def testDatabaseMigration_always_keepsCallerLoggingHandlers(
-    mocker, db_engine_path, restored_logging_state
-):
-    """Running migrations embedded must not let alembic's `fileConfig` reconfigure the caller's logging."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    caller_handler = logging.NullHandler()
-    root_logger = logging.getLogger()
-    root_logger.addHandler(caller_handler)
-    root_level = root_logger.level
-    caller_logger = logging.getLogger("ostorlab.runtimes.local.runtime")
-    caller_logger.disabled = False
-
-    with models.Database() as session:
-        assert session.query(models.Scan).count() == 0
-
-    assert caller_handler in root_logger.handlers
-    assert root_logger.level == root_level
-    assert caller_logger.disabled is False
