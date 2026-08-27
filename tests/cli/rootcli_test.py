@@ -50,3 +50,20 @@ def testRootCli_whenVerboseIsEnabled_keepsThirdPartyLoggersQuiet(
     assert result.exit_code == 0, result.output
     for name in THIRD_PARTY_LOGGERS:
         assert logging.getLogger(name).level == logging.NOTSET
+
+
+def testRootCli_whenDebugIsEnabled_raisesOxoLoggersVerbosityOnly(
+    restored_logger_levels,
+) -> None:
+    """`-d` goes through the same filtering as `-v`, and must not turn the library internals on either."""
+    logging.getLogger(OXO_LOGGER).setLevel(logging.NOTSET)
+    for name in THIRD_PARTY_LOGGERS:
+        logging.getLogger(name).setLevel(logging.NOTSET)
+    runner = click_testing.CliRunner()
+
+    result = runner.invoke(rootcli.rootcli, ["-d", "scan", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert logging.getLogger(OXO_LOGGER).level == logging.DEBUG
+    for name in THIRD_PARTY_LOGGERS:
+        assert logging.getLogger(name).level == logging.NOTSET
