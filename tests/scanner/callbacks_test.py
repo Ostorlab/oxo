@@ -24,8 +24,8 @@ from ostorlab.assets import (
     ipv4,
     ipv6,
 )
-from ostorlab.assets import link as link_asset
 from ostorlab.assets import api_schema as api_schema_asset
+from ostorlab.assets import link as link_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
