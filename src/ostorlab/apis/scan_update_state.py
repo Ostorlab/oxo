@@ -67,6 +67,27 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on AgentAssetType { key agentVersion: version gitLocation dockerLocation yamlFileLocation }
                     ... on RepositoryAssetType { provider repositoryUrl commitHash }
                     ... on RepositoryArchiveAssetType { path contentUrl }
+                    ... on MultiAssetsAssetType {
+                      files { __typename path contentUrl }
+                      androidPackageName { __typename packageName }
+                      iosBundleId { __typename bundleId }
+                      androidApk { __typename path contentUrl }
+                      androidAab { __typename path contentUrl }
+                      iosIpa { __typename path contentUrl }
+                      harmonyosBundleName { __typename bundleName }
+                      harmonyosApk { __typename path contentUrl }
+                      harmonyosAab { __typename path contentUrl }
+                      harmonyosHap { __typename path contentUrl }
+                      harmonyosApp { __typename path contentUrl }
+                      harmonyosRpk { __typename path contentUrl }
+                      repositories { __typename provider repositoryUrl commitHash }
+                      repositoryArchives { __typename path contentUrl }
+                      urls { __typename urls }
+                      ips { __typename host version mask }
+                      ipv4s { __typename host version mask }
+                      ipv6s { __typename host version mask }
+                      apiSchemas { endpointUrl contentUrl }
+                    }
                     ... on RisksAssetType {
                       risks {
                         description

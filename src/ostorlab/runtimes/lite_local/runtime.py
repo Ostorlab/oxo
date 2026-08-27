@@ -16,7 +16,7 @@ from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker, dumpers, install_agent
-from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes import definitions, docker_cleanup, runtime
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import volumes
@@ -165,6 +165,21 @@ class LiteLocalRuntime(runtime.Runtime):
         del agent_group_definition
         return True
 
+    def _handle_scan_error(self) -> None:
+        """Trigger cleanup gracefully on error."""
+        try:
+            self.stop(self.scan_id)
+        except (
+            docker.errors.DockerException,
+            docker.errors.APIError,
+            click.exceptions.Exit,
+            exceptions.OstorlabError,
+            ValueError,
+        ) as cleanup_err:
+            logger.warning(
+                "Failed to clean up scan resources after error: %s", cleanup_err
+            )
+
     def scan(
         self,
         title: str,
@@ -207,67 +222,45 @@ class LiteLocalRuntime(runtime.Runtime):
                 )
         except AgentNotHealthy:
             console.error("Agent not starting")
-            self.stop(self.scan_id)
+            self._handle_scan_error()
         except AgentNotInstalled as e:
             console.error(f"Agent {e} not installed")
-            self.stop(self.scan_id)
+            self._handle_scan_error()
         except agent_runtime.MissingAgentDefinitionLabel as e:
             console.error(
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
                 f" docker instead of `oxo agent build` command"
             )
-            self.stop(self.scan_id)
+            self._handle_scan_error()
 
-    def stop(self, scan_id: str) -> None:
+    def stop(self, scan_id: str | None = None) -> bool:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
 
         Args:
             scan_id: The id of the scan to stop.
+
+        Returns:
+            bool: True if cleanup completed without error, False otherwise.
         """
+        if scan_id is None:
+            scan_id = self.scan_id
 
-        stopped_services = []
-        stopped_network = []
-        stopped_configs = []
-        client = docker.from_env()
-        services = client.services.list()
-        for service in services:
-            service_labels = service.attrs["Spec"]["Labels"]
-            logger.debug(
-                "comparing %s and %s", service_labels.get("ostorlab.universe"), scan_id
-            )
-            if service_labels.get("ostorlab.universe") == scan_id:
-                stopped_services.append(service)
-                service.remove()
+        if scan_id is None or str(scan_id).strip() == "":
+            logger.warning("No valid scan_id provided to stop.")
+            return True
 
-        networks = client.networks.list()
-        for network in networks:
-            network_labels = network.attrs["Labels"]
-            if (
-                network_labels is not None
-                and network_labels.get("ostorlab.universe") == scan_id
-            ):
-                logger.debug("removing network %s", network_labels)
-                stopped_network.append(network)
-                network.remove()
+        client = self._docker_client
+        if client is None:
+            try:
+                client = docker.from_env(max_pool_size=100)
+                self._docker_client = client
+            except docker.errors.DockerException as e:
+                logger.warning("Failed to connect to Docker daemon: %s", e)
+                return False
 
-        configs = client.configs.list()
-        for config in configs:
-            config_labels = config.attrs["Spec"]["Labels"]
-            if config_labels.get("ostorlab.universe") == scan_id:
-                logger.debug("removing config %s", config_labels)
-                stopped_configs.append(config)
-                config.remove()
+        return docker_cleanup.cleanup_scan_docker_resources(client, scan_id)
 
-        stopped_volumes = []
-        for volume in client.volumes.list():
-            volume_labels = volume.attrs.get("Labels") or {}
-            if volume_labels.get("ostorlab.universe") == scan_id:
-                logger.debug("removing volume %s", volume.name)
-                stopped_volumes.append(volume)
-                volume.remove(force=True)
-
-        if stopped_services or stopped_network or stopped_configs or stopped_volumes:
-            console.success("All scan components stopped.")
+    cleanup = stop
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
@@ -368,7 +361,11 @@ class LiteLocalRuntime(runtime.Runtime):
             contents[f"asset.binproto_{i}"] = asset.to_proto()
             contents[f"selector.txt_{i}"] = asset.selector.encode()
 
-        volumes.create_volume(f"asset_{self.name}", contents)
+        volumes.create_volume(
+            f"asset_{self.name}",
+            contents,
+            labels={"ostorlab.universe": self.name},
+        )
 
         if agent_settings is None:
             agent_settings = definitions.AgentSettings(

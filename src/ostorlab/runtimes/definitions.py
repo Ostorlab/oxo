@@ -544,9 +544,9 @@ class AssetsDefinition:
 
         multi_asset_group = assets.get("multi_asset")
         if multi_asset_group is not None:
-            bundled_asset = _parse_multi_asset(multi_asset_group)
-            if bundled_asset is not None:
-                assets_def.append(bundled_asset)
+            multi_asset = _parse_multi_asset(multi_asset_group)
+            if multi_asset is not None:
+                assets_def.append(multi_asset)
 
         return cls(
             targets=assets_def,
@@ -555,10 +555,10 @@ class AssetsDefinition:
         )
 
 
-def _bundle_multi_asset(
+def build_multi_asset(
     targets: list[base_asset.Asset],
 ) -> multi_asset_asset.MultiAsset:
-    """Group targets into a single multi asset.
+    """Build the multi asset holding the given targets as its members.
 
     Raises ValidationError if a target has no matching field, or if more than one mobile
     asset is present."""
@@ -586,15 +586,15 @@ def _bundle_multi_asset(
             f"{', '.join(unsupported_targets)}."
         )
 
-    bundled_asset = multi_asset_asset.MultiAsset(**multi_asset_kwargs)
-    set_mobile_fields = bundled_asset.present_mobile_asset_fields
+    multi_asset = multi_asset_asset.MultiAsset(**multi_asset_kwargs)
+    set_mobile_fields = multi_asset.present_mobile_asset_fields
     if len(set_mobile_fields) > 1:
         # MultiAsset.to_proto enforces this same invariant with a ValueError; here at the
         # config-parsing layer we raise ValidationError so the CLI reports a config error.
         raise validator.ValidationError(
             multi_asset_asset.single_mobile_asset_error_message(set_mobile_fields)
         )
-    return bundled_asset
+    return multi_asset
 
 
 def _parse_multi_asset(
@@ -614,7 +614,7 @@ def _parse_multi_asset(
 
     if len(targets) == 0:
         return None
-    return _bundle_multi_asset(targets)
+    return build_multi_asset(targets)
 
 
 def _parse_multi_asset_ips(
