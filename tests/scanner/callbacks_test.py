@@ -1326,3 +1326,61 @@ def testExtractAssets_whenUrlAssetWithApiSchemaUrlAndNoUrls_shouldSkipAndReturnN
 
     assets = runtime_mock.scan.call_args[1].get("assets")
     assert assets is None
+
+
+def testExtractAssets_whenUrlAssetWithWhitespaceApiSchemaUrl_shouldFallbackToApiSchema(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with whitespace-only apiSchemaUrl falls back to apiSchema."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://ostorlab.co"],
+            "apiSchemaUrl": "   ",
+            "apiSchema": "https://storage.ostorlab.co/uploads/fallback_schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    api_schema = assets[0]
+    assert isinstance(api_schema, api_schema_asset.ApiSchema) is True
+    assert api_schema.endpoint_url == "https://ostorlab.co"
+    assert (
+        api_schema.content_url
+        == "https://storage.ostorlab.co/uploads/fallback_schema.json"
+    )
+
+
+def testExtractAssets_whenUrlAssetWithWhitespaceFirstUrl_shouldSkipAndReturnNoAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with apiSchemaUrl and whitespace-only first url skips asset creation."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["   "],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert assets is None
