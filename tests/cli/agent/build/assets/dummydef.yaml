@@ -5,5 +5,5 @@ description: random text
 in_selectors:
   - a.b.c
 out_selectors: []
-docker_file_path : ./assets/dummyagentDockerfile
-docker_build_root : ./
+docker_file_path : dummyagentDockerfile
+docker_build_root : ./assets

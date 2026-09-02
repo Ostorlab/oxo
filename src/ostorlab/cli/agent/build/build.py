@@ -1,4 +1,5 @@
 """Agent Build commands."""
+
 import io
 import logging
 import pathlib
@@ -7,8 +8,7 @@ import click
 import docker
 from docker import errors
 
-from ostorlab.agent.schema import loader
-from ostorlab.agent.schema import validator
+from ostorlab.agent.schema import loader, validator
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli.agent.agent import agent
@@ -96,9 +96,7 @@ def build(
         agent_def = loader.load_agent_yaml(file)
         file.seek(0)
         dockerfile_path = agent_def["docker_file_path"]
-        docker_build_root = agent_def["docker_build_root"]
-
-        _check_build_root(docker_build_root, file)
+        docker_build_root = _resolve_build_root(agent_def["docker_build_root"], file)
 
         agent_name = agent_def["name"]
         agent_version = agent_def.get("version", "0.0.0")
@@ -131,17 +129,17 @@ def build(
         )
         raise click.exceptions.Exit(2) from e
     except validator.ValidationError as e:
-        console.error(f"Definition file does not conform to the provided specification: {e}")
+        console.error(
+            f"Definition file does not conform to the provided specification: {e}"
+        )
         raise click.exceptions.Exit(2) from e
 
 
-def _check_build_root(docker_build_root, file):
-    """Check whether build root is valid.
-
-    Checks if docker build root is a subfolder of yaml file path.
-    """
+def _resolve_build_root(docker_build_root: str, file: io.FileIO) -> str:
+    """Resolve the Docker build root relative to the agent definition."""
     yaml_file_dir = pathlib.Path(file.name).parent.resolve()
     docker_build_root_path = (yaml_file_dir / docker_build_root).resolve()
-    if str(yaml_file_dir) not in str(docker_build_root_path):
+    if docker_build_root_path.is_relative_to(yaml_file_dir) is False:
         console.error(f"Invalid docker build path {docker_build_root}.")
         raise click.exceptions.Exit(3)
+    return str(docker_build_root_path)
