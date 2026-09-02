@@ -8,7 +8,8 @@ import click
 import docker
 from docker import errors
 
-from ostorlab.agent.schema import loader, validator
+from ostorlab.agent.schema import loader
+from ostorlab.agent.schema import validator
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import docker_requirements_checker
 from ostorlab.cli.agent.agent import agent
@@ -96,7 +97,9 @@ def build(
         agent_def = loader.load_agent_yaml(file)
         file.seek(0)
         dockerfile_path = agent_def["docker_file_path"]
-        docker_build_root = _resolve_build_root(agent_def["docker_build_root"], file)
+        docker_build_root = _resolve_build_root(
+            agent_def.get("docker_build_root", "."), file
+        )
 
         agent_name = agent_def["name"]
         agent_version = agent_def.get("version", "0.0.0")

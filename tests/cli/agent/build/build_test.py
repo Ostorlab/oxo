@@ -36,7 +36,9 @@ def testAgentBuildCLI_whenBuildRootIsConfigured_useAgentDefinitionDirectory(
     mocker,
 ):
     """Resolve the configured Docker build root from the agent definition."""
-    dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
+    dummy_def_yaml_file_path = (
+        pathlib.Path(__file__).parent / "assets/nested_build_root_dummydef.yaml"
+    )
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
         return_value=True,
@@ -66,7 +68,7 @@ def testAgentBuildCLI_whenBuildRootIsConfigured_useAgentDefinitionDirectory(
 
     assert result.exit_code == 0
     assert build_image.call_args.args[3] == str(
-        (dummy_def_yaml_file_path.parent / "assets").resolve()
+        (dummy_def_yaml_file_path.parent / "build_context").resolve()
     )
 
 
