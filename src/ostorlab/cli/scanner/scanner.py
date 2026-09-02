@@ -211,6 +211,7 @@ def scanner(
                 scanner_log_file,
                 scanner_log_level,
                 gcp_logging_credential,
+                nb_parallel_scans,
             ),
         )
         process.start()
@@ -232,6 +233,7 @@ def start_scanner(
     log_file: str | None = None,
     log_level: int = logging.INFO,
     gcp_logging_credential: str | None = None,
+    max_concurrent_scans: int = 1,
 ) -> None:
     """Run subscription to nats in event loop.
 
@@ -242,6 +244,7 @@ def start_scanner(
         log_file: Optional path to persist scanner logs.
         log_level: Logging level used for persisted scanner logs.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
+        max_concurrent_scans: Number of universes the host may run at once.
     """
     _configure_file_logging(log_file, log_level)
     _configure_gcp_logging(gcp_logging_credential, scanner_id)
@@ -260,4 +263,5 @@ def start_scanner(
         scanner_id=scanner_id,
         state_reporter=state_reporter,
         gcp_logging_credential=gcp_logging_credential,
+        max_concurrent_scans=max_concurrent_scans,
     )
