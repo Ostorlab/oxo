@@ -54,7 +54,16 @@ class ScanHandler:
 
         while True:
             running_universes = self._count_running_universes()
-            if running_universes >= self._max_concurrent_scans:
+            if running_universes > self._max_concurrent_scans:
+                logger.error(
+                    "Host is running %s universe(s) over a limit of %s. Sleeping...",
+                    running_universes,
+                    self._max_concurrent_scans,
+                )
+                time.sleep(WAIT_CHECK_MESSAGES.seconds)
+                continue
+
+            if running_universes == self._max_concurrent_scans:
                 logger.debug(
                     "Host is running %s universe(s) for a limit of %s. Sleeping...",
                     running_universes,
