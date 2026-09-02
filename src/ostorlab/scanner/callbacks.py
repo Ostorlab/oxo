@@ -287,7 +287,12 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
 
         if api_schema_url is not None and str(api_schema_url).strip() != "":
             urls = kwargs.get("urls")
-            if urls is not None and len(urls) > 0 and str(urls[0]).strip() != "":
+            if (
+                urls is not None
+                and len(urls) > 0
+                and urls[0] is not None
+                and str(urls[0]).strip() != ""
+            ):
                 return [
                     api_schema_asset.ApiSchema(
                         endpoint_url=urls[0],
