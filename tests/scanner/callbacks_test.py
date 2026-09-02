@@ -1301,3 +1301,28 @@ def testExtractAssets_whenUrlAssetWithoutApiSchema_shouldReturnLinks(
     assert isinstance(link, link_asset.Link) is True
     assert link.url == "https://ostorlab.co"
     assert link.method == "GET"
+
+
+def testExtractAssets_whenUrlAssetWithApiSchemaUrlAndNoUrls_shouldSkipAndReturnNoAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with apiSchemaUrl but empty urls skips asset creation."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": [],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert assets is None

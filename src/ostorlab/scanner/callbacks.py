@@ -287,16 +287,16 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
 
         if api_schema_url is not None and str(api_schema_url).strip() != "":
             urls = kwargs.get("urls")
-            endpoint_url = ""
-            if urls is not None and len(urls) > 0:
-                endpoint_url = urls[0]
-            return [
-                api_schema_asset.ApiSchema(
-                    endpoint_url=endpoint_url,
-                    content_url=api_schema_url,
-                    schema_type=None,
-                )
-            ]
+            if urls is not None and len(urls) > 0 and str(urls[0]).strip() != "":
+                return [
+                    api_schema_asset.ApiSchema(
+                        endpoint_url=urls[0],
+                        content_url=api_schema_url,
+                        schema_type=None,
+                    )
+                ]
+            logger.error("Url asset api schema holds no endpoint url.")
+            return []
         urls = kwargs.get("urls")
         if urls is not None:
             return [link_asset.Link(url=link, method="GET") for link in urls]
