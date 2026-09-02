@@ -304,8 +304,13 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             return []
         urls = kwargs.get("urls")
         if urls is not None:
-            return [link_asset.Link(url=link, method="GET") for link in urls]
+            return [
+                link_asset.Link(url=str(link).strip(), method="GET")
+                for link in urls
+                if link is not None and str(link).strip() != ""
+            ]
         return []
+
     elif typename == "AndroidPackageNameAssetType":
         return [android_store.AndroidStore(package_name=kwargs.get("packageName", ""))]
     elif typename == "IosBundleIdAssetType":

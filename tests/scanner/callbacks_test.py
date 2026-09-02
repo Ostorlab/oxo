@@ -1409,3 +1409,29 @@ def testExtractAssets_whenUrlAssetWithNoneFirstUrl_shouldSkipAndReturnNoAssets(
 
     assets = runtime_mock.scan.call_args[1].get("assets")
     assert assets is None
+
+
+def testExtractAssets_whenUrlAssetWithNoneAndEmptyUrls_shouldFilterOutInvalidLinks(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType without apiSchema filters out None and whitespace URLs when creating Link assets."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": [None, "  ", "", "https://ostorlab.co"],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], link_asset.Link)
+    assert assets[0].url == "https://ostorlab.co"
