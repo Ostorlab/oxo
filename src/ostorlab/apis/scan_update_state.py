@@ -34,7 +34,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                   progress
                   asset {
                     __typename
-                    ... on UrlAssetType { urls apiSchema }
+                    ... on UrlAssetType { urls apiSchema apiSchemaUrl }
                     ... on Ipv4AssetType { host version mask }
                     ... on Ipv6AssetType { host version mask }
                     ... on IpAssetType { host version mask }
@@ -94,7 +94,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                         rating
                         target {
                           __typename
-                          ... on UrlAssetType { urls apiSchema }
+                          ... on UrlAssetType { urls apiSchema apiSchemaUrl }
                           ... on Ipv4AssetType { host version mask }
                           ... on Ipv6AssetType { host version mask }
                           ... on IpAssetType { host version mask }
@@ -125,7 +125,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                       rating 
                       target {
                         __typename
-                        ... on UrlAssetType { urls apiSchema }
+                        ... on UrlAssetType { urls apiSchema apiSchemaUrl }
                         ... on Ipv4AssetType { host version mask }
                         ... on Ipv6AssetType { host version mask }
                         ... on IpAssetType { host version mask }

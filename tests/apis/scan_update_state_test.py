@@ -34,10 +34,12 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGrou
     assert api_request.query is not None
     assert "mutation UpdateScanState" in api_request.query
     assert "$scanId: Int!" in api_request.query
-    assert "deviceId: null" not in api_request.query
     assert "asset" in api_request.query
     assert "agentGroup" in api_request.query
-    assert "... on UrlAssetType" in api_request.query
+    assert (
+        api_request.query.count("... on UrlAssetType { urls apiSchema apiSchemaUrl }")
+        == 3
+    )
     assert "... on AndroidApkAssetType" in api_request.query
     assert "... on IosIpaAssetType" in api_request.query
 

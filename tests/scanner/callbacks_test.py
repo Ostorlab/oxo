@@ -1214,10 +1214,41 @@ def testStartScan_whenNoAssetExtracted_shouldPassNoneToRuntime(
     assert runtime_mock.scan.call_args[1].get("assets") is None
 
 
-def testExtractAssets_whenUrlAssetWithApiSchema_shouldReturnApiSchemaAsset(
+def testExtractAssets_whenUrlAssetWithApiSchemaUrl_shouldReturnApiSchemaAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Ensure UrlAssetType with apiSchema returns an ApiSchema asset."""
+    """Ensure UrlAssetType with apiSchemaUrl returns an ApiSchema asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://api.example.com/graphql"],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+            "apiSchema": "uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    schema_asset = assets[0]
+    assert isinstance(schema_asset, api_schema_asset.ApiSchema) is True
+    assert schema_asset.endpoint_url == "https://api.example.com/graphql"
+    assert schema_asset.content_url == "https://storage.ostorlab.co/uploads/schema.json"
+    assert schema_asset.schema_type is None
+
+
+def testExtractAssets_whenUrlAssetWithLegacyApiSchemaOnly_shouldReturnApiSchemaAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with only legacy apiSchema fallback returns an ApiSchema asset."""
     reserved_scan = {
         "id": 42,
         "agentGroup": {
@@ -1241,6 +1272,7 @@ def testExtractAssets_whenUrlAssetWithApiSchema_shouldReturnApiSchemaAsset(
     assert isinstance(schema_asset, api_schema_asset.ApiSchema) is True
     assert schema_asset.endpoint_url == "https://api.example.com/graphql"
     assert schema_asset.content_url == "https://storage.ostorlab.co/uploads/schema.json"
+    assert schema_asset.schema_type is None
 
 
 def testExtractAssets_whenUrlAssetWithoutApiSchema_shouldReturnLinks(
@@ -1269,3 +1301,137 @@ def testExtractAssets_whenUrlAssetWithoutApiSchema_shouldReturnLinks(
     assert isinstance(link, link_asset.Link) is True
     assert link.url == "https://ostorlab.co"
     assert link.method == "GET"
+
+
+def testExtractAssets_whenUrlAssetWithApiSchemaUrlAndNoUrls_shouldSkipAndReturnNoAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with apiSchemaUrl but empty urls skips asset creation."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": [],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert assets is None
+
+
+def testExtractAssets_whenUrlAssetWithWhitespaceApiSchemaUrl_shouldFallbackToApiSchema(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with whitespace-only apiSchemaUrl falls back to apiSchema."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://ostorlab.co"],
+            "apiSchemaUrl": "   ",
+            "apiSchema": "https://storage.ostorlab.co/uploads/fallback_schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    api_schema = assets[0]
+    assert isinstance(api_schema, api_schema_asset.ApiSchema) is True
+    assert api_schema.endpoint_url == "https://ostorlab.co"
+    assert (
+        api_schema.content_url
+        == "https://storage.ostorlab.co/uploads/fallback_schema.json"
+    )
+
+
+def testExtractAssets_whenUrlAssetWithWhitespaceFirstUrl_shouldSkipAndReturnNoAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with apiSchemaUrl and whitespace-only first url skips asset creation."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["   "],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert assets is None
+
+
+def testExtractAssets_whenUrlAssetWithNoneFirstUrl_shouldSkipAndReturnNoAssets(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with apiSchemaUrl and None first url skips asset creation."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": [None],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert assets is None
+
+
+def testExtractAssets_whenUrlAssetWithNoneAndEmptyUrls_shouldFilterOutInvalidLinks(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType without apiSchema filters out None and whitespace URLs when creating Link assets."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": [None, "  ", "", "https://ostorlab.co"],
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    assert isinstance(assets[0], link_asset.Link)
+    assert assets[0].url == "https://ostorlab.co"
