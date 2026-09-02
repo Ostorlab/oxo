@@ -37,7 +37,7 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGrou
     assert "deviceId: null" not in api_request.query
     assert "asset" in api_request.query
     assert "agentGroup" in api_request.query
-    assert "... on UrlAssetType" in api_request.query
+    assert "... on UrlAssetType { urls apiSchema apiSchemaUrl }" in api_request.query
     assert "... on AndroidApkAssetType" in api_request.query
     assert "... on IosIpaAssetType" in api_request.query
 

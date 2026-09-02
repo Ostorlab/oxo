@@ -1214,10 +1214,41 @@ def testStartScan_whenNoAssetExtracted_shouldPassNoneToRuntime(
     assert runtime_mock.scan.call_args[1].get("assets") is None
 
 
-def testExtractAssets_whenUrlAssetWithApiSchema_shouldReturnApiSchemaAsset(
+def testExtractAssets_whenUrlAssetWithApiSchemaUrl_shouldReturnApiSchemaAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Ensure UrlAssetType with apiSchema returns an ApiSchema asset."""
+    """Ensure UrlAssetType with apiSchemaUrl returns an ApiSchema asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "UrlAssetType",
+            "urls": ["https://api.example.com/graphql"],
+            "apiSchemaUrl": "https://storage.ostorlab.co/uploads/schema.json",
+            "apiSchema": "uploads/schema.json",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    assets = runtime_mock.scan.call_args[1].get("assets")
+    assert len(assets) == 1
+    schema_asset = assets[0]
+    assert isinstance(schema_asset, api_schema_asset.ApiSchema) is True
+    assert schema_asset.endpoint_url == "https://api.example.com/graphql"
+    assert schema_asset.content_url == "https://storage.ostorlab.co/uploads/schema.json"
+    assert schema_asset.schema_type is None
+
+
+def testExtractAssets_whenUrlAssetWithLegacyApiSchemaOnly_shouldReturnApiSchemaAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure UrlAssetType with only legacy apiSchema fallback returns an ApiSchema asset."""
     reserved_scan = {
         "id": 42,
         "agentGroup": {
@@ -1241,6 +1272,7 @@ def testExtractAssets_whenUrlAssetWithApiSchema_shouldReturnApiSchemaAsset(
     assert isinstance(schema_asset, api_schema_asset.ApiSchema) is True
     assert schema_asset.endpoint_url == "https://api.example.com/graphql"
     assert schema_asset.content_url == "https://storage.ostorlab.co/uploads/schema.json"
+    assert schema_asset.schema_type is None
 
 
 def testExtractAssets_whenUrlAssetWithoutApiSchema_shouldReturnLinks(

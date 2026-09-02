@@ -281,20 +281,26 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
             for network in kwargs.get("networks") or []
         ]
     elif typename == "UrlAssetType":
-        api_schema_url = kwargs.get("apiSchema")
+        api_schema_url = kwargs.get("apiSchemaUrl")
+        if api_schema_url is None or str(api_schema_url).strip() == "":
+            api_schema_url = kwargs.get("apiSchema")
+
         if api_schema_url is not None and str(api_schema_url).strip() != "":
-            endpoint_url = (
-                kwargs.get("urls", [""])[0] if kwargs.get("urls") is not None else ""
-            )
+            urls = kwargs.get("urls")
+            endpoint_url = ""
+            if urls is not None and len(urls) > 0:
+                endpoint_url = urls[0]
             return [
                 api_schema_asset.ApiSchema(
                     endpoint_url=endpoint_url,
                     content_url=api_schema_url,
+                    schema_type=None,
                 )
             ]
-        return [
-            link_asset.Link(url=link, method="GET") for link in kwargs.get("urls") or []
-        ]
+        urls = kwargs.get("urls")
+        if urls is not None:
+            return [link_asset.Link(url=link, method="GET") for link in urls]
+        return []
     elif typename == "AndroidPackageNameAssetType":
         return [android_store.AndroidStore(package_name=kwargs.get("packageName", ""))]
     elif typename == "IosBundleIdAssetType":
