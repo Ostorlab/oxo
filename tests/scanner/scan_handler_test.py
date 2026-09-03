@@ -1,5 +1,6 @@
 """Unit tests for scan handler module."""
 
+import docker
 import pytest
 from pytest_mock import plugin
 
@@ -29,8 +30,8 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     )
     mocker.patch.object(
         scan_handler.ScanHandler,
-        "_is_scan_running",
-        return_value=True,
+        "_count_running_universes",
+        side_effect=[0, 1],
     )
     mocker.patch(
         "ostorlab.scanner.scan_handler.time.sleep",
@@ -52,18 +53,49 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     assert trigger_mock.call_args.kwargs["api_key"] == "test_api_key"
 
 
-def testIsScanRunning_whenScanIdIsNone_returnsFalse() -> None:
-    """_is_scan_running should return False when scan_id is None."""
+def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_count_running_universes should count distinct universes, not services."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._docker_client.services.list.return_value = [
+        mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
+        mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
+        mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "43"}}}),
+        mocker.MagicMock(attrs={"Spec": {"Labels": {}}}),
+    ]
 
-    result = scan_handler_instance._is_scan_running(scan_id=None)
+    result = scan_handler_instance._count_running_universes()
 
-    assert result is False
+    assert result == 2
+
+
+def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A Docker error must not let the host claim more scans."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(
+        state_reporter=state_reporter, max_concurrent_scans=3
+    )
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._docker_client.services.list.side_effect = (
+        docker.errors.DockerException("boom")
+    )
+
+    result = scan_handler_instance._count_running_universes()
+
+    assert result == 3
 
 
 def testReserveSingleScan_whenFirstScanSucceeds_returnsScanData(
@@ -205,7 +237,10 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
     docker_client = mocker.patch(
         "ostorlab.scanner.scan_handler.docker.from_env"
     ).return_value
-    docker_client.services.list.return_value = [mocker.MagicMock()]
+    docker_client.services.list.side_effect = [
+        [],
+        [mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}})],
+    ]
     start_scan_mock = mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="42"
     )

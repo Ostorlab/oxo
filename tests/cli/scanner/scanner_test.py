@@ -136,7 +136,7 @@ def testScannerCommandInvocation_whenGcpCredentialProvided_forwardsItToProcess(
 
     assert result.exit_code == 0
     process_args = create_process_mock.call_args.kwargs["args"]
-    assert process_args[-1] == '{"project_id": "test-project"}'
+    assert process_args[5] == '{"project_id": "test-project"}'
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
@@ -245,7 +245,7 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level, _ = (
+    _, _, _, scanner_log_file, scanner_log_level, _, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
@@ -283,7 +283,7 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level, _ = (
+    _, _, _, scanner_log_file, scanner_log_level, _, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)

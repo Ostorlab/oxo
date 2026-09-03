@@ -21,6 +21,7 @@ from ostorlab.utils import scanner_state_reporter
 logger = logging.getLogger(__name__)
 
 WAIT_CHECK_MESSAGES = datetime.timedelta(seconds=5)
+UNIVERSE_LABEL = "ostorlab.universe"
 
 
 class ScanHandler:
@@ -32,10 +33,12 @@ class ScanHandler:
         scan_resource_requirements: dict[str, scanner_conf.ScanResourceRequirements]
         | None = None,
         gcp_logging_credential: str | None = None,
+        max_concurrent_scans: int = 1,
     ):
         self._state_reporter = state_reporter
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
+        self._max_concurrent_scans = max_concurrent_scans
         self._docker_client = docker.from_env()
 
     def close(self) -> None:
@@ -47,19 +50,27 @@ class ScanHandler:
         api_key: str | None = None,
     ) -> None:
         """Scan handler method responsible for fetching messages from the API and triggering the scan."""
-        scan_id = None
-
         logger.info("Starting main API polling loop.")
 
         while True:
-            if scan_id is not None and self._is_scan_running(scan_id=scan_id) is True:
-                logger.debug("Scan %s is still running. Sleeping...", scan_id)
+            running_universes = self._count_running_universes()
+            if running_universes > self._max_concurrent_scans:
+                logger.error(
+                    "Host is running %s universe(s) over a limit of %s. Sleeping...",
+                    running_universes,
+                    self._max_concurrent_scans,
+                )
                 time.sleep(WAIT_CHECK_MESSAGES.seconds)
                 continue
 
-            if scan_id is not None:
-                logger.debug("Scan %s has finished. Ready for next.", scan_id)
-            scan_id = None
+            if running_universes == self._max_concurrent_scans:
+                logger.debug(
+                    "Host is running %s universe(s) for a limit of %s. Sleeping...",
+                    running_universes,
+                    self._max_concurrent_scans,
+                )
+                time.sleep(WAIT_CHECK_MESSAGES.seconds)
+                continue
 
             scans_list = self._fetch_available_scans(runner=runner)
             if scans_list is None or len(scans_list) == 0:
@@ -239,21 +250,33 @@ class ScanHandler:
         except Exception:
             logger.exception("FATAL: Failed to rollback scan %s", scan_id_val)
 
-    def _is_scan_running(self, scan_id: str | None) -> bool:
-        """Returns True if docker services with `ostorlab.universe` label exist."""
-        if scan_id is None:
-            return False
+    def _count_running_universes(self) -> int:
+        """Count the universes currently running on this host.
+
+        Returns:
+            The number of distinct `ostorlab.universe` label values across the
+            host services. On a Docker error, the concurrency limit is returned
+            so the caller treats the host as full.
+        """
         try:
-            scan_services: list[services.Service] = self._docker_client.services.list(
-                filters={"label": f"ostorlab.universe={scan_id!s}"}
+            universe_services: list[services.Service] = (
+                self._docker_client.services.list(
+                    filters={"label": UNIVERSE_LABEL},
+                )
             )
-            is_running = len(scan_services) > 0
-            return is_running
         except docker.errors.DockerException:
             logger.exception(
-                "Docker error checking scan %s status, assuming still running.", scan_id
+                "Docker error listing services, assuming the host is at capacity."
             )
-            return True
+            return self._max_concurrent_scans
+
+        universes = set()
+        for universe_service in universe_services:
+            labels = (universe_service.attrs.get("Spec") or {}).get("Labels") or {}
+            universe = labels.get(UNIVERSE_LABEL)
+            if universe is not None:
+                universes.add(universe)
+        return len(universes)
 
 
 def start_scan_loop(
@@ -261,6 +284,7 @@ def start_scan_loop(
     scanner_id: str,
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     gcp_logging_credential: str | None = None,
+    max_concurrent_scans: int = 1,
 ) -> None:
     """Fetching the scanner configuration and starting the API polling loop.
 
@@ -269,6 +293,7 @@ def start_scan_loop(
         scanner_id: The scanner identifier.
         state_reporter: instance responsible for reporting the scanner state.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
+        max_concurrent_scans: Number of universes the host may run at once.
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
@@ -288,6 +313,7 @@ def start_scan_loop(
         state_reporter=state_reporter,
         scan_resource_requirements=config.scan_resource_requirements,
         gcp_logging_credential=gcp_logging_credential,
+        max_concurrent_scans=max_concurrent_scans,
     )
     try:
         scan_handler.handle_messages(runner=s_runner, api_key=api_key)
