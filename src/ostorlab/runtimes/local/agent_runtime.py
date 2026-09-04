@@ -11,6 +11,7 @@ import io
 import logging
 import random
 import uuid
+from typing import Any
 
 import docker
 from docker import constants, errors
@@ -35,6 +36,17 @@ HEALTHCHECK_START_PERIOD = 2 * SECOND
 HEALTHCHECK_INTERVAL = 30 * SECOND
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
+# Swarm stores these fields only when they are set explicitly, and fills them in on read when
+# asked for defaults. A client that scales a service by re-fetching the spec with
+# `insertDefaults=true` then submits values the stored spec never had, which Swarm reads as a
+# changed task definition and answers by rolling the running tasks. Setting them at creation
+# keeps the stored spec complete so no such diff can appear. Values match Docker's own defaults.
+STOP_GRACE_PERIOD = 10 * SECOND
+UPDATE_MONITOR = 5 * SECOND
+UPDATE_PARALLELISM = 1
+UPDATE_FAILURE_ACTION = "pause"
+UPDATE_MAX_FAILURE_RATIO = 0
+UPDATE_ORDER = "stop-first"
 
 
 class Error(exceptions.OstorlabError):
@@ -404,6 +416,13 @@ class AgentRuntime:
                     + random_suffix
                 )
 
+        # `Resources` is built as a plain dict rather than with `docker_types_services.Resources`,
+        # which has no parameter for `MemorySwappiness`. Swarm defaults that field when it is
+        # unset, so leaving it out keeps the stored spec incomplete.
+        resources: dict[str, Any] = {"MemorySwappiness": None}
+        if mem_limit is not None:
+            resources["Limits"] = {"MemoryBytes": mem_limit}
+
         env = [
             f"UNIVERSE={self.runtime_name}",
             f"SERVICE_NAME={docker_service_name}",
@@ -439,9 +458,25 @@ class AgentRuntime:
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
-            resources=docker_types_services.Resources(mem_limit=mem_limit),
+            resources=resources,
             cap_add=caps,
             mode=docker_types_services.ServiceMode("replicated", replicas),
+            stop_grace_period=STOP_GRACE_PERIOD,
+            dns_config=docker_types_services.DNSConfig(),
+            update_config=docker_types_services.UpdateConfig(
+                parallelism=UPDATE_PARALLELISM,
+                failure_action=UPDATE_FAILURE_ACTION,
+                monitor=UPDATE_MONITOR,
+                max_failure_ratio=UPDATE_MAX_FAILURE_RATIO,
+                order=UPDATE_ORDER,
+            ),
+            rollback_config=docker_types_services.RollbackConfig(
+                parallelism=UPDATE_PARALLELISM,
+                failure_action=UPDATE_FAILURE_ACTION,
+                monitor=UPDATE_MONITOR,
+                max_failure_ratio=UPDATE_MAX_FAILURE_RATIO,
+                order=UPDATE_ORDER,
+            ),
         )
 
         return agent_service
