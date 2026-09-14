@@ -170,14 +170,11 @@ class LocalRuntime(runtime.Runtime):
 
         self._docker_client = docker.from_env(max_pool_size=100)
 
-    def prepare_scan(
-        self, title: str, assets: list[base_asset.Asset] | None
-    ) -> models.Scan:
+    def prepare_scan(self, title: str) -> models.Scan:
         """Prepare scan entry in the database.
 
         Args:
             title: Scan title.
-            assets: The target asset to scan.
         """
         self._scan_db = self._create_scan_db(title=title)
         return self._scan_db
@@ -228,7 +225,7 @@ class LocalRuntime(runtime.Runtime):
         self._log_streamer = log_streamer.LogStream(self._docker_client)
         try:
             if self._scan_db is None:
-                self.prepare_scan(title=title, assets=assets)
+                self.prepare_scan(title=title)
             console.info("Creating network")
             self._create_network()
             console.info("Starting services")

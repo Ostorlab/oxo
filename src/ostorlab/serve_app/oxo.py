@@ -803,9 +803,7 @@ class RunScanMutation(graphene.Mutation):
 
         runtime_instance: runtime.LocalRuntime = runtime.LocalRuntime()
         runtime_instance.follow = []
-        created_scan = runtime_instance.prepare_scan(
-            assets=scan_assets, title=scan.title
-        )
+        created_scan = runtime_instance.prepare_scan(title=scan.title)
         RunScanMutation._persist_scan_info(created_scan, scan)
 
         thread = threading.Thread(
