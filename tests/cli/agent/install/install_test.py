@@ -13,7 +13,8 @@ from docker.models import images as images_model
 from pytest_mock import plugin
 
 from ostorlab.apis.runners import public_runner
-from ostorlab.cli import install_agent, rootcli
+from ostorlab.cli import install_agent
+from ostorlab.cli import rootcli
 
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage() -> None:

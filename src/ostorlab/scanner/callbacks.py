@@ -37,8 +37,11 @@ from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import ticket as ticket_asset
-from ostorlab.cli import agent_fetcher, install_agent
-from ostorlab.runtimes import definitions, registry, runtime
+from ostorlab.cli import agent_fetcher
+from ostorlab.cli import install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import registry
+from ostorlab.runtimes import runtime
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -341,7 +344,7 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
     elif typename == "IosTestflightAssetType":
         return [
             ios_testflight.IOSTestflight(
-                application_url=kwargs.get("applicationUrl"),
+                application_url=str(kwargs.get("applicationUrl") or ""),
             )
         ]
     elif typename == "FileAssetType":

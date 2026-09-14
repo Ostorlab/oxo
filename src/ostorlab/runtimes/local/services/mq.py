@@ -9,7 +9,8 @@ import uuid
 
 import docker
 import tenacity
-from docker import errors, types
+from docker import errors
+from docker import types
 from docker.models import services
 
 logger = logging.getLogger(__name__)

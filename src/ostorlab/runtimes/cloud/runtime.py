@@ -14,25 +14,26 @@ from typing import Any
 import click
 import markdownify
 import rich
-from rich import markdown, panel
+from rich import markdown
+from rich import panel
 
 from ostorlab import configuration_manager
-from ostorlab.apis import (
-    agent_details,
-    agent_group,
-    create_agent_scan,
-    scan_list,
-    scan_stop,
-    vulnz_describe,
-    vulnz_list,
-)
+from ostorlab.apis import agent_details
+from ostorlab.apis import agent_group
 from ostorlab.apis import assets as api_assets
-from ostorlab.apis.runners import authenticated_runner, runner
+from ostorlab.apis import create_agent_scan
+from ostorlab.apis import scan_list
+from ostorlab.apis import scan_stop
+from ostorlab.apis import vulnz_describe
+from ostorlab.apis import vulnz_list
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import link
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
-from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import runtime
 from ostorlab.utils import styles
 
 logger = logging.getLogger(__name__)

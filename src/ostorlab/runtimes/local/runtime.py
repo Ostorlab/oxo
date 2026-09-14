@@ -16,24 +16,30 @@ import sqlalchemy
 import tenacity
 from docker import errors as docker_errors
 from docker.models import services as docker_models_services
-from rich import markdown, panel
+from rich import markdown
+from rich import panel
 from sqlalchemy import case
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
-from ostorlab.cli import (
-    agent_fetcher,
-    docker_requirements_checker,
-    dumpers,
-    install_agent,
-)
+from ostorlab.cli import agent_fetcher
 from ostorlab.cli import console as cli_console
-from ostorlab.runtimes import definitions, docker_cleanup, runtime
-from ostorlab.runtimes.local import agent_runtime, log_streamer
+from ostorlab.cli import docker_requirements_checker
+from ostorlab.cli import dumpers
+from ostorlab.cli import install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import docker_cleanup
+from ostorlab.runtimes import runtime
+from ostorlab.runtimes.local import agent_runtime
+from ostorlab.runtimes.local import log_streamer
 from ostorlab.runtimes.local.models import models
-from ostorlab.runtimes.local.services import jaeger, mq, redis
+from ostorlab.runtimes.local.services import jaeger
+from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local.services import redis
 from ostorlab.utils import definitions as utils_definitions
-from ostorlab.utils import risk_rating, styles, volumes
+from ostorlab.utils import risk_rating
+from ostorlab.utils import styles
+from ostorlab.utils import volumes
 
 NETWORK_PREFIX = "ostorlab_local_network"
 

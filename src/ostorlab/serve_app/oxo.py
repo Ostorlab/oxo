@@ -11,7 +11,8 @@ import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
 
-from ostorlab import configuration_manager, exceptions
+from ostorlab import configuration_manager
+from ostorlab import exceptions
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -22,12 +23,16 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_address_asset
 from ostorlab.assets import ipv6 as ipv6_address_asset
 from ostorlab.assets import link as link_asset
-from ostorlab.cli import agent_fetcher, install_agent
+from ostorlab.cli import agent_fetcher
+from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common, export_utils, import_utils, types
+from ostorlab.serve_app import common
+from ostorlab.serve_app import export_utils
+from ostorlab.serve_app import import_utils
+from ostorlab.serve_app import types
 from ostorlab.utils import definitions as utils_definitions
 
 DEFAULT_NUMBER_ELEMENTS = 15

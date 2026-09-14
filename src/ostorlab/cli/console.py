@@ -1,10 +1,13 @@
 """Pretty prints and logs console statements."""
 
 import logging
-from typing import Any, ClassVar
+from typing import Any
+from typing import ClassVar
 
 import rich
-from rich import box, markup, status
+from rich import box
+from rich import markup
+from rich import status
 
 
 def _escape(text: Any, is_markup: bool) -> str:
