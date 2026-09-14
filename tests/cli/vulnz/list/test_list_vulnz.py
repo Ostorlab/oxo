@@ -492,14 +492,10 @@ def testOstorlabVulnzListCLI_whenListVulnz_showsVulnzOrderedByRiskRatingByDefaul
 
     assert result.exception is None
     risk_ratings = [
-        vuln.get("risk_rating") for vuln in table_mock.call_args_list[0][1].get("data")
+        vuln.get("risk_rating").plain
+        for vuln in table_mock.call_args_list[0][1].get("data")
     ]
-    assert risk_ratings == [
-        "[bold bright_white on #F55246]High[/]",
-        "[bold bright_white on #FF9800]Medium[/]",
-        "[bold bright_white on #FF9800]Medium[/]",
-        "[bold bright_white on #FDDB45]Low[/]",
-    ]
+    assert risk_ratings == ["High", "Medium", "Medium", "Low"]
 
 
 def testOstorlabVulnzListCLI_whenListVulnzOrderByID_showsVulnzOrderedByID(

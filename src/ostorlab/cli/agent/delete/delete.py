@@ -5,6 +5,7 @@ import re
 
 import click
 import docker
+from rich import markup
 
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.agent import agent as agent_cli
@@ -37,12 +38,20 @@ def delete(agent: str, agent_version_regex: str | None = None) -> None:
                 if agent_version_regex is None or re.match(
                     agent_version_regex, agent_container_version
                 ):
-                    console.info(f"deleting container [bold red]{t}[/]")
+                    console.info(
+                        f"deleting container [bold red]{markup.escape(t)}[/]",
+                        is_markup=True,
+                    )
                     docker_client.images.remove(t, force=True)
                     console.success(
-                        f"container image [bold red]{t}[/] deleted successfully"
+                        f"container image [bold red]{markup.escape(t)}[/]"
+                        " deleted successfully",
+                        is_markup=True,
                     )
                     deleted = True
 
     if deleted is False:
-        console.error(f"No agent matching [bold white]{agent}[/] was found")
+        console.error(
+            f"No agent matching [bold white]{markup.escape(agent)}[/] was found",
+            is_markup=True,
+        )
