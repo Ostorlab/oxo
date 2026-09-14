@@ -21,6 +21,7 @@ from ostorlab.assets import harmonyos_rpk
 from ostorlab.assets import harmonyos_store
 from ostorlab.assets import ios_ipa
 from ostorlab.assets import ios_store
+from ostorlab.assets import ios_testflight
 from ostorlab.assets import ipv4
 from ostorlab.assets import ipv6
 from ostorlab.assets import link as link_asset
@@ -534,6 +535,45 @@ def testExtractAssets_whenRiskAssetWithRepositoryTarget_shouldReturnCorrectAsset
         == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
     )
     assert extracted_risk_asset.repository.provider == "GITLAB"
+
+
+def testExtractAssets_whenRiskAssetWithIosTestflightTarget_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets maps an iOS TestFlight target onto a risk asset."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "RiskAssetType",
+            "description": "Vulnerable testflight app",
+            "rating": "HIGH",
+            "target": {
+                "__typename": "IosTestflightAssetType",
+                "applicationUrl": "https://testflight.apple.com/join/abcdef",
+            },
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_risk_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_risk_asset, risk_asset.Risk) is True
+    assert extracted_risk_asset.description == "Vulnerable testflight app"
+    assert extracted_risk_asset.rating == "HIGH"
+    assert (
+        isinstance(extracted_risk_asset.ios_testflight, ios_testflight.IOSTestflight)
+        is True
+    )
+    assert (
+        extracted_risk_asset.ios_testflight.application_url
+        == "https://testflight.apple.com/join/abcdef"
+    )
 
 
 def testExtractAssets_whenRepositoryArchiveAsset_shouldReturnCorrectAsset(
