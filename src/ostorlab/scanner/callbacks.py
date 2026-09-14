@@ -158,6 +158,8 @@ def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
         kwargs["android_store"] = target_asset
     elif isinstance(target_asset, ios_store.IOSStore):
         kwargs["ios_store"] = target_asset
+    elif isinstance(target_asset, ios_testflight.IOSTestflight):
+        kwargs["ios_testflight"] = target_asset
     elif isinstance(target_asset, android_aab.AndroidAab):
         kwargs["android_aab"] = target_asset
     elif isinstance(target_asset, android_apk.AndroidApk):
