@@ -12,7 +12,8 @@ import docker.errors
 from ostorlab import configuration_manager
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.apis import agent_details as agent_details_api
-from ostorlab.apis.runners import authenticated_runner, public_runner
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import public_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.utils import version as version_definition
 

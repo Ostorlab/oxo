@@ -1,6 +1,7 @@
 """Define methods to style components for console."""
 
-from rich import emoji, text
+from rich import emoji
+from rich import text
 
 STYLE_RISK_MAP = {
     "CRITICAL": "[bold bright_white on #263238]Critical[/]",
