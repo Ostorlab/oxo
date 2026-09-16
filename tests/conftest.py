@@ -43,7 +43,8 @@ from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.scanner import scanner_conf
 from ostorlab.scanner.proto.assets import apk_pb2
 from ostorlab.scanner.proto.scan._location import startAgentScan_pb2
-from ostorlab.serve_app import app, types
+from ostorlab.serve_app import app
+from ostorlab.serve_app import types
 from ostorlab.utils import risk_rating
 
 

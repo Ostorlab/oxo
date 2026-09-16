@@ -16,7 +16,8 @@ import httpx
 import ubjson
 
 from ostorlab.apis import request as api_request
-from ostorlab.apis.runners import login_runner, runner
+from ostorlab.apis.runners import login_runner
+from ostorlab.apis.runners import runner
 from ostorlab.cli import console as cli_console
 
 AUTHENTICATED_GRAPHQL_ENDPOINT = "https://api.ostorlab.co/apis/graphql"

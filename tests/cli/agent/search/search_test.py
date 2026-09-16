@@ -4,7 +4,8 @@ from unittest import mock
 
 from click import testing
 
-from ostorlab.apis.runners import authenticated_runner, public_runner
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import public_runner
 from ostorlab.cli import rootcli
 
 

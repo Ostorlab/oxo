@@ -8,9 +8,11 @@ import ipaddress
 import json
 import logging
 import pathlib
-from typing import Any, NamedTuple
+from typing import Any
+from typing import NamedTuple
 
-from ostorlab.agent.schema import loader, validator
+from ostorlab.agent.schema import loader
+from ostorlab.agent.schema import validator
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset

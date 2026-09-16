@@ -4,7 +4,8 @@ import dataclasses
 import enum
 import io
 import json
-from typing import Any, BinaryIO
+from typing import Any
+from typing import BinaryIO
 
 from . import request
 

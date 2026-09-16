@@ -12,10 +12,15 @@ import docker
 import httpx
 from docker.models import services
 
-from ostorlab.apis import scan_update_state, scanner_config, scans_discover
-from ostorlab.apis.runners import authenticated_runner, scanner_runner
+from ostorlab.apis import scan_update_state
+from ostorlab.apis import scanner_config
+from ostorlab.apis import scans_discover
+from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
-from ostorlab.scanner import callbacks, resource_checker, scanner_conf
+from ostorlab.apis.runners import scanner_runner
+from ostorlab.scanner import callbacks
+from ostorlab.scanner import resource_checker
+from ostorlab.scanner import scanner_conf
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)

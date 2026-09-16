@@ -1,4 +1,5 @@
 """Agent Build commands."""
+
 import io
 import logging
 import pathlib
@@ -6,6 +7,7 @@ import pathlib
 import click
 import docker
 from docker import errors
+from rich import markup
 
 from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
@@ -39,10 +41,14 @@ def _build_image(
 ) -> None:
     """Build agent image from agent settings."""
     console.info(
-        f"Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]"
-        f" at root [bold red]{docker_build_root}[/]."
+        f"Building agent [bold red]{markup.escape(str(agent_name))}[/]"
+        f" dockerfile [bold red]{markup.escape(str(dockerfile_path))}[/]"
+        f" at root [bold red]{markup.escape(str(docker_build_root))}[/].",
+        is_markup=True,
     )
-    with console.status(f"Building [bold red]{container_name}[/]"):
+    with console.status(
+        f"Building [bold red]{markup.escape(str(container_name))}[/]", is_markup=True
+    ):
         for log in build_progress.BuildProgress().build(
             path=docker_build_root,
             dockerfile=dockerfile_path,
@@ -58,7 +64,9 @@ def _build_image(
                 logger.debug(log)
 
     console.success(
-        f"Agent {agent_name} built, container [bold red]{container_name}[/] created."
+        f"Agent {markup.escape(str(agent_name))} built,"
+        f" container [bold red]{markup.escape(str(container_name))}[/] created.",
+        is_markup=True,
     )
 
 
@@ -96,9 +104,9 @@ def build(
         agent_def = loader.load_agent_yaml(file)
         file.seek(0)
         dockerfile_path = agent_def["docker_file_path"]
-        docker_build_root = agent_def["docker_build_root"]
-
-        _check_build_root(docker_build_root, file)
+        docker_build_root = _resolve_build_root(
+            agent_def.get("docker_build_root", "."), file
+        )
 
         agent_name = agent_def["name"]
         agent_version = agent_def.get("version", "0.0.0")
@@ -131,17 +139,17 @@ def build(
         )
         raise click.exceptions.Exit(2) from e
     except validator.ValidationError as e:
-        console.error(f"Definition file does not conform to the provided specification: {e}")
+        console.error(
+            f"Definition file does not conform to the provided specification: {e}"
+        )
         raise click.exceptions.Exit(2) from e
 
 
-def _check_build_root(docker_build_root, file):
-    """Check whether build root is valid.
-
-    Checks if docker build root is a subfolder of yaml file path.
-    """
+def _resolve_build_root(docker_build_root: str, file: io.FileIO) -> str:
+    """Resolve the Docker build root relative to the agent definition."""
     yaml_file_dir = pathlib.Path(file.name).parent.resolve()
     docker_build_root_path = (yaml_file_dir / docker_build_root).resolve()
-    if str(yaml_file_dir) not in str(docker_build_root_path):
+    if docker_build_root_path.is_relative_to(yaml_file_dir) is False:
         console.error(f"Invalid docker build path {docker_build_root}.")
         raise click.exceptions.Exit(3)
+    return str(docker_build_root_path)
