@@ -13,33 +13,35 @@ import docker
 
 from ostorlab import exceptions
 from ostorlab.assets import agent as agent_asset
-from ostorlab.assets import (
-    android_aab,
-    android_apk,
-    android_store,
-    asset,
-    domain_name,
-    file,
-    harmonyos_aab,
-    harmonyos_apk,
-    harmonyos_app,
-    harmonyos_hap,
-    harmonyos_rpk,
-    harmonyos_store,
-    ios_ipa,
-    ios_store,
-    ipv4,
-    ipv6,
-)
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
 from ostorlab.assets import api_schema as api_schema_asset
+from ostorlab.assets import asset
+from ostorlab.assets import domain_name
+from ostorlab.assets import file
+from ostorlab.assets import harmonyos_aab
+from ostorlab.assets import harmonyos_apk
+from ostorlab.assets import harmonyos_app
+from ostorlab.assets import harmonyos_hap
+from ostorlab.assets import harmonyos_rpk
+from ostorlab.assets import harmonyos_store
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import ios_testflight
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
 from ostorlab.assets import link as link_asset
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.assets import repository as repository_asset
 from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import ticket as ticket_asset
-from ostorlab.cli import agent_fetcher, install_agent
-from ostorlab.runtimes import definitions, registry, runtime
+from ostorlab.cli import agent_fetcher
+from ostorlab.cli import install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import registry
+from ostorlab.runtimes import runtime
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -158,6 +160,8 @@ def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
         kwargs["android_store"] = target_asset
     elif isinstance(target_asset, ios_store.IOSStore):
         kwargs["ios_store"] = target_asset
+    elif isinstance(target_asset, ios_testflight.IOSTestflight):
+        kwargs["ios_testflight"] = target_asset
     elif isinstance(target_asset, android_aab.AndroidAab):
         kwargs["android_aab"] = target_asset
     elif isinstance(target_asset, android_apk.AndroidApk):
@@ -339,6 +343,12 @@ def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
                 content=kwargs.get("content"),
                 path=kwargs.get("path"),
                 content_url=kwargs.get("contentUrl"),
+            )
+        ]
+    elif typename == "IosTestflightAssetType":
+        return [
+            ios_testflight.IOSTestflight(
+                application_url=str(kwargs.get("applicationUrl") or ""),
             )
         ]
     elif typename == "FileAssetType":

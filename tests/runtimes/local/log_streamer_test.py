@@ -33,8 +33,8 @@ def testServiceLogStream_whenLogsAreAvailable_logsArePrintedToConsole(
     assert console_mock.info.call_count == 2
     console_mock.info.assert_has_calls(
         [
-            mock.call("[red bold]service_name:[/] log1"),
-            mock.call("[red bold]service_name:[/] log2"),
+            mock.call("[red bold]service_name:[/] log1", is_markup=True),
+            mock.call("[red bold]service_name:[/] log2", is_markup=True),
         ]
     )
 
@@ -51,7 +51,7 @@ def testServiceLogStream_whenLogLineHasRichMarkup_escapesLogLine(
     stream._stream()
 
     console_mock.info.assert_called_once_with(
-        "[red bold]service_name:[/] closing tag \\[/] without opener"
+        "[red bold]service_name:[/] closing tag \\[/] without opener", is_markup=True
     )
 
 

@@ -7,6 +7,7 @@ import pytest
 from click import testing
 
 from ostorlab.cli import rootcli
+from ostorlab.cli.agent.build import build as agent_build
 
 
 def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage():
@@ -31,12 +32,30 @@ def _is_docker_image_present(image: str):
         return False
 
 
-def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
-    """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
+def testAgentBuildCLI_whenBuildRootIsConfigured_useAgentDefinitionDirectory(
+    mocker,
+):
+    """Resolve the configured Docker build root from the agent definition."""
     dummy_def_yaml_file_path = (
-        pathlib.Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
+        pathlib.Path(__file__).parent / "assets/nested_build_root_dummydef.yaml"
     )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working",
+        return_value=True,
+    )
+    mocker.patch.object(agent_build, "_image_exists", return_value=False)
+    mocker.patch.object(agent_build.docker, "from_env")
+    build_image = mocker.patch.object(agent_build, "_build_image")
     runner = testing.CliRunner()
+
     result = runner.invoke(
         rootcli.rootcli,
         [
@@ -46,6 +65,68 @@ def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
             "--organization=ostorlab",
         ],
     )
+
+    assert result.exit_code == 0
+    assert build_image.call_args.args[3] == str(
+        (dummy_def_yaml_file_path.parent / "build_context").resolve()
+    )
+
+
+def testAgentBuildCLI_whenBuildRootIsMissing_useAgentDefinitionDirectory(
+    mocker,
+):
+    """Use the agent definition directory when the build root is omitted."""
+    dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working",
+        return_value=True,
+    )
+    mocker.patch.object(agent_build, "_image_exists", return_value=False)
+    mocker.patch.object(agent_build.docker, "from_env")
+    build_image = mocker.patch.object(agent_build, "_build_image")
+    runner = testing.CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "agent",
+            "build",
+            f"--file={dummy_def_yaml_file_path}",
+            "--organization=ostorlab",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert build_image.call_args.args[3] == str(
+        dummy_def_yaml_file_path.parent.resolve()
+    )
+
+
+def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
+    """Reject a Docker build root outside the agent definition directory."""
+    dummy_def_yaml_file_path = (
+        pathlib.Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
+    )
+    runner = testing.CliRunner()
+
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "agent",
+            "build",
+            f"--file={dummy_def_yaml_file_path}",
+            "--organization=ostorlab",
+        ],
+    )
+
     assert "ERROR: Invalid docker build path" in result.output
 
 

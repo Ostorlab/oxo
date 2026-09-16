@@ -13,10 +13,13 @@ from ruamel.yaml import error
 
 from ostorlab import exceptions
 from ostorlab.agent.schema import validator
-from ostorlab.cli import agent_fetcher, install_agent, types
+from ostorlab.cli import agent_fetcher
 from ostorlab.cli import console as cli_console
+from ostorlab.cli import install_agent
+from ostorlab.cli import types
 from ostorlab.cli.scan.scan import scan
-from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import runtime
 from ostorlab.utils import definitions as utils_definitions
 
 console = cli_console.Console()

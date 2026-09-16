@@ -782,3 +782,61 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         "type": "volume",
         "read_only": False,
     }
+
+
+def testCreateAgentService_always_serviceCreatedWithSwarmDefaultsSetExplicitly(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Swarm fills unset spec fields with defaults when a client reads the spec with
+    `insertDefaults=true`. A client that then resubmits that spec to scale the service sends values
+    the stored spec never had, which Swarm reads as a changed task definition and answers by
+    rolling the running tasks. Setting the fields at creation keeps the stored spec complete."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=[],
+        mem_limit=420000,
+        restart_policy="",
+        open_ports=[],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+
+    docker_client = mocker.MagicMock()
+    runtime_agent = agent_runtime.AgentRuntime(
+        definitions.AgentSettings(key="agent/org/name"),
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+        labels={},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = docker_client.services.create.call_args.kwargs
+    assert kwargs["stop_grace_period"] == agent_runtime.STOP_GRACE_PERIOD
+    assert kwargs["dns_config"] is not None
+    assert "MemorySwappiness" in kwargs["resources"]
+    assert kwargs["update_config"]["Parallelism"] == agent_runtime.UPDATE_PARALLELISM
+    assert kwargs["update_config"]["Order"] == agent_runtime.UPDATE_ORDER
+    assert kwargs["rollback_config"]["Parallelism"] == agent_runtime.UPDATE_PARALLELISM
+    assert kwargs["rollback_config"]["Order"] == agent_runtime.UPDATE_ORDER
