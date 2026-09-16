@@ -151,7 +151,6 @@ def testInstall_whenUseExperimentalIsTrue_forwardsUseExperimentalToAgentFetcher(
             "versions": {"versions": [{"version": "1.0.0"}]},
         },
     )
-    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=True)
 
     install_agent.install(
         agent_key="agent/ostorlab/dependency_confusion",
@@ -175,7 +174,6 @@ def testInstall_whenUseExperimentalIsNotProvided_forwardsFalseToAgentFetcher(
             "versions": {"versions": [{"version": "1.0.0"}]},
         },
     )
-    mocker.patch("ostorlab.cli.install_agent._is_image_present", return_value=True)
 
     install_agent.install(
         agent_key="agent/ostorlab/dependency_confusion",

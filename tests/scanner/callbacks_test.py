@@ -832,7 +832,6 @@ def testStartScan_whenUseExperimentalAgentsIsTrue_forwardsUseExperimentalToInsta
         },
     }
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
@@ -869,7 +868,6 @@ def testStartScan_whenUseExperimentalAgentsIsAbsent_forwardsFalseToInstallAgent(
         },
     }
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
-    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
