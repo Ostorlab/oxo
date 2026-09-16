@@ -144,6 +144,7 @@ def install(
     version: str = "",
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
+    use_experimental: bool = False,
 ) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
@@ -153,6 +154,8 @@ def install(
         version: version of the docker image.
         docker_client: optional instance of the docker client to use to install the agent.
         api_key: optional api key to fetch a short-lived download token for the image.
+        use_experimental: when True, the fetched agent details may include experimental
+            (prerelease) versions.
 
     Returns:
         None
@@ -161,7 +164,9 @@ def install(
         click Exit exception with status code 2 when the docker image does not exist.
     """
 
-    agent_details = agent_fetcher.get_details(agent_key=agent_key, api_key=api_key)
+    agent_details = agent_fetcher.get_details(
+        agent_key=agent_key, use_experimental=use_experimental, api_key=api_key
+    )
     agent_docker_location = agent_details["dockerLocation"]
     if agent_docker_location is None or not agent_details.get("versions", {}).get(
         "versions", []
