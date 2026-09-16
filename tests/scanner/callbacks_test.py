@@ -811,6 +811,82 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
     assert install_agent_mock.call_args.kwargs.get("api_key") is None
 
 
+def testStartScan_whenUseExperimentalAgentsIsTrue_forwardsUseExperimentalToInstallAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When the reserved scan has useExperimentalAgents=True, install_agent.install
+    must be called with use_experimental=True so experimental agent versions are
+    considered."""
+    reserved_scan = {
+        "id": 42,
+        "useExperimentalAgents": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [
+                {"key": "agent/ostorlab/agent42", "version": "0.0.1"},
+            ],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
+
+    state_reporter = mocker.MagicMock()
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("use_experimental") is True
+
+
+def testStartScan_whenUseExperimentalAgentsIsAbsent_forwardsFalseToInstallAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When the reserved scan carries no useExperimentalAgents field,
+    install_agent.install must default to use_experimental=False."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [
+                {"key": "agent/ostorlab/agent42", "version": "0.0.1"},
+            ],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
+
+    state_reporter = mocker.MagicMock()
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("use_experimental") is False
+
+
 def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
 ) -> None:

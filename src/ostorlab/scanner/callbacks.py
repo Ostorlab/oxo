@@ -78,6 +78,7 @@ def _install_agents(
     agents,
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
+    use_experimental_agents: bool = False,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -88,6 +89,7 @@ def _install_agents(
                 version=agent.version,
                 docker_client=docker_client,
                 api_key=api_key,
+                use_experimental=use_experimental_agents,
             )
     except agent_fetcher.AgentDetailsNotFound:
         logger.warning("agent %s not found on the store", agent.key)
@@ -542,6 +544,8 @@ def start_scan(
                 agents=agent_group_definition.agents,
                 docker_client=docker_client,
                 api_key=api_key,
+                use_experimental_agents=request.get("useExperimentalAgents", False)
+                is True,
             )
 
             try:

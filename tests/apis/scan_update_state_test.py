@@ -44,6 +44,18 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGrou
     assert "... on IosIpaAssetType" in api_request.query
 
 
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsUseExperimentalAgents() -> (
+    None
+):
+    """Test full details query selects useExperimentalAgents on scan."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    assert "useExperimentalAgents" in api_request.query
+
+
 def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsMultiAssetMembers() -> (
     None
 ):
