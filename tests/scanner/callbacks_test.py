@@ -870,7 +870,7 @@ def testStartScan_whenUseExperimentalAgentsIsTrue_forwardsUseExperimentalToInsta
             "content": base64.b64encode(b"dummy_apk").decode(),
         },
     }
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
@@ -906,7 +906,7 @@ def testStartScan_whenUseExperimentalAgentsIsAbsent_forwardsFalseToInstallAgent(
             "content": base64.b64encode(b"dummy_apk").decode(),
         },
     }
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
@@ -946,7 +946,7 @@ def testStartScan_whenAgentHasNoVersion_resolvesVersionBeforeInstalling(
             "content": base64.b64encode(b"dummy_apk").decode(),
         },
     }
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
@@ -990,7 +990,7 @@ def testStartScan_whenAgentHasNoVersionAndAgentDetailsNotFound_logsWarningAndIns
             "content": base64.b64encode(b"dummy_apk").decode(),
         },
     }
-    mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
     runtime_mock = mocker.MagicMock()
     runtime_mock.can_run.return_value = True
