@@ -95,7 +95,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                                 "metadata": [
                                     {
                                         "metadataType": "FILE_PATH",
-                                        "metadataValue": "line:24,5",
+                                        "metadataValue": {"value": "line:24,5"},
                                     }
                                 ],
                             },
@@ -241,7 +241,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
                                 "metadata": [
                                     {
                                         "metadataType": "FILE_PATH",
-                                        "metadataValue": "line:24,5",
+                                        "metadataValue": {"value": "line:24,5"},
                                     }
                                 ],
                             },

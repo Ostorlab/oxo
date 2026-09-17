@@ -121,7 +121,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
                                 "metadata": [
                                     {
                                         "metadataType": "CODE_LOCATION",
-                                        "metadataValue": "some/file.java:42",
+                                        "metadataValue": {"value": "some/file.java:42"},
                                     }
                                 ],
                             },

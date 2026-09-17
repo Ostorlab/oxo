@@ -311,7 +311,10 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                             "vulnerabilityLocation": {
                                 "asset": {"host": "91.235.134.131"},
                                 "metadata": [
-                                    {"metadataType": "PORT", "metadataValue": "443"}
+                                    {
+                                        "metadataType": "PORT",
+                                        "metadataValue": {"value": "443"},
+                                    }
                                 ],
                             },
                             "detail": {

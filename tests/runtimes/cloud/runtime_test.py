@@ -205,13 +205,35 @@ def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormatte
         {
             "asset": {"bundleName": "com.example.harmony"},
             "metadata": [
-                {"metadataType": "CODE_LOCATION", "metadataValue": "Main.ets:42"}
+                {
+                    "metadataType": "CODE_LOCATION",
+                    "metadataValue": {"value": "Main.ets:42"},
+                }
             ],
         }
     )
 
     assert "HarmonyOS bundle name: com.example.harmony" in formatted
     assert "CODE_LOCATION: Main.ets:42" in formatted
+
+
+def testPrepareVulnLocationMarkdown_whenMetadataValueIsNotAString_shouldSkipIt():
+    """Ensure metadata carrying a non-string union member is left out of the markdown."""
+    runtime = cloud_runtime.CloudRuntime()
+
+    formatted = runtime._prepare_vuln_location_markdown(
+        {
+            "asset": {"packageName": "com.example.android"},
+            "metadata": [
+                {"metadataType": "CALL_TRACE", "metadataValue": {}},
+                {"metadataType": "CODE_LOCATION", "metadataValue": {"value": "a.c:1"}},
+            ],
+        }
+    )
+
+    assert formatted == (
+        "Android package name: com.example.android  \nCODE_LOCATION: a.c:1  \n"
+    )
 
 
 def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
@@ -223,7 +245,10 @@ def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
             {
                 "asset": {"someField": "someValue"},
                 "metadata": [
-                    {"metadataType": "FILE_PATH", "metadataValue": "/tmp/file"}
+                    {
+                        "metadataType": "FILE_PATH",
+                        "metadataValue": {"value": "/tmp/file"},
+                    }
                 ],
             }
         )

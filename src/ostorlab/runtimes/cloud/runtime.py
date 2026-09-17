@@ -222,7 +222,9 @@ class CloudRuntime(runtime.Runtime):
 
         for metadata in location.get("metadata", []):
             metad_type = metadata.get("metadataType")
-            metad_value = metadata.get("metadataValue")
+            metad_value = (metadata.get("metadataValue") or {}).get("value")
+            if metad_value is None:
+                continue
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
 
         return location_markdwon_value

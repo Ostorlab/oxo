@@ -61,7 +61,11 @@ class VulnzListAPIRequest(request.APIRequest):
                           }
                           metadata {
                             metadataType
-                            metadataValue
+                            metadataValue {
+                              ... on VulnerabilityLocationMetadataStringType {
+                                value
+                              }
+                            }
                           }
                         }
                         detail{
