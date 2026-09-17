@@ -93,7 +93,9 @@ def _install_agents(
                         use_experimental=use_experimental_agents,
                         api_key=api_key,
                     )
-                    agent.version = agent_details["versions"]["versions"][0]["version"]
+                    versions = agent_details.get("versions", {}).get("versions", [])
+                    if len(versions) > 0:
+                        agent.version = versions[0]["version"]
                 except agent_fetcher.AgentDetailsNotFound:
                     logger.warning(
                         "agent %s not found on the store, skipping version fetch",

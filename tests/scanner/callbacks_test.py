@@ -1012,6 +1012,48 @@ def testStartScan_whenAgentHasNoVersionAndAgentDetailsNotFound_logsWarningAndIns
     assert install_agent_mock.call_args.kwargs.get("version") is None
 
 
+def testStartScan_whenAgentHasNoVersionAndNoPublishedVersionsExist_installsWithNone(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A draft agent with no published version yet returns an empty
+    versions[\"versions\"] list -- start_scan must not crash indexing into it,
+    and should fall through to install_agent.install with the version still
+    None, exactly as install() already handles that case on its own."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [
+                {"key": "agent/ostorlab/draft_agent"},
+            ],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    mocker.patch(
+        "ostorlab.scanner.callbacks.agent_fetcher.get_details",
+        return_value={"versions": {"versions": []}},
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
+
+    state_reporter = mocker.MagicMock()
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    install_agent_mock.assert_called_once()
+    assert install_agent_mock.call_args.kwargs.get("version") is None
+
+
 def testExtractAssets_whenRiskAsset_shouldReturnCorrectAsset(
     mocker: plugin.MockerFixture,
 ) -> None:
