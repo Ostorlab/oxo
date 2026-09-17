@@ -62,6 +62,15 @@ class VulnzListAPIRequest(request.APIRequest):
                             ... on NGDomainAssetType {
                                 name
                             }
+
+                            ... on NGRepositoryAssetType {
+                                repositoryUrl
+                            }
+
+                            ... on NGNodeType {
+                                nodeType
+                                nodeKey
+                            }
                           }
                           metadata {
                             metadataType

@@ -216,6 +216,13 @@ class CloudRuntime(runtime.Runtime):
         elif asset_data.get("bundleName") is not None:
             bundle_name = asset_data.get("bundleName")
             location_markdwon_value = f"HarmonyOS bundle name: {bundle_name}  \n"
+        elif asset_data.get("repositoryUrl") is not None:
+            repository_url = asset_data.get("repositoryUrl")
+            location_markdwon_value = f"Repository: {repository_url}  \n"
+        elif asset_data.get("nodeKey") is not None:
+            node_type = asset_data.get("nodeType")
+            node_key = asset_data.get("nodeKey")
+            location_markdwon_value = f"Node {node_type}: {node_key}  \n"
         else:
             raise ValueError(f"Unknown asset : {asset_data}")
 
@@ -440,13 +447,6 @@ class CloudRuntime(runtime.Runtime):
                 panel.Panel(
                     markdown.Markdown(vulnerability.get("exploitationDetail")),
                     title="Exploitation details",
-                )
-            )
-        if vulnerability.get("postExploitationDetail") is not None:
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(vulnerability.get("postExploitationDetail")),
-                    title="Post Exploitation details",
                 )
             )
 

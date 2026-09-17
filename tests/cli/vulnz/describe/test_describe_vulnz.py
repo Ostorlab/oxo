@@ -244,7 +244,6 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
                                 ],
                             },
                             "exploitationDetail": "Exploitation Details",
-                            "postExploitationDetail": "Post Exploitation Details",
                         }
                     ],
                 },
@@ -264,4 +263,3 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
     )
 
     assert "Exploitation Details" in result.output
-    assert "Post Exploitation Details" in result.output

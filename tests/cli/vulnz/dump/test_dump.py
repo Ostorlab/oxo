@@ -128,6 +128,38 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
                             },
                         },
                         {
+                            "id": "37199943",
+                            "technicalDetail": "someData",
+                            "detail": {
+                                "title": "t",
+                                "shortDescription": "s",
+                                "description": "d",
+                                "recommendation": "r",
+                                "cvssV3Vector": None,
+                                "riskRating": "LOW",
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {"repositoryUrl": "https://github.com/o/r"},
+                                "metadata": [],
+                            },
+                        },
+                        {
+                            "id": "37199944",
+                            "technicalDetail": "someData",
+                            "detail": {
+                                "title": "t",
+                                "shortDescription": "s",
+                                "description": "d",
+                                "recommendation": "r",
+                                "cvssV3Vector": None,
+                                "riskRating": "LOW",
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {"nodeType": "SERVICE", "nodeKey": "svc-42"},
+                                "metadata": [],
+                            },
+                        },
+                        {
                             "id": "37199942",
                             "vulnerabilityLocation": {
                                 "asset": {"bundleName": "com.example.harmony"},
@@ -188,7 +220,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
     assert data[0]["location"] == (
         "Android package name: a.b.c  \nCODE_LOCATION: some/file.java:42  \n"
     )
-    assert data[1]["location"] == "HarmonyOS bundle name: com.example.harmony  \n"
+    assert data[1]["location"] == "Repository: https://github.com/o/r  \n"
+    assert data[2]["location"] == "Node SERVICE: svc-42  \n"
+    assert data[3]["location"] == "HarmonyOS bundle name: com.example.harmony  \n"
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
