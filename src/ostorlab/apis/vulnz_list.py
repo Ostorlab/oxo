@@ -88,6 +88,10 @@ class VulnzListAPIRequest(request.APIRequest):
                           recommendation
                           cvssV3Vector
                           riskRating
+                          references {
+                            title
+                            url
+                          }
                         }
                     }
                 }
