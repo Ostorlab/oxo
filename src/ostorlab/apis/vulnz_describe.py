@@ -52,11 +52,23 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
                     vulnerabilities {
                       id
                       technicalDetail
-                      technicalDetailFormat
                       customRiskRating
                       customCvssV3BaseScore
-                      falsePositive
-                      vulnerabilityLocation
+                      vulnerabilityLocation {
+                        asset {
+                          ... on NGAndroidAppAssetType { packageName }
+                          ... on NGIOSAppAssetType { bundleId }
+                          ... on NGIPv6AssetType { host }
+                          ... on NGIPv4AssetType { host }
+                          ... on NGDomainAssetType { name }
+                        }
+                        metadata {
+                          metadataType
+                          metadataValue {
+                            ... on VulnerabilityLocationMetadataStringType { value }
+                          }
+                        }
+                      }
                       detail {
                         title
                         shortDescription

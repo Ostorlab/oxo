@@ -12,7 +12,6 @@ import logging
 from typing import Any
 
 import click
-import markdownify
 import rich
 from rich import markdown
 from rich import panel
@@ -430,22 +429,12 @@ class CloudRuntime(runtime.Runtime):
                     markdown.Markdown(references_markdown_value), title="references"
                 )
             )
-        if vulnerability["technicalDetailFormat"] == "HTML":
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(
-                        markdownify.markdownify(vulnerability["technicalDetail"])
-                    ),
-                    title="Technical details",
-                )
+        rich.print(
+            panel.Panel(
+                markdown.Markdown(vulnerability["technicalDetail"]),
+                title="Technical details",
             )
-        else:
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(vulnerability["technicalDetail"]),
-                    title="Technical details",
-                )
-            )
+        )
         if vulnerability.get("exploitationDetail") is not None:
             rich.print(
                 panel.Panel(

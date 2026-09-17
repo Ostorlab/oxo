@@ -70,7 +70,6 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                             "id": "38311495",
                             "technicalDetail": "<code>malwarebytes.keystone.permission.PERMISSION.CHECK_REQ</code> "
                             "not declared in <code>permission</code> tag",
-                            "technicalDetailFormat": "HTML",
                             "customRiskRating": "MEDIUM",
                             "customCvssV3BaseScore": "null",
                             "falsePositive": "false",
@@ -216,7 +215,6 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
                             "id": "38311495",
                             "technicalDetail": "<code>malwarebytes.keystone.permission.PERMISSION.CHECK_REQ</code> "
                             "not declared in <code>permission</code> tag",
-                            "technicalDetailFormat": "HTML",
                             "customRiskRating": "MEDIUM",
                             "customCvssV3BaseScore": "null",
                             "falsePositive": "false",
