@@ -47,6 +47,10 @@ class VulnzListAPIRequest(request.APIRequest):
                                 bundleId
                             }
                             
+                            ... on NGHarmonyOSAppAssetType {
+                                bundleName
+                            }
+                            
                             ... on NGIPv6AssetType {
                                 host
                             }

@@ -129,6 +129,10 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
                         },
                         {
                             "id": "37199942",
+                            "vulnerabilityLocation": {
+                                "asset": {"bundleName": "com.example.harmony"},
+                                "metadata": [],
+                            },
                             "technicalDetail": "someData",
                             "detail": {
                                 "title": "Use of Outdated Vulnerable Component",
@@ -184,6 +188,7 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
     assert data[0]["location"] == (
         "Android package name: a.b.c  \nCODE_LOCATION: some/file.java:42  \n"
     )
+    assert data[1]["location"] == "HarmonyOS bundle name: com.example.harmony  \n"
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(

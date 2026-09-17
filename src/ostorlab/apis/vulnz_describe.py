@@ -58,6 +58,7 @@ class ScanVulnzDescribeAPIRequest(request.APIRequest):
                         asset {
                           ... on NGAndroidAppAssetType { packageName }
                           ... on NGIOSAppAssetType { bundleId }
+                          ... on NGHarmonyOSAppAssetType { bundleName }
                           ... on NGIPv6AssetType { host }
                           ... on NGIPv4AssetType { host }
                           ... on NGDomainAssetType { name }
