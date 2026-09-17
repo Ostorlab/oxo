@@ -217,25 +217,6 @@ def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormatte
     assert "CODE_LOCATION: Main.ets:42" in formatted
 
 
-def testPrepareVulnLocationMarkdown_whenMetadataValueIsNotAString_shouldSkipIt():
-    """Ensure metadata carrying a non-string union member is left out of the markdown."""
-    runtime = cloud_runtime.CloudRuntime()
-
-    formatted = runtime._prepare_vuln_location_markdown(
-        {
-            "asset": {"packageName": "com.example.android"},
-            "metadata": [
-                {"metadataType": "CALL_TRACE", "metadataValue": {}},
-                {"metadataType": "CODE_LOCATION", "metadataValue": {"value": "a.c:1"}},
-            ],
-        }
-    )
-
-    assert formatted == (
-        "Android package name: com.example.android  \nCODE_LOCATION: a.c:1  \n"
-    )
-
-
 def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
     """Ensure cloud formatter raises on unknown asset shapes."""
     runtime = cloud_runtime.CloudRuntime()

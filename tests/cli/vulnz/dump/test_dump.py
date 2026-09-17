@@ -122,7 +122,8 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
                                     {
                                         "metadataType": "CODE_LOCATION",
                                         "metadataValue": {"value": "some/file.java:42"},
-                                    }
+                                    },
+                                    {"metadataType": "CALL_TRACE", "metadataValue": {}},
                                 ],
                             },
                         },
@@ -180,7 +181,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
     assert data[0]["id"] == "37200006"
     assert "Use of Outdated Vulnerable Component" in data[0]["title"]
     assert "dummy title: https://dummy.co/dummy2" in data[0]["references"]
-    assert "Android package name: a.b.c" in data[0]["location"]
+    assert data[0]["location"] == (
+        "Android package name: a.b.c  \nCODE_LOCATION: some/file.java:42  \n"
+    )
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
