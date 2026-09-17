@@ -86,6 +86,19 @@ def _install_agents(
     try:
         runtime_instance.install(docker_client=docker_client)
         for agent in agents:
+            if agent.version is None:
+                try:
+                    agent_details = agent_fetcher.get_details(
+                        agent.key,
+                        use_experimental=use_experimental_agents,
+                        api_key=api_key,
+                    )
+                    agent.version = agent_details["versions"]["versions"][0]["version"]
+                except agent_fetcher.AgentDetailsNotFound:
+                    logger.warning(
+                        "agent %s not found on the store, skipping version fetch",
+                        agent.key,
+                    )
             install_agent.install(
                 agent_key=agent.key,
                 version=agent.version,
