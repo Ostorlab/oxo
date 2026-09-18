@@ -21,6 +21,7 @@ def testScanUpdateStateAPIRequest_whenMinimal_queryContainsUpdateScanStateMutati
     assert "deviceId: null" in api_request.query
     assert "asset" not in api_request.query
     assert "agentGroup" not in api_request.query
+    assert "blacklistedIps" not in api_request.query
 
 
 def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGroup() -> (
@@ -54,6 +55,16 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsUseExperimentalAg
 
     assert api_request.query is not None
     assert "useExperimentalAgents" in api_request.query
+
+
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsBlacklistedIps() -> None:
+    """Test full details query selects blacklistedIps on scan."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    assert "blacklistedIps" in api_request.query
 
 
 def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsMultiAssetMembers() -> (
