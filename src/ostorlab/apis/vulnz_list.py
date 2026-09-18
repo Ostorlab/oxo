@@ -47,6 +47,10 @@ class VulnzListAPIRequest(request.APIRequest):
                                 bundleId
                             }
                             
+                            ... on NGHarmonyOSAppAssetType {
+                                bundleName
+                            }
+                            
                             ... on NGIPv6AssetType {
                                 host
                             }
@@ -58,10 +62,23 @@ class VulnzListAPIRequest(request.APIRequest):
                             ... on NGDomainAssetType {
                                 name
                             }
+
+                            ... on NGRepositoryAssetType {
+                                repositoryUrl
+                            }
+
+                            ... on NGNodeType {
+                                nodeType
+                                nodeKey
+                            }
                           }
                           metadata {
                             metadataType
-                            metadataValue
+                            metadataValue {
+                              ... on VulnerabilityLocationMetadataStringType {
+                                value
+                              }
+                            }
                           }
                         }
                         detail{
@@ -71,6 +88,10 @@ class VulnzListAPIRequest(request.APIRequest):
                           recommendation
                           cvssV3Vector
                           riskRating
+                          references {
+                            title
+                            url
+                          }
                         }
                     }
                 }

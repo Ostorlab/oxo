@@ -284,7 +284,12 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                                 "asset": {
                                     "packageName": "com.firsttennessee.prepaid.vmcp"
                                 },
-                                "metadata": [],
+                                "metadata": [
+                                    {
+                                        "metadataType": "PORT",
+                                        "metadataValue": {"value": "443"},
+                                    }
+                                ],
                             },
                             "detail": {
                                 "title": "List of dynamic code loading API calls",
@@ -310,9 +315,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                             "id": "38312826",
                             "vulnerabilityLocation": {
                                 "asset": {"host": "91.235.134.131"},
-                                "metadata": [
-                                    {"metadataType": "PORT", "metadataValue": "443"}
-                                ],
+                                "metadata": [],
                             },
                             "detail": {
                                 "title": "Application is compiled with debug mode disabled",
@@ -361,6 +364,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
     )
 
     assert "Scan 56835: Found 2 vulnerabilities." in result.output
+    assert "PORT: 443" in result.output
     assert "High" in result.output
     assert "Info" in result.output
     result_keywords = [

@@ -12,7 +12,6 @@ import logging
 from typing import Any
 
 import click
-import markdownify
 import rich
 from rich import markdown
 from rich import panel
@@ -217,12 +216,21 @@ class CloudRuntime(runtime.Runtime):
         elif asset_data.get("bundleName") is not None:
             bundle_name = asset_data.get("bundleName")
             location_markdwon_value = f"HarmonyOS bundle name: {bundle_name}  \n"
+        elif asset_data.get("repositoryUrl") is not None:
+            repository_url = asset_data.get("repositoryUrl")
+            location_markdwon_value = f"Repository: {repository_url}  \n"
+        elif asset_data.get("nodeKey") is not None:
+            node_type = asset_data.get("nodeType")
+            node_key = asset_data.get("nodeKey")
+            location_markdwon_value = f"Node {node_type}: {node_key}  \n"
         else:
             raise ValueError(f"Unknown asset : {asset_data}")
 
         for metadata in location.get("metadata", []):
             metad_type = metadata.get("metadataType")
-            metad_value = metadata.get("metadataValue")
+            metad_value = (metadata.get("metadataValue") or {}).get("value")
+            if metad_value is None:
+                continue
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
 
         return location_markdwon_value
@@ -428,34 +436,17 @@ class CloudRuntime(runtime.Runtime):
                     markdown.Markdown(references_markdown_value), title="references"
                 )
             )
-        if vulnerability["technicalDetailFormat"] == "HTML":
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(
-                        markdownify.markdownify(vulnerability["technicalDetail"])
-                    ),
-                    title="Technical details",
-                )
+        rich.print(
+            panel.Panel(
+                markdown.Markdown(vulnerability["technicalDetail"]),
+                title="Technical details",
             )
-        else:
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(vulnerability["technicalDetail"]),
-                    title="Technical details",
-                )
-            )
+        )
         if vulnerability.get("exploitationDetail") is not None:
             rich.print(
                 panel.Panel(
                     markdown.Markdown(vulnerability.get("exploitationDetail")),
                     title="Exploitation details",
-                )
-            )
-        if vulnerability.get("postExploitationDetail") is not None:
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(vulnerability.get("postExploitationDetail")),
-                    title="Post Exploitation details",
                 )
             )
 

@@ -205,7 +205,10 @@ def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormatte
         {
             "asset": {"bundleName": "com.example.harmony"},
             "metadata": [
-                {"metadataType": "CODE_LOCATION", "metadataValue": "Main.ets:42"}
+                {
+                    "metadataType": "CODE_LOCATION",
+                    "metadataValue": {"value": "Main.ets:42"},
+                }
             ],
         }
     )
@@ -223,7 +226,10 @@ def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
             {
                 "asset": {"someField": "someValue"},
                 "metadata": [
-                    {"metadataType": "FILE_PATH", "metadataValue": "/tmp/file"}
+                    {
+                        "metadataType": "FILE_PATH",
+                        "metadataValue": {"value": "/tmp/file"},
+                    }
                 ],
             }
         )
