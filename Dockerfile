@@ -1,4 +1,5 @@
 FROM python:3.14-alpine as base
+RUN apk add --no-cache iptables ip6tables
 FROM base as builder
 RUN mkdir /install
 WORKDIR /ostorlab

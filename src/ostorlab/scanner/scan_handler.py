@@ -10,7 +10,6 @@ from typing import Any
 
 import docker
 import httpx
-from docker.models import services
 
 from ostorlab.apis import scan_update_state
 from ostorlab.apis import scanner_config
@@ -19,6 +18,7 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.apis.runners import scanner_runner
 from ostorlab.scanner import callbacks
+from ostorlab.scanner import firewall
 from ostorlab.scanner import resource_checker
 from ostorlab.scanner import scanner_conf
 from ostorlab.utils import scanner_state_reporter
@@ -45,9 +45,14 @@ class ScanHandler:
         self._gcp_logging_credential = gcp_logging_credential
         self._max_concurrent_scans = max_concurrent_scans
         self._docker_client = docker.from_env()
+        self._has_active_firewall_rules: bool = False
+        firewall.ensure_firewall_chains()
+        firewall.flush_blacklist()
 
     def close(self) -> None:
         self._docker_client.close()
+        firewall.flush_blacklist()
+        self._has_active_firewall_rules = False
 
     def handle_messages(
         self,
@@ -59,6 +64,9 @@ class ScanHandler:
 
         while True:
             running_universes = self._count_running_universes()
+            if running_universes == 0 and self._has_active_firewall_rules is True:
+                firewall.flush_blacklist()
+                self._has_active_firewall_rules = False
             if running_universes > self._max_concurrent_scans:
                 logger.error(
                     "Host is running %s universe(s) over a limit of %s. Sleeping...",
@@ -209,6 +217,14 @@ class ScanHandler:
             self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
             return None
 
+        blacklisted_ips: list[str] = reserved_scan.get("blacklistedIps") or []
+        if blacklisted_ips:
+            firewall.apply_blacklist(blacklisted_ips)
+            self._has_active_firewall_rules = True
+        elif self._has_active_firewall_rules is True:
+            firewall.flush_blacklist()
+            self._has_active_firewall_rules = False
+
         logger.info("Handing off scan ID %s to callbacks.start_scan...", scan_id_val)
 
         try:
@@ -243,6 +259,8 @@ class ScanHandler:
         self, runner: scanner_runner.ScannerAPIRunner, scan_id_val: Any
     ) -> None:
         """Reverts a scan's progress to not_started if local execution fails."""
+        firewall.flush_blacklist()
+        self._has_active_firewall_rules = False
         try:
             runner.execute(
                 request=scan_update_state.ScanUpdateStateAPIRequest(
@@ -264,10 +282,8 @@ class ScanHandler:
             so the caller treats the host as full.
         """
         try:
-            universe_services: list[services.Service] = (
-                self._docker_client.services.list(
-                    filters={"label": UNIVERSE_LABEL},
-                )
+            universe_services = self._docker_client.services.list(
+                filters={"label": UNIVERSE_LABEL},
             )
         except docker.errors.DockerException:
             logger.exception(
@@ -307,7 +323,7 @@ def start_scan_loop(
     )
     config = scanner_conf.ScannerConfig.from_json(config=data)
 
-    if config is None:
+    if config is None or config.api_key is None:
         logger.error("No config found to start the connection.")
         return
 
