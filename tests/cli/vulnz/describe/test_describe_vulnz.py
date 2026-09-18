@@ -194,10 +194,10 @@ def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetai
     assert "Post Exploitation details" in result.output
 
 
-def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
+def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationDetails_showsVulnzInfo(
     httpx_mock: mock.MagicMock,
 ) -> None:
-    """Test oxo vulnz describe command with Vulnerability that has exploitation and post exploitation details.
+    """Test oxo vulnz describe command with Vulnerability that has exploitation details.
     Should show vulnz details."""
     mock_response = {
         "data": {
