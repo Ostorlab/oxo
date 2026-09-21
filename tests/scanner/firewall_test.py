@@ -397,13 +397,27 @@ def testApplyBlacklist_whenCalled_flushesBlacklistFirst(
     mock_flush: mock.MagicMock,
 ) -> None:
     """Ensure apply_blacklist flushes existing rules before adding new ones."""
+    mock_flush.return_value = True
     mock_run.return_value = subprocess.CompletedProcess(
         [], returncode=0, stdout=b"", stderr=b""
     )
 
-    firewall.apply_blacklist(["192.168.1.1"])
+    result = firewall.apply_blacklist(["192.168.1.1"])
 
     mock_flush.assert_called_once()
+    assert result is True
+
+
+@mock.patch("ostorlab.scanner.firewall.flush_blacklist")
+def testApplyBlacklist_whenFlushFails_returnsFalse(
+    mock_flush: mock.MagicMock,
+) -> None:
+    """Ensure apply_blacklist returns False when initial flush fails."""
+    mock_flush.return_value = False
+
+    result = firewall.apply_blacklist(["192.168.1.1"])
+
+    assert result is False
 
 
 @mock.patch("subprocess.run")
@@ -415,8 +429,9 @@ def testFlushBlacklist_whenCalled_flushesIptablesAndIp6tables(
         [], returncode=0, stdout=b"", stderr=b""
     )
 
-    firewall.flush_blacklist()
+    result = firewall.flush_blacklist()
 
+    assert result is True
     assert mock_run.call_args_list == [
         mock.call(
             ["iptables", "-F", "OXO_EGRESS_FILTER"],
@@ -432,10 +447,10 @@ def testFlushBlacklist_whenCalled_flushesIptablesAndIp6tables(
 
 
 @mock.patch("subprocess.run")
-def testFlushBlacklist_whenChainNotFound_doesNotRaise(
+def testFlushBlacklist_whenChainNotFound_returnsFalse(
     mock_run: mock.MagicMock,
 ) -> None:
-    """Ensure flush_blacklist ignores non-zero exit codes without raising."""
+    """Ensure flush_blacklist returns False when command exits non-zero."""
     mock_run.return_value = subprocess.CompletedProcess(
         ["iptables", "-F", "OXO_EGRESS_FILTER"],
         returncode=1,
@@ -443,14 +458,18 @@ def testFlushBlacklist_whenChainNotFound_doesNotRaise(
         stderr=b"iptables: No chain/target/match by that name.",
     )
 
-    firewall.flush_blacklist()
+    result = firewall.flush_blacklist()
+
+    assert result is False
 
 
 @mock.patch("subprocess.run")
-def testFlushBlacklist_whenBinaryNotFound_doesNotRaise(
+def testFlushBlacklist_whenBinaryNotFound_returnsFalse(
     mock_run: mock.MagicMock,
 ) -> None:
-    """Ensure flush_blacklist ignores missing binary errors without raising."""
+    """Ensure flush_blacklist returns False when binary is missing."""
     mock_run.side_effect = FileNotFoundError("No such file or directory: 'iptables'")
 
-    firewall.flush_blacklist()
+    result = firewall.flush_blacklist()
+
+    assert result is False

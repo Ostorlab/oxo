@@ -50,15 +50,16 @@ class ScanHandler:
             logger.warning(
                 "Firewall chain setup failed. Network isolation will be disabled."
             )
-        firewall.flush_blacklist()
+        flush_success = firewall.flush_blacklist()
         self._active_blacklists: dict[str, list[str]] = {}
-        self._firewall_healthy: bool = True
+        self._firewall_healthy: bool = flush_success
 
     def close(self) -> None:
         self._docker_client.close()
-        self._active_blacklists.clear()
-        firewall.flush_blacklist()
-        self._firewall_healthy = True
+        if not self._active_blacklists:
+            firewall.flush_blacklist()
+        else:
+            self._sync_firewall_rules()
 
     def _sync_firewall_rules(self) -> bool:
         """Synchronize firewall rules with the union of all active scan blacklists."""
@@ -69,9 +70,9 @@ class ScanHandler:
             all_ips.extend(ips)
         unique_ips = list(dict.fromkeys(all_ips))
         if not unique_ips:
-            firewall.flush_blacklist()
-            self._firewall_healthy = True
-            return True
+            success = firewall.flush_blacklist()
+            self._firewall_healthy = success
+            return success
         success = firewall.apply_blacklist(unique_ips)
         self._firewall_healthy = success
         return success

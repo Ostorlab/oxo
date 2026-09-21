@@ -98,38 +98,42 @@ def ensure_firewall_chains() -> bool:
     return True
 
 
-def flush_blacklist() -> None:
+def flush_blacklist() -> bool:
     """Flush all rules in OXO_EGRESS_FILTER chain for IPv4 and IPv6."""
+    all_success = True
     for binary in (IPTABLES_BIN, IP6TABLES_BIN):
         result = _execute_command([binary, "-F", OXO_EGRESS_FILTER_CHAIN])
         if result is None:
-            logger.debug(
+            logger.warning(
                 "Could not flush chain %s with %s",
                 OXO_EGRESS_FILTER_CHAIN,
                 binary,
             )
+            all_success = False
         elif result.returncode != 0:
-            logger.debug(
+            logger.warning(
                 "Chain %s flush returned non-zero with %s: %s",
                 OXO_EGRESS_FILTER_CHAIN,
                 binary,
                 result.stderr.decode(errors="ignore"),
             )
+            all_success = False
         else:
             logger.debug(
                 "Successfully flushed chain %s in %s",
                 OXO_EGRESS_FILTER_CHAIN,
                 binary,
             )
+    return all_success
 
 
 def apply_blacklist(ips: list[str]) -> bool:
     """Flush and apply blacklist DROP rules for the given IPs and networks."""
-    flush_blacklist()
+    flush_success = flush_blacklist()
     if not ips:
-        return True
+        return flush_success
 
-    all_success = True
+    all_success = flush_success
     for ip in ips:
         network = _validate_ip(ip)
         if network is None:
