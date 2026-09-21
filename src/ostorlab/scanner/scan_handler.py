@@ -50,15 +50,21 @@ class ScanHandler:
             logger.warning(
                 "Firewall chain setup failed. Network isolation will be disabled."
             )
-            self._firewall_healthy: bool = True
+        flush_success = firewall.flush_blacklist()
+        if self._firewall_enabled is False:
+            self._firewall_healthy = True
+            if flush_success is False:
+                logger.warning(
+                    "Could not flush firewall chains during startup while disabled."
+                )
         else:
-            self._firewall_healthy = firewall.flush_blacklist()
+            self._firewall_healthy = flush_success
         self._active_blacklists: dict[str, list[str]] = {}
 
     def close(self) -> None:
         self._docker_client.close()
         if self._firewall_enabled is True:
-            if not self._active_blacklists:
+            if len(self._active_blacklists) == 0:
                 firewall.flush_blacklist()
             else:
                 self._sync_firewall_rules()
@@ -71,7 +77,7 @@ class ScanHandler:
         for ips in self._active_blacklists.values():
             all_ips.extend(ips)
         unique_ips = list(dict.fromkeys(all_ips))
-        if not unique_ips:
+        if len(unique_ips) == 0:
             success = firewall.flush_blacklist()
             self._firewall_healthy = success
             return success
@@ -109,7 +115,7 @@ class ScanHandler:
                     for finished_scan_id in self._active_blacklists
                     if finished_scan_id not in running_universes
                 ]
-                if finished_scans:
+                if len(finished_scans) > 0:
                     for finished_scan_id in finished_scans:
                         del self._active_blacklists[finished_scan_id]
                     if self._sync_firewall_rules() is False:
@@ -271,7 +277,7 @@ class ScanHandler:
             return None
 
         blacklisted_ips: list[str] = reserved_scan.get("blacklistedIps") or []
-        if blacklisted_ips:
+        if len(blacklisted_ips) > 0:
             if self._firewall_enabled is False:
                 logger.error(
                     "Firewall chains not initialized. Cannot enforce blacklist for scan %s. Rolling back.",

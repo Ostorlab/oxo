@@ -31,12 +31,18 @@ def _execute_command(cmd: list[str]) -> subprocess.CompletedProcess[bytes] | Non
 
 
 def _validate_ip(
-    ip: str,
+    ip: object,
 ) -> ipaddress.IPv4Network | ipaddress.IPv6Network | None:
+    if isinstance(ip, str) is False:
+        logger.warning("Invalid IP address type: %s", type(ip))
+        return None
     try:
-        return ipaddress.ip_network(ip, strict=False)
+        return ipaddress.ip_network(str(ip), strict=False)
     except ValueError:
         logger.warning("Invalid IP address or network: %s", ip)
+        return None
+    except TypeError:
+        logger.warning("Invalid IP address type: %s", type(ip))
         return None
 
 
@@ -130,7 +136,7 @@ def flush_blacklist() -> bool:
 def apply_blacklist(ips: list[str]) -> bool:
     """Flush and apply blacklist DROP rules for the given IPs and networks."""
     flush_success = flush_blacklist()
-    if not ips or flush_success is False:
+    if len(ips) == 0 or flush_success is False:
         return flush_success
 
     all_success: bool = True
@@ -144,7 +150,7 @@ def apply_blacklist(ips: list[str]) -> bool:
             if network.num_addresses == 1 and "/" not in ip
             else str(network)
         )
-        if isinstance(network, ipaddress.IPv4Network):
+        if isinstance(network, ipaddress.IPv4Network) is True:
             result = _execute_command(
                 [
                     IPTABLES_BIN,

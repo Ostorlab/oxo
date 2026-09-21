@@ -476,3 +476,42 @@ def testFlushBlacklist_whenBinaryNotFound_returnsFalse(
     result = firewall.flush_blacklist()
 
     assert result is False
+
+
+@mock.patch("subprocess.run")
+def testApplyBlacklist_whenIpContainsNoneOrNonString_returnsFalseWithoutCrashing(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure apply_blacklist safely handles None or non-string entries without crashing."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.apply_blacklist(["1.2.3.4", None, 12345])  # type: ignore[list-item]
+
+    assert result is False
+    assert mock_run.call_args_list == [
+        mock.call(
+            ["iptables", "-F", "OXO_EGRESS_FILTER"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["ip6tables", "-F", "OXO_EGRESS_FILTER"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "iptables",
+                "-A",
+                "OXO_EGRESS_FILTER",
+                "-d",
+                "1.2.3.4",
+                "-j",
+                "DROP",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+    ]

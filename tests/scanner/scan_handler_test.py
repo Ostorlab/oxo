@@ -364,7 +364,32 @@ def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
 
     assert scan_handler_instance._firewall_enabled is False
     assert scan_handler_instance._firewall_healthy is True
-    mock_flush.assert_not_called()
+    mock_flush.assert_called_once()
+
+
+def testScanHandlerInit_whenEnsureChainsFailsAndFlushFails_stillRecordsDisabledFirewallAndHealthy(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """ScanHandler.__init__ should keep _firewall_healthy=True when disabled even if startup flush fails."""
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
+        return_value=False,
+    )
+    mock_flush = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.flush_blacklist",
+        return_value=False,
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    assert scan_handler_instance._firewall_enabled is False
+    assert scan_handler_instance._firewall_healthy is True
+    mock_flush.assert_called_once()
 
 
 def testTriggerScanWithRollback_whenBlacklistedIpsPresent_appliesBlacklist(
