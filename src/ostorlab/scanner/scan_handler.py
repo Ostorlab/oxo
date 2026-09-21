@@ -276,7 +276,15 @@ class ScanHandler:
             self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
             return None
 
-        blacklisted_ips: list[str] = reserved_scan.get("blacklistedIps") or []
+        blacklisted_ips: list[str]
+        raw_blacklisted_ips = reserved_scan.get("blacklistedIps")
+        if (
+            raw_blacklisted_ips is not None
+            and isinstance(raw_blacklisted_ips, list) is True
+        ):
+            blacklisted_ips = raw_blacklisted_ips
+        else:
+            blacklisted_ips = []
         if len(blacklisted_ips) > 0:
             if self._firewall_enabled is False:
                 logger.error(
