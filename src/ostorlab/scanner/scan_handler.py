@@ -50,40 +50,14 @@ class ScanHandler:
             logger.warning(
                 "Firewall chain setup failed. Network isolation will be disabled."
             )
-        flush_success = firewall.flush_blacklist()
-        if self._firewall_enabled is False:
-            self._firewall_healthy = True
-            if flush_success is False:
-                logger.warning(
-                    "Could not flush firewall chains during startup while disabled."
-                )
-        else:
-            self._firewall_healthy = flush_success
-        self._active_blacklists: dict[str, list[str]] = {}
+        self._active_scan_ids: set[int] = set()
 
     def close(self) -> None:
         self._docker_client.close()
         if self._firewall_enabled is True:
-            if len(self._active_blacklists) == 0:
-                firewall.flush_blacklist()
-            else:
-                self._sync_firewall_rules()
-
-    def _sync_firewall_rules(self) -> bool:
-        """Synchronize firewall rules with the union of all active scan blacklists."""
-        if self._firewall_enabled is False:
-            return True
-        all_ips: list[str] = []
-        for ips in self._active_blacklists.values():
-            all_ips.extend(ips)
-        unique_ips = list(dict.fromkeys(all_ips))
-        if len(unique_ips) == 0:
-            success = firewall.flush_blacklist()
-            self._firewall_healthy = success
-            return success
-        success = firewall.apply_blacklist(unique_ips)
-        self._firewall_healthy = success
-        return success
+            for scan_id in list(self._active_scan_ids):
+                firewall.clear_scan_blacklist(scan_id=scan_id)
+            self._active_scan_ids.clear()
 
     def handle_messages(
         self,
@@ -94,17 +68,6 @@ class ScanHandler:
         logger.info("Starting main API polling loop.")
 
         while True:
-            if self._firewall_enabled is True and self._firewall_healthy is False:
-                logger.error(
-                    "Firewall rules are in an unhealthy state. Retrying sync..."
-                )
-                if self._sync_firewall_rules() is False:
-                    logger.error(
-                        "Firewall sync retry failed. Pausing scan scheduling..."
-                    )
-                    time.sleep(WAIT_CHECK_MESSAGES.seconds)
-                    continue
-
             running_universes = self._get_running_universes()
             if running_universes is None:
                 running_universes_count = self._max_concurrent_scans
@@ -112,19 +75,21 @@ class ScanHandler:
                 running_universes_count = len(running_universes)
                 finished_scans = [
                     finished_scan_id
-                    for finished_scan_id in self._active_blacklists
-                    if finished_scan_id not in running_universes
+                    for finished_scan_id in self._active_scan_ids
+                    if str(finished_scan_id) not in running_universes
                 ]
                 if len(finished_scans) > 0:
                     for finished_scan_id in finished_scans:
-                        del self._active_blacklists[finished_scan_id]
-                    if self._sync_firewall_rules() is False:
-                        logger.error(
-                            "Failed to re-sync firewall rules after scan completion. "
-                            "Pausing scan scheduling..."
-                        )
-                        time.sleep(WAIT_CHECK_MESSAGES.seconds)
-                        continue
+                        self._active_scan_ids.discard(finished_scan_id)
+                        if self._firewall_enabled is True:
+                            clear_success = firewall.clear_scan_blacklist(
+                                scan_id=finished_scan_id
+                            )
+                            if clear_success is False:
+                                logger.error(
+                                    "Failed to clear firewall rules for finished scan %s.",
+                                    finished_scan_id,
+                                )
 
             if running_universes_count > self._max_concurrent_scans:
                 logger.error(
@@ -294,14 +259,18 @@ class ScanHandler:
                 self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
                 return None
 
-            self._active_blacklists[str(scan_id_val)] = blacklisted_ips
-            if self._sync_firewall_rules() is False:
+            if (
+                firewall.apply_scan_blacklist(scan_id=scan_id_val, ips=blacklisted_ips)
+                is False
+            ):
                 logger.error(
                     "Failed to apply firewall rules for scan %s. Rolling back.",
                     scan_id_val,
                 )
                 self._rollback_scan_state(runner=runner, scan_id_val=scan_id_val)
                 return None
+
+            self._active_scan_ids.add(scan_id_val)
 
         logger.info("Handing off scan ID %s to callbacks.start_scan...", scan_id_val)
 
@@ -337,15 +306,21 @@ class ScanHandler:
         self, runner: scanner_runner.ScannerAPIRunner, scan_id_val: Any
     ) -> bool:
         """Reverts a scan's progress to not_started if local execution fails."""
-        sync_success = True
-        if str(scan_id_val) in self._active_blacklists:
-            del self._active_blacklists[str(scan_id_val)]
-            sync_success = self._sync_firewall_rules()
-            if sync_success is False:
-                logger.error(
-                    "Failed to re-sync firewall rules during rollback of scan %s.",
-                    scan_id_val,
-                )
+        clear_success = True
+        try:
+            scan_id_int = int(scan_id_val)
+            if scan_id_int in self._active_scan_ids:
+                self._active_scan_ids.discard(scan_id_int)
+            if self._firewall_enabled is True:
+                clear_success = firewall.clear_scan_blacklist(scan_id=scan_id_int)
+                if clear_success is False:
+                    logger.error(
+                        "Failed to clear firewall rules during rollback of scan %s.",
+                        scan_id_val,
+                    )
+        except (ValueError, TypeError):
+            logger.warning("Invalid scan ID format in rollback: %s", scan_id_val)
+
         try:
             runner.execute(
                 request=scan_update_state.ScanUpdateStateAPIRequest(
@@ -357,7 +332,8 @@ class ScanHandler:
             )
         except Exception:
             logger.exception("FATAL: Failed to rollback scan %s", scan_id_val)
-        return sync_success
+            return False
+        return clear_success
 
     def _get_running_universes(self) -> set[str] | None:
         """Get set of running universe identifiers from Docker services."""
