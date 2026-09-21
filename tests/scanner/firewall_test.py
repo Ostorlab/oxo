@@ -6,6 +6,28 @@ from unittest import mock
 from ostorlab.scanner import firewall
 
 
+@mock.patch("ostorlab.scanner.firewall.flush_blacklist")
+@mock.patch("subprocess.run")
+def testEnsureFirewallChains_always_includesWaitFlagAndDoesNotFlush(
+    mock_run: mock.MagicMock,
+    mock_flush: mock.MagicMock,
+) -> None:
+    """Ensure chains include -w 10 flag and flush_blacklist is never called."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.ensure_firewall_chains()
+
+    assert result is True
+    mock_flush.assert_not_called()
+    assert mock_run.call_count == 4
+    for call in mock_run.call_args_list:
+        cmd = call[0][0]
+        assert cmd[1] == "-w"
+        assert cmd[2] == "10"
+
+
 @mock.patch("subprocess.run")
 def testEnsureFirewallChains_whenChainsDoNotExist_createsChainsAndInsertsJump(
     mock_run: mock.MagicMock,
@@ -32,18 +54,28 @@ def testEnsureFirewallChains_whenChainsDoNotExist_createsChainsAndInsertsJump(
     assert mock_run.call_count == 6
     assert mock_run.call_args_list == [
         mock.call(
-            ["iptables", "-N", "OXO_EGRESS_FILTER"],
-            capture_output=True,
-            check=False,
-        ),
-        mock.call(
-            ["iptables", "-C", "DOCKER-USER", "-j", "OXO_EGRESS_FILTER"],
+            ["iptables", "-w", "10", "-N", "OXO_EGRESS_FILTER"],
             capture_output=True,
             check=False,
         ),
         mock.call(
             [
                 "iptables",
+                "-w",
+                "10",
+                "-C",
+                "DOCKER-USER",
+                "-j",
+                "OXO_EGRESS_FILTER",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "iptables",
+                "-w",
+                "10",
                 "-I",
                 "DOCKER-USER",
                 "1",
@@ -54,18 +86,28 @@ def testEnsureFirewallChains_whenChainsDoNotExist_createsChainsAndInsertsJump(
             check=False,
         ),
         mock.call(
-            ["ip6tables", "-N", "OXO_EGRESS_FILTER"],
-            capture_output=True,
-            check=False,
-        ),
-        mock.call(
-            ["ip6tables", "-C", "DOCKER-USER", "-j", "OXO_EGRESS_FILTER"],
+            ["ip6tables", "-w", "10", "-N", "OXO_EGRESS_FILTER"],
             capture_output=True,
             check=False,
         ),
         mock.call(
             [
                 "ip6tables",
+                "-w",
+                "10",
+                "-C",
+                "DOCKER-USER",
+                "-j",
+                "OXO_EGRESS_FILTER",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "ip6tables",
+                "-w",
+                "10",
                 "-I",
                 "DOCKER-USER",
                 "1",
@@ -107,22 +149,38 @@ def testEnsureFirewallChains_whenChainsAlreadyExist_doesNotInsertJumpAgain(
     assert mock_run.call_count == 4
     assert mock_run.call_args_list == [
         mock.call(
-            ["iptables", "-N", "OXO_EGRESS_FILTER"],
+            ["iptables", "-w", "10", "-N", "OXO_EGRESS_FILTER"],
             capture_output=True,
             check=False,
         ),
         mock.call(
-            ["iptables", "-C", "DOCKER-USER", "-j", "OXO_EGRESS_FILTER"],
+            [
+                "iptables",
+                "-w",
+                "10",
+                "-C",
+                "DOCKER-USER",
+                "-j",
+                "OXO_EGRESS_FILTER",
+            ],
             capture_output=True,
             check=False,
         ),
         mock.call(
-            ["ip6tables", "-N", "OXO_EGRESS_FILTER"],
+            ["ip6tables", "-w", "10", "-N", "OXO_EGRESS_FILTER"],
             capture_output=True,
             check=False,
         ),
         mock.call(
-            ["ip6tables", "-C", "DOCKER-USER", "-j", "OXO_EGRESS_FILTER"],
+            [
+                "ip6tables",
+                "-w",
+                "10",
+                "-C",
+                "DOCKER-USER",
+                "-j",
+                "OXO_EGRESS_FILTER",
+            ],
             capture_output=True,
             check=False,
         ),
@@ -159,7 +217,7 @@ def testEnsureFirewallChains_whenChainCreationFails_returnsFalse(
 ) -> None:
     """Ensure failure is returned when chain creation fails with non-zero exit."""
     mock_run.return_value = subprocess.CompletedProcess(
-        ["iptables", "-N", "OXO_EGRESS_FILTER"],
+        ["iptables", "-w", "10", "-N", "OXO_EGRESS_FILTER"],
         returncode=2,
         stdout=b"",
         stderr=b"iptables: Memory allocation failed",
@@ -265,41 +323,48 @@ def testEnsureFirewallChains_whenCheckJumpReturnsNone_returnsFalse(
 
 
 @mock.patch("subprocess.run")
-def testApplyBlacklist_whenMixedValidAndInvalidIps_appliesValidAndSkipsInvalid(
+def testApplyScanBlacklist_whenValidIps_createsChainPopulatesRulesAndInsertsJump(
     mock_run: mock.MagicMock,
 ) -> None:
-    """Ensure valid IPv4 and IPv6 addresses are added and invalid ones skipped."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
+    """Ensure per-scan chain is created, populated with DROP rules, and jumped to."""
+
+    def run_side_effect(
+        cmd: list[str],
+        capture_output: bool = True,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del capture_output, check
+        if "-C" in cmd:
+            return subprocess.CompletedProcess(
+                cmd, returncode=1, stdout=b"", stderr=b"rule not found"
+            )
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout=b"", stderr=b"")
+
+    mock_run.side_effect = run_side_effect
+
+    result = firewall.apply_scan_blacklist(
+        scan_id=42, ips=["1.2.3.4", "10.0.0.0/8", "2001:db8::1"]
     )
 
-    ips = [
-        "1.2.3.4",
-        "10.0.0.0/8",
-        "2001:db8::/32",
-        "invalid-domain.com",
-        "1.2.3.4; rm -rf /",
-    ]
-
-    result = firewall.apply_blacklist(ips)
-
-    assert result is False
+    assert result is True
     assert mock_run.call_args_list == [
         mock.call(
-            ["iptables", "-F", "OXO_EGRESS_FILTER"],
+            ["iptables", "-w", "10", "-N", "OXO_SCAN_42"],
             capture_output=True,
             check=False,
         ),
         mock.call(
-            ["ip6tables", "-F", "OXO_EGRESS_FILTER"],
+            ["iptables", "-w", "10", "-F", "OXO_SCAN_42"],
             capture_output=True,
             check=False,
         ),
         mock.call(
             [
                 "iptables",
+                "-w",
+                "10",
                 "-A",
-                "OXO_EGRESS_FILTER",
+                "OXO_SCAN_42",
                 "-d",
                 "1.2.3.4",
                 "-j",
@@ -311,8 +376,10 @@ def testApplyBlacklist_whenMixedValidAndInvalidIps_appliesValidAndSkipsInvalid(
         mock.call(
             [
                 "iptables",
+                "-w",
+                "10",
                 "-A",
-                "OXO_EGRESS_FILTER",
+                "OXO_SCAN_42",
                 "-d",
                 "10.0.0.0/8",
                 "-j",
@@ -323,13 +390,79 @@ def testApplyBlacklist_whenMixedValidAndInvalidIps_appliesValidAndSkipsInvalid(
         ),
         mock.call(
             [
-                "ip6tables",
-                "-A",
+                "iptables",
+                "-w",
+                "10",
+                "-C",
                 "OXO_EGRESS_FILTER",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "iptables",
+                "-w",
+                "10",
+                "-I",
+                "OXO_EGRESS_FILTER",
+                "1",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["ip6tables", "-w", "10", "-N", "OXO_SCAN_42"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["ip6tables", "-w", "10", "-F", "OXO_SCAN_42"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "ip6tables",
+                "-w",
+                "10",
+                "-A",
+                "OXO_SCAN_42",
                 "-d",
-                "2001:db8::/32",
+                "2001:db8::1",
                 "-j",
                 "DROP",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "ip6tables",
+                "-w",
+                "10",
+                "-C",
+                "OXO_EGRESS_FILTER",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "ip6tables",
+                "-w",
+                "10",
+                "-I",
+                "OXO_EGRESS_FILTER",
+                "1",
+                "-j",
+                "OXO_SCAN_42",
             ],
             capture_output=True,
             check=False,
@@ -338,38 +471,21 @@ def testApplyBlacklist_whenMixedValidAndInvalidIps_appliesValidAndSkipsInvalid(
 
 
 @mock.patch("subprocess.run")
-def testApplyBlacklist_whenAllIpsValidAndCommandSucceeds_returnsTrue(
+def testApplyScanBlacklist_whenEmptyIps_returnsTrueWithoutExecutingCommands(
     mock_run: mock.MagicMock,
 ) -> None:
-    """Ensure apply_blacklist returns True when all rules are applied successfully."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.apply_blacklist(["1.2.3.4", "2001:db8::1"])
+    """Ensure apply_scan_blacklist returns True without executing commands when ips is empty."""
+    result = firewall.apply_scan_blacklist(scan_id=42, ips=[])
 
     assert result is True
+    mock_run.assert_not_called()
 
 
 @mock.patch("subprocess.run")
-def testApplyBlacklist_whenEmptyIps_returnsTrue(
+def testApplyScanBlacklist_whenInvalidIps_skipsInvalidAndReturnsFalse(
     mock_run: mock.MagicMock,
 ) -> None:
-    """Ensure apply_blacklist returns True when ips list is empty."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.apply_blacklist([])
-
-    assert result is True
-
-
-@mock.patch("subprocess.run")
-def testApplyBlacklist_whenCommandFails_returnsFalse(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Ensure apply_blacklist returns False when command returns non-zero code."""
+    """Ensure invalid IPs are skipped, valid ones applied, and False is returned."""
 
     def run_side_effect(
         cmd: list[str],
@@ -377,135 +493,37 @@ def testApplyBlacklist_whenCommandFails_returnsFalse(
         check: bool = False,
     ) -> subprocess.CompletedProcess[bytes]:
         del capture_output, check
-        if "-A" in cmd:
+        if "-C" in cmd:
             return subprocess.CompletedProcess(
-                cmd, returncode=1, stdout=b"", stderr=b"iptables error"
+                cmd, returncode=1, stdout=b"", stderr=b"rule not found"
             )
         return subprocess.CompletedProcess(cmd, returncode=0, stdout=b"", stderr=b"")
 
     mock_run.side_effect = run_side_effect
 
-    result = firewall.apply_blacklist(["1.2.3.4"])
-
-    assert result is False
-
-
-@mock.patch("ostorlab.scanner.firewall.flush_blacklist")
-@mock.patch("subprocess.run")
-def testApplyBlacklist_whenCalled_flushesBlacklistFirst(
-    mock_run: mock.MagicMock,
-    mock_flush: mock.MagicMock,
-) -> None:
-    """Ensure apply_blacklist flushes existing rules before adding new ones."""
-    mock_flush.return_value = True
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
+    result = firewall.apply_scan_blacklist(
+        scan_id=42, ips=["1.2.3.4", "invalid-domain.com", "1.2.3.4; rm -rf /"]
     )
-
-    result = firewall.apply_blacklist(["192.168.1.1"])
-
-    mock_flush.assert_called_once()
-    assert result is True
-
-
-@mock.patch("subprocess.run")
-@mock.patch("ostorlab.scanner.firewall.flush_blacklist")
-def testApplyBlacklist_whenFlushFails_returnsFalse(
-    mock_flush: mock.MagicMock,
-    mock_run: mock.MagicMock,
-) -> None:
-    """Ensure apply_blacklist returns False when initial flush fails."""
-    mock_flush.return_value = False
-
-    result = firewall.apply_blacklist(["192.168.1.1"])
-
-    assert result is False
-    mock_run.assert_not_called()
-
-
-@mock.patch("subprocess.run")
-def testFlushBlacklist_whenCalled_flushesIptablesAndIp6tables(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Ensure flush_blacklist executes flush on both iptables and ip6tables."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.flush_blacklist()
-
-    assert result is True
-    assert mock_run.call_args_list == [
-        mock.call(
-            ["iptables", "-F", "OXO_EGRESS_FILTER"],
-            capture_output=True,
-            check=False,
-        ),
-        mock.call(
-            ["ip6tables", "-F", "OXO_EGRESS_FILTER"],
-            capture_output=True,
-            check=False,
-        ),
-    ]
-
-
-@mock.patch("subprocess.run")
-def testFlushBlacklist_whenChainNotFound_returnsFalse(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Ensure flush_blacklist returns False when command exits non-zero."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        ["iptables", "-F", "OXO_EGRESS_FILTER"],
-        returncode=1,
-        stdout=b"",
-        stderr=b"iptables: No chain/target/match by that name.",
-    )
-
-    result = firewall.flush_blacklist()
-
-    assert result is False
-
-
-@mock.patch("subprocess.run")
-def testFlushBlacklist_whenBinaryNotFound_returnsFalse(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Ensure flush_blacklist returns False when binary is missing."""
-    mock_run.side_effect = FileNotFoundError("No such file or directory: 'iptables'")
-
-    result = firewall.flush_blacklist()
-
-    assert result is False
-
-
-@mock.patch("subprocess.run")
-def testApplyBlacklist_whenIpContainsNoneOrNonString_returnsFalseWithoutCrashing(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Ensure apply_blacklist safely handles None or non-string entries without crashing."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.apply_blacklist(["1.2.3.4", None, 12345])  # type: ignore[list-item]
 
     assert result is False
     assert mock_run.call_args_list == [
         mock.call(
-            ["iptables", "-F", "OXO_EGRESS_FILTER"],
+            ["iptables", "-w", "10", "-N", "OXO_SCAN_42"],
             capture_output=True,
             check=False,
         ),
         mock.call(
-            ["ip6tables", "-F", "OXO_EGRESS_FILTER"],
+            ["iptables", "-w", "10", "-F", "OXO_SCAN_42"],
             capture_output=True,
             check=False,
         ),
         mock.call(
             [
                 "iptables",
+                "-w",
+                "10",
                 "-A",
-                "OXO_EGRESS_FILTER",
+                "OXO_SCAN_42",
                 "-d",
                 "1.2.3.4",
                 "-j",
@@ -514,4 +532,166 @@ def testApplyBlacklist_whenIpContainsNoneOrNonString_returnsFalseWithoutCrashing
             capture_output=True,
             check=False,
         ),
+        mock.call(
+            [
+                "iptables",
+                "-w",
+                "10",
+                "-C",
+                "OXO_EGRESS_FILTER",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "iptables",
+                "-w",
+                "10",
+                "-I",
+                "OXO_EGRESS_FILTER",
+                "1",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
     ]
+
+
+@mock.patch("subprocess.run")
+def testClearScanBlacklist_whenCalled_removesJumpFlushesAndDeletesChain(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure clear_scan_blacklist removes jump, flushes and deletes per-scan chain."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.clear_scan_blacklist(scan_id=42)
+
+    assert result is True
+    assert mock_run.call_args_list == [
+        mock.call(
+            [
+                "iptables",
+                "-w",
+                "10",
+                "-D",
+                "OXO_EGRESS_FILTER",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["iptables", "-w", "10", "-F", "OXO_SCAN_42"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["iptables", "-w", "10", "-X", "OXO_SCAN_42"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            [
+                "ip6tables",
+                "-w",
+                "10",
+                "-D",
+                "OXO_EGRESS_FILTER",
+                "-j",
+                "OXO_SCAN_42",
+            ],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["ip6tables", "-w", "10", "-F", "OXO_SCAN_42"],
+            capture_output=True,
+            check=False,
+        ),
+        mock.call(
+            ["ip6tables", "-w", "10", "-X", "OXO_SCAN_42"],
+            capture_output=True,
+            check=False,
+        ),
+    ]
+
+
+@mock.patch("subprocess.run")
+def testClearScanBlacklist_whenChainDoesNotExist_handlesGracefullyAndReturnsTrue(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure clear_scan_blacklist handles missing chains and rules gracefully."""
+
+    def run_side_effect(
+        cmd: list[str],
+        capture_output: bool = True,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del capture_output, check
+        if "-D" in cmd:
+            return subprocess.CompletedProcess(
+                cmd,
+                returncode=1,
+                stdout=b"",
+                stderr=b"iptables: Bad rule (does a matching rule exist?)",
+            )
+        if "-F" in cmd or "-X" in cmd:
+            return subprocess.CompletedProcess(
+                cmd,
+                returncode=1,
+                stdout=b"",
+                stderr=b"iptables: No chain/target/match by that name.",
+            )
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout=b"", stderr=b"")
+
+    mock_run.side_effect = run_side_effect
+
+    result = firewall.clear_scan_blacklist(scan_id=42)
+
+    assert result is True
+
+
+@mock.patch("ostorlab.scanner.firewall.clear_scan_blacklist")
+@mock.patch("subprocess.run")
+def testCleanupOrphanedChains_whenOrphanedChainsPresent_clearsOnlyOrphaned(
+    mock_run: mock.MagicMock,
+    mock_clear: mock.MagicMock,
+) -> None:
+    """Ensure cleanup_orphaned_chains parses -S output and clears only dead scan chains."""
+
+    def run_side_effect(
+        cmd: list[str],
+        capture_output: bool = True,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del capture_output, check
+        if cmd[0] == "iptables":
+            stdout = (
+                b"-P INPUT ACCEPT\n"
+                b"-N OXO_EGRESS_FILTER\n"
+                b"-N OXO_SCAN_10\n"
+                b"-N OXO_SCAN_20\n"
+            )
+        else:
+            stdout = (
+                b"-P INPUT ACCEPT\n"
+                b"-N OXO_EGRESS_FILTER\n"
+                b"-N OXO_SCAN_20\n"
+                b"-N OXO_SCAN_30\n"
+            )
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout=stdout, stderr=b"")
+
+    mock_run.side_effect = run_side_effect
+
+    firewall.cleanup_orphaned_chains(active_scan_ids={20})
+
+    assert mock_clear.call_count == 2
+    mock_clear.assert_has_calls([mock.call(10), mock.call(30)], any_order=True)
