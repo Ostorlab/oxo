@@ -248,6 +248,9 @@ def apply_scan_blacklist(scan_id: int, ips: list[str]) -> bool:
         else:
             ipv6_targets.append(target)
 
+    ipv4_targets = list(dict.fromkeys(ipv4_targets))
+    ipv6_targets = list(dict.fromkeys(ipv6_targets))
+
     targets_by_binary = [
         (IPTABLES_BIN, ipv4_targets),
         (IP6TABLES_BIN, ipv6_targets),

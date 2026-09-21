@@ -474,7 +474,9 @@ def testApplyScanBlacklist_whenValidIps_createsChainPopulatesRulesAndInsertsJump
 def testApplyScanBlacklist_whenEmptyIps_returnsTrueWithoutExecutingCommands(
     mock_run: mock.MagicMock,
 ) -> None:
-    """Ensure apply_scan_blacklist returns True without executing commands when ips is empty."""
+    """Ensure apply_scan_blacklist returns True without executing commands
+    when ips is empty.
+    """
     result = firewall.apply_scan_blacklist(scan_id=42, ips=[])
 
     assert result is True
@@ -665,7 +667,9 @@ def testCleanupOrphanedChains_whenOrphanedChainsPresent_clearsOnlyOrphaned(
     mock_run: mock.MagicMock,
     mock_clear: mock.MagicMock,
 ) -> None:
-    """Ensure cleanup_orphaned_chains parses -S output and clears only dead scan chains."""
+    """Ensure cleanup_orphaned_chains parses -S output and clears only dead
+    scan chains.
+    """
 
     def run_side_effect(
         cmd: list[str],
@@ -695,3 +699,105 @@ def testCleanupOrphanedChains_whenOrphanedChainsPresent_clearsOnlyOrphaned(
 
     assert mock_clear.call_count == 2
     mock_clear.assert_has_calls([mock.call(10), mock.call(30)], any_order=True)
+
+
+@mock.patch("subprocess.run")
+def testApplyScanBlacklist_whenIpContainsNonStringOrNone_returnsFalseWithoutCrashing(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure non-string and None IP inputs are handled safely and return False."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.apply_scan_blacklist(
+        scan_id=42,
+        ips=["1.1.1.1", None, 12345],  # type: ignore[list-item]
+    )
+
+    assert result is False
+
+
+@mock.patch("subprocess.run")
+def testApplyScanBlacklist_whenDropAppendFails_returnsFalse(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure apply_scan_blacklist returns False when DROP rule append fails."""
+
+    def run_side_effect(
+        cmd: list[str],
+        capture_output: bool = True,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del capture_output, check
+        if "-A" in cmd:
+            return subprocess.CompletedProcess(
+                cmd, returncode=1, stdout=b"", stderr=b"permission denied"
+            )
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout=b"", stderr=b"")
+
+    mock_run.side_effect = run_side_effect
+
+    result = firewall.apply_scan_blacklist(scan_id=42, ips=["1.1.1.1"])
+
+    assert result is False
+
+
+@mock.patch("subprocess.run")
+def testApplyScanBlacklist_whenDuplicateIpsProvided_deduplicatesRules(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure duplicate IPs are deduplicated before adding DROP rules."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.apply_scan_blacklist(
+        scan_id=42, ips=["1.1.1.1", "1.1.1.1", "2.2.2.2"]
+    )
+
+    assert result is True
+    append_calls = [call for call in mock_run.call_args_list if "-A" in call[0][0]]
+    assert len(append_calls) == 2
+
+
+@mock.patch("subprocess.run")
+def testClearScanBlacklist_whenCommandFails_returnsFalse(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure clear_scan_blacklist returns False when command execution fails."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=1, stdout=b"", stderr=b"permission denied"
+    )
+
+    result = firewall.clear_scan_blacklist(scan_id=42)
+
+    assert result is False
+
+
+@mock.patch("subprocess.run")
+def testApplyBlacklist_whenValidIps_returnsTrue(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Smoke test for legacy apply_blacklist with wait flag."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.apply_blacklist(["1.1.1.1"])
+
+    assert result is True
+
+
+@mock.patch("subprocess.run")
+def testFlushBlacklist_whenCalled_returnsTrue(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Smoke test for legacy flush_blacklist with wait flag."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.flush_blacklist()
+
+    assert result is True
