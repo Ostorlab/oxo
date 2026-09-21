@@ -52,11 +52,13 @@ class ScanHandler:
             )
         firewall.flush_blacklist()
         self._active_blacklists: dict[str, list[str]] = {}
+        self._firewall_healthy: bool = True
 
     def close(self) -> None:
         self._docker_client.close()
         self._active_blacklists.clear()
         firewall.flush_blacklist()
+        self._firewall_healthy = True
 
     def _sync_firewall_rules(self) -> bool:
         """Synchronize firewall rules with the union of all active scan blacklists."""
@@ -68,8 +70,11 @@ class ScanHandler:
         unique_ips = list(dict.fromkeys(all_ips))
         if not unique_ips:
             firewall.flush_blacklist()
+            self._firewall_healthy = True
             return True
-        return firewall.apply_blacklist(unique_ips)
+        success = firewall.apply_blacklist(unique_ips)
+        self._firewall_healthy = success
+        return success
 
     def handle_messages(
         self,
@@ -80,6 +85,17 @@ class ScanHandler:
         logger.info("Starting main API polling loop.")
 
         while True:
+            if self._firewall_healthy is False:
+                logger.error(
+                    "Firewall rules are in an unhealthy state. Retrying sync..."
+                )
+                if self._sync_firewall_rules() is False:
+                    logger.error(
+                        "Firewall sync retry failed. Pausing scan scheduling..."
+                    )
+                    time.sleep(WAIT_CHECK_MESSAGES.seconds)
+                    continue
+
             running_universes = self._get_running_universes()
             if running_universes is None:
                 running_universes_count = self._max_concurrent_scans
@@ -93,7 +109,13 @@ class ScanHandler:
                 if finished_scans:
                     for finished_scan_id in finished_scans:
                         del self._active_blacklists[finished_scan_id]
-                    self._sync_firewall_rules()
+                    if self._sync_firewall_rules() is False:
+                        logger.error(
+                            "Failed to re-sync firewall rules after scan completion. "
+                            "Pausing scan scheduling..."
+                        )
+                        time.sleep(WAIT_CHECK_MESSAGES.seconds)
+                        continue
 
             if running_universes_count > self._max_concurrent_scans:
                 logger.error(
@@ -296,11 +318,17 @@ class ScanHandler:
 
     def _rollback_scan_state(
         self, runner: scanner_runner.ScannerAPIRunner, scan_id_val: Any
-    ) -> None:
+    ) -> bool:
         """Reverts a scan's progress to not_started if local execution fails."""
+        sync_success = True
         if str(scan_id_val) in self._active_blacklists:
             del self._active_blacklists[str(scan_id_val)]
-            self._sync_firewall_rules()
+            sync_success = self._sync_firewall_rules()
+            if sync_success is False:
+                logger.error(
+                    "Failed to re-sync firewall rules during rollback of scan %s.",
+                    scan_id_val,
+                )
         try:
             runner.execute(
                 request=scan_update_state.ScanUpdateStateAPIRequest(
@@ -312,6 +340,7 @@ class ScanHandler:
             )
         except Exception:
             logger.exception("FATAL: Failed to rollback scan %s", scan_id_val)
+        return sync_success
 
     def _get_running_universes(self) -> set[str] | None:
         """Get set of running universe identifiers from Docker services."""
@@ -332,19 +361,6 @@ class ScanHandler:
             if universe is not None:
                 universes.add(universe)
         return universes
-
-    def _count_running_universes(self) -> int:
-        """Count the universes currently running on this host.
-
-        Returns:
-            The number of distinct `ostorlab.universe` label values across the
-            host services. On a Docker error, the concurrency limit is returned
-            so the caller treats the host as full.
-        """
-        universes = self._get_running_universes()
-        if universes is None:
-            return self._max_concurrent_scans
-        return len(universes)
 
 
 def start_scan_loop(

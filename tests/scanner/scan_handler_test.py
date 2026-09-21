@@ -32,8 +32,8 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     )
     mocker.patch.object(
         scan_handler.ScanHandler,
-        "_count_running_universes",
-        side_effect=[0, 1],
+        "_get_running_universes",
+        return_value=set(),
     )
     mocker.patch(
         "ostorlab.scanner.scan_handler.time.sleep",
@@ -55,10 +55,10 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     assert trigger_mock.call_args.kwargs["api_key"] == "test_api_key"
 
 
-def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
+def testGetRunningUniverses_whenServicesShareUniverses_returnsDistinctSet(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_count_running_universes should count distinct universes, not services."""
+    """_get_running_universes should return distinct universe IDs."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
@@ -73,15 +73,15 @@ def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
         mocker.MagicMock(attrs={"Spec": {"Labels": {}}}),
     ]
 
-    result = scan_handler_instance._count_running_universes()
+    result = scan_handler_instance._get_running_universes()
 
-    assert result == 2
+    assert result == {"42", "43"}
 
 
-def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
+def testGetRunningUniverses_whenDockerFails_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """A Docker error must not let the host claim more scans."""
+    """_get_running_universes should return None on Docker error."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
@@ -95,9 +95,9 @@ def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
         docker.errors.DockerException("boom")
     )
 
-    result = scan_handler_instance._count_running_universes()
+    result = scan_handler_instance._get_running_universes()
 
-    assert result == 3
+    assert result is None
 
 
 def testReserveSingleScan_whenFirstScanSucceeds_returnsScanData(
@@ -681,3 +681,103 @@ def testClose_always_clearsActiveBlacklistsAndFlushesBlacklist(
 
     mock_flush.assert_called_once()
     assert scan_handler_instance._active_blacklists == {}
+
+
+def testRollbackScanState_whenSyncFails_returnsFalseAndMarksFirewallUnhealthy(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_rollback_scan_state returns False and marks firewall unhealthy when sync fails."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._active_blacklists = {
+        "41": ["1.1.1.1"],
+        "42": ["2.2.2.2"],
+    }
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=False,
+    )
+    runner = mocker.MagicMock()
+
+    result = scan_handler_instance._rollback_scan_state(runner=runner, scan_id_val=42)
+
+    assert result is False
+    assert scan_handler_instance._firewall_healthy is False
+
+
+def testHandleMessages_whenUniverseFinishesAndSyncFails_pausesAndDoesNotSchedule(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """handle_messages pauses scheduling and does not reserve scans when finished universe sync fails."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._active_blacklists = {
+        "41": ["1.1.1.1"],
+        "42": ["2.2.2.2"],
+    }
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value={"42"},
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=False,
+    )
+    mock_fetch = mocker.patch.object(scan_handler_instance, "_fetch_available_scans")
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.time.sleep",
+        side_effect=RuntimeError("stop"),
+    )
+    runner = mocker.MagicMock()
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner=runner)
+
+    mock_fetch.assert_not_called()
+    assert scan_handler_instance._firewall_healthy is False
+
+
+def testHandleMessages_whenFirewallUnhealthy_retriesSyncAndSkipsSchedulingIfFailed(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """handle_messages retries sync when firewall unhealthy and pauses if it fails."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._firewall_healthy = False
+    scan_handler_instance._active_blacklists = {"42": ["2.2.2.2"]}
+
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value={"42"},
+    )
+    mock_sync = mocker.patch.object(
+        scan_handler_instance,
+        "_sync_firewall_rules",
+        return_value=False,
+    )
+    mock_fetch = mocker.patch.object(scan_handler_instance, "_fetch_available_scans")
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.time.sleep",
+        side_effect=RuntimeError("stop"),
+    )
+    runner = mocker.MagicMock()
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner=runner)
+
+    mock_sync.assert_called_once()
+    mock_fetch.assert_not_called()
