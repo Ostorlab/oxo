@@ -130,10 +130,10 @@ def flush_blacklist() -> bool:
 def apply_blacklist(ips: list[str]) -> bool:
     """Flush and apply blacklist DROP rules for the given IPs and networks."""
     flush_success = flush_blacklist()
-    if not ips:
+    if not ips or flush_success is False:
         return flush_success
 
-    all_success = flush_success
+    all_success: bool = True
     for ip in ips:
         network = _validate_ip(ip)
         if network is None:

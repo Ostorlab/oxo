@@ -50,21 +50,23 @@ class ScanHandler:
             logger.warning(
                 "Firewall chain setup failed. Network isolation will be disabled."
             )
-        flush_success = firewall.flush_blacklist()
+            self._firewall_healthy: bool = True
+        else:
+            self._firewall_healthy = firewall.flush_blacklist()
         self._active_blacklists: dict[str, list[str]] = {}
-        self._firewall_healthy: bool = flush_success
 
     def close(self) -> None:
         self._docker_client.close()
-        if not self._active_blacklists:
-            firewall.flush_blacklist()
-        else:
-            self._sync_firewall_rules()
+        if self._firewall_enabled is True:
+            if not self._active_blacklists:
+                firewall.flush_blacklist()
+            else:
+                self._sync_firewall_rules()
 
     def _sync_firewall_rules(self) -> bool:
         """Synchronize firewall rules with the union of all active scan blacklists."""
         if self._firewall_enabled is False:
-            return False
+            return True
         all_ips: list[str] = []
         for ips in self._active_blacklists.values():
             all_ips.extend(ips)
@@ -86,7 +88,7 @@ class ScanHandler:
         logger.info("Starting main API polling loop.")
 
         while True:
-            if self._firewall_healthy is False:
+            if self._firewall_enabled is True and self._firewall_healthy is False:
                 logger.error(
                     "Firewall rules are in an unhealthy state. Retrying sync..."
                 )

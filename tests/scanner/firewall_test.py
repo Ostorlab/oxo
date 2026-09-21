@@ -408,9 +408,11 @@ def testApplyBlacklist_whenCalled_flushesBlacklistFirst(
     assert result is True
 
 
+@mock.patch("subprocess.run")
 @mock.patch("ostorlab.scanner.firewall.flush_blacklist")
 def testApplyBlacklist_whenFlushFails_returnsFalse(
     mock_flush: mock.MagicMock,
+    mock_run: mock.MagicMock,
 ) -> None:
     """Ensure apply_blacklist returns False when initial flush fails."""
     mock_flush.return_value = False
@@ -418,6 +420,7 @@ def testApplyBlacklist_whenFlushFails_returnsFalse(
     result = firewall.apply_blacklist(["192.168.1.1"])
 
     assert result is False
+    mock_run.assert_not_called()
 
 
 @mock.patch("subprocess.run")

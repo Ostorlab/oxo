@@ -353,7 +353,7 @@ def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
         "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
         return_value=False,
     )
-    mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
+    mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
@@ -363,6 +363,8 @@ def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
     assert scan_handler_instance._firewall_enabled is False
+    assert scan_handler_instance._firewall_healthy is True
+    mock_flush.assert_not_called()
 
 
 def testTriggerScanWithRollback_whenBlacklistedIpsPresent_appliesBlacklist(
@@ -837,3 +839,82 @@ def testHandleMessages_whenFirewallUnhealthy_retriesSyncAndSkipsSchedulingIfFail
 
     mock_sync.assert_called_once()
     mock_fetch.assert_not_called()
+
+
+def testSyncFirewallRules_whenFirewallDisabled_returnsTrue(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_sync_firewall_rules should return True as no-op when firewall is disabled."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._firewall_enabled = False
+
+    result = scan_handler_instance._sync_firewall_rules()
+
+    assert result is True
+    assert scan_handler_instance._firewall_healthy is True
+
+
+def testHandleMessages_whenFirewallDisabled_schedulesScansNormally(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """handle_messages should not pause or get stuck in retry loop when firewall is disabled."""
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
+        return_value=False,
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    runner = mocker.MagicMock()
+    mocker.patch.object(
+        scan_handler_instance,
+        "_fetch_available_scans",
+        return_value=[{"id": 1}],
+    )
+    mocker.patch.object(
+        scan_handler_instance,
+        "_reserve_single_scan",
+        return_value={"id": 42},
+    )
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        side_effect=[set(), {"42"}],
+    )
+    trigger_mock = mocker.patch.object(
+        scan_handler_instance,
+        "_trigger_scan_with_rollback",
+        return_value=42,
+    )
+    mocker.patch("time.sleep", side_effect=RuntimeError("stop"))
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner=runner)
+
+    trigger_mock.assert_called_once()
+
+
+def testClose_whenFirewallDisabled_doesNotFlush(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """close should not flush blacklist when firewall is disabled."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._firewall_enabled = False
+    mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
+
+    scan_handler_instance.close()
+
+    mock_flush.assert_not_called()
