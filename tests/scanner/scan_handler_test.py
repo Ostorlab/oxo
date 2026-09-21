@@ -1,5 +1,7 @@
 """Unit tests for scan handler module."""
 
+from unittest import mock
+
 import docker
 import pytest
 from pytest_mock import plugin
@@ -314,7 +316,8 @@ def testScanHandlerInit_always_ensuresFirewallChainsAndFlushesBlacklist(
 ) -> None:
     """ScanHandler.__init__ should ensure firewall chains exist and flush blacklist."""
     mock_ensure = mocker.patch(
-        "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains"
+        "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
+        return_value=True,
     )
     mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
     state_reporter = scanner_state_reporter.ScannerStateReporter(
@@ -327,7 +330,28 @@ def testScanHandlerInit_always_ensuresFirewallChainsAndFlushesBlacklist(
 
     mock_ensure.assert_called_once()
     mock_flush.assert_called_once()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    assert scan_handler_instance._firewall_enabled is True
+    assert scan_handler_instance._active_blacklists == {}
+
+
+def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """ScanHandler.__init__ should record disabled firewall when setup fails."""
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
+        return_value=False,
+    )
+    mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    assert scan_handler_instance._firewall_enabled is False
 
 
 def testTriggerScanWithRollback_whenBlacklistedIpsPresent_appliesBlacklist(
@@ -340,7 +364,10 @@ def testTriggerScanWithRollback_whenBlacklistedIpsPresent_appliesBlacklist(
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    mock_apply = mocker.patch("ostorlab.scanner.scan_handler.firewall.apply_blacklist")
+    mock_apply = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=True,
+    )
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         return_value="local-42",
@@ -357,20 +384,80 @@ def testTriggerScanWithRollback_whenBlacklistedIpsPresent_appliesBlacklist(
 
     assert result == "local-42"
     mock_apply.assert_called_once_with(["1.2.3.4", "10.0.0.0/8"])
-    assert scan_handler_instance._has_active_firewall_rules is True
+    assert scan_handler_instance._active_blacklists == {"42": ["1.2.3.4", "10.0.0.0/8"]}
 
 
-def testTriggerScanWithRollback_whenBlacklistEmptyAndRulesActive_flushesBlacklist(
+def testTriggerScanWithRollback_whenFirewallDisabledAndBlacklistPresent_rollsBack(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_trigger_scan_with_rollback flushes blacklist when empty but rules active."""
+    """_trigger_scan_with_rollback rolls back when firewall is disabled and blacklist required."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    scan_handler_instance._has_active_firewall_rules = True
+    scan_handler_instance._firewall_enabled = False
+    mock_apply = mocker.patch("ostorlab.scanner.scan_handler.firewall.apply_blacklist")
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {"data": {"updateScan": {"success": True}}}
+    reserved_scan = {
+        "id": 42,
+        "blacklistedIps": ["1.2.3.4"],
+    }
+
+    result = scan_handler_instance._trigger_scan_with_rollback(
+        runner=runner, reserved_scan=reserved_scan, api_key="test-key"
+    )
+
+    assert result is None
+    mock_apply.assert_not_called()
+    assert scan_handler_instance._active_blacklists == {}
+    runner.execute.assert_called_once()
+
+
+def testTriggerScanWithRollback_whenApplyBlacklistFails_rollsBack(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_trigger_scan_with_rollback rolls back when apply_blacklist returns False."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=False,
+    )
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {"data": {"updateScan": {"success": True}}}
+    reserved_scan = {
+        "id": 42,
+        "blacklistedIps": ["1.2.3.4"],
+    }
+
+    result = scan_handler_instance._trigger_scan_with_rollback(
+        runner=runner, reserved_scan=reserved_scan, api_key="test-key"
+    )
+
+    assert result is None
+    assert scan_handler_instance._active_blacklists == {}
+    runner.execute.assert_called_once()
+
+
+def testTriggerScanWithRollback_whenNoBlacklistAndOtherActiveRules_preservesActiveRules(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_trigger_scan_with_rollback leaves existing rules untouched when new scan has no blacklist."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._active_blacklists = {"41": ["1.1.1.1"]}
+    mock_apply = mocker.patch("ostorlab.scanner.scan_handler.firewall.apply_blacklist")
     mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
@@ -385,71 +472,109 @@ def testTriggerScanWithRollback_whenBlacklistEmptyAndRulesActive_flushesBlacklis
     )
 
     assert result == "local-42"
-    mock_flush.assert_called_once()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    mock_flush.assert_not_called()
+    mock_apply.assert_not_called()
+    assert scan_handler_instance._active_blacklists == {"41": ["1.1.1.1"]}
 
 
-def testTriggerScanWithRollback_whenNoBlacklistAndNoActiveRules_doesNotTouchFirewall(
+def testTriggerScanWithRollback_whenMultipleScansWithBlacklists_mergesUnion(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_trigger_scan_with_rollback skips firewall when no IPs and no active rules."""
+    """_trigger_scan_with_rollback merges union of blacklisted IPs across concurrent scans."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    mock_apply = mocker.patch("ostorlab.scanner.scan_handler.firewall.apply_blacklist")
-    mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
+    scan_handler_instance._active_blacklists = {"41": ["1.1.1.1"]}
+    mock_apply = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=True,
+    )
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         return_value="local-42",
     )
+    runner = mocker.MagicMock()
+    reserved_scan = {
+        "id": 42,
+        "blacklistedIps": ["2.2.2.2", "1.1.1.1"],
+    }
 
     result = scan_handler_instance._trigger_scan_with_rollback(
-        runner=mocker.MagicMock(),
-        reserved_scan={"id": 42},
-        api_key="test-key",
+        runner=runner, reserved_scan=reserved_scan, api_key="test-key"
     )
 
     assert result == "local-42"
-    mock_apply.assert_not_called()
-    mock_flush.assert_not_called()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    mock_apply.assert_called_once_with(["1.1.1.1", "2.2.2.2"])
+    assert scan_handler_instance._active_blacklists == {
+        "41": ["1.1.1.1"],
+        "42": ["2.2.2.2", "1.1.1.1"],
+    }
 
 
-def testRollbackScanState_always_flushesBlacklistAndResetsFlag(
+def testRollbackScanState_whenOtherActiveScansExist_resyncsRemainingRules(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_rollback_scan_state should flush blacklist and reset active flag."""
+    """_rollback_scan_state removes failed scan from active blacklists and resyncs remaining."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    scan_handler_instance._has_active_firewall_rules = True
+    scan_handler_instance._active_blacklists = {
+        "41": ["1.1.1.1"],
+        "42": ["2.2.2.2"],
+    }
+    mock_apply = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=True,
+    )
+    runner = mocker.MagicMock()
+
+    scan_handler_instance._rollback_scan_state(runner=runner, scan_id_val=42)
+
+    mock_apply.assert_called_once_with(["1.1.1.1"])
+    assert scan_handler_instance._active_blacklists == {"41": ["1.1.1.1"]}
+
+
+def testRollbackScanState_whenLastActiveScanRollsBack_flushesBlacklist(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_rollback_scan_state flushes blacklist when no other scans remain."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._active_blacklists = {"42": ["2.2.2.2"]}
     mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
     runner = mocker.MagicMock()
 
     scan_handler_instance._rollback_scan_state(runner=runner, scan_id_val=42)
 
     mock_flush.assert_called_once()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    assert scan_handler_instance._active_blacklists == {}
 
 
-def testTriggerScanWithRollback_whenStartScanFailsWithBlacklist_flushesBlacklist(
+def testTriggerScanWithRollback_whenStartScanFailsWithBlacklist_rollsBackAndResyncs(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """_trigger_scan_with_rollback should flush blacklist on scan start failure."""
+    """_trigger_scan_with_rollback should roll back and resync remaining on scan start failure."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    mock_apply = mocker.patch("ostorlab.scanner.scan_handler.firewall.apply_blacklist")
-    mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
+    scan_handler_instance._active_blacklists = {"41": ["1.1.1.1"]}
+    mock_apply = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=True,
+    )
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         side_effect=RuntimeError("start failed"),
@@ -457,7 +582,7 @@ def testTriggerScanWithRollback_whenStartScanFailsWithBlacklist_flushesBlacklist
     runner = mocker.MagicMock()
     reserved_scan = {
         "id": 42,
-        "blacklistedIps": ["1.2.3.4"],
+        "blacklistedIps": ["2.2.2.2"],
     }
 
     result = scan_handler_instance._trigger_scan_with_rollback(
@@ -465,26 +590,64 @@ def testTriggerScanWithRollback_whenStartScanFailsWithBlacklist_flushesBlacklist
     )
 
     assert result is None
-    mock_apply.assert_called_once_with(["1.2.3.4"])
-    mock_flush.assert_called_once()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    assert mock_apply.call_args_list == [
+        mock.call(["1.1.1.1", "2.2.2.2"]),
+        mock.call(["1.1.1.1"]),
+    ]
+    assert scan_handler_instance._active_blacklists == {"41": ["1.1.1.1"]}
 
 
-def testHandleMessages_whenRunningUniverseFinishesAndHadActiveRules_flushesBlacklist(
+def testHandleMessages_whenOneUniverseFinishes_resyncsRemainingRules(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """handle_messages should flush blacklist when running universe count drops to 0."""
+    """handle_messages should resync firewall when one of multiple universes finishes."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    scan_handler_instance._has_active_firewall_rules = True
+    scan_handler_instance._active_blacklists = {
+        "41": ["1.1.1.1"],
+        "42": ["2.2.2.2"],
+    }
     mocker.patch.object(
-        scan_handler.ScanHandler,
-        "_count_running_universes",
-        return_value=0,
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value={"42"},
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.time.sleep",
+        side_effect=RuntimeError("stop"),
+    )
+    mock_apply = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.apply_blacklist",
+        return_value=True,
+    )
+    runner = mocker.MagicMock()
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner=runner)
+
+    mock_apply.assert_called_once_with(["2.2.2.2"])
+    assert scan_handler_instance._active_blacklists == {"42": ["2.2.2.2"]}
+
+
+def testHandleMessages_whenAllUniversesFinish_flushesBlacklist(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """handle_messages should flush blacklist when all running universes finish."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._active_blacklists = {"42": ["2.2.2.2"]}
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value=set(),
     )
     mocker.patch(
         "ostorlab.scanner.scan_handler.time.sleep",
@@ -497,13 +660,13 @@ def testHandleMessages_whenRunningUniverseFinishesAndHadActiveRules_flushesBlack
         scan_handler_instance.handle_messages(runner=runner)
 
     mock_flush.assert_called_once()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    assert scan_handler_instance._active_blacklists == {}
 
 
-def testClose_always_flushesBlacklistAndResetsFlag(
+def testClose_always_clearsActiveBlacklistsAndFlushesBlacklist(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """close should flush blacklist and reset active flag."""
+    """close should clear active blacklists and flush blacklist."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
@@ -511,10 +674,10 @@ def testClose_always_flushesBlacklistAndResetsFlag(
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
     scan_handler_instance._docker_client = mocker.MagicMock()
-    scan_handler_instance._has_active_firewall_rules = True
+    scan_handler_instance._active_blacklists = {"42": ["2.2.2.2"]}
     mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
 
     scan_handler_instance.close()
 
     mock_flush.assert_called_once()
-    assert scan_handler_instance._has_active_firewall_rules is False
+    assert scan_handler_instance._active_blacklists == {}

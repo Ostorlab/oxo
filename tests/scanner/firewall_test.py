@@ -281,8 +281,9 @@ def testApplyBlacklist_whenMixedValidAndInvalidIps_appliesValidAndSkipsInvalid(
         "1.2.3.4; rm -rf /",
     ]
 
-    firewall.apply_blacklist(ips)
+    result = firewall.apply_blacklist(ips)
 
+    assert result is False
     assert mock_run.call_args_list == [
         mock.call(
             ["iptables", "-F", "OXO_EGRESS_FILTER"],
@@ -334,6 +335,59 @@ def testApplyBlacklist_whenMixedValidAndInvalidIps_appliesValidAndSkipsInvalid(
             check=False,
         ),
     ]
+
+
+@mock.patch("subprocess.run")
+def testApplyBlacklist_whenAllIpsValidAndCommandSucceeds_returnsTrue(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure apply_blacklist returns True when all rules are applied successfully."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.apply_blacklist(["1.2.3.4", "2001:db8::1"])
+
+    assert result is True
+
+
+@mock.patch("subprocess.run")
+def testApplyBlacklist_whenEmptyIps_returnsTrue(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure apply_blacklist returns True when ips list is empty."""
+    mock_run.return_value = subprocess.CompletedProcess(
+        [], returncode=0, stdout=b"", stderr=b""
+    )
+
+    result = firewall.apply_blacklist([])
+
+    assert result is True
+
+
+@mock.patch("subprocess.run")
+def testApplyBlacklist_whenCommandFails_returnsFalse(
+    mock_run: mock.MagicMock,
+) -> None:
+    """Ensure apply_blacklist returns False when command returns non-zero code."""
+
+    def run_side_effect(
+        cmd: list[str],
+        capture_output: bool = True,
+        check: bool = False,
+    ) -> subprocess.CompletedProcess[bytes]:
+        del capture_output, check
+        if "-A" in cmd:
+            return subprocess.CompletedProcess(
+                cmd, returncode=1, stdout=b"", stderr=b"iptables error"
+            )
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout=b"", stderr=b"")
+
+    mock_run.side_effect = run_side_effect
+
+    result = firewall.apply_blacklist(["1.2.3.4"])
+
+    assert result is False
 
 
 @mock.patch("ostorlab.scanner.firewall.flush_blacklist")

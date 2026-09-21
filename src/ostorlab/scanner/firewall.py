@@ -123,12 +123,17 @@ def flush_blacklist() -> None:
             )
 
 
-def apply_blacklist(ips: list[str]) -> None:
+def apply_blacklist(ips: list[str]) -> bool:
     """Flush and apply blacklist DROP rules for the given IPs and networks."""
     flush_blacklist()
+    if not ips:
+        return True
+
+    all_success = True
     for ip in ips:
         network = _validate_ip(ip)
         if network is None:
+            all_success = False
             continue
         target = (
             str(network.network_address)
@@ -136,7 +141,7 @@ def apply_blacklist(ips: list[str]) -> None:
             else str(network)
         )
         if isinstance(network, ipaddress.IPv4Network):
-            _execute_command(
+            result = _execute_command(
                 [
                     IPTABLES_BIN,
                     "-A",
@@ -147,8 +152,8 @@ def apply_blacklist(ips: list[str]) -> None:
                     "DROP",
                 ]
             )
-        elif isinstance(network, ipaddress.IPv6Network):
-            _execute_command(
+        else:
+            result = _execute_command(
                 [
                     IP6TABLES_BIN,
                     "-A",
@@ -159,3 +164,12 @@ def apply_blacklist(ips: list[str]) -> None:
                     "DROP",
                 ]
             )
+        if result is None or result.returncode != 0:
+            error_msg = (
+                result.stderr.decode(errors="ignore")
+                if result is not None
+                else "command failed"
+            )
+            logger.warning("Failed to append DROP rule for %s: %s", target, error_msg)
+            all_success = False
+    return all_success
