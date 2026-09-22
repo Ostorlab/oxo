@@ -19,6 +19,9 @@ def mock_firewall_setup(mocker: plugin.MockerFixture) -> None:
         "ostorlab.scanner.scan_handler.firewall.flush_blacklist",
         return_value=True,
     )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.cleanup_orphaned_chains",
+    )
 
 
 def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
@@ -41,11 +44,6 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
         "_reserve_single_scan",
         return_value={"id": 42, "agentGroup": {"key": "test/group"}},
     )
-    mocker.patch.object(
-        scan_handler.ScanHandler,
-        "_get_running_universes",
-        side_effect=[set(), {"42"}],
-    )
     mocker.patch(
         "ostorlab.scanner.scan_handler.time.sleep",
         side_effect=RuntimeError("stop"),
@@ -57,6 +55,11 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        side_effect=[set(), {"42"}],
+    )
     runner = mocker.MagicMock()
 
     with pytest.raises(RuntimeError, match="stop"):
@@ -252,6 +255,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
     ).return_value
     docker_client.services.list.side_effect = [
         [],
+        [],
         [mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}})],
     ]
     start_scan_mock = mocker.patch(
@@ -343,6 +347,33 @@ def testScanHandlerInit_always_ensuresFirewallChainsWithoutFlush(
     mock_flush.assert_not_called()
     assert scan_handler_instance._firewall_enabled is True
     assert scan_handler_instance._active_scan_ids == set()
+
+
+def testScanHandlerInit_whenFirewallEnabled_cleansUpOrphanedChainsWithRunningUniverses(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """ScanHandler.__init__ cleans up orphaned chains for non-running scans."""
+    mock_cleanup = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.cleanup_orphaned_chains"
+    )
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
+        return_value=True,
+    )
+    mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_get_running_universes",
+        return_value={"42", "43", "invalid"},
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+
+    scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    mock_cleanup.assert_called_once_with(active_scan_ids={42, 43})
 
 
 def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
@@ -587,6 +618,29 @@ def testRollbackScanState_whenFirewallDisabled_doesNotCallClearScanBlacklist(
     mock_clear.assert_not_called()
 
 
+def testRollbackScanState_whenClearFails_retainsScanIdInActiveScanIds(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """_rollback_scan_state retains scan ID in _active_scan_ids when clear fails."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._active_scan_ids = {41, 42}
+    mock_clear = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.clear_scan_blacklist",
+        return_value=False,
+    )
+    runner = mocker.MagicMock()
+
+    scan_handler_instance._rollback_scan_state(runner=runner, scan_id_val=42)
+
+    mock_clear.assert_called_once_with(scan_id=42)
+    assert scan_handler_instance._active_scan_ids == {41, 42}
+
+
 def testTriggerScanWithRollback_whenStartScanFailsWithBlacklist_rollsBackAndClearsScan(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -691,7 +745,7 @@ def testHandleMessages_whenClearFails_logsErrorAndContinues(
         scan_handler_instance.handle_messages(runner=runner)
 
     mock_clear.assert_called_once_with(scan_id=42)
-    assert scan_handler_instance._active_scan_ids == set()
+    assert scan_handler_instance._active_scan_ids == {42}
 
 
 def testClose_whenNoActiveScans_doesNotCallClear(

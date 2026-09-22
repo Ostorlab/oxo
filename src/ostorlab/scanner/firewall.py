@@ -1,8 +1,13 @@
 """Firewall management for scan network isolation using iptables."""
 
+import contextlib
 import ipaddress
 import logging
+import os
 import subprocess
+import sys
+import tempfile
+from collections.abc import Iterator
 
 logger = logging.getLogger(__name__)
 
@@ -12,6 +17,28 @@ IPTABLES_BIN = "iptables"
 IP6TABLES_BIN = "ip6tables"
 IPTABLES_WAIT_TIMEOUT = "10"
 OXO_SCAN_PREFIX = "OXO_SCAN_"
+
+
+@contextlib.contextmanager
+def _firewall_lock() -> Iterator[None]:
+    """Inter-process file lock preventing concurrent firewall chain setup races."""
+    if sys.platform == "win32":
+        yield
+        return
+
+    import fcntl
+
+    lock_file_path = os.path.join(tempfile.gettempdir(), "oxo_firewall_setup.lock")
+    try:
+        with open(lock_file_path, "a+") as lock_file:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+    except OSError as error:
+        logger.warning("Failed to acquire firewall setup lock: %s", error)
+        yield
 
 
 def _execute_command(cmd: list[str]) -> subprocess.CompletedProcess[bytes] | None:
@@ -212,15 +239,16 @@ def _remove_jump_rule(binary: str, parent_chain: str, target_chain: str) -> bool
 
 def ensure_firewall_chains() -> bool:
     """Ensure OXO_EGRESS_FILTER chain exists and is hooked into DOCKER-USER."""
-    for binary in (IPTABLES_BIN, IP6TABLES_BIN):
-        if _ensure_chain(binary, OXO_EGRESS_FILTER_CHAIN) is False:
-            return False
-        if (
-            _ensure_jump_rule(binary, DOCKER_USER_CHAIN, OXO_EGRESS_FILTER_CHAIN)
-            is False
-        ):
-            return False
-    return True
+    with _firewall_lock():
+        for binary in (IPTABLES_BIN, IP6TABLES_BIN):
+            if _ensure_chain(binary, OXO_EGRESS_FILTER_CHAIN) is False:
+                return False
+            if (
+                _ensure_jump_rule(binary, DOCKER_USER_CHAIN, OXO_EGRESS_FILTER_CHAIN)
+                is False
+            ):
+                return False
+        return True
 
 
 def apply_scan_blacklist(scan_id: int, ips: list[str]) -> bool:

@@ -50,6 +50,11 @@ class ScanHandler:
             logger.warning(
                 "Firewall chain setup failed. Network isolation will be disabled."
             )
+        else:
+            running_universes = self._get_running_universes()
+            if running_universes is not None:
+                active_ids = {int(u) for u in running_universes if u.isdigit() is True}
+                firewall.cleanup_orphaned_chains(active_scan_ids=active_ids)
         self._active_scan_ids: set[int] = set()
 
     def close(self) -> None:
@@ -80,16 +85,19 @@ class ScanHandler:
                 ]
                 if len(finished_scans) > 0:
                     for finished_scan_id in finished_scans:
-                        self._active_scan_ids.discard(finished_scan_id)
                         if self._firewall_enabled is True:
                             clear_success = firewall.clear_scan_blacklist(
                                 scan_id=finished_scan_id
                             )
-                            if clear_success is False:
+                            if clear_success is True:
+                                self._active_scan_ids.discard(finished_scan_id)
+                            else:
                                 logger.error(
-                                    "Failed to clear firewall rules for finished scan %s.",
+                                    "Failed to clear firewall rules for finished scan %s. Will retry.",
                                     finished_scan_id,
                                 )
+                        else:
+                            self._active_scan_ids.discard(finished_scan_id)
 
             if running_universes_count > self._max_concurrent_scans:
                 logger.error(
@@ -309,15 +317,18 @@ class ScanHandler:
         clear_success = True
         try:
             scan_id_int = int(scan_id_val)
-            if scan_id_int in self._active_scan_ids:
-                self._active_scan_ids.discard(scan_id_int)
             if self._firewall_enabled is True:
                 clear_success = firewall.clear_scan_blacklist(scan_id=scan_id_int)
-                if clear_success is False:
+                if clear_success is True:
+                    self._active_scan_ids.discard(scan_id_int)
+                else:
+                    self._active_scan_ids.add(scan_id_int)
                     logger.error(
-                        "Failed to clear firewall rules during rollback of scan %s.",
+                        "Failed to clear firewall rules during rollback of scan %s. Retrying in loop.",
                         scan_id_val,
                     )
+            else:
+                self._active_scan_ids.discard(scan_id_int)
         except (ValueError, TypeError):
             logger.warning("Invalid scan ID format in rollback: %s", scan_id_val)
 
