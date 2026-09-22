@@ -6,13 +6,11 @@ from unittest import mock
 from ostorlab.scanner import firewall
 
 
-@mock.patch("ostorlab.scanner.firewall.flush_blacklist")
 @mock.patch("subprocess.run")
-def testEnsureFirewallChains_always_includesWaitFlagAndDoesNotFlush(
+def testEnsureFirewallChains_always_includesWaitFlag(
     mock_run: mock.MagicMock,
-    mock_flush: mock.MagicMock,
 ) -> None:
-    """Ensure chains include -w 10 flag and flush_blacklist is never called."""
+    """Ensure chains include -w 10 flag on all invocations."""
     mock_run.return_value = subprocess.CompletedProcess(
         [], returncode=0, stdout=b"", stderr=b""
     )
@@ -20,7 +18,6 @@ def testEnsureFirewallChains_always_includesWaitFlagAndDoesNotFlush(
     result = firewall.ensure_firewall_chains()
 
     assert result is True
-    mock_flush.assert_not_called()
     assert mock_run.call_count == 4
     for call in mock_run.call_args_list:
         cmd = call[0][0]
@@ -773,31 +770,3 @@ def testClearScanBlacklist_whenCommandFails_returnsFalse(
     result = firewall.clear_scan_blacklist(scan_id=42)
 
     assert result is False
-
-
-@mock.patch("subprocess.run")
-def testApplyBlacklist_whenValidIps_returnsTrue(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Smoke test for legacy apply_blacklist with wait flag."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.apply_blacklist(["1.1.1.1"])
-
-    assert result is True
-
-
-@mock.patch("subprocess.run")
-def testFlushBlacklist_whenCalled_returnsTrue(
-    mock_run: mock.MagicMock,
-) -> None:
-    """Smoke test for legacy flush_blacklist with wait flag."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.flush_blacklist()
-
-    assert result is True

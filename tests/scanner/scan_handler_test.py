@@ -7,6 +7,8 @@ from pytest_mock import plugin
 from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter
 
+_real_get_running_universes = scan_handler.ScanHandler._get_running_universes
+
 
 @pytest.fixture(autouse=True)
 def mock_firewall_setup(mocker: plugin.MockerFixture) -> None:
@@ -16,11 +18,12 @@ def mock_firewall_setup(mocker: plugin.MockerFixture) -> None:
         return_value=True,
     )
     mocker.patch(
-        "ostorlab.scanner.scan_handler.firewall.flush_blacklist",
-        return_value=True,
-    )
-    mocker.patch(
         "ostorlab.scanner.scan_handler.firewall.cleanup_orphaned_chains",
+    )
+    mocker.patch.object(
+        scan_handler.ScanHandler,
+        "_get_running_universes",
+        return_value=set(),
     )
 
 
@@ -87,7 +90,7 @@ def testGetRunningUniverses_whenServicesShareUniverses_returnsDistinctSet(
         mocker.MagicMock(attrs={"Spec": {"Labels": {}}}),
     ]
 
-    result = scan_handler_instance._get_running_universes()
+    result = _real_get_running_universes(scan_handler_instance)
 
     assert result == {"42", "43"}
 
@@ -109,7 +112,7 @@ def testGetRunningUniverses_whenDockerFails_returnsNone(
         docker.errors.DockerException("boom")
     )
 
-    result = scan_handler_instance._get_running_universes()
+    result = _real_get_running_universes(scan_handler_instance)
 
     assert result is None
 
@@ -286,6 +289,11 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         state_reporter=state_reporter,
         gcp_logging_credential="gcp-credential",
     )
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        side_effect=[set(), {"42"}],
+    )
 
     with pytest.raises(RuntimeError, match="stop"):
         scan_handler_instance.handle_messages(runner, api_key="test-key")
@@ -326,15 +334,14 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
     runner.execute.assert_called_once()
 
 
-def testScanHandlerInit_always_ensuresFirewallChainsWithoutFlush(
+def testScanHandlerInit_always_ensuresFirewallChains(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """ScanHandler.__init__ should ensure firewall chains exist without flushing."""
+    """ScanHandler.__init__ should ensure firewall chains exist."""
     mock_ensure = mocker.patch(
         "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
         return_value=True,
     )
-    mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
@@ -344,7 +351,6 @@ def testScanHandlerInit_always_ensuresFirewallChainsWithoutFlush(
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
     mock_ensure.assert_called_once()
-    mock_flush.assert_not_called()
     assert scan_handler_instance._firewall_enabled is True
     assert scan_handler_instance._active_scan_ids == set()
 
@@ -374,7 +380,7 @@ def testScanHandlerInit_whenFirewallEnabled_cleansUpOrphanedChainsWithRunningUni
     handler = scan_handler.ScanHandler(state_reporter=state_reporter)
 
     mock_cleanup.assert_called_once_with(active_scan_ids={42, 43})
-    assert handler._active_scan_ids == {42, 43}
+    assert handler._active_scan_ids == set()
 
 
 def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
@@ -385,7 +391,6 @@ def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
         "ostorlab.scanner.scan_handler.firewall.ensure_firewall_chains",
         return_value=False,
     )
-    mock_flush = mocker.patch("ostorlab.scanner.scan_handler.firewall.flush_blacklist")
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",
         hostname="test-host",
@@ -396,7 +401,6 @@ def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
 
     assert scan_handler_instance._firewall_enabled is False
     assert scan_handler_instance._active_scan_ids == set()
-    mock_flush.assert_not_called()
 
 
 def testTriggerScanWithRollback_whenBlacklistedIpsPresent_appliesScanBlacklist(
@@ -809,6 +813,34 @@ def testClose_whenScanStillRunning_preservesScanBlacklist(
         scan_handler_instance,
         "_get_running_universes",
         return_value={"42"},
+    )
+    mock_clear = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.clear_scan_blacklist",
+        return_value=True,
+    )
+
+    scan_handler_instance.close()
+
+    mock_clear.assert_not_called()
+    assert scan_handler_instance._active_scan_ids == {42}
+
+
+def testClose_whenGetRunningUniversesReturnsNone_preservesScanBlacklists(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """close should preserve blacklists if running universes cannot be determined."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._active_scan_ids = {42}
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value=None,
     )
     mock_clear = mocker.patch(
         "ostorlab.scanner.scan_handler.firewall.clear_scan_blacklist",

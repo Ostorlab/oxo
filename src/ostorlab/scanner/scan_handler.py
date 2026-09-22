@@ -56,27 +56,27 @@ class ScanHandler:
             if running_universes is not None:
                 active_ids = {int(u) for u in running_universes if u.isdigit() is True}
                 firewall.cleanup_orphaned_chains(active_scan_ids=active_ids)
-                self._active_scan_ids.update(active_ids)
 
     def close(self) -> None:
         """Close resources and clean up managed scan blacklists for finished scans."""
         if self._firewall_enabled is True and len(self._active_scan_ids) > 0:
             running_universes = self._get_running_universes()
-            running_ids = (
-                {int(u) for u in running_universes if u.isdigit() is True}
-                if running_universes is not None
-                else set()
-            )
-            for scan_id in list(self._active_scan_ids):
-                if scan_id not in running_ids:
-                    clear_success = firewall.clear_scan_blacklist(scan_id=scan_id)
-                    if clear_success is True:
-                        self._active_scan_ids.discard(scan_id)
-                    else:
-                        logger.error(
-                            "Failed to clear firewall rules during close for scan %s.",
-                            scan_id,
-                        )
+            if running_universes is not None:
+                running_ids = {int(u) for u in running_universes if u.isdigit() is True}
+                for scan_id in list(self._active_scan_ids):
+                    if scan_id not in running_ids:
+                        clear_success = firewall.clear_scan_blacklist(scan_id=scan_id)
+                        if clear_success is True:
+                            self._active_scan_ids.discard(scan_id)
+                        else:
+                            logger.error(
+                                "Failed to clear firewall rules during close for scan %s.",
+                                scan_id,
+                            )
+            else:
+                logger.warning(
+                    "Unable to query running universes during close. Preserving firewall rules."
+                )
         self._docker_client.close()
 
     def handle_messages(
