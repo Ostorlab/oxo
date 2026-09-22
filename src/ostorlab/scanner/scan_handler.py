@@ -46,6 +46,7 @@ class ScanHandler:
         self._max_concurrent_scans = max_concurrent_scans
         self._docker_client = docker.from_env()
         self._firewall_enabled: bool = firewall.ensure_firewall_chains()
+        self._active_scan_ids: set[int] = set()
         if self._firewall_enabled is False:
             logger.warning(
                 "Firewall chain setup failed. Network isolation will be disabled."
@@ -55,14 +56,28 @@ class ScanHandler:
             if running_universes is not None:
                 active_ids = {int(u) for u in running_universes if u.isdigit() is True}
                 firewall.cleanup_orphaned_chains(active_scan_ids=active_ids)
-        self._active_scan_ids: set[int] = set()
+                self._active_scan_ids.update(active_ids)
 
     def close(self) -> None:
-        self._docker_client.close()
-        if self._firewall_enabled is True:
+        """Close resources and clean up managed scan blacklists for finished scans."""
+        if self._firewall_enabled is True and len(self._active_scan_ids) > 0:
+            running_universes = self._get_running_universes()
+            running_ids = (
+                {int(u) for u in running_universes if u.isdigit() is True}
+                if running_universes is not None
+                else set()
+            )
             for scan_id in list(self._active_scan_ids):
-                firewall.clear_scan_blacklist(scan_id=scan_id)
-            self._active_scan_ids.clear()
+                if scan_id not in running_ids:
+                    clear_success = firewall.clear_scan_blacklist(scan_id=scan_id)
+                    if clear_success is True:
+                        self._active_scan_ids.discard(scan_id)
+                    else:
+                        logger.error(
+                            "Failed to clear firewall rules during close for scan %s.",
+                            scan_id,
+                        )
+        self._docker_client.close()
 
     def handle_messages(
         self,

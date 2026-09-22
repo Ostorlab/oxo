@@ -9,6 +9,11 @@ import sys
 import tempfile
 from collections.abc import Iterator
 
+if sys.platform != "win32":
+    import fcntl
+else:
+    fcntl = None
+
 logger = logging.getLogger(__name__)
 
 OXO_EGRESS_FILTER_CHAIN = "OXO_EGRESS_FILTER"
@@ -22,11 +27,9 @@ OXO_SCAN_PREFIX = "OXO_SCAN_"
 @contextlib.contextmanager
 def _firewall_lock() -> Iterator[None]:
     """Inter-process file lock preventing concurrent firewall chain setup races."""
-    if sys.platform == "win32":
+    if fcntl is None:
         yield
         return
-
-    import fcntl
 
     lock_file_path = os.path.join(tempfile.gettempdir(), "oxo_firewall_setup.lock")
     try:

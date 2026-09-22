@@ -371,9 +371,10 @@ def testScanHandlerInit_whenFirewallEnabled_cleansUpOrphanedChainsWithRunningUni
         ip="192.168.0.1",
     )
 
-    scan_handler.ScanHandler(state_reporter=state_reporter)
+    handler = scan_handler.ScanHandler(state_reporter=state_reporter)
 
     mock_cleanup.assert_called_once_with(active_scan_ids={42, 43})
+    assert handler._active_scan_ids == {42, 43}
 
 
 def testScanHandlerInit_whenEnsureChainsFails_recordsDisabledFirewall(
@@ -790,6 +791,62 @@ def testClose_whenActiveScansRemain_clearsOnlyManagedScanIds(
 
     mock_clear.assert_called_once_with(scan_id=42)
     assert scan_handler_instance._active_scan_ids == set()
+
+
+def testClose_whenScanStillRunning_preservesScanBlacklist(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """close should not clear scan blacklist if scan services are still running."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._active_scan_ids = {42}
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value={"42"},
+    )
+    mock_clear = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.clear_scan_blacklist",
+        return_value=True,
+    )
+
+    scan_handler_instance.close()
+
+    mock_clear.assert_not_called()
+    assert scan_handler_instance._active_scan_ids == {42}
+
+
+def testClose_whenClearFails_logsErrorAndRetainsId(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """close should retain scan ID if clear_scan_blacklist fails."""
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._active_scan_ids = {42}
+    mocker.patch.object(
+        scan_handler_instance,
+        "_get_running_universes",
+        return_value=set(),
+    )
+    mock_clear = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.clear_scan_blacklist",
+        return_value=False,
+    )
+
+    scan_handler_instance.close()
+
+    mock_clear.assert_called_once_with(scan_id=42)
+    assert scan_handler_instance._active_scan_ids == {42}
 
 
 def testClose_whenFirewallDisabled_doesNotCallClearScanBlacklist(
