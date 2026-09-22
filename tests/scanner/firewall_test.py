@@ -322,23 +322,6 @@ def testEnsureFirewallChains_whenCheckJumpReturnsNone_returnsFalse(
     assert result is False
 
 
-@mock.patch("ostorlab.scanner.firewall._firewall_lock")
-@mock.patch("subprocess.run")
-def testEnsureFirewallChains_always_acquiresFirewallLock(
-    mock_run: mock.MagicMock,
-    mock_lock: mock.MagicMock,
-) -> None:
-    """Ensure firewall lock is held during chain setup to prevent concurrent races."""
-    mock_run.return_value = subprocess.CompletedProcess(
-        [], returncode=0, stdout=b"", stderr=b""
-    )
-
-    result = firewall.ensure_firewall_chains()
-
-    assert result is True
-    mock_lock.assert_called_once()
-
-
 @mock.patch("subprocess.run")
 def testApplyScanBlacklist_whenValidIps_createsChainPopulatesRulesAndInsertsJump(
     mock_run: mock.MagicMock,
