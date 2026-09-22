@@ -854,3 +854,32 @@ def testHandleMessages_whenFirewallDisabled_schedulesScansNormally(
         scan_handler_instance.handle_messages(runner=runner)
 
     trigger_mock.assert_called_once()
+
+
+def testClose_whenMultipleIndependentWorkers_clearsOnlyOwningWorkersScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Closing one worker should only clear its own scan chain, preserving other workers."""
+    state_reporter1 = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="SCANNER-1", hostname="host-1", ip="192.168.0.1"
+    )
+    state_reporter2 = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="SCANNER-2", hostname="host-2", ip="192.168.0.2"
+    )
+    worker1 = scan_handler.ScanHandler(state_reporter=state_reporter1)
+    worker2 = scan_handler.ScanHandler(state_reporter=state_reporter2)
+    worker1._docker_client = mocker.MagicMock()
+    worker2._docker_client = mocker.MagicMock()
+    worker1._active_scan_ids = {42}
+    worker2._active_scan_ids = {99}
+
+    mock_clear = mocker.patch(
+        "ostorlab.scanner.scan_handler.firewall.clear_scan_blacklist",
+        return_value=True,
+    )
+
+    worker1.close()
+
+    mock_clear.assert_called_once_with(scan_id=42)
+    assert worker1._active_scan_ids == set()
+    assert worker2._active_scan_ids == {99}
