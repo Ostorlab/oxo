@@ -1,5 +1,7 @@
 # Agents Information Guide for OXO/Ostorlab
 
+> **Start here:** read `docs/agent-kb/map.md` (repo router) and `docs/agent-kb/gotchas.md` (hard-won invariants) before any task. Record new non-obvious learnings there via the `kb-learn` skill.
+
 This file contains essential information for development agents working on the OXO (Ostorlab) codebase.
 
 ## Build, Lint, Test, and Format Commands
