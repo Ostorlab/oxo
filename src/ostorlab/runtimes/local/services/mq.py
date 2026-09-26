@@ -16,6 +16,9 @@ from docker.models import services
 logger = logging.getLogger(__name__)
 
 MQ_IMAGE = "rabbitmq:3.9-management"
+MQ_READINESS_COMMAND = ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+MQ_READINESS_ATTEMPTS = 60
+MQ_READINESS_WAIT_SECONDS = 1
 MQ_ADVANCED_CONF_PATH = "/etc/rabbitmq/advanced.config"
 
 
@@ -166,15 +169,42 @@ class LocalRabbitMQ:
             return
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(20),
-        wait=tenacity.wait_fixed(0.5),
+        stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
+        wait=tenacity.wait_fixed(MQ_READINESS_WAIT_SECONDS),
         # return last value and don't raise RetryError exception.
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def is_service_healthy(self) -> bool:
+        """Check the service is running and RabbitMQ accepts client connections.
+
+        A running task only means the container started; RabbitMQ needs a few more seconds before its AMQP
+        listener accepts connections, and agents started earlier fail to connect.
+        """
         logger.info("checking service %s", self._mq_service.name)
-        return self.is_healthy
+        return self.is_healthy and self.is_accepting_connections
+
+    @property
+    def is_accepting_connections(self) -> bool:
+        """Check if the RabbitMQ listeners accept connections, from inside the running MQ container.
+
+        Returns:
+            True if the readiness check succeeds, False otherwise.
+        """
+        try:
+            running_tasks = [
+                task
+                for task in self._mq_service.tasks()
+                if task["Status"]["State"] == "running"
+            ]
+            if len(running_tasks) != 1:
+                return False
+            container_id = running_tasks[0]["Status"]["ContainerStatus"]["ContainerID"]
+            container = self._docker_client.containers.get(container_id)
+            result = container.exec_run(MQ_READINESS_COMMAND)
+            return result.exit_code == 0
+        except (errors.DockerException, KeyError):
+            return False
 
     @property
     def is_healthy(self) -> bool:

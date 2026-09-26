@@ -6,6 +6,7 @@ on instances missing docker.
 
 import docker
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.runtimes.local.services import mq
 
@@ -35,3 +36,52 @@ def testLocalRabbitMQStart_always_rabbitMQServiceIsStartedWithFixedHostname(
     assert service.attrs["Spec"]["TaskTemplate"]["ContainerSpec"]["Mounts"] == [
         {"Source": "core_mq_mq_data", "Target": "/var/lib/rabbitmq", "Type": "volume"}
     ]
+
+
+def _mock_mq_with_task(
+    mocker: plugin.MockerFixture, task_state: str, exit_code: int
+) -> tuple[mq.LocalRabbitMQ, object]:
+    docker_client = mocker.MagicMock()
+    docker_client.containers.get.return_value.exec_run.return_value = mocker.Mock(
+        exit_code=exit_code
+    )
+    mocker.patch("docker.from_env", return_value=docker_client)
+    lrm = mq.LocalRabbitMQ(name="test_mq", network="test_network")
+    service = mocker.MagicMock()
+    service.tasks.return_value = [
+        {"Status": {"State": task_state, "ContainerStatus": {"ContainerID": "abc123"}}}
+    ]
+    lrm._mq_service = service
+    return lrm, docker_client
+
+
+def testLocalRabbitMQIsAcceptingConnections_whenReadinessCheckSucceeds_returnsTrue(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The readiness check runs inside the MQ container and its success means RabbitMQ accepts connections."""
+    lrm, docker_client = _mock_mq_with_task(mocker, task_state="running", exit_code=0)
+
+    assert lrm.is_accepting_connections is True
+    docker_client.containers.get.assert_called_once_with("abc123")
+    docker_client.containers.get.return_value.exec_run.assert_called_once_with(
+        mq.MQ_READINESS_COMMAND
+    )
+
+
+def testLocalRabbitMQIsAcceptingConnections_whenReadinessCheckFails_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A running container whose RabbitMQ listeners are not up yet is not ready."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=69)
+
+    assert lrm.is_accepting_connections is False
+
+
+def testLocalRabbitMQIsAcceptingConnections_whenNoRunningTask_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Without a running task there is no container to check."""
+    lrm, docker_client = _mock_mq_with_task(mocker, task_state="starting", exit_code=0)
+
+    assert lrm.is_accepting_connections is False
+    docker_client.containers.get.assert_not_called()
