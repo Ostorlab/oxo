@@ -12,6 +12,8 @@ from ostorlab import exceptions
 _SUPPORTED_ARCH_TYPES = ["x86_64", "AMD64", "arm64", "aarch64"]
 RETRY_ATTEMPTS = 10
 WAIT_TIME = 2
+MULTIPLE_ADVERTISE_ADDRESSES_ERROR = "could not choose an IP address to advertise"
+LOCAL_ADVERTISE_ADDRESS = "127.0.0.1"
 
 # The architecture is checked with a return value that's based on the kernel implementation of the uname(2)
 # system call. So it might be necessary to handle the same arch with various strings e.g. linux returns x86_64
@@ -119,6 +121,15 @@ def init_swarm() -> None:
     reraise=True,
 )
 def _init_swarm() -> None:
-    """Initialize docker swarm"""
+    """Initialize docker swarm.
+
+    Docker refuses to pick an advertise address when the default interface has several addresses. The local
+    runtime runs a single-node swarm, so the loopback address is used in that case.
+    """
     docker_client = docker.from_env()
-    docker_client.swarm.init()
+    try:
+        docker_client.swarm.init()
+    except errors.APIError as e:
+        if MULTIPLE_ADVERTISE_ADDRESSES_ERROR not in str(e):
+            raise
+        docker_client.swarm.init(advertise_addr=LOCAL_ADVERTISE_ADDRESS)
