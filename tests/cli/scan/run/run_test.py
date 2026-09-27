@@ -566,6 +566,7 @@ def testScanRunCLI_whenTimeoutProvided_setsTrackerAgentTimeout(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._create_network")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_services")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._start_pre_agents")
     mock_start_agent = mocker.patch(
         "ostorlab.runtimes.local.runtime.LocalRuntime._start_agent"
