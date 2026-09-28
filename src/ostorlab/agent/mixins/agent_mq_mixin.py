@@ -184,7 +184,8 @@ class AgentMQMixin:
                 aiormq_exceptions.ChannelInvalidStateError,
                 aiormq_exceptions.AMQPConnectionError,
             )
-        ),
+        )
+        | tenacity.retry_if_exception_message(match="Connection was not opened"),
         stop=tenacity.stop_after_attempt(NUMBER_RETRIES),
         wait=tenacity.wait_fixed(WAIT_FIXED_TIME),
         reraise=True,
