@@ -235,6 +235,25 @@ def testMqSendMessage_onRuntimeError_shouldRetryAndReraise(
     assert mock_send_message.call_count == 6
 
 
+def testMqSendMessage_onUnrelatedRuntimeError_shouldNotRetry(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that a RuntimeError unrelated to the reconnect window is not retried."""
+    mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
+    mock_send_message.side_effect = RuntimeError("Event loop is closed")
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    with pytest.raises(RuntimeError):
+        agent.mq_send_message(key="a.1.2", message=b"test message")
+
+    assert mock_send_message.call_count == 1
+
+
 @pytest.mark.asyncio
 async def testAgentMqMixin_declaresQueueWithDefaultPriority(
     mocker: plugin.MockerFixture,
