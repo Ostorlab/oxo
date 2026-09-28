@@ -211,6 +211,30 @@ def testMqSendMessage_onCanceledError_shouldRetryAndReraise(
     assert mock_send_message.call_count == 6
 
 
+def testMqSendMessage_onRuntimeError_shouldRetryAndReraise(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test that the message is retried when a RuntimeError is raised.
+
+    This covers the aio_pika `Connection.channel()` transient
+    `RuntimeError("Connection was not opened")` raised while a
+    `RobustConnection` is reconnecting after a broker disconnect.
+    """
+    mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
+    mock_send_message.side_effect = RuntimeError("Connection was not opened")
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    with pytest.raises(RuntimeError):
+        agent.mq_send_message(key="a.1.2", message=b"test message")
+
+    assert mock_send_message.call_count == 6
+
+
 @pytest.mark.asyncio
 async def testAgentMqMixin_declaresQueueWithDefaultPriority(
     mocker: plugin.MockerFixture,

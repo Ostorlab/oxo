@@ -183,6 +183,7 @@ class AgentMQMixin:
                 concurrent.futures.CancelledError,
                 aiormq_exceptions.ChannelInvalidStateError,
                 aiormq_exceptions.AMQPConnectionError,
+                RuntimeError,
             )
         ),
         stop=tenacity.stop_after_attempt(NUMBER_RETRIES),
