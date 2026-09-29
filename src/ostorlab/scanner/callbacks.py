@@ -1,4 +1,4 @@
-"""Defines call back to trigger a scan after receiving a startAgentScan messages in the NATS."""
+"""Defines the call back triggering a scan once one is reserved from the API."""
 
 from __future__ import annotations
 
