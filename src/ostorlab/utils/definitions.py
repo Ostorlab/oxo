@@ -25,7 +25,7 @@ class Arg:
         description: str | None = None,
     ) -> "Arg":
         if isinstance(value, bytes):
-            # When the value comes from a message received in the NATS.
+            # When the value comes from a scan payload received from the API.
             if type != "binary":
                 value = Arg.convert_str(value_str=value.decode(), target_type=type)
 
