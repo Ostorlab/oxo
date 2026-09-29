@@ -1,4 +1,4 @@
-"""Representations of nats configuration definitions."""
+"""Representations of the scanner configuration served by the API."""
 
 from __future__ import annotations
 
@@ -9,23 +9,6 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 SCAN_RESOURCE_REQUIREMENTS_KEY = "scanResourceRequirements"
-
-
-@dataclasses.dataclass
-class RegistryConfig:
-    """Represents the configuration for container registry credentials."""
-
-    username: str
-    token: str
-    url: str
-
-
-@dataclasses.dataclass
-class SubjectBusConfigs:
-    """Represents the configuration for a subject and its corresponding queue."""
-
-    subject: str
-    queue: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -66,11 +49,6 @@ class ScanResourceRequirements:
 class ScannerConfig:
     """Represents the configuration for a scanner."""
 
-    bus_url: str
-    bus_cluster_id: str
-    bus_client_name: str
-    registry_conf: RegistryConfig
-    subject_bus_configs: list[SubjectBusConfigs]
     scan_resource_requirements: dict[str, ScanResourceRequirements]
     api_key: str | None = None
 
@@ -93,23 +71,6 @@ class ScannerConfig:
             return None
 
         conf = subject_configs[0].get("config") or {}
-        bus_configs = []
-
-        subject_bus_configs = conf.get("subjectBusConfigs") or {}
-        for subject_config in subject_bus_configs.get("subjectBusConfigs") or []:
-            bus_configs.append(
-                SubjectBusConfigs(
-                    subject=subject_config.get("subject"),
-                    queue=subject_config.get("queue"),
-                )
-            )
-
-        registry_conf = conf.get("registryConfiguration") or {}
-        registry_conf_instance = RegistryConfig(
-            username=registry_conf.get("accountName"),
-            token=registry_conf.get("credentials"),
-            url=registry_conf.get("url"),
-        )
         resource_requirements = {}
         raw_resource_requirements = conf.get(SCAN_RESOURCE_REQUIREMENTS_KEY, {})
         if isinstance(raw_resource_requirements, str):
@@ -134,11 +95,6 @@ class ScannerConfig:
                 type(raw_resource_requirements).__name__,
             )
         return cls(
-            bus_url=conf.get("busUrl"),
-            bus_cluster_id=conf.get("busClusterId"),
-            bus_client_name=conf.get("busClientName"),
-            registry_conf=registry_conf_instance,
-            subject_bus_configs=bus_configs,
             scan_resource_requirements=resource_requirements,
             api_key=conf.get("apiKey"),
         )

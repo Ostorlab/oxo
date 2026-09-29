@@ -1,4 +1,4 @@
-"""Receive scanner config (Nats creds, container registry creds ...)."""
+"""Receive the scanner config (API key, scan resource requirements ...)."""
 
 import json
 from typing import Any
@@ -27,22 +27,8 @@ class ScannerConfigAPIRequest(request.APIRequest):
               name
               description
               config{
-                registryConfiguration{
-                  accountName
-                  credentials
-                  url
-                }
-                busUrl
-                busClusterId
-                busClientName
                 scanResourceRequirements
                 apiKey
-                subjectBusConfigs{
-                    subjectBusConfigs{
-                        subject
-                        queue
-                    }
-                }
               }
             }
           }

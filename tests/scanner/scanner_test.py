@@ -18,26 +18,13 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
                         "name": "scanner_42",
                         "description": "scanner 42 description",
                         "config": {
-                            "registryConfiguration": {
-                                "accountName": "robot_account",
-                                "credentials": "<secret_key>",
-                                "url": "https://ostorlab.store/",
-                            },
-                            "busUrl": "nats://localhost:4222",
                             "apiKey": "test-api-key",
-                            "busClusterId": "cluster_id",
-                            "busClientName": "client_name",
                             "scanResourceRequirements": {
                                 "agentgroup/ostorlab/agent_group42": {
                                     "cpuCount": 8,
                                     "memory": 17179869184,
                                     "disk": 53687091200,
                                 }
-                            },
-                            "subjectBusConfigs": {
-                                "subjectBusConfigs": [
-                                    {"subject": "subject1", "queue": "queue1"}
-                                ]
                             },
                         },
                     }
@@ -49,14 +36,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(
         config=api_response_data,
     )
-    assert scanner_conf_instance.bus_url == "nats://localhost:4222"
     assert scanner_conf_instance.api_key == "test-api-key"
-    assert scanner_conf_instance.bus_cluster_id == "cluster_id"
-    assert scanner_conf_instance.bus_client_name == "client_name"
-    assert scanner_conf_instance.registry_conf.username == "robot_account"
-    assert scanner_conf_instance.registry_conf.token == "<secret_key>"
-    assert scanner_conf_instance.subject_bus_configs[0].subject == "subject1"
-    assert scanner_conf_instance.subject_bus_configs[0].queue == "queue1"
     requirements = scanner_conf_instance.scan_resource_requirements[
         "agentgroup/ostorlab/agent_group42"
     ]
@@ -161,25 +141,7 @@ def testScannerConfigFromJson_whenResourceRequirementsInvalidJson_shouldLogWarni
 
 def testScannerConfigFromJson_whenResourceRequirementsAbsent_returnsEmptyDict() -> None:
     api_response_data = {
-        "data": {
-            "scanners": {
-                "scanners": [
-                    {
-                        "config": {
-                            "busUrl": "nats://localhost:4222",
-                            "busClusterId": "cluster_id",
-                            "busClientName": "client_name",
-                            "registryConfiguration": {
-                                "accountName": "robot_account",
-                                "credentials": "secret",
-                                "url": "https://ostorlab.store/",
-                            },
-                            "subjectBusConfigs": {"subjectBusConfigs": []},
-                        }
-                    }
-                ]
-            }
-        }
+        "data": {"scanners": {"scanners": [{"config": {"apiKey": "test-api-key"}}]}}
     }
 
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
