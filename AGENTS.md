@@ -53,6 +53,7 @@ mypy src/ostorlab/utils
 mypy src/ostorlab/apis/runners
 mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
 mypy src/ostorlab/assets
+mypy src/ostorlab/ai tests/ai
 
 # Install typing dependencies
 pip install -r typing_requirements.txt
@@ -156,6 +157,23 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Use conventional commit messages
 - Pull requests run CI on Python 3.13, 3.14
 - Squash commits when merging
+
+### AI Models and Providers (`ostorlab.ai`)
+- `ostorlab.ai` is the single place that builds pydantic-ai models for agents. Agents call
+  `factory.build_model("provider/model", credential, options=..., settings=...)` and must
+  not construct `pydantic_ai.providers` themselves.
+- The package never reads agent configuration or environment variables: every input
+  (identifier, credential, gateway URLs, HTTP timeouts, settings) is passed in. Agent-specific
+  selection logic (per-role models, complexity routing) stays in the agent.
+- Adding a provider: add a `build_<provider>(request)` builder under `src/ostorlab/ai/providers/`,
+  register it in `factory._BUILDERS`, add it to `keys.PROVIDER_PRIORITY` and to `_BUILD_CASES` in
+  `tests/ai/factory_test.py`. The registry coverage tests fail until all three are done.
+- Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
+  secrets on the platform.
+- Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never
+  include the credential in the message.
+- `anthropic<1.0.0` is pinned because anthropic 1.x moved to `httpx2`, which pydantic-ai 1.107's
+  `AnthropicProvider` rejects.
 
 ## Project Structure Reference
 

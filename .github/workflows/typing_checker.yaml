@@ -35,3 +35,4 @@ jobs:
           mypy src/ostorlab/apis/runners
           mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
           mypy src/ostorlab/assets
+          mypy src/ostorlab/ai tests/ai
