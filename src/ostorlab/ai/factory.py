@@ -83,7 +83,7 @@ def build_model(
         credential: The provider secret. A plain API key, or a JSON object for
             ``aws_bedrock``, ``azure_ai_foundry``, ``google_vertex`` (service account
             form) and ``google_vertex_endpoint`` (service-account JSON).
-        options: Deployment-wide provider options (gateway URLs, HTTP timeouts).
+        options: Deployment-wide provider options (gateway and endpoint URLs).
         settings: Model settings; defaults to ``default_settings()``.
 
     Returns:

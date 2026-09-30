@@ -27,7 +27,7 @@ class BuildRequest:
 
     provider: str
     model_name: str
-    credential: str
+    credential: str = dataclasses.field(repr=False)
     options: options_module.ProviderOptions
     settings: pydantic_ai_settings.ModelSettings
 

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 
-import httpx
-import openai
 import pytest
 from pydantic_ai.models import openai as pydantic_openai
 from pydantic_ai.profiles import openai as openai_profile
@@ -89,45 +87,6 @@ def testBuildModel_whenFireworksDeepSeekR1_shouldKeepPydanticAiThinkingProfile()
     assert isinstance(model.profile, openai_profile.OpenAIModelProfile)
     assert model.profile.supports_thinking is True
     assert model.profile.openai_chat_send_back_thinking_parts == "auto"
-
-
-@pytest.mark.parametrize(
-    "identifier",
-    [
-        "openai/gpt-5.2",
-        "openrouter/moonshotai/kimi-k2.6",
-        "deepseek/deepseek-chat",
-        "moonshotai/kimi-k2.5",
-        "fireworks/accounts/fireworks/models/deepseek-r1",
-    ],
-)
-def testBuildModel_whenHttpTimeoutConfigured_shouldApplyItToTheClient(
-    identifier: str,
-) -> None:
-    provider, _ = factory.parse_identifier(identifier)
-    provider_options = options.ProviderOptions(
-        http_timeouts={provider: httpx.Timeout(61)}
-    )
-
-    model = factory.build_model(identifier, "k", options=provider_options)
-
-    assert isinstance(
-        model, pydantic_openai.OpenAIChatModel | pydantic_openai.OpenAIResponsesModel
-    )
-    assert isinstance(model.client.timeout, openai.Timeout)
-    assert model.client.timeout.read == 61
-
-
-def testBuildModel_whenOtherProviderHasTimeout_shouldKeepTheSdkDefault() -> None:
-    provider_options = options.ProviderOptions(
-        http_timeouts={"deepseek": httpx.Timeout(61)}
-    )
-
-    model = factory.build_model("openai/gpt-5.2", "k", options=provider_options)
-
-    assert isinstance(model, pydantic_openai.OpenAIResponsesModel)
-    assert isinstance(model.client.timeout, openai.Timeout)
-    assert model.client.timeout.read != 61
 
 
 def testBuildModel_whenAzureWithApiVersion_shouldUseTheAzureDeployment() -> None:

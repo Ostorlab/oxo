@@ -15,7 +15,6 @@ def build_anthropic(request: base.BuildRequest) -> models.Model:
         model_name=request.model_name,
         provider=anthropic_provider.AnthropicProvider(
             api_key=request.credential,
-            http_client=request.options.http_client_for(request.provider),
         ),
         settings=request.settings,
     )

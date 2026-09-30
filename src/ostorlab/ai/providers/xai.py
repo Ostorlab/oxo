@@ -1,4 +1,4 @@
-"""xAI provider (gRPC, so HTTP timeouts do not apply)."""
+"""xAI provider."""
 
 from __future__ import annotations
 

@@ -34,7 +34,6 @@ def build_openai(request: base.BuildRequest) -> models.Model:
         provider=openai_provider.OpenAIProvider(
             api_key=request.credential,
             base_url=OPENAI_BASE_URL,
-            http_client=request.options.http_client_for(request.provider),
         ),
         settings=request.settings,
     )
@@ -70,7 +69,6 @@ def build_deepseek(request: base.BuildRequest) -> models.Model:
         model_name=request.model_name,
         provider=deepseek_provider.DeepSeekProvider(
             api_key=request.credential,
-            http_client=request.options.http_client_for(request.provider),
         ),
         settings=request.settings,
     )
@@ -80,7 +78,7 @@ def build_moonshotai(request: base.BuildRequest) -> models.Model:
     """Build a MoonshotAI (Kimi) model."""
     return openai.OpenAIChatModel(
         model_name=request.model_name,
-        provider=_build_moonshotai_provider(request),
+        provider=moonshotai_provider.MoonshotAIProvider(api_key=request.credential),
         settings=request.settings,
     )
 
@@ -89,7 +87,7 @@ def build_fireworks(request: base.BuildRequest) -> models.Model:
     """Build a Fireworks model, keeping pydantic-ai's per-model profile."""
     return openai.OpenAIChatModel(
         model_name=request.model_name,
-        provider=_build_fireworks_provider(request),
+        provider=fireworks_provider.FireworksProvider(api_key=request.credential),
         settings=request.settings,
     )
 
@@ -107,7 +105,6 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
     credentials.require_non_empty_strings(
         creds, ["azure_endpoint", "api_key", "api_version"], "Azure provider"
     )
-    http_client = request.options.http_client_for(request.provider)
     if creds.get("api_version") is not None:
         return openai.OpenAIChatModel(
             model_name=request.model_name,
@@ -115,7 +112,6 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
                 azure_endpoint=creds["azure_endpoint"],
                 api_key=creds["api_key"],
                 api_version=creds["api_version"],
-                http_client=http_client,
             ),
             settings=request.settings,
         )
@@ -128,7 +124,6 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
         provider=openai_provider.OpenAIProvider(
             base_url=creds["azure_endpoint"].rstrip("/") + "/" + AZURE_V1_PATH,
             api_key=creds["api_key"],
-            http_client=http_client,
         ),
         settings=request.settings,
     )
@@ -140,32 +135,7 @@ def _build_gateway_model(request: base.BuildRequest, base_url: str) -> models.Mo
         provider=openai_provider.OpenAIProvider(
             api_key=request.credential,
             base_url=base_url,
-            http_client=request.options.http_client_for(request.provider),
         ),
         profile=base.reasoning_content_profile(supports_tool_choice_required=False),
         settings=request.settings,
-    )
-
-
-# MoonshotAI and Fireworks type ``http_client`` as non-optional in their overloads,
-# so it is only passed when a timeout is configured.
-def _build_moonshotai_provider(
-    request: base.BuildRequest,
-) -> moonshotai_provider.MoonshotAIProvider:
-    http_client = request.options.http_client_for(request.provider)
-    if http_client is None:
-        return moonshotai_provider.MoonshotAIProvider(api_key=request.credential)
-    return moonshotai_provider.MoonshotAIProvider(
-        api_key=request.credential, http_client=http_client
-    )
-
-
-def _build_fireworks_provider(
-    request: base.BuildRequest,
-) -> fireworks_provider.FireworksProvider:
-    http_client = request.options.http_client_for(request.provider)
-    if http_client is None:
-        return fireworks_provider.FireworksProvider(api_key=request.credential)
-    return fireworks_provider.FireworksProvider(
-        api_key=request.credential, http_client=http_client
     )

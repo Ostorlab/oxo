@@ -25,7 +25,6 @@ def build_google(request: base.BuildRequest) -> models.Model:
         model_name=request.model_name,
         provider=google_provider.GoogleProvider(
             api_key=request.credential,
-            http_client=request.options.http_client_for(request.provider),
         ),
         settings=request.settings,
     )
@@ -75,14 +74,11 @@ def _build_vertex_provider(
     request: base.BuildRequest,
 ) -> google_cloud_provider.GoogleCloudProvider:
     model = request.model_name
-    http_client = request.options.http_client_for(request.provider)
     stripped_credential = request.credential.strip()
     # Anything JSON-shaped is parsed, so a malformed object or an array fails here
     # instead of being sent to Vertex as an Express key.
     if stripped_credential.startswith(("{", "[")) is False:
-        return google_cloud_provider.GoogleCloudProvider(
-            api_key=stripped_credential, http_client=http_client
-        )
+        return google_cloud_provider.GoogleCloudProvider(api_key=stripped_credential)
 
     creds = credentials.parse_json_object(stripped_credential, _VERTEX_LABEL, model)
     if "api_key" in creds and "service_account" in creds:
@@ -101,7 +97,7 @@ def _build_vertex_provider(
                 f"Google Vertex 'api_key' must be a non-empty string (model={model})."
             )
         return google_cloud_provider.GoogleCloudProvider(
-            api_key=creds["api_key"].strip(), http_client=http_client
+            api_key=creds["api_key"].strip()
         )
 
     service_account_info = _extract_service_account_info(creds, model)
@@ -125,7 +121,6 @@ def _build_vertex_provider(
         credentials=build_service_account_credentials(service_account_info, model),
         project=project,
         location=location,
-        http_client=http_client,
     )
 
 

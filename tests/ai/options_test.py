@@ -2,32 +2,23 @@
 
 from __future__ import annotations
 
-import httpx
+import dataclasses
+
+import pytest
 
 from ostorlab.ai import options
 
 
-def testHttpClientFor_whenTimeoutConfigured_shouldBuildClientWithThatTimeout() -> None:
-    provider_options = options.ProviderOptions(
-        http_timeouts={"google": httpx.Timeout(250, connect=5)}
-    )
+def testProviderOptions_whenNoArguments_shouldLeaveEveryOptionUnset() -> None:
+    provider_options = options.ProviderOptions()
 
-    http_client = provider_options.http_client_for("google")
-
-    assert http_client is not None
-    assert http_client.timeout == httpx.Timeout(250, connect=5)
+    assert provider_options.litellm_gateway_url is None
+    assert provider_options.vertex_endpoint_url is None
 
 
-def testHttpClientFor_whenProviderHasNoTimeout_shouldReturnNone() -> None:
-    provider_options = options.ProviderOptions(http_timeouts={"google": 250})
+def testProviderOptions_whenModified_shouldRaiseBecauseItIsShared() -> None:
+    """One options object is shared by every model an agent builds."""
+    provider_options = options.ProviderOptions(litellm_gateway_url="https://a")
 
-    assert provider_options.http_client_for("openai") is None
-
-
-def testHttpClientFor_whenCalledTwice_shouldReturnDistinctClients() -> None:
-    """Each model gets its own client, bound to the event loop that uses it."""
-    provider_options = options.ProviderOptions(http_timeouts={"google": 250})
-
-    assert provider_options.http_client_for(
-        "google"
-    ) is not provider_options.http_client_for("google")
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        provider_options.litellm_gateway_url = "https://b"  # type: ignore[misc]

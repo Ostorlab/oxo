@@ -165,7 +165,7 @@ pip install -e ".[testing,scanner,agent,serve]"
   `factory.build_model("provider/model", credential, options=..., settings=...)` and must not
   construct `pydantic_ai.providers` themselves.
 - The package never reads agent configuration or environment variables; callers pass every input
-  (identifier, credential, gateway URLs, HTTP timeouts, settings) explicitly. Agent-specific
+  (identifier, credential, gateway URLs, settings) explicitly. Agent-specific
   selection logic (per-role models, complexity routing) stays in the agent.
 - Adding a provider means completing every step:
   1. Add a `build_<provider>(request)` builder under `src/ostorlab/ai/providers/`.
@@ -174,6 +174,8 @@ pip install -e ".[testing,scanner,agent,serve]"
   4. Add a case to `_BUILD_CASES` in `tests/ai/factory_test.py`.
 
   The registry coverage tests fail until steps 2–4 are done.
+- Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
+  `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
 - Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never

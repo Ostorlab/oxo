@@ -110,7 +110,6 @@ def build_google_vertex_endpoint(request: base.BuildRequest) -> models.Model:
         provider=openai_provider.OpenAIProvider(
             base_url=endpoint_url,
             api_key=token,
-            http_client=request.options.http_client_for(request.provider),
         ),
         settings=request.settings,
         profile=base.reasoning_content_profile(supports_tool_choice_required=True),
