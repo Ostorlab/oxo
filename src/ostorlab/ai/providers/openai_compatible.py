@@ -107,7 +107,7 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
     )
     credentials.require_keys(creds, ["azure_endpoint", "api_key"], "Azure provider")
     credentials.require_non_empty_strings(
-        creds, ["azure_endpoint", "api_key", "api_version"], "Azure provider"
+        creds, ["azure_endpoint", "api_key"], "Azure provider"
     )
     azure_endpoint = creds["azure_endpoint"].strip()
     # The endpoint is part of the credential, so it is not echoed in the error.
@@ -116,13 +116,19 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
             "Credential 'azure_endpoint' for Azure provider must start with "
             f"'http://' or 'https://' (model={request.model_name})."
         )
-    if creds.get("api_version") is not None:
+    # A blank api_version means "use the v1 API", as the agents stored it before.
+    api_version = creds.get("api_version")
+    if isinstance(api_version, str) is False and api_version is not None:
+        raise errors.ModelConfigurationError(
+            f"Credential 'api_version' for Azure provider must be a string (model={request.model_name})."
+        )
+    if api_version is not None and api_version.strip() != "":
         return openai.OpenAIChatModel(
             model_name=request.model_name,
             provider=azure_provider.AzureProvider(
                 azure_endpoint=azure_endpoint,
                 api_key=creds["api_key"],
-                api_version=creds["api_version"],
+                api_version=api_version.strip(),
             ),
             settings=request.settings,
         )

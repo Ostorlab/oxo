@@ -131,8 +131,8 @@ def testBuildModel_whenAzureWithoutApiVersion_shouldFallbackToV1Api() -> None:
             "non-empty strings: api_key",
         ),
         (
-            '{"api_key": "k", "azure_endpoint": "https://a", "api_version": ""}',
-            "non-empty strings: api_version",
+            '{"api_key": "k", "azure_endpoint": "https://a", "api_version": 1}',
+            "'api_version' for Azure provider must be a string",
         ),
         ('{"api_key": "k", "azure_endpoint": "not a url"}', "must start with"),
         ('{"api_key": "k", "azure_endpoint": "ftp://a.example"}', "must start with"),
@@ -160,6 +160,26 @@ def testBuildModel_whenAzureEndpointHasSurroundingSpaces_shouldStripThem() -> No
         "azure_ai_foundry/gpt-5.2",
         json.dumps(
             {"api_key": "k", "azure_endpoint": "  https://test.openai.azure.com/ "}
+        ),
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert str(model.client.base_url) == "https://test.openai.azure.com/openai/v1/"
+
+
+@pytest.mark.parametrize("api_version", ["", "   ", None])
+def testBuildModel_whenAzureApiVersionBlankOrNull_shouldFallbackToV1Api(
+    api_version: str | None,
+) -> None:
+    """Stored secrets use an empty api_version to mean the v1 GA API."""
+    model = factory.build_model(
+        "azure_ai_foundry/gpt-5.2",
+        json.dumps(
+            {
+                "api_key": "k",
+                "azure_endpoint": "https://test.openai.azure.com/",
+                "api_version": api_version,
+            }
         ),
     )
 
