@@ -13,3 +13,12 @@ Typical use::
         settings=settings.default_settings(max_tokens=config.MAX_OUTPUT_TOKENS),
     )
 """
+
+from __future__ import annotations
+
+try:
+    import pydantic_ai  # noqa: F401
+except ImportError as e:
+    raise ImportError(
+        "ostorlab.ai requires the agent extra: pip install 'ostorlab[agent]'"
+    ) from e

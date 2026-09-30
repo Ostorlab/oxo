@@ -180,6 +180,8 @@ pip install -e ".[testing,scanner,agent,serve]"
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never
   include the credential in the message.
+- The dependencies live in the `agent` extra: `import ostorlab.ai` needs `ostorlab[agent]`,
+  which every agent already installs. Plain `pip install ostorlab` stays free of the AI SDKs.
 - Keep `anthropic<1.0.0`: anthropic 1.x moved to `httpx2`, which pydantic-ai 1.107's
   `AnthropicProvider` rejects. Lift the cap only once pydantic-ai supports `httpx2`.
 

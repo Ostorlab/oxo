@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r typing_requirements.txt
-          python -m pip install -e .
+          python -m pip install -e .[agent]
       - name: Running static types checker.
         run: |
           mypy src/ostorlab/agent/schema
