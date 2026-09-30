@@ -120,7 +120,8 @@ def testBuildModel_whenCredentialMissing_shouldRaise(credential: str | None) -> 
 
 
 @pytest.mark.parametrize(
-    "identifier", ["openai", "openai/", "/gpt-5.2", "", "openai/   ", "   /gpt-5.2"]
+    "identifier",
+    ["openai", "openai/", "/gpt-5.2", "", "openai/   ", "   /gpt-5.2", "openai//"],
 )
 def testParseIdentifier_whenMalformed_shouldRaise(identifier: str) -> None:
     with pytest.raises(errors.ModelConfigurationError, match="provider/model"):

@@ -60,6 +60,10 @@ def build_litellm(request: base.BuildRequest) -> models.Model:
         raise errors.ModelConfigurationError(
             "litellm_gateway_url must be set when using litellm provider"
         )
+    if gateway_url.startswith(("http://", "https://")) is False:
+        raise errors.ModelConfigurationError(
+            f"litellm_gateway_url must start with 'http://' or 'https://', got: {gateway_url!r}."
+        )
     return _build_gateway_model(request, gateway_url)
 
 

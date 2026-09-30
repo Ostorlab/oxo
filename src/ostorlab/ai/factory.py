@@ -62,7 +62,7 @@ def parse_identifier(model_identifier: str) -> tuple[str, str]:
     raw_provider, separator, raw_model_name = model_identifier.partition("/")
     provider = raw_provider.strip()
     model_name = raw_model_name.strip()
-    if separator == "" or provider == "" or model_name == "":
+    if separator == "" or provider == "" or model_name.strip("/") == "":
         raise errors.ModelConfigurationError(
             f"Model identifier must be 'provider/model', got: {model_identifier!r}."
         )

@@ -161,8 +161,9 @@ pip install -e ".[testing,scanner,agent,serve]"
 ### AI Models and Providers (`ostorlab.ai`)
 - **Agents must not construct `pydantic_ai.providers` or `pydantic_ai.models` themselves; they call
   `factory.build_model("provider/model", credential, options=..., settings=...)`.**
-- `ostorlab.ai` replaces the per-agent copies that drifted apart. Existing agents are being migrated
-  in follow-up PRs; new or changed provider logic goes only here.
+- `ostorlab.ai` is replacing the per-agent builder copies (500–700 lines each) that already diverged
+  on Vertex handling, the Azure v1 fallback and per-provider HTTP clients. Existing agents are being
+  migrated in follow-up PRs.
 - The package never reads agent configuration or environment variables; callers pass every input
   (identifier, credential, gateway URLs, settings) explicitly. Agent-specific
   selection logic (per-role models, complexity routing) stays in the agent.
@@ -179,8 +180,8 @@ pip install -e ".[testing,scanner,agent,serve]"
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never
   include the credential in the message.
-- `anthropic<1.0.0` is pinned because anthropic 1.x moved to `httpx2`, which pydantic-ai 1.107's
-  `AnthropicProvider` rejects.
+- Keep `anthropic<1.0.0`: anthropic 1.x moved to `httpx2`, which pydantic-ai 1.107's
+  `AnthropicProvider` rejects. Lift the cap only once pydantic-ai supports `httpx2`.
 
 ## Project Structure Reference
 

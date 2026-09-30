@@ -53,8 +53,8 @@ def testBuildModel_whenGatewayProvider_shouldConfigureReasoningContentProfile(
     assert model.profile.openai_chat_send_back_thinking_parts == "field"
 
 
-@pytest.mark.parametrize("gateway_url", [None, "", "   "])
-def testBuildModel_whenLitellmWithoutGatewayUrl_shouldRaise(
+@pytest.mark.parametrize("gateway_url", [None, "", "   ", "not a url", "ftp://gateway"])
+def testBuildModel_whenLitellmGatewayUrlMissingOrInvalid_shouldRaise(
     gateway_url: str | None,
 ) -> None:
     with pytest.raises(errors.ModelConfigurationError, match="litellm_gateway_url"):
