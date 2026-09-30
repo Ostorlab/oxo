@@ -26,6 +26,11 @@ def build_aws_bedrock(request: base.BuildRequest) -> models.Model:
         raise errors.ModelConfigurationError(
             "Missing required credential 'region' for Bedrock provider."
         )
+    credentials.require_non_empty_strings(
+        creds,
+        ["region", "api_key", "aws_access_key_id", "aws_secret_access_key"],
+        _PROVIDER_LABEL,
+    )
     if "api_key" in creds:
         provider = bedrock_provider.BedrockProvider(
             api_key=creds["api_key"],

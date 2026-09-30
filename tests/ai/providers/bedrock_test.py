@@ -41,6 +41,11 @@ def testBuildModel_whenBedrockCredentialValid_shouldBuildConverseModelInRegion(
             json.dumps({"region": "us-east-1", "aws_access_key_id": "AKIA"}),
             "aws_secret_access_key",
         ),
+        (
+            json.dumps({"region": "us-east-1", "api_key": None}),
+            "non-empty strings: api_key",
+        ),
+        (json.dumps({"region": " ", "api_key": "k"}), "non-empty strings: region"),
     ],
 )
 def testBuildModel_whenBedrockCredentialInvalid_shouldRaise(

@@ -119,7 +119,9 @@ def testBuildModel_whenCredentialMissing_shouldRaise(credential: str | None) -> 
         factory.build_model("openai/gpt-5.2", credential)
 
 
-@pytest.mark.parametrize("identifier", ["openai", "openai/", "/gpt-5.2", ""])
+@pytest.mark.parametrize(
+    "identifier", ["openai", "openai/", "/gpt-5.2", "", "openai/   ", "   /gpt-5.2"]
+)
 def testParseIdentifier_whenMalformed_shouldRaise(identifier: str) -> None:
     with pytest.raises(errors.ModelConfigurationError, match="provider/model"):
         factory.parse_identifier(identifier)
@@ -169,3 +171,7 @@ def testBuildModel_whenVertexEndpoint_shouldPassOptionsToTheBuilder(
 
     assert isinstance(model, pydantic_openai.OpenAIChatModel)
     assert str(model.client.base_url) == f"{conftest.VERTEX_ENDPOINT_URL}/"
+
+
+def testParseIdentifier_whenPartsHaveSurroundingSpaces_shouldStripThem() -> None:
+    assert factory.parse_identifier(" openai / gpt-5.2 ") == ("openai", "gpt-5.2")

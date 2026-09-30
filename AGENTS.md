@@ -53,7 +53,7 @@ mypy src/ostorlab/utils
 mypy src/ostorlab/apis/runners
 mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
 mypy src/ostorlab/assets
-mypy src/ostorlab/ai tests/ai
+mypy src/ostorlab/ai
 
 # Install typing dependencies
 pip install -r typing_requirements.txt
@@ -159,15 +159,21 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Squash commits when merging
 
 ### AI Models and Providers (`ostorlab.ai`)
-- `ostorlab.ai` is the single place that builds pydantic-ai models for agents. Agents call
-  `factory.build_model("provider/model", credential, options=..., settings=...)` and must
-  not construct `pydantic_ai.providers` themselves.
-- The package never reads agent configuration or environment variables: every input
-  (identifier, credential, gateway URLs, HTTP timeouts, settings) is passed in. Agent-specific
+- `ostorlab.ai` is the single place for building pydantic-ai models for agents, replacing the
+  per-agent copies that drifted apart. Existing agents are being migrated in follow-up PRs; new or
+  changed provider logic goes only here. Agents call
+  `factory.build_model("provider/model", credential, options=..., settings=...)` and must not
+  construct `pydantic_ai.providers` themselves.
+- The package never reads agent configuration or environment variables; callers pass every input
+  (identifier, credential, gateway URLs, HTTP timeouts, settings) explicitly. Agent-specific
   selection logic (per-role models, complexity routing) stays in the agent.
-- Adding a provider: add a `build_<provider>(request)` builder under `src/ostorlab/ai/providers/`,
-  register it in `factory._BUILDERS`, add it to `keys.PROVIDER_PRIORITY` and to `_BUILD_CASES` in
-  `tests/ai/factory_test.py`. The registry coverage tests fail until all three are done.
+- Adding a provider means completing every step:
+  1. Add a `build_<provider>(request)` builder under `src/ostorlab/ai/providers/`.
+  2. Register it in `factory._BUILDERS`.
+  3. Add it to `keys.PROVIDER_PRIORITY`.
+  4. Add a case to `_BUILD_CASES` in `tests/ai/factory_test.py`.
+
+  The registry coverage tests fail until steps 2–4 are done.
 - Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never

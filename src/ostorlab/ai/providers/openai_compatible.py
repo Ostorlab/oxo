@@ -56,11 +56,12 @@ def build_litellm(request: base.BuildRequest) -> models.Model:
     LiteLLM proxies many upstream providers, so the reasoning profile is set
     unconditionally, as for OpenRouter.
     """
-    if request.options.litellm_gateway_url is None:
+    gateway_url = (request.options.litellm_gateway_url or "").strip()
+    if gateway_url == "":
         raise errors.ModelConfigurationError(
             "litellm_gateway_url must be set when using litellm provider"
         )
-    return _build_gateway_model(request, request.options.litellm_gateway_url)
+    return _build_gateway_model(request, gateway_url)
 
 
 def build_deepseek(request: base.BuildRequest) -> models.Model:
@@ -103,6 +104,9 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
         request.credential, "Azure provider", request.model_name
     )
     credentials.require_keys(creds, ["azure_endpoint", "api_key"], "Azure provider")
+    credentials.require_non_empty_strings(
+        creds, ["azure_endpoint", "api_key", "api_version"], "Azure provider"
+    )
     http_client = request.options.http_client_for(request.provider)
     if creds.get("api_version") is not None:
         return openai.OpenAIChatModel(

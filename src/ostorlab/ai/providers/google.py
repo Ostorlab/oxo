@@ -77,7 +77,9 @@ def _build_vertex_provider(
     model = request.model_name
     http_client = request.options.http_client_for(request.provider)
     stripped_credential = request.credential.strip()
-    if stripped_credential.startswith("{") is False:
+    # Anything JSON-shaped is parsed, so a malformed object or an array fails here
+    # instead of being sent to Vertex as an Express key.
+    if stripped_credential.startswith(("{", "[")) is False:
         return google_cloud_provider.GoogleCloudProvider(
             api_key=stripped_credential, http_client=http_client
         )
@@ -94,9 +96,9 @@ def _build_vertex_provider(
                 "Google Vertex 'api_key' cannot be combined with 'project' or "
                 f"'location' (model={model})."
             )
-        if isinstance(creds["api_key"], str) is False:
+        if isinstance(creds["api_key"], str) is False or creds["api_key"].strip() == "":
             raise errors.ModelConfigurationError(
-                f"Google Vertex 'api_key' must be a string (model={model})."
+                f"Google Vertex 'api_key' must be a non-empty string (model={model})."
             )
         return google_cloud_provider.GoogleCloudProvider(
             api_key=creds["api_key"].strip(), http_client=http_client

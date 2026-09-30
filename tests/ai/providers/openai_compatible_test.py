@@ -55,9 +55,16 @@ def testBuildModel_whenGatewayProvider_shouldConfigureReasoningContentProfile(
     assert model.profile.openai_chat_send_back_thinking_parts == "field"
 
 
-def testBuildModel_whenLitellmWithoutGatewayUrl_shouldRaise() -> None:
+@pytest.mark.parametrize("gateway_url", [None, "", "   "])
+def testBuildModel_whenLitellmWithoutGatewayUrl_shouldRaise(
+    gateway_url: str | None,
+) -> None:
     with pytest.raises(errors.ModelConfigurationError, match="litellm_gateway_url"):
-        factory.build_model("litellm/openrouter/zai/glm-4", "k")
+        factory.build_model(
+            "litellm/openrouter/zai/glm-4",
+            "k",
+            options=options.ProviderOptions(litellm_gateway_url=gateway_url),
+        )
 
 
 def testBuildModel_whenFireworks_shouldUseFireworksEndpointAndKey() -> None:
@@ -159,6 +166,15 @@ def testBuildModel_whenAzureWithoutApiVersion_shouldFallbackToV1Api() -> None:
         ("[1]", "must be a JSON object"),
         ('{"api_key": "k"}', "azure_endpoint"),
         ("{}", "azure_endpoint, api_key"),
+        ('{"api_key": "k", "azure_endpoint": 1}', "non-empty strings: azure_endpoint"),
+        (
+            '{"api_key": " ", "azure_endpoint": "https://a"}',
+            "non-empty strings: api_key",
+        ),
+        (
+            '{"api_key": "k", "azure_endpoint": "https://a", "api_version": ""}',
+            "non-empty strings: api_version",
+        ),
     ],
 )
 def testBuildModel_whenAzureCredentialInvalid_shouldRaise(

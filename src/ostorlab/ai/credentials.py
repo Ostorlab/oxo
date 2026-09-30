@@ -48,3 +48,24 @@ def require_keys(
         raise errors.ModelConfigurationError(
             f"Missing required credential(s) for {provider_label}: {', '.join(missing)}"
         )
+
+
+def require_non_empty_strings(
+    creds: dict[str, Any], keys: Sequence[str], provider_label: str
+) -> None:
+    """Raise if any of ``keys`` is present but not a non-empty string.
+
+    Keeps a wrongly-typed field from failing later inside the provider SDK with an
+    unrelated error. Absent keys are left to ``require_keys``.
+    """
+    invalid = [
+        key
+        for key in keys
+        if key in creds
+        and (isinstance(creds[key], str) is False or creds[key].strip() == "")
+    ]
+    if len(invalid) > 0:
+        raise errors.ModelConfigurationError(
+            f"Credential(s) for {provider_label} must be non-empty strings: "
+            f"{', '.join(invalid)}"
+        )

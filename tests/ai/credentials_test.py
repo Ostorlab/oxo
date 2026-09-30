@@ -31,3 +31,15 @@ def testParseJsonObject_whenInvalid_shouldNotLeakTheCredentialInTheMessage() -> 
 def testRequireKeys_whenKeysMissing_shouldListThem() -> None:
     with pytest.raises(errors.ModelConfigurationError, match="b, c"):
         credentials.require_keys({"a": 1}, ["a", "b", "c"], "X provider")
+
+
+@pytest.mark.parametrize("value", [None, 42, "", "   "])
+def testRequireNonEmptyStrings_whenValueIsNotANonEmptyString_shouldRaise(
+    value: object,
+) -> None:
+    with pytest.raises(errors.ModelConfigurationError, match="non-empty strings: a"):
+        credentials.require_non_empty_strings({"a": value}, ["a", "b"], "X provider")
+
+
+def testRequireNonEmptyStrings_whenKeyAbsent_shouldLeaveItToRequireKeys() -> None:
+    credentials.require_non_empty_strings({"a": "value"}, ["a", "b"], "X provider")
