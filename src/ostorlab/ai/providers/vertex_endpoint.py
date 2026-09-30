@@ -76,7 +76,19 @@ class VertexEndpointModel(openai.OpenAIChatModel):
     with a currently-valid token and a client bound to the current event loop.
     """
 
-    _build_request: base.BuildRequest
+    def __init__(
+        self, build_request: base.BuildRequest, endpoint_url: str, token: str
+    ) -> None:
+        self._build_request = build_request
+        super().__init__(
+            model_name=build_request.model_name,
+            provider=openai_provider.OpenAIProvider(
+                base_url=endpoint_url,
+                api_key=token,
+            ),
+            settings=build_request.settings,
+            profile=base.reasoning_content_profile(supports_tool_choice_required=True),
+        )
 
     def refresh(self) -> models.Model:
         """Build a sibling model with a currently-valid token and its own httpx client."""
@@ -94,7 +106,7 @@ def build_google_vertex_endpoint(request: base.BuildRequest) -> models.Model:
         raise errors.ModelConfigurationError(
             "vertex_endpoint_url must be set when using google_vertex_endpoint provider"
         )
-    if endpoint_url.endswith("/"):
+    if endpoint_url.endswith("/") is True:
         raise errors.ModelConfigurationError(
             f"vertex_endpoint_url must not end with a trailing slash, got: {endpoint_url!r}."
         )
@@ -105,14 +117,4 @@ def build_google_vertex_endpoint(request: base.BuildRequest) -> models.Model:
         )
 
     token = get_token_provider(request.credential.strip()).bearer_token
-    model = VertexEndpointModel(
-        model_name=request.model_name,
-        provider=openai_provider.OpenAIProvider(
-            base_url=endpoint_url,
-            api_key=token,
-        ),
-        settings=request.settings,
-        profile=base.reasoning_content_profile(supports_tool_choice_required=True),
-    )
-    model._build_request = request
-    return model
+    return VertexEndpointModel(request, endpoint_url, token)
