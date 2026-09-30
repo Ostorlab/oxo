@@ -134,6 +134,8 @@ def testBuildModel_whenAzureWithoutApiVersion_shouldFallbackToV1Api() -> None:
             '{"api_key": "k", "azure_endpoint": "https://a", "api_version": ""}',
             "non-empty strings: api_version",
         ),
+        ('{"api_key": "k", "azure_endpoint": "not a url"}', "must start with"),
+        ('{"api_key": "k", "azure_endpoint": "ftp://a.example"}', "must start with"),
     ],
 )
 def testBuildModel_whenAzureCredentialInvalid_shouldRaise(
@@ -141,3 +143,25 @@ def testBuildModel_whenAzureCredentialInvalid_shouldRaise(
 ) -> None:
     with pytest.raises(errors.ModelConfigurationError, match=message):
         factory.build_model("azure_ai_foundry/gpt-5.2", credential)
+
+
+def testBuildModel_whenAzureEndpointInvalid_shouldNotEchoItInTheError() -> None:
+    with pytest.raises(errors.ModelConfigurationError) as exc_info:
+        factory.build_model(
+            "azure_ai_foundry/gpt-5.2",
+            json.dumps({"api_key": "k", "azure_endpoint": "tenant-secret-host"}),
+        )
+
+    assert "tenant-secret-host" not in str(exc_info.value)
+
+
+def testBuildModel_whenAzureEndpointHasSurroundingSpaces_shouldStripThem() -> None:
+    model = factory.build_model(
+        "azure_ai_foundry/gpt-5.2",
+        json.dumps(
+            {"api_key": "k", "azure_endpoint": "  https://test.openai.azure.com/ "}
+        ),
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert str(model.client.base_url) == "https://test.openai.azure.com/openai/v1/"

@@ -109,11 +109,18 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
     credentials.require_non_empty_strings(
         creds, ["azure_endpoint", "api_key", "api_version"], "Azure provider"
     )
+    azure_endpoint = creds["azure_endpoint"].strip()
+    # The endpoint is part of the credential, so it is not echoed in the error.
+    if azure_endpoint.startswith(("http://", "https://")) is False:
+        raise errors.ModelConfigurationError(
+            "Credential 'azure_endpoint' for Azure provider must start with "
+            f"'http://' or 'https://' (model={request.model_name})."
+        )
     if creds.get("api_version") is not None:
         return openai.OpenAIChatModel(
             model_name=request.model_name,
             provider=azure_provider.AzureProvider(
-                azure_endpoint=creds["azure_endpoint"],
+                azure_endpoint=azure_endpoint,
                 api_key=creds["api_key"],
                 api_version=creds["api_version"],
             ),
@@ -126,7 +133,7 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
     return openai.OpenAIChatModel(
         model_name=request.model_name,
         provider=openai_provider.OpenAIProvider(
-            base_url=creds["azure_endpoint"].rstrip("/") + "/" + AZURE_V1_PATH,
+            base_url=azure_endpoint.rstrip("/") + "/" + AZURE_V1_PATH,
             api_key=creds["api_key"],
         ),
         settings=request.settings,
