@@ -42,7 +42,7 @@ def credential_for(provider: str, keys: Mapping[str, str | None]) -> str | None:
     credential = keys.get(factory.canonical_provider(provider))
     if credential is None or credential.strip() == "":
         return None
-    return credential
+    return credential.strip()
 
 
 def first_available(keys: Mapping[str, str | None]) -> tuple[str, str] | None:

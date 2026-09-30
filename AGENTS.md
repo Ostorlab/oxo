@@ -53,7 +53,7 @@ mypy src/ostorlab/utils
 mypy src/ostorlab/apis/runners
 mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
 mypy src/ostorlab/assets
-mypy src/ostorlab/ai
+mypy src/ostorlab/ai tests/ai
 
 # Install typing dependencies
 pip install -r typing_requirements.txt
@@ -159,11 +159,10 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Squash commits when merging
 
 ### AI Models and Providers (`ostorlab.ai`)
-- `ostorlab.ai` is the single place for building pydantic-ai models for agents, replacing the
-  per-agent copies that drifted apart. Existing agents are being migrated in follow-up PRs; new or
-  changed provider logic goes only here. Agents call
-  `factory.build_model("provider/model", credential, options=..., settings=...)` and must not
-  construct `pydantic_ai.providers` themselves.
+- **Agents must not construct `pydantic_ai.providers` or `pydantic_ai.models` themselves; they call
+  `factory.build_model("provider/model", credential, options=..., settings=...)`.**
+- `ostorlab.ai` replaces the per-agent copies that drifted apart. Existing agents are being migrated
+  in follow-up PRs; new or changed provider logic goes only here.
 - The package never reads agent configuration or environment variables; callers pass every input
   (identifier, credential, gateway URLs, settings) explicitly. Agent-specific
   selection logic (per-role models, complexity routing) stays in the agent.

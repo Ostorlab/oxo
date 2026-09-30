@@ -81,7 +81,9 @@ def _build_vertex_provider(
         return google_cloud_provider.GoogleCloudProvider(api_key=stripped_credential)
 
     creds = credentials.parse_json_object(stripped_credential, _VERTEX_LABEL, model)
-    if "api_key" in creds and "service_account" in creds:
+    if "api_key" in creds and (
+        "service_account" in creds or creds.get("type") == "service_account"
+    ):
         raise errors.ModelConfigurationError(
             "Google Vertex 'api_key' cannot be combined with 'service_account' "
             f"(model={model})."

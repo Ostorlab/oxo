@@ -29,3 +29,7 @@ def testFirstAvailable_whenNoKeySet_shouldReturnNone() -> None:
 
 def testProviderPriority_whenCompared_shouldListEverySupportedProvider() -> None:
     assert sorted(keys.PROVIDER_PRIORITY) == sorted(factory.SUPPORTED_PROVIDERS)
+
+
+def testCredentialFor_whenKeyHasSurroundingWhitespace_shouldStripIt() -> None:
+    assert keys.credential_for("openai", {"openai": "  sk-key\n"}) == "sk-key"

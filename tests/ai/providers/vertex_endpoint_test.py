@@ -93,8 +93,6 @@ def testVertexEndpointModelRefresh_whenCalled_shouldBuildIndependentSiblingModel
     assert isinstance(model, vertex_endpoint.VertexEndpointModel)
 
     refreshed = model.refresh()
-
-    assert isinstance(refreshed, vertex_endpoint.VertexEndpointModel)
     assert refreshed is not model
     assert refreshed.client is not model.client
     assert refreshed.model_name == model.model_name

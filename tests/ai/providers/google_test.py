@@ -81,6 +81,10 @@ def testBuildModel_whenGoogleVertexServiceAccountWithoutProject_shouldRaise(
         (json.dumps({"api_key": 42}), "must be a non-empty string"),
         (json.dumps({"api_key": "   "}), "must be a non-empty string"),
         ("[1]", "must be a JSON object"),
+        (
+            json.dumps({"api_key": "k", "type": "service_account", "project_id": "p"}),
+            "'service_account'",
+        ),
         (json.dumps({"api_key": "k", "service_account": {}}), "'service_account'"),
     ],
 )

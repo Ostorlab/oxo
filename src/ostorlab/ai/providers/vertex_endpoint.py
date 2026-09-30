@@ -7,7 +7,6 @@ import threading
 
 from google.auth.transport import requests as google_auth_requests
 from google.oauth2 import service_account
-from pydantic_ai import models
 from pydantic_ai.models import openai
 from pydantic_ai.providers import openai as openai_provider
 
@@ -90,12 +89,12 @@ class VertexEndpointModel(openai.OpenAIChatModel):
             profile=base.reasoning_content_profile(supports_tool_choice_required=True),
         )
 
-    def refresh(self) -> models.Model:
+    def refresh(self) -> VertexEndpointModel:
         """Build a sibling model with a currently-valid token and its own httpx client."""
         return build_google_vertex_endpoint(self._build_request)
 
 
-def build_google_vertex_endpoint(request: base.BuildRequest) -> models.Model:
+def build_google_vertex_endpoint(request: base.BuildRequest) -> VertexEndpointModel:
     """Build a model backed by a model deployed on a Vertex AI endpoint.
 
     The credential is the plain service-account JSON; the endpoint URL comes from
