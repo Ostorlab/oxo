@@ -79,13 +79,11 @@ class LocalRabbitMQ:
 
     def stop(self) -> None:
         """Stop local Rabiit MQ instance."""
-        for service in self._docker_client.services.list():
+        for service in self._docker_client.services.list(
+            filters={"label": f"ostorlab.universe={self._name}"}
+        ):
             universe = service.attrs["Spec"]["Labels"].get("ostorlab.universe")
-            if (
-                universe is not None
-                and service.name.startswith("mq_")
-                and self._name in universe
-            ):
+            if universe == self._name and service.name.startswith("mq_"):
                 service.remove()
 
     def _create_network(self):
