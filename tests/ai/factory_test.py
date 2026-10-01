@@ -8,6 +8,7 @@ import pytest
 from pydantic_ai.models import anthropic as pydantic_anthropic
 from pydantic_ai.models import bedrock as pydantic_bedrock
 from pydantic_ai.models import google as pydantic_google
+from pydantic_ai.models import mistral as pydantic_mistral
 from pydantic_ai.models import openai as pydantic_openai
 from pydantic_ai.models import xai as pydantic_xai
 
@@ -35,6 +36,12 @@ _BUILD_CASES = [
     ("google_vertex/gemini-3.1", "k", pydantic_google.GoogleModel, "gemini-3.1"),
     ("deepseek/deepseek-chat", "k", pydantic_openai.OpenAIChatModel, "deepseek-chat"),
     ("xai/grok-4.5", "k", pydantic_xai.XaiModel, "grok-4.5"),
+    (
+        "mistral/mistral-small-latest",
+        "k",
+        pydantic_mistral.MistralModel,
+        "mistral-small-latest",
+    ),
     (
         "anthropic/claude-sonnet-4-6",
         "k",

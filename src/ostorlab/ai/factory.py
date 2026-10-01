@@ -19,6 +19,7 @@ from ostorlab.ai.providers import anthropic
 from ostorlab.ai.providers import base
 from ostorlab.ai.providers import bedrock
 from ostorlab.ai.providers import google
+from ostorlab.ai.providers import mistral
 from ostorlab.ai.providers import openai_compatible
 from ostorlab.ai.providers import vertex_endpoint
 from ostorlab.ai.providers import xai
@@ -33,6 +34,7 @@ _BUILDERS: Final[Mapping[str, base.Builder]] = {
     "google_vertex": google.build_google_vertex,
     "google_vertex_endpoint": vertex_endpoint.build_google_vertex_endpoint,
     "litellm": openai_compatible.build_litellm,
+    "mistral": mistral.build_mistral,
     "moonshotai": openai_compatible.build_moonshotai,
     "openai": openai_compatible.build_openai,
     "openrouter": openai_compatible.build_openrouter,
