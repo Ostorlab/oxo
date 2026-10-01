@@ -225,7 +225,7 @@ class AgentMixin(
     def process_message(self, selector: str, message: bytes) -> None:
         """Processes raw message received from BS.
 
-        Processing failures are logged and re-raised after cleanup.
+        Processing failures are logged and consumed after cleanup and log flushing.
 
         Args:
             selector: destination selector with full path, including UUID set by default.
@@ -267,7 +267,6 @@ class AgentMixin(
                 object_message.selector,
                 string_utils.format_dict(object_message.data),
             )
-            raise
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")

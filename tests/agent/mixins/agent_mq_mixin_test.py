@@ -2,6 +2,7 @@
 
 import asyncio
 import concurrent.futures
+import logging
 from collections import abc
 from unittest import mock
 
@@ -305,6 +306,7 @@ class MessageProcessingAgent(agent.Agent):
         self.processing_error = ValueError("processing failed")
         self.fail_processing = False
         self.processed_messages: list[agent_message.Message] = []
+        self.completed_messages: list[agent_message.Message] = []
         self.cleanup_count = 0
         self.limit_callbacks: list[str] = []
 
@@ -313,6 +315,7 @@ class MessageProcessingAgent(agent.Agent):
         self.processed_messages.append(message)
         if self.fail_processing is True:
             raise self.processing_error
+        self.completed_messages.append(message)
 
     def process_cleanup(self) -> None:
         """Record cleanup after each processing attempt."""
@@ -377,6 +380,7 @@ def _incoming_message(
     message: agent_message.Message,
     redelivered: bool = False,
     control_agents: tuple[str, ...] = (),
+    delivery_tag: int = 1,
 ) -> aio_pika.IncomingMessage:
     """Build an actual aio-pika delivery around a serialized Agent message."""
     control_message = agent_message.Message.from_data(
@@ -388,7 +392,7 @@ def _incoming_message(
     )
     delivery = aiormq_abc.DeliveredMessage(
         delivery=commands.Basic.Deliver(
-            delivery_tag=1,
+            delivery_tag=delivery_tag,
             routing_key=f"{message.selector}.message-id",
             redelivered=redelivered,
         ),
@@ -433,7 +437,7 @@ async def testMqRun_whenAgentSucceeds_acknowledgesAfterCleanup(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("redelivered", [False, True])
-async def testMqRun_whenAgentFails_rejectsWithBoundedRedelivery(
+async def testMqRun_whenAgentFails_acknowledgesAfterLoggingAndCleanup(
     message_processing_agent: MessageProcessingAgent,
     consumed_message_callback: abc.Callable[
         [aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]
@@ -441,8 +445,9 @@ async def testMqRun_whenAgentFails_rejectsWithBoundedRedelivery(
     ping_message: agent_message.Message,
     redelivered: bool,
     caplog: pytest.LogCaptureFixture,
+    mocker: plugin.MockerFixture,
 ) -> None:
-    """Failures requeue new work and reject redelivered work without requeue."""
+    """Caught processing failures consume both new and redelivered work."""
     channel = mock.Mock(
         spec=aiormq_abc.AbstractChannel,
         is_closed=False,
@@ -450,21 +455,78 @@ async def testMqRun_whenAgentFails_rejectsWithBoundedRedelivery(
         basic_reject=mock.AsyncMock(),
     )
     incoming_message = _incoming_message(channel, ping_message, redelivered)
+    process_context = mocker.spy(aio_pika.IncomingMessage, "process")
+    log_handler = logging.NullHandler()
+    flush_logs = mocker.spy(log_handler, "flush")
+    mocker.patch.object(agent.logger, "handlers", [log_handler])
     message_processing_agent.fail_processing = True
 
-    with pytest.raises(ValueError, match="processing failed") as raised:
-        await consumed_message_callback(incoming_message)
+    assert await consumed_message_callback(incoming_message) is None
 
-    assert raised.value is message_processing_agent.processing_error
-    channel.basic_ack.assert_not_awaited()
-    channel.basic_reject.assert_awaited_once_with(
-        delivery_tag=1, requeue=redelivered is False
+    channel.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
+    channel.basic_reject.assert_not_awaited()
+    process_context.assert_called_once_with(
+        incoming_message, requeue=True, reject_on_redelivered=True
     )
+    flush_logs.assert_called_once_with()
     assert incoming_message.processed is True
     assert len(message_processing_agent.processed_messages) == 1
+    assert message_processing_agent.completed_messages == []
     assert message_processing_agent.cleanup_count == 1
     assert "Error processing message on selector v3.healthcheck.ping" in caplog.text
     assert "Hello, can you hear me?" in caplog.text
+    error_record = next(
+        record
+        for record in caplog.records
+        if record.getMessage()
+        == "Error processing message on selector v3.healthcheck.ping"
+    )
+    assert error_record.exc_info is not None
+    assert error_record.exc_info[1] is message_processing_agent.processing_error
+
+
+@pytest.mark.asyncio
+async def testMqRun_whenFailurePrecedesHealthyMessage_stopsFailedProcessingAndContinuesConsumer(
+    message_processing_agent: MessageProcessingAgent,
+    consumed_message_callback: abc.Callable[
+        [aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]
+    ],
+    ping_message: agent_message.Message,
+) -> None:
+    """A consumed failure stops its processing and leaves the consumer usable."""
+    channel = mock.Mock(
+        spec=aiormq_abc.AbstractChannel,
+        is_closed=False,
+        basic_ack=mock.AsyncMock(),
+        basic_reject=mock.AsyncMock(),
+    )
+    failed_delivery = _incoming_message(channel, ping_message, delivery_tag=1)
+    healthy_message = agent_message.Message.from_data(
+        "v3.healthcheck.ping", {"body": "Independent healthy message"}
+    )
+    healthy_delivery = _incoming_message(channel, healthy_message, delivery_tag=2)
+    message_processing_agent.fail_processing = True
+
+    await consumed_message_callback(failed_delivery)
+
+    assert message_processing_agent.completed_messages == []
+    assert message_processing_agent.cleanup_count == 1
+    channel.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
+    message_processing_agent.fail_processing = False
+
+    await consumed_message_callback(healthy_delivery)
+
+    assert channel.basic_ack.await_args_list == [
+        mock.call(delivery_tag=1, multiple=False),
+        mock.call(delivery_tag=2, multiple=False),
+    ]
+    channel.basic_reject.assert_not_awaited()
+    assert failed_delivery.processed is True
+    assert healthy_delivery.processed is True
+    assert len(message_processing_agent.processed_messages) == 2
+    assert len(message_processing_agent.completed_messages) == 1
+    assert message_processing_agent.completed_messages[0].data == healthy_message.data
+    assert message_processing_agent.cleanup_count == 2
 
 
 @pytest.mark.asyncio

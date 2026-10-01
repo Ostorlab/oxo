@@ -140,7 +140,8 @@ class AgentMQMixin:
     ) -> None:
         """Consume messages and call the process message callback.
 
-        Processing failures requeue new deliveries and reject redelivered messages.
+        Agent consumes caught processing errors, so those deliveries are acknowledged.
+        Exceptions escaping the callback requeue new deliveries and reject redeliveries.
         """
         logger.debug("incoming pika message received")
         try:

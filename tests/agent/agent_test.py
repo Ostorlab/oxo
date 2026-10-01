@@ -476,10 +476,12 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
-    with pytest.raises(ValueError, match="some error"):
+    assert (
         test_agent.process_message(
             f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
         )
+        is None
+    )
 
     assert logger_error.call_count == 3
     assert "System Info: %s" in logger_error.call_args_list[0][0][0]
@@ -538,10 +540,12 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
         },
     )
 
-    with pytest.raises(ValueError, match="some error"):
+    assert (
         test_agent.process_message(
             f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
         )
+        is None
+    )
 
     assert logger_error.call_count == 2
     assert (
