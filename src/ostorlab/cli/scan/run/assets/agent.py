@@ -49,4 +49,6 @@ def agent(
             assets=[asset],
         )
     except exceptions.OstorlabError as e:
-        console.error(f"An error was encountered while running the scan: {e}")
+        raise click.ClickException(
+            f"An error was encountered while running the scan: {e}"
+        ) from e

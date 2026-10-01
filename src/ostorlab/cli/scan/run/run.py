@@ -224,7 +224,9 @@ def run(
                     )
 
             except exceptions.OstorlabError as e:
-                console.error(f"An error was encountered while running the scan: {e}")
+                raise click.ClickException(
+                    f"An error was encountered while running the scan: {e}"
+                ) from e
     else:
         raise click.ClickException(
             "The runtime does not support the provided agent list or group definition."

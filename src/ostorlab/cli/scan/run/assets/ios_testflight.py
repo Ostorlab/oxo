@@ -28,4 +28,6 @@ def ios_testflight(ctx: click.core.Context, application_url: str) -> None:
             assets=assets,
         )
     except exceptions.OstorlabError as e:
-        console.error(f"An error was encountered while running the scan: {e}")
+        raise click.ClickException(
+            f"An error was encountered while running the scan: {e}"
+        ) from e
