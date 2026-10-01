@@ -1,5 +1,6 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
+import collections.abc
 import datetime
 import io
 import pathlib
@@ -52,6 +53,29 @@ def isolated_configuration(
     """Keep every test's configuration and default database in temporary storage."""
     monkeypatch.setenv("OSTORLAB_PRIVATE_DIR", str(tmp_path / "configuration"))
     monkeypatch.setattr(models, "ENGINE_URL", db_engine_path)
+
+
+@pytest.fixture
+def offline_docker_client(
+    mocker: plugin.MockerFixture,
+) -> collections.abc.Iterator[docker.DockerClient]:
+    """Keep SDK collections real while requiring Docker operations to be mocked."""
+    client = docker.DockerClient(
+        base_url="http://unit-docker.invalid:2375", version="1.42"
+    )
+    mocker.patch.object(
+        client.api,
+        "request",
+        autospec=True,
+        side_effect=AssertionError(
+            "Unexpected Docker HTTP request; mock the Docker SDK operation."
+        ),
+    )
+    mocker.patch("docker.from_env", autospec=True, return_value=client)
+    try:
+        yield client
+    finally:
+        client.close()
 
 
 @pytest.fixture(scope="session")

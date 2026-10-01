@@ -2,6 +2,7 @@
 
 import io
 
+import docker
 import pytest
 from pytest_mock import plugin
 
@@ -177,8 +178,13 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
     assert new_instance.args[0].value == b'"fast"'
 
 
-def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
-    """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError(
+    mocker: plugin.MockerFixture, offline_docker_client: docker.DockerClient
+) -> None:
+    """Return no container image when the SDK finds no matching image."""
+    mocker.patch(
+        "docker.models.images.ImageCollection.list", return_value=[], autospec=True
+    )
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
         bus_url="mq",
