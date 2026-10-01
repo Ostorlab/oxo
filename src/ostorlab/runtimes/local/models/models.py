@@ -9,9 +9,11 @@ import pathlib
 import struct
 import threading
 import types
+import typing
 import uuid
 from typing import Any
 from typing import ClassVar
+from typing import Optional
 
 import sqlalchemy
 from alembic import command as alembic_command
@@ -40,6 +42,7 @@ from ostorlab.assets import multi_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.models import utils
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab.utils import risk_rating as risk_rating_utils
 
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
@@ -463,7 +466,7 @@ class AgentArgument(Base):
         name: str,
         type: str,
         description: str | None = None,
-        value: bytes | float | str | bool | list | dict | None = None,
+        value: Optional[utils_definitions.ArgValue] = None,
     ) -> "AgentArgument":
         """Persist the agent argument in the database.
 
@@ -492,13 +495,19 @@ class AgentArgument(Base):
             return agent_argument
 
     @staticmethod
-    def to_bytes(type: str, value: float | str | bool | list | dict | None) -> bytes:
-        """Convert the value to bytes."""
+    def to_bytes(
+        type: str, value: Optional[utils_definitions.ArgValue]
+    ) -> Optional[bytes]:
+        """Encode native values in the canonical database argument format."""
+        if value is None:
+            return None
+        if type == "binary" and isinstance(value, bytes):
+            return value
         if type == "string":
-            return value.encode(encoding="utf-8")
+            return typing.cast(str, value).encode(encoding="utf-8")
         elif type in ("boolean", "bool"):
             return (1 if value is True else 0).to_bytes(1, byteorder="big")
-        elif type == "number":
+        elif type in ("number", "int"):
             return struct.pack("d", value)
         elif type in ("array", "object"):
             return json.dumps(value).encode(encoding="utf-8")
@@ -506,8 +515,8 @@ class AgentArgument(Base):
             raise NotImplementedError(f"Type {type} not supported")
 
     @staticmethod
-    def from_bytes(type: str, value: bytes) -> Any:
-        """Get the value of the argument."""
+    def from_bytes(type: str, value: Optional[bytes]) -> Any:
+        """Decode canonical database bytes, preserving opaque unknown types."""
         if value is None:
             return None
 
@@ -515,7 +524,7 @@ class AgentArgument(Base):
             return value.decode(encoding="utf-8")
         elif type in ("boolean", "bool"):
             return bool(int.from_bytes(value, byteorder="big"))
-        elif type == "number":
+        elif type in ("number", "int"):
             return struct.unpack("d", value)[0]
         elif type in ("array", "object"):
             return json.loads(value.decode())
