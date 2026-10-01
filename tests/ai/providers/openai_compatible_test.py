@@ -6,7 +6,9 @@ import json
 
 import pytest
 from pydantic_ai.models import openai as pydantic_openai
+from pydantic_ai.models import openrouter as pydantic_openrouter
 from pydantic_ai.profiles import openai as openai_profile
+from pydantic_ai.providers import openrouter as openrouter_provider
 
 from ostorlab.ai import errors
 from ostorlab.ai import factory
@@ -40,7 +42,7 @@ def testBuildModel_whenOpenAICompatibleProvider_shouldTargetItsEndpointWithTheKe
 
 @pytest.mark.parametrize(
     "identifier",
-    ["openrouter/moonshotai/kimi-k2.6", "z_ai/glm-5", "litellm/openrouter/zai/glm-4"],
+    ["z_ai/glm-5", "litellm/openrouter/zai/glm-4"],
 )
 def testBuildModel_whenGatewayProvider_shouldConfigureReasoningContentProfile(
     identifier: str,
@@ -271,3 +273,20 @@ def testBuildModel_whenOllamaBaseUrlMissingOrInvalid_shouldRaise(
             None,
             options=options.ProviderOptions(ollama_base_url=ollama_base_url),
         )
+
+
+@pytest.mark.parametrize(
+    "model_name",
+    ["moonshotai/kimi-k2.6", "google/gemini-3.7-flash", "anthropic/claude-sonnet-4.6"],
+)
+def testBuildModel_whenOpenRouter_shouldUseNativeModelWithPerModelProfile(
+    model_name: str,
+) -> None:
+    """Each model family keeps its own conventions instead of OpenAI's."""
+    model = factory.build_model(f"openrouter/{model_name}", "or-key")
+
+    assert isinstance(model, pydantic_openrouter.OpenRouterModel)
+    assert model.system == "openrouter"
+    assert model.client.api_key == "or-key"
+    assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
+    assert model.profile.openai_chat_thinking_field == "reasoning"

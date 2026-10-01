@@ -6,6 +6,7 @@ import logging
 
 from pydantic_ai import models
 from pydantic_ai.models import openai
+from pydantic_ai.models import openrouter as openrouter_model
 from pydantic_ai.providers import alibaba as alibaba_provider
 from pydantic_ai.providers import azure as azure_provider
 from pydantic_ai.providers import deepseek as deepseek_provider
@@ -13,6 +14,7 @@ from pydantic_ai.providers import fireworks as fireworks_provider
 from pydantic_ai.providers import moonshotai as moonshotai_provider
 from pydantic_ai.providers import ollama as ollama_provider
 from pydantic_ai.providers import openai as openai_provider
+from pydantic_ai.providers import openrouter as openrouter_provider
 
 from ostorlab.ai import credentials
 from ostorlab.ai import errors
@@ -21,7 +23,6 @@ from ostorlab.ai.providers import base
 logger = logging.getLogger(__name__)
 
 OPENAI_BASE_URL = "https://api.openai.com/v1"
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4"
 QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
@@ -47,8 +48,18 @@ def build_openai(request: base.BuildRequest) -> models.Model:
 
 
 def build_openrouter(request: base.BuildRequest) -> models.Model:
-    """Build an OpenRouter model, exposing reasoning under ``reasoning_content``."""
-    return _build_gateway_model(request, OPENROUTER_BASE_URL)
+    """Build an OpenRouter model with pydantic-ai's native ``OpenRouterModel``.
+
+    OpenRouter serves many model families, so the profile comes from
+    ``OpenRouterProvider`` per model (tool calling, structured output and the
+    ``reasoning`` field OpenRouter actually returns) instead of forcing OpenAI's
+    conventions on every model.
+    """
+    return openrouter_model.OpenRouterModel(
+        model_name=request.model_name,
+        provider=openrouter_provider.OpenRouterProvider(api_key=request.credential),
+        settings=request.settings,
+    )
 
 
 def build_z_ai(request: base.BuildRequest) -> models.Model:
