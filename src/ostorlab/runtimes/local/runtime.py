@@ -453,25 +453,26 @@ class LocalRuntime(runtime.Runtime):
         """Check if the core services are running and healthy."""
         return self._are_services_ready()
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(20),
-        wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda lv: lv.outcome,
-        retry=tenacity.retry_if_result(lambda v: v is False),
-    )
     def _are_services_ready(self) -> bool:
-        if self._mq_service is None or self._mq_service.is_service_healthy() is False:
+        if (
+            self._mq_service is None
+            or self._mq_service.service is None
+            or self._mq_service.is_service_healthy() is False
+        ):
             raise UnhealthyService("MQ service is unhealthy.")
         if (
             self._redis_service is None
+            or self._redis_service.service is None
             or self._redis_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Redis service is unhealthy.")
         if self._tracing is True and (
             self._jaeger_service is None
+            or self._jaeger_service.service is None
             or self._jaeger_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
+        return True
 
     def _check_agents_healthy(self):
         """Checks if an agent is healthy."""
@@ -538,8 +539,7 @@ class LocalRuntime(runtime.Runtime):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda _: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
@@ -693,13 +693,6 @@ class LocalRuntime(runtime.Runtime):
         except docker_errors.DockerException as e:
             console.error(f"Error calling the Docker API: {e}")
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(20),
-        wait=tenacity.wait_fixed(0.5),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
-        retry=tenacity.retry_if_result(lambda v: v is False),
-    )
     def _are_agents_ready(self, fail_fast=True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
         (once vs long-running)."""

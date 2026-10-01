@@ -6,6 +6,7 @@ on instances missing docker.
 
 import docker
 import pytest
+import tenacity
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local.services import mq
@@ -85,3 +86,16 @@ def testLocalRabbitMQIsAcceptingConnections_whenNoRunningTask_returnsFalse(
 
     assert lrm.is_accepting_connections is False
     docker_client.containers.get.assert_not_called()
+
+
+def testLocalRabbitMQServiceReadiness_whenListenersNeverReady_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A running task cannot bypass exhausted RabbitMQ listener readiness checks."""
+    lrm, docker_client = _mock_mq_with_task(mocker, task_state="running", exit_code=69)
+    check_health = mq.LocalRabbitMQ.is_service_healthy.retry_with(
+        stop=tenacity.stop_after_attempt(2), wait=tenacity.wait_none()
+    )
+
+    assert check_health(lrm) is False
+    assert docker_client.containers.get.return_value.exec_run.call_count == 2
