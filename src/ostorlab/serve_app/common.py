@@ -8,6 +8,8 @@ import struct
 import zipfile
 from functools import cached_property
 from math import ceil
+from typing import Any
+from typing import Optional
 
 import cvss
 import graphene
@@ -52,7 +54,7 @@ class Bytes(scalars.Scalar):
 
     @staticmethod
     def coerce_bytes(
-        value: str | bytes | memoryview | list | float | dict | bool,
+        value: str | bytes | memoryview | list[Any] | float | dict[str, Any] | bool,
     ) -> bytes:
         """Coerce a value to bytes.
 
@@ -70,17 +72,27 @@ class Bytes(scalars.Scalar):
             return Bytes._rawbytes(value)
         elif isinstance(value, list):
             return json.dumps(value).encode(encoding="utf-8")
+        elif isinstance(value, bool):
+            return (1 if value is True else 0).to_bytes(1, byteorder="big")
         elif isinstance(value, (float, int)):
             return struct.pack("d", value)
         elif isinstance(value, dict):
             return json.dumps(value).encode(encoding="utf-8")
-        elif isinstance(value, bool):
-            return (1 if value is True else 0).to_bytes(1, byteorder="big")
         else:
             raise NotImplementedError(f"Bytes scalar coerce error from {type(value)}")
 
     serialize = coerce_bytes
-    parse_value = coerce_bytes
+
+    @staticmethod
+    def parse_value(
+        value: Optional[
+            str | bytes | memoryview | list[Any] | int | float | dict[str, Any] | bool
+        ],
+    ) -> Optional[str | bytes | list[Any] | int | float | dict[str, Any] | bool]:
+        """Preserve input values until the argument's declared type is available."""
+        if isinstance(value, memoryview):
+            return value.tobytes()
+        return value
 
     @staticmethod
     def parse_literal(asst: ast.Value) -> int | None:
