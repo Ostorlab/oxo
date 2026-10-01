@@ -10,6 +10,7 @@ from docker.models import containers
 from docker.models import services
 from pytest_mock import plugin
 
+from ostorlab.assets import asset as base_asset
 from ostorlab.assets import ipv4
 from ostorlab.cli import docker_requirements_checker
 from ostorlab.runtimes import definitions
@@ -45,8 +46,15 @@ def runtime_instance(
         "_is_service_healthy",
         runtime_type._is_service_healthy.retry_with(wait=tenacity.wait_none()),
     )
+    mocker.patch.object(runtime_type, "_start_agents")
     if runtime_type is local_runtime.LocalRuntime:
-        return runtime_type(scan_id="1", run_default_agents=False)
+        mocker.patch.object(runtime_type, "_create_network")
+        mocker.patch.object(runtime_type, "_start_services")
+        mocker.patch.object(runtime_type, "_check_services_healthy", return_value=True)
+        mocker.patch.object(runtime_type, "_wait_log_streamer")
+        runtime = runtime_type(scan_id="1", run_default_agents=False)
+        runtime.can_run(definitions.AgentGroupDefinition(agents=[]))
+        return runtime
     return runtime_type(
         scan_id="1",
         bus_url="bus",
@@ -118,6 +126,13 @@ def _mock_cleanup_resources(
     client.volumes.get.side_effect = docker.errors.NotFound("no volumes")
 
 
+def _assert_scan_progress(scan_id: int, progress: models.ScanProgress) -> None:
+    with models.Database() as session:
+        scan = session.get(models.Scan, scan_id)
+        assert scan is not None
+        assert scan.progress == progress
+
+
 def testServiceReadiness_whenUnstarted_returnsFalse(
     core_service: _CoreService,
 ) -> None:
@@ -148,63 +163,70 @@ def testServiceReadiness_whenEventuallyRunning_returnsTrue(
     assert core_service.is_service_healthy() is True
 
 
-@pytest.mark.parametrize("missing_service", [False, True])
-def testAgentServiceReadiness_whenRetriesExhausted_returnsFalse(
-    runtime_instance: _Runtime, mocker: plugin.MockerFixture, missing_service: bool
-) -> None:
-    """Unhealthy and removed Docker services cannot become truthy retry Futures."""
-    service = _agent_service(mocker)
-    if missing_service:
-        service.tasks.side_effect = docker.errors.NotFound("removed")
-
-    assert runtime_instance._is_service_healthy(service) is False
-    assert service.tasks.call_count == 20
-
-
-def testAgentReadiness_whenRetriesExhausted_usesOneServiceRetryBudget(
+def testScan_whenAgentRecoversOnFinalPoll_injectsAssets(
     runtime_instance: _Runtime, mocker: plugin.MockerFixture
 ) -> None:
-    """An unhealthy agent gets one bounded service readiness window."""
-    service = _agent_service(mocker)
-    mocker.patch.object(
-        runtime_instance, "_list_agent_services", return_value=[service]
-    )
-
-    assert runtime_instance._are_agents_ready() is False
-    assert service.tasks.call_count == 20
-
-
-def testAgentReadiness_whenEventuallyRunning_returnsTrue(
-    runtime_instance: _Runtime, mocker: plugin.MockerFixture
-) -> None:
-    """An agent can recover on the final poll within its readiness window."""
+    """An agent recovering on poll twenty permits public scan startup."""
     service = _agent_service(mocker)
     service.tasks.side_effect = [[]] * 19 + [[{"Status": {"State": "running"}}]]
-    mocker.patch.object(
-        runtime_instance, "_list_agent_services", return_value=[service]
+    assert runtime_instance._docker_client is not None
+    runtime_instance._docker_client.services.list.return_value = [service]
+    inject = mocker.patch.object(runtime_instance, "_inject_assets")
+    cleanup = mocker.spy(runtime_instance, "cleanup")
+    assets: list[base_asset.Asset] = [ipv4.IPv4(host="8.8.8.8", mask="32")]
+
+    scan = runtime_instance.scan(
+        "test", definitions.AgentGroupDefinition(agents=[]), assets=assets
     )
 
-    assert runtime_instance._are_agents_ready() is True
     assert service.tasks.call_count == 20
+    inject.assert_called_once_with(assets=assets, agent_settings=None)
+    cleanup.assert_not_called()
+    service.remove.assert_not_called()
+    if isinstance(runtime_instance, local_runtime.LocalRuntime):
+        assert scan is not None
+        _assert_scan_progress(scan.id, models.ScanProgress.IN_PROGRESS)
 
 
 @pytest.mark.parametrize("tracing", [False, True])
-def testCoreReadiness_whenHealthy_returnsTrue(
+def testLocalScan_whenCoreServicesHealthy_injectsAssetsAndSetsInProgress(
     mocker: plugin.MockerFixture, tracing: bool
 ) -> None:
-    """Successful local core readiness explicitly returns True."""
-    runtime = local_runtime.LocalRuntime(tracing=tracing)
-    runtime._mq_service = mocker.Mock()
-    runtime._redis_service = mocker.Mock()
-    runtime._jaeger_service = mocker.Mock()
-    for service in [
+    """Healthy core services permit scan startup with either tracing setting."""
+    mocker.patch("docker.from_env", return_value=mocker.MagicMock())
+    runtime = local_runtime.LocalRuntime(
+        scan_id="1", run_default_agents=False, tracing=tracing
+    )
+    runtime._docker_client = mocker.MagicMock()
+    runtime._docker_client.services.list.return_value = []
+    runtime._mq_service = mq.LocalRabbitMQ(name="1", network="network")
+    runtime._redis_service = redis.LocalRedis(name="1", network="network")
+    runtime._jaeger_service = jaeger.LocalJaeger(name="1", network="network")
+    running_tasks: list[dict[str, object]] = [
+        {"Status": {"State": "running", "ContainerStatus": {"ContainerID": "abc"}}}
+    ]
+    core_services: list[_CoreService] = [
         runtime._mq_service,
         runtime._redis_service,
         runtime._jaeger_service,
-    ]:
-        service.is_service_healthy.return_value = True
+    ]
+    for service in core_services:
+        _set_service_tasks(service, mocker, running_tasks)
+    mocker.patch.object(runtime, "_create_network")
+    mocker.patch.object(runtime, "_start_services")
+    mocker.patch.object(runtime, "_wait_log_streamer")
+    inject = mocker.patch.object(runtime, "_inject_assets")
+    cleanup = mocker.spy(runtime, "cleanup")
+    assets: list[base_asset.Asset] = [ipv4.IPv4(host="8.8.8.8", mask="32")]
 
-    assert runtime._are_services_ready() is True
+    scan = runtime.scan(
+        "test", definitions.AgentGroupDefinition(agents=[]), assets=assets
+    )
+
+    assert scan is not None
+    _assert_scan_progress(scan.id, models.ScanProgress.IN_PROGRESS)
+    inject.assert_called_once_with(assets=assets, agent_settings=None)
+    cleanup.assert_not_called()
 
 
 def testLocalScan_whenCoreRetriesExhausted_setsErrorAndCleansUp(
@@ -232,37 +254,30 @@ def testLocalScan_whenCoreRetriesExhausted_setsErrorAndCleansUp(
     start_agents = mocker.patch.object(runtime, "_start_agents")
     mocker.patch.object(runtime, "_wait_log_streamer")
     cleanup = mocker.spy(runtime, "cleanup")
+    prepared_scan = runtime.prepare_scan("test")
 
     with pytest.raises(local_runtime.UnhealthyService):
         runtime.scan("test", definitions.AgentGroupDefinition(agents=[]), assets=None)
 
-    with models.Database() as session:
-        scan = session.get(models.Scan, runtime._scan_db.id)
-        assert scan.progress == models.ScanProgress.ERROR
+    _assert_scan_progress(prepared_scan.id, models.ScanProgress.ERROR)
     start_agents.assert_not_called()
     cleanup.assert_called_once_with()
     docker_service.remove.assert_called_once_with()
 
 
+@pytest.mark.parametrize("missing_service", [False, True])
 def testScan_whenAgentRetriesExhausted_cleansUpWithoutInjectingAssets(
-    runtime_instance: _Runtime, mocker: plugin.MockerFixture
+    runtime_instance: _Runtime, mocker: plugin.MockerFixture, missing_service: bool
 ) -> None:
     """Both runtimes abort asset injection and clean up unhealthy agent scans."""
     service = _agent_service(mocker)
-    mocker.patch.object(
-        runtime_instance, "_list_agent_services", return_value=[service]
-    )
-    mocker.patch.object(runtime_instance, "_start_agents")
+    if missing_service is True:
+        service.tasks.side_effect = docker.errors.NotFound("removed")
+    assert runtime_instance._docker_client is not None
+    _mock_cleanup_resources(runtime_instance._docker_client, service)
     inject = mocker.patch.object(runtime_instance, "_inject_assets")
     if isinstance(runtime_instance, local_runtime.LocalRuntime):
-        runtime_instance._docker_client = mocker.MagicMock()
-        mocker.patch.object(runtime_instance, "_create_network")
-        mocker.patch.object(runtime_instance, "_start_services")
-        mocker.patch.object(
-            runtime_instance, "_check_services_healthy", return_value=True
-        )
-        mocker.patch.object(runtime_instance, "_wait_log_streamer")
-        _mock_cleanup_resources(runtime_instance._docker_client, service)
+        prepared_scan = runtime_instance.prepare_scan("test")
         cleanup = mocker.spy(runtime_instance, "cleanup")
         with pytest.raises(local_runtime.AgentNotHealthy):
             runtime_instance.scan(
@@ -270,12 +285,9 @@ def testScan_whenAgentRetriesExhausted_cleansUpWithoutInjectingAssets(
                 definitions.AgentGroupDefinition(agents=[]),
                 assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
             )
-        with models.Database() as session:
-            scan = session.get(models.Scan, runtime_instance._scan_db.id)
-            assert scan.progress == models.ScanProgress.ERROR
+        _assert_scan_progress(prepared_scan.id, models.ScanProgress.ERROR)
         cleanup.assert_called_once_with()
     else:
-        _mock_cleanup_resources(runtime_instance._docker_client, service)
         cleanup = mocker.spy(runtime_instance, "stop")
         runtime_instance.scan(
             "test",
@@ -285,6 +297,7 @@ def testScan_whenAgentRetriesExhausted_cleansUpWithoutInjectingAssets(
         cleanup.assert_called_once_with(runtime_instance.scan_id)
     inject.assert_not_called()
     service.remove.assert_called_once_with()
+    assert service.tasks.call_count == 20
 
 
 @pytest.mark.parametrize(
@@ -386,6 +399,7 @@ def testLocalScan_whenCoreServiceCreationFails_skipsReadinessAndCleansUp(
     start_agents = mocker.patch.object(runtime, "_start_agents")
     inject = mocker.patch.object(runtime, "_inject_assets")
     cleanup = mocker.spy(runtime, "cleanup")
+    prepared_scan = runtime.prepare_scan("test")
 
     with pytest.raises(local_runtime.UnhealthyService, match=service_name):
         runtime.scan(
@@ -394,9 +408,7 @@ def testLocalScan_whenCoreServiceCreationFails_skipsReadinessAndCleansUp(
             assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
         )
 
-    with models.Database() as session:
-        scan = session.get(models.Scan, runtime._scan_db.id)
-        assert scan.progress == models.ScanProgress.ERROR
+    _assert_scan_progress(prepared_scan.id, models.ScanProgress.ERROR)
     cleanup.assert_called_once_with()
     assert remove.call_count == 2
     start_agents.assert_not_called()

@@ -6,3 +6,4 @@ force-single-line = true
 
 [lint.per-file-ignores]
 "src/ostorlab/configuration_manager.py" = ["UP045"]
+"src/ostorlab/runtimes/local/services/mq.py" = ["UP045"]

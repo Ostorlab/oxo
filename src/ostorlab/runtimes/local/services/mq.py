@@ -6,6 +6,7 @@ import logging
 import os
 import pathlib
 import uuid
+from typing import Optional
 
 import docker
 import tenacity
@@ -134,7 +135,7 @@ class LocalRabbitMQ:
             filename=MQ_ADVANCED_CONF_PATH,
         )
 
-    def _start_mq(self) -> services.Service:
+    def _start_mq(self) -> Optional[services.Service]:
         try:
             logger.info("starting MQ")
             endpoint_spec = types.services.EndpointSpec(
@@ -166,7 +167,7 @@ class LocalRabbitMQ:
         except docker.errors.APIError as e:
             error_message = f"MQ service could not be started. Reason: {e}."
             logger.error(error_message)
-            return
+            return None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
