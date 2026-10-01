@@ -2,13 +2,23 @@
 
 import asyncio
 import concurrent.futures
+from collections import abc
 from unittest import mock
 
+import aio_pika
 import pytest
+import pytest_asyncio
+from aiormq import abc as aiormq_abc
 from aiormq import exceptions as aiormq_exceptions
+from pamqp import commands
+from pamqp import header
 from pytest_mock import plugin
 
+from ostorlab.agent import agent
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.mixins import agent_mq_mixin
+from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.utils import strings
 
 
@@ -280,3 +290,182 @@ async def testAgentMqMixin_declaresQueueWithDefaultPriority(
         durable=True,
         arguments={"x-max-priority": agent_mq_mixin.DEFAULT_MAX_PRIORITY},
     )
+
+
+class MessageProcessingAgent(agent.Agent):
+    """Exercise the Agent lifecycle with deterministic processing outcomes."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            agent_definition=agent_definitions.AgentDefinition(name="queue-agent"),
+            agent_settings=runtime_definitions.AgentSettings(key="queue-agent"),
+        )
+        self.processing_error = ValueError("processing failed")
+        self.fail_processing = False
+        self.processed_messages: list[agent_message.Message] = []
+        self.cleanup_count = 0
+        self.limit_callbacks: list[str] = []
+
+    def process(self, message: agent_message.Message) -> None:
+        """Record each processing attempt and optionally fail."""
+        self.processed_messages.append(message)
+        if self.fail_processing is True:
+            raise self.processing_error
+
+    def process_cleanup(self) -> None:
+        """Record cleanup after each processing attempt."""
+        self.cleanup_count += 1
+
+    def on_max_cyclic_process_reached(self, message: agent_message.Message) -> None:
+        """Record the established cyclic-limit callback."""
+        self.limit_callbacks.append("cyclic")
+
+    def on_max_depth_process_reached(self, message: agent_message.Message) -> None:
+        """Record the established depth-limit callback."""
+        self.limit_callbacks.append("depth")
+
+
+@pytest_asyncio.fixture
+async def message_processing_agent(
+    mocker: plugin.MockerFixture,
+) -> abc.AsyncIterator[MessageProcessingAgent]:
+    """Create an offline Agent on the running loop and release its executor."""
+    mocker.patch("werkzeug.serving.make_server")
+    client = MessageProcessingAgent()
+    try:
+        yield client
+    finally:
+        client._executor.shutdown(wait=True)
+
+
+def _incoming_message(
+    channel: aiormq_abc.AbstractChannel,
+    message: agent_message.Message,
+    redelivered: bool = False,
+    control_agents: tuple[str, ...] = (),
+) -> aio_pika.IncomingMessage:
+    """Build an actual aio-pika delivery around a serialized Agent message."""
+    control_message = agent_message.Message.from_data(
+        "v3.control",
+        {
+            "control": {"agents": list(control_agents)},
+            "message": message.raw,
+        },
+    )
+    delivery = aiormq_abc.DeliveredMessage(
+        delivery=commands.Basic.Deliver(
+            delivery_tag=1,
+            routing_key=f"{message.selector}.message-id",
+            redelivered=redelivered,
+        ),
+        header=header.ContentHeader(body_size=len(control_message.raw)),
+        body=control_message.raw,
+        channel=channel,
+    )
+    return aio_pika.IncomingMessage(delivery)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("redelivered", [False, True])
+async def testMqProcessMessage_whenAgentSucceeds_acknowledgesAfterCleanup(
+    message_processing_agent: MessageProcessingAgent,
+    ping_message: agent_message.Message,
+    redelivered: bool,
+) -> None:
+    """Successful Agent processing acknowledges both new and redelivered work."""
+    channel = mock.Mock(
+        spec=aiormq_abc.AbstractChannel,
+        is_closed=False,
+        basic_ack=mock.AsyncMock(),
+        basic_reject=mock.AsyncMock(),
+    )
+    incoming_message = _incoming_message(channel, ping_message, redelivered)
+
+    await message_processing_agent._mq_process_message(incoming_message)
+
+    channel.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
+    channel.basic_reject.assert_not_awaited()
+    assert incoming_message.processed is True
+    assert len(message_processing_agent.processed_messages) == 1
+    assert (
+        message_processing_agent.processed_messages[0].selector == ping_message.selector
+    )
+    assert message_processing_agent.processed_messages[0].data == ping_message.data
+    assert message_processing_agent.cleanup_count == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("redelivered", [False, True])
+async def testMqProcessMessage_whenAgentFails_rejectsWithBoundedRedelivery(
+    message_processing_agent: MessageProcessingAgent,
+    ping_message: agent_message.Message,
+    redelivered: bool,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Failures requeue new work and reject redelivered work without requeue."""
+    channel = mock.Mock(
+        spec=aiormq_abc.AbstractChannel,
+        is_closed=False,
+        basic_ack=mock.AsyncMock(),
+        basic_reject=mock.AsyncMock(),
+    )
+    incoming_message = _incoming_message(channel, ping_message, redelivered)
+    message_processing_agent.fail_processing = True
+
+    with pytest.raises(ValueError, match="processing failed") as raised:
+        await message_processing_agent._mq_process_message(incoming_message)
+
+    assert raised.value is message_processing_agent.processing_error
+    channel.basic_ack.assert_not_awaited()
+    channel.basic_reject.assert_awaited_once_with(
+        delivery_tag=1, requeue=redelivered is False
+    )
+    assert incoming_message.processed is True
+    assert len(message_processing_agent.processed_messages) == 1
+    assert message_processing_agent.cleanup_count == 1
+    assert "Error processing message on selector v3.healthcheck.ping" in caplog.text
+    assert "Hello, can you hear me?" in caplog.text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("cyclic_limit", "depth_limit", "accepted_agents", "expected_callbacks"),
+    [
+        (0, 0, ["trusted-agent"], []),
+        (1, 0, [], ["cyclic"]),
+        (0, 2, [], ["depth"]),
+    ],
+    ids=["unaccepted-sender", "cyclic-limit", "depth-limit"],
+)
+async def testMqProcessMessage_whenAgentDeclinesMessage_acknowledgesWithoutRetry(
+    message_processing_agent: MessageProcessingAgent,
+    ping_message: agent_message.Message,
+    cyclic_limit: int,
+    depth_limit: int,
+    accepted_agents: list[str],
+    expected_callbacks: list[str],
+) -> None:
+    """Intentional validation skips keep their callbacks and acknowledge work."""
+    channel = mock.Mock(
+        spec=aiormq_abc.AbstractChannel,
+        is_closed=False,
+        basic_ack=mock.AsyncMock(),
+        basic_reject=mock.AsyncMock(),
+    )
+    incoming_message = _incoming_message(
+        channel,
+        ping_message,
+        control_agents=("sender-agent", message_processing_agent.name),
+    )
+    message_processing_agent.cyclic_processing_limit = cyclic_limit
+    message_processing_agent.depth_processing_limit = depth_limit
+    message_processing_agent.accepted_agents = accepted_agents
+
+    await message_processing_agent._mq_process_message(incoming_message)
+
+    channel.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
+    channel.basic_reject.assert_not_awaited()
+    assert incoming_message.processed is True
+    assert message_processing_agent.processed_messages == []
+    assert message_processing_agent.cleanup_count == 0
+    assert message_processing_agent.limit_callbacks == expected_callbacks

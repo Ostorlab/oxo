@@ -138,7 +138,10 @@ class AgentMQMixin:
     async def _mq_process_message(
         self, message: aio_pika.abc.AbstractIncomingMessage
     ) -> None:
-        """Consumes the MQ messages and calls the process message callback."""
+        """Consume messages and call the process message callback.
+
+        Processing failures requeue new deliveries and reject redelivered messages.
+        """
         logger.debug("incoming pika message received")
         try:
             async with message.process(requeue=True, reject_on_redelivered=True):
