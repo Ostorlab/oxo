@@ -6,10 +6,8 @@ import click
 
 from ostorlab import exceptions
 from ostorlab.assets import ios_testflight as ios_testflight_asset
-from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 
-console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
@@ -28,4 +26,6 @@ def ios_testflight(ctx: click.core.Context, application_url: str) -> None:
             assets=assets,
         )
     except exceptions.OstorlabError as e:
-        console.error(f"An error was encountered while running the scan: {e}")
+        raise click.ClickException(
+            f"An error was encountered while running the scan: {e}"
+        ) from e

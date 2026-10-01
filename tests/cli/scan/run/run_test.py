@@ -3,7 +3,10 @@
 import pathlib
 import re
 import warnings
+import zipfile
+from unittest import mock
 
+import click
 import httpx
 import pytest
 from click.testing import CliRunner
@@ -15,6 +18,147 @@ from ostorlab.cli import rootcli
 from ostorlab.cli.scan.run import run
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.models import models
+
+SCAN_COMMANDS = (
+    "agent",
+    "android-aab",
+    "android-apk",
+    "android-store",
+    "api-schema",
+    "domain-name",
+    "file",
+    "harmonyos-aab",
+    "harmonyos-apk",
+    "harmonyos-app",
+    "harmonyos-hap",
+    "harmonyos-rpk",
+    "harmonyos-store",
+    "ios-ipa",
+    "ios-store",
+    "ios-testflight",
+    "ip",
+    "link",
+    "message",
+    "phone-number",
+    "repository",
+    "repository-archive",
+    "risk",
+    "ticket",
+    "asset-group",
+)
+
+
+@pytest.fixture(params=SCAN_COMMANDS)
+def scan_command_arguments(
+    request: pytest.FixtureRequest, tmp_path: pathlib.Path
+) -> list[str]:
+    """Provide valid root CLI arguments for every registered scan asset command."""
+    archive = tmp_path / "application.zip"
+    with zipfile.ZipFile(archive, "w") as package:
+        package.writestr("AndroidManifest.xml", "<manifest/>")
+        package.writestr("base/manifest/AndroidManifest.xml", "<manifest/>")
+        package.writestr("Payload/Application.app/Info.plist", "<plist/>")
+        package.writestr("module.json", "{}")
+    proto_file = tmp_path / "risk.textproto"
+    proto_file.write_text('rating: "HIGH"\ndescription: "Server exposed"')
+    schema_file = tmp_path / "schema.graphql"
+    schema_file.write_text("type Query { version: String }")
+    assets_file = tmp_path / "assets.yaml"
+    assets_file.write_text(
+        "kind: targetGroup\nassets:\n  domain:\n    - name: example.com\n"
+    )
+    arguments = {
+        "agent": ["--key=agent/ostorlab/nmap"],
+        "android-store": ["--package-name=com.example.app"],
+        "api-schema": ["--url=https://example.com", "--schema-file", str(schema_file)],
+        "domain-name": ["example.com"],
+        "harmonyos-store": ["--bundle-name=com.example.app"],
+        "ios-store": ["--bundle-id=com.example.app"],
+        "ios-testflight": ["--application-url=https://testflight.apple.com/join/test"],
+        "ip": ["127.0.0.1"],
+        "link": ["--url=https://example.com", "--method=GET"],
+        "message": ["--selector=v3.report.risk", "--textproto", str(proto_file)],
+        "phone-number": ["+12025550123"],
+        "repository": [
+            "--repository-url=https://example.com/repo.git",
+            "--commit-hash=abc123",
+            "--provider=git",
+        ],
+        "risk": ["--severity=HIGH", "--description=Server exposed"],
+        "ticket": ["--title=Security issue", "--description=Server exposed"],
+    }
+    for command in (
+        "android-aab",
+        "android-apk",
+        "file",
+        "harmonyos-aab",
+        "harmonyos-apk",
+        "harmonyos-app",
+        "harmonyos-hap",
+        "harmonyos-rpk",
+        "ios-ipa",
+        "repository-archive",
+    ):
+        arguments[command] = ["--file", str(archive)]
+    assert set(arguments) == set(run.run.commands)
+    base_arguments = ["scan", "--runtime=local", "run", "--agent=agent/ostorlab/nmap"]
+    if request.param == "asset-group":
+        return base_arguments + ["--assets", str(assets_file)]
+    return base_arguments + [request.param] + arguments[request.param]
+
+
+@pytest.fixture
+def scan_runtime(mocker: plugin.MockerFixture) -> mock.Mock:
+    """Replace the runtime boundary without touching Docker or network services."""
+    runtime_instance = mocker.create_autospec(runtime.LocalRuntime, instance=True)
+    runtime_instance.can_run.return_value = True
+    runtime_instance.scan.return_value = None
+    mocker.patch(
+        "ostorlab.runtimes.registry.select_runtime",
+        autospec=True,
+        return_value=runtime_instance,
+    )
+    return runtime_instance
+
+
+def testScanRun_whenRuntimeStartupFails_exitsWithHelpfulError(
+    scan_command_arguments: list[str], scan_runtime: mock.Mock
+) -> None:
+    """Every root CLI scan command reports runtime failure and exits with status one."""
+    startup_error = exceptions.OstorlabError("startup failed")
+    scan_runtime.scan.side_effect = startup_error
+    runner = CliRunner()
+
+    result = runner.invoke(rootcli.rootcli, scan_command_arguments)
+
+    assert result.exit_code == 1, result.output
+    assert result.output.count("startup failed") == 1
+    assert "Scan created successfully" not in result.output
+    assert "Missing agent list" not in result.output
+    scan_runtime.scan.assert_called_once()
+    scan_runtime.link_agent_group_scan.assert_not_called()
+    scan_runtime.link_assets_scan.assert_not_called()
+
+    result = runner.invoke(
+        rootcli.rootcli, scan_command_arguments, standalone_mode=False
+    )
+
+    assert isinstance(result.exception, click.ClickException)
+    assert "startup failed" in result.exception.message
+    assert result.exception.__cause__ is startup_error
+
+
+def testScanRun_whenRuntimeReturnsNone_exitsSuccessfully(
+    scan_command_arguments: list[str], scan_runtime: mock.Mock
+) -> None:
+    """Runtime success without a returned scan preserves exit status zero."""
+    result = CliRunner().invoke(rootcli.rootcli, scan_command_arguments)
+
+    assert result.exit_code == 0, result.output
+    assert result.exception is None
+    scan_runtime.scan.assert_called_once()
+    scan_runtime.link_agent_group_scan.assert_not_called()
+    scan_runtime.link_assets_scan.assert_not_called()
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(

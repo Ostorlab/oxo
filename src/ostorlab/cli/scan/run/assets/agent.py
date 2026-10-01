@@ -6,10 +6,8 @@ import click
 
 from ostorlab import exceptions
 from ostorlab.assets import agent as agent_asset
-from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 
-console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
@@ -49,4 +47,6 @@ def agent(
             assets=[asset],
         )
     except exceptions.OstorlabError as e:
-        console.error(f"An error was encountered while running the scan: {e}")
+        raise click.ClickException(
+            f"An error was encountered while running the scan: {e}"
+        ) from e
