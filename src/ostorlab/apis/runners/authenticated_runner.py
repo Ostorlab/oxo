@@ -142,7 +142,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             )
         data: dict[str, Any] = response.json()
         errors = data.get("errors")
-        if errors is not None and isinstance(errors, list):
+        if isinstance(errors, list) and len(errors) > 0:
             error = errors[0].get("message")
             raise runner.ResponseError(f"Response errors: {error}")
         else:
@@ -206,7 +206,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             )
         data: dict[str, Any] = json.loads(response.content.decode())
         errors = data.get("errors")
-        if errors is not None and isinstance(errors, list):
+        if isinstance(errors, list) and len(errors) > 0:
             error = errors[0].get("message")
             raise runner.ResponseError(f"Response errors: {error}")
         else:

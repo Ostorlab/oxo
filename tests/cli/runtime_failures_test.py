@@ -73,20 +73,48 @@ def testRunnerError_whenRaised_usesRepositoryErrorHierarchy() -> None:
     assert isinstance(runner.ResponseError("failed"), exceptions.OstorlabError)
 
 
-@pytest.mark.parametrize("outcome", [False, None, True])
-def testStopCLI_whenRuntimeReturnsOutcome_acceptsOnlySuccessfulOutcome(
-    outcome: object, mocker: plugin.MockerFixture
+@pytest.mark.parametrize("empty_errors", [True, False])
+def testCloudStopCLI_whenHttpResponseSuccessful_reportsSuccess(
+    empty_errors: bool, httpx_mock: HTTPXMock
 ) -> None:
-    """Explicit False is a failure while legacy None remains successful."""
-    mocker.patch.object(local_runtime.LocalRuntime, "__init__", return_value=None)
-    stop = mocker.patch.object(local_runtime.LocalRuntime, "stop", return_value=outcome)
+    """Successful HTTP responses permit absent or empty GraphQL errors."""
+    httpx_mock.add_response(
+        json={
+            "data": {"stopScan": {"scan": {"id": 123}}},
+            **({"errors": []} if empty_errors is True else {}),
+        }
+    )
 
-    result = testing.CliRunner().invoke(rootcli.rootcli, ["scan", "stop", "123"])
+    result = testing.CliRunner().invoke(
+        rootcli.rootcli, ["--api-key=test", "scan", "--runtime=cloud", "stop", "123"]
+    )
 
-    stop.assert_called_once_with(scan_id=123)
-    assert result.exit_code == (1 if outcome is False else 0)
-    if outcome is False:
-        assert "Could not stop scan 123" in result.output
+    assert result.exit_code == 0
+    assert "Scan stopped successfully" in result.output
+
+
+def testCloudStopCLI_whenHttpResponseHasErrors_preservesContextAndCause(
+    httpx_mock: HTTPXMock,
+) -> None:
+    """The runner's HTTP error is wrapped once with scan context."""
+    httpx_mock.add_response(json={"errors": [{"message": "Access denied"}]})
+
+    result = testing.CliRunner().invoke(
+        rootcli.rootcli,
+        ["--api-key=test", "scan", "--runtime=cloud", "stop", "123"],
+        standalone_mode=False,
+    )
+
+    assert result.exit_code == 1
+    assert "Could not stop scan 123: Response errors: Access denied" in str(
+        result.exception
+    )
+    assert result.exception is not None
+    contextual_error = result.exception.__cause__
+    assert isinstance(contextual_error, runner.ResponseError)
+    assert isinstance(contextual_error.__cause__, runner.ResponseError)
+    assert str(contextual_error.__cause__) == "Response errors: Access denied"
+    assert "stopped successfully" not in result.output
 
 
 @pytest.mark.parametrize("command", [["list"], ["stop", "--all"], ["stop", "--last"]])

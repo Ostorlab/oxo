@@ -134,11 +134,8 @@ class CloudRuntime(runtime.Runtime):
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
-            response = api_runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
-            if response.get("errors") is not None:
-                raise runner.ResponseError(f"Scan with id {scan_id} not found")
-            else:
-                console.success("Scan stopped successfully")
+            api_runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
+            console.success("Scan stopped successfully")
         except (runner.Error, httpx.HTTPError) as error:
             raise runner.ResponseError(
                 f"Could not stop scan {scan_id}: {error}"

@@ -3,6 +3,7 @@
 import abc
 import builtins
 import dataclasses
+import typing
 
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import dumpers
@@ -60,14 +61,14 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, scan_id: str) -> None:
+    def stop(self, scan_id: str) -> typing.Optional[bool]:
         """Stops a scan with the given id.
 
         Args:
             scan_id: The scan or universe id.
 
         Returns:
-            None
+            False on failure; None or True on success, depending on the runtime.
         """
         raise NotImplementedError()
 
