@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 
 from pydantic_ai import models
@@ -25,6 +26,13 @@ logger = logging.getLogger(__name__)
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4"
 QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+# Model families that fail on OpenRouter when tool_choice=required is forced, verified
+# live: Moonshot (Kimi) upstream providers return a 400 (kimi-k2.5 every time,
+# kimi-k2.6 depending on the provider OpenRouter routes to), and DeepSeek in thinking
+# mode never produces a valid result (deepseek-v3.2: 0/6 with it, 8/8 without).
+# pydantic-ai then lets the model choose the tool.
+_OPENROUTER_NO_TOOL_CHOICE_REQUIRED_PREFIXES = ("moonshotai/", "deepseek/")
 
 # Sent to Ollama servers that need no key, instead of letting the SDK fall back to
 # the OLLAMA_API_KEY environment variable.
@@ -53,11 +61,28 @@ def build_openrouter(request: base.BuildRequest) -> models.Model:
     OpenRouter serves many model families, so the profile comes from
     ``OpenRouterProvider`` per model (tool calling, structured output and the
     ``reasoning`` field OpenRouter actually returns) instead of forcing OpenAI's
-    conventions on every model.
+    conventions on every model. Moonshot (Kimi) and DeepSeek models additionally
+    have ``tool_choice=required`` turned off, which they fail on through OpenRouter.
     """
+    provider = openrouter_provider.OpenRouterProvider(api_key=request.credential)
+    if (
+        request.model_name.startswith(_OPENROUTER_NO_TOOL_CHOICE_REQUIRED_PREFIXES)
+        is False
+    ):
+        return openrouter_model.OpenRouterModel(
+            model_name=request.model_name,
+            provider=provider,
+            settings=request.settings,
+        )
     return openrouter_model.OpenRouterModel(
         model_name=request.model_name,
-        provider=openrouter_provider.OpenRouterProvider(api_key=request.credential),
+        provider=provider,
+        profile=dataclasses.replace(
+            openrouter_provider.OpenRouterModelProfile.from_profile(
+                provider.model_profile(request.model_name)
+            ),
+            openai_supports_tool_choice_required=False,
+        ),
         settings=request.settings,
     )
 

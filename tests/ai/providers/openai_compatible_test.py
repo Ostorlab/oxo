@@ -290,3 +290,31 @@ def testBuildModel_whenOpenRouter_shouldUseNativeModelWithPerModelProfile(
     assert model.client.api_key == "or-key"
     assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
     assert model.profile.openai_chat_thinking_field == "reasoning"
+
+
+@pytest.mark.parametrize(
+    "model_name",
+    ["moonshotai/kimi-k2.5", "moonshotai/kimi-k2.6", "deepseek/deepseek-v3.2"],
+)
+def testBuildModel_whenOpenRouterKimiOrDeepSeek_shouldNotForceToolChoice(
+    model_name: str,
+) -> None:
+    """Both fail on tool_choice=required through OpenRouter (verified live)."""
+    model = factory.build_model(f"openrouter/{model_name}", "k")
+
+    assert isinstance(model, pydantic_openrouter.OpenRouterModel)
+    assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
+    assert model.profile.openai_supports_tool_choice_required is False
+    assert model.profile.openai_chat_thinking_field == "reasoning"
+
+
+@pytest.mark.parametrize(
+    "model_name", ["z-ai/glm-5", "google/gemini-3.7-flash", "openai/gpt-5.6-luna-pro"]
+)
+def testBuildModel_whenOpenRouterNonKimi_shouldKeepOpenRoutersToolChoice(
+    model_name: str,
+) -> None:
+    model = factory.build_model(f"openrouter/{model_name}", "k")
+
+    assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
+    assert model.profile.openai_supports_tool_choice_required is True
