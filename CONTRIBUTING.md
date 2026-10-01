@@ -22,6 +22,10 @@ cd oxo
 pip install -e ".[testing]"
 ```
 
+Set `OSTORLAB_PRIVATE_DIR` before launching OXO to choose an alternate directory
+for credentials, uploaded assets, the local database, and agent configuration
+mounts. Without the override, OXO uses `~/.ostorlab`.
+
 ## Checks to run before opening a pull request
 
 CI runs the same checks on every pull request.
@@ -46,12 +50,11 @@ with `-p no:pytest_ostorlab`; its fixtures are loaded later, after temporary sto
 is configured. If overriding pytest's `addopts`, retain that option.
 
 Cloud schema comparisons run in a separate integration workflow on pushes to `main`
-or through `workflow_dispatch`. To run them locally, configure `RE_OXO_API_KEY` and run
+or through `workflow_dispatch`. The six tests compare enum, input object, mutation,
+query, union, and output type definitions between local OXO and the live
+[OXO API](https://api.ostorlab.co/apis/oxo), using `RE_OXO_API_KEY` in the
+`X-Api-Key` header. To run them locally, configure `RE_OXO_API_KEY` and run
 `pytest -m cloud tests/serve_app/oxo_test.py`; they skip when the key is absent.
-
-Set `OSTORLAB_PRIVATE_DIR` before launching OXO to choose an alternate directory
-for credentials, uploaded assets, the local database, and agent configuration
-mounts. Without the override, OXO uses `~/.ostorlab`.
 
 ## Code conventions
 
