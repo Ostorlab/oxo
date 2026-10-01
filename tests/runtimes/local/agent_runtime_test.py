@@ -21,11 +21,12 @@ def testReplaceVariableMounts_whenConfigurationOverridden_usesSelectedDirectory(
     """Agent configuration mounts follow the selected private directory."""
     private_dir = tmp_path / "private"
     monkeypatch.setenv("OSTORLAB_PRIVATE_DIR", str(private_dir))
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        new_callable=mocker.PropertyMock,
+        return_value="agent_org_name:v1.0.0",
+    )
     docker_client = mocker.MagicMock(spec=docker.DockerClient)
-    docker_client.images.list.return_value = [
-        mocker.Mock(tags=["agent_org_name:v1.0.0"])
-    ]
-    mocker.patch("docker.from_env", return_value=docker_client, autospec=True)
     runtime_agent = agent_runtime.AgentRuntime(
         definitions.AgentSettings(key="agent/org/name"),
         "42",

@@ -27,7 +27,7 @@ pip install -e ".[testing]"
 CI runs the same checks on every pull request.
 
 ```shell
-# Tests (CI skips tests that need external services)
+# Tests (skip local Docker/NATS and live cloud tests)
 pytest -m "not docker and not nats and not cloud"
 
 # Lint and format
@@ -41,20 +41,17 @@ mypy src/ostorlab/agent/schema src/ostorlab/agent/kb src/ostorlab/agent/message 
 ```
 
 Tests use temporary configuration directories and databases, including when OXO's
-installed pytest plugin is available. The repository disables plugin autoload for
-that entry point and loads its fixtures after configuring temporary storage. If
-overriding pytest's `addopts`, retain `-p no:pytest_ostorlab`.
+installed pytest plugin is available. The `pytest_ostorlab` entry point is disabled
+with `-p no:pytest_ostorlab`; its fixtures are loaded later, after temporary storage
+is configured. If overriding pytest's `addopts`, retain that option.
 
-Cloud schema comparisons run in a separate integration workflow on `main` or
-through manual dispatch. To run them locally, configure `RE_OXO_API_KEY` and run
+Cloud schema comparisons run in a separate integration workflow on pushes to `main`
+or through `workflow_dispatch`. To run them locally, configure `RE_OXO_API_KEY` and run
 `pytest -m cloud tests/serve_app/oxo_test.py`; they skip when the key is absent.
 
 Set `OSTORLAB_PRIVATE_DIR` before launching OXO to choose an alternate directory
 for credentials, uploaded assets, the local database, and agent configuration
 mounts. Without the override, OXO uses `~/.ostorlab`.
-
-The Ruff exception for `configuration_manager.py` preserves the `Optional[T]`
-annotation style required by the project's agent instructions.
 
 ## Code conventions
 
@@ -62,6 +59,7 @@ The full guide is in [AGENTS.md](AGENTS.md). In short:
 
 - Absolute imports only (`from ostorlab.package import module`), grouped standard library, third-party, local.
 - Type annotations on all public functions, checked by mypy.
+- `AGENTS.md` requires `Optional[T]` for nullable types. Ruff's `UP045` converts those annotations to `T | None`; the exception for `src/ostorlab/configuration_manager.py` preserves `Optional[pathlib.Path]`.
 - Custom exceptions inherit from `ostorlab.exceptions.OstorlabError`.
 - Tests live under `tests/`, mirror the source layout, use the `*_test.py` suffix and are named
   `test[Action]_[conditionCamelCase]_[expectedResultCamelCase]`.
