@@ -51,6 +51,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
         return {"query": self.query, "variables": {}}
 
 
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
     mocker, httpx_mock, data_list_agent, data_create_agent_group, data_create_asset
 ):

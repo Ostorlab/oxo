@@ -1,5 +1,6 @@
 """Tests for vulnz list command."""
 
+import pytest
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -379,6 +380,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
     assert all(word in result.output for word in result_keywords) is True
 
 
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectResult(
     httpx_mock,
 ) -> None:

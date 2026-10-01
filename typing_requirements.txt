@@ -6,3 +6,7 @@ types-redis
 typing_extensions
 types-Flask-Cors
 types-graphene
+# Test libraries, so mypy can check tests/ai.
+pytest
+pytest-httpx==0.35.0
+cryptography

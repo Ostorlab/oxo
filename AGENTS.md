@@ -53,6 +53,7 @@ mypy src/ostorlab/utils
 mypy src/ostorlab/apis/runners
 mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
 mypy src/ostorlab/assets
+mypy src/ostorlab/ai tests/ai
 
 # Install typing dependencies
 pip install -r typing_requirements.txt
@@ -156,6 +157,33 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Use conventional commit messages
 - Pull requests run CI on Python 3.13, 3.14
 - Squash commits when merging
+
+### AI Models and Providers (`ostorlab.ai`)
+- **Agents must not construct `pydantic_ai.providers` or `pydantic_ai.models` themselves; they call
+  `factory.build_model("provider/model", credential, options=..., settings=...)`.**
+- `ostorlab.ai` is replacing the per-agent builder copies (500–700 lines each) that already diverged
+  on Vertex handling, the Azure v1 fallback and per-provider HTTP clients. Existing agents are being
+  migrated in follow-up PRs.
+- The package never reads agent configuration or environment variables; callers pass every input
+  (identifier, credential, gateway URLs, settings) explicitly. Agent-specific
+  selection logic (per-role models, complexity routing) stays in the agent.
+- Adding a provider means completing every step:
+  1. Add a `build_<provider>(request)` builder under `src/ostorlab/ai/providers/`.
+  2. Register it in `factory._BUILDERS`.
+  3. Add it to `keys.PROVIDER_PRIORITY`.
+  4. Add a case to `_BUILD_CASES` in `tests/ai/factory_test.py`.
+
+  The registry coverage tests fail until steps 2–4 are done.
+- Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
+  `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
+- Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
+  secrets on the platform.
+- Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never
+  include the credential in the message.
+- The dependencies live in the `agent` extra: `import ostorlab.ai` needs `ostorlab[agent]`,
+  which every agent already installs. Plain `pip install ostorlab` stays free of the AI SDKs.
+- Keep `anthropic<1.0.0`: anthropic 1.x moved to `httpx2`, which pydantic-ai 1.107's
+  `AnthropicProvider` rejects. Lift the cap only once pydantic-ai supports `httpx2`.
 
 ## Project Structure Reference
 
