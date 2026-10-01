@@ -10,6 +10,7 @@ import ipaddress
 import json
 import logging
 from typing import Any
+from typing import Optional
 
 import click
 import httpx
@@ -34,6 +35,7 @@ from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab.utils import styles
 
 logger = logging.getLogger(__name__)
@@ -591,18 +593,22 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
-    def _to_serialized(self, value) -> bytes | memoryview | builtins.list[Any] | str:
-        if isinstance(value, (bytes, memoryview)) is True:
+    def _to_serialized(
+        self, value: Optional[utils_definitions.ArgValue | memoryview]
+    ) -> Optional[bytes | memoryview]:
+        """Encode native arguments as API text or opaque binary transport."""
+        if isinstance(value, (bytes, memoryview)):
             return value
-        elif isinstance(value, (list, bool)) is True:
+        elif isinstance(value, (list, dict, bool)):
             try:
                 return json.dumps(value).encode()
             except TypeError as e:
                 raise ValueError(f"type {value} is not JSON serializable") from e
-        elif isinstance(value, (int, float)) is True:
+        elif isinstance(value, (int, float)):
             return str(value).encode()
-        elif isinstance(value, str) is True:
+        elif isinstance(value, str):
             return value.encode()
+        return None
 
     def _agents_from_agent_group_def(
         self,

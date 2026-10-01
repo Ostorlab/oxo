@@ -29,6 +29,9 @@ PROVIDER_PRIORITY: Final[tuple[str, ...]] = (
     "aws_bedrock",
     "azure_ai_foundry",
     "fireworks",
+    "mistral",
+    "qwen",
+    "ollama",
 )
 
 
