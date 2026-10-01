@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import pytest
 from pydantic_ai.models import mistral as pydantic_mistral
 
+from ostorlab.ai import errors
 from ostorlab.ai import factory
 from ostorlab.ai import settings
+from ostorlab.ai.providers import mistral as mistral_module
 
 
 def testBuildModel_whenMistral_shouldBuildMistralModelWithTheGivenSettings() -> None:
@@ -20,3 +23,14 @@ def testBuildModel_whenMistral_shouldBuildMistralModelWithTheGivenSettings() -> 
     assert model.system == "mistral"
     assert model.settings is not None
     assert model.settings.get("max_tokens") == 2048
+
+
+def testBuildModel_whenMistralSdkMissing_shouldRaiseAndKeepOtherProvidersWorking(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A missing optional SDK must only affect its own provider."""
+    monkeypatch.setattr(mistral_module, "mistral", None)
+
+    with pytest.raises(errors.ModelConfigurationError, match="mistralai"):
+        factory.build_model("mistral/mistral-small-latest", "k")
+    assert factory.build_model("anthropic/claude-sonnet-4-6", "k") is not None
