@@ -476,8 +476,11 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
-    test_agent.process_message(
-        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    assert (
+        test_agent.process_message(
+            f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+        )
+        is None
     )
 
     assert logger_error.call_count == 3
@@ -537,8 +540,11 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
         },
     )
 
-    test_agent.process_message(
-        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    assert (
+        test_agent.process_message(
+            f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+        )
+        is None
     )
 
     assert logger_error.call_count == 2
