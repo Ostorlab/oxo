@@ -176,6 +176,8 @@ pip install -e ".[testing,scanner,agent,serve]"
   The registry coverage tests fail until steps 2–4 are done.
 - Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
   `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
+- Every provider requires a credential except those in `factory._CREDENTIAL_OPTIONAL` (`ollama`, for
+  local servers). Providers never fall back to environment variables such as `OLLAMA_API_KEY`.
 - Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never

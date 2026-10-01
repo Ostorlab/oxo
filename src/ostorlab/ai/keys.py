@@ -30,6 +30,8 @@ PROVIDER_PRIORITY: Final[tuple[str, ...]] = (
     "azure_ai_foundry",
     "fireworks",
     "mistral",
+    "qwen",
+    "ollama",
 )
 
 

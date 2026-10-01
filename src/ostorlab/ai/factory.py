@@ -35,14 +35,19 @@ _BUILDERS: Final[Mapping[str, base.Builder]] = {
     "google_vertex_endpoint": vertex_endpoint.build_google_vertex_endpoint,
     "litellm": openai_compatible.build_litellm,
     "mistral": mistral.build_mistral,
+    "ollama": openai_compatible.build_ollama,
     "moonshotai": openai_compatible.build_moonshotai,
     "openai": openai_compatible.build_openai,
     "openrouter": openai_compatible.build_openrouter,
+    "qwen": openai_compatible.build_qwen,
     "xai": xai.build_xai,
     "z_ai": openai_compatible.build_z_ai,
 }
 
-PROVIDER_ALIASES: Final[Mapping[str, str]] = {"gemini": "google"}
+PROVIDER_ALIASES: Final[Mapping[str, str]] = {"gemini": "google", "alibaba": "qwen"}
+
+# Providers that can run without a credential (e.g. a local Ollama server).
+_CREDENTIAL_OPTIONAL: Final[frozenset[str]] = frozenset({"ollama"})
 
 SUPPORTED_PROVIDERS: Final[tuple[str, ...]] = tuple(sorted(_BUILDERS))
 
@@ -84,7 +89,8 @@ def build_model(
         model_identifier: ``provider/model``, e.g. ``anthropic/claude-sonnet-4-6``.
         credential: The provider secret. A plain API key, or a JSON object for
             ``aws_bedrock``, ``azure_ai_foundry``, ``google_vertex`` (service account
-            form) and ``google_vertex_endpoint`` (service-account JSON).
+            form) and ``google_vertex_endpoint`` (service-account JSON). Optional for
+            ``ollama``.
         options: Deployment-wide provider options (gateway and endpoint URLs).
         settings: Model settings; defaults to ``default_settings()``.
 
@@ -102,9 +108,11 @@ def build_model(
             f"No Provider found for {provider} and model {model_name}."
         )
     if credential is None or credential.strip() == "":
-        raise errors.ModelConfigurationError(
-            f"API key must be set for provider: {provider}"
-        )
+        if provider not in _CREDENTIAL_OPTIONAL:
+            raise errors.ModelConfigurationError(
+                f"API key must be set for provider: {provider}"
+            )
+        credential = ""
     return builder(
         base.BuildRequest(
             provider=provider,

@@ -185,3 +185,89 @@ def testBuildModel_whenAzureApiVersionBlankOrNull_shouldFallbackToV1Api(
 
     assert isinstance(model, pydantic_openai.OpenAIChatModel)
     assert str(model.client.base_url) == "https://test.openai.azure.com/openai/v1/"
+
+
+def testBuildModel_whenQwen_shouldTargetDashScopeInternationalByDefault() -> None:
+    model = factory.build_model("qwen/qwen3-max", "dashscope-key")
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.client.api_key == "dashscope-key"
+    assert (
+        str(model.client.base_url)
+        == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/"
+    )
+
+
+def testBuildModel_whenQwenBaseUrlConfigured_shouldTargetThatRegion() -> None:
+    model = factory.build_model(
+        "qwen/qwen3-max",
+        "k",
+        options=options.ProviderOptions(
+            qwen_base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+        ),
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert (
+        str(model.client.base_url)
+        == "https://dashscope.aliyuncs.com/compatible-mode/v1/"
+    )
+
+
+@pytest.mark.parametrize("qwen_base_url", ["", "ftp://dashscope"])
+def testBuildModel_whenQwenBaseUrlInvalid_shouldRaise(qwen_base_url: str) -> None:
+    with pytest.raises(errors.ModelConfigurationError, match="qwen_base_url"):
+        factory.build_model(
+            "qwen/qwen3-max",
+            "k",
+            options=options.ProviderOptions(qwen_base_url=qwen_base_url),
+        )
+
+
+def testBuildModel_whenQwenWithoutKey_shouldRaise() -> None:
+    with pytest.raises(errors.ModelConfigurationError, match="API key must be set"):
+        factory.build_model("qwen/qwen3-max", None)
+
+
+_OLLAMA_OPTIONS = options.ProviderOptions(ollama_base_url="http://localhost:11434/v1")
+
+
+@pytest.mark.parametrize("credential", [None, "", "  "])
+def testBuildModel_whenOllamaWithoutKey_shouldUsePlaceholderInsteadOfEnvironment(
+    monkeypatch: pytest.MonkeyPatch, credential: str | None
+) -> None:
+    """A local server needs no key; the library must not pick one up from the env."""
+    monkeypatch.setenv("OLLAMA_API_KEY", "key-from-environment")
+
+    model = factory.build_model("ollama/qwen3:8b", credential, options=_OLLAMA_OPTIONS)
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.model_name == "qwen3:8b"
+    assert str(model.client.base_url) == "http://localhost:11434/v1/"
+    assert model.client.api_key == "api-key-not-set"
+
+
+def testBuildModel_whenOllamaWithKey_shouldSendIt() -> None:
+    model = factory.build_model(
+        "ollama/gpt-oss:120b",
+        "ollama-cloud-key",
+        options=options.ProviderOptions(ollama_base_url="https://ollama.com/v1"),
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.client.api_key == "ollama-cloud-key"
+
+
+@pytest.mark.parametrize("ollama_base_url", [None, "", "localhost:11434"])
+def testBuildModel_whenOllamaBaseUrlMissingOrInvalid_shouldRaise(
+    monkeypatch: pytest.MonkeyPatch, ollama_base_url: str | None
+) -> None:
+    """The OLLAMA_BASE_URL environment variable is not a fallback either."""
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://from-environment:11434/v1")
+
+    with pytest.raises(errors.ModelConfigurationError, match="ollama_base_url"):
+        factory.build_model(
+            "ollama/qwen3:8b",
+            None,
+            options=options.ProviderOptions(ollama_base_url=ollama_base_url),
+        )
