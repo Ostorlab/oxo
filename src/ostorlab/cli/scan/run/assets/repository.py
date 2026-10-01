@@ -7,10 +7,8 @@ import click
 
 from ostorlab import exceptions
 from ostorlab.assets import repository as repository_asset
-from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 
-console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
