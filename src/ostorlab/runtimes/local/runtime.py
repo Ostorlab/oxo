@@ -454,15 +454,21 @@ class LocalRuntime(runtime.Runtime):
         return self._are_services_ready()
 
     def _are_services_ready(self) -> bool:
-        if self._mq_service is None or self._mq_service.is_service_healthy() is False:
+        if (
+            self._mq_service is None
+            or self._mq_service.service is None
+            or self._mq_service.is_service_healthy() is False
+        ):
             raise UnhealthyService("MQ service is unhealthy.")
         if (
             self._redis_service is None
+            or self._redis_service.service is None
             or self._redis_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Redis service is unhealthy.")
         if self._tracing is True and (
             self._jaeger_service is None
+            or self._jaeger_service.service is None
             or self._jaeger_service.is_service_healthy() is False
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")

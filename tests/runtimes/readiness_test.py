@@ -5,6 +5,9 @@ import unittest.mock
 import docker
 import pytest
 import tenacity
+from docker.models import configs
+from docker.models import containers
+from docker.models import services
 from pytest_mock import plugin
 
 from ostorlab.assets import ipv4
@@ -282,3 +285,120 @@ def testScan_whenAgentRetriesExhausted_cleansUpWithoutInjectingAssets(
         cleanup.assert_called_once_with(runtime_instance.scan_id)
     inject.assert_not_called()
     service.remove.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("service_type", "service_index", "service_name"),
+    [
+        (mq.LocalRabbitMQ, 0, "MQ"),
+        (redis.LocalRedis, 1, "Redis"),
+        (jaeger.LocalJaeger, 2, "Jaeger"),
+    ],
+)
+def testLocalScan_whenCoreServiceCreationFails_skipsReadinessAndCleansUp(
+    offline_docker_client: docker.DockerClient,
+    mocker: plugin.MockerFixture,
+    service_type: type[_CoreService],
+    service_index: int,
+    service_name: str,
+) -> None:
+    """A failed core creation aborts before polling, agents or asset injection."""
+    runtime = local_runtime.LocalRuntime(
+        scan_id="1", run_default_agents=False, tracing=True
+    )
+    runtime._docker_client = offline_docker_client
+    docker_services = [
+        services.Service(
+            attrs={
+                "ID": name,
+                "Spec": {"Name": name, "Labels": {"ostorlab.universe": "1"}},
+            },
+            client=offline_docker_client,
+        )
+        for name in ["mq_1", "redis_1", "jaeger_1"]
+    ]
+    creations: list[services.Service | docker.errors.APIError] = list(docker_services)
+    creations[service_index] = docker.errors.APIError("creation failed")
+    mocker.patch.object(
+        services.ServiceCollection, "create", autospec=True, side_effect=creations
+    )
+    mocker.patch.object(
+        services.ServiceCollection,
+        "list",
+        autospec=True,
+        return_value=[s for i, s in enumerate(docker_services) if i != service_index],
+    )
+    remove = mocker.patch.object(services.Service, "remove", autospec=True)
+    mocker.patch.object(
+        services.Service,
+        "tasks",
+        autospec=True,
+        return_value=[
+            {"Status": {"State": "running", "ContainerStatus": {"ContainerID": "abc"}}}
+        ],
+    )
+    mocker.patch(
+        "docker.models.networks.NetworkCollection.list", autospec=True, return_value=[]
+    )
+    mocker.patch("docker.models.networks.NetworkCollection.create", autospec=True)
+    mocker.patch.object(
+        configs.ConfigCollection,
+        "get",
+        autospec=True,
+        side_effect=docker.errors.NotFound("no config"),
+    )
+    mocker.patch.object(
+        configs.ConfigCollection,
+        "create",
+        autospec=True,
+        return_value=configs.Config(attrs={"ID": "config"}),
+    )
+    mocker.patch.object(
+        configs.ConfigCollection, "list", autospec=True, return_value=[]
+    )
+    mocker.patch(
+        "docker.models.volumes.VolumeCollection.list", autospec=True, return_value=[]
+    )
+    mocker.patch(
+        "docker.models.volumes.VolumeCollection.get",
+        autospec=True,
+        side_effect=docker.errors.NotFound("no volume"),
+    )
+    mocker.patch.object(
+        containers.ContainerCollection,
+        "get",
+        autospec=True,
+        return_value=containers.Container(attrs={"Id": "abc"}),
+    )
+    mocker.patch.object(
+        containers.Container,
+        "exec_run",
+        autospec=True,
+        return_value=containers.ExecResult(0, b""),
+    )
+    mocker.patch("click.launch", autospec=True)
+    mocker.patch.object(
+        service_type,
+        "is_service_healthy",
+        service_type.is_service_healthy.retry_with(wait=tenacity.wait_none()),
+    )
+    health_check = mocker.spy(service_type, "is_service_healthy")
+    start_agents = mocker.patch.object(runtime, "_start_agents")
+    inject = mocker.patch.object(runtime, "_inject_assets")
+    cleanup = mocker.spy(runtime, "cleanup")
+
+    with pytest.raises(local_runtime.UnhealthyService, match=service_name):
+        runtime.scan(
+            "test",
+            definitions.AgentGroupDefinition(agents=[]),
+            assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
+        )
+
+    with models.Database() as session:
+        scan = session.get(models.Scan, runtime._scan_db.id)
+        assert scan.progress == models.ScanProgress.ERROR
+    cleanup.assert_called_once_with()
+    assert remove.call_count == 2
+    start_agents.assert_not_called()
+    inject.assert_not_called()
+    health_check.assert_not_called()
