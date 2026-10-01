@@ -10,6 +10,7 @@ from pydantic_ai.models import bedrock as pydantic_bedrock
 from pydantic_ai.models import google as pydantic_google
 from pydantic_ai.models import mistral as pydantic_mistral
 from pydantic_ai.models import openai as pydantic_openai
+from pydantic_ai.models import openrouter as pydantic_openrouter
 from pydantic_ai.models import xai as pydantic_xai
 
 from ostorlab.ai import errors
@@ -27,7 +28,7 @@ _BUILD_CASES = [
     (
         "openrouter/meta-llama/llama-3.3-70b-instruct",
         "k",
-        pydantic_openai.OpenAIChatModel,
+        pydantic_openrouter.OpenRouterModel,
         "meta-llama/llama-3.3-70b-instruct",
     ),
     ("moonshotai/kimi-k2.5", "k", pydantic_openai.OpenAIChatModel, "kimi-k2.5"),
