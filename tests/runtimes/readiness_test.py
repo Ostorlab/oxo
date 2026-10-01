@@ -25,7 +25,7 @@ _Runtime = local_runtime.LocalRuntime | lite_runtime.LiteLocalRuntime
 def runtime_instance(
     request: pytest.FixtureRequest, mocker: plugin.MockerFixture
 ) -> _Runtime:
-    """Use real readiness checks with short retries and a mocked Docker boundary."""
+    """Use real readiness budgets without delays or a Docker daemon."""
     for name in [
         "is_docker_installed",
         "is_sys_arch_supported",
@@ -36,16 +36,12 @@ def runtime_instance(
         mocker.patch.object(docker_requirements_checker, name, return_value=True)
     mocker.patch("docker.from_env", return_value=mocker.MagicMock())
     runtime_type = request.param
-    for name in ["_is_service_healthy", "_are_agents_ready"]:
-        method = getattr(runtime_type, name)
-        if hasattr(method, "retry_with"):
-            mocker.patch.object(
-                runtime_type,
-                name,
-                method.retry_with(
-                    stop=tenacity.stop_after_attempt(2), wait=tenacity.wait_none()
-                ),
-            )
+    mocker.patch("time.sleep")
+    mocker.patch.object(
+        runtime_type,
+        "_is_service_healthy",
+        runtime_type._is_service_healthy.retry_with(wait=tenacity.wait_none()),
+    )
     if runtime_type is local_runtime.LocalRuntime:
         return runtime_type(scan_id="1", run_default_agents=False)
     return runtime_type(
@@ -159,33 +155,34 @@ def testAgentServiceReadiness_whenRetriesExhausted_returnsFalse(
         service.tasks.side_effect = docker.errors.NotFound("removed")
 
     assert runtime_instance._is_service_healthy(service) is False
-    assert service.tasks.call_count == 2
+    assert service.tasks.call_count == 20
 
 
-def testAgentReadiness_whenRetriesExhausted_returnsFalse(
+def testAgentReadiness_whenRetriesExhausted_usesOneServiceRetryBudget(
     runtime_instance: _Runtime, mocker: plugin.MockerFixture
 ) -> None:
-    """Nested readiness checks preserve a False result at both retry boundaries."""
+    """An unhealthy agent gets one bounded service readiness window."""
     service = _agent_service(mocker)
     mocker.patch.object(
         runtime_instance, "_list_agent_services", return_value=[service]
     )
 
     assert runtime_instance._are_agents_ready() is False
+    assert service.tasks.call_count == 20
 
 
 def testAgentReadiness_whenEventuallyRunning_returnsTrue(
     runtime_instance: _Runtime, mocker: plugin.MockerFixture
 ) -> None:
-    """The outer retry permits recovery after one exhausted service check."""
+    """An agent can recover on the final poll within its readiness window."""
     service = _agent_service(mocker)
-    service.tasks.side_effect = [[], [], [{"Status": {"State": "running"}}]]
+    service.tasks.side_effect = [[]] * 19 + [[{"Status": {"State": "running"}}]]
     mocker.patch.object(
         runtime_instance, "_list_agent_services", return_value=[service]
     )
 
     assert runtime_instance._are_agents_ready() is True
-    assert service.tasks.call_count == 3
+    assert service.tasks.call_count == 20
 
 
 @pytest.mark.parametrize("tracing", [False, True])
