@@ -2,10 +2,13 @@
 
 import json
 import logging
+from typing import Any
 
 import click
+import httpx
 
 from ostorlab import configuration_manager
+from ostorlab import exceptions
 
 logger = logging.getLogger("CLI")
 
@@ -26,7 +29,20 @@ def _set_loggers_level(level: int) -> None:
         logging.getLogger(name).setLevel(level)
 
 
-@click.group()
+class ErrorHandlingGroup(click.Group):
+    """Translate expected operational failures into nonzero CLI errors."""
+
+    def invoke(self, ctx: click.Context) -> Any:
+        """Invoke a command while preserving the original failure as its cause."""
+        try:
+            return super().invoke(ctx)
+        except exceptions.OstorlabError as error:
+            raise click.ClickException(str(error)) from error
+        except httpx.HTTPError as error:
+            raise click.ClickException(f"HTTP request failed: {error}") from error
+
+
+@click.group(cls=ErrorHandlingGroup)
 @click.pass_context
 @click.version_option()
 @click.option("--api-key", help="API key to login to the platform.", required=False)

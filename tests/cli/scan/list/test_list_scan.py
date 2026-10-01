@@ -5,7 +5,6 @@ from unittest import mock
 from click.testing import CliRunner
 
 from ostorlab.apis.runners import authenticated_runner
-from ostorlab.cli import console
 from ostorlab.cli import rootcli
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
@@ -59,16 +58,12 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(httpx_mock):
     assert "Scans listed successfully" in result.output
 
 
-@mock.patch.object(console.Console, "error")
-def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
-    mock_console, httpx_mock
-):
+def testOstorlabScanListCLI_whenUserIsNotAuthenticated_reportsFailure(httpx_mock):
     """Test ostorlab scan list command with correct commands and options
     but the user is not authenticated.
     Should log an error.
     """
 
-    mock_console.return_value = None
     runner = CliRunner()
     httpx_mock.add_response(
         method="POST",
@@ -77,8 +72,9 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
         status_code=401,
     )
     result = runner.invoke(rootcli.rootcli, ["scan", "--runtime=cloud", "list"])
-    assert result.exception is None
-    mock_console.assert_called()
+    assert result.exit_code == 1
+    assert "Could not fetch scans" in result.output
+    assert "401" in result.output
 
 
 @mock.patch.object(local_runtime.LocalRuntime, "list")

@@ -55,8 +55,9 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(
         rootcli.rootcli, ["scan", "--runtime=cloud", "stop", "123456"]
     )
 
-    assert result.exception is None
-    assert "Could not stop scan" in result.output
+    assert result.exit_code == 1
+    assert "Could not stop scan 123456" in result.output
+    assert "Scan matching query does not exist" in result.output
 
 
 @mock.patch.object(local_runtime.LocalRuntime, "stop")

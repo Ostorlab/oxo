@@ -12,6 +12,7 @@ import logging
 from typing import Any
 
 import click
+import httpx
 import rich
 from rich import markdown
 from rich import panel
@@ -122,8 +123,8 @@ class CloudRuntime(runtime.Runtime):
             self._create_scan(api_runner, asset_id, agent_group_id, title)
 
             console.success("Scan created successfully.")
-        except runner.ResponseError as error_msg:
-            console.error(error_msg)
+        except (runner.Error, httpx.HTTPError) as error:
+            raise runner.ResponseError(f"Could not create scan: {error}") from error
 
     def stop(self, scan_id: int) -> None:
         """Stops a scan.
@@ -135,11 +136,13 @@ class CloudRuntime(runtime.Runtime):
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
             response = api_runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
             if response.get("errors") is not None:
-                console.error(f"Scan with id {scan_id} not found")
+                raise runner.ResponseError(f"Scan with id {scan_id} not found")
             else:
                 console.success("Scan stopped successfully")
-        except runner.Error:
-            console.error("Could not stop scan.")
+        except (runner.Error, httpx.HTTPError) as error:
+            raise runner.ResponseError(
+                f"Could not stop scan {scan_id}: {error}"
+            ) from error
 
     def list(
         self,
@@ -175,8 +178,8 @@ class CloudRuntime(runtime.Runtime):
                 for scan in scans
             ]
 
-        except runner.Error:
-            console.error("Could not fetch scans.")
+        except (runner.Error, httpx.HTTPError) as error:
+            raise runner.ResponseError(f"Could not fetch scans: {error}") from error
 
     def install(self) -> None:
         """No installation action.
@@ -365,8 +368,10 @@ class CloudRuntime(runtime.Runtime):
                         filter_risk_rating=filter_risk_rating,
                         search=search,
                     )
-        except runner.Error:
-            console.error(f"scan with id {scan_id} does not exist.")
+        except (runner.Error, httpx.HTTPError) as error:
+            raise runner.ResponseError(
+                f"Could not list vulnerabilities for scan {scan_id}: {error}"
+            ) from error
 
     def _prepare_references_markdown(
         self, references: builtins.list[dict[str, str]]
@@ -501,8 +506,10 @@ class CloudRuntime(runtime.Runtime):
                             number_elements=number_elements,
                         )
 
-        except runner.ResponseError:
-            console.error("Vulnerability / scan not Found.")
+        except (runner.Error, httpx.HTTPError) as error:
+            raise runner.ResponseError(
+                f"Could not describe vulnerabilities for scan {scan_id}: {error}"
+            ) from error
 
     def _fetch_scan_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
