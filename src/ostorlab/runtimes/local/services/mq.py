@@ -171,8 +171,7 @@ class LocalRabbitMQ:
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
         wait=tenacity.wait_fixed(MQ_READINESS_WAIT_SECONDS),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda _: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def is_service_healthy(self) -> bool:
@@ -181,6 +180,8 @@ class LocalRabbitMQ:
         A running task only means the container started; RabbitMQ needs a few more seconds before its AMQP
         listener accepts connections, and agents started earlier fail to connect.
         """
+        if self._mq_service is None:
+            return False
         logger.info("checking service %s", self._mq_service.name)
         return self.is_healthy and self.is_accepting_connections
 
