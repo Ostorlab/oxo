@@ -14,6 +14,8 @@ def testProviderOptions_whenNoArguments_shouldLeaveEveryOptionUnset() -> None:
 
     assert provider_options.litellm_gateway_url is None
     assert provider_options.vertex_endpoint_url is None
+    assert provider_options.ollama_base_url is None
+    assert provider_options.qwen_base_url is None
 
 
 def testProviderOptions_whenModified_shouldRaiseBecauseItIsShared() -> None:

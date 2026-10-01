@@ -6,10 +6,12 @@ import logging
 
 from pydantic_ai import models
 from pydantic_ai.models import openai
+from pydantic_ai.providers import alibaba as alibaba_provider
 from pydantic_ai.providers import azure as azure_provider
 from pydantic_ai.providers import deepseek as deepseek_provider
 from pydantic_ai.providers import fireworks as fireworks_provider
 from pydantic_ai.providers import moonshotai as moonshotai_provider
+from pydantic_ai.providers import ollama as ollama_provider
 from pydantic_ai.providers import openai as openai_provider
 
 from ostorlab.ai import credentials
@@ -21,6 +23,11 @@ logger = logging.getLogger(__name__)
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4"
+QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+# Sent to Ollama servers that need no key, instead of letting the SDK fall back to
+# the OLLAMA_API_KEY environment variable.
+OLLAMA_NO_API_KEY = "api-key-not-set"
 
 # Path appended to an Azure OpenAI endpoint to reach the v1 GA API, which is
 # OpenAI-client compatible and needs no dated ``api-version``.
@@ -55,16 +62,46 @@ def build_litellm(request: base.BuildRequest) -> models.Model:
     LiteLLM proxies many upstream providers, so the reasoning profile is set
     unconditionally, as for OpenRouter.
     """
-    gateway_url = (request.options.litellm_gateway_url or "").strip()
-    if gateway_url == "":
-        raise errors.ModelConfigurationError(
-            "litellm_gateway_url must be set when using litellm provider"
-        )
-    if gateway_url.startswith(("http://", "https://")) is False:
-        raise errors.ModelConfigurationError(
-            f"litellm_gateway_url must start with 'http://' or 'https://', got: {gateway_url!r}."
-        )
+    gateway_url = _require_http_url(
+        request.options.litellm_gateway_url, "litellm_gateway_url", "litellm"
+    )
     return _build_gateway_model(request, gateway_url)
+
+
+def build_qwen(request: base.BuildRequest) -> models.Model:
+    """Build a Qwen model served by Alibaba Cloud DashScope."""
+    base_url = (
+        QWEN_BASE_URL
+        if request.options.qwen_base_url is None
+        else _require_http_url(request.options.qwen_base_url, "qwen_base_url", "qwen")
+    )
+    return openai.OpenAIChatModel(
+        model_name=request.model_name,
+        provider=alibaba_provider.AlibabaProvider(
+            api_key=request.credential, base_url=base_url
+        ),
+        settings=request.settings,
+    )
+
+
+def build_ollama(request: base.BuildRequest) -> models.Model:
+    """Build a model served by an Ollama server's OpenAI-compatible API.
+
+    The credential is optional: local servers need none, Ollama's hosted API does.
+    """
+    base_url = _require_http_url(
+        request.options.ollama_base_url, "ollama_base_url", "ollama"
+    )
+    return openai.OpenAIChatModel(
+        model_name=request.model_name,
+        provider=ollama_provider.OllamaProvider(
+            base_url=base_url,
+            api_key=request.credential
+            if request.credential.strip() != ""
+            else OLLAMA_NO_API_KEY,
+        ),
+        settings=request.settings,
+    )
 
 
 def build_deepseek(request: base.BuildRequest) -> models.Model:
@@ -156,3 +193,17 @@ def _build_gateway_model(request: base.BuildRequest, base_url: str) -> models.Mo
         profile=base.reasoning_content_profile(supports_tool_choice_required=False),
         settings=request.settings,
     )
+
+
+def _require_http_url(raw_url: str | None, option_name: str, provider: str) -> str:
+    """Return the stripped URL, or raise if it is unset or not http(s)."""
+    url = (raw_url or "").strip()
+    if url == "":
+        raise errors.ModelConfigurationError(
+            f"{option_name} must be set when using {provider} provider"
+        )
+    if url.startswith(("http://", "https://")) is False:
+        raise errors.ModelConfigurationError(
+            f"{option_name} must start with 'http://' or 'https://', got: {url!r}."
+        )
+    return url
