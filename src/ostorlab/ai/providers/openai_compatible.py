@@ -65,10 +65,10 @@ def build_openrouter(request: base.BuildRequest) -> models.Model:
     have ``tool_choice=required`` turned off, which they fail on through OpenRouter.
     """
     provider = openrouter_provider.OpenRouterProvider(api_key=request.credential)
-    if (
-        request.model_name.startswith(_OPENROUTER_NO_TOOL_CHOICE_REQUIRED_PREFIXES)
-        is False
-    ):
+    # OpenRouter's latest-model aliases are ``~provider/model``; pydantic-ai strips the
+    # ``~`` to pick the profile, so the family check must too.
+    model_family = request.model_name.removeprefix("~")
+    if model_family.startswith(_OPENROUTER_NO_TOOL_CHOICE_REQUIRED_PREFIXES) is False:
         return openrouter_model.OpenRouterModel(
             model_name=request.model_name,
             provider=provider,

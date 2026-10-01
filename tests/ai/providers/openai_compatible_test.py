@@ -294,7 +294,13 @@ def testBuildModel_whenOpenRouter_shouldUseNativeModelWithPerModelProfile(
 
 @pytest.mark.parametrize(
     "model_name",
-    ["moonshotai/kimi-k2.5", "moonshotai/kimi-k2.6", "deepseek/deepseek-v3.2"],
+    [
+        "moonshotai/kimi-k2.5",
+        "moonshotai/kimi-k2.6",
+        "deepseek/deepseek-v3.2",
+        "~moonshotai/kimi-latest",
+        "~deepseek/deepseek-pro-latest",
+    ],
 )
 def testBuildModel_whenOpenRouterKimiOrDeepSeek_shouldNotForceToolChoice(
     model_name: str,
@@ -309,9 +315,15 @@ def testBuildModel_whenOpenRouterKimiOrDeepSeek_shouldNotForceToolChoice(
 
 
 @pytest.mark.parametrize(
-    "model_name", ["z-ai/glm-5", "google/gemini-3.7-flash", "openai/gpt-5.6-luna-pro"]
+    "model_name",
+    [
+        "z-ai/glm-5",
+        "google/gemini-3.7-flash",
+        "openai/gpt-5.6-luna-pro",
+        "~openai/gpt-luna-latest",
+    ],
 )
-def testBuildModel_whenOpenRouterNonKimi_shouldKeepOpenRoutersToolChoice(
+def testBuildModel_whenOpenRouterModelIsNotKimiOrDeepSeek_shouldKeepOpenRoutersToolChoice(
     model_name: str,
 ) -> None:
     model = factory.build_model(f"openrouter/{model_name}", "k")
