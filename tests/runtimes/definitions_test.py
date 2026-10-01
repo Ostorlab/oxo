@@ -178,7 +178,7 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
     assert new_instance.args[0].value == b'"fast"'
 
 
-def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError(
+def testAgentInstanceContainerImage_ifNoImageIsPresent_returnsNone(
     mocker: plugin.MockerFixture, offline_docker_client: docker.DockerClient
 ) -> None:
     """Return no container image when the SDK finds no matching image."""
