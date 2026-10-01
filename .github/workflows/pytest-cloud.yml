@@ -1,0 +1,28 @@
+name: Cloud schema integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  cloud-schema:
+    runs-on: ubuntu-latest
+    env:
+      RE_OXO_API_KEY: ${{ secrets.RE_OXO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          submodules: true
+      - uses: actions/setup-python@v5.0.0
+        with:
+          python-version: "3.13"
+      - name: Require cloud credentials
+        run: test -n "$RE_OXO_API_KEY"
+      - name: Install dependencies
+        run: python -m pip install -e ".[testing,scanner,agent,serve]"
+      - name: Compare cloud schema
+        run: pytest -m cloud tests/serve_app/oxo_test.py

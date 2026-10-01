@@ -3,3 +3,6 @@ extend-exclude = ["*_pb2.py"]
 
 [lint.isort]
 force-single-line = true
+
+[lint.per-file-ignores]
+"src/ostorlab/configuration_manager.py" = ["UP045"]

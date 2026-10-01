@@ -15,6 +15,8 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_m
     """
 
     api_data_dict = {"data": {"revokeApiKey": {"result": True}}}
+    config_manager = configuration_manager.ConfigurationManager()
+    config_manager.set_authorization_token("revoke-test-token")
     runner = CliRunner()
     httpx_mock.add_response(
         method="POST",
@@ -26,6 +28,7 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_m
 
     assert result.exception is None
     assert configuration_manager.ConfigurationManager().api_key is None
+    assert config_manager.authorization_token is None
 
 
 @mock.patch.object(

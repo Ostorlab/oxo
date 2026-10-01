@@ -1,5 +1,7 @@
 """Unittest for agent runtime."""
 
+import pathlib
+
 import docker
 import pytest
 from pytest_mock import plugin
@@ -9,6 +11,35 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.utils import definitions as utils_defintions
+
+
+def testReplaceVariableMounts_whenConfigurationOverridden_usesSelectedDirectory(
+    mocker: plugin.MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Agent configuration mounts follow the selected private directory."""
+    private_dir = tmp_path / "private"
+    monkeypatch.setenv("OSTORLAB_PRIVATE_DIR", str(private_dir))
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    docker_client.images.list.return_value = [
+        mocker.Mock(tags=["agent_org_name:v1.0.0"])
+    ]
+    mocker.patch("docker.from_env", return_value=docker_client, autospec=True)
+    runtime_agent = agent_runtime.AgentRuntime(
+        definitions.AgentSettings(key="agent/org/name"),
+        "42",
+        docker_client,
+        mq_service=mocker.Mock(
+            url="amqp://localhost", management_url="http://localhost", vhost="/"
+        ),
+        redis_service=mocker.Mock(url="redis://localhost"),
+        jaeger_service=None,
+    )
+
+    assert runtime_agent.replace_variable_mounts(["$CONFIG_HOME:/config"]) == [
+        f"{private_dir.resolve()}:/config"
+    ]
 
 
 def container_name_mock(name):

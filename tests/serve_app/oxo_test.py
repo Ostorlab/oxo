@@ -4,21 +4,29 @@ import io
 import json
 import os
 import pathlib
-import sys
 from typing import Any
 from unittest import mock
 
 import httpx
+import pytest
 import ubjson
 from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
 
+from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app.schema import schema as oxo_schema
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
+
+
+@pytest.fixture
+def scan_thread(mocker: plugin.MockerFixture) -> mock.MagicMock:
+    """Keep mutation tests from launching background work outside their mocks."""
+    return mocker.patch("ostorlab.serve_app.oxo.threading.Thread", autospec=True)
+
 
 INTROSPECT_ENUMS_QUERY = """
     {
@@ -1602,23 +1610,16 @@ def testCreateAsset_androidApkFile_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["packageName"] == "a.b.c"
-    if sys.platform == "win32":
-        assert "\\.ostorlab\\uploads\\android_" in asset_data["path"]
-    else:
-        assert ".ostorlab/uploads/android_" in asset_data["path"]
+    upload_path = pathlib.Path(asset_data["path"])
+    assert (
+        upload_path.parent == configuration_manager.ConfigurationManager().upload_path
+    )
+    assert upload_path.name.startswith("android_")
+    assert upload_path.is_file()
     with models.Database() as session:
         assert session.query(models.AndroidFile).count() == 1
         assert session.query(models.AndroidFile).all()[0].package_name == "a.b.c"
-        if sys.platform == "win32":
-            assert (
-                "\\.ostorlab\\uploads\\android_"
-                in session.query(models.AndroidFile).all()[0].path
-            )
-        else:
-            assert (
-                ".ostorlab/uploads/android_"
-                in session.query(models.AndroidFile).all()[0].path
-            )
+        assert pathlib.Path(session.query(models.AndroidFile).one().path) == upload_path
 
 
 def testCreateAsset_androidAabFile_createsNewAsset(
@@ -1671,23 +1672,16 @@ def testCreateAsset_androidAabFile_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["packageName"] == "a.b.c"
-    if sys.platform == "win32":
-        assert "\\.ostorlab\\uploads\\android_" in asset_data["path"]
-    else:
-        assert ".ostorlab/uploads/android_" in asset_data["path"]
+    upload_path = pathlib.Path(asset_data["path"])
+    assert (
+        upload_path.parent == configuration_manager.ConfigurationManager().upload_path
+    )
+    assert upload_path.name.startswith("android_")
+    assert upload_path.is_file()
     with models.Database() as session:
         assert session.query(models.AndroidFile).count() == 1
         assert session.query(models.AndroidFile).all()[0].package_name == "a.b.c"
-        if sys.platform == "win32":
-            assert (
-                "\\.ostorlab\\uploads\\android_"
-                in session.query(models.AndroidFile).all()[0].path
-            )
-        else:
-            assert (
-                ".ostorlab/uploads/android_"
-                in session.query(models.AndroidFile).all()[0].path
-            )
+        assert pathlib.Path(session.query(models.AndroidFile).one().path) == upload_path
 
 
 def testCreateAsset_iOSFile_createsNewAsset(
@@ -1740,22 +1734,16 @@ def testCreateAsset_iOSFile_createsNewAsset(
     asset_data = resp.get_json()["data"]["createAssets"]["assets"][0]
     assert asset_data["id"] is not None
     assert asset_data["bundleId"] == "a.b.c"
-    if sys.platform == "win32":
-        assert "\\.ostorlab\\uploads\\ios_" in asset_data["path"]
-    else:
-        assert ".ostorlab/uploads/ios_" in asset_data["path"]
+    upload_path = pathlib.Path(asset_data["path"])
+    assert (
+        upload_path.parent == configuration_manager.ConfigurationManager().upload_path
+    )
+    assert upload_path.name.startswith("ios_")
+    assert upload_path.is_file()
     with models.Database() as session:
         assert session.query(models.IosFile).count() == 1
         assert session.query(models.IosFile).all()[0].bundle_id == "a.b.c"
-        if sys.platform == "win32":
-            assert (
-                "\\.ostorlab\\uploads\\ios_"
-                in session.query(models.IosFile).all()[0].path
-            )
-        else:
-            assert (
-                ".ostorlab/uploads/ios_" in session.query(models.IosFile).all()[0].path
-            )
+        assert pathlib.Path(session.query(models.IosFile).one().path) == upload_path
 
 
 def testCreateAsset_whenMultipleAssets_shouldCreateAll(
@@ -2312,6 +2300,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     scan: models.Scan,
     mocker: plugin.MockerFixture,
     db_engine_path: str,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for Network asset."""
 
@@ -2333,7 +2322,9 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2369,6 +2360,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2392,10 +2384,13 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     scan: models.Scan,
     mocker: plugin.MockerFixture,
     run_scan_mock: None,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for Domain asset."""
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2430,6 +2425,7 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2451,6 +2447,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     url_asset: models.Urls,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for Url asset."""
     mocker.patch(
@@ -2470,7 +2467,9 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
 
     query = """
@@ -2507,6 +2506,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2528,6 +2528,7 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     android_file_asset: models.AndroidFile,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for AndroidFile asset."""
     mocker.patch(
@@ -2547,7 +2548,9 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2581,6 +2584,7 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2599,6 +2603,7 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     ios_file_asset: models.IosFile,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for IosFile asset."""
     mocker.patch(
@@ -2618,7 +2623,9 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2652,6 +2659,7 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2670,6 +2678,7 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     android_store: models.AndroidStore,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for AndroidStore asset."""
     mocker.patch(
@@ -2689,7 +2698,9 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2723,6 +2734,7 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2741,6 +2753,7 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     ios_store: models.IosStore,
     scan: models.Scan,
     mocker: plugin.MockerFixture,
+    scan_thread: mock.MagicMock,
 ) -> None:
     """Test RunScanMutation for IosStore asset."""
     mocker.patch(
@@ -2760,7 +2773,9 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     )
     mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     prepare_scan_mock = mocker.patch(
-        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan",
+        return_value=scan,
+        autospec=True,
     )
     query = """
         mutation RunScan($scan: OxoAgentScanInputType!) {
@@ -2794,6 +2809,7 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
         "/graphql", json={"query": query, "variables": variables}
     )
 
+    scan_thread.return_value.start.assert_called_once()
     assert response.status_code == 200, response.get_json()
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
@@ -2886,6 +2902,10 @@ def _get_re_oxo_schema(query: str) -> dict[str, Any]:
         return response.json()["data"]
 
 
+@pytest.mark.cloud
+@pytest.mark.skipif(
+    os.environ.get("RE_OXO_API_KEY", "") == "", reason="RE_OXO_API_KEY is required"
+)
 def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
     """Ensure the `ENUMs` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2929,6 +2949,10 @@ def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
         assert enum_values == oxo_enums[enum]
 
 
+@pytest.mark.cloud
+@pytest.mark.skipif(
+    os.environ.get("RE_OXO_API_KEY", "") == "", reason="RE_OXO_API_KEY is required"
+)
 def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
     """Ensure the `InputObjects` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -2982,6 +3006,10 @@ def testOxoSchemaReOxoSchemas_whenInputObject_schemasShouldBeSimilar() -> None:
             assert input_field_type == oxo_input_types[input_field_name]
 
 
+@pytest.mark.cloud
+@pytest.mark.skipif(
+    os.environ.get("RE_OXO_API_KEY", "") == "", reason="RE_OXO_API_KEY is required"
+)
 def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
     """Ensure the `Mutations` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3051,6 +3079,10 @@ def testOxoSchemaReOxoSchemas_whenMutations_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_mutation_args[arg_name]
 
 
+@pytest.mark.cloud
+@pytest.mark.skipif(
+    os.environ.get("RE_OXO_API_KEY", "") == "", reason="RE_OXO_API_KEY is required"
+)
 def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
     """Ensure the `Queries` in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3109,6 +3141,10 @@ def testOxoSchemaReOxoSchemas_whenQueries_schemasShouldBeSimilar() -> None:
             assert arg_type == oxo_query_args[arg_name]
 
 
+@pytest.mark.cloud
+@pytest.mark.skipif(
+    os.environ.get("RE_OXO_API_KEY", "") == "", reason="RE_OXO_API_KEY is required"
+)
 def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
     """Ensure the `UNION` types in the OxO Schema & RE_OxO schema are similar."""
 
@@ -3177,6 +3213,10 @@ def testOxoSchemaReOxoSchemas_whenUnions_schemasShouldBeSimilar() -> None:
             assert possible_type_fields == oxo_unions[union_name][possible_type_name]
 
 
+@pytest.mark.cloud
+@pytest.mark.skipif(
+    os.environ.get("RE_OXO_API_KEY", "") == "", reason="RE_OXO_API_KEY is required"
+)
 def testOxoSchemaReOxoSchemas_whenOutputTypes_schemasShouldBeSimilar() -> None:
     """Ensure the `return types` in the OxO Schema & RE_OxO schema are similar."""
 

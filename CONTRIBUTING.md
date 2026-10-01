@@ -27,8 +27,8 @@ pip install -e ".[testing]"
 CI runs the same checks on every pull request.
 
 ```shell
-# Tests (CI skips the docker and nats markers)
-pytest -m "not docker and not nats"
+# Tests (CI skips tests that need external services)
+pytest -m "not docker and not nats and not cloud"
 
 # Lint and format
 ruff check .
@@ -39,6 +39,22 @@ pip install -r typing_requirements.txt
 mypy src/ostorlab/agent/schema src/ostorlab/agent/kb src/ostorlab/agent/message src/ostorlab/utils \
   src/ostorlab/apis/runners src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py src/ostorlab/assets
 ```
+
+Tests use temporary configuration directories and databases, including when OXO's
+installed pytest plugin is available. The repository disables plugin autoload for
+that entry point and loads its fixtures after configuring temporary storage. If
+overriding pytest's `addopts`, retain `-p no:pytest_ostorlab`.
+
+Cloud schema comparisons run in a separate integration workflow on `main` or
+through manual dispatch. To run them locally, configure `RE_OXO_API_KEY` and run
+`pytest -m cloud tests/serve_app/oxo_test.py`; they skip when the key is absent.
+
+Set `OSTORLAB_PRIVATE_DIR` before launching OXO to choose an alternate directory
+for credentials, uploaded assets, the local database, and agent configuration
+mounts. Without the override, OXO uses `~/.ostorlab`.
+
+The Ruff exception for `configuration_manager.py` preserves the `Optional[T]`
+annotation style required by the project's agent instructions.
 
 ## Code conventions
 
