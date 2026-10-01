@@ -367,8 +367,9 @@ def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(httpx_mock, tmpdir):
             "jsonl",
         ],
     )
-    assert result.exception is None
-    assert "ERROR: scan with id 5858 does not exist" in result.output
+    assert result.exit_code == 1
+    assert "Could not dump vulnerabilities for scan 5858" in result.output
+    assert "Scan matching query does not exist" in result.output
 
 
 def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(

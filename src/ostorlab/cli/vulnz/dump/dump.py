@@ -3,6 +3,7 @@
 import logging
 
 import click
+import httpx
 import sqlalchemy
 
 from ostorlab.apis.runners import runner
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
     default="jsonl",
 )
 @click.pass_context
-def dump(ctx, scan_id: int, output: str, output_format: str) -> None:
+def dump(ctx: click.Context, scan_id: int, output: str, output_format: str) -> None:
     """Dump found vulnerabilities of a scan in a specific format."""
     try:
         runtime_instance = ctx.obj["runtime"]
@@ -42,5 +43,7 @@ def dump(ctx, scan_id: int, output: str, output_format: str) -> None:
     except FileNotFoundError as e:
         console.error(f"No such file or directory: {output}")
         raise click.exceptions.Exit(2) from e
-    except (sqlalchemy.exc.OperationalError, runner.Error):
-        console.error(f"scan with id {scan_id} does not exist.")
+    except (sqlalchemy.exc.OperationalError, runner.Error, httpx.HTTPError) as error:
+        raise click.ClickException(
+            f"Could not dump vulnerabilities for scan {scan_id}: {error}"
+        ) from error

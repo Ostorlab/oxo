@@ -62,7 +62,7 @@ def list_scans(
 
             console.table(columns=columns, data=data, title=title)
         else:
-            console.error("Error fetching scan list.")
+            raise click.ClickException("Could not fetch scans.")
 
 
 def _get_risk_rating(risk: risk_rating.RiskRating | str | None) -> str:

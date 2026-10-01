@@ -9,12 +9,13 @@ from typing import Any
 import httpx
 
 from ostorlab import configuration_manager as config_manager
+from ostorlab import exceptions
 from ostorlab.apis import request as api_request
 
 REQUEST_TIMEOUT = 80
 
 
-class Error(Exception):
+class Error(exceptions.OstorlabError):
     """Base Error Class"""
 
 
