@@ -22,13 +22,17 @@ cd oxo
 pip install -e ".[testing]"
 ```
 
+Set `OSTORLAB_PRIVATE_DIR` before launching OXO to choose an alternate directory
+for credentials, uploaded assets, the local database, and agent configuration
+mounts. Without the override, OXO uses `~/.ostorlab`.
+
 ## Checks to run before opening a pull request
 
 CI runs the same checks on every pull request.
 
 ```shell
-# Tests (CI skips the docker and nats markers)
-pytest -m "not docker and not nats"
+# Tests (skip local Docker/NATS and live cloud tests)
+pytest -m "not docker and not nats and not cloud"
 
 # Lint and format
 ruff check .
@@ -40,12 +44,25 @@ mypy src/ostorlab/agent/schema src/ostorlab/agent/kb src/ostorlab/agent/message 
   src/ostorlab/apis/runners src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py src/ostorlab/assets
 ```
 
+Tests use temporary configuration directories and databases, including when OXO's
+installed pytest plugin is available. The `pytest_ostorlab` entry point is disabled
+with `-p no:pytest_ostorlab`; its fixtures are loaded later, after temporary storage
+is configured. If overriding pytest's `addopts`, retain that option.
+
+Cloud schema comparisons run in a separate integration workflow on pushes to `main`
+or through `workflow_dispatch`. The six tests compare enum, input object, mutation,
+query, union, and output type definitions between local OXO and the live
+[OXO API](https://api.ostorlab.co/apis/oxo), using `RE_OXO_API_KEY` in the
+`X-Api-Key` header. To run them locally, configure `RE_OXO_API_KEY` and run
+`pytest -m cloud tests/serve_app/oxo_test.py`; they skip when the key is absent.
+
 ## Code conventions
 
 The full guide is in [AGENTS.md](AGENTS.md). In short:
 
 - Absolute imports only (`from ostorlab.package import module`), grouped standard library, third-party, local.
 - Type annotations on all public functions, checked by mypy.
+- `AGENTS.md` requires `Optional[T]` for nullable types. Ruff's `UP045` converts those annotations to `T | None`; the exception for `src/ostorlab/configuration_manager.py` preserves `Optional[pathlib.Path]`.
 - Custom exceptions inherit from `ostorlab.exceptions.OstorlabError`.
 - Tests live under `tests/`, mirror the source layout, use the `*_test.py` suffix and are named
   `test[Action]_[conditionCamelCase]_[expectedResultCamelCase]`.

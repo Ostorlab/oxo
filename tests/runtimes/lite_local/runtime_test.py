@@ -197,8 +197,9 @@ def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(mocker):
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreatedWithAgentSettings(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+    offline_docker_client: docker.DockerClient,
+) -> None:
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
@@ -234,6 +235,9 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
         "docker.models.services.ServiceCollection.create", return_value=None
     )
 
+    mocker.patch.object(
+        offline_docker_client, "info", return_value={"Name": "test-host"}, autospec=True
+    )
     docker_client = docker.from_env()
 
     agent_settings = definitions.AgentSettings(
@@ -271,8 +275,9 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+    offline_docker_client: docker.DockerClient,
+) -> None:
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
@@ -309,6 +314,9 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
         "docker.models.services.ServiceCollection.create", return_value=None
     )
 
+    mocker.patch.object(
+        offline_docker_client, "info", return_value={"Name": "test-host"}, autospec=True
+    )
     docker_client = docker.from_env()
 
     agent_settings = definitions.AgentSettings(
@@ -343,8 +351,9 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
 
 
 def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithReplicas(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+    offline_docker_client: docker.DockerClient,
+) -> None:
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
@@ -380,6 +389,9 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
         "docker.models.services.ServiceCollection.create", return_value=None
     )
 
+    mocker.patch.object(
+        offline_docker_client, "info", return_value={"Name": "test-host"}, autospec=True
+    )
     docker_client = docker.from_env()
 
     agent_settings = definitions.AgentSettings(
@@ -465,7 +477,8 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
 
 def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUniverseToEnv(
     mocker: plugin.MockerFixture,
-):
+    offline_docker_client: docker.DockerClient,
+) -> None:
     """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
     mock_host_hostname = "test-mocked-hostname"
     mocker.patch("docker.DockerClient.info", return_value={"Name": mock_host_hostname})
@@ -526,6 +539,7 @@ def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUn
 
 def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContainerLabels(
     mocker: plugin.MockerFixture,
+    offline_docker_client: docker.DockerClient,
 ) -> None:
     """Container labels should be merged into the container_labels dict when provided."""
     agent_def = agent_definitions.AgentDefinition(
@@ -556,6 +570,9 @@ def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContai
         "docker.models.services.ServiceCollection.create", return_value=None
     )
 
+    mocker.patch.object(
+        offline_docker_client, "info", return_value={"Name": "test-host"}, autospec=True
+    )
     docker_client = docker.from_env()
     agent_settings = definitions.AgentSettings(key="agent/org/name")
     runtime_agent = agent_runtime.AgentRuntime(

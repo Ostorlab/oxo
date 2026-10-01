@@ -18,8 +18,8 @@ pytest tests/path/to/specific_test.py
 # Run tests matching a pattern
 pytest -k "test_function_name"
 
-# Run tests excluding docker/nats tests (as done in CI)
-pytest -m "not docker and not nats"
+# Run tests excluding local Docker/NATS/live cloud tests (as done in CI)
+pytest -m "not docker and not nats and not cloud"
 
 # Install test dependencies
 pip install -e .[testing]
@@ -31,7 +31,7 @@ pip install -e .[testing]
 ruff check .
 
 # Run ruff linter with auto-fix
-ruff --fix .
+ruff check --fix .
 
 # Run ruff formatter (black-compatible)
 ruff format .
@@ -130,7 +130,8 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Test function naming: `test[Action]_[conditionCamelCase]_[expectedResultCamelCase]`
 - Use pytest fixtures defined in `tests/conftest.py`
 - Avoid test classes unless necessary for grouping
-- Use pytest markers: `docker`, `nats` (skip in CI with `-m "not docker and not nats"`)
+- Use pytest markers: `docker`, `nats`, `cloud` (live cloud API).
+  Skip in CI with `-m "not docker and not nats and not cloud"`.
 
 ### Documentation
 - Use Google-style or reStructuredText docstrings

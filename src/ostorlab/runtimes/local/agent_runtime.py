@@ -29,8 +29,6 @@ from ostorlab.utils import definitions as utils_definitions
 
 logger = logging.getLogger(__name__)
 
-MOUNT_VARIABLES = {"$CONFIG_HOME": str(configuration_manager.OSTORLAB_PRIVATE_DIR)}
-
 HEALTHCHECK_HOST = "0.0.0.0"
 HEALTHCHECK_PORT = 5000
 SECOND = 1000000000
@@ -296,19 +294,15 @@ class AgentRuntime:
         )
         return healthcheck
 
-    def replace_variable_mounts(self, mounts: list[str]):
+    def replace_variable_mounts(self, mounts: list[str]) -> list[str]:
         """Replace path variables for the container mounts
 
         Args:
             mounts: List of src:dst paths to mount
         """
 
-        replaced_mounts = []
-        for mount in mounts:
-            for mount_variable, mount_value in MOUNT_VARIABLES.items():
-                mount = mount.replace(mount_variable, mount_value)
-            replaced_mounts.append(mount)
-        return replaced_mounts
+        configuration_home = str(configuration_manager.ConfigurationManager().conf_path)
+        return [mount.replace("$CONFIG_HOME", configuration_home) for mount in mounts]
 
     def create_scan_volume_mounts(
         self, volumes: list[utils_definitions.Volume]

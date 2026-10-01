@@ -9,7 +9,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ "**" ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -41,8 +41,6 @@ jobs:
         pip install .[serve]
         python -m pip install -e .
     - name: Running tests with pytest.
-      env:
-        RE_OXO_API_KEY: ${{ secrets.RE_OXO_API_KEY }}
       run: |
         set -o pipefail
-        pytest -m "not docker and not nats"
+        pytest -m "not docker and not nats and not cloud"
