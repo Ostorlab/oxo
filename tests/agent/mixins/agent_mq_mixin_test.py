@@ -297,7 +297,9 @@ class MessageProcessingAgent(agent.Agent):
 
     def __init__(self) -> None:
         super().__init__(
-            agent_definition=agent_definitions.AgentDefinition(name="queue-agent"),
+            agent_definition=agent_definitions.AgentDefinition(
+                name="queue-agent", in_selectors=["v3.healthcheck.ping"]
+            ),
             agent_settings=runtime_definitions.AgentSettings(key="queue-agent"),
         )
         self.processing_error = ValueError("processing failed")
@@ -338,6 +340,38 @@ async def message_processing_agent(
         client._executor.shutdown(wait=True)
 
 
+@pytest_asyncio.fixture
+async def consumed_message_callback(
+    mocker: plugin.MockerFixture,
+    message_processing_agent: MessageProcessingAgent,
+) -> abc.Callable[[aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]]:
+    """Register the actual MQ consumer without connecting to a broker."""
+    queue = mock.Mock(spec=aio_pika.RobustQueue)
+    exchange = mock.Mock(spec=aio_pika.RobustExchange)
+    channel = mock.Mock(spec=aio_pika.RobustChannel)
+    channel.declare_queue.return_value = queue
+    channel.declare_exchange.return_value = exchange
+    connection = mock.Mock(spec=aio_pika.RobustConnection)
+    connection.channel = mock.AsyncMock(return_value=channel)
+    mocker.patch("aio_pika.connect_robust", return_value=connection)
+
+    await message_processing_agent.mq_run()
+
+    callback: abc.Callable[
+        [aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]
+    ] = queue.consume.call_args.args[0]
+    queue.consume.assert_awaited_once_with(callback, no_ack=False)
+    channel.set_qos.assert_awaited_once_with(prefetch_count=1)
+    channel.declare_queue.assert_awaited_once_with(
+        f"{message_processing_agent.mq_name}_queue",
+        auto_delete=False,
+        durable=True,
+        arguments={"x-max-priority": agent_mq_mixin.DEFAULT_MAX_PRIORITY},
+    )
+    queue.bind.assert_awaited_once_with(exchange, "v3.healthcheck.ping.#")
+    return callback
+
+
 def _incoming_message(
     channel: aiormq_abc.AbstractChannel,
     message: agent_message.Message,
@@ -367,8 +401,11 @@ def _incoming_message(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("redelivered", [False, True])
-async def testMqProcessMessage_whenAgentSucceeds_acknowledgesAfterCleanup(
+async def testMqRun_whenAgentSucceeds_acknowledgesAfterCleanup(
     message_processing_agent: MessageProcessingAgent,
+    consumed_message_callback: abc.Callable[
+        [aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]
+    ],
     ping_message: agent_message.Message,
     redelivered: bool,
 ) -> None:
@@ -381,7 +418,7 @@ async def testMqProcessMessage_whenAgentSucceeds_acknowledgesAfterCleanup(
     )
     incoming_message = _incoming_message(channel, ping_message, redelivered)
 
-    await message_processing_agent._mq_process_message(incoming_message)
+    await consumed_message_callback(incoming_message)
 
     channel.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
     channel.basic_reject.assert_not_awaited()
@@ -396,8 +433,11 @@ async def testMqProcessMessage_whenAgentSucceeds_acknowledgesAfterCleanup(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("redelivered", [False, True])
-async def testMqProcessMessage_whenAgentFails_rejectsWithBoundedRedelivery(
+async def testMqRun_whenAgentFails_rejectsWithBoundedRedelivery(
     message_processing_agent: MessageProcessingAgent,
+    consumed_message_callback: abc.Callable[
+        [aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]
+    ],
     ping_message: agent_message.Message,
     redelivered: bool,
     caplog: pytest.LogCaptureFixture,
@@ -413,7 +453,7 @@ async def testMqProcessMessage_whenAgentFails_rejectsWithBoundedRedelivery(
     message_processing_agent.fail_processing = True
 
     with pytest.raises(ValueError, match="processing failed") as raised:
-        await message_processing_agent._mq_process_message(incoming_message)
+        await consumed_message_callback(incoming_message)
 
     assert raised.value is message_processing_agent.processing_error
     channel.basic_ack.assert_not_awaited()
@@ -437,8 +477,11 @@ async def testMqProcessMessage_whenAgentFails_rejectsWithBoundedRedelivery(
     ],
     ids=["unaccepted-sender", "cyclic-limit", "depth-limit"],
 )
-async def testMqProcessMessage_whenAgentDeclinesMessage_acknowledgesWithoutRetry(
+async def testMqRun_whenAgentDeclinesMessage_acknowledgesWithoutRetry(
     message_processing_agent: MessageProcessingAgent,
+    consumed_message_callback: abc.Callable[
+        [aio_pika.abc.AbstractIncomingMessage], abc.Awaitable[None]
+    ],
     ping_message: agent_message.Message,
     cyclic_limit: int,
     depth_limit: int,
@@ -461,7 +504,7 @@ async def testMqProcessMessage_whenAgentDeclinesMessage_acknowledgesWithoutRetry
     message_processing_agent.depth_processing_limit = depth_limit
     message_processing_agent.accepted_agents = accepted_agents
 
-    await message_processing_agent._mq_process_message(incoming_message)
+    await consumed_message_callback(incoming_message)
 
     channel.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
     channel.basic_reject.assert_not_awaited()
