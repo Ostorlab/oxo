@@ -33,3 +33,7 @@ def testProviderPriority_whenCompared_shouldListEverySupportedProvider() -> None
 
 def testCredentialFor_whenKeyHasSurroundingWhitespace_shouldStripIt() -> None:
     assert keys.credential_for("openai", {"openai": "  sk-key\n"}) == "sk-key"
+
+
+def testCredentialFor_whenAlibabaAliasUsed_shouldResolveTheQwenKey() -> None:
+    assert keys.credential_for("alibaba", {"qwen": "dashscope-key"}) == "dashscope-key"
