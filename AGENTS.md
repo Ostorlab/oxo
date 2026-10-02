@@ -173,16 +173,18 @@ pip install -e ".[testing,scanner,agent,serve]"
   2. Register it in `factory._BUILDERS`.
   3. Add it to `keys.PROVIDER_PRIORITY`.
   4. Add a case to `_BUILD_CASES` in `tests/ai/factory_test.py`.
-  5. If the provider can run without a key, add it to `factory._CREDENTIAL_OPTIONAL` and send an
-     explicit placeholder (`NO_API_KEY`) rather than `None`, so the SDK cannot read a key from the
-     environment.
+  5. If the provider can run without a key, add it to `factory._CREDENTIAL_OPTIONAL` and always
+     pass the SDK the `NO_API_KEY` placeholder plus the provider's explicit base URL, never `None`,
+     so it cannot read either value from the environment.
 
   The registry coverage tests fail until steps 2–4 are done.
 - Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
   `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
-- `openai_compatible/<model>` targets any self-hosted server exposing an OpenAI-compatible API
-  (vLLM, LM Studio, llama.cpp `llama-server`, LocalAI, TGI) with no LiteLLM gateway required, and
-  complements `ollama`.
+- `openai_compatible/<model>` targets any server exposing an OpenAI-compatible API (vLLM, LM Studio,
+  llama.cpp `llama-server`, LocalAI, TGI) at a configured URL, with no LiteLLM gateway required. It
+  complements `ollama`, which also speaks the OpenAI-compatible API but has its own provider
+  (pydantic-ai's `OllamaProvider`, with per-model profiles); `openai_compatible` is the generic path
+  for any other server.
 - Every provider requires a credential except `ollama` and `openai_compatible`, the entries in
   `factory._CREDENTIAL_OPTIONAL`. Local servers run with no key; a key for a hosted or secured server
   is the caller's responsibility.
