@@ -225,8 +225,6 @@ class AgentMixin(
     def process_message(self, selector: str, message: bytes) -> None:
         """Processes raw message received from BS.
 
-        Processing failures are logged and consumed after cleanup and log flushing.
-
         Args:
             selector: destination selector with full path, including UUID set by default.
             message: raw bytes message.
