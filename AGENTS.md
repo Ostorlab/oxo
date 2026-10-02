@@ -181,7 +181,7 @@ pip install -e ".[testing,scanner,agent,serve]"
 - Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
   `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
 - `openai_compatible/<model>` targets any server exposing an OpenAI-compatible API (vLLM, LM Studio,
-  llama.cpp `llama-server`, LocalAI, TGI) at a configured URL, with no LiteLLM gateway required. It
+  llama.cpp `llama-server`, LocalAI, Hugging Face TGI (Text Generation Inference)) at a configured URL, with no LiteLLM gateway required. It
   complements `ollama`, which also speaks the OpenAI-compatible API but has its own provider
   (pydantic-ai's `OllamaProvider`, with per-model profiles); `openai_compatible` is the generic path
   for any other server.
