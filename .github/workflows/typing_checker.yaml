@@ -2,7 +2,7 @@ name: Static Types Checker.
 
 on:
   pull_request:
-    branches: [ "**" ]
+    branches: [ "*" ]
   push:
     branches: [ "main" ]
 jobs:

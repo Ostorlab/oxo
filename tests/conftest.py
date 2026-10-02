@@ -1,6 +1,5 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
-import collections.abc
 import datetime
 import io
 import pathlib
@@ -44,38 +43,6 @@ from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.serve_app import app
 from ostorlab.serve_app import types
 from ostorlab.utils import risk_rating
-
-
-@pytest.fixture(autouse=True)
-def isolated_configuration(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path, db_engine_path: str
-) -> None:
-    """Keep every test's configuration and default database in temporary storage."""
-    monkeypatch.setenv("OSTORLAB_PRIVATE_DIR", str(tmp_path / "configuration"))
-    monkeypatch.setattr(models, "ENGINE_URL", db_engine_path)
-
-
-@pytest.fixture
-def offline_docker_client(
-    mocker: plugin.MockerFixture,
-) -> collections.abc.Iterator[docker.DockerClient]:
-    """Keep SDK collections real while requiring Docker operations to be mocked."""
-    client = docker.DockerClient(
-        base_url="http://unit-docker.invalid:2375", version="1.42"
-    )
-    mocker.patch.object(
-        client.api,
-        "request",
-        autospec=True,
-        side_effect=AssertionError(
-            "Unexpected Docker HTTP request; mock the Docker SDK operation."
-        ),
-    )
-    mocker.patch("docker.from_env", autospec=True, return_value=client)
-    try:
-        yield client
-    finally:
-        client.close()
 
 
 @pytest.fixture(scope="session")
@@ -783,9 +750,8 @@ def ios_scans(
 
 
 @pytest.fixture
-def flask_app(mocker: plugin.MockerFixture) -> flask.Flask:
+def flask_app() -> flask.Flask:
     """Fixture for creating a Flask app."""
-    mocker.patch.object(models.AgentGroup, "create_from_directory", autospec=True)
     flask_app = app.create_app()
 
     ctx = flask_app.app_context()
@@ -826,8 +792,6 @@ def clean_db(mocker: plugin.MockerFixture, db_engine_path: str) -> None:
         session.query(models.AgentArgument).delete()
         session.query(models.AgentGroup).delete()
         session.query(models.AgentGroupMapping).delete()
-        session.query(models.AgentGroupAssetType).delete()
-        session.query(models.AssetType).delete()
         session.query(models.Asset).delete()
         session.query(models.AndroidFile).delete()
         session.query(models.AndroidStore).delete()

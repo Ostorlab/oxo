@@ -1,7 +1,6 @@
 """Tests for scan run command."""
 
 import pathlib
-import re
 import warnings
 
 import httpx
@@ -21,18 +20,12 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
     mocker,
 ):
     """Test ostorlab scan command with no options and no sub command.
-    Should show list of available commands and exit with exit_code = 2."""
+    Should show list of available commands and exit with exit_code = 0."""
 
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     result = runner.invoke(rootcli.rootcli, ["scan", "run"])
-    assert (
-        re.search(
-            r"Usage: rootcli scan run \[OPTIONS\] \[?COMMAND\]? \[ARGS\]\.\.\.",
-            result.output,
-        )
-        is not None
-    )
+    assert "Usage: rootcli scan run [OPTIONS] [COMMAND] [ARGS]..." in result.output
     assert "Commands:" in result.output
     assert "Options:" in result.output
     assert result.exit_code == 2

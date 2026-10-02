@@ -1,37 +1,25 @@
 """Handles any configurations related to Ostorlab, such as storing and retrieving tokens or API keys."""
 
 import json
-import os
 import pathlib
 from typing import ClassVar
-from typing import Optional
 
 OSTORLAB_PRIVATE_DIR = pathlib.Path.home() / ".ostorlab"
 
 
 class SingletonMeta(type):
-    """Cache configuration managers by their resolved private directory."""
+    """Metaclass implementation of a singleton pattern."""
 
-    _instances: ClassVar[
-        dict[tuple["SingletonMeta", pathlib.Path], "ConfigurationManager"]
-    ] = {}
+    _instances: ClassVar[dict[object, object]] = {}
 
     def __call__(
-        cls: "SingletonMeta", private_dir: Optional[pathlib.Path] = None
-    ) -> "ConfigurationManager":
-        """Share credential state only between callers using the same directory."""
-        if private_dir is None:
-            environment_dir = os.environ.get("OSTORLAB_PRIVATE_DIR")
-            private_dir = (
-                OSTORLAB_PRIVATE_DIR
-                if environment_dir is None or environment_dir == ""
-                else pathlib.Path(environment_dir)
-            )
-        resolved_dir = private_dir.expanduser().resolve()
-        cache_key = (cls, resolved_dir)
-        if cache_key not in cls._instances:
-            cls._instances[cache_key] = super().__call__(private_dir=resolved_dir)
-        return cls._instances[cache_key]
+        cls: "SingletonMeta", *args: tuple[object], **kwargs: dict[object, object]
+    ) -> object:
+        """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
 
 
 class ConfigurationManager(metaclass=SingletonMeta):
@@ -39,11 +27,11 @@ class ConfigurationManager(metaclass=SingletonMeta):
     API keys.
     """
 
-    def __init__(self, private_dir: pathlib.Path = OSTORLAB_PRIVATE_DIR) -> None:
+    def __init__(self, private_dir: pathlib.Path = OSTORLAB_PRIVATE_DIR):
         """Constructs all the necessary attributes for the object
         Args:
             private_dir: The private directory where Ostorlab configurations are stored.
-            Defaults to OSTORLAB_PRIVATE_DIR, or the environment override of that name.
+            Defaults to OSTORLAB_PRIVATE_DIR.
         """
         self._private_dir = private_dir
         self._private_dir.mkdir(parents=True, exist_ok=True)
@@ -69,11 +57,6 @@ class ConfigurationManager(metaclass=SingletonMeta):
             return self._api_key
         return None
 
-    @api_key.setter
-    def api_key(self, key: str | None) -> None:
-        """Set API key"""
-        self._api_key = key
-
     @property
     def authorization_token(self) -> str | None:
         """retrieve authorization token in the configuration folder."""
@@ -85,6 +68,11 @@ class ConfigurationManager(metaclass=SingletonMeta):
             return authorization_token
         else:
             return None
+
+    @api_key.setter
+    def api_key(self, key: str | None) -> None:
+        """Set API key"""
+        self._api_key = key
 
     def set_authorization_token(self, authorization_token: str) -> None:
         """Persists the Authorization token to a file in the given path.
