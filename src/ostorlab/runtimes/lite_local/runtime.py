@@ -322,7 +322,8 @@ class LiteLocalRuntime(runtime.Runtime):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_exponential(multiplier=1, max=12),
-        retry_error_callback=lambda _: False,
+        # return last value and don't raise RetryError exception.
+        retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
@@ -383,6 +384,13 @@ class LiteLocalRuntime(runtime.Runtime):
             ],
         )
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(20),
+        wait=tenacity.wait_exponential(multiplier=1, max=20),
+        # return last value and don't raise RetryError exception.
+        retry_error_callback=lambda lv: lv.outcome,
+        retry=tenacity.retry_if_result(lambda v: v is False),
+    )
     def list(
         self,
         page: int = 1,
