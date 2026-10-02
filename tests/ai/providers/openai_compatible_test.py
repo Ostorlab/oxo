@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import json
 
+import pydantic_ai
 import pytest
 from pydantic_ai.models import openai as pydantic_openai
 from pydantic_ai.models import openrouter as pydantic_openrouter
 from pydantic_ai.profiles import openai as openai_profile
 from pydantic_ai.providers import openrouter as openrouter_provider
+from pytest_httpx import HTTPXMock
 
 from ostorlab.ai import errors
 from ostorlab.ai import factory
@@ -330,3 +332,121 @@ def testBuildModel_whenOpenRouterModelIsNotKimiOrDeepSeek_shouldKeepOpenRoutersT
 
     assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
     assert model.profile.openai_supports_tool_choice_required is True
+
+
+_LOCAL_SERVER = options.ProviderOptions(
+    openai_compatible_base_url="http://gpu-box:8000/v1"
+)
+
+
+@pytest.mark.parametrize("credential", [None, "", "  "])
+def testBuildModel_whenOpenAICompatibleWithoutKey_shouldIgnoreTheOpenAIEnvironment(
+    monkeypatch: pytest.MonkeyPatch, credential: str | None
+) -> None:
+    """A real OPENAI_API_KEY must never be sent to a self-hosted server."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-real-openai-key")
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+    model = factory.build_model(
+        "openai_compatible/Qwen/Qwen3-32B", credential, options=_LOCAL_SERVER
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.model_name == "Qwen/Qwen3-32B"
+    assert str(model.client.base_url) == "http://gpu-box:8000/v1/"
+    assert model.client.api_key == "api-key-not-set"
+
+
+def testBuildModel_whenOpenAICompatibleWithKey_shouldSendIt() -> None:
+    model = factory.build_model(
+        "openai_compatible/meta-llama/Llama-3.3-70B-Instruct",
+        "server-token",
+        options=_LOCAL_SERVER,
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.client.api_key == "server-token"
+
+
+def testBuildModel_whenOpenAICompatible_shouldUseTheConservativeGatewayProfile() -> (
+    None
+):
+    """Self-hosted servers vary in forced tool-call support (e.g. vLLM tool parsers)."""
+    model = factory.build_model(
+        "openai_compatible/any-model", None, options=_LOCAL_SERVER
+    )
+
+    assert isinstance(model.profile, openai_profile.OpenAIModelProfile)
+    assert model.profile.openai_supports_tool_choice_required is False
+    assert model.profile.openai_chat_thinking_field == "reasoning_content"
+
+
+@pytest.mark.parametrize("base_url", [None, "", "gpu-box:8000/v1"])
+def testBuildModel_whenOpenAICompatibleBaseUrlMissingOrInvalid_shouldRaise(
+    monkeypatch: pytest.MonkeyPatch, base_url: str | None
+) -> None:
+    """OPENAI_BASE_URL from the environment is not a fallback either."""
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://from-environment:8000/v1")
+
+    with pytest.raises(
+        errors.ModelConfigurationError, match="openai_compatible_base_url"
+    ):
+        factory.build_model(
+            "openai_compatible/any-model",
+            None,
+            options=options.ProviderOptions(openai_compatible_base_url=base_url),
+        )
+
+
+def testRunModel_whenOpenAICompatibleWithoutKey_shouldCallTheServerWithoutTheOpenAIKey(
+    monkeypatch: pytest.MonkeyPatch, httpx_mock: HTTPXMock
+) -> None:
+    """End to end: the request reaches the configured server and carries no real key."""
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-real-openai-key")
+    httpx_mock.add_response(
+        url="http://gpu-box:8000/v1/chat/completions",
+        json={
+            "id": "chatcmpl-1",
+            "object": "chat.completion",
+            "created": 0,
+            "model": "Qwen/Qwen3-32B",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "ok"},
+                    "finish_reason": "stop",
+                }
+            ],
+        },
+    )
+    model = factory.build_model(
+        "openai_compatible/Qwen/Qwen3-32B", None, options=_LOCAL_SERVER
+    )
+
+    pydantic_ai.Agent(model).run_sync("hello")
+
+    request = httpx_mock.get_request()
+    assert request is not None
+    assert request.method == "POST"
+    assert str(request.url) == "http://gpu-box:8000/v1/chat/completions"
+    assert request.headers["authorization"] == "Bearer api-key-not-set"
+    assert "sk-real-openai-key" not in str(request.headers)
+
+
+@pytest.mark.parametrize(
+    ("identifier", "provider_options"),
+    [
+        ("openai_compatible/any-model", _LOCAL_SERVER),
+        ("ollama/qwen3:8b", _OLLAMA_OPTIONS),
+    ],
+)
+def testBuildModel_whenLocalKeyHasSurroundingWhitespace_shouldSendItStripped(
+    identifier: str, provider_options: options.ProviderOptions
+) -> None:
+    """A pasted key with a trailing newline must not reach the server literally."""
+    model = factory.build_model(
+        identifier, "  server-token\n", options=provider_options
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.client.api_key == "server-token"

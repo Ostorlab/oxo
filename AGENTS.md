@@ -173,16 +173,26 @@ pip install -e ".[testing,scanner,agent,serve]"
   2. Register it in `factory._BUILDERS`.
   3. Add it to `keys.PROVIDER_PRIORITY`.
   4. Add a case to `_BUILD_CASES` in `tests/ai/factory_test.py`.
+  5. If the provider can run without a key, add it to `factory._CREDENTIAL_OPTIONAL` and always
+     pass the SDK the `NO_API_KEY` placeholder plus the provider's explicit base URL, never `None`,
+     so it cannot read either value from the environment.
 
   The registry coverage tests fail until steps 2–4 are done.
 - Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
   `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
-- Every provider requires a credential except `ollama`, the sole entry in
-  `factory._CREDENTIAL_OPTIONAL`: local servers run with no key, while a key for Ollama's hosted API
+- `openai_compatible/<model>` targets any server exposing an OpenAI-compatible API (vLLM, LM Studio,
+  llama.cpp `llama-server`, LocalAI, Hugging Face TGI (Text Generation Inference)) at a configured URL, with no LiteLLM gateway required. It
+  complements `ollama`, which also speaks the OpenAI-compatible API but has its own provider
+  (pydantic-ai's `OllamaProvider`, with per-model profiles); `openai_compatible` is the generic path
+  for any other server.
+- Every provider requires a credential except `ollama` and `openai_compatible`, the entries in
+  `factory._CREDENTIAL_OPTIONAL`. Local servers run with no key; a key for a hosted or secured server
   is the caller's responsibility.
-- Builders always pass pydantic-ai an explicit credential and URL. For `ollama` that means the
-  `OLLAMA_NO_API_KEY` placeholder when no key is given, plus the required `ollama_base_url`; this is
-  what stops pydantic-ai falling back to `OLLAMA_API_KEY` / `OLLAMA_BASE_URL`, so keep both.
+- Builders always pass pydantic-ai an explicit credential and URL. For keyless local servers that
+  means the `NO_API_KEY` placeholder plus the required `ollama_base_url` /
+  `openai_compatible_base_url`; this is what stops pydantic-ai falling back to `OLLAMA_*` or
+  `OPENAI_API_KEY` / `OPENAI_BASE_URL` (which would send a real key to the configured server), so
+  keep both.
 - Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never

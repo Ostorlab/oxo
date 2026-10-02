@@ -38,6 +38,7 @@ _BUILDERS: Final[Mapping[str, base.Builder]] = {
     "ollama": openai_compatible.build_ollama,
     "moonshotai": openai_compatible.build_moonshotai,
     "openai": openai_compatible.build_openai,
+    "openai_compatible": openai_compatible.build_openai_compatible,
     "openrouter": openai_compatible.build_openrouter,
     "qwen": openai_compatible.build_qwen,
     "xai": xai.build_xai,
@@ -46,8 +47,8 @@ _BUILDERS: Final[Mapping[str, base.Builder]] = {
 
 PROVIDER_ALIASES: Final[Mapping[str, str]] = {"gemini": "google", "alibaba": "qwen"}
 
-# Providers that can run without a credential (e.g. a local Ollama server).
-_CREDENTIAL_OPTIONAL: Final[frozenset[str]] = frozenset({"ollama"})
+# Providers that can run without a credential (local or self-hosted servers).
+_CREDENTIAL_OPTIONAL: Final[frozenset[str]] = frozenset({"ollama", "openai_compatible"})
 
 SUPPORTED_PROVIDERS: Final[tuple[str, ...]] = tuple(sorted(_BUILDERS))
 
@@ -90,7 +91,7 @@ def build_model(
         credential: The provider secret. A plain API key, or a JSON object for
             ``aws_bedrock``, ``azure_ai_foundry``, ``google_vertex`` (service account
             form) and ``google_vertex_endpoint`` (service-account JSON). Optional for
-            ``ollama``.
+            ``ollama`` and ``openai_compatible``.
         options: Deployment-wide provider options (gateway and endpoint URLs).
         settings: Model settings; defaults to ``default_settings()``.
 
