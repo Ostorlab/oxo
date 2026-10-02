@@ -134,6 +134,17 @@ OXO supports scanning multiple asset types, allowing for comprehensive security 
 | | `phone-number` | Phone number. |
 | | `agent` | Meta-scanning of an agent. |
 
+# OXO and the Ostorlab platform
+
+OXO is free and open source, and runs on your own infrastructure. The same team builds the managed
+[Ostorlab platform](https://ostorlab.co/?utm_source=oxo&utm_medium=readme&utm_campaign=oxo_platform_path), which adds
+Agentic Deep Scans of mobile apps, web apps and APIs, the Mobile Shielding Scan, and reports and ticketing for release
+testing. The `oxo` CLI connects to it with `oxo auth login` or an API key, and `oxo ci-scan run` runs platform scans
+from your CI.
+
+See [OXO and the Ostorlab platform](https://oxo.ostorlab.co/docs/oxo_and_the_platform?utm_source=oxo&utm_medium=readme&utm_campaign=oxo_platform_path)
+for when to use each one.
+
 # The Store
 
 OXO lists all agents on a public store where you can search and also publish your own agents.
