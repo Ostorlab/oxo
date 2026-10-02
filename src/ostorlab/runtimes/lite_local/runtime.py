@@ -224,22 +224,18 @@ class LiteLocalRuntime(runtime.Runtime):
                     assets=assets,
                     agent_settings=inject_asset_agent_settings,
                 )
-        except AgentNotHealthy as error:
+        except AgentNotHealthy:
+            console.error("Agent not starting")
             self._handle_scan_error()
-            raise AgentNotHealthy(
-                f"Could not start scan {self.scan_id}: agent not healthy. {error}"
-            ) from error
-        except AgentNotInstalled as error:
+        except AgentNotInstalled as e:
+            console.error(f"Agent {e} not installed")
             self._handle_scan_error()
-            raise AgentNotInstalled(
-                f"Could not start scan {self.scan_id}: agent {error} not installed."
-            ) from error
-        except agent_runtime.MissingAgentDefinitionLabel as error:
+        except agent_runtime.MissingAgentDefinitionLabel as e:
+            console.error(
+                f"Missing agent definition {e}. This is probably due to building the image directly with"
+                f" docker instead of `oxo agent build` command"
+            )
             self._handle_scan_error()
-            raise agent_runtime.MissingAgentDefinitionLabel(
-                f"Could not start scan {self.scan_id}: {error}. "
-                "Build the image with `oxo agent build` to include its definition."
-            ) from error
 
     def stop(self, scan_id: str | None = None) -> bool:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).

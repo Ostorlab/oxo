@@ -289,12 +289,11 @@ def testScan_whenAgentRetriesExhausted_cleansUpWithoutInjectingAssets(
         cleanup.assert_called_once_with()
     else:
         cleanup = mocker.spy(runtime_instance, "stop")
-        with pytest.raises(lite_runtime.AgentNotHealthy):
-            runtime_instance.scan(
-                "test",
-                definitions.AgentGroupDefinition(agents=[]),
-                assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
-            )
+        runtime_instance.scan(
+            "test",
+            definitions.AgentGroupDefinition(agents=[]),
+            assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
+        )
         cleanup.assert_called_once_with(runtime_instance.scan_id)
     inject.assert_not_called()
     service.remove.assert_called_once_with()

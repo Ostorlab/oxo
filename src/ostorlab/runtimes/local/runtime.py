@@ -7,7 +7,6 @@ a local RabbitMQ.
 import builtins
 import logging
 import threading
-import typing
 from concurrent import futures
 
 import click
@@ -344,15 +343,12 @@ class LocalRuntime(runtime.Runtime):
         self,
         scan_id: int | None = None,
         update_scan_status: bool = True,
-    ) -> typing.Optional[bool]:
+    ) -> None:
         """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
             scan_id: The id of the scan to stop. If None, defaults to the runtime's scan identifier.
             update_scan_status: Whether to update the scan progress to STOPPED in the local database.
-
-        Returns:
-            False if cleanup fails; None on success or when no scan id is available.
         """
         if scan_id is None:
             scan_id = (
@@ -363,18 +359,11 @@ class LocalRuntime(runtime.Runtime):
 
         if scan_id is None:
             logger.warning("No valid scan_id provided to stop.")
-            return None
+            return
 
         cleanup_success = self.cleanup(scan_id=scan_id)
 
-        if cleanup_success is False:
-            logger.warning(
-                "Cleanup had errors for scan %s; not updating scan progress to STOPPED.",
-                scan_id,
-            )
-            return False
-
-        if update_scan_status is True:
+        if update_scan_status is True and cleanup_success is True:
             target_db_id = None
             if self._scan_db is not None and (
                 scan_id is None or scan_id == self._scan_db.id
@@ -392,7 +381,11 @@ class LocalRuntime(runtime.Runtime):
                         console.success("Scan stopped successfully.")
                     else:
                         console.info(f"Scan {target_db_id} was not found.")
-        return None
+        elif update_scan_status is True and cleanup_success is False:
+            logger.warning(
+                "Cleanup had errors for scan %s; not updating scan progress to STOPPED.",
+                scan_id,
+            )
 
     def _create_scan_db(self, title: str):
         """Persist the scan in the database"""
