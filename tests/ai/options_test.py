@@ -15,6 +15,7 @@ def testProviderOptions_whenNoArguments_shouldLeaveEveryOptionUnset() -> None:
     assert provider_options.litellm_gateway_url is None
     assert provider_options.vertex_endpoint_url is None
     assert provider_options.ollama_base_url is None
+    assert provider_options.openai_compatible_base_url is None
     assert provider_options.qwen_base_url is None
 
 

@@ -34,9 +34,10 @@ QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 # pydantic-ai then lets the model choose the tool.
 _OPENROUTER_NO_TOOL_CHOICE_REQUIRED_PREFIXES = ("moonshotai/", "deepseek/")
 
-# Sent to Ollama servers that need no key, instead of letting the SDK fall back to
-# the OLLAMA_API_KEY environment variable.
-OLLAMA_NO_API_KEY = "api-key-not-set"
+# Sent to local servers (Ollama, generic OpenAI-compatible) that need no key, instead
+# of letting the SDK fall back to OLLAMA_API_KEY / OPENAI_API_KEY from the environment,
+# which would send a real key to whatever server is configured.
+NO_API_KEY = "api-key-not-set"
 
 # Path appended to an Azure OpenAI endpoint to reach the v1 GA API, which is
 # OpenAI-client compatible and needs no dated ``api-version``.
@@ -134,8 +135,33 @@ def build_ollama(request: base.BuildRequest) -> models.Model:
             base_url=base_url,
             api_key=request.credential
             if request.credential.strip() != ""
-            else OLLAMA_NO_API_KEY,
+            else NO_API_KEY,
         ),
+        settings=request.settings,
+    )
+
+
+def build_openai_compatible(request: base.BuildRequest) -> models.Model:
+    """Build a model served by any OpenAI-compatible API (vLLM, LM Studio, llama.cpp...).
+
+    The credential is optional, as most self-hosted servers need none. Servers differ
+    in how far they support forced tool calls, so the conservative gateway profile is
+    used: ``tool_choice=required`` off and reasoning read from ``reasoning_content``.
+    """
+    base_url = _require_http_url(
+        request.options.openai_compatible_base_url,
+        "openai_compatible_base_url",
+        "openai_compatible",
+    )
+    return openai.OpenAIChatModel(
+        model_name=request.model_name,
+        provider=openai_provider.OpenAIProvider(
+            base_url=base_url,
+            api_key=request.credential
+            if request.credential.strip() != ""
+            else NO_API_KEY,
+        ),
+        profile=base.reasoning_content_profile(supports_tool_choice_required=False),
         settings=request.settings,
     )
 

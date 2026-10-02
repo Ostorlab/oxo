@@ -105,7 +105,7 @@ def testSupportedProviders_whenCompared_shouldAllBeCoveredByTheBuildCases() -> N
     """Fails when a builder is registered without a case in ``_BUILD_CASES``.
 
     ``google_vertex_endpoint`` needs a service account and an endpoint URL, and ``ollama``
-    a server URL, so they are covered in ``providers/vertex_endpoint_test.py`` and
+    and ``openai_compatible`` a server URL, so they are covered in ``providers/vertex_endpoint_test.py`` and
     ``providers/openai_compatible_test.py``.
     """
     covered = {factory.parse_identifier(case[0])[0] for case in _BUILD_CASES}
@@ -113,6 +113,7 @@ def testSupportedProviders_whenCompared_shouldAllBeCoveredByTheBuildCases() -> N
     assert set(factory.SUPPORTED_PROVIDERS) == covered | {
         "google_vertex_endpoint",
         "ollama",
+        "openai_compatible",
     }
 
 

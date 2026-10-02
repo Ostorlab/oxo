@@ -177,12 +177,15 @@ pip install -e ".[testing,scanner,agent,serve]"
   The registry coverage tests fail until steps 2–4 are done.
 - Request timeouts come from `settings.default_settings(timeout=...)`: pydantic-ai sends
   `ModelSettings.timeout` with every request, overriding any HTTP client timeout.
-- Every provider requires a credential except `ollama`, the sole entry in
-  `factory._CREDENTIAL_OPTIONAL`: local servers run with no key, while a key for Ollama's hosted API
-  is the caller's responsibility.
-- Builders always pass pydantic-ai an explicit credential and URL. For `ollama` that means the
-  `OLLAMA_NO_API_KEY` placeholder when no key is given, plus the required `ollama_base_url`; this is
-  what stops pydantic-ai falling back to `OLLAMA_API_KEY` / `OLLAMA_BASE_URL`, so keep both.
+- Every provider requires a credential except those in `factory._CREDENTIAL_OPTIONAL`: `ollama` and
+  `openai_compatible` (any OpenAI-compatible server: vLLM, LM Studio, llama.cpp, LocalAI, TGI).
+  Local servers run with no key; a key for a hosted or secured server is the caller's
+  responsibility.
+- Builders always pass pydantic-ai an explicit credential and URL. For keyless local servers that
+  means the `NO_API_KEY` placeholder plus the required `ollama_base_url` /
+  `openai_compatible_base_url`; this is what stops pydantic-ai falling back to `OLLAMA_*` or
+  `OPENAI_API_KEY` / `OPENAI_BASE_URL` (which would send a real key to the configured server), so
+  keep both.
 - Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
   secrets on the platform.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never

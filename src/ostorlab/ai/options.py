@@ -19,6 +19,8 @@ class ProviderOptions:
             ``google_vertex_endpoint``. Must not end with a trailing slash.
         ollama_base_url: OpenAI-compatible base URL of the Ollama server, required by
             ``ollama`` (e.g. ``http://localhost:11434/v1``).
+        openai_compatible_base_url: Base URL of any OpenAI-compatible server, required
+            by ``openai_compatible`` (e.g. ``http://localhost:8000/v1`` for vLLM).
         qwen_base_url: DashScope base URL for ``qwen``. Defaults to the international
             endpoint; DashScope keys are region-bound, so keys from another region
             need that region's URL.
@@ -27,4 +29,5 @@ class ProviderOptions:
     litellm_gateway_url: str | None = None
     vertex_endpoint_url: str | None = None
     ollama_base_url: str | None = None
+    openai_compatible_base_url: str | None = None
     qwen_base_url: str | None = None
