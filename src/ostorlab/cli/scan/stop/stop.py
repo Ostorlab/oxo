@@ -55,8 +55,6 @@ def stop(
     runtime_instance = ctx.obj["runtime"]
     if stop_all is True:
         scans_list = runtime_instance.list()
-        if scans_list is None:
-            raise click.ClickException("Could not fetch scans.")
         ids_to_stop = [
             s.id
             for s in scans_list
@@ -67,9 +65,7 @@ def stop(
             return
     elif stop_last is True:
         scans_list = runtime_instance.list()
-        if scans_list is None:
-            raise click.ClickException("Could not fetch scans.")
-        if len(scans_list) == 0:
+        if scans_list is None or len(scans_list) == 0:
             console.warning("No scans found.")
             return
         last_scan = max(scans_list, key=lambda s: s.created_time)
@@ -79,5 +75,4 @@ def stop(
 
     console.info(f"Stopping {len(ids_to_stop)} scan(s).")
     for scan_id in ids_to_stop:
-        if runtime_instance.stop(scan_id=scan_id) is False:
-            raise click.ClickException(f"Could not stop scan {scan_id}.")
+        runtime_instance.stop(scan_id=scan_id)

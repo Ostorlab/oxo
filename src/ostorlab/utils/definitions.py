@@ -3,9 +3,6 @@
 import dataclasses
 import json
 from typing import Any
-from typing import Optional
-
-ArgValue = bytes | int | float | str | bool | list[Any] | dict[str, Any]
 
 
 @dataclasses.dataclass
@@ -16,7 +13,7 @@ class Arg:
 
     name: str
     type: str
-    value: Optional[ArgValue] = None
+    value: bytes | int | float | str | bool | None = None
     description: str | None = None
 
     @classmethod
@@ -24,14 +21,22 @@ class Arg:
         cls,
         name: str,
         type: str,
-        value: Optional[ArgValue] = None,
+        value: bytes | float | str | bool | None = None,
         description: str | None = None,
     ) -> "Arg":
-        """Build an argument from native values or API/CLI text transport."""
-        if isinstance(value, bytes) and type != "binary":
-            value = Arg.convert_str(value_str=value.decode(), target_type=type)
+        if isinstance(value, bytes):
+            # When the value comes from a scan payload received from the API.
+            if type != "binary":
+                value = Arg.convert_str(value_str=value.decode(), target_type=type)
+
+        # When the value comes from the CLI arguments using --arg.
         elif isinstance(value, str):
             value = Arg.convert_str(value_str=value, target_type=type)
+
+        # When the value comes from the CLI with a YAML file for the group definition.
+        else:
+            # In this case, we don't need to parse the value since it will already be in the correct type.
+            pass
 
         return cls(name, type, value, description)
 
@@ -53,14 +58,9 @@ class Arg:
         """
         if target_type == "string":
             return value_str
-        elif target_type == "number":
-            try:
-                return int(value_str)
-            except ValueError:
-                return float(value_str)
-        elif target_type == "int":
+        elif target_type in ("number", "int"):
             return int(value_str)
-        elif target_type in ("boolean", "bool"):
+        elif target_type == "boolean":
             return value_str.lower() == "true"
         elif target_type == "array":
             try:

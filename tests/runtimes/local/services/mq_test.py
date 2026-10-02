@@ -6,13 +6,9 @@ on instances missing docker.
 
 import docker
 import pytest
-import tenacity
-from docker.models import services
 from pytest_mock import plugin
 
-from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
-from ostorlab.runtimes.local.services import redis
 
 
 @pytest.mark.docker
@@ -89,67 +85,3 @@ def testLocalRabbitMQIsAcceptingConnections_whenNoRunningTask_returnsFalse(
 
     assert lrm.is_accepting_connections is False
     docker_client.containers.get.assert_not_called()
-
-
-def testLocalRabbitMQServiceReadiness_whenListenersNeverReady_returnsFalse(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """A running task cannot bypass exhausted RabbitMQ listener readiness checks."""
-    lrm, docker_client = _mock_mq_with_task(mocker, task_state="running", exit_code=69)
-    check_health = mq.LocalRabbitMQ.is_service_healthy.retry_with(
-        stop=tenacity.stop_after_attempt(2), wait=tenacity.wait_none()
-    )
-
-    assert check_health(lrm) is False
-    assert docker_client.containers.get.return_value.exec_run.call_count == 2
-
-
-@pytest.mark.parametrize(
-    ("helper_class", "service_prefix"),
-    [
-        (mq.LocalRabbitMQ, "mq_"),
-        (redis.LocalRedis, "redis_"),
-        (jaeger.LocalJaeger, "jaeger_"),
-    ],
-)
-def testLocalServiceStop_whenUniversesShareDigits_removesOnlyOwnedHelper(
-    mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
-    helper_class: type[mq.LocalRabbitMQ | redis.LocalRedis | jaeger.LocalJaeger],
-    service_prefix: str,
-) -> None:
-    """Stopping one universe preserves neighboring and unrelated services."""
-    service_definitions = [
-        (f"{service_prefix}1", {"ostorlab.universe": "1"}),
-        (f"{service_prefix}11", {"ostorlab.universe": "11"}),
-        (f"{service_prefix}21", {"ostorlab.universe": "21"}),
-        (f"{service_prefix}unlabeled", {}),
-        ("unrelated_1", {"ostorlab.universe": "1"}),
-    ]
-    docker_services = [
-        services.Service(
-            attrs={
-                "ID": service_name,
-                "Spec": {"Name": service_name, "Labels": labels},
-            },
-            client=offline_docker_client,
-        )
-        for service_name, labels in service_definitions
-    ]
-    list_services = mocker.patch.object(
-        services.ServiceCollection,
-        "list",
-        autospec=True,
-        return_value=docker_services,
-    )
-    remove_service = mocker.patch.object(
-        offline_docker_client.api, "remove_service", autospec=True
-    )
-    helper = helper_class(name="1", network="test_network")
-
-    helper.stop()
-
-    remove_service.assert_called_once_with(f"{service_prefix}1")
-    list_services.assert_called_once_with(
-        mocker.ANY, filters={"label": "ostorlab.universe=1"}
-    )

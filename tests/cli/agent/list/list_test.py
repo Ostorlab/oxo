@@ -1,15 +1,11 @@
 """Tests for CLI agent list command."""
 
-import docker
 from click import testing
-from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testAgentListCLI_always_listDockerImagesWithAgent(
-    mocker: plugin.MockerFixture, offline_docker_client: docker.DockerClient
-) -> None:
+def testAgentListCLI_always_listDockerImagesWithAgent(mocker):
     """Test oxo agent list CLI command returns list of installed agents.
 
     This is just a smoke test to avoid a complex mock

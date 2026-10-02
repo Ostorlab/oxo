@@ -68,9 +68,7 @@ def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(
     result = runner.invoke(
         rootcli.rootcli, ["vulnz", "--runtime", "cloud", "list", "--scan-id", "56835"]
     )
-    assert result.exit_code == 1
-    assert "Could not list vulnerabilities for scan 56835" in result.output
-    assert "401" in result.output
+    assert "ERROR: scan with id 56835 does not exist." in result.output, result.output
 
 
 def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(

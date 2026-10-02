@@ -3,7 +3,6 @@
 import ipaddress
 import pathlib
 import threading
-import typing
 import uuid
 
 import graphene
@@ -520,35 +519,6 @@ class StopScansMutation(graphene.Mutation):
             return StopScansMutation(scans=scans)
 
 
-def _argument_from_input(
-    argument: typing.Any,
-) -> utils_definitions.Arg:
-    """Normalize API transport values before canonical database encoding."""
-    if argument.type in (
-        "string",
-        "number",
-        "int",
-        "boolean",
-        "bool",
-        "array",
-        "object",
-    ):
-        return utils_definitions.Arg.build(
-            name=argument.name,
-            type=argument.type,
-            value=argument.value,
-            description=argument.description,
-        )
-    return utils_definitions.Arg(
-        name=argument.name,
-        type=argument.type,
-        value=common.Bytes.coerce_bytes(argument.value)
-        if argument.value is not None
-        else None,
-        description=argument.description,
-    )
-
-
 class PublishAgentGroupMutation(graphene.Mutation):
     """Create agent group."""
 
@@ -579,13 +549,7 @@ class PublishAgentGroupMutation(graphene.Mutation):
         group = models.AgentGroup.create(
             name=agent_group.name,
             description=agent_group.description,
-            agents=[
-                definitions.AgentSettings(
-                    key=agent.key,
-                    args=[_argument_from_input(argument) for argument in agent.args],
-                )
-                for agent in typing.cast(list[typing.Any], agent_group.agents)
-            ],
+            agents=agent_group.agents,
             asset_types=asset_types,
         )
         return PublishAgentGroupMutation(agent_group=group)
@@ -664,12 +628,10 @@ class RunScanMutation(graphene.Mutation):
                         key=agent.key.split(":")[0],
                         version=agent.key.split(":")[1] if ":" in agent.key else None,
                         args=[
-                            utils_definitions.Arg(
+                            utils_definitions.Arg.build(
                                 name=arg.name,
                                 type=arg.type,
-                                value=models.AgentArgument.from_bytes(
-                                    arg.type, arg.value
-                                ),
+                                value=arg.value,
                                 description=arg.description,
                             )
                             for arg in session.query(models.AgentArgument)

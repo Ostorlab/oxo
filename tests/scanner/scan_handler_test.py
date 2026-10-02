@@ -10,7 +10,6 @@ from ostorlab.utils import scanner_state_reporter
 
 def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """handle_messages should forward the api_key to _trigger_scan_with_rollback
     so the image pull uses a short-lived registry token."""
@@ -56,7 +55,6 @@ def testHandleMessages_whenApiKeyProvided_forwardsApiKeyToStartScan(
 
 def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """_count_running_universes should count distinct universes, not services."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
@@ -65,16 +63,13 @@ def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    mocker.patch(
-        "docker.models.services.ServiceCollection.list",
-        autospec=True,
-        return_value=[
-            mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
-            mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
-            mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "43"}}}),
-            mocker.MagicMock(attrs={"Spec": {"Labels": {}}}),
-        ],
-    )
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._docker_client.services.list.return_value = [
+        mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
+        mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
+        mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "43"}}}),
+        mocker.MagicMock(attrs={"Spec": {"Labels": {}}}),
+    ]
 
     result = scan_handler_instance._count_running_universes()
 
@@ -83,7 +78,6 @@ def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
 
 def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """A Docker error must not let the host claim more scans."""
     state_reporter = scanner_state_reporter.ScannerStateReporter(
@@ -94,10 +88,9 @@ def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
     scan_handler_instance = scan_handler.ScanHandler(
         state_reporter=state_reporter, max_concurrent_scans=3
     )
-    mocker.patch(
-        "docker.models.services.ServiceCollection.list",
-        autospec=True,
-        side_effect=docker.errors.DockerException("boom"),
+    scan_handler_instance._docker_client = mocker.MagicMock()
+    scan_handler_instance._docker_client.services.list.side_effect = (
+        docker.errors.DockerException("boom")
     )
 
     result = scan_handler_instance._count_running_universes()
@@ -107,7 +100,6 @@ def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
 
 def testReserveSingleScan_whenFirstScanSucceeds_returnsScanData(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """_reserve_single_scan should return scan data when the first reservation succeeds."""
     runner = mocker.MagicMock()
@@ -138,7 +130,6 @@ def testReserveSingleScan_whenFirstScanSucceeds_returnsScanData(
 
 def testReserveSingleScan_whenReservationFails_skipsAndTriesNext(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """_reserve_single_scan should try the next scan when reservation fails."""
     mocker.patch.object(
@@ -185,7 +176,6 @@ def testReserveSingleScan_whenReservationFails_skipsAndTriesNext(
 
 def testReserveSingleScan_whenAllFail_returnsNone(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """_reserve_single_scan should return None when all reservations fail."""
     runner = mocker.MagicMock()
@@ -213,7 +203,6 @@ def testReserveSingleScan_whenAllFail_returnsNone(
 
 def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """_trigger_scan_with_rollback should rollback scan state when callbacks.start_scan raises."""
     runner = mocker.MagicMock()
@@ -294,7 +283,6 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
 
 def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
     mocker: plugin.MockerFixture,
-    offline_docker_client: docker.DockerClient,
 ) -> None:
     """_reserve_single_scan should skip entries with no id."""
     runner = mocker.MagicMock()

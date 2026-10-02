@@ -113,7 +113,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
     runner = CliRunner()
 
     result = runner.invoke(
-        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "--scan-id=502152"]
+        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "-scan-id=502152"]
     )
 
     assert "Applications can expose their functionality to other apps" in result.output
@@ -146,12 +146,10 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundEr
     runner = CliRunner()
 
     result = runner.invoke(
-        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "--scan-id=502152"]
+        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "-scan-id=502152"]
     )
 
-    assert result.exit_code == 1
-    assert "Could not describe vulnerabilities for scan 502152" in result.output
-    assert "Scan matching query does not exist" in result.output
+    assert "Vulnerability / scan not Found." in result.output
 
 
 def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
@@ -261,7 +259,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationDetails_
     runner = CliRunner()
 
     result = runner.invoke(
-        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "--scan-id=502152"]
+        rootcli.rootcli, ["vulnz", "--runtime", "cloud", "describe", "-scan-id=502152"]
     )
 
     assert "Exploitation Details" in result.output

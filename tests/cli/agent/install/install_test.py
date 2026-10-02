@@ -68,9 +68,7 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
 
 
 def testAgentInstallCLI_whenAgentExists_installsAgent(
-    mocker: plugin.MockerFixture,
-    httpx_mock: pytest_httpx.HTTPXMock,
-    offline_docker_client: docker.DockerClient,
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
 ) -> None:
     """Test oxo agent install CLI command with a valid agent_key value should install the agent."""
 

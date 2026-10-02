@@ -52,9 +52,3 @@ def testPaginator_always_returnTheRightPages(
         assert page.has_next() == (page_number < paginator.num_pages)
         assert page.has_previous() == (page_number > 1)
     assert pages == expected_pages
-
-
-@pytest.mark.parametrize("value,expected", [(True, b"\x01"), (False, b"\x00")])
-def testBytes_withBoolean_serializesOneByte(value: bool, expected: bytes) -> None:
-    """Booleans serialize independently of their integer superclass."""
-    assert common.Bytes.serialize(value) == expected

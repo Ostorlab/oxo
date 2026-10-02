@@ -6,7 +6,6 @@ import logging
 import os
 import pathlib
 import uuid
-from typing import Optional
 
 import docker
 import tenacity
@@ -79,11 +78,13 @@ class LocalRabbitMQ:
 
     def stop(self) -> None:
         """Stop local Rabiit MQ instance."""
-        for service in self._docker_client.services.list(
-            filters={"label": f"ostorlab.universe={self._name}"}
-        ):
+        for service in self._docker_client.services.list():
             universe = service.attrs["Spec"]["Labels"].get("ostorlab.universe")
-            if universe == self._name and service.name.startswith("mq_"):
+            if (
+                universe is not None
+                and service.name.startswith("mq_")
+                and self._name in universe
+            ):
                 service.remove()
 
     def _create_network(self):
@@ -133,7 +134,7 @@ class LocalRabbitMQ:
             filename=MQ_ADVANCED_CONF_PATH,
         )
 
-    def _start_mq(self) -> Optional[services.Service]:
+    def _start_mq(self) -> services.Service:
         try:
             logger.info("starting MQ")
             endpoint_spec = types.services.EndpointSpec(
@@ -165,12 +166,13 @@ class LocalRabbitMQ:
         except docker.errors.APIError as e:
             error_message = f"MQ service could not be started. Reason: {e}."
             logger.error(error_message)
-            return None
+            return
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
         wait=tenacity.wait_fixed(MQ_READINESS_WAIT_SECONDS),
-        retry_error_callback=lambda _: False,
+        # return last value and don't raise RetryError exception.
+        retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def is_service_healthy(self) -> bool:
@@ -179,8 +181,6 @@ class LocalRabbitMQ:
         A running task only means the container started; RabbitMQ needs a few more seconds before its AMQP
         listener accepts connections, and agents started earlier fail to connect.
         """
-        if self._mq_service is None:
-            return False
         logger.info("checking service %s", self._mq_service.name)
         return self.is_healthy and self.is_accepting_connections
 
