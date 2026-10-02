@@ -6,8 +6,10 @@ import click
 
 from ostorlab import exceptions
 from ostorlab.assets import phone_number
+from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 
+console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +35,4 @@ def phone_number_cli(ctx: click.core.Context, numbers: list[str]) -> None:
             )
             runtime.link_assets_scan(created_scan.id, assets)
     except exceptions.OstorlabError as e:
-        raise click.ClickException(
-            f"An error was encountered while running the scan: {e}"
-        ) from e
+        console.error(f"An error was encountered while running the scan: {e}")

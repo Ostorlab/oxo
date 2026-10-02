@@ -57,6 +57,4 @@ def ios_ipa(
             runtime.link_assets_scan(created_scan.id, assets)
 
     except exceptions.OstorlabError as e:
-        raise click.ClickException(
-            f"An error was encountered while running the scan: {e}"
-        ) from e
+        console.error(f"An error was encountered while running the scan: {e}")
