@@ -29,6 +29,7 @@ _BUILDERS: Final[Mapping[str, base.Builder]] = {
     "aws_bedrock": bedrock.build_aws_bedrock,
     "azure_ai_foundry": openai_compatible.build_azure_ai_foundry,
     "deepseek": openai_compatible.build_deepseek,
+    "earthruntime": openai_compatible.build_earthruntime,
     "fireworks": openai_compatible.build_fireworks,
     "google": google.build_google,
     "google_vertex": google.build_google_vertex,

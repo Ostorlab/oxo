@@ -27,6 +27,7 @@ _LITELLM_OPTIONS = options.ProviderOptions(
         ("openai/gpt-5.2", "https://api.openai.com/v1/"),
         ("openrouter/moonshotai/kimi-k2.6", "https://openrouter.ai/api/v1/"),
         ("z_ai/glm-5", "https://api.z.ai/api/paas/v4/"),
+        ("earthruntime/deepseek-v4-flash", "https://staging.earthruntime.com/v1/"),
         ("litellm/openrouter/zai/glm-4", "https://litellm.example.com/v1/"),
     ],
 )
@@ -44,7 +45,7 @@ def testBuildModel_whenOpenAICompatibleProvider_shouldTargetItsEndpointWithTheKe
 
 @pytest.mark.parametrize(
     "identifier",
-    ["z_ai/glm-5", "litellm/openrouter/zai/glm-4"],
+    ["z_ai/glm-5", "earthruntime/deepseek-v4-flash", "litellm/openrouter/zai/glm-4"],
 )
 def testBuildModel_whenGatewayProvider_shouldConfigureReasoningContentProfile(
     identifier: str,
