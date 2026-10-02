@@ -133,7 +133,7 @@ def build_ollama(request: base.BuildRequest) -> models.Model:
         model_name=request.model_name,
         provider=ollama_provider.OllamaProvider(
             base_url=base_url,
-            api_key=request.credential
+            api_key=request.credential.strip()
             if request.credential.strip() != ""
             else NO_API_KEY,
         ),
@@ -157,7 +157,7 @@ def build_openai_compatible(request: base.BuildRequest) -> models.Model:
         model_name=request.model_name,
         provider=openai_provider.OpenAIProvider(
             base_url=base_url,
-            api_key=request.credential
+            api_key=request.credential.strip()
             if request.credential.strip() != ""
             else NO_API_KEY,
         ),

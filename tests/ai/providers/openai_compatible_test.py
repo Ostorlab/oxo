@@ -427,5 +427,26 @@ def testRunModel_whenOpenAICompatibleWithoutKey_shouldCallTheServerWithoutTheOpe
 
     request = httpx_mock.get_request()
     assert request is not None
+    assert request.method == "POST"
+    assert str(request.url) == "http://gpu-box:8000/v1/chat/completions"
     assert request.headers["authorization"] == "Bearer api-key-not-set"
     assert "sk-real-openai-key" not in str(request.headers)
+
+
+@pytest.mark.parametrize(
+    ("identifier", "provider_options"),
+    [
+        ("openai_compatible/any-model", _LOCAL_SERVER),
+        ("ollama/qwen3:8b", _OLLAMA_OPTIONS),
+    ],
+)
+def testBuildModel_whenLocalKeyHasSurroundingWhitespace_shouldSendItStripped(
+    identifier: str, provider_options: options.ProviderOptions
+) -> None:
+    """A pasted key with a trailing newline must not reach the server literally."""
+    model = factory.build_model(
+        identifier, "  server-token\n", options=provider_options
+    )
+
+    assert isinstance(model, pydantic_openai.OpenAIChatModel)
+    assert model.client.api_key == "server-token"
