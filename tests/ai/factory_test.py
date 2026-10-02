@@ -62,6 +62,12 @@ _BUILD_CASES = [
         "openrouter/zai/glm-4",
     ),
     ("z_ai/some-model", "k", pydantic_openai.OpenAIChatModel, "some-model"),
+    (
+        "earthruntime/deepseek-v4-flash",
+        "k",
+        pydantic_openai.OpenAIChatModel,
+        "deepseek-v4-flash",
+    ),
     ("qwen/qwen3-max", "k", pydantic_openai.OpenAIChatModel, "qwen3-max"),
     ("alibaba/qwen3-max", "k", pydantic_openai.OpenAIChatModel, "qwen3-max"),
     (

@@ -31,6 +31,7 @@ PROVIDER_PRIORITY: Final[tuple[str, ...]] = (
     "fireworks",
     "mistral",
     "qwen",
+    "earthruntime",
     "ollama",
     "openai_compatible",
 )

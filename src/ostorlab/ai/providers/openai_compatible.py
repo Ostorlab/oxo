@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4"
 QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+EARTHRUNTIME_BASE_URL = "https://staging.earthruntime.com/v1"
 
 # Model families that fail on OpenRouter when tool_choice=required is forced, verified
 # live: Moonshot (Kimi) upstream providers return a 400 (kimi-k2.5 every time,
@@ -91,6 +92,16 @@ def build_openrouter(request: base.BuildRequest) -> models.Model:
 def build_z_ai(request: base.BuildRequest) -> models.Model:
     """Build a z.ai model, exposing reasoning under ``reasoning_content``."""
     return _build_gateway_model(request, Z_AI_BASE_URL)
+
+
+def build_earthruntime(request: base.BuildRequest) -> models.Model:
+    """Build a model served by Earth Runtime's OpenAI-compatible chat API.
+
+    Earth Runtime hosts open-weight models (e.g. ``deepseek-v4-flash``) under their bare
+    name. Those families differ in forced tool-call support and expose reasoning as
+    ``reasoning_content``, so the conservative gateway profile is used.
+    """
+    return _build_gateway_model(request, EARTHRUNTIME_BASE_URL)
 
 
 def build_litellm(request: base.BuildRequest) -> models.Model:

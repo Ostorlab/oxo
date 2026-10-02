@@ -185,6 +185,10 @@ pip install -e ".[testing,scanner,agent,serve]"
   complements `ollama`, which also speaks the OpenAI-compatible API but has its own provider
   (pydantic-ai's `OllamaProvider`, with per-model profiles); `openai_compatible` is the generic path
   for any other server.
+- `earthruntime/<model>` (e.g. `earthruntime/deepseek-v4-flash`) targets the open-weight models
+  Earth Runtime hosts behind an OpenAI-compatible chat API
+  (`EARTHRUNTIME_BASE_URL`, currently the staging endpoint) with the conservative gateway profile,
+  like `litellm` and `z_ai`. It requires an API key.
 - Every provider requires a credential except `ollama` and `openai_compatible`, the entries in
   `factory._CREDENTIAL_OPTIONAL`. Local servers run with no key; a key for a hosted or secured server
   is the caller's responsibility.
