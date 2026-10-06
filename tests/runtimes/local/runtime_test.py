@@ -661,8 +661,19 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAsse
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
     """Ensure a resumed scan restores its snapshot before starting the agents and does not inject the assets."""
+    for check in (
+        "is_docker_installed",
+        "is_sys_arch_supported",
+        "is_user_permitted",
+        "is_docker_working",
+        "is_swarm_initialized",
+    ):
+        mocker.patch(
+            f"ostorlab.cli.docker_requirements_checker.{check}", return_value=True
+        )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
     mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        "ostorlab.runtimes.local.runtime.LocalRuntime._check_agents_healthy",
         return_value=True,
     )
     mocker.patch(
@@ -723,10 +734,16 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSn
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
     """Ensure a resumed scan fails when its agent group cannot restore the snapshot."""
-    mocker.patch(
-        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
-        return_value=True,
-    )
+    for check in (
+        "is_docker_installed",
+        "is_sys_arch_supported",
+        "is_user_permitted",
+        "is_docker_working",
+        "is_swarm_initialized",
+    ):
+        mocker.patch(
+            f"ostorlab.cli.docker_requirements_checker.{check}", return_value=True
+        )
     mocker.patch(
         "ostorlab.runtimes.definitions.AgentSettings.container_image",
         return_value="agent_42_docker_image",
