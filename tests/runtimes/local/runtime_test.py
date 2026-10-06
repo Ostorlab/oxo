@@ -662,6 +662,10 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAsse
 ) -> None:
     """Ensure a resumed scan restores its snapshot before starting the agents and does not inject the assets."""
     mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch(
         "ostorlab.runtimes.definitions.AgentSettings.container_image",
         return_value="stop_scan_image",
         new_callable=mocker.PropertyMock,
@@ -719,6 +723,10 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSn
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
     """Ensure a resumed scan fails when its agent group cannot restore the snapshot."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
     mocker.patch(
         "ostorlab.runtimes.definitions.AgentSettings.container_image",
         return_value="agent_42_docker_image",

@@ -32,8 +32,8 @@ from urllib import parse
 
 import docker
 import httpx
-from docker import types as docker_types
 import tenacity
+from docker import types as docker_types
 from docker.models import services as docker_services
 from google.protobuf import message as protobuf_message
 
