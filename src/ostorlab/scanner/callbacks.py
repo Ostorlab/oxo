@@ -555,17 +555,27 @@ def _fetch_scan_snapshot(
     if snapshot_info is None or snapshot_info.get("downloadUrl") is None:
         raise MissingScanSnapshotError(f"snapshot of scan {scan_id} not found.")
 
+    expected_size = int(snapshot_info.get("size") or 0)
+    snapshot_data = bytearray()
     try:
-        download = httpx.get(
+        with httpx.stream(
+            "GET",
             snapshot_info["downloadUrl"],
             timeout=SNAPSHOT_DOWNLOAD_TIMEOUT.total_seconds(),
-        )
-        download.raise_for_status()
+        ) as download:
+            download.raise_for_status()
+            for chunk in download.iter_bytes():
+                snapshot_data.extend(chunk)
+                if len(snapshot_data) > expected_size:
+                    # Stop reading a download larger than the snapshot the scanning engine recorded.
+                    raise MissingScanSnapshotError(
+                        f"snapshot of scan {scan_id} is larger than its {expected_size} bytes."
+                    )
     except httpx.HTTPError as e:
         raise MissingScanSnapshotError(
             f"snapshot of scan {scan_id} could not be downloaded: {e}"
         ) from e
-    snapshot_data = download.content
+    snapshot_data = bytes(snapshot_data)
     if hashlib.sha256(snapshot_data).hexdigest() != snapshot_info.get("sha256"):
         raise MissingScanSnapshotError(
             f"snapshot of scan {scan_id} does not match its checksum."
@@ -577,14 +587,20 @@ def _fetch_scan_snapshot(
 
 
 def _delete_scan_snapshot(
-    scanner_api_runner: base_runner.APIRunner, scan_id: int
+    scanner_api_runner: base_runner.APIRunner, scan_id: int, scan_snapshot: bytes
 ) -> None:
-    """Delete the snapshot of a scan once it was restored. A remaining snapshot is only stale data."""
+    """Delete the snapshot a scan was restored from, a newer snapshot of a later pause is kept.
+
+    The scan already runs: a failed deletion only leaves stale data, removed when the scan ends, so it is logged and
+    never fails the scan.
+    """
     try:
         scanner_api_runner.execute(
-            request=scan_snapshot_api.DeleteScanSnapshotAPIRequest(scan_id=scan_id)
+            request=scan_snapshot_api.DeleteScanSnapshotAPIRequest(
+                scan_id=scan_id, sha256=hashlib.sha256(scan_snapshot).hexdigest()
+            )
         )
-    except (base_runner.Error, httpx.HTTPError):
+    except (base_runner.Error, httpx.HTTPError, ValueError):
         logger.exception("Could not delete the snapshot of scan %s.", scan_id)
 
 
@@ -657,7 +673,7 @@ def start_scan(
                 raise
 
             if scan_snapshot is not None and scanner_api_runner is not None:
-                _delete_scan_snapshot(scanner_api_runner, scan_id)
+                _delete_scan_snapshot(scanner_api_runner, scan_id, scan_snapshot)
             return runtime_instance.name
         else:
             logger.error(

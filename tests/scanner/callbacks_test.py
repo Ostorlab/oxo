@@ -2,9 +2,10 @@
 
 import base64
 import hashlib
+import json
 
-import httpx
 import pytest
+from pytest_httpx import HTTPXMock
 from pytest_mock import plugin
 
 from ostorlab.agent.schema import validator
@@ -1683,7 +1684,7 @@ def testExtractAssets_whenUrlAssetWithNoneAndEmptyUrls_shouldFilterOutInvalidLin
 
 
 def testStartScan_whenScanHasSnapshot_resumesFromSnapshotAndDeletesIt(
-    mocker: plugin.MockerFixture,
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
 ) -> None:
     """Ensure a resumed scan is started from its snapshot, which is deleted once the scan started."""
     reserved_scan = {
@@ -1710,13 +1711,8 @@ def testStartScan_whenScanHasSnapshot_resumesFromSnapshotAndDeletesIt(
         },
         {"data": {"deleteScanSnapshot": {"deleted": True}}},
     ]
-    download = mocker.patch(
-        "ostorlab.scanner.callbacks.httpx.get",
-        return_value=httpx.Response(
-            200,
-            content=b"snapshot",
-            request=httpx.Request("GET", "https://storage.googleapis.com"),
-        ),
+    httpx_mock.add_response(
+        url="https://storage.googleapis.com/snapshots/42?sig=1", content=b"snapshot"
     )
 
     callbacks.start_scan(
@@ -1731,14 +1727,17 @@ def testStartScan_whenScanHasSnapshot_resumesFromSnapshotAndDeletesIt(
         for call_arg in scanner_api_runner.execute.call_args_list
     ]
     assert requests == ["ScanSnapshotAPIRequest", "DeleteScanSnapshotAPIRequest"]
-    assert (
-        download.call_args.args[0]
-        == "https://storage.googleapis.com/snapshots/42?sig=1"
+    delete_variables = json.loads(
+        scanner_api_runner.execute.call_args_list[1].kwargs["request"].data["variables"]
     )
+    assert delete_variables == {
+        "scanId": 42,
+        "sha256": hashlib.sha256(b"snapshot").hexdigest(),
+    }
 
 
 def testStartScan_whenSnapshotDoesNotMatchItsChecksum_raisesAndDoesNotStartTheScan(
-    mocker: plugin.MockerFixture,
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
 ) -> None:
     """Ensure a corrupted snapshot download is not restored."""
     reserved_scan = {
@@ -1762,13 +1761,8 @@ def testStartScan_whenSnapshotDoesNotMatchItsChecksum_raisesAndDoesNotStartTheSc
             }
         }
     }
-    mocker.patch(
-        "ostorlab.scanner.callbacks.httpx.get",
-        return_value=httpx.Response(
-            200,
-            content=b"truncated",
-            request=httpx.Request("GET", "https://storage.googleapis.com"),
-        ),
+    httpx_mock.add_response(
+        url="https://storage.googleapis.com/snapshots/42?sig=1", content=b"snapshoX"
     )
 
     with pytest.raises(callbacks.MissingScanSnapshotError):
@@ -1806,3 +1800,83 @@ def testStartScan_whenScanSnapshotIsMissing_raisesAndDoesNotStartTheScan(
         )
 
     runtime_mock.scan.assert_not_called()
+
+
+def testStartScan_whenSnapshotDownloadIsLargerThanRecorded_raisesAndDoesNotStartTheScan(
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+) -> None:
+    """Ensure the scanner stops reading a download larger than the recorded snapshot size."""
+    reserved_scan = {
+        "id": 42,
+        "hasSnapshot": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/stop_scan"}],
+        },
+        "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = {
+        "data": {
+            "scanSnapshot": {
+                "scanId": 42,
+                "size": 8,
+                "sha256": hashlib.sha256(b"snapshot").hexdigest(),
+                "downloadUrl": "https://storage.googleapis.com/snapshots/42?sig=1",
+            }
+        }
+    }
+    httpx_mock.add_response(
+        url="https://storage.googleapis.com/snapshots/42?sig=1", content=b"x" * 1024
+    )
+
+    with pytest.raises(callbacks.MissingScanSnapshotError):
+        callbacks.start_scan(
+            reserved_scan,
+            mocker.MagicMock(),
+            scanner_api_runner=scanner_api_runner,
+        )
+
+    runtime_mock.scan.assert_not_called()
+
+
+def testStartScan_whenSnapshotDeletionFails_keepsTheStartedScan(
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+) -> None:
+    """Ensure a failed cleanup of the restored snapshot does not fail the running scan."""
+    reserved_scan = {
+        "id": 42,
+        "hasSnapshot": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/stop_scan"}],
+        },
+        "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.side_effect = [
+        {
+            "data": {
+                "scanSnapshot": {
+                    "scanId": 42,
+                    "size": 8,
+                    "sha256": hashlib.sha256(b"snapshot").hexdigest(),
+                    "downloadUrl": "https://storage.googleapis.com/snapshots/42?sig=1",
+                }
+            }
+        },
+        json.JSONDecodeError("Expecting value", "", 0),
+    ]
+    httpx_mock.add_response(
+        url="https://storage.googleapis.com/snapshots/42?sig=1", content=b"snapshot"
+    )
+
+    callbacks.start_scan(
+        reserved_scan,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+    )
+
+    runtime_mock.scan.assert_called_once()

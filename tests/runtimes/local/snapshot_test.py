@@ -4,6 +4,7 @@ import datetime
 import gzip
 
 import pytest
+from pytest_httpx import HTTPXMock
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local import snapshot
@@ -163,7 +164,9 @@ def testRestoreRedis_always_restoresRawKeysAndRecordsPauseDuration(
     mocker: plugin.MockerFixture,
 ) -> None:
     redis_client = mocker.MagicMock()
-    mocker.patch("redis.Redis.from_url", return_value=redis_client)
+    mocker.patch(
+        "redis.Redis.from_url"
+    ).return_value.__enter__.return_value = redis_client
     universe_snapshot = _universe_snapshot()
     universe_snapshot.proto.paused_at_ms = int(
         (
@@ -276,3 +279,51 @@ def testStartUniverseAgents_always_scalesStoppedServicesBackAndRemovesTheirLabel
     assert update["mode"].replicas == 3
     assert update["labels"] == {"ostorlab.universe": "42"}
     xss.update.assert_not_called()
+
+
+def testListMqTopology_whenQueueIsBoundToAmqExchange_skipsThatBinding(
+    httpx_mock: HTTPXMock,
+) -> None:
+    """amq.* exchanges are not captured, their bindings would reference an exchange missing on restore."""
+    management_url = "http://guest:guest@mq_42:15672/"
+    httpx_mock.add_response(
+        url=f"{management_url}api/exchanges/%2F",
+        json=[
+            {"name": "", "type": "direct", "durable": True, "auto_delete": False},
+            {
+                "name": "amq.direct",
+                "type": "direct",
+                "durable": True,
+                "auto_delete": False,
+            },
+            {
+                "name": "ostorlab_topic",
+                "type": "topic",
+                "durable": True,
+                "auto_delete": False,
+            },
+        ],
+    )
+    httpx_mock.add_response(
+        url=f"{management_url}api/queues/%2F",
+        json=[
+            {
+                "name": "nmap_queue",
+                "durable": True,
+                "arguments": {"x-max-priority": 255},
+            }
+        ],
+    )
+    httpx_mock.add_response(
+        url=f"{management_url}api/queues/%2F/nmap_queue/bindings",
+        json=[
+            {"source": "", "routing_key": "nmap_queue"},
+            {"source": "amq.direct", "routing_key": "nmap"},
+            {"source": "ostorlab_topic", "routing_key": "v3.asset.ip.#"},
+        ],
+    )
+
+    exchanges, queues = snapshot._list_mq_topology(management_url, "/")
+
+    assert [exchange.name for exchange in exchanges] == ["ostorlab_topic"]
+    assert [binding.exchange for binding in queues[0].bindings] == ["ostorlab_topic"]

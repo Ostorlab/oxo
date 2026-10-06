@@ -39,6 +39,15 @@ from google.protobuf import message as protobuf_message
 
 from ostorlab.runtimes.local.proto import universe_snapshot_pb2
 
+try:
+    # Agent extra requirements: the scanner imports the module to restore snapshots without installing them, only the
+    # snapshot taking and restoring code, run from agent images, uses them.
+    import aio_pika
+    import redis
+except ImportError:
+    aio_pika = None
+    redis = None
+
 logger = logging.getLogger(__name__)
 
 SNAPSHOT_VERSION = 1
@@ -75,6 +84,17 @@ class AgentsNotStoppedError(Error):
 
 class InvalidSnapshotError(Error):
     """The snapshot document cannot be restored."""
+
+
+class MissingAgentRequirementsError(Error):
+    """The agent extra requirements are needed to take or restore a snapshot."""
+
+
+def _check_agent_requirements() -> None:
+    if aio_pika is None or redis is None:
+        raise MissingAgentRequirementsError(
+            "taking or restoring a snapshot requires the ostorlab[agent] extra requirements."
+        )
 
 
 class Snapshot:
@@ -217,13 +237,16 @@ def take_snapshot(
     Returns:
         The universe snapshot.
     """
+    _check_agent_requirements()
+    # The agents are already stopped: the time spent capturing the universe counts as paused time.
+    paused_at_ms = int(time.time() * 1000)
     exchanges, queues = _list_mq_topology(mq_management_url, mq_vhost)
     asyncio.run(_read_queues_messages(mq_url, queues))
     snapshot = Snapshot(
         universe_snapshot_pb2.UniverseSnapshot(
             version=SNAPSHOT_VERSION,
             universe=universe,
-            paused_at_ms=int(time.time() * 1000),
+            paused_at_ms=paused_at_ms,
             exchanges=exchanges,
             queues=queues,
             redis_keys=_dump_redis(redis_url),
@@ -247,6 +270,7 @@ def restore_snapshot(snapshot: Snapshot, mq_url: str, redis_url: str) -> None:
         mq_url: AMQP URL of the universe RabbitMQ.
         redis_url: URL of the universe Redis.
     """
+    _check_agent_requirements()
     _restore_redis(redis_url, snapshot)
     asyncio.run(_restore_mq(mq_url, snapshot))
     logger.info(
@@ -313,7 +337,9 @@ def _list_mq_topology(
                 for binding in _get_json(
                     client, f"api/queues/{vhost}/{parse.quote(name, safe='')}/bindings"
                 )
+                # The default exchange and the excluded amq.* exchanges are not captured, neither are their bindings.
                 if binding["source"] != ""
+                and binding["source"].startswith("amq.") is False
             ]
             queues.append(
                 universe_snapshot_pb2.Queue(
@@ -339,8 +365,6 @@ async def _read_queues_messages(
 
     The connection is closed once the messages are read, which puts the messages back in their queues.
     """
-    import aio_pika
-
     connection = await aio_pika.connect(mq_url)
     try:
         channel = await connection.channel()
@@ -433,41 +457,39 @@ def _from_field_value(value: universe_snapshot_pb2.FieldValue) -> Any:
 
 
 def _dump_redis(redis_url: str) -> list[universe_snapshot_pb2.RedisKey]:
-    import redis
-
-    client = redis.Redis.from_url(redis_url)
     keys = []
-    for key in client.scan_iter(count=1000):
-        value = client.dump(key)
-        ttl_ms = client.pttl(key)
-        if value is None or ttl_ms == -2:
-            # The key expired between the scan and the dump.
-            continue
-        keys.append(
-            universe_snapshot_pb2.RedisKey(key=key, ttl_ms=max(ttl_ms, 0), value=value)
-        )
+    with redis.Redis.from_url(redis_url) as client:
+        for key in client.scan_iter(count=1000):
+            value = client.dump(key)
+            ttl_ms = client.pttl(key)
+            if value is None or ttl_ms == -2:
+                # The key expired between the scan and the dump.
+                continue
+            keys.append(
+                universe_snapshot_pb2.RedisKey(
+                    key=key, ttl_ms=max(ttl_ms, 0), value=value
+                )
+            )
     return keys
 
 
 def _restore_redis(redis_url: str, snapshot: Snapshot) -> None:
-    import redis
+    with redis.Redis.from_url(redis_url) as client:
+        pipeline = client.pipeline(transaction=False)
+        for redis_key in snapshot.proto.redis_keys:
+            pipeline.restore(
+                redis_key.key, redis_key.ttl_ms, redis_key.value, replace=True
+            )
+        pipeline.execute()
 
-    client = redis.Redis.from_url(redis_url)
-    pipeline = client.pipeline(transaction=False)
-    for redis_key in snapshot.proto.redis_keys:
-        pipeline.restore(redis_key.key, redis_key.ttl_ms, redis_key.value, replace=True)
-    pipeline.execute()
-
-    now = datetime.datetime.now(datetime.timezone.utc)
-    client.incrbyfloat(
-        PAUSED_SECONDS_KEY, max((now - snapshot.paused_at).total_seconds(), 0)
-    )
-    client.set(RESTORED_AT_KEY, now.isoformat())
+        now = datetime.datetime.now(datetime.timezone.utc)
+        client.incrbyfloat(
+            PAUSED_SECONDS_KEY, max((now - snapshot.paused_at).total_seconds(), 0)
+        )
+        client.set(RESTORED_AT_KEY, now.isoformat())
 
 
 async def _restore_mq(mq_url: str, snapshot: Snapshot) -> None:
-    import aio_pika
-
     connection = await aio_pika.connect(mq_url)
     try:
         channel = await connection.channel(publisher_confirms=True)
@@ -516,8 +538,6 @@ async def _restore_mq(mq_url: str, snapshot: Snapshot) -> None:
 
 
 def _build_message(message: universe_snapshot_pb2.Message, queue_name: str) -> Any:
-    import aio_pika
-
     headers = _from_field_table(message.headers)
     headers[RESTORE_QUEUE_HEADER] = queue_name
     optional_fields = {
@@ -552,6 +572,7 @@ def main(args: list[str] | None = None) -> None:
     parsed_args = parser.parse_args(args)
 
     logging.basicConfig(level=logging.INFO)
+    _check_agent_requirements()
     snapshot = Snapshot.from_bytes(parsed_args.snapshot.read_bytes())
     _wait_services_ready(mq_url=parsed_args.mq_url, redis_url=parsed_args.redis_url)
     # The restore runs once: retrying after a partial publish would duplicate messages.
@@ -567,15 +588,12 @@ def main(args: list[str] | None = None) -> None:
 )
 def _wait_services_ready(mq_url: str, redis_url: str) -> None:
     """Wait for the MQ and Redis services to accept connections, they report running before they do."""
-    import redis
-
-    redis.Redis.from_url(redis_url).ping()
+    with redis.Redis.from_url(redis_url) as client:
+        client.ping()
     asyncio.run(_check_mq_connection(mq_url))
 
 
 async def _check_mq_connection(mq_url: str) -> None:
-    import aio_pika
-
     connection = await aio_pika.connect(mq_url)
     await connection.close()
 

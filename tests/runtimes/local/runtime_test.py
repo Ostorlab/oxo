@@ -687,6 +687,9 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAsse
     create_volume_mock = mocker.patch(
         "ostorlab.runtimes.local.runtime.volumes.create_volume"
     )
+    snapshot_volume = mocker.patch(
+        "docker.models.volumes.VolumeCollection.get"
+    ).return_value
     restore_service = mocker.MagicMock()
     restore_service.tasks.return_value = [{"Status": {"State": "complete"}}]
     services_create_mock = mocker.patch(
@@ -723,6 +726,7 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAsse
     ]
     assert restore_kwargs["networks"] == ["ostorlab_local_network_42"]
     restore_service.remove.assert_called_once()
+    snapshot_volume.remove.assert_called_once()
     started_agents = [
         call_arg.kwargs["agent_settings"].key
         for call_arg in agent_runtime_mock.call_args_list

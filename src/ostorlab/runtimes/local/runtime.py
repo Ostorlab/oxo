@@ -56,6 +56,7 @@ LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
 # The stop scan agent takes the snapshot of a universe when its scan is paused. Its image ships the snapshot module,
 # so it also restores the snapshot when the scan resumes.
 SNAPSHOT_AGENT = "agent/ostorlab/stop_scan"
+SNAPSHOT_VOLUME_RELEASE_TIMEOUT = datetime.timedelta(seconds=30)
 SNAPSHOT_RESTORE_TIMEOUT = datetime.timedelta(minutes=10)
 SNAPSHOT_RESTORE_CHECK_INTERVAL = datetime.timedelta(seconds=2)
 
@@ -650,37 +651,38 @@ class LocalRuntime(runtime.Runtime):
             )
 
         volume_name = f"snapshot_{self.name}"
-        volumes.create_volume(
-            volume_name,
-            {snapshot.SNAPSHOT_FILENAME: scan_snapshot},
-            labels={"ostorlab.universe": self.name},
-        )
-        restore_service = self._docker_client.services.create(
-            image=snapshot_agent.container_image,
-            command=[
-                "python3",
-                "-m",
-                "ostorlab.runtimes.local.snapshot",
-                "restore",
-                "--mq-url",
-                self._mq_service.url,
-                "--redis-url",
-                self._redis_service.url,
-            ],
-            name=f"snapshot_restore_{self.name}",
-            networks=[self.network],
-            mounts=[
-                docker.types.Mount(
-                    target=snapshot.SNAPSHOT_MOUNT_PATH,
-                    source=volume_name,
-                    type="volume",
-                    read_only=True,
-                )
-            ],
-            restart_policy=docker.types.RestartPolicy(condition="none"),
-            labels={"ostorlab.universe": self.name},
-        )
+        restore_service = None
         try:
+            volumes.create_volume(
+                volume_name,
+                {snapshot.SNAPSHOT_FILENAME: scan_snapshot},
+                labels={"ostorlab.universe": self.name},
+            )
+            restore_service = self._docker_client.services.create(
+                image=snapshot_agent.container_image,
+                command=[
+                    "python3",
+                    "-m",
+                    "ostorlab.runtimes.local.snapshot",
+                    "restore",
+                    "--mq-url",
+                    self._mq_service.url,
+                    "--redis-url",
+                    self._redis_service.url,
+                ],
+                name=f"snapshot_restore_{self.name}",
+                networks=[self.network],
+                mounts=[
+                    docker.types.Mount(
+                        target=snapshot.SNAPSHOT_MOUNT_PATH,
+                        source=volume_name,
+                        type="volume",
+                        read_only=True,
+                    )
+                ],
+                restart_policy=docker.types.RestartPolicy(condition="none"),
+                labels={"ostorlab.universe": self.name},
+            )
             state = self._wait_run_once_service(restore_service)
             if state != "complete":
                 logs = b"".join(
@@ -690,7 +692,26 @@ class LocalRuntime(runtime.Runtime):
                     f"snapshot restore finished with state {state}: {logs}"
                 )
         finally:
-            restore_service.remove()
+            if restore_service is not None:
+                restore_service.remove()
+            # The snapshot is no longer needed on the scanner once restored.
+            self._remove_snapshot_volume(volume_name)
+
+    def _remove_snapshot_volume(self, volume_name: str) -> None:
+        """Remove the snapshot volume once the restore container released it, the scan cleanup removes a leftover."""
+        try:
+            tenacity.retry(
+                stop=tenacity.stop_after_delay(
+                    SNAPSHOT_VOLUME_RELEASE_TIMEOUT.total_seconds()
+                ),
+                wait=tenacity.wait_fixed(1),
+                retry=tenacity.retry_if_exception_type(docker_errors.APIError),
+                reraise=True,
+            )(self._docker_client.volumes.get(volume_name).remove)()
+        except docker_errors.NotFound:
+            pass
+        except docker_errors.APIError as e:
+            logger.warning("Could not remove snapshot volume %s: %s", volume_name, e)
         console.success("Scan snapshot restored")
 
     def _wait_run_once_service(

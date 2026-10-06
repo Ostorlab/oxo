@@ -189,3 +189,13 @@ def testScanUpdateStateAPIRequest_whenFullDetails_multiAssetSelectsNoConflicting
             )
 
     assert response_names & sibling_names == set()
+
+
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsHasSnapshot() -> None:
+    """Test full details query selects hasSnapshot, which tells a resumed scan to restore its snapshot."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    assert "hasSnapshot" in api_request.query
