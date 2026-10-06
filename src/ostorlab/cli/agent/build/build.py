@@ -7,6 +7,7 @@ import pathlib
 import click
 import docker
 from docker import errors
+from rich import markup
 
 from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
@@ -40,10 +41,14 @@ def _build_image(
 ) -> None:
     """Build agent image from agent settings."""
     console.info(
-        f"Building agent [bold red]{agent_name}[/] dockerfile [bold red]{dockerfile_path}[/]"
-        f" at root [bold red]{docker_build_root}[/]."
+        f"Building agent [bold red]{markup.escape(str(agent_name))}[/]"
+        f" dockerfile [bold red]{markup.escape(str(dockerfile_path))}[/]"
+        f" at root [bold red]{markup.escape(str(docker_build_root))}[/].",
+        is_markup=True,
     )
-    with console.status(f"Building [bold red]{container_name}[/]"):
+    with console.status(
+        f"Building [bold red]{markup.escape(str(container_name))}[/]", is_markup=True
+    ):
         for log in build_progress.BuildProgress().build(
             path=docker_build_root,
             dockerfile=dockerfile_path,
@@ -59,7 +64,9 @@ def _build_image(
                 logger.debug(log)
 
     console.success(
-        f"Agent {agent_name} built, container [bold red]{container_name}[/] created."
+        f"Agent {markup.escape(str(agent_name))} built,"
+        f" container [bold red]{markup.escape(str(container_name))}[/] created.",
+        is_markup=True,
     )
 
 

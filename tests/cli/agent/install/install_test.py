@@ -13,7 +13,8 @@ from docker.models import images as images_model
 from pytest_mock import plugin
 
 from ostorlab.apis.runners import public_runner
-from ostorlab.cli import install_agent, rootcli
+from ostorlab.cli import install_agent
+from ostorlab.cli import rootcli
 
 
 def testAgentInstallCLI_whenRequiredOptionAgentKeyIsMissing_showMessage() -> None:
@@ -136,6 +137,52 @@ def testInstall_whenAgentImageIsPresent_logsAgentExistsMessage(
         )
 
     assert "agent/ostorlab/dependency_confusion already exist." in caplog.text
+
+
+def testInstall_whenUseExperimentalIsTrue_forwardsUseExperimentalToAgentFetcher(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure install forwards use_experimental down to agent_fetcher.get_details
+    so experimental agent versions are considered."""
+    get_details_mock = mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_details",
+        return_value={
+            "dockerLocation": "ostorlab.store/library/busybox",
+            "key": "agent/ostorlab/dependency_confusion",
+            "versions": {"versions": [{"version": "1.0.0"}]},
+        },
+    )
+
+    install_agent.install(
+        agent_key="agent/ostorlab/dependency_confusion",
+        docker_client=mocker.MagicMock(),
+        use_experimental=True,
+    )
+
+    get_details_mock.assert_called_once()
+    assert get_details_mock.call_args.kwargs.get("use_experimental") is True
+
+
+def testInstall_whenUseExperimentalIsNotProvided_forwardsFalseToAgentFetcher(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure install defaults use_experimental to False when not provided."""
+    get_details_mock = mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_details",
+        return_value={
+            "dockerLocation": "ostorlab.store/library/busybox",
+            "key": "agent/ostorlab/dependency_confusion",
+            "versions": {"versions": [{"version": "1.0.0"}]},
+        },
+    )
+
+    install_agent.install(
+        agent_key="agent/ostorlab/dependency_confusion",
+        docker_client=mocker.MagicMock(),
+    )
+
+    get_details_mock.assert_called_once()
+    assert get_details_mock.call_args.kwargs.get("use_experimental") is False
 
 
 def testAgentInstallCLI_whenPullFails_retries(

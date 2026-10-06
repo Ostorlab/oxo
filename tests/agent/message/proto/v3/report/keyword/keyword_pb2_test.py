@@ -1,6 +1,4 @@
-from ostorlab.agent.message.proto.v3.report.keyword import (
-    keyword_pb2,
-)
+from ostorlab.agent.message.proto.v3.report.keyword import keyword_pb2
 
 
 def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():

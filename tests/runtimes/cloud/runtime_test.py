@@ -51,6 +51,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
         return {"query": self.query, "variables": {}}
 
 
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
     mocker, httpx_mock, data_list_agent, data_create_agent_group, data_create_asset
 ):
@@ -205,7 +206,10 @@ def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormatte
         {
             "asset": {"bundleName": "com.example.harmony"},
             "metadata": [
-                {"metadataType": "CODE_LOCATION", "metadataValue": "Main.ets:42"}
+                {
+                    "metadataType": "CODE_LOCATION",
+                    "metadataValue": {"value": "Main.ets:42"},
+                }
             ],
         }
     )
@@ -223,7 +227,10 @@ def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
             {
                 "asset": {"someField": "someValue"},
                 "metadata": [
-                    {"metadataType": "FILE_PATH", "metadataValue": "/tmp/file"}
+                    {
+                        "metadataType": "FILE_PATH",
+                        "metadataValue": {"value": "/tmp/file"},
+                    }
                 ],
             }
         )

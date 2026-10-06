@@ -7,7 +7,8 @@ import logging
 import click
 
 from ostorlab import exceptions
-from ostorlab.assets import ipv4, ipv6
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
 

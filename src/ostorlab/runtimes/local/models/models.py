@@ -10,11 +10,13 @@ import struct
 import threading
 import types
 import uuid
-from typing import Any, ClassVar
+from typing import Any
+from typing import ClassVar
 
 import sqlalchemy
 from alembic import command as alembic_command
-from alembic import config, script
+from alembic import config
+from alembic import script
 from alembic.runtime import migration
 from alembic.util import exc as alembic_exceptions
 from sqlalchemy import orm
@@ -23,20 +25,18 @@ from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext import declarative
 
 from ostorlab import configuration_manager as config_manager
-from ostorlab.assets import (
-    android_aab,
-    android_apk,
-    android_store,
-    domain_name,
-    ios_ipa,
-    ios_store,
-    ip,
-    ipv4,
-    ipv6,
-    link,
-    multi_asset,
-)
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
 from ostorlab.assets import asset as base_asset
+from ostorlab.assets import domain_name
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import ip
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
+from ostorlab.assets import link
+from ostorlab.assets import multi_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.models import utils

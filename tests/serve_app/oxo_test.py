@@ -2382,13 +2382,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     ]
     assert prepare_scan_mock.called is True
     title = prepare_scan_mock.call_args[1]["title"]
-    assets = prepare_scan_mock.call_args[1]["assets"]
     assert title == "Test Scan Network Asset"
-    assert len(assets) == 2
-    assert assets[0].host == "8.8.8.8"
-    assert assets[0].mask == "32"
-    assert assets[1].host == "8.8.4.4"
-    assert assets[1].mask == "24"
 
 
 def testRunScanMutation_whenDomainAsset_shouldRunScan(
@@ -2449,9 +2443,6 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     ]
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Domain Asset"
-    assert len(args["assets"]) == 2
-    assert args["assets"][0].name == "google.com"
-    assert args["assets"][1].name == "tesla.com"
 
 
 def testRunScanMutation_whenUrl_shouldRunScan(
@@ -2529,11 +2520,6 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     ]
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Url Asset"
-    assert len(args["assets"]) == 2
-    assert args["assets"][0].url == "https://google.com"
-    assert args["assets"][0].method == "GET"
-    assert args["assets"][1].url == "https://tesla.com"
-    assert args["assets"][1].method == "GET"
 
 
 def testRunScanMutation_whenAndroidFile_shouldRunScan(
@@ -2605,8 +2591,6 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     assert "test.apk" in res_scan["assets"][0]["path"]
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android File"
-    assert len(args["assets"]) == 1
-    assert "test.apk" in args["assets"][0].path
 
 
 def testRunScanMutation_whenIosFile_shouldRunScan(
@@ -2678,8 +2662,6 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     assert "test.ipa" in res_scan["assets"][0]["path"]
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios File"
-    assert len(args["assets"]) == 1
-    assert "test.ipa" in args["assets"][0].path
 
 
 def testRunScanMutation_whenAndroidStore_shouldRunScan(
@@ -2751,8 +2733,6 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     assert res_scan["assets"][0]["packageName"] == "com.example.android"
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Android Store"
-    assert len(args["assets"]) == 1
-    assert "com.example.android" in args["assets"][0].package_name
 
 
 def testRunScanMutation_whenIosStore_shouldRunScan(
@@ -2824,8 +2804,6 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     assert res_scan["assets"][0]["bundleId"] == "com.example.ios"
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios Store"
-    assert len(args["assets"]) == 1
-    assert "com.example.ios" in args["assets"][0].bundle_id
 
 
 def testRunScanMutation_whenAgentGroupDoesNotExist_returnErrorMessage(

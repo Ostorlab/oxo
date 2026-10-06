@@ -32,6 +32,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                 scan {
                   id
                   progress
+                  useExperimentalAgents
                   hasSnapshot
                   asset {
                     __typename

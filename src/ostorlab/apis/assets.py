@@ -3,20 +3,18 @@
 import json
 
 from ostorlab.apis import request
-from ostorlab.assets import (
-    android_aab,
-    android_apk,
-    android_store,
-    domain_name,
-    file,
-    ios_ipa,
-    ios_store,
-    ip,
-    ipv4,
-    ipv6,
-    link,
-)
+from ostorlab.assets import android_aab
+from ostorlab.assets import android_apk
+from ostorlab.assets import android_store
 from ostorlab.assets import asset as base_asset
+from ostorlab.assets import domain_name
+from ostorlab.assets import file
+from ostorlab.assets import ios_ipa
+from ostorlab.assets import ios_store
+from ostorlab.assets import ip
+from ostorlab.assets import ipv4
+from ostorlab.assets import ipv6
+from ostorlab.assets import link
 
 
 class CreateAssetAPIRequest(request.APIRequest):

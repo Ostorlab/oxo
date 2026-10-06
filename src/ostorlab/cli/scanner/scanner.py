@@ -30,7 +30,8 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.scanner import scan_handler
-from ostorlab.utils import ip, scanner_state_reporter
+from ostorlab.utils import ip
+from ostorlab.utils import scanner_state_reporter
 
 console = cli_console.Console()
 
@@ -177,7 +178,7 @@ def scanner(
     parallel: int,
 ) -> None:
     """Oxo scanner enables running custom instances of scanners.
-    Scanner communicates with NATs to receive start scan messages.\n
+    Scanner polls the API to receive start scan messages.\n
     """
     if sys.platform != "linux" and sys.platform != "darwin":
         console.error("oxo scanner sub-command is only supported on Unix systems.")
@@ -235,7 +236,7 @@ def start_scanner(
     gcp_logging_credential: str | None = None,
     max_concurrent_scans: int = 1,
 ) -> None:
-    """Run subscription to nats in event loop.
+    """Run the API polling loop reserving and starting scans.
 
     Args:
         api_key: The api key to login to the platform.

@@ -22,6 +22,10 @@ class Asset(abc.ABC):
             raise MissingTargetSelector()
         return serializer.serialize(self.selector, self.__dict__).SerializeToString()
 
+    def to_dict(self) -> dict[str, Any]:
+        """Convert asset to a dict matching what is expected from protobuf."""
+        return self.__dict__
+
     @property
     def proto_field(self) -> str:
         return "asset"

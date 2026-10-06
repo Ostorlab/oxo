@@ -17,6 +17,7 @@ from ostorlab.assets import harmonyos_rpk as harmonyos_rpk_asset
 from ostorlab.assets import harmonyos_store as harmonyos_store_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
+from ostorlab.assets import ios_testflight as ios_testflight_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
@@ -38,6 +39,7 @@ class Risk(asset.Asset):
     link: link_asset.Link | None = None
     android_store: android_store_asset.AndroidStore | None = None
     ios_store: ios_store_asset.IOSStore | None = None
+    ios_testflight: ios_testflight_asset.IOSTestflight | None = None
     android_aab: android_aab_asset.AndroidAab | None = None
     android_apk: android_apk_asset.AndroidApk | None = None
     ios_ipa: ios_ipa_asset.IOSIpa | None = None

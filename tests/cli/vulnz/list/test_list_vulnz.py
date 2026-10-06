@@ -1,5 +1,6 @@
 """Tests for vulnz list command."""
 
+import pytest
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -284,7 +285,12 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                                 "asset": {
                                     "packageName": "com.firsttennessee.prepaid.vmcp"
                                 },
-                                "metadata": [],
+                                "metadata": [
+                                    {
+                                        "metadataType": "PORT",
+                                        "metadataValue": {"value": "443"},
+                                    }
+                                ],
                             },
                             "detail": {
                                 "title": "List of dynamic code loading API calls",
@@ -310,9 +316,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
                             "id": "38312826",
                             "vulnerabilityLocation": {
                                 "asset": {"host": "91.235.134.131"},
-                                "metadata": [
-                                    {"metadataType": "PORT", "metadataValue": "443"}
-                                ],
+                                "metadata": [],
                             },
                             "detail": {
                                 "title": "Application is compiled with debug mode disabled",
@@ -361,6 +365,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
     )
 
     assert "Scan 56835: Found 2 vulnerabilities." in result.output
+    assert "PORT: 443" in result.output
     assert "High" in result.output
     assert "Info" in result.output
     result_keywords = [
@@ -375,6 +380,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
     assert all(word in result.output for word in result_keywords) is True
 
 
+@pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectResult(
     httpx_mock,
 ) -> None:
@@ -492,14 +498,10 @@ def testOstorlabVulnzListCLI_whenListVulnz_showsVulnzOrderedByRiskRatingByDefaul
 
     assert result.exception is None
     risk_ratings = [
-        vuln.get("risk_rating") for vuln in table_mock.call_args_list[0][1].get("data")
+        vuln.get("risk_rating").plain
+        for vuln in table_mock.call_args_list[0][1].get("data")
     ]
-    assert risk_ratings == [
-        "[bold bright_white on #F55246]High[/]",
-        "[bold bright_white on #FF9800]Medium[/]",
-        "[bold bright_white on #FF9800]Medium[/]",
-        "[bold bright_white on #FDDB45]Low[/]",
-    ]
+    assert risk_ratings == ["High", "Medium", "Medium", "Low"]
 
 
 def testOstorlabVulnzListCLI_whenListVulnzOrderByID_showsVulnzOrderedByID(

@@ -5,8 +5,9 @@ import json
 import pytest
 
 from ostorlab.apis import assets
-from ostorlab.assets import android_aab, ipv4
+from ostorlab.assets import android_aab
 from ostorlab.assets import asset as base_asset
+from ostorlab.assets import ipv4
 
 
 def testcreateAssetApiRequest_whenFilesAreUploaded_returnsRequestWithFilesAndMapVariables():

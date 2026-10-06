@@ -15,8 +15,12 @@ from docker.models import services as docker_models_services
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import console as cli_console
-from ostorlab.cli import docker_requirements_checker, dumpers, install_agent
-from ostorlab.runtimes import definitions, docker_cleanup, runtime
+from ostorlab.cli import docker_requirements_checker
+from ostorlab.cli import dumpers
+from ostorlab.cli import install_agent
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import docker_cleanup
+from ostorlab.runtimes import runtime
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.local.models import models
 from ostorlab.utils import volumes

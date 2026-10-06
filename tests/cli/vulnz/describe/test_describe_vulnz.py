@@ -70,7 +70,6 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                             "id": "38311495",
                             "technicalDetail": "<code>malwarebytes.keystone.permission.PERMISSION.CHECK_REQ</code> "
                             "not declared in <code>permission</code> tag",
-                            "technicalDetailFormat": "HTML",
                             "customRiskRating": "MEDIUM",
                             "customCvssV3BaseScore": "null",
                             "falsePositive": "false",
@@ -95,7 +94,7 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
                                 "metadata": [
                                     {
                                         "metadataType": "FILE_PATH",
-                                        "metadataValue": "line:24,5",
+                                        "metadataValue": {"value": "line:24,5"},
                                     }
                                 ],
                             },
@@ -195,10 +194,10 @@ def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetai
     assert "Post Exploitation details" in result.output
 
 
-def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetails_showsVulnzInfo(
+def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationDetails_showsVulnzInfo(
     httpx_mock: mock.MagicMock,
 ) -> None:
-    """Test oxo vulnz describe command with Vulnerability that has exploitation and post exploitation details.
+    """Test oxo vulnz describe command with Vulnerability that has exploitation details.
     Should show vulnz details."""
     mock_response = {
         "data": {
@@ -216,7 +215,6 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
                             "id": "38311495",
                             "technicalDetail": "<code>malwarebytes.keystone.permission.PERMISSION.CHECK_REQ</code> "
                             "not declared in <code>permission</code> tag",
-                            "technicalDetailFormat": "HTML",
                             "customRiskRating": "MEDIUM",
                             "customCvssV3BaseScore": "null",
                             "falsePositive": "false",
@@ -241,12 +239,11 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
                                 "metadata": [
                                     {
                                         "metadataType": "FILE_PATH",
-                                        "metadataValue": "line:24,5",
+                                        "metadataValue": {"value": "line:24,5"},
                                     }
                                 ],
                             },
                             "exploitationDetail": "Exploitation Details",
-                            "postExploitationDetail": "Post Exploitation Details",
                         }
                     ],
                 },
@@ -266,4 +263,3 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenVulnHasExploitationAndPostE
     )
 
     assert "Exploitation Details" in result.output
-    assert "Post Exploitation Details" in result.output

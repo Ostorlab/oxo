@@ -10,7 +10,8 @@ from pytest_mock import plugin
 
 import ostorlab
 from ostorlab import exceptions
-from ostorlab.assets import android_apk, ipv4
+from ostorlab.assets import android_apk
+from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
@@ -740,3 +741,57 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSn
             assets=None,
             scan_snapshot=b"snapshot",
         )
+
+
+def testLocalRuntimeScan_always_checksServicesHealthyBeforeStartingAgents(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Agents must only start once the MQ and other core services are ready."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_sys_arch_supported",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_user_permitted", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime()
+    calls = mocker.Mock()
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_pre_agents",
+        "_start_agents",
+        "_start_post_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name, getattr(calls, name))
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+
+    runtime.scan(
+        title="test",
+        agent_group_definition=definitions.AgentGroupDefinition(agents=[]),
+        assets=None,
+    )
+
+    call_names = [call[0] for call in calls.mock_calls]
+    assert call_names.index("_check_services_healthy") < call_names.index(
+        "_start_pre_agents"
+    )
+    assert call_names.index("_check_services_healthy") < call_names.index(
+        "_start_agents"
+    )

@@ -49,7 +49,10 @@ class _ServiceLogStream:
             if self._stop_event.is_set():
                 break
             log_line = line[:-1].decode()
-            console.info(f"[{self._color} bold]{escape(name)}:[/] {escape(log_line)}")
+            console.info(
+                f"[{self._color} bold]{escape(name)}:[/] {escape(log_line)}",
+                is_markup=True,
+            )
 
     def stop(self) -> None:
         """Stop the log stream."""

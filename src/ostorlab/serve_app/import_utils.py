@@ -8,7 +8,8 @@ import uuid
 import zipfile
 
 from ostorlab import configuration_manager
-from ostorlab.runtimes.local.models import models, utils
+from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.models import utils
 from ostorlab.utils import risk_rating
 
 SCAN_JSON = "scan.json"

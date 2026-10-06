@@ -5,7 +5,8 @@ import pathlib
 
 import pytest
 
-from ostorlab.agent.schema import loader, validator
+from ostorlab.agent.schema import loader
+from ostorlab.agent.schema import validator
 
 
 def testAgentSpecValidation_whenDefinitionIsCorrect_noRaise() -> None:

@@ -6,7 +6,8 @@ import click
 from click.testing import CliRunner
 
 from ostorlab import configuration_manager
-from ostorlab.apis.runners import authenticated_runner, login_runner
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import login_runner
 from ostorlab.cli import rootcli
 
 

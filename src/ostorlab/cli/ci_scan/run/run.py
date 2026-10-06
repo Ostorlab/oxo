@@ -14,12 +14,10 @@ from ostorlab.apis import scan_create as scan_create_api
 from ostorlab.apis import scan_info as scan_info_api
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli.ci_scan.ci_scan import ci_scan
-from ostorlab.cli.ci_scan.run.ci_logger import (
-    circleci_logger,
-    console_logger,
-    github_logger,
-    logger,
-)
+from ostorlab.cli.ci_scan.run.ci_logger import circleci_logger
+from ostorlab.cli.ci_scan.run.ci_logger import console_logger
+from ostorlab.cli.ci_scan.run.ci_logger import github_logger
+from ostorlab.cli.ci_scan.run.ci_logger import logger
 from ostorlab.utils import risk_rating
 
 MINUTE = 60

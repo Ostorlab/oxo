@@ -25,7 +25,8 @@ weight: int
 import dataclasses
 from typing import Any
 
-from ostorlab.agent.message import proto_dict, serializer
+from ostorlab.agent.message import proto_dict
+from ostorlab.agent.message import serializer
 
 
 @dataclasses.dataclass

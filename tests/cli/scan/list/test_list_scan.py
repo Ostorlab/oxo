@@ -5,7 +5,8 @@ from unittest import mock
 from click.testing import CliRunner
 
 from ostorlab.apis.runners import authenticated_runner
-from ostorlab.cli import console, rootcli
+from ostorlab.cli import console
+from ostorlab.cli import rootcli
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 

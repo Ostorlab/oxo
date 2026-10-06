@@ -12,27 +12,27 @@ import logging
 from typing import Any
 
 import click
-import markdownify
 import rich
-from rich import markdown, panel
+from rich import markdown
+from rich import panel
 
 from ostorlab import configuration_manager
-from ostorlab.apis import (
-    agent_details,
-    agent_group,
-    create_agent_scan,
-    scan_list,
-    scan_stop,
-    vulnz_describe,
-    vulnz_list,
-)
+from ostorlab.apis import agent_details
+from ostorlab.apis import agent_group
 from ostorlab.apis import assets as api_assets
-from ostorlab.apis.runners import authenticated_runner, runner
+from ostorlab.apis import create_agent_scan
+from ostorlab.apis import scan_list
+from ostorlab.apis import scan_stop
+from ostorlab.apis import vulnz_describe
+from ostorlab.apis import vulnz_list
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import link
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
-from ostorlab.runtimes import definitions, runtime
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes import runtime
 from ostorlab.utils import styles
 
 logger = logging.getLogger(__name__)
@@ -216,12 +216,21 @@ class CloudRuntime(runtime.Runtime):
         elif asset_data.get("bundleName") is not None:
             bundle_name = asset_data.get("bundleName")
             location_markdwon_value = f"HarmonyOS bundle name: {bundle_name}  \n"
+        elif asset_data.get("repositoryUrl") is not None:
+            repository_url = asset_data.get("repositoryUrl")
+            location_markdwon_value = f"Repository: {repository_url}  \n"
+        elif asset_data.get("nodeKey") is not None:
+            node_type = asset_data.get("nodeType")
+            node_key = asset_data.get("nodeKey")
+            location_markdwon_value = f"Node {node_type}: {node_key}  \n"
         else:
             raise ValueError(f"Unknown asset : {asset_data}")
 
         for metadata in location.get("metadata", []):
             metad_type = metadata.get("metadataType")
-            metad_value = metadata.get("metadataValue")
+            metad_value = (metadata.get("metadataValue") or {}).get("value")
+            if metad_value is None:
+                continue
             location_markdwon_value += f"{metad_type}: {metad_value}  \n"
 
         return location_markdwon_value
@@ -427,34 +436,17 @@ class CloudRuntime(runtime.Runtime):
                     markdown.Markdown(references_markdown_value), title="references"
                 )
             )
-        if vulnerability["technicalDetailFormat"] == "HTML":
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(
-                        markdownify.markdownify(vulnerability["technicalDetail"])
-                    ),
-                    title="Technical details",
-                )
+        rich.print(
+            panel.Panel(
+                markdown.Markdown(vulnerability["technicalDetail"]),
+                title="Technical details",
             )
-        else:
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(vulnerability["technicalDetail"]),
-                    title="Technical details",
-                )
-            )
+        )
         if vulnerability.get("exploitationDetail") is not None:
             rich.print(
                 panel.Panel(
                     markdown.Markdown(vulnerability.get("exploitationDetail")),
                     title="Exploitation details",
-                )
-            )
-        if vulnerability.get("postExploitationDetail") is not None:
-            rich.print(
-                panel.Panel(
-                    markdown.Markdown(vulnerability.get("postExploitationDetail")),
-                    title="Post Exploitation details",
                 )
             )
 

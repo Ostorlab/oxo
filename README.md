@@ -5,7 +5,7 @@
 
 # OXO Scan Orchestration Engine
 
-OXO is a security scanning framework built for modularity, scalability, and simplicity.
+OXO is a security scanning framework built for modularity, scalability, and simplicity. It is open source and maintained by [Ostorlab](https://ostorlab.co).
 
 OXO Engine combines specialized tools to work cohesively to find vulnerabilities and perform actions like recon, enumeration, and fingerprinting.
 
@@ -183,6 +183,7 @@ Implementations of popular tools such as:
 ## Credits
 
 As an open-source project in a rapidly developing field, we are always open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
 We would like to thank the following contributors for their help in making OXO a better tool:
 

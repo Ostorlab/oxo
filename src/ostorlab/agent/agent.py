@@ -23,7 +23,8 @@ from typing import Any
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
-from ostorlab.agent.mixins import agent_healthcheck_mixin, agent_mq_mixin
+from ostorlab.agent.mixins import agent_healthcheck_mixin
+from ostorlab.agent.mixins import agent_mq_mixin
 from ostorlab.agent.mixins import agent_open_telemetry_mixin as open_telemetry_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.utils import strings as string_utils

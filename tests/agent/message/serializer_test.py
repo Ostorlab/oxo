@@ -111,3 +111,33 @@ def testSerialize_whenDataclassWithInvalidField_shouldRaiseSerializationError() 
 
     with pytest.raises(serializer.SerializationError):
         serializer.serialize("v3.asset.multi_asset", {"android_store": _InvalidAsset()})
+
+
+def testSerializeAndDeserialize_withUseDeviceSessionToken_returnsCorrectObject() -> (
+    None
+):
+    """A use.device message carrying a device_session_token round-trips correctly.
+
+    Regression test for the DaaS device_session_token field: agents allocating a
+    device through the scanning engine's Device-as-a-Service API need this field
+    to authenticate DaaS device-action calls for that allocation.
+    """
+    serialized = serializer.serialize(
+        "v3.use.device",
+        {
+            "device_id": "939AX05RHG",
+            "device_type": "android",
+            "device_version": "11",
+            "device_session_token": "5f8c7a2e-1b3d-4e6f-9a0b-1c2d3e4f5a6b",
+        },
+    )
+
+    deserialized_object = serializer.deserialize(
+        "v3.use.device", serialized.SerializeToString()
+    )
+
+    assert deserialized_object.device_id == "939AX05RHG"
+    assert (
+        deserialized_object.device_session_token
+        == "5f8c7a2e-1b3d-4e6f-9a0b-1c2d3e4f5a6b"
+    )

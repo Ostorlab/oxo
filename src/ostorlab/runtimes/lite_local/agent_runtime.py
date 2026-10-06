@@ -14,10 +14,12 @@ import random
 import uuid
 
 import docker
-from docker import constants, errors
+from docker import constants
+from docker import errors
 from docker.types import services as docker_types_services
 
-from ostorlab import configuration_manager, exceptions
+from ostorlab import configuration_manager
+from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
 from ostorlab.utils import definitions as utils_definitions

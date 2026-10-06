@@ -133,8 +133,8 @@ class MultiAsset(asset.Asset):
             if key in MOBILE_ASSET_FIELDS and value is not None
         ]
 
-    def to_proto(self) -> bytes:
-        """Serialize the grouped assets into a single multi asset proto message.
+    def to_dict(self) -> dict[str, Any]:
+        """Convert multi asset to a dict matching what is expected from protobuf.
 
         Raises ValueError if more than one mobile asset is set, since the proto oneof
         would silently drop the extras."""
@@ -156,6 +156,14 @@ class MultiAsset(asset.Asset):
             else:
                 data[key] = value
 
+        return data
+
+    def to_proto(self) -> bytes:
+        """Serialize the grouped assets into a single multi asset proto message.
+
+        Raises ValueError if more than one mobile asset is set, since the proto oneof
+        would silently drop the extras."""
+        data = self.to_dict()
         return bytes(serializer.serialize(self.selector, data).SerializeToString())
 
     @property

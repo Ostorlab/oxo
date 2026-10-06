@@ -8,7 +8,8 @@ import click
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.scan import scan
 from ostorlab.runtimes.local.models import models
-from ostorlab.utils import risk_rating, styles
+from ostorlab.utils import risk_rating
+from ostorlab.utils import styles
 
 console = cli_console.Console()
 

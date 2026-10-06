@@ -121,13 +121,50 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
                                 "metadata": [
                                     {
                                         "metadataType": "CODE_LOCATION",
-                                        "metadataValue": "some/file.java:42",
-                                    }
+                                        "metadataValue": {"value": "some/file.java:42"},
+                                    },
+                                    {"metadataType": "CALL_TRACE", "metadataValue": {}},
                                 ],
                             },
                         },
                         {
+                            "id": "37199943",
+                            "technicalDetail": "someData",
+                            "detail": {
+                                "title": "t",
+                                "shortDescription": "s",
+                                "description": "d",
+                                "recommendation": "r",
+                                "cvssV3Vector": None,
+                                "riskRating": "LOW",
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {"repositoryUrl": "https://github.com/o/r"},
+                                "metadata": [],
+                            },
+                        },
+                        {
+                            "id": "37199944",
+                            "technicalDetail": "someData",
+                            "detail": {
+                                "title": "t",
+                                "shortDescription": "s",
+                                "description": "d",
+                                "recommendation": "r",
+                                "cvssV3Vector": None,
+                                "riskRating": "LOW",
+                            },
+                            "vulnerabilityLocation": {
+                                "asset": {"nodeType": "SERVICE", "nodeKey": "svc-42"},
+                                "metadata": [],
+                            },
+                        },
+                        {
                             "id": "37199942",
+                            "vulnerabilityLocation": {
+                                "asset": {"bundleName": "com.example.harmony"},
+                                "metadata": [],
+                            },
                             "technicalDetail": "someData",
                             "detail": {
                                 "title": "Use of Outdated Vulnerable Component",
@@ -180,7 +217,12 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
     assert data[0]["id"] == "37200006"
     assert "Use of Outdated Vulnerable Component" in data[0]["title"]
     assert "dummy title: https://dummy.co/dummy2" in data[0]["references"]
-    assert "Android package name: a.b.c" in data[0]["location"]
+    assert data[0]["location"] == (
+        "Android package name: a.b.c  \nCODE_LOCATION: some/file.java:42  \n"
+    )
+    assert data[1]["location"] == "Repository: https://github.com/o/r  \n"
+    assert data[2]["location"] == "Node SERVICE: svc-42  \n"
+    assert data[3]["location"] == "HarmonyOS bundle name: com.example.harmony  \n"
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
