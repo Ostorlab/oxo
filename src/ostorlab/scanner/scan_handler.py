@@ -212,6 +212,7 @@ class ScanHandler:
                 state_reporter=self._state_reporter,
                 api_key=api_key,
                 gcp_logging_credential=self._gcp_logging_credential,
+                scanner_api_runner=runner,
             )
             if started_scan_id is None:
                 logger.warning(

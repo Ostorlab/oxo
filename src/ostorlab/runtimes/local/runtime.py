@@ -5,8 +5,10 @@ a local RabbitMQ.
 """
 
 import builtins
+import datetime
 import logging
 import threading
+import time
 from concurrent import futures
 
 import click
@@ -29,7 +31,7 @@ from ostorlab.cli import (
 )
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions, docker_cleanup, runtime
-from ostorlab.runtimes.local import agent_runtime, log_streamer
+from ostorlab.runtimes.local import agent_runtime, log_streamer, snapshot
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import jaeger, mq, redis
 from ostorlab.utils import definitions as utils_definitions
@@ -44,6 +46,11 @@ ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
+# The stop scan agent takes the snapshot of a universe when its scan is paused. Its image ships the snapshot module,
+# so it also restores the snapshot when the scan resumes.
+SNAPSHOT_AGENT = "agent/ostorlab/stop_scan"
+SNAPSHOT_RESTORE_TIMEOUT = datetime.timedelta(minutes=10)
+SNAPSHOT_RESTORE_CHECK_INTERVAL = datetime.timedelta(seconds=2)
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -66,6 +73,10 @@ class AgentNotHealthy(exceptions.OstorlabError):
 
 class MissingAgentDefinition(exceptions.OstorlabError):
     """Agent definition is missing."""
+
+
+class SnapshotRestoreError(exceptions.OstorlabError):
+    """The snapshot of a paused scan could not be restored."""
 
 
 def _has_container_image(agent: definitions.AgentSettings):
@@ -211,16 +222,21 @@ class LocalRuntime(runtime.Runtime):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: list[base_asset.Asset] | None,
+        scan_snapshot: bytes | None = None,
     ) -> models.Scan | None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
          agents, ensuring they are healthy and then injects the target asset.
 
+        A paused scan resumes from its snapshot: the snapshot is restored in the scan services before the agents
+        start, and the assets are not injected again.
+
         Args:
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             assets: the target asset to scan.
+            scan_snapshot: Snapshot of the paused scan to resume from.
 
         Returns:
             The scan object.
@@ -233,6 +249,11 @@ class LocalRuntime(runtime.Runtime):
             self._create_network()
             console.info("Starting services")
             self._start_services()
+
+            if scan_snapshot is not None:
+                console.info("Restoring the scan snapshot")
+                self._check_services_healthy()
+                self._restore_snapshot(scan_snapshot, agent_group_definition)
 
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
@@ -252,7 +273,7 @@ class LocalRuntime(runtime.Runtime):
             if is_healthy is False:
                 raise AgentNotHealthy()
 
-            if assets is not None:
+            if assets is not None and scan_snapshot is None:
                 inject_asset_agent_settings = next(
                     (
                         agent
@@ -285,6 +306,9 @@ class LocalRuntime(runtime.Runtime):
             message = f"Unhealthy service {e}"
             self._handle_scan_error()
             raise UnhealthyService(message)
+        except SnapshotRestoreError:
+            self._handle_scan_error()
+            raise
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
@@ -598,6 +622,86 @@ class LocalRuntime(runtime.Runtime):
             key=LOCAL_PERSIST_VULNZ_AGENT_DEFAULT, mounts=[]
         )
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
+
+    def _restore_snapshot(
+        self,
+        scan_snapshot: bytes,
+        agent_group_definition: definitions.AgentGroupDefinition,
+    ) -> None:
+        """Restore the snapshot in the scan services with a run-once service attached to the scan network.
+
+        The MQ and Redis services are only reachable from the scan network, the restore runs from the image of the
+        snapshot agent, which ships the snapshot module.
+        """
+        snapshot_agent = next(
+            (
+                agent
+                for agent in agent_group_definition.agents
+                if agent.key == SNAPSHOT_AGENT
+            ),
+            None,
+        )
+        if snapshot_agent is None or snapshot_agent.container_image is None:
+            raise SnapshotRestoreError(
+                f"agent {SNAPSHOT_AGENT} is required to restore the scan snapshot."
+            )
+
+        volume_name = f"snapshot_{self.name}"
+        volumes.create_volume(
+            volume_name,
+            {snapshot.SNAPSHOT_FILENAME: scan_snapshot},
+            labels={"ostorlab.universe": self.name},
+        )
+        restore_service = self._docker_client.services.create(
+            image=snapshot_agent.container_image,
+            command=[
+                "python3",
+                "-m",
+                "ostorlab.runtimes.local.snapshot",
+                "restore",
+                "--mq-url",
+                self._mq_service.url,
+                "--redis-url",
+                self._redis_service.url,
+            ],
+            name=f"snapshot_restore_{self.name}",
+            networks=[self.network],
+            mounts=[
+                docker.types.Mount(
+                    target=snapshot.SNAPSHOT_MOUNT_PATH,
+                    source=volume_name,
+                    type="volume",
+                    read_only=True,
+                )
+            ],
+            restart_policy=docker.types.RestartPolicy(condition="none"),
+            labels={"ostorlab.universe": self.name},
+        )
+        try:
+            state = self._wait_run_once_service(restore_service)
+            if state != "complete":
+                logs = b"".join(
+                    restore_service.logs(stdout=True, stderr=True, tail=50)
+                ).decode(errors="replace")
+                raise SnapshotRestoreError(
+                    f"snapshot restore finished with state {state}: {logs}"
+                )
+        finally:
+            restore_service.remove()
+        console.success("Scan snapshot restored")
+
+    def _wait_run_once_service(
+        self, service: docker_models_services.Service
+    ) -> str | None:
+        """Wait for the task of a run-once service to finish and return its final state."""
+        deadline = time.monotonic() + SNAPSHOT_RESTORE_TIMEOUT.total_seconds()
+        while time.monotonic() < deadline:
+            for task in service.tasks():
+                state = task.get("Status", {}).get("State")
+                if state in ("complete", "failed", "rejected", "shutdown"):
+                    return state
+            time.sleep(SNAPSHOT_RESTORE_CHECK_INTERVAL.total_seconds())
+        return None
 
     def _inject_assets(
         self,

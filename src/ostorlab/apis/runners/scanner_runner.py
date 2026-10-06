@@ -7,6 +7,7 @@ Typical usage example:
 """
 
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -41,7 +42,9 @@ class ScannerAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return SCANNER_GRAPHQL_ENDPOINT
+        return os.environ.get(
+            "OSTORLAB_SCANNER_GRAPHQL_ENDPOINT", SCANNER_GRAPHQL_ENDPOINT
+        )
 
     def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Scanner GraphQL API.

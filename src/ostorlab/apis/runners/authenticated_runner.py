@@ -9,6 +9,7 @@ authenticated_runner.authenticate()
 import datetime
 import json
 import logging
+import os
 from typing import Any
 
 import click
@@ -66,7 +67,9 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return AUTHENTICATED_GRAPHQL_ENDPOINT
+        return os.environ.get(
+            "OSTORLAB_AUTHENTICATED_GRAPHQL_ENDPOINT", AUTHENTICATED_GRAPHQL_ENDPOINT
+        )
 
     def authenticate(self) -> None:
         """Authenticates the user.

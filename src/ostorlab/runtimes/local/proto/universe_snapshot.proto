@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package ostorlab.runtimes.local.proto;
+
+// State of a scan universe captured when its scan is paused, restored when the scan resumes.
+message UniverseSnapshot {
+  uint32 version = 1;
+  string universe = 2;
+  // Time the snapshot was taken, in milliseconds since the epoch.
+  int64 paused_at_ms = 3;
+  repeated Exchange exchanges = 4;
+  repeated Queue queues = 5;
+  repeated RedisKey redis_keys = 6;
+}
+
+message Exchange {
+  string name = 1;
+  string type = 2;
+  bool durable = 3;
+  bool auto_delete = 4;
+  FieldTable arguments = 5;
+}
+
+message Queue {
+  string name = 1;
+  bool durable = 2;
+  FieldTable arguments = 3;
+  repeated Binding bindings = 4;
+  repeated Message messages = 5;
+}
+
+message Binding {
+  string exchange = 1;
+  string routing_key = 2;
+  FieldTable arguments = 3;
+}
+
+// A pending AMQP message, the body is the raw agent message.
+message Message {
+  bytes body = 1;
+  string exchange = 2;
+  string routing_key = 3;
+  optional uint32 priority = 4;
+  optional uint32 delivery_mode = 5;
+  optional string content_type = 6;
+  optional string content_encoding = 7;
+  optional string correlation_id = 8;
+  optional string message_id = 9;
+  optional string type = 10;
+  optional string app_id = 11;
+  FieldTable headers = 12;
+}
+
+// A Redis key dumped with DUMP, restored with RESTORE.
+message RedisKey {
+  bytes key = 1;
+  // Remaining time to live in milliseconds, 0 when the key does not expire.
+  int64 ttl_ms = 2;
+  bytes value = 3;
+}
+
+// AMQP field table, used for arguments and headers.
+message FieldTable {
+  map<string, FieldValue> fields = 1;
+}
+
+message FieldArray {
+  repeated FieldValue values = 1;
+}
+
+message FieldValue {
+  oneof value {
+    string string_value = 1;
+    int64 int_value = 2;
+    double float_value = 3;
+    bool bool_value = 4;
+    bytes bytes_value = 5;
+    FieldTable table_value = 6;
+    FieldArray array_value = 7;
+  }
+}

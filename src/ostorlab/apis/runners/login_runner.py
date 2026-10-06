@@ -5,6 +5,7 @@ public_runner = LoginAPIRunner(username, password, otp_token)
 public_runner.login_user()
 """
 
+import os
 from typing import Any
 
 import httpx
@@ -43,7 +44,7 @@ class LoginAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """Token API endpoint."""
-        return TOKEN_ENDPOINT
+        return os.environ.get("OSTORLAB_TOKEN_ENDPOINT", TOKEN_ENDPOINT)
 
     def login_user(self) -> httpx.Response:
         """Logs in the user.

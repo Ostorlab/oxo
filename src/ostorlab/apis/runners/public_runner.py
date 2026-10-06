@@ -5,6 +5,7 @@ public_runner = PublicAPIRunner()
 public_runner.execute()
 """
 
+import os
 from typing import Any
 
 import httpx
@@ -21,7 +22,9 @@ class PublicAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return PUBLIC_GRAPHQL_ENDPOINT
+        return os.environ.get(
+            "OSTORLAB_PUBLIC_GRAPHQL_ENDPOINT", PUBLIC_GRAPHQL_ENDPOINT
+        )
 
     def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Public GraphQL API.

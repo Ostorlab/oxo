@@ -1,7 +1,9 @@
 """Unit tests for ostorlab.scanner.callbacks module."""
 
 import base64
+import hashlib
 
+import httpx
 import pytest
 from pytest_mock import plugin
 
@@ -1435,3 +1437,129 @@ def testExtractAssets_whenUrlAssetWithNoneAndEmptyUrls_shouldFilterOutInvalidLin
     assert len(assets) == 1
     assert isinstance(assets[0], link_asset.Link)
     assert assets[0].url == "https://ostorlab.co"
+
+
+def testStartScan_whenScanHasSnapshot_resumesFromSnapshotAndDeletesIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a resumed scan is started from its snapshot, which is deleted once the scan started."""
+    reserved_scan = {
+        "id": 42,
+        "hasSnapshot": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/stop_scan"}],
+        },
+        "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.side_effect = [
+        {
+            "data": {
+                "scanSnapshot": {
+                    "scanId": 42,
+                    "size": 8,
+                    "sha256": hashlib.sha256(b"snapshot").hexdigest(),
+                    "downloadUrl": "https://storage.googleapis.com/snapshots/42?sig=1",
+                }
+            }
+        },
+        {"data": {"deleteScanSnapshot": {"deleted": True}}},
+    ]
+    download = mocker.patch(
+        "ostorlab.scanner.callbacks.httpx.get",
+        return_value=httpx.Response(
+            200,
+            content=b"snapshot",
+            request=httpx.Request("GET", "https://storage.googleapis.com"),
+        ),
+    )
+
+    callbacks.start_scan(
+        reserved_scan,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+    )
+
+    assert runtime_mock.scan.call_args.kwargs["scan_snapshot"] == b"snapshot"
+    requests = [
+        type(call_arg.kwargs["request"]).__name__
+        for call_arg in scanner_api_runner.execute.call_args_list
+    ]
+    assert requests == ["ScanSnapshotAPIRequest", "DeleteScanSnapshotAPIRequest"]
+    assert (
+        download.call_args.args[0]
+        == "https://storage.googleapis.com/snapshots/42?sig=1"
+    )
+
+
+def testStartScan_whenSnapshotDoesNotMatchItsChecksum_raisesAndDoesNotStartTheScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a corrupted snapshot download is not restored."""
+    reserved_scan = {
+        "id": 42,
+        "hasSnapshot": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/stop_scan"}],
+        },
+        "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = {
+        "data": {
+            "scanSnapshot": {
+                "scanId": 42,
+                "size": 8,
+                "sha256": hashlib.sha256(b"snapshot").hexdigest(),
+                "downloadUrl": "https://storage.googleapis.com/snapshots/42?sig=1",
+            }
+        }
+    }
+    mocker.patch(
+        "ostorlab.scanner.callbacks.httpx.get",
+        return_value=httpx.Response(
+            200,
+            content=b"truncated",
+            request=httpx.Request("GET", "https://storage.googleapis.com"),
+        ),
+    )
+
+    with pytest.raises(callbacks.MissingScanSnapshotError):
+        callbacks.start_scan(
+            reserved_scan,
+            mocker.MagicMock(),
+            scanner_api_runner=scanner_api_runner,
+        )
+
+    runtime_mock.scan.assert_not_called()
+
+
+def testStartScan_whenScanSnapshotIsMissing_raisesAndDoesNotStartTheScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a resumed scan is not started over from scratch when its snapshot cannot be fetched."""
+    reserved_scan = {
+        "id": 42,
+        "hasSnapshot": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/stop_scan"}],
+        },
+        "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = {"data": {"scanSnapshot": None}}
+
+    with pytest.raises(callbacks.MissingScanSnapshotError):
+        callbacks.start_scan(
+            reserved_scan,
+            mocker.MagicMock(),
+            scanner_api_runner=scanner_api_runner,
+        )
+
+    runtime_mock.scan.assert_not_called()

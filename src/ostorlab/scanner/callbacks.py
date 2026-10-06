@@ -5,13 +5,18 @@ from __future__ import annotations
 import base64
 import binascii
 import contextlib
+import datetime
+import hashlib
 import ipaddress
 import logging
 from typing import Any
 
 import docker
+import httpx
 
 from ostorlab import exceptions
+from ostorlab.apis import scan_snapshot as scan_snapshot_api
+from ostorlab.apis.runners import runner as base_runner
 from ostorlab.assets import agent as agent_asset
 from ostorlab.assets import (
     android_aab,
@@ -43,6 +48,14 @@ from ostorlab.runtimes import definitions, registry, runtime
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
+
+
+class MissingScanSnapshotError(exceptions.OstorlabError):
+    """The scan resumes from a snapshot that could not be fetched."""
+
+
+SNAPSHOT_DOWNLOAD_TIMEOUT = datetime.timedelta(minutes=5)
+
 
 # Fields of the multi asset payload holding nested assets, each resolved through
 # `_extract_assets` by its own `__typename`. `apiSchemas` is deliberately absent: it
@@ -496,19 +509,75 @@ def _connect_containers_registry() -> docker.DockerClient:
     return docker.from_env()
 
 
+def _fetch_scan_snapshot(
+    scanner_api_runner: base_runner.APIRunner | None, scan_id: int
+) -> bytes:
+    """Download the snapshot a paused scan resumes from.
+
+    The scanning engine returns a short-lived signed URL of the snapshot object in cloud storage, the scanner needs
+    no storage credentials.
+    """
+    if scanner_api_runner is None:
+        raise MissingScanSnapshotError(
+            f"scan {scan_id} resumes from a snapshot but no scanner API runner is set."
+        )
+    response = scanner_api_runner.execute(
+        request=scan_snapshot_api.ScanSnapshotAPIRequest(scan_id=scan_id)
+    )
+    snapshot_info = (response.get("data") or {}).get("scanSnapshot")
+    if snapshot_info is None or snapshot_info.get("downloadUrl") is None:
+        raise MissingScanSnapshotError(f"snapshot of scan {scan_id} not found.")
+
+    try:
+        download = httpx.get(
+            snapshot_info["downloadUrl"],
+            timeout=SNAPSHOT_DOWNLOAD_TIMEOUT.total_seconds(),
+        )
+        download.raise_for_status()
+    except httpx.HTTPError as e:
+        raise MissingScanSnapshotError(
+            f"snapshot of scan {scan_id} could not be downloaded: {e}"
+        ) from e
+    snapshot_data = download.content
+    if hashlib.sha256(snapshot_data).hexdigest() != snapshot_info.get("sha256"):
+        raise MissingScanSnapshotError(
+            f"snapshot of scan {scan_id} does not match its checksum."
+        )
+    logger.info(
+        "Fetched the snapshot of scan %s, %s bytes.", scan_id, len(snapshot_data)
+    )
+    return snapshot_data
+
+
+def _delete_scan_snapshot(
+    scanner_api_runner: base_runner.APIRunner, scan_id: int
+) -> None:
+    """Delete the snapshot of a scan once it was restored. A remaining snapshot is only stale data."""
+    try:
+        scanner_api_runner.execute(
+            request=scan_snapshot_api.DeleteScanSnapshotAPIRequest(scan_id=scan_id)
+        )
+    except (base_runner.Error, httpx.HTTPError):
+        logger.exception("Could not delete the snapshot of scan %s.", scan_id)
+
+
 def start_scan(
     request: dict[str, Any],
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
     gcp_logging_credential: str | None = None,
+    scanner_api_runner: base_runner.APIRunner | None = None,
 ) -> str | None:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
+
+    A paused scan resumes from its snapshot instead of starting over.
 
     Args:
         request: API response data for the scan.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         api_key: Optional api key to fetch short-lived download tokens for agent images.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
+        scanner_api_runner: Runner of the scanner API, used to fetch the snapshot of a resumed scan.
     """
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
@@ -521,6 +590,9 @@ def start_scan(
         # empty asset volume and starts the injection agent with nothing to inject.
         assets = extracted_assets if len(extracted_assets) > 0 else None
         scan_id = _extract_scan_id(request=request)
+        scan_snapshot = None
+        if request.get("hasSnapshot") is True:
+            scan_snapshot = _fetch_scan_snapshot(scanner_api_runner, scan_id)
 
         state_reporter = _update_state_reporter(
             state_reporter=state_reporter, scan_id=scan_id
@@ -549,11 +621,14 @@ def start_scan(
                     agent_group_definition=agent_group_definition,
                     assets=assets,
                     title=None,
+                    scan_snapshot=scan_snapshot,
                 )
             except exceptions.OstorlabError as e:
                 logger.error("An error was encountered while running the scan: %s", e)
                 raise
 
+            if scan_snapshot is not None and scanner_api_runner is not None:
+                _delete_scan_snapshot(scanner_api_runner, scan_id)
             return runtime_instance.name
         else:
             logger.error(

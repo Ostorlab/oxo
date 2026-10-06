@@ -278,6 +278,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         state_reporter=state_reporter,
         api_key="test-key",
         gcp_logging_credential="gcp-credential",
+        scanner_api_runner=runner,
     )
 
 

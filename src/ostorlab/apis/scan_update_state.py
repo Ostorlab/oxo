@@ -32,6 +32,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                 scan {
                   id
                   progress
+                  hasSnapshot
                   asset {
                     __typename
                     ... on UrlAssetType { urls apiSchema apiSchemaUrl }

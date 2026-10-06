@@ -654,3 +654,89 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     mock_start_agent.assert_called_once()
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
+
+
+def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAssetInjection(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """Ensure a resumed scan restores its snapshot before starting the agents and does not inject the assets."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="stop_scan_image",
+        new_callable=mocker.PropertyMock,
+    )
+    agent_runtime_mock = mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime"
+    )
+    create_volume_mock = mocker.patch(
+        "ostorlab.runtimes.local.runtime.volumes.create_volume"
+    )
+    restore_service = mocker.MagicMock()
+    restore_service.tasks.return_value = [{"Status": {"State": "complete"}}]
+    services_create_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create",
+        return_value=restore_service,
+    )
+    local_runtime_instance = local_runtime.LocalRuntime(
+        scan_id="42", run_default_agents=False
+    )
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/stop_scan")]
+    )
+
+    local_runtime_instance.can_run(agent_group_definition=agent_group_definition)
+    local_runtime_instance.scan(
+        title="test local",
+        agent_group_definition=agent_group_definition,
+        assets=[android_apk.AndroidApk(content=b"APK")],
+        scan_snapshot=b"snapshot",
+    )
+
+    create_volume_mock.assert_called_once_with(
+        "snapshot_42",
+        {"snapshot.pb.gz": b"snapshot"},
+        labels={"ostorlab.universe": "42"},
+    )
+    restore_kwargs = services_create_mock.call_args.kwargs
+    assert restore_kwargs["image"] == "stop_scan_image"
+    assert restore_kwargs["command"][:4] == [
+        "python3",
+        "-m",
+        "ostorlab.runtimes.local.snapshot",
+        "restore",
+    ]
+    assert restore_kwargs["networks"] == ["ostorlab_local_network_42"]
+    restore_service.remove.assert_called_once()
+    started_agents = [
+        call_arg.kwargs["agent_settings"].key
+        for call_arg in agent_runtime_mock.call_args_list
+    ]
+    assert started_agents == ["agent/ostorlab/stop_scan"]
+
+
+def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSnapshotRestoreError(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """Ensure a resumed scan fails when its agent group cannot restore the snapshot."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="agent_42_docker_image",
+        new_callable=mocker.PropertyMock,
+    )
+    mocker.patch("ostorlab.runtimes.local.agent_runtime.AgentRuntime")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.cleanup")
+    local_runtime_instance = local_runtime.LocalRuntime(
+        scan_id="42", run_default_agents=False
+    )
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/agent42")]
+    )
+
+    local_runtime_instance.can_run(agent_group_definition=agent_group_definition)
+    with pytest.raises(local_runtime.SnapshotRestoreError):
+        local_runtime_instance.scan(
+            title="test local",
+            agent_group_definition=agent_group_definition,
+            assets=None,
+            scan_snapshot=b"snapshot",
+        )
