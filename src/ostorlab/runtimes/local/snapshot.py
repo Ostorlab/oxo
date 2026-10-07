@@ -60,6 +60,10 @@ RESTORED_AT_KEY = "ostorlab:universe:restored_at"
 UNIVERSE_LABEL = "ostorlab.universe"
 # Only agent services carry the queue name label, the MQ and Redis services of the universe do not.
 AGENT_SERVICE_LABEL = "ostorlab.queue_name"
+# Docker task states a task never leaves: the task no longer runs and will not run again.
+FINAL_TASK_STATES = frozenset(
+    {"complete", "shutdown", "failed", "rejected", "orphaned", "remove"}
+)
 REPLICAS_LABEL = "ostorlab.snapshot.replicas"
 
 # Messages are restored through a headers exchange matching on this header, so each message lands in the queue it
@@ -180,7 +184,7 @@ def stop_universe_agents(
         stopped_services[service.name] = replicas
 
     deadline = time.monotonic() + timeout.total_seconds()
-    while _has_running_tasks(docker_client, list(stopped_services)) is True:
+    while _has_active_tasks(docker_client, list(stopped_services)) is True:
         if time.monotonic() > deadline:
             raise AgentsNotStoppedError(
                 f"agents of universe {universe} still running after {timeout}."
@@ -295,13 +299,18 @@ def _service_replicas(service: docker_services.Service) -> int:
     return int((mode.get("Replicated") or {}).get("Replicas", 0))
 
 
-def _has_running_tasks(
+def _has_active_tasks(
     docker_client: docker.DockerClient, service_names: list[str]
 ) -> bool:
+    """Whether a task of the services is not in a final state.
+
+    A task still pending, assigned or preparing can become running and consume messages while the snapshot is taken,
+    so only the final states count as stopped.
+    """
     for service_name in service_names:
         service = docker_client.services.get(service_name)
         for task in service.tasks():
-            if task.get("Status", {}).get("State") in ("running", "starting"):
+            if task.get("Status", {}).get("State") not in FINAL_TASK_STATES:
                 return True
     return False
 

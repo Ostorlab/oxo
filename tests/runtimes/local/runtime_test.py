@@ -772,6 +772,60 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSn
         )
 
 
+def testScanInLocalRuntime_whenRestoreFailsAndItsServiceCannotBeRemoved_raisesRestoreErrorAndRemovesVolume(
+    mocker: plugin.MockerFixture, local_runtime_mocks: Any
+) -> None:
+    """Ensure a failed cleanup of the restore service neither hides the restore error nor leaves the snapshot."""
+    for check in (
+        "is_docker_installed",
+        "is_sys_arch_supported",
+        "is_user_permitted",
+        "is_docker_working",
+        "is_swarm_initialized",
+    ):
+        mocker.patch(
+            f"ostorlab.cli.docker_requirements_checker.{check}", return_value=True
+        )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime._check_services_healthy")
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        return_value="stop_scan_image",
+        new_callable=mocker.PropertyMock,
+    )
+    mocker.patch("ostorlab.runtimes.local.agent_runtime.AgentRuntime")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.cleanup")
+    mocker.patch("ostorlab.runtimes.local.runtime.volumes.create_volume")
+    snapshot_volume = mocker.patch(
+        "docker.models.volumes.VolumeCollection.get"
+    ).return_value
+    restore_service = mocker.MagicMock()
+    restore_service.tasks.return_value = [{"Status": {"State": "failed"}}]
+    restore_service.logs.return_value = [b"restore failed"]
+    restore_service.remove.side_effect = docker.errors.APIError("swarm busy")
+    mocker.patch(
+        "docker.models.services.ServiceCollection.create",
+        return_value=restore_service,
+    )
+    local_runtime_instance = local_runtime.LocalRuntime(
+        scan_id="42", run_default_agents=False
+    )
+    agent_group_definition = definitions.AgentGroupDefinition(
+        agents=[definitions.AgentSettings(key="agent/ostorlab/stop_scan")]
+    )
+
+    local_runtime_instance.can_run(agent_group_definition=agent_group_definition)
+    with pytest.raises(local_runtime.SnapshotRestoreError):
+        local_runtime_instance.scan(
+            title="test local",
+            agent_group_definition=agent_group_definition,
+            assets=None,
+            scan_snapshot=b"snapshot",
+        )
+
+    restore_service.remove.assert_called_once()
+    snapshot_volume.remove.assert_called_once()
+
+
 def testLocalRuntimeScan_always_checksServicesHealthyBeforeStartingAgents(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:

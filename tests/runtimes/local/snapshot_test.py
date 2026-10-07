@@ -263,6 +263,26 @@ def testStopUniverseAgents_whenAgentsKeepRunning_raisesAgentsNotStopped(
     assert nmap.update.call_args.kwargs["labels"][snapshot.REPLICAS_LABEL] == "1"
 
 
+@pytest.mark.parametrize("state", ["pending", "assigned", "preparing", "ready"])
+def testStopUniverseAgents_whenATaskIsStillStarting_raisesAgentsNotStopped(
+    mocker: plugin.MockerFixture, state: str
+) -> None:
+    """A task not yet running can still start and consume messages while the snapshot is taken."""
+    nmap = _service(mocker, "nmap_42", 1)
+    docker_client = mocker.MagicMock()
+    docker_client.services.list.return_value = [nmap]
+    docker_client.services.get.return_value.tasks.return_value = [
+        {"Status": {"State": "shutdown"}},
+        {"Status": {"State": state}},
+    ]
+    mocker.patch("ostorlab.runtimes.local.snapshot.time.sleep")
+
+    with pytest.raises(snapshot.AgentsNotStoppedError):
+        snapshot.stop_universe_agents(
+            docker_client, universe="42", timeout=datetime.timedelta(seconds=0)
+        )
+
+
 def testStartUniverseAgents_always_scalesStoppedServicesBackAndRemovesTheirLabel(
     mocker: plugin.MockerFixture,
 ) -> None:

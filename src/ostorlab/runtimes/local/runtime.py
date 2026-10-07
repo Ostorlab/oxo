@@ -697,10 +697,19 @@ class LocalRuntime(runtime.Runtime):
                 )
             console.success("Scan snapshot restored")
         finally:
-            if restore_service is not None:
-                restore_service.remove()
-            # The snapshot is no longer needed on the scanner once restored.
-            self._remove_snapshot_volume(volume_name)
+            try:
+                if restore_service is not None:
+                    restore_service.remove()
+            except docker_errors.DockerException as e:
+                # Best effort: a cleanup failure must not hide the restore outcome, the scan cleanup removes it.
+                logger.warning(
+                    "Could not remove the snapshot restore service of %s: %s",
+                    self.name,
+                    e,
+                )
+            finally:
+                # The snapshot is no longer needed on the scanner once restored.
+                self._remove_snapshot_volume(volume_name)
 
     def _remove_snapshot_volume(self, volume_name: str) -> None:
         """Remove the snapshot volume once the restore container released it, the scan cleanup removes a leftover."""

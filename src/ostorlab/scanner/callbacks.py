@@ -606,7 +606,15 @@ def _delete_scan_snapshot(
                 scan_id=scan_id, sha256=hashlib.sha256(scan_snapshot).hexdigest()
             )
         )
-    except (base_runner.Error, httpx.HTTPError, ValueError):
+    except (
+        base_runner.Error,
+        httpx.HTTPError,
+        ValueError,
+        AttributeError,
+        TypeError,
+        KeyError,
+    ):
+        # A malformed response, like a JSON null body, must not fail the scan that already runs.
         logger.exception("Could not delete the snapshot of scan %s.", scan_id)
 
 

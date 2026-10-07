@@ -1884,8 +1884,16 @@ def testStartScan_whenSnapshotDownloadFails_doesNotExposeTheSignedUrl(
     runtime_mock.scan.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "deletion_error",
+    [
+        json.JSONDecodeError("Expecting value", "", 0),
+        # The runner reads `errors` from a JSON body that is null.
+        AttributeError("'NoneType' object has no attribute 'get'"),
+    ],
+)
 def testStartScan_whenSnapshotDeletionFails_keepsTheStartedScan(
-    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock, deletion_error: Exception
 ) -> None:
     """Ensure a failed cleanup of the restored snapshot does not fail the running scan."""
     reserved_scan = {
@@ -1910,7 +1918,7 @@ def testStartScan_whenSnapshotDeletionFails_keepsTheStartedScan(
                 }
             }
         },
-        json.JSONDecodeError("Expecting value", "", 0),
+        deletion_error,
     ]
     httpx_mock.add_response(
         url="https://storage.googleapis.com/snapshots/42?sig=1", content=b"snapshot"
