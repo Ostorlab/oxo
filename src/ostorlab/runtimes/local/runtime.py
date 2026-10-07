@@ -645,7 +645,11 @@ class LocalRuntime(runtime.Runtime):
             ),
             None,
         )
-        if snapshot_agent is None or snapshot_agent.container_image is None:
+        # The image lookup scans the local images, it is read once.
+        snapshot_image = (
+            snapshot_agent.container_image if snapshot_agent is not None else None
+        )
+        if snapshot_image is None:
             raise SnapshotRestoreError(
                 f"agent {SNAPSHOT_AGENT} is required to restore the scan snapshot."
             )
@@ -659,7 +663,7 @@ class LocalRuntime(runtime.Runtime):
                 labels={"ostorlab.universe": self.name},
             )
             restore_service = self._docker_client.services.create(
-                image=snapshot_agent.container_image,
+                image=snapshot_image,
                 command=[
                     "python3",
                     "-m",
@@ -691,6 +695,7 @@ class LocalRuntime(runtime.Runtime):
                 raise SnapshotRestoreError(
                     f"snapshot restore finished with state {state}: {logs}"
                 )
+            console.success("Scan snapshot restored")
         finally:
             if restore_service is not None:
                 restore_service.remove()
@@ -712,7 +717,6 @@ class LocalRuntime(runtime.Runtime):
             pass
         except docker_errors.APIError as e:
             logger.warning("Could not remove snapshot volume %s: %s", volume_name, e)
-        console.success("Scan snapshot restored")
 
     def _wait_run_once_service(
         self, service: docker_models_services.Service
