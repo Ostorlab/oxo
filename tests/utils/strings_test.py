@@ -89,6 +89,9 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "AWSSecret",
         "HTTPAuthorization",
         "private_key",
+        "secret_key",
+        "secretKey",
+        "aws_secret_access_key",
         "credentials",
         "device_relay_credentials",
         "Authorization",
@@ -180,6 +183,7 @@ def testFormatDict_whenArgNameIsSensitive_redactsArgValues() -> None:
             "https://example.com/app.ipa?Signature=fakesig&sig=fakesig&token=fake-token"
             "&access_token=fake-token"
         ),
+        "https://api.example.com/v1/resource?api_key=fake-token&apikey=fake-token",
     ],
 )
 def testFormatDict_whenStringHasSignedUrl_redactsSignatureParameters(
@@ -248,3 +252,22 @@ def testFormatDict_whenMessageIsUseDevice_redactsAllSecrets() -> None:
     assert '"device_id": "fake-device-id"' in result
     assert '"address": "10.0.0.1"' in result
     assert "https://storage.googleapis.com/bucket/app.ipa" in result
+
+
+def testFormatDict_whenStringHasUrlWithUserInfoPassword_redactsPassword() -> None:
+    """Tests if the password of a URL user info is redacted."""
+    data = {"relay": "ssh://fake-user:fake-password@relay.example.com:22/path"}
+
+    result = strings.format_dict(data)
+
+    assert "fake-password" not in result
+    assert '"ssh://fake-user:<redacted>@relay.example.com:22/path"' in result
+
+
+def testFormatDict_whenStringHasUrlWithPort_keepsUrl() -> None:
+    """Tests if a URL with a port and no user info is not altered."""
+    data = {"url": "https://example.com:8443/path?q=1"}
+
+    result = strings.format_dict(data)
+
+    assert '"url": "https://example.com:8443/path?q=1"' in result

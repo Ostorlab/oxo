@@ -12,19 +12,22 @@ REDACTED = "<redacted>"
 # `device_relay_credentials` or `apiKey`, but not `token_count` or `password_policy`.
 _SENSITIVE_KEY_PATTERN = re.compile(
     r"(?:^|[_\-.])(?:passwords?|passwd|secrets?|tokens?|api_?keys?|private_?keys?"
-    r"|credentials?|authorization|cookies?)$",
+    r"|secret_?(?:access_?)?keys?|credentials?|authorization|cookies?)$",
     re.IGNORECASE,
 )
 # Splits camelCase words, including acronyms, e.g. `AWSPrivateKey` to `AWS_Private_Key`.
 _CAMEL_CASE_BOUNDARY_PATTERN = re.compile(
     r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
 )
-# Matches signature, credential and token query parameters of signed URLs (GCS, S3...).
+# Matches signature, credential, token and API key query parameters of URLs, notably
+# signed URLs (GCS, S3...).
 _SIGNED_URL_PARAM_PATTERN = re.compile(
     r"([?&](?:X-Goog-Signature|X-Goog-Credential|X-Amz-Signature|X-Amz-Credential"
-    r"|X-Amz-Security-Token|Signature|sig|token|access_token)=)[^&#\s\"']*",
+    r"|X-Amz-Security-Token|Signature|sig|token|access_token|api_key|apikey)=)[^&#\s\"']*",
     re.IGNORECASE,
 )
+# Matches the password of URL user info, e.g. `https://user:password@host`.
+_URL_USER_INFO_PASSWORD_PATTERN = re.compile(r"(://[^/\s:@]+:)[^/\s@]+@")
 
 
 def random_string(length: int, alphabet: str = string.ascii_lowercase) -> str:
@@ -79,6 +82,7 @@ def _format_data(data: Any) -> Any:
         return f"<bytes of length {len(data)}>"
     elif isinstance(data, str):
         data = _SIGNED_URL_PARAM_PATTERN.sub(rf"\1{REDACTED}", data)
+        data = _URL_USER_INFO_PASSWORD_PATTERN.sub(rf"\1{REDACTED}@", data)
         if len(data) > 4096:
             return f"{data[:256]}... <string of length {len(data)}>"
         else:
