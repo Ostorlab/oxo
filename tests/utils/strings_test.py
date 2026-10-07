@@ -356,3 +356,30 @@ def testFormatDict_whenUrlHasPortAndQueryValueWithAt_keepsUrl() -> None:
     result = strings.format_dict(data)
 
     assert '"url": "https://example.com:8443?next=user@example.com"' in result
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/callback#access_token=fake-token&state=1",
+        "https://example.com/redirect?next=https://example.com/cb?access_token=fake-token&x=1",
+    ],
+)
+def testFormatDict_whenUrlHasTokenInFragmentOrNestedUrl_redactsToken(url: str) -> None:
+    """Tests if tokens in URL fragments and in URLs nested in parameters are redacted."""
+    data = {"url": url}
+
+    result = strings.format_dict(data)
+
+    assert "fake-token" not in result
+    assert "access_token=<redacted>" in result
+
+
+def testFormatDict_whenNameIsSensitive_keepsOtherValueLikeKeys() -> None:
+    """Tests if only the value keys of a sensitive name/value pair are redacted."""
+    data = {"name": "password", "value": "fake-password", "value_type": "string"}
+
+    result = strings.format_dict(data)
+
+    assert "fake-password" not in result
+    assert '"value_type": "string"' in result

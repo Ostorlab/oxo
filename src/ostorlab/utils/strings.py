@@ -24,14 +24,19 @@ _KEY_SEPARATOR_PATTERN = re.compile(r"[\s\-.]+")
 _CAMEL_CASE_BOUNDARY_PATTERN = re.compile(
     r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
 )
-# Matches URL query parameters, e.g. `&X-Goog-Signature=...`, capturing their name.
-_URL_QUERY_PARAM_PATTERN = re.compile(r"([?&]([^=&#\s\"']+)=)[^&#\s\"']*")
+# Matches URL query and fragment parameters, e.g. `&X-Goog-Signature=...`, capturing
+# their name. Values stop at `?` so parameters of URLs nested in values are matched too.
+_URL_QUERY_PARAM_PATTERN = re.compile(r"([?&#]([^=?&#\s\"']+)=)[^?&#\s\"']*")
 # Matches signature query parameter names of signed URLs, e.g. `X-Amz-Signature`.
 _URL_SIGNATURE_PARAM_PATTERN = re.compile(
     r"(?:^|[_\-.])(?:signature|sig)$", re.IGNORECASE
 )
-# Maps the name key of name/value pairs to the prefix of their value keys.
-_NAME_VALUE_KEYS = {"arg_name": "arg_value", "name": "value", "key": "value"}
+# Maps the name key of name/value pairs to their value keys.
+_NAME_VALUE_KEYS = {
+    "arg_name": ("arg_value", "arg_value_bytes"),
+    "name": ("value", "value_bytes"),
+    "key": ("value", "value_bytes"),
+}
 # Matches the password of URL user info, e.g. `https://user:password@host`.
 _URL_USER_INFO_PASSWORD_PATTERN = re.compile(r"(://[^/?#\s:@]*:)[^/?#\s@]+@")
 
@@ -79,16 +84,15 @@ def _format_dict_data(data: dict[Any, Any]) -> dict[Any, Any]:
     # Name/value pairs, e.g. `{"arg_name": "token", "arg_value": [...]}` for args or
     # `{"name": "Authorization", "value": "..."}` for headers, have their values
     # redacted when the name is sensitive.
-    sensitive_value_prefixes = tuple(
-        value_prefix
-        for name_key, value_prefix in _NAME_VALUE_KEYS.items()
+    sensitive_value_keys = {
+        value_key
+        for name_key, value_keys in _NAME_VALUE_KEYS.items()
         if _is_sensitive_key(data.get(name_key)) is True
-    )
+        for value_key in value_keys
+    }
     formatted: dict[Any, Any] = {}
     for key, value in data.items():
-        if _is_sensitive_key(key) is True or (
-            isinstance(key, str) and key.startswith(sensitive_value_prefixes)
-        ):
+        if _is_sensitive_key(key) is True or (key in sensitive_value_keys):
             formatted[key] = REDACTED
         else:
             formatted[key] = _format_data(value)
