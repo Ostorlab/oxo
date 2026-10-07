@@ -13,7 +13,8 @@ REDACTED = "<redacted>"
 # `password_policy`.
 _SENSITIVE_KEY_PATTERN = re.compile(
     r"(?:^|_)(?:passwords?|passwd|secrets?|tokens?|api_?keys?|private_?keys?"
-    r"|secret_?(?:access_?)?keys?|session_?ids?|credentials?|authorization|cookies?)"
+    r"|(?:secret|session|signing|encryption)_?(?:access_?)?keys?|session_?ids?"
+    r"|credentials?|authorization|cookies?)"
     r"[0-9]*$",
     re.IGNORECASE,
 )
@@ -23,17 +24,16 @@ _KEY_SEPARATOR_PATTERN = re.compile(r"[\s\-.]+")
 _CAMEL_CASE_BOUNDARY_PATTERN = re.compile(
     r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
 )
-# Matches signature, credential, token and API key query parameters of URLs, notably
-# signed URLs (GCS, S3...).
-_SIGNED_URL_PARAM_PATTERN = re.compile(
-    r"([?&](?:X-Goog-Signature|X-Goog-Credential|X-Amz-Signature|X-Amz-Credential"
-    r"|X-Amz-Security-Token|Signature|sig|token|access_token|api_key|apikey)=)[^&#\s\"']*",
-    re.IGNORECASE,
+# Matches URL query parameters, e.g. `&X-Goog-Signature=...`, capturing their name.
+_URL_QUERY_PARAM_PATTERN = re.compile(r"([?&]([^=&#\s\"']+)=)[^&#\s\"']*")
+# Matches signature query parameter names of signed URLs, e.g. `X-Amz-Signature`.
+_URL_SIGNATURE_PARAM_PATTERN = re.compile(
+    r"(?:^|[_\-.])(?:signature|sig)$", re.IGNORECASE
 )
 # Maps the name key of name/value pairs to the prefix of their value keys.
 _NAME_VALUE_KEYS = {"arg_name": "arg_value", "name": "value", "key": "value"}
 # Matches the password of URL user info, e.g. `https://user:password@host`.
-_URL_USER_INFO_PASSWORD_PATTERN = re.compile(r"(://[^/\s:@]*:)[^/\s@]+@")
+_URL_USER_INFO_PASSWORD_PATTERN = re.compile(r"(://[^/?#\s:@]*:)[^/?#\s@]+@")
 
 
 def random_string(length: int, alphabet: str = string.ascii_lowercase) -> str:
@@ -64,6 +64,17 @@ def _is_sensitive_key(key: Any) -> bool:
     return _SENSITIVE_KEY_PATTERN.search(key) is not None
 
 
+def _redact_url_query_param(match: re.Match[str]) -> str:
+    """Redact the value of a URL query parameter if its name is sensitive."""
+    name = match.group(2)
+    if (
+        _is_sensitive_key(name) is True
+        or _URL_SIGNATURE_PARAM_PATTERN.search(name) is not None
+    ):
+        return f"{match.group(1)}{REDACTED}"
+    return match.group(0)
+
+
 def _format_dict_data(data: dict[Any, Any]) -> dict[Any, Any]:
     # Name/value pairs, e.g. `{"arg_name": "token", "arg_value": [...]}` for args or
     # `{"name": "Authorization", "value": "..."}` for headers, have their values
@@ -92,7 +103,7 @@ def _format_data(data: Any) -> Any:
     elif isinstance(data, bytes):
         return f"<bytes of length {len(data)}>"
     elif isinstance(data, str):
-        data = _SIGNED_URL_PARAM_PATTERN.sub(rf"\1{REDACTED}", data)
+        data = _URL_QUERY_PARAM_PATTERN.sub(_redact_url_query_param, data)
         data = _URL_USER_INFO_PASSWORD_PATTERN.sub(rf"\1{REDACTED}@", data)
         if len(data) > 4096:
             return f"{data[:256]}... <string of length {len(data)}>"

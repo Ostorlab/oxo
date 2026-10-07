@@ -89,6 +89,10 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "AWSSecret",
         "HTTPAuthorization",
         "private_key",
+        "session_key",
+        "sessionKey",
+        "signing_key",
+        "encryption_key",
         "password1",
         "token2",
         "api_key1",
@@ -195,6 +199,11 @@ def testFormatDict_whenArgNameIsSensitive_redactsArgValues() -> None:
             "&access_token=fake-token"
         ),
         "https://api.example.com/v1/resource?api_key=fake-token&apikey=fake-token",
+        (
+            "https://example.com/callback?id_token=fake-token&refresh_token=fake-token"
+            "&auth_token=fake-token&accessToken=fake-token&idToken=fake-token"
+            "&refreshToken=fake-token"
+        ),
     ],
 )
 def testFormatDict_whenStringHasSignedUrl_redactsSignatureParameters(
@@ -338,3 +347,12 @@ def testFormatDict_whenKeyValuePairHasSensitiveKey_redactsValue() -> None:
     assert "fake-token" not in result
     assert '"key": "access_token"' in result
     assert '"value": "dark"' in result
+
+
+def testFormatDict_whenUrlHasPortAndQueryValueWithAt_keepsUrl() -> None:
+    """Tests if a URL with a port and an `@` in its query is not taken for user info."""
+    data = {"url": "https://example.com:8443?next=user@example.com"}
+
+    result = strings.format_dict(data)
+
+    assert '"url": "https://example.com:8443?next=user@example.com"' in result
