@@ -17,20 +17,15 @@ def testScanSnapshotAPIRequest_always_queriesTheSignedDownloadUrlOfTheScanSnapsh
     assert json.loads(api_request.data["variables"]) == {"scanId": 42}
 
 
-def testDeleteScanSnapshotAPIRequest_whenChecksumIsGiven_sendsIt() -> None:
+def testDeleteScanSnapshotAPIRequest_always_sendsTheChecksumAsRequired() -> None:
     api_request = scan_snapshot.DeleteScanSnapshotAPIRequest(
         scan_id=42, sha256="a" * 64
     )
 
     assert api_request.query is not None
+    assert "$sha256: String!" in api_request.query
     assert "deleteScanSnapshot(scanId: $scanId, sha256: $sha256)" in api_request.query
     assert json.loads(api_request.data["variables"]) == {
         "scanId": 42,
         "sha256": "a" * 64,
     }
-
-
-def testDeleteScanSnapshotAPIRequest_whenChecksumIsNotGiven_sendsNullChecksum() -> None:
-    api_request = scan_snapshot.DeleteScanSnapshotAPIRequest(scan_id=42)
-
-    assert json.loads(api_request.data["variables"]) == {"scanId": 42, "sha256": None}

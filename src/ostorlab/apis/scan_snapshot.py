@@ -36,17 +36,18 @@ class ScanSnapshotAPIRequest(request.APIRequest):
 class DeleteScanSnapshotAPIRequest(request.APIRequest):
     """Delete the snapshot of a scan once it was restored.
 
-    With the checksum of the restored snapshot, a newer snapshot saved by a later pause of the scan is kept.
+    Only the snapshot matching the checksum of the restored one is deleted, a newer snapshot saved by a later pause of
+    the scan is kept.
     """
 
-    def __init__(self, scan_id: int, sha256: str | None = None) -> None:
+    def __init__(self, scan_id: int, sha256: str) -> None:
         self._scan_id = scan_id
         self._sha256 = sha256
 
     @property
     def query(self) -> str | None:
         return """
-        mutation DeleteScanSnapshot($scanId: Int!, $sha256: String) {
+        mutation DeleteScanSnapshot($scanId: Int!, $sha256: String!) {
           deleteScanSnapshot(scanId: $scanId, sha256: $sha256) {
             deleted
           }
