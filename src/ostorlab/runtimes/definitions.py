@@ -39,6 +39,7 @@ from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import definitions
+from ostorlab.utils import release_channel
 
 MAX_AGENT_REPLICAS = 100
 
@@ -279,6 +280,7 @@ class AgentGroupDefinition:
     name: str | None = None
     description: str | None = None
     use_experimental_agents: bool = False
+    experimental_channel: str = release_channel.STABLE
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -331,7 +333,16 @@ class AgentGroupDefinition:
             "description", f"""Agent group : {",".join(agents_names)}"""
         )
         use_experimental_agents = agent_group_def.get("use_experimental_agents", False)
-        return cls(agent_settings, name, description, use_experimental_agents)
+        experimental_channel = agent_group_def.get(
+            "experimental_channel", release_channel.STABLE
+        )
+        return cls(
+            agent_settings,
+            name,
+            description,
+            use_experimental_agents,
+            experimental_channel,
+        )
 
     @classmethod
     def from_api_response(cls, agent_group: dict[str, Any]) -> "AgentGroupDefinition":
@@ -395,12 +406,16 @@ class AgentGroupDefinition:
 
         description = f"Agent group {name}: {','.join(agents_names)}"
         use_experimental_agents = agent_group.get("useExperimentalAgents", False)
+        experimental_channel = (
+            agent_group.get("experimentalChannel") or release_channel.STABLE
+        )
 
         return cls(
             agents=agent_settings,
             name=name,
             description=description,
             use_experimental_agents=use_experimental_agents,
+            experimental_channel=experimental_channel,
         )
 
 

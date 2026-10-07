@@ -4,26 +4,41 @@ import json
 from typing import Any
 
 from ostorlab.apis import request
+from ostorlab.utils import release_channel
 
 
 class AgentDetailsAPIRequest(request.APIRequest):
     """Get agent details for a specified agent_key."""
 
-    def __init__(self, agent_key: str, use_experimental: bool = False) -> None:
+    def __init__(
+        self,
+        agent_key: str,
+        use_experimental: bool = False,
+        channel: str = release_channel.STABLE,
+    ) -> None:
         """Initializer"""
         self._agent_key = agent_key
         self._use_experimental = use_experimental
+        self._channel = channel
 
     @property
     def query(self) -> str:
         """The query to fetch the agent details with an agent key.
 
+        The `channel` argument is only declared for a non-stable channel, since store
+        servers that predate release channels reject it even when it is null.
+
         Returns:
             The query to fetch the agent details.
         """
-        return """
-            query Agent($agentKey: String!, $useExperimental: Boolean){
-                agent(agentKey: $agentKey) {
+        channel_variable = ""
+        channel_argument = ""
+        if self._channel != release_channel.STABLE:
+            channel_variable = ", $channel: String"
+            channel_argument = ", channel: $channel"
+        return f"""
+            query Agent($agentKey: String!, $useExperimental: Boolean{channel_variable}){{
+                agent(agentKey: $agentKey) {{
                     name,
                     gitLocation,
                     yamlFileLocation,
@@ -31,13 +46,13 @@ class AgentDetailsAPIRequest(request.APIRequest):
                     access,
                     listable,
                     key
-                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental) {
-                      versions {
+                    versions(orderBy: Version, sort: Desc, page: 1, numberElements: 1, useExperimental: $useExperimental{channel_argument}) {{
+                      versions {{
                         version
-                      }
-                    }
-                }
-            }
+                      }}
+                    }}
+                }}
+            }}
         """
 
     @property
@@ -47,9 +62,10 @@ class AgentDetailsAPIRequest(request.APIRequest):
         Returns:
             The body of the agent details request.
         """
-        return {
-            "query": self.query,
-            "variables": json.dumps(
-                {"agentKey": self._agent_key, "useExperimental": self._use_experimental}
-            ),
+        variables: dict[str, Any] = {
+            "agentKey": self._agent_key,
+            "useExperimental": self._use_experimental,
         }
+        if self._channel != release_channel.STABLE:
+            variables["channel"] = self._channel
+        return {"query": self.query, "variables": json.dumps(variables)}

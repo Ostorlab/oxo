@@ -4,6 +4,8 @@ import re
 
 import click
 
+from ostorlab.utils import release_channel
+
 
 def validate_port_binding_input(ctx: click.core.Context, param: str, value: str) -> str:
     """Validator for the bind ports flag.
@@ -50,3 +52,25 @@ def validate_labels(
             )
         labels[key] = val
     return labels
+
+
+def validate_release_channel(ctx: click.core.Context, param: str, value: str) -> str:
+    """Validator for the experimental release channel flag.
+
+    Args:
+        ctx: as per click callback convention, the calling click context.
+        param: as per click callback convention: the parameter name of argument.
+        value: value of the argument.
+
+    Returns:
+        The release channel name.
+
+    Raises:
+        click.BadParameter: when the name does not match the release channel pattern.
+    """
+    del ctx, param
+    if release_channel.is_valid(value) is False:
+        raise click.BadParameter(
+            f"Invalid release channel '{value}': it must match {release_channel.CHANNEL_PATTERN.pattern}."
+        )
+    return value

@@ -55,3 +55,39 @@ def testAgentDetailsAPIRequest_whenUseExperimentalTrue_sendsQueryWithUseExperime
 
     assert "$useExperimental: Boolean" in query
     assert "useExperimental: $useExperimental" in query
+
+
+def testAgentDetailsAPIRequest_whenChannelIsStable_queryAndVariablesDoNotMentionChannel() -> (
+    None
+):
+    """Test that the stable channel keeps the query compatible with stores without the channel argument."""
+    api_request = agent_details.AgentDetailsAPIRequest(
+        agent_key="agent/ostorlab/nmap", use_experimental=True, channel="stable"
+    )
+
+    data = api_request.data
+    variables = json.loads(data["variables"])
+
+    assert "channel" not in data["query"]
+    assert variables == {"agentKey": "agent/ostorlab/nmap", "useExperimental": True}
+
+
+def testAgentDetailsAPIRequest_whenChannelIsNotStable_sendsChannelVariableAndArgument() -> (
+    None
+):
+    """Test that a non-stable channel is declared, passed to versions and sent with useExperimental."""
+    api_request = agent_details.AgentDetailsAPIRequest(
+        agent_key="agent/ostorlab/nmap", channel="beta"
+    )
+
+    data = api_request.data
+    variables = json.loads(data["variables"])
+
+    assert "$channel: String" in data["query"]
+    assert "channel: $channel" in data["query"]
+    assert "useExperimental: $useExperimental" in data["query"]
+    assert variables == {
+        "agentKey": "agent/ostorlab/nmap",
+        "useExperimental": False,
+        "channel": "beta",
+    }

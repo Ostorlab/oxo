@@ -239,3 +239,56 @@ def testAgentGroupSpecValidation_whenDefinitionHasInvalidArgType_raiseValidation
         pytest.raises(validator.ValidationError),
     ):
         loader.load_agent_group_yaml(invalid_agent_group)
+
+
+@pytest.mark.parametrize("channel", ["stable", "beta", "qa1", "nightly-build"])
+def testAgentGroupSpecValidation_whenExperimentalChannelIsValid_noRaise(
+    channel: str,
+) -> None:
+    """Test that the agent group schema accepts valid release channel names."""
+    yaml_agent_group_data = f"""
+        kind: "AgentGroup"
+        description: "Agent group on a release channel"
+        use_experimental_agents: true
+        experimental_channel: "{channel}"
+        agents:
+            - key: agent/ostorlab/nmap
+    """
+
+    data = loader.load_agent_group_yaml(io.StringIO(yaml_agent_group_data))
+
+    assert data["experimental_channel"] == channel
+    assert data["use_experimental_agents"] is True
+
+
+@pytest.mark.parametrize("channel", ["Beta", "1beta", "beta.2", "beta_2", "a" * 33, ""])
+def testAgentGroupSpecValidation_whenExperimentalChannelIsInvalid_raiseValidationError(
+    channel: str,
+) -> None:
+    """Test that the agent group schema rejects invalid release channel names."""
+    yaml_agent_group_data = f"""
+        kind: "AgentGroup"
+        description: "Agent group on a release channel"
+        experimental_channel: "{channel}"
+        agents:
+            - key: agent/ostorlab/nmap
+    """
+
+    with pytest.raises(validator.ValidationError):
+        loader.load_agent_group_yaml(io.StringIO(yaml_agent_group_data))
+
+
+def testAgentGroupSpecValidation_whenUseExperimentalAgentsIsNotBoolean_raiseValidationError() -> (
+    None
+):
+    """Test that the agent group schema rejects a non boolean use_experimental_agents."""
+    yaml_agent_group_data = """
+        kind: "AgentGroup"
+        description: "Agent group with experimental agents"
+        use_experimental_agents: "yes please"
+        agents:
+            - key: agent/ostorlab/nmap
+    """
+
+    with pytest.raises(validator.ValidationError):
+        loader.load_agent_group_yaml(io.StringIO(yaml_agent_group_data))

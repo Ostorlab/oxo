@@ -1297,3 +1297,74 @@ assets:
 
     with pytest.raises(validator.ValidationError):
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAgentGroupDefinitionFromYaml_whenExperimentalChannelProvided_parsedCorrectly() -> (
+    None
+):
+    """Test that the experimental_channel yaml key is parsed into the agent group definition."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        experimental_channel: "beta"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.experimental_channel == "beta"
+
+
+def testAgentGroupDefinitionFromYaml_whenExperimentalChannelMissing_defaultsToStable() -> (
+    None
+):
+    """Test that a yaml without experimental_channel resolves agents from the stable channel."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.experimental_channel == "stable"
+
+
+def testAgentGroupDefinitionFromApiResponse_whenExperimentalChannelProvided_parsedCorrectly() -> (
+    None
+):
+    """Test that experimentalChannel from the API response is parsed into the agent group definition."""
+    agent_group = {
+        "key": "agentgroup/ostorlab/agent_group42",
+        "experimentalChannel": "beta",
+        "agents": [{"key": "agent/ostorlab/nmap"}],
+    }
+
+    agent_group_def = definitions.AgentGroupDefinition.from_api_response(agent_group)
+
+    assert agent_group_def.experimental_channel == "beta"
+
+
+@pytest.mark.parametrize(
+    "agent_group",
+    [
+        {
+            "key": "agentgroup/ostorlab/group",
+            "agents": [{"key": "agent/ostorlab/nmap"}],
+        },
+        {
+            "key": "agentgroup/ostorlab/group",
+            "experimentalChannel": None,
+            "agents": [{"key": "agent/ostorlab/nmap"}],
+        },
+    ],
+)
+def testAgentGroupDefinitionFromApiResponse_whenExperimentalChannelMissingOrNull_defaultsToStable(
+    agent_group: dict[str, object],
+) -> None:
+    """Test that a missing or null experimentalChannel falls back to the stable channel."""
+    agent_group_def = definitions.AgentGroupDefinition.from_api_response(agent_group)
+
+    assert agent_group_def.experimental_channel == "stable"

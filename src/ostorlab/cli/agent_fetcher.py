@@ -15,6 +15,7 @@ from ostorlab.apis import agent_details as agent_details_api
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import public_runner
 from ostorlab.apis.runners import runner as base_runner
+from ostorlab.utils import release_channel
 from ostorlab.utils import version as version_definition
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,10 @@ class AgentDetailsNotFound(Error):
 
 
 def get_details(
-    agent_key: str, use_experimental: bool = False, api_key: str | None = None
+    agent_key: str,
+    use_experimental: bool = False,
+    api_key: str | None = None,
+    channel: str = release_channel.STABLE,
 ) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
@@ -38,6 +42,8 @@ def get_details(
         use_experimental: when True, the server includes experimental (prerelease)
             versions in the result set for this agent.
         api_key: the API key for RE authentication
+        channel: the release channel to resolve the latest version from, `stable`
+            meaning no channel.
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
@@ -57,7 +63,7 @@ def get_details(
     try:
         response = runner.execute(
             agent_details_api.AgentDetailsAPIRequest(
-                agent_key, use_experimental=use_experimental
+                agent_key, use_experimental=use_experimental, channel=channel
             )
         )
     except base_runner.ResponseError as e:
