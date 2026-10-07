@@ -89,6 +89,11 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "AWSSecret",
         "HTTPAuthorization",
         "private_key",
+        "api-key",
+        "private-key",
+        "secret-key",
+        "auth.token",
+        "Session Token",
         "secret_key",
         "secretKey",
         "aws_secret_access_key",
@@ -271,3 +276,29 @@ def testFormatDict_whenStringHasUrlWithPort_keepsUrl() -> None:
     result = strings.format_dict(data)
 
     assert '"url": "https://example.com:8443/path?q=1"' in result
+
+
+def testFormatDict_whenNameValuePairHasSensitiveName_redactsValue() -> None:
+    """Tests if values of name/value pairs, like headers or form inputs, are redacted."""
+    data = {
+        "url": "https://example.com/login",
+        "extra_headers": [
+            {"name": "Authorization", "value": "Bearer fake-bearer-token"},
+            {"name": "Accept", "value": "application/json"},
+        ],
+        "form": {
+            "inputs": [
+                {"name": "password", "type": "password", "value": "fake-password"},
+                {"name": "username", "type": "text", "value": "fake-user"},
+            ]
+        },
+    }
+
+    result = strings.format_dict(data)
+
+    assert "fake-bearer-token" not in result
+    assert "fake-password" not in result
+    assert '"name": "Authorization"' in result
+    assert '"value": "application/json"' in result
+    assert '"value": "fake-user"' in result
+    assert '"type": "password"' in result
