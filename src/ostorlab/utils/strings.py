@@ -13,7 +13,8 @@ REDACTED = "<redacted>"
 # `password_policy`.
 _SENSITIVE_KEY_PATTERN = re.compile(
     r"(?:^|_)(?:passwords?|passwd|secrets?|tokens?|api_?keys?|private_?keys?"
-    r"|(?:secret|session|signing|encryption)_?(?:access_?)?keys?|session_?ids?"
+    r"|(?:secret|session|signing|encryption)_?(?:access_?)?keys?"
+    r"|(?:j|php|asp)?sess(?:ion)?_?ids?"
     r"|credentials?|authorization|cookies?)"
     r"[0-9]*$",
     re.IGNORECASE,
@@ -24,9 +25,15 @@ _KEY_SEPARATOR_PATTERN = re.compile(r"[\s\-.]+")
 _CAMEL_CASE_BOUNDARY_PATTERN = re.compile(
     r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
 )
-# Matches URL query and fragment parameters, e.g. `&X-Goog-Signature=...`, capturing
-# their name and value.
-_URL_QUERY_PARAM_PATTERN = re.compile(r"([?&#]([^=?&#\s\"']+)=)([^&#\s\"']*)")
+# Matches the start of URL query and fragment parameters, e.g. `&X-Goog-Signature=`,
+# capturing their name. Percent-encoded delimiters of nested URLs are supported.
+_URL_QUERY_PARAM_PATTERN = re.compile(
+    r"(?:[?&#]|%3F|%26|%23)([^=?&#%\s\"']+)(?:=|%3D)", re.IGNORECASE
+)
+# Matches a URL query parameter value, up to the next parameter or fragment.
+_URL_QUERY_PARAM_VALUE_PATTERN = re.compile(
+    r"(?:(?!%26|%23)[^&#\s\"'])*", re.IGNORECASE
+)
 # Matches signature query parameter names of signed URLs, e.g. `X-Amz-Signature`.
 _URL_SIGNATURE_PARAM_PATTERN = re.compile(
     r"(?:^|[_\-.])(?:signature|sig)$", re.IGNORECASE
@@ -69,19 +76,27 @@ def _is_sensitive_key(key: Any) -> bool:
     return _SENSITIVE_KEY_PATTERN.search(key) is not None
 
 
-def _redact_url_query_param(match: re.Match[str]) -> str:
-    """Redact the value of a URL query parameter if its name is sensitive.
+def _redact_url_query_params(text: str) -> str:
+    """Redact the values of URL query parameters with a sensitive name.
 
-    Values of other parameters are redacted recursively, as they may be nested URLs.
+    Values of other parameters are scanned too, as they may be nested URLs.
     """
-    name = match.group(2)
-    if (
-        _is_sensitive_key(name) is True
-        or _URL_SIGNATURE_PARAM_PATTERN.search(name) is not None
-    ):
-        return f"{match.group(1)}{REDACTED}"
-    value = _URL_QUERY_PARAM_PATTERN.sub(_redact_url_query_param, match.group(3))
-    return f"{match.group(1)}{value}"
+    parts = []
+    position = 0
+    while (match := _URL_QUERY_PARAM_PATTERN.search(text, position)) is not None:
+        parts.append(text[position : match.end()])
+        position = match.end()
+        name = match.group(1)
+        if (
+            _is_sensitive_key(name) is True
+            or _URL_SIGNATURE_PARAM_PATTERN.search(name) is not None
+        ):
+            parts.append(REDACTED)
+            value_match = _URL_QUERY_PARAM_VALUE_PATTERN.match(text, position)
+            if value_match is not None:
+                position = value_match.end()
+    parts.append(text[position:])
+    return "".join(parts)
 
 
 def _format_dict_data(data: dict[Any, Any]) -> dict[Any, Any]:
@@ -111,7 +126,7 @@ def _format_data(data: Any) -> Any:
     elif isinstance(data, bytes):
         return f"<bytes of length {len(data)}>"
     elif isinstance(data, str):
-        data = _URL_QUERY_PARAM_PATTERN.sub(_redact_url_query_param, data)
+        data = _redact_url_query_params(data)
         data = _URL_USER_INFO_PASSWORD_PATTERN.sub(rf"\1{REDACTED}@", data)
         if len(data) > 4096:
             return f"{data[:256]}... <string of length {len(data)}>"

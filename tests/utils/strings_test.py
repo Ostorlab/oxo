@@ -98,6 +98,10 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "api_key1",
         "session_id",
         "sessionid",
+        "JSESSIONID",
+        "PHPSESSID",
+        "ASPSESSIONID",
+        "ASP.NET_SessionId",
         "api-key",
         "private-key",
         "secret-key",
@@ -395,3 +399,35 @@ def testFormatDict_whenSensitiveParamValueIsUrl_redactsWholeValue() -> None:
 
     assert "fake-x" not in result
     assert '"https://example.com/redirect?token=<redacted>&y=1"' in result
+
+
+def testFormatDict_whenNestedUrlIsPercentEncoded_redactsToken() -> None:
+    """Tests if tokens of percent-encoded URLs nested in parameters are redacted."""
+    data = {
+        "url": "https://example.com/redirect"
+        "?next=https%3A%2F%2Fexample.com%2Fcb%3Faccess_token%3Dfake-token%26x%3D1"
+    }
+
+    result = strings.format_dict(data)
+
+    assert "fake-token" not in result
+    assert "access_token%3D<redacted>%26x%3D1" in result
+
+
+def testFormatDict_whenStringHasManyNestedParams_doesNotRaise() -> None:
+    """Tests if strings with many nested parameter-like segments are handled."""
+    data = {"url": "https://example.com/" + "?a=" * 10000 + "&token=fake-token"}
+
+    result = strings.format_dict(data)
+
+    assert "fake-token" not in result
+    assert "<string of length" in result
+
+
+def testFormatDict_whenKeyValuePairHasSessionCookie_redactsValue() -> None:
+    """Tests if values of session cookie key/value pairs are redacted."""
+    data = {"key": "JSESSIONID", "value": "fake-session"}
+
+    result = strings.format_dict(data)
+
+    assert "fake-session" not in result
