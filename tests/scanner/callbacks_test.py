@@ -1841,6 +1841,49 @@ def testStartScan_whenSnapshotDownloadIsLargerThanRecorded_raisesAndDoesNotStart
     runtime_mock.scan.assert_not_called()
 
 
+def testStartScan_whenSnapshotDownloadFails_doesNotExposeTheSignedUrl(
+    mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
+) -> None:
+    """Ensure the signed download URL does not reach the scanner logs through the raised error."""
+    reserved_scan = {
+        "id": 42,
+        "hasSnapshot": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/stop_scan"}],
+        },
+        "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = {
+        "data": {
+            "scanSnapshot": {
+                "scanId": 42,
+                "size": 8,
+                "sha256": hashlib.sha256(b"snapshot").hexdigest(),
+                "downloadUrl": "https://storage.googleapis.com/snapshots/42?sig=secret",
+            }
+        }
+    }
+    httpx_mock.add_response(
+        url="https://storage.googleapis.com/snapshots/42?sig=secret", status_code=403
+    )
+
+    with pytest.raises(callbacks.MissingScanSnapshotError) as error:
+        callbacks.start_scan(
+            reserved_scan,
+            mocker.MagicMock(),
+            scanner_api_runner=scanner_api_runner,
+        )
+
+    assert "secret" not in str(error.value)
+    assert "403" in str(error.value)
+    assert error.value.__cause__ is None
+    assert error.value.__suppress_context__ is True
+    runtime_mock.scan.assert_not_called()
+
+
 def testStartScan_whenSnapshotDeletionFails_keepsTheStartedScan(
     mocker: plugin.MockerFixture, httpx_mock: HTTPXMock
 ) -> None:

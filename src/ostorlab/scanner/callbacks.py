@@ -572,9 +572,15 @@ def _fetch_scan_snapshot(
                         f"snapshot of scan {scan_id} is larger than its {expected_size} bytes."
                     )
     except httpx.HTTPError as e:
+        # The httpx error and its traceback hold the signed URL: only its type and status are reported.
+        status = (
+            f", status {e.response.status_code}"
+            if isinstance(e, httpx.HTTPStatusError)
+            else ""
+        )
         raise MissingScanSnapshotError(
-            f"snapshot of scan {scan_id} could not be downloaded: {e}"
-        ) from e
+            f"snapshot of scan {scan_id} could not be downloaded: {type(e).__name__}{status}"
+        ) from None
     snapshot_data = bytes(snapshot_data)
     if hashlib.sha256(snapshot_data).hexdigest() != snapshot_info.get("sha256"):
         raise MissingScanSnapshotError(
