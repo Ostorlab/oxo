@@ -251,7 +251,12 @@ class AgentMixin(
             return
 
         try:
-            logger.debug("Call to process with message= %s", raw_message)
+            # The raw message is not logged as it may contain secrets like credentials.
+            logger.debug(
+                "Call to process with message of selector %s and size %d",
+                selector,
+                len(raw_message),
+            )
             self.process(object_message)
         except Exception:
             system_info = system.get_system_info()

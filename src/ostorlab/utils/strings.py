@@ -2,8 +2,26 @@
 
 import json
 import random
+import re
 import string
 from typing import Any
+
+REDACTED = "<redacted>"
+
+# Matches keys whose last word is a secret, e.g. `password`, `session_token`,
+# `device_relay_credentials` or `apiKey`, but not `token_count` or `password_policy`.
+_SENSITIVE_KEY_PATTERN = re.compile(
+    r"(?:^|[_\-.])(?:passwords?|passwd|secrets?|tokens?|api_?keys?|private_?keys?"
+    r"|credentials?|authorization|cookies?)$",
+    re.IGNORECASE,
+)
+_CAMEL_CASE_BOUNDARY_PATTERN = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+# Matches signature, credential and token query parameters of signed URLs (GCS, S3...).
+_SIGNED_URL_PARAM_PATTERN = re.compile(
+    r"([?&](?:X-Goog-Signature|X-Goog-Credential|X-Amz-Signature|X-Amz-Credential"
+    r"|X-Amz-Security-Token|Signature|sig|token|access_token)=)[^&#\s\"']*",
+    re.IGNORECASE,
+)
 
 
 def random_string(length: int, alphabet: str = string.ascii_lowercase) -> str:
@@ -23,14 +41,41 @@ def random_string(length: int, alphabet: str = string.ascii_lowercase) -> str:
     return result
 
 
+def _is_sensitive_key(key: Any) -> bool:
+    """Check if a key name designates a secret value, like a password or a token."""
+    if isinstance(key, bytes):
+        key = key.decode(errors="ignore")
+    if isinstance(key, str) is False:
+        return False
+    key = _CAMEL_CASE_BOUNDARY_PATTERN.sub("_", key)
+    return _SENSITIVE_KEY_PATTERN.search(key) is not None
+
+
+def _format_dict_data(data: dict[Any, Any]) -> dict[Any, Any]:
+    # Arguments are name/value pairs, e.g. `{"arg_name": "token", "arg_value": [...]}`.
+    is_sensitive_arg = _is_sensitive_key(data.get("arg_name"))
+    formatted: dict[Any, Any] = {}
+    for key, value in data.items():
+        if _is_sensitive_key(key) is True or (
+            is_sensitive_arg is True
+            and isinstance(key, str)
+            and key.startswith("arg_value")
+        ):
+            formatted[key] = REDACTED
+        else:
+            formatted[key] = _format_data(value)
+    return formatted
+
+
 def _format_data(data: Any) -> Any:
     if isinstance(data, dict):
-        return {k: _format_data(v) for k, v in data.items()}
+        return _format_dict_data(data)
     elif isinstance(data, list):
         return [_format_data(v) for v in data]
     elif isinstance(data, bytes):
         return f"<bytes of length {len(data)}>"
     elif isinstance(data, str):
+        data = _SIGNED_URL_PARAM_PATTERN.sub(rf"\1{REDACTED}", data)
         if len(data) > 4096:
             return f"{data[:256]}... <string of length {len(data)}>"
         else:
@@ -40,6 +85,10 @@ def _format_data(data: Any) -> Any:
 
 
 def format_dict(dict_obj: dict[str, Any]) -> str:
-    """Format message for logging, filtering out large values."""
+    """Format message for logging, filtering out large values and redacting secrets.
+
+    Values of keys that look sensitive (passwords, tokens, credentials...) and signature
+    parameters of signed URLs are replaced with a `<redacted>` placeholder.
+    """
     filtered_data = _format_data(dict_obj)
     return json.dumps(filtered_data, indent=2)
