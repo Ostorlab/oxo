@@ -89,6 +89,11 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "AWSSecret",
         "HTTPAuthorization",
         "private_key",
+        "password1",
+        "token2",
+        "api_key1",
+        "session_id",
+        "sessionid",
         "api-key",
         "private-key",
         "secret-key",
@@ -118,6 +123,7 @@ def testFormatDict_whenKeyIsSensitive_redactsValue(key: str) -> None:
     "key",
     [
         "token_count",
+        "session_count",
         "tokenizer",
         "password_policy",
         "keyboard",
@@ -302,3 +308,33 @@ def testFormatDict_whenNameValuePairHasSensitiveName_redactsValue() -> None:
     assert '"value": "application/json"' in result
     assert '"value": "fake-user"' in result
     assert '"type": "password"' in result
+
+
+def testFormatDict_whenStringHasUrlWithEmptyUserAndPassword_redactsPassword() -> None:
+    """Tests if the password of a URL user info with an empty username is redacted."""
+    data = {"relay": "ssh://:fake-password@relay.example.com"}
+
+    result = strings.format_dict(data)
+
+    assert "fake-password" not in result
+    assert '"ssh://:<redacted>@relay.example.com"' in result
+
+
+def testFormatDict_whenKeyValuePairHasSensitiveKey_redactsValue() -> None:
+    """Tests if values of key/value pairs, like local storage items, are redacted."""
+    data = {
+        "localstorage_items": [
+            {
+                "url": "https://example.com",
+                "key": "access_token",
+                "value": "fake-token",
+            },
+            {"url": "https://example.com", "key": "theme", "value": "dark"},
+        ]
+    }
+
+    result = strings.format_dict(data)
+
+    assert "fake-token" not in result
+    assert '"key": "access_token"' in result
+    assert '"value": "dark"' in result

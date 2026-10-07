@@ -9,10 +9,12 @@ from typing import Any
 REDACTED = "<redacted>"
 
 # Matches keys whose last word is a secret, e.g. `password`, `session_token`,
-# `device_relay_credentials` or `apiKey`, but not `token_count` or `password_policy`.
+# `device_relay_credentials`, `apiKey` or `password2`, but not `token_count` or
+# `password_policy`.
 _SENSITIVE_KEY_PATTERN = re.compile(
     r"(?:^|_)(?:passwords?|passwd|secrets?|tokens?|api_?keys?|private_?keys?"
-    r"|secret_?(?:access_?)?keys?|credentials?|authorization|cookies?)$",
+    r"|secret_?(?:access_?)?keys?|session_?ids?|credentials?|authorization|cookies?)"
+    r"[0-9]*$",
     re.IGNORECASE,
 )
 # Normalizes key word separators to `_`, e.g. `X-Auth-Token` to `X_Auth_Token`.
@@ -29,9 +31,9 @@ _SIGNED_URL_PARAM_PATTERN = re.compile(
     re.IGNORECASE,
 )
 # Maps the name key of name/value pairs to the prefix of their value keys.
-_NAME_VALUE_KEYS = {"arg_name": "arg_value", "name": "value"}
+_NAME_VALUE_KEYS = {"arg_name": "arg_value", "name": "value", "key": "value"}
 # Matches the password of URL user info, e.g. `https://user:password@host`.
-_URL_USER_INFO_PASSWORD_PATTERN = re.compile(r"(://[^/\s:@]+:)[^/\s@]+@")
+_URL_USER_INFO_PASSWORD_PATTERN = re.compile(r"(://[^/\s:@]*:)[^/\s@]+@")
 
 
 def random_string(length: int, alphabet: str = string.ascii_lowercase) -> str:
