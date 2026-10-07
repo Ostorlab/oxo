@@ -9,14 +9,14 @@ from typing import Any
 REDACTED = "<redacted>"
 
 # Matches keys whose last word is a secret, e.g. `password`, `session_token`,
-# `device_relay_credentials`, `apiKey` or `password2`, but not `token_count` or
+# `device_relay_credentials`, `apiKey` or `password_2`, but not `token_count` or
 # `password_policy`.
 _SENSITIVE_KEY_PATTERN = re.compile(
     r"(?:^|_)(?:passwords?|passwd|secrets?|tokens?|api_?keys?|private_?keys?"
     r"|(?:secret|session|signing|encryption)_?(?:access_?)?keys?"
     r"|(?:j|php|asp)?sess(?:ion)?_?ids?"
     r"|credentials?|authorization|cookies?)"
-    r"[0-9]*$",
+    r"(?:_?[0-9]+)?$",
     re.IGNORECASE,
 )
 # Normalizes key word separators to `_`, e.g. `X-Auth-Token` to `X_Auth_Token`.
@@ -31,7 +31,10 @@ _URL_QUERY_PARAM_PATTERN = re.compile(
     r"(?:[?&#]|%3F|%26|%23)([^=?&#%\s\"']+)(?:=|%3D)", re.IGNORECASE
 )
 # Matches a URL query parameter value, up to the next parameter or fragment.
-_URL_QUERY_PARAM_VALUE_PATTERN = re.compile(
+_URL_QUERY_PARAM_VALUE_PATTERN = re.compile(r"[^&#\s\"']*")
+# Matches a percent-encoded URL query parameter value, up to the next encoded parameter
+# or fragment.
+_ENCODED_URL_QUERY_PARAM_VALUE_PATTERN = re.compile(
     r"(?:(?!%26|%23)[^&#\s\"'])*", re.IGNORECASE
 )
 # Matches signature query parameter names of signed URLs, e.g. `X-Amz-Signature`.
@@ -92,7 +95,12 @@ def _redact_url_query_params(text: str) -> str:
             or _URL_SIGNATURE_PARAM_PATTERN.search(name) is not None
         ):
             parts.append(REDACTED)
-            value_match = _URL_QUERY_PARAM_VALUE_PATTERN.match(text, position)
+            # `%26` and `%23` only delimit values of parameters of encoded nested URLs.
+            if text[match.start()] in "?&#":
+                value_pattern = _URL_QUERY_PARAM_VALUE_PATTERN
+            else:
+                value_pattern = _ENCODED_URL_QUERY_PARAM_VALUE_PATTERN
+            value_match = value_pattern.match(text, position)
             if value_match is not None:
                 position = value_match.end()
     parts.append(text[position:])

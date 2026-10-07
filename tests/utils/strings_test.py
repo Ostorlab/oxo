@@ -96,6 +96,10 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "password1",
         "token2",
         "api_key1",
+        "token_1",
+        "api-key-1",
+        "password.1",
+        "session_id_2",
         "session_id",
         "sessionid",
         "JSESSIONID",
@@ -431,3 +435,15 @@ def testFormatDict_whenKeyValuePairHasSessionCookie_redactsValue() -> None:
     result = strings.format_dict(data)
 
     assert "fake-session" not in result
+
+
+def testFormatDict_whenSensitiveParamValueHasEncodedDelimiter_redactsWholeValue() -> (
+    None
+):
+    """Tests if encoded delimiters in a sensitive parameter value are redacted too."""
+    data = {"url": "https://example.com/?token=fake%26secret&x=1"}
+
+    result = strings.format_dict(data)
+
+    assert "secret" not in result
+    assert '"https://example.com/?token=<redacted>&x=1"' in result
