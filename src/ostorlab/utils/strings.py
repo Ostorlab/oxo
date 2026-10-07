@@ -15,7 +15,10 @@ _SENSITIVE_KEY_PATTERN = re.compile(
     r"|credentials?|authorization|cookies?)$",
     re.IGNORECASE,
 )
-_CAMEL_CASE_BOUNDARY_PATTERN = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+# Splits camelCase words, including acronyms, e.g. `AWSPrivateKey` to `AWS_Private_Key`.
+_CAMEL_CASE_BOUNDARY_PATTERN = re.compile(
+    r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+)
 # Matches signature, credential and token query parameters of signed URLs (GCS, S3...).
 _SIGNED_URL_PARAM_PATTERN = re.compile(
     r"([?&](?:X-Goog-Signature|X-Goog-Credential|X-Amz-Signature|X-Amz-Credential"

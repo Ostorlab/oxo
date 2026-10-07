@@ -165,7 +165,8 @@ class AgentMQMixin:
             key: Selector where to send the message.
             message_priority: the priority of the message. Default is 0
         """
-        logger.debug("sending %s to %s", message, key)
+        # The message is not logged as it may contain secrets like credentials.
+        logger.debug("sending message of size %d to %s", len(message), key)
         async with self._channel_pool.acquire() as channel:
             exchange = await self._get_exchange(channel)
             pika_message = aio_pika.Message(
@@ -199,7 +200,8 @@ class AgentMQMixin:
             message: Message to send.
             message_priority: the priority to use for the message default is 0.
         """
-        logger.debug("sending %s to %s", message, key)
+        # The message is not logged as it may contain secrets like credentials.
+        logger.debug("sending message of size %d to %s", len(message), key)
 
         if not self._loop.is_running():
             self._loop.run_until_complete(

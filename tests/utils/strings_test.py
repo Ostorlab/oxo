@@ -85,6 +85,9 @@ def testToString_whenObjectIsNotStringOrBytes_returnsObject():
         "api_key",
         "apikey",
         "apiKey",
+        "AWSPrivateKey",
+        "AWSSecret",
+        "HTTPAuthorization",
         "private_key",
         "credentials",
         "device_relay_credentials",
@@ -105,7 +108,15 @@ def testFormatDict_whenKeyIsSensitive_redactsValue(key: str) -> None:
 
 @pytest.mark.parametrize(
     "key",
-    ["token_count", "tokenizer", "password_policy", "keyboard", "public_key", "name"],
+    [
+        "token_count",
+        "tokenizer",
+        "password_policy",
+        "keyboard",
+        "public_key",
+        "AWSPublicKey",
+        "name",
+    ],
 )
 def testFormatDict_whenKeyIsNotSensitive_keepsValue(key: str) -> None:
     """Tests if values of keys that only contain a sensitive word are not redacted."""
