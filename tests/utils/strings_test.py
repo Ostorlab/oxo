@@ -383,3 +383,15 @@ def testFormatDict_whenNameIsSensitive_keepsOtherValueLikeKeys() -> None:
 
     assert "fake-password" not in result
     assert '"value_type": "string"' in result
+
+
+def testFormatDict_whenSensitiveParamValueIsUrl_redactsWholeValue() -> None:
+    """Tests if a sensitive parameter whose value is a URL is redacted entirely."""
+    data = {
+        "url": "https://example.com/redirect?token=https://example.com/cb?x=fake-x&y=1"
+    }
+
+    result = strings.format_dict(data)
+
+    assert "fake-x" not in result
+    assert '"https://example.com/redirect?token=<redacted>&y=1"' in result

@@ -25,8 +25,8 @@ _CAMEL_CASE_BOUNDARY_PATTERN = re.compile(
     r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
 )
 # Matches URL query and fragment parameters, e.g. `&X-Goog-Signature=...`, capturing
-# their name. Values stop at `?` so parameters of URLs nested in values are matched too.
-_URL_QUERY_PARAM_PATTERN = re.compile(r"([?&#]([^=?&#\s\"']+)=)[^?&#\s\"']*")
+# their name and value.
+_URL_QUERY_PARAM_PATTERN = re.compile(r"([?&#]([^=?&#\s\"']+)=)([^&#\s\"']*)")
 # Matches signature query parameter names of signed URLs, e.g. `X-Amz-Signature`.
 _URL_SIGNATURE_PARAM_PATTERN = re.compile(
     r"(?:^|[_\-.])(?:signature|sig)$", re.IGNORECASE
@@ -70,14 +70,18 @@ def _is_sensitive_key(key: Any) -> bool:
 
 
 def _redact_url_query_param(match: re.Match[str]) -> str:
-    """Redact the value of a URL query parameter if its name is sensitive."""
+    """Redact the value of a URL query parameter if its name is sensitive.
+
+    Values of other parameters are redacted recursively, as they may be nested URLs.
+    """
     name = match.group(2)
     if (
         _is_sensitive_key(name) is True
         or _URL_SIGNATURE_PARAM_PATTERN.search(name) is not None
     ):
         return f"{match.group(1)}{REDACTED}"
-    return match.group(0)
+    value = _URL_QUERY_PARAM_PATTERN.sub(_redact_url_query_param, match.group(3))
+    return f"{match.group(1)}{value}"
 
 
 def _format_dict_data(data: dict[Any, Any]) -> dict[Any, Any]:
