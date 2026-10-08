@@ -189,3 +189,29 @@ def testScanUpdateStateAPIRequest_whenFullDetails_multiAssetSelectsNoConflicting
             )
 
     assert response_names & sibling_names == set()
+
+
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsExperimentalChannelOnScan() -> (
+    None
+):
+    """Test full details query selects experimentalChannel on the scan, not on its agent group."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    scan_selection, agent_group_selection = api_request.query.split("agentGroup {")
+    assert "experimentalChannel" in scan_selection
+    assert "experimentalChannel" not in agent_group_selection
+
+
+def testScanUpdateStateAPIRequest_whenMinimal_queryDoesNotContainExperimentalChannel() -> (
+    None
+):
+    """Test minimal query does not select experimentalChannel."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="started"
+    )
+
+    assert api_request.query is not None
+    assert "experimentalChannel" not in api_request.query

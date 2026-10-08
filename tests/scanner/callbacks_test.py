@@ -1,6 +1,7 @@
 """Unit tests for ostorlab.scanner.callbacks module."""
 
 import base64
+from unittest import mock
 
 import pytest
 from pytest_mock import plugin
@@ -1717,3 +1718,82 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
         use_experimental=True,
         channel="beta",
     )
+
+
+def _start_scan_with_unpinned_agent(
+    mocker: plugin.MockerFixture, scan_fields: dict[str, object]
+) -> tuple[mock.MagicMock, mock.MagicMock]:
+    reserved_scan = {
+        "id": 42,
+        "useExperimentalAgents": True,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/agent42"}],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+        **scan_fields,
+    }
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    get_details_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.agent_fetcher.get_details",
+        return_value={"versions": {"versions": [{"version": "1.4.0-beta.2"}]}},
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
+
+    callbacks.start_scan(reserved_scan, mocker.MagicMock())
+
+    return get_details_mock, install_agent_mock
+
+
+def testStartScan_whenExperimentalChannelIsSet_forwardsChannelToGetDetailsAndInstall(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The daemon resolves and installs unpinned agents from the scan release channel."""
+    get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
+        mocker, {"experimentalChannel": "beta"}
+    )
+
+    get_details_mock.assert_called_once_with(
+        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel="beta"
+    )
+    assert install_agent_mock.call_args.kwargs["channel"] == "beta"
+    assert install_agent_mock.call_args.kwargs["use_experimental"] is True
+
+
+@pytest.mark.parametrize("scan_fields", [{}, {"experimentalChannel": None}])
+def testStartScan_whenExperimentalChannelIsMissingOrNull_forwardsStableChannel(
+    mocker: plugin.MockerFixture, scan_fields: dict[str, object]
+) -> None:
+    """A scan without a release channel installs agents from the stable channel."""
+    get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
+        mocker, scan_fields
+    )
+
+    assert get_details_mock.call_args.kwargs["channel"] == "stable"
+    assert install_agent_mock.call_args.kwargs["channel"] == "stable"
+
+
+def testStartScan_whenExperimentalChannelIsInvalid_logsWarningAndForwardsStableChannel(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An invalid release channel from the API falls back to stable instead of failing the scan."""
+    logger_mock = mocker.patch.object(callbacks.logger, "warning")
+
+    get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
+        mocker, {"experimentalChannel": "Beta.2"}
+    )
+
+    assert get_details_mock.call_args.kwargs["channel"] == "stable"
+    assert install_agent_mock.call_args.kwargs["channel"] == "stable"
+    assert "Beta.2" in [call.args[1] for call in logger_mock.call_args_list]

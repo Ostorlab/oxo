@@ -510,6 +510,19 @@ def _extract_scan_id(request: dict[str, Any]) -> int:
     return scan_id
 
 
+def _extract_experimental_channel(request: dict[str, Any]) -> str:
+    channel = request.get("experimentalChannel")
+    if channel is None:
+        return release_channel.STABLE
+    if isinstance(channel, str) is False or release_channel.is_valid(channel) is False:
+        logger.warning(
+            "Invalid experimental channel %r, installing agents from the stable channel.",
+            channel,
+        )
+        return release_channel.STABLE
+    return channel
+
+
 def _update_state_reporter(
     state_reporter: scanner_state_reporter.ScannerStateReporter, scan_id: int
 ) -> scanner_state_reporter.ScannerStateReporter:
@@ -575,6 +588,7 @@ def start_scan(
                 api_key=api_key,
                 use_experimental_agents=request.get("useExperimentalAgents", False)
                 is True,
+                channel=_extract_experimental_channel(request=request),
             )
 
             try:

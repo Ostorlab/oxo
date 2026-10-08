@@ -406,16 +406,12 @@ class AgentGroupDefinition:
 
         description = f"Agent group {name}: {','.join(agents_names)}"
         use_experimental_agents = agent_group.get("useExperimentalAgents", False)
-        experimental_channel = (
-            agent_group.get("experimentalChannel") or release_channel.STABLE
-        )
 
         return cls(
             agents=agent_settings,
             name=name,
             description=description,
             use_experimental_agents=use_experimental_agents,
-            experimental_channel=experimental_channel,
         )
 
 
