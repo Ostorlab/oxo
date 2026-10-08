@@ -26,7 +26,7 @@ def testGetDetails_whenUseExperimentalNotProvided_buildsRequestWithDefaultFalse(
                 agent_fetcher.get_details("agent/ostorlab/nmap")
 
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", use_experimental=False, channel="stable"
+                    "agent/ostorlab/nmap", use_experimental=False, channel=None
                 )
 
 
@@ -48,7 +48,7 @@ def testGetDetails_whenUseExperimentalTrue_buildsRequestWithTrue() -> None:
                 agent_fetcher.get_details("agent/ostorlab/nmap", use_experimental=True)
 
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", use_experimental=True, channel="stable"
+                    "agent/ostorlab/nmap", use_experimental=True, channel=None
                 )
 
 
@@ -93,7 +93,7 @@ def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> N
 
                 mock_runner_cls.assert_called_once_with(api_key="test-api-key")
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", use_experimental=False, channel="stable"
+                    "agent/ostorlab/nmap", use_experimental=False, channel=None
                 )
                 assert result == {"key": "value"}
 

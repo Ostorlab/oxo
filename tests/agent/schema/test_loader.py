@@ -241,7 +241,7 @@ def testAgentGroupSpecValidation_whenDefinitionHasInvalidArgType_raiseValidation
         loader.load_agent_group_yaml(invalid_agent_group)
 
 
-@pytest.mark.parametrize("channel", ["stable", "beta", "qa1", "nightly-build"])
+@pytest.mark.parametrize("channel", ["beta", "qa1", "stable", "nightly-build"])
 def testAgentGroupSpecValidation_whenExperimentalChannelIsValid_noRaise(
     channel: str,
 ) -> None:

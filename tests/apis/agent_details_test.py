@@ -57,12 +57,12 @@ def testAgentDetailsAPIRequest_whenUseExperimentalTrue_sendsQueryWithUseExperime
     assert "useExperimental: $useExperimental" in query
 
 
-def testAgentDetailsAPIRequest_whenChannelIsStable_queryAndVariablesDoNotMentionChannel() -> (
+def testAgentDetailsAPIRequest_whenNoChannel_queryAndVariablesDoNotMentionChannel() -> (
     None
 ):
-    """Test that the stable channel keeps the query compatible with stores without the channel argument."""
+    """Test that a request without a channel stays compatible with stores without the channel argument."""
     api_request = agent_details.AgentDetailsAPIRequest(
-        agent_key="agent/ostorlab/nmap", use_experimental=True, channel="stable"
+        agent_key="agent/ostorlab/nmap", use_experimental=True
     )
 
     data = api_request.data
@@ -72,10 +72,10 @@ def testAgentDetailsAPIRequest_whenChannelIsStable_queryAndVariablesDoNotMention
     assert variables == {"agentKey": "agent/ostorlab/nmap", "useExperimental": True}
 
 
-def testAgentDetailsAPIRequest_whenChannelIsNotStable_sendsChannelVariableAndArgument() -> (
+def testAgentDetailsAPIRequest_whenChannelIsSet_sendsChannelVariableAndArgument() -> (
     None
 ):
-    """Test that a non-stable channel is declared, passed to versions and sent with useExperimental."""
+    """Test that a channel is declared, passed to versions and sent with useExperimental."""
     api_request = agent_details.AgentDetailsAPIRequest(
         agent_key="agent/ostorlab/nmap", channel="beta"
     )

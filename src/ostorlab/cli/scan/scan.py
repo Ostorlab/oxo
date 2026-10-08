@@ -5,7 +5,6 @@ import click
 from ostorlab.cli import input_validators
 from ostorlab.cli.rootcli import rootcli
 from ostorlab.runtimes import registry
-from ostorlab.utils import release_channel
 
 
 @rootcli.group()
@@ -84,8 +83,8 @@ from ostorlab.utils import release_channel
 @click.option(
     "--experimental-channel",
     "experimental_channel",
-    default=release_channel.STABLE,
-    help="Release channel to resolve agent versions from, stable meaning no channel.",
+    default=None,
+    help="Release channel to resolve agent versions from. Without it, stable versions are used.",
     hidden=True,
     callback=input_validators.validate_release_channel,
 )
@@ -114,7 +113,7 @@ def scan(
     scan_id: str | None = None,
     labels: dict[str, str] | None = None,
     use_experimental_agents: bool = False,
-    experimental_channel: str = release_channel.STABLE,
+    experimental_channel: str | None = None,
     network: str | None = None,
     redis_url: str | None = None,
     tracing: bool = False,

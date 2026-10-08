@@ -54,7 +54,9 @@ def validate_labels(
     return labels
 
 
-def validate_release_channel(ctx: click.core.Context, param: str, value: str) -> str:
+def validate_release_channel(
+    ctx: click.core.Context, param: str, value: str | None
+) -> str | None:
     """Validator for the experimental release channel flag.
 
     Args:
@@ -63,13 +65,13 @@ def validate_release_channel(ctx: click.core.Context, param: str, value: str) ->
         value: value of the argument.
 
     Returns:
-        The release channel name.
+        The release channel name, None when no channel is set.
 
     Raises:
         click.BadParameter: when the name does not match the release channel pattern.
     """
     del ctx, param
-    if release_channel.is_valid(value) is False:
+    if value is not None and release_channel.is_valid(value) is False:
         raise click.BadParameter(
             f"Invalid release channel '{value}': it must match {release_channel.CHANNEL_PATTERN.pattern}."
         )

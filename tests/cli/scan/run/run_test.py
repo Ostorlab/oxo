@@ -981,7 +981,7 @@ agents:
     )
 
     mock_get_details.assert_called_once_with(
-        "agent/ostorlab/nmap", use_experimental=True, channel="stable"
+        "agent/ostorlab/nmap", use_experimental=True, channel=None
     )
     assert result.exit_code == 0
 
@@ -1053,10 +1053,10 @@ def testRunScan_whenExperimentalChannelOptionSet_resolvesAndInstallsFromChannel(
     )
 
 
-def testRunScan_whenExperimentalChannelOptionIsStable_usesAgentGroupChannel(
+def testRunScan_whenExperimentalChannelOptionNotSet_usesAgentGroupChannel(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that the agent group experimental_channel is used when the CLI option is stable."""
+    """Test that the agent group experimental_channel is used when the CLI option is not set."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
     agent_group_yaml = _write_agent_group(tmp_path, "experimental_channel: qa1")
 
@@ -1113,7 +1113,7 @@ def testRunScan_whenExperimentalChannelIsInvalid_exitsWithUsageError(
 def testRunScan_whenInstallAndUseExperimentalFlagSet_forwardsUseExperimentalAndChannelToInstall(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that the install step receives use_experimental and the stable channel."""
+    """Test that the install step receives use_experimental and no channel."""
     _, mock_install = _mock_install_scan_run(mocker)
     agent_group_yaml = _write_agent_group(tmp_path)
 
@@ -1137,5 +1137,5 @@ def testRunScan_whenInstallAndUseExperimentalFlagSet_forwardsUseExperimentalAndC
         "agent/ostorlab/nmap",
         "0.4.0-beta.2",
         use_experimental=True,
-        channel="stable",
+        channel=None,
     )

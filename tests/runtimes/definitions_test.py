@@ -1316,10 +1316,10 @@ def testAgentGroupDefinitionFromYaml_whenExperimentalChannelProvided_parsedCorre
     assert agentgrp_def.experimental_channel == "beta"
 
 
-def testAgentGroupDefinitionFromYaml_whenExperimentalChannelMissing_defaultsToStable() -> (
+def testAgentGroupDefinitionFromYaml_whenExperimentalChannelMissing_defaultsToNone() -> (
     None
 ):
-    """Test that a yaml without experimental_channel resolves agents from the stable channel."""
+    """Test that a yaml without experimental_channel has no channel, so stable versions are used."""
     valid_yaml = """
         kind: "AgentGroup"
         description: "test"
@@ -1329,4 +1329,4 @@ def testAgentGroupDefinitionFromYaml_whenExperimentalChannelMissing_defaultsToSt
 
     agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
 
-    assert agentgrp_def.experimental_channel == "stable"
+    assert agentgrp_def.experimental_channel is None

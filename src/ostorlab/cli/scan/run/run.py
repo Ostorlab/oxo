@@ -21,7 +21,6 @@ from ostorlab.cli.scan.scan import scan
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
 from ostorlab.utils import definitions as utils_definitions
-from ostorlab.utils import release_channel
 
 console = cli_console.Console()
 
@@ -197,8 +196,8 @@ def run(
                     ctx.obj.get("use_experimental_agents", False) is True
                     or agent_group.use_experimental_agents is True
                 )
-                channel = ctx.obj.get("experimental_channel", release_channel.STABLE)
-                if channel == release_channel.STABLE:
+                channel = ctx.obj.get("experimental_channel")
+                if channel is None:
                     channel = agent_group.experimental_channel
                 _install_agents_with_retry(
                     runtime_instance,
@@ -246,7 +245,7 @@ def _install_agents_with_retry(
     runtime_instance: runtime.Runtime,
     agent_group: definitions.AgentGroupDefinition,
     use_experimental: bool = False,
-    channel: str = release_channel.STABLE,
+    channel: str | None = None,
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()

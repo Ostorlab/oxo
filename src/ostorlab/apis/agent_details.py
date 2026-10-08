@@ -4,7 +4,6 @@ import json
 from typing import Any
 
 from ostorlab.apis import request
-from ostorlab.utils import release_channel
 
 
 class AgentDetailsAPIRequest(request.APIRequest):
@@ -14,7 +13,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
         self,
         agent_key: str,
         use_experimental: bool = False,
-        channel: str = release_channel.STABLE,
+        channel: str | None = None,
     ) -> None:
         """Initializer"""
         self._agent_key = agent_key
@@ -25,7 +24,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
     def query(self) -> str:
         """The query to fetch the agent details with an agent key.
 
-        The `channel` argument is only declared for a non-stable channel, since store
+        The `channel` argument is only declared when a channel is set, since store
         servers that predate release channels reject it even when it is null.
 
         Returns:
@@ -33,7 +32,7 @@ class AgentDetailsAPIRequest(request.APIRequest):
         """
         channel_variable = ""
         channel_argument = ""
-        if self._channel != release_channel.STABLE:
+        if self._channel is not None:
             channel_variable = ", $channel: String"
             channel_argument = ", channel: $channel"
         return f"""
@@ -66,6 +65,6 @@ class AgentDetailsAPIRequest(request.APIRequest):
             "agentKey": self._agent_key,
             "useExperimental": self._use_experimental,
         }
-        if self._channel != release_channel.STABLE:
+        if self._channel is not None:
             variables["channel"] = self._channel
         return {"query": self.query, "variables": json.dumps(variables)}

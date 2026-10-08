@@ -967,7 +967,7 @@ def testStartScan_whenAgentHasNoVersion_resolvesVersionBeforeInstalling(
     callbacks.start_scan(reserved_scan, state_reporter)
 
     get_details_mock.assert_called_once_with(
-        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel="stable"
+        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel=None
     )
     install_agent_mock.assert_called_once()
     assert install_agent_mock.call_args.kwargs.get("version") == "2.5.0-alpha"
@@ -1756,35 +1756,36 @@ def _start_scan_with_unpinned_agent(
     return get_details_mock, install_agent_mock
 
 
+@pytest.mark.parametrize("channel", ["beta", "stable"])
 def testStartScan_whenExperimentalChannelIsSet_forwardsChannelToGetDetailsAndInstall(
-    mocker: plugin.MockerFixture,
+    mocker: plugin.MockerFixture, channel: str
 ) -> None:
     """The daemon resolves and installs unpinned agents from the scan release channel."""
     get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
-        mocker, {"experimentalChannel": "beta"}
+        mocker, {"experimentalChannel": channel}
     )
 
     get_details_mock.assert_called_once_with(
-        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel="beta"
+        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel=channel
     )
-    assert install_agent_mock.call_args.kwargs["channel"] == "beta"
+    assert install_agent_mock.call_args.kwargs["channel"] == channel
     assert install_agent_mock.call_args.kwargs["use_experimental"] is True
 
 
 @pytest.mark.parametrize("scan_fields", [{}, {"experimentalChannel": None}])
-def testStartScan_whenExperimentalChannelIsMissingOrNull_forwardsStableChannel(
+def testStartScan_whenExperimentalChannelIsMissingOrNull_forwardsNoChannel(
     mocker: plugin.MockerFixture, scan_fields: dict[str, object]
 ) -> None:
-    """A scan without a release channel installs agents from the stable channel."""
+    """A scan without a release channel installs stable agent versions."""
     get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
         mocker, scan_fields
     )
 
-    assert get_details_mock.call_args.kwargs["channel"] == "stable"
-    assert install_agent_mock.call_args.kwargs["channel"] == "stable"
+    assert get_details_mock.call_args.kwargs["channel"] is None
+    assert install_agent_mock.call_args.kwargs["channel"] is None
 
 
-def testStartScan_whenExperimentalChannelIsInvalid_logsWarningAndForwardsStableChannel(
+def testStartScan_whenExperimentalChannelIsInvalid_logsWarningAndForwardsNoChannel(
     mocker: plugin.MockerFixture,
 ) -> None:
     """An invalid release channel from the API falls back to stable instead of failing the scan."""
@@ -1794,6 +1795,6 @@ def testStartScan_whenExperimentalChannelIsInvalid_logsWarningAndForwardsStableC
         mocker, {"experimentalChannel": "Beta.2"}
     )
 
-    assert get_details_mock.call_args.kwargs["channel"] == "stable"
-    assert install_agent_mock.call_args.kwargs["channel"] == "stable"
+    assert get_details_mock.call_args.kwargs["channel"] is None
+    assert install_agent_mock.call_args.kwargs["channel"] is None
     assert "Beta.2" in [call.args[1] for call in logger_mock.call_args_list]

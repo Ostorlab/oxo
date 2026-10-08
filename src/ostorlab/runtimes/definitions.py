@@ -39,7 +39,6 @@ from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 from ostorlab.utils import definitions
-from ostorlab.utils import release_channel
 
 MAX_AGENT_REPLICAS = 100
 
@@ -280,7 +279,7 @@ class AgentGroupDefinition:
     name: str | None = None
     description: str | None = None
     use_experimental_agents: bool = False
-    experimental_channel: str = release_channel.STABLE
+    experimental_channel: str | None = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -333,9 +332,7 @@ class AgentGroupDefinition:
             "description", f"""Agent group : {",".join(agents_names)}"""
         )
         use_experimental_agents = agent_group_def.get("use_experimental_agents", False)
-        experimental_channel = agent_group_def.get(
-            "experimental_channel", release_channel.STABLE
-        )
+        experimental_channel = agent_group_def.get("experimental_channel")
         return cls(
             agent_settings,
             name,

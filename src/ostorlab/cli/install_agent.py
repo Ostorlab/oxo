@@ -16,7 +16,6 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import agent_fetcher
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.agent.install import install_progress
-from ostorlab.utils import release_channel
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +145,7 @@ def install(
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
     use_experimental: bool = False,
-    channel: str = release_channel.STABLE,
+    channel: str | None = None,
 ) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
@@ -158,8 +157,8 @@ def install(
         api_key: optional api key to fetch a short-lived download token for the image.
         use_experimental: when True, the fetched agent details may include experimental
             (prerelease) versions.
-        channel: the release channel to resolve the latest version from, `stable`
-            meaning no channel.
+        channel: the release channel to resolve the latest version from, None meaning
+            stable versions.
 
     Returns:
         None

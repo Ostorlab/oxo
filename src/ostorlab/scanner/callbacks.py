@@ -82,7 +82,7 @@ def _install_agents(
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
     use_experimental_agents: bool = False,
-    channel: str = release_channel.STABLE,
+    channel: str | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -510,17 +510,16 @@ def _extract_scan_id(request: dict[str, Any]) -> int:
     return scan_id
 
 
-def _extract_experimental_channel(request: dict[str, Any]) -> str:
+def _extract_experimental_channel(request: dict[str, Any]) -> str | None:
     channel = request.get("experimentalChannel")
     if channel is None:
-        return release_channel.STABLE
-    if isinstance(channel, str) is False or release_channel.is_valid(channel) is False:
-        logger.warning(
-            "Invalid experimental channel %r, installing agents from the stable channel.",
-            channel,
-        )
-        return release_channel.STABLE
-    return channel
+        return None
+    if isinstance(channel, str) and release_channel.is_valid(channel) is True:
+        return channel
+    logger.warning(
+        "Invalid experimental channel %r, installing stable agent versions.", channel
+    )
+    return None
 
 
 def _update_state_reporter(

@@ -9,10 +9,10 @@ from ostorlab.utils import release_channel
 
 
 @pytest.mark.parametrize(
-    "channel", ["stable", "beta", "qa1", "nightly-build", "a", "a" * 32]
+    "channel", ["beta", "qa1", "stable", "nightly-build", "a", "a" * 32]
 )
 def testIsValid_whenChannelMatchesPattern_returnsTrue(channel: str) -> None:
-    """Test that valid release channel names, including stable, are accepted."""
+    """Test that valid release channel names are accepted."""
     assert release_channel.is_valid(channel) is True
 
 
