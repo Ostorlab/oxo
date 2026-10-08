@@ -1,5 +1,6 @@
 """Unit tests for the universe snapshot used to pause and resume scans."""
 
+import asyncio
 import datetime
 import gzip
 
@@ -111,6 +112,15 @@ def testSnapshot_whenDataIsNotProtobuf_raisesInvalidSnapshot() -> None:
         snapshot.Snapshot.from_bytes(gzip.compress(b"\xff\xff\xff\xff"))
 
 
+def testSnapshot_whenGzipBodyIsCorrupted_raisesInvalidSnapshot() -> None:
+    data = bytearray(_universe_snapshot().to_bytes())
+    # Keep the gzip header, corrupt the deflate stream right after it.
+    data[10:20] = b"\xff" * 10
+
+    with pytest.raises(snapshot.InvalidSnapshotError):
+        snapshot.Snapshot.from_bytes(bytes(data))
+
+
 def testFieldTable_whenConvertedBackAndForth_keepsAmqpValues() -> None:
     headers = {
         "raw": bytearray(b"\x00\x01"),
@@ -214,9 +224,12 @@ def testStopUniverseAgents_whenAgentsRun_scalesThemToZeroAndKeepsTheirReplicas(
         stopped_tracker,
         inject_asset,
     ]
+    # nmap still running on the first check, then nmap, the stopped tracker and the asset injection all finished.
     docker_client.services.get.return_value.tasks.side_effect = [
         [{"Status": {"State": "running"}}],
         [{"Status": {"State": "shutdown"}}],
+        [{"Status": {"State": "shutdown"}}],
+        [{"Status": {"State": "complete"}}],
     ]
     mocker.patch("ostorlab.runtimes.local.snapshot.time.sleep")
 
@@ -294,6 +307,29 @@ def testStopUniverseAgents_whenATaskIsStillStarting_raisesAgentsNotStopped(
         )
 
 
+def testStopUniverseAgents_whenRunOnceServiceStillRuns_waitsForItWithoutScalingIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An asset injection still publishing would add messages after the queues are read, they would be lost."""
+    inject_asset = _service(
+        mocker, "inject_asset_42", replicas=1, restart_condition="none"
+    )
+    docker_client = mocker.MagicMock()
+    docker_client.services.list.return_value = [inject_asset]
+    docker_client.services.get.return_value.tasks.return_value = [
+        {"Status": {"State": "running"}}
+    ]
+    mocker.patch("ostorlab.runtimes.local.snapshot.time.sleep")
+
+    with pytest.raises(snapshot.AgentsNotStoppedError):
+        snapshot.stop_universe_agents(
+            docker_client, universe="42", timeout=datetime.timedelta(seconds=0)
+        )
+
+    inject_asset.update.assert_not_called()
+    docker_client.services.get.assert_called_with("inject_asset_42")
+
+
 def testStartUniverseAgents_always_scalesStoppedServicesBackAndRemovesTheirLabel(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -358,3 +394,37 @@ def testListMqTopology_whenQueueIsBoundToAmqExchange_skipsThatBinding(
 
     assert [exchange.name for exchange in exchanges] == ["ostorlab_topic"]
     assert [binding.exchange for binding in queues[0].bindings] == ["ostorlab_topic"]
+
+
+def testRestoreMq_always_routesEachMessageToItsQueueAndRemovesTheRestoreExchange(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Messages are published through a temporary headers exchange, keeping their original routing key."""
+    connection = mocker.AsyncMock()
+    mocker.patch("aio_pika.connect", return_value=connection)
+    channel = connection.channel.return_value
+    topic_exchange = mocker.AsyncMock()
+    restore_exchange = mocker.AsyncMock()
+    channel.declare_exchange.side_effect = [topic_exchange, restore_exchange]
+    queue = channel.declare_queue.return_value
+
+    asyncio.run(snapshot._restore_mq("amqp://mq_42", _universe_snapshot()))
+
+    assert (
+        channel.declare_exchange.call_args_list[0].args[0] == "ostorlab_topic_exchange"
+    )
+    assert (
+        channel.declare_exchange.call_args_list[1].args[0] == snapshot.RESTORE_EXCHANGE
+    )
+    assert channel.declare_queue.call_args.args[0] == "nmap_queue"
+    queue.bind.assert_any_call(
+        topic_exchange, routing_key="v3.asset.ip.#", arguments={}
+    )
+    restore_binding = {"x-match": "all", snapshot.RESTORE_QUEUE_HEADER: "nmap_queue"}
+    queue.bind.assert_any_call(restore_exchange, arguments=restore_binding)
+    published = restore_exchange.publish.call_args
+    assert published.kwargs["routing_key"] == "v3.asset.ip.v4.0f3c"
+    assert published.args[0].headers[snapshot.RESTORE_QUEUE_HEADER] == "nmap_queue"
+    queue.unbind.assert_called_once_with(restore_exchange, arguments=restore_binding)
+    restore_exchange.delete.assert_called_once()
+    connection.close.assert_called_once()

@@ -28,6 +28,7 @@ import gzip
 import logging
 import pathlib
 import time
+import zlib
 from typing import Any
 from urllib import parse
 
@@ -131,7 +132,7 @@ class Snapshot:
             proto = universe_snapshot_pb2.UniverseSnapshot.FromString(
                 gzip.decompress(data)
             )
-        except (OSError, EOFError, protobuf_message.DecodeError) as e:
+        except (OSError, EOFError, zlib.error, protobuf_message.DecodeError) as e:
             raise InvalidSnapshotError(f"snapshot is not a gzip protobuf message: {e}")
         if proto.version != SNAPSHOT_VERSION:
             raise InvalidSnapshotError(f"unsupported snapshot version {proto.version}")
@@ -149,7 +150,8 @@ def stop_universe_agents(
     Stopping an agent requeues the message it was processing, so the snapshot captures it. The replicas of each
     service are kept in its `REPLICAS_LABEL` label, so `start_universe_agents` can start the agents again even when
     this call fails midway, and a later attempt keeps the replicas of the agents an earlier attempt stopped.
-    Run-once services, like the asset injection, are left alone: starting them again would run them twice.
+    Run-once services, like the asset injection, are not scaled: starting them again would run them twice. Their tasks
+    are still waited for, so they finish publishing before the queues are read.
 
     Args:
         docker_client: Docker client of the swarm running the universe.
@@ -165,8 +167,14 @@ def stop_universe_agents(
     """
     keep_services = keep_services or set()
     stopped_services: dict[str, int] = {}
+    # Every agent may still publish or consume while the snapshot is taken, including run-once services and services
+    # already scaled to zero whose tasks are still stopping: the snapshot waits for all of them.
+    waited_services: list[str] = []
     for service in _list_agent_services(docker_client, universe):
-        if service.name in keep_services or _is_run_once_service(service) is True:
+        if service.name in keep_services:
+            continue
+        waited_services.append(service.name)
+        if _is_run_once_service(service) is True:
             continue
         labels = dict(service.attrs["Spec"].get("Labels") or {})
         stored_replicas = labels.get(REPLICAS_LABEL)
@@ -185,7 +193,7 @@ def stop_universe_agents(
         stopped_services[service.name] = replicas
 
     deadline = time.monotonic() + timeout.total_seconds()
-    while _has_active_tasks(docker_client, list(stopped_services)) is True:
+    while _has_active_tasks(docker_client, waited_services) is True:
         if time.monotonic() > deadline:
             raise AgentsNotStoppedError(
                 f"agents of universe {universe} still running after {timeout}."
