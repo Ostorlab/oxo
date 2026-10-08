@@ -723,7 +723,7 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAsse
     assert restore_kwargs["command"][:4] == [
         "python3",
         "-m",
-        "ostorlab.runtimes.local.snapshot",
+        "ostorlab.runtimes.local.snapshot_state",
         "restore",
     ]
     assert restore_kwargs["networks"] == ["ostorlab_local_network_42"]

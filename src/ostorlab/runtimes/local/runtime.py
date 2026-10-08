@@ -687,7 +687,7 @@ class LocalRuntime(runtime.Runtime):
                 command=[
                     "python3",
                     "-m",
-                    "ostorlab.runtimes.local.snapshot",
+                    snapshot.RESTORE_MODULE,
                     "restore",
                     "--mq-url",
                     self._mq_service.url,
