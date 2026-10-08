@@ -257,10 +257,15 @@ def _load_snapshot_storage_settings(
             "--snapshot-bucket and --snapshot-service-account must be set together."
         )
         raise click.exceptions.Exit(2)
-    with open(snapshot_service_account, "r", encoding="utf-8") as key_file:
-        settings = snapshot_storage.SnapshotStorageSettings(
-            bucket_path=snapshot_bucket, service_account_key=key_file.read()
-        )
+    try:
+        with open(snapshot_service_account, "r", encoding="utf-8") as key_file:
+            service_account_key = key_file.read()
+    except (OSError, UnicodeDecodeError) as e:
+        console.error(f"Could not read the snapshot service account key: {e}")
+        raise click.exceptions.Exit(2) from e
+    settings = snapshot_storage.SnapshotStorageSettings(
+        bucket_path=snapshot_bucket, service_account_key=service_account_key
+    )
     try:
         settings.store()
     except snapshot_storage.SnapshotStorageError as e:

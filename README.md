@@ -118,7 +118,10 @@ oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-level DEBUG
 
 Pausing a scan frees the scanner machine and its devices; resuming continues the scan where it stopped instead of
 restarting it. To enable pause and resume on a scanner, point it at a snapshot bucket and at the key of a service
-account allowed to read, write and delete objects in that bucket.
+account allowed to read, write and delete objects in that bucket. OXO stores one snapshot per paused scan at
+`<bucket>/<prefix>/<scan_id>/snapshot.pb.gz`, holding the scan's RabbitMQ queues and Redis state; resuming restores that
+state instead of injecting the assets again. A lifecycle rule on the bucket removes the snapshots of scans that are
+never resumed.
 
 First install the scanner extras:
 

@@ -555,7 +555,12 @@ def _fetch_scan_snapshot(
     try:
         store = snapshot_storage_settings.store()
         stored_snapshot = store.download(scan_id)
-        snapshot.Snapshot.from_bytes(stored_snapshot.data)
+        parsed_snapshot = snapshot.Snapshot.from_bytes(stored_snapshot.data)
+        if parsed_snapshot.universe != str(scan_id):
+            # Restoring the state of another universe would mix two scans.
+            raise snapshot.InvalidSnapshotError(
+                f"snapshot of universe {parsed_snapshot.universe} stored for scan {scan_id}."
+            )
     except (
         snapshot_storage.SnapshotNotFoundError,
         snapshot_storage.SnapshotCorruptedError,

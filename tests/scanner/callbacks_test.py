@@ -1899,3 +1899,28 @@ def testStartScan_whenClearResponseIsMalformed_keepsTheSnapshotAndTheStartedScan
 
     runtime_mock.scan.assert_called_once()
     bucket.blob.return_value.delete.assert_not_called()
+
+
+def testStartScan_whenSnapshotBelongsToAnotherUniverse_startsTheScanOverInstead(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The state of another universe stored at this scan path is never restored into this scan."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    other_universe = snapshot.Snapshot(
+        universe_snapshot_pb2.UniverseSnapshot(
+            version=snapshot.SNAPSHOT_VERSION, universe="7"
+        )
+    ).to_bytes()
+    _, bucket = _fake_bucket(mocker, other_universe)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = _cleared_flag_response()
+
+    callbacks.start_scan(
+        RESUMED_SCAN,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+        snapshot_storage_settings=SNAPSHOT_SETTINGS,
+    )
+
+    assert runtime_mock.scan.call_args.kwargs["scan_snapshot"] is None
+    bucket.blob.return_value.delete.assert_not_called()

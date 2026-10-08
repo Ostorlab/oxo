@@ -432,3 +432,30 @@ def testScannerCommandInvocation_whenOnlyTheSnapshotBucketIsGiven_exitsWithoutSt
 
     assert result.exit_code == 2
     create_process_mock.assert_not_called()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenKeyFileIsNotUtf8_exitsWithAnError(
+    mocker: plugin.MockerFixture, tmp_path
+) -> None:
+    create_process_mock = mocker.patch("multiprocessing.Process")
+    key_path = tmp_path / "snapshot-sa.json"
+    key_path.write_bytes(b"\xff\xfe not utf-8")
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--snapshot-bucket",
+            "gs://scan-snapshots",
+            "--snapshot-service-account",
+            str(key_path),
+        ],
+    )
+
+    assert result.exit_code == 2
+    create_process_mock.assert_not_called()
