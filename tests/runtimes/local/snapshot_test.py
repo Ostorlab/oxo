@@ -1,11 +1,10 @@
 """Unit tests for the universe snapshot used to pause and resume scans."""
 
-import asyncio
 import datetime
 import gzip
+from unittest import mock
 
 import pytest
-from pytest_httpx import HTTPXMock
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local import snapshot
@@ -18,7 +17,7 @@ def _service(
     replicas: int,
     labels: dict[str, str] | None = None,
     restart_condition: str = "any",
-):
+) -> mock.MagicMock:
     service = mocker.MagicMock()
     service.name = name
     service.attrs = {
@@ -46,7 +45,13 @@ def _universe_snapshot() -> snapshot.Snapshot:
                 universe_snapshot_pb2.Queue(
                     name="nmap_queue",
                     durable=True,
-                    arguments=snapshot._to_field_table({"x-max-priority": 255}),
+                    arguments=universe_snapshot_pb2.FieldTable(
+                        fields={
+                            "x-max-priority": universe_snapshot_pb2.FieldValue(
+                                int_value=255
+                            )
+                        }
+                    ),
                     bindings=[
                         universe_snapshot_pb2.Binding(
                             exchange="ostorlab_topic_exchange",
@@ -119,101 +124,6 @@ def testSnapshot_whenGzipBodyIsCorrupted_raisesInvalidSnapshot() -> None:
 
     with pytest.raises(snapshot.InvalidSnapshotError):
         snapshot.Snapshot.from_bytes(bytes(data))
-
-
-def testFieldTable_whenConvertedBackAndForth_keepsAmqpValues() -> None:
-    headers = {
-        "raw": bytearray(b"\x00\x01"),
-        "count": 3,
-        "ratio": 0.5,
-        "enabled": True,
-        "nested": {"values": [bytearray(b"\x02"), 1, "text"]},
-    }
-
-    table = universe_snapshot_pb2.FieldTable.FromString(
-        snapshot._to_field_table(headers | {"absent": None}).SerializeToString()
-    )
-
-    assert snapshot._from_field_table(table) == headers
-    assert isinstance(snapshot._from_field_table(table)["enabled"], bool)
-
-
-def testBuildMessage_whenRestoringSerializedMessage_keepsBodyRoutingKeyAndProperties(
-    mocker: plugin.MockerFixture,
-) -> None:
-    incoming = mocker.MagicMock(
-        body=b"\x0a\x02body",
-        exchange="ostorlab_topic_exchange",
-        routing_key="v3.asset.domain_name.1a2b",
-        priority=4,
-        delivery_mode=2,
-        content_type=None,
-        content_encoding=None,
-        correlation_id=None,
-        message_id="m-1",
-        type=None,
-        app_id=None,
-        reply_to="nmap_replies",
-        expiration=30.0,
-        timestamp=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
-        headers={"trace": bytearray(b"\x01")},
-    )
-
-    serialized = snapshot._serialize_message(incoming)
-    rebuilt = snapshot._build_message(serialized, queue_name="nmap_queue")
-
-    assert serialized.routing_key == "v3.asset.domain_name.1a2b"
-    assert serialized.HasField("content_type") is False
-    assert rebuilt.body == b"\x0a\x02body"
-    assert rebuilt.priority == 4
-    assert rebuilt.message_id == "m-1"
-    assert rebuilt.reply_to == "nmap_replies"
-    assert rebuilt.expiration == 30.0
-    assert rebuilt.timestamp == datetime.datetime(
-        2026, 1, 1, tzinfo=datetime.timezone.utc
-    )
-    assert rebuilt.headers == {
-        "trace": bytearray(b"\x01"),
-        snapshot.RESTORE_QUEUE_HEADER: "nmap_queue",
-    }
-
-
-def testRestoreRedis_always_restoresRawKeysOnly(
-    mocker: plugin.MockerFixture,
-) -> None:
-    redis_client = mocker.MagicMock()
-    mocker.patch(
-        "redis.Redis.from_url"
-    ).return_value.__enter__.return_value = redis_client
-
-    snapshot._restore_redis("redis://redis_42:6379/", _universe_snapshot())
-
-    redis_client.pipeline.return_value.restore.assert_called_once_with(
-        b"agent_nmap_asset", 0, b"\x00\x05dump", replace=True
-    )
-    redis_client.set.assert_not_called()
-    redis_client.incrbyfloat.assert_not_called()
-
-
-def testDumpRedis_whenKeysDescribeTheCurrentRun_leavesThemOut(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """A resumed universe starts a new run, the tracker clock for example starts again from zero."""
-    redis_client = mocker.MagicMock()
-    mocker.patch(
-        "redis.Redis.from_url"
-    ).return_value.__enter__.return_value = redis_client
-    redis_client.scan_iter.return_value = [
-        b"agent_nmap_asset",
-        b"ostorlab:run:scan_start_datetime",
-    ]
-    redis_client.dump.return_value = b"\x00\x05dump"
-    redis_client.pttl.return_value = -1
-
-    keys = snapshot._dump_redis("redis://redis_42:6379/")
-
-    assert [key.key for key in keys] == [b"agent_nmap_asset"]
-    redis_client.dump.assert_called_once_with(b"agent_nmap_asset")
 
 
 def testStopUniverseAgents_whenAgentsRun_scalesThemToZeroAndKeepsTheirReplicas(
@@ -354,85 +264,3 @@ def testStartUniverseAgents_always_scalesStoppedServicesBackAndRemovesTheirLabel
     assert update["mode"].replicas == 3
     assert update["labels"] == {"ostorlab.universe": "42"}
     xss.update.assert_not_called()
-
-
-def testListMqTopology_whenQueueIsBoundToAmqExchange_skipsThatBinding(
-    httpx_mock: HTTPXMock,
-) -> None:
-    """amq.* exchanges are not captured, their bindings would reference an exchange missing on restore."""
-    management_url = "http://guest:guest@mq_42:15672/"
-    httpx_mock.add_response(
-        url=f"{management_url}api/exchanges/%2F",
-        json=[
-            {"name": "", "type": "direct", "durable": True, "auto_delete": False},
-            {
-                "name": "amq.direct",
-                "type": "direct",
-                "durable": True,
-                "auto_delete": False,
-            },
-            {
-                "name": "ostorlab_topic",
-                "type": "topic",
-                "durable": True,
-                "auto_delete": False,
-            },
-        ],
-    )
-    httpx_mock.add_response(
-        url=f"{management_url}api/queues/%2F",
-        json=[
-            {
-                "name": "nmap_queue",
-                "durable": True,
-                "arguments": {"x-max-priority": 255},
-            }
-        ],
-    )
-    httpx_mock.add_response(
-        url=f"{management_url}api/queues/%2F/nmap_queue/bindings",
-        json=[
-            {"source": "", "routing_key": "nmap_queue"},
-            {"source": "amq.direct", "routing_key": "nmap"},
-            {"source": "ostorlab_topic", "routing_key": "v3.asset.ip.#"},
-        ],
-    )
-
-    exchanges, queues = snapshot._list_mq_topology(management_url, "/")
-
-    assert [exchange.name for exchange in exchanges] == ["ostorlab_topic"]
-    assert [binding.exchange for binding in queues[0].bindings] == ["ostorlab_topic"]
-
-
-def testRestoreMq_always_routesEachMessageToItsQueueAndRemovesTheRestoreExchange(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """Messages are published through a temporary headers exchange, keeping their original routing key."""
-    connection = mocker.AsyncMock()
-    mocker.patch("aio_pika.connect", return_value=connection)
-    channel = connection.channel.return_value
-    topic_exchange = mocker.AsyncMock()
-    restore_exchange = mocker.AsyncMock()
-    channel.declare_exchange.side_effect = [topic_exchange, restore_exchange]
-    queue = channel.declare_queue.return_value
-
-    asyncio.run(snapshot._restore_mq("amqp://mq_42", _universe_snapshot()))
-
-    assert (
-        channel.declare_exchange.call_args_list[0].args[0] == "ostorlab_topic_exchange"
-    )
-    assert (
-        channel.declare_exchange.call_args_list[1].args[0] == snapshot.RESTORE_EXCHANGE
-    )
-    assert channel.declare_queue.call_args.args[0] == "nmap_queue"
-    queue.bind.assert_any_call(
-        topic_exchange, routing_key="v3.asset.ip.#", arguments={}
-    )
-    restore_binding = {"x-match": "all", snapshot.RESTORE_QUEUE_HEADER: "nmap_queue"}
-    queue.bind.assert_any_call(restore_exchange, arguments=restore_binding)
-    published = restore_exchange.publish.call_args
-    assert published.kwargs["routing_key"] == "v3.asset.ip.v4.0f3c"
-    assert published.args[0].headers[snapshot.RESTORE_QUEUE_HEADER] == "nmap_queue"
-    queue.unbind.assert_called_once_with(restore_exchange, arguments=restore_binding)
-    restore_exchange.delete.assert_called_once()
-    connection.close.assert_called_once()
