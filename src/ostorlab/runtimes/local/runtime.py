@@ -755,7 +755,7 @@ class LocalRuntime(runtime.Runtime):
         while time.monotonic() < deadline:
             for task in service.tasks():
                 state = task.get("Status", {}).get("State")
-                if state in ("complete", "failed", "rejected", "shutdown"):
+                if state in snapshot.FINAL_TASK_STATES:
                     return state
             time.sleep(SNAPSHOT_RESTORE_CHECK_INTERVAL.total_seconds())
         return None
