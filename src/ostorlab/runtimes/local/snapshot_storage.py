@@ -22,11 +22,13 @@ try:
     from google.auth import exceptions as auth_exceptions
     from google.cloud import storage
     from google.oauth2 import service_account
+    from google.resumable_media import common as resumable_media_common
 except ImportError:
     gcloud_exceptions = None
     auth_exceptions = None
     storage = None
     service_account = None
+    resumable_media_common = None
 
 SNAPSHOT_OBJECT_NAME = "snapshot.pb.gz"
 SHA256_METADATA_KEY = "sha256"
@@ -140,7 +142,12 @@ class SnapshotStore:
                 )
         except gcloud_exceptions.NotFound as e:
             raise SnapshotNotFoundError(f"snapshot of scan {scan_id} not found.") from e
-        except (gcloud_exceptions.GoogleAPIError, auth_exceptions.GoogleAuthError) as e:
+        except (
+            gcloud_exceptions.GoogleAPIError,
+            auth_exceptions.GoogleAuthError,
+            # The crc32c of the transfer did not match: the download is retried, the stored object may be intact.
+            resumable_media_common.DataCorruption,
+        ) as e:
             raise SnapshotStorageError(
                 f"could not download the snapshot of scan {scan_id}: {e}"
             ) from e
@@ -195,6 +202,7 @@ def _load_credentials(service_account_key: str) -> service_account.Credentials:
         )
     try:
         return service_account.Credentials.from_service_account_info(key_info)
+    # A key missing a field raises google.auth `MalformedError`, a `ValueError`.
     except (ValueError, TypeError) as e:
         raise SnapshotStorageError(
             "snapshot service account key is not a service account key."

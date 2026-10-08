@@ -5,6 +5,7 @@ import json
 
 import pytest
 from google.api_core import exceptions as gcloud_exceptions
+from google.resumable_media import common as resumable_media_common
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local import snapshot_storage
@@ -103,3 +104,29 @@ def testDelete_whenStorageFails_raisesSnapshotStorageError(storage_client) -> No
 
     with pytest.raises(snapshot_storage.SnapshotStorageError):
         store.delete(42, generation=7)
+
+
+def testSnapshotStore_whenKeyMissesServiceAccountFields_raisesSnapshotStorageError() -> (
+    None
+):
+    """A JSON object that is not a usable service account key is rejected with the storage error."""
+    with pytest.raises(snapshot_storage.SnapshotStorageError):
+        snapshot_storage.SnapshotStore(
+            "gs://scan-snapshots", json.dumps({"type": "service_account"})
+        )
+
+
+def testDownload_whenTransferIsCorrupted_raisesRetryableStorageError(
+    storage_client,
+) -> None:
+    bucket = storage_client.return_value.__enter__.return_value.bucket.return_value
+    blob = bucket.get_blob.return_value
+    blob.generation = 7
+    blob.metadata = {"sha256": "0" * 64}
+    blob.download_as_bytes.side_effect = resumable_media_common.DataCorruption(
+        None, "crc32c mismatch"
+    )
+    store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
+
+    with pytest.raises(snapshot_storage.SnapshotStorageError):
+        store.download(42)
