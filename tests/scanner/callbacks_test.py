@@ -1689,7 +1689,7 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
     runtime_mock = mocker.MagicMock()
     get_details_mock = mocker.patch(
         "ostorlab.scanner.callbacks.agent_fetcher.get_details",
-        return_value={"versions": {"versions": [{"version": "1.4.0-beta.2"}]}},
+        return_value={"versions": {"versions": [{"version": "1.4.1-beta"}]}},
     )
     install_agent_mock = mocker.patch(
         "ostorlab.scanner.callbacks.install_agent.install"
@@ -1712,7 +1712,7 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
     )
     install_agent_mock.assert_called_once_with(
         agent_key="agent/ostorlab/agent42",
-        version="1.4.0-beta.2",
+        version="1.4.1-beta",
         docker_client=None,
         api_key="api-key",
         use_experimental=True,
@@ -1745,7 +1745,7 @@ def _start_scan_with_unpinned_agent(
     )
     get_details_mock = mocker.patch(
         "ostorlab.scanner.callbacks.agent_fetcher.get_details",
-        return_value={"versions": {"versions": [{"version": "1.4.0-beta.2"}]}},
+        return_value={"versions": {"versions": [{"version": "1.4.1-beta"}]}},
     )
     install_agent_mock = mocker.patch(
         "ostorlab.scanner.callbacks.install_agent.install"

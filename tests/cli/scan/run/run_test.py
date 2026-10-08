@@ -999,7 +999,7 @@ def _mock_install_scan_run(
     mock_install = mocker.patch("ostorlab.cli.install_agent.install")
     mock_get_details = mocker.patch(
         "ostorlab.cli.agent_fetcher.get_details",
-        return_value={"versions": {"versions": [{"version": "0.4.0-beta.2"}]}},
+        return_value={"versions": {"versions": [{"version": "0.4.1-beta"}]}},
     )
     return mock_get_details, mock_install
 
@@ -1047,7 +1047,7 @@ def testRunScan_whenExperimentalChannelOptionSet_resolvesAndInstallsFromChannel(
     )
     mock_install.assert_called_once_with(
         "agent/ostorlab/nmap",
-        "0.4.0-beta.2",
+        "0.4.1-beta",
         use_experimental=False,
         channel="beta",
     )
@@ -1135,7 +1135,7 @@ def testRunScan_whenInstallAndUseExperimentalFlagSet_forwardsUseExperimentalAndC
     assert result.exit_code == 0
     mock_install.assert_called_once_with(
         "agent/ostorlab/nmap",
-        "0.4.0-beta.2",
+        "0.4.1-beta",
         use_experimental=True,
         channel=None,
     )
