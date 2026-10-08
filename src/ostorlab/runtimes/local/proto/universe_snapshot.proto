@@ -49,6 +49,11 @@ message Message {
   optional string type = 10;
   optional string app_id = 11;
   optional FieldTable headers = 12;
+  // Per-message time to live, in seconds.
+  optional double expiration = 13;
+  // Seconds since the epoch.
+  optional int64 timestamp = 14;
+  optional string reply_to = 15;
 }
 
 // A Redis key dumped with DUMP, restored with RESTORE.

@@ -408,6 +408,11 @@ def _serialize_message(message: Any) -> universe_snapshot_pb2.Message:
         snapshot_message.priority = message.priority
     if message.delivery_mode is not None:
         snapshot_message.delivery_mode = int(message.delivery_mode)
+    if message.expiration is not None:
+        snapshot_message.expiration = float(message.expiration)
+    if message.timestamp is not None:
+        snapshot_message.timestamp = int(message.timestamp.timestamp())
+    # `user_id` is left out: RabbitMQ rejects a message whose user differs from the restoring connection user.
     for field in (
         "content_type",
         "content_encoding",
@@ -415,6 +420,7 @@ def _serialize_message(message: Any) -> universe_snapshot_pb2.Message:
         "message_id",
         "type",
         "app_id",
+        "reply_to",
     ):
         value = getattr(message, field)
         if value is not None:
@@ -565,9 +571,15 @@ def _build_message(message: universe_snapshot_pb2.Message, queue_name: str) -> A
             "message_id",
             "type",
             "app_id",
+            "reply_to",
+            "expiration",
         )
         if message.HasField(field) is True
     }
+    if message.HasField("timestamp") is True:
+        optional_fields["timestamp"] = datetime.datetime.fromtimestamp(
+            message.timestamp, tz=datetime.timezone.utc
+        )
     return aio_pika.Message(body=message.body, headers=headers, **optional_fields)
 
 
@@ -608,8 +620,8 @@ def _wait_services_ready(mq_url: str, redis_url: str) -> None:
 
 
 async def _check_mq_connection(mq_url: str) -> None:
-    connection = await aio_pika.connect(mq_url)
-    await connection.close()
+    async with await aio_pika.connect(mq_url):
+        pass
 
 
 if __name__ == "__main__":

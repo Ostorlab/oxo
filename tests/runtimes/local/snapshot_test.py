@@ -153,6 +153,9 @@ def testBuildMessage_whenRestoringSerializedMessage_keepsBodyRoutingKeyAndProper
         message_id="m-1",
         type=None,
         app_id=None,
+        reply_to="nmap_replies",
+        expiration=30.0,
+        timestamp=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
         headers={"trace": bytearray(b"\x01")},
     )
 
@@ -164,6 +167,11 @@ def testBuildMessage_whenRestoringSerializedMessage_keepsBodyRoutingKeyAndProper
     assert rebuilt.body == b"\x0a\x02body"
     assert rebuilt.priority == 4
     assert rebuilt.message_id == "m-1"
+    assert rebuilt.reply_to == "nmap_replies"
+    assert rebuilt.expiration == 30.0
+    assert rebuilt.timestamp == datetime.datetime(
+        2026, 1, 1, tzinfo=datetime.timezone.utc
+    )
     assert rebuilt.headers == {
         "trace": bytearray(b"\x01"),
         snapshot.RESTORE_QUEUE_HEADER: "nmap_queue",
