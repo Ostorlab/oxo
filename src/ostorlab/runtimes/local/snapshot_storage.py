@@ -114,7 +114,12 @@ class SnapshotStore:
                 blob.metadata = {SHA256_METADATA_KEY: hashlib.sha256(data).hexdigest()}
                 blob.upload_from_string(data, content_type="application/gzip")
                 return int(blob.generation)
-        except (gcloud_exceptions.GoogleAPIError, auth_exceptions.GoogleAuthError) as e:
+        except (
+            gcloud_exceptions.GoogleAPIError,
+            auth_exceptions.GoogleAuthError,
+            # The checksum of the transfer did not match, the library removes the corrupted object.
+            resumable_media_common.DataCorruption,
+        ) as e:
             raise SnapshotStorageError(
                 f"could not upload the snapshot of scan {scan_id}: {e}"
             ) from e
@@ -136,9 +141,10 @@ class SnapshotStore:
                     raise SnapshotNotFoundError(
                         f"snapshot of scan {scan_id} not found."
                     )
-                # Pinning the generation fetches the version whose metadata was read.
+                # The blob read above pins its generation in the download, and the precondition fails the download
+                # if the object was replaced meanwhile: the bytes always match the metadata read.
                 data = blob.download_as_bytes(
-                    generation=blob.generation, checksum="crc32c"
+                    if_generation_match=blob.generation, checksum="crc32c"
                 )
         except gcloud_exceptions.NotFound as e:
             raise SnapshotNotFoundError(f"snapshot of scan {scan_id} not found.") from e

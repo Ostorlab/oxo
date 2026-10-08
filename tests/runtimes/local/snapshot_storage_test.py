@@ -78,7 +78,7 @@ def testDownload_whenObjectWasReplacedMeanwhile_fetchesTheVersionItChecked(
     stored = store.download(42)
 
     assert stored == snapshot_storage.StoredSnapshot(data=b"snapshot", generation=7)
-    assert blob.download_as_bytes.call_args.kwargs["generation"] == 7
+    assert blob.download_as_bytes.call_args.kwargs["if_generation_match"] == 7
 
 
 @pytest.mark.parametrize(
@@ -129,4 +129,48 @@ def testDownload_whenTransferIsCorrupted_raisesRetryableStorageError(
     store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
 
     with pytest.raises(snapshot_storage.SnapshotStorageError):
+        store.download(42)
+
+
+def testUpload_whenTransferIsCorrupted_raisesRetryableStorageError(
+    storage_client,
+) -> None:
+    blob = storage_client.return_value.__enter__.return_value.bucket.return_value.blob.return_value
+    blob.upload_from_string.side_effect = resumable_media_common.DataCorruption(
+        None, "crc32c mismatch"
+    )
+    store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
+
+    with pytest.raises(snapshot_storage.SnapshotStorageError):
+        store.upload(42, b"snapshot")
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        {"return_value": None},
+        {"side_effect": gcloud_exceptions.NotFound("gone")},
+    ],
+)
+def testDownload_whenObjectIsMissing_raisesSnapshotNotFound(
+    storage_client, missing: dict
+) -> None:
+    bucket = storage_client.return_value.__enter__.return_value.bucket.return_value
+    bucket.get_blob.configure_mock(**missing)
+    store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
+
+    with pytest.raises(snapshot_storage.SnapshotNotFoundError):
+        store.download(42)
+
+
+def testDownload_whenBytesDoNotMatchTheirChecksum_raisesSnapshotCorrupted(
+    storage_client,
+) -> None:
+    blob = storage_client.return_value.__enter__.return_value.bucket.return_value.get_blob.return_value
+    blob.generation = 7
+    blob.metadata = {"sha256": hashlib.sha256(b"snapshot").hexdigest()}
+    blob.download_as_bytes.return_value = b"tampered"
+    store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
+
+    with pytest.raises(snapshot_storage.SnapshotCorruptedError):
         store.download(42)
