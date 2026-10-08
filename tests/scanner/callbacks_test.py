@@ -1879,3 +1879,23 @@ def testStartScan_whenRestoredSnapshotFlagCannotBeCleared_keepsTheSnapshot(
 
     runtime_mock.scan.assert_called_once()
     bucket.blob.return_value.delete.assert_not_called()
+
+
+def testStartScan_whenClearResponseIsMalformed_keepsTheSnapshotAndTheStartedScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A malformed scanning engine answer is a failed clear: the scan runs on and its snapshot is kept."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    _, bucket = _fake_bucket(mocker, _snapshot_bytes())
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = {"data": "not a mapping"}
+
+    callbacks.start_scan(
+        RESUMED_SCAN,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+        snapshot_storage_settings=SNAPSHOT_SETTINGS,
+    )
+
+    runtime_mock.scan.assert_called_once()
+    bucket.blob.return_value.delete.assert_not_called()

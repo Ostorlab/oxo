@@ -595,6 +595,8 @@ def _clear_scan_snapshot(
         response = scanner_api_runner.execute(
             request=scan_snapshot_api.ClearScanSnapshotAPIRequest(scan_id=scan_id)
         )
+        update_scan = (response.get("data") or {}).get("updateScan") or {}
+        is_cleared = update_scan.get("success") is True
     except (
         base_runner.Error,
         httpx.HTTPError,
@@ -603,11 +605,10 @@ def _clear_scan_snapshot(
         TypeError,
         KeyError,
     ):
-        # A malformed response, like a JSON null body, is a failed call.
+        # A malformed response, like a JSON null body or a non-mapping `data`, is a failed call.
         logger.exception("Could not clear the snapshot flag of scan %s.", scan_id)
         return False
-    update_scan = (response.get("data") or {}).get("updateScan") or {}
-    if update_scan.get("success") is not True:
+    if is_cleared is False:
         logger.error(
             "The snapshot flag of scan %s was not cleared: %s",
             scan_id,

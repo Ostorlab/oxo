@@ -114,9 +114,19 @@ To change the persisted log verbosity:
 oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-level DEBUG
 ```
 
-To let scans running on the scanner be paused and resumed, give it a bucket storing their snapshots and the key of a
-service account allowed to read, write and delete objects in it. Install the scanner extra requirements with
-`pip install ostorlab[scanner]`:
+# Pausing and Resuming Scans
+
+Pausing a scan frees the scanner machine and its devices; resuming continues the scan where it stopped instead of
+restarting it. To enable pause and resume on a scanner, point it at a snapshot bucket and at the key of a service
+account allowed to read, write and delete objects in that bucket.
+
+First install the scanner extras:
+
+```shell
+pip install ostorlab[scanner]
+```
+
+Then start the scanner with the snapshot options:
 
 ```shell
 oxo scanner --scanner-id <scanner-uuid> \
@@ -124,7 +134,8 @@ oxo scanner --scanner-id <scanner-uuid> \
   --snapshot-service-account /path/to/service-account.json
 ```
 
-A scanner started without these options does not pause scans and leaves paused scans to the scanners that have them.
+A scanner started without these options cannot pause or resume scans. Paused scans stay queued until a scanner with
+snapshot storage picks them up.
 
 # Assets
 
