@@ -13,6 +13,7 @@ from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 from ostorlab.cli.scanner import scanner as scanner_cli
+from ostorlab.runtimes.local import snapshot_storage
 
 
 def _remove_scanner_file_handlers() -> None:
@@ -245,7 +246,7 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level, _, _ = (
+    _, _, _, scanner_log_file, scanner_log_level, _, _, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
@@ -283,7 +284,7 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level, _, _ = (
+    _, _, _, scanner_log_file, scanner_log_level, _, _, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
@@ -372,3 +373,62 @@ def testCloudLoggingClient_always_acceptsDisablingGrpcTransport() -> None:
     parameters = inspect.signature(gcp_logging.Client.__init__).parameters
 
     assert "_use_grpc" in parameters
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenSnapshotStorageIsGiven_forwardsItToEveryProcess(
+    mocker: plugin.MockerFixture, tmp_path
+) -> None:
+    """Scanners holding the snapshot storage settings upload and restore the snapshots of paused scans."""
+    create_process_mock = mocker.patch("multiprocessing.Process")
+    mocker.patch("google.oauth2.service_account.Credentials.from_service_account_info")
+    key_path = tmp_path / "snapshot-sa.json"
+    key_path.write_text('{"type": "service_account"}')
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--parallel",
+            "2",
+            "--snapshot-bucket",
+            "gs://scan-snapshots/scan_snapshots",
+            "--snapshot-service-account",
+            str(key_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    process_args = create_process_mock.call_args.kwargs["args"]
+    assert process_args[6] == 2
+    assert process_args[7] == snapshot_storage.SnapshotStorageSettings(
+        bucket_path="gs://scan-snapshots/scan_snapshots",
+        service_account_key='{"type": "service_account"}',
+    )
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenOnlyTheSnapshotBucketIsGiven_exitsWithoutStartingScans(
+    mocker: plugin.MockerFixture,
+) -> None:
+    create_process_mock = mocker.patch("multiprocessing.Process")
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--snapshot-bucket",
+            "gs://scan-snapshots",
+        ],
+    )
+
+    assert result.exit_code == 2
+    create_process_mock.assert_not_called()

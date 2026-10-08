@@ -1,8 +1,11 @@
 """Unit tests for ostorlab.scanner.callbacks module."""
 
 import base64
+import hashlib
+import json
 
 import pytest
+from google.api_core import exceptions as gcloud_exceptions
 from pytest_mock import plugin
 
 from ostorlab.agent.schema import validator
@@ -31,6 +34,9 @@ from ostorlab.assets import repository_archive as repository_archive_asset
 from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher
+from ostorlab.runtimes.local import snapshot
+from ostorlab.runtimes.local import snapshot_storage
+from ostorlab.runtimes.local.proto import universe_snapshot_pb2
 from ostorlab.scanner import callbacks
 
 
@@ -108,6 +114,7 @@ def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
         scan_id="42",
         run_default_agents=False,
         gcp_logging_credential="gcp-credential",
+        snapshot_storage_settings=None,
     )
 
 
@@ -1678,3 +1685,197 @@ def testExtractAssets_whenUrlAssetWithNoneAndEmptyUrls_shouldFilterOutInvalidLin
     assert len(assets) == 1
     assert isinstance(assets[0], link_asset.Link)
     assert assets[0].url == "https://ostorlab.co"
+
+
+SNAPSHOT_SETTINGS = snapshot_storage.SnapshotStorageSettings(
+    bucket_path="gs://scan-snapshots/scan_snapshots",
+    service_account_key=json.dumps({"type": "service_account"}),
+)
+
+RESUMED_SCAN = {
+    "id": 42,
+    "hasSnapshot": True,
+    "agentGroup": {
+        "key": "agentgroup/ostorlab/agent_group42",
+        "agents": [{"key": "agent/ostorlab/stop_scan"}],
+    },
+    "asset": {"__typename": "DomainNameAssetType", "name": "ostorlab.co"},
+}
+
+
+def _snapshot_bytes() -> bytes:
+    return snapshot.Snapshot(
+        universe_snapshot_pb2.UniverseSnapshot(
+            version=snapshot.SNAPSHOT_VERSION, universe="42"
+        )
+    ).to_bytes()
+
+
+def _fake_bucket(mocker: plugin.MockerFixture, data: bytes | None):
+    """Bucket of the snapshot storage, holding `data` as the snapshot of scan 42 at generation 7."""
+    mocker.patch("google.oauth2.service_account.Credentials.from_service_account_info")
+    client = mocker.patch("google.cloud.storage.Client")
+    bucket = client.return_value.__enter__.return_value.bucket.return_value
+    if data is None:
+        bucket.get_blob.return_value = None
+    else:
+        blob = bucket.get_blob.return_value
+        blob.generation = 7
+        blob.metadata = {"sha256": hashlib.sha256(data).hexdigest()}
+        blob.download_as_bytes.return_value = data
+    return client, bucket
+
+
+def _cleared_flag_response() -> dict[str, object]:
+    return {"data": {"updateScan": {"success": True, "message": "Scan updated."}}}
+
+
+def testStartScan_whenScanHasSnapshot_resumesFromItThenClearsTheFlagAndDeletesIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The flag is cleared before the object is deleted, so a later start never looks for a deleted snapshot."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    data = _snapshot_bytes()
+    _, bucket = _fake_bucket(mocker, data)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = _cleared_flag_response()
+
+    callbacks.start_scan(
+        RESUMED_SCAN,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+        snapshot_storage_settings=SNAPSHOT_SETTINGS,
+    )
+
+    bucket.get_blob.assert_called_once_with("scan_snapshots/42/snapshot.pb.gz")
+    assert runtime_mock.scan.call_args.kwargs["scan_snapshot"] == data
+    clear_request = scanner_api_runner.execute.call_args.kwargs["request"]
+    assert type(clear_request).__name__ == "ClearScanSnapshotAPIRequest"
+    bucket.blob.return_value.delete.assert_called_once_with(if_generation_match=7)
+
+
+@pytest.mark.parametrize(
+    "stored_data",
+    [
+        None,  # Missing: removed by the bucket lifecycle.
+        b"not a gzip protobuf",
+    ],
+)
+def testStartScan_whenSnapshotIsLost_clearsTheFlagAndStartsTheScanOver(
+    mocker: plugin.MockerFixture, stored_data: bytes | None
+) -> None:
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    _, bucket = _fake_bucket(mocker, stored_data)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = _cleared_flag_response()
+
+    callbacks.start_scan(
+        RESUMED_SCAN,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+        snapshot_storage_settings=SNAPSHOT_SETTINGS,
+    )
+
+    assert runtime_mock.scan.call_args.kwargs["scan_snapshot"] is None
+    clear_request = scanner_api_runner.execute.call_args.kwargs["request"]
+    assert type(clear_request).__name__ == "ClearScanSnapshotAPIRequest"
+    bucket.blob.return_value.delete.assert_not_called()
+
+
+def testStartScan_whenSnapshotDoesNotMatchItsChecksum_clearsTheFlagAndStartsTheScanOver(
+    mocker: plugin.MockerFixture,
+) -> None:
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    _, bucket = _fake_bucket(mocker, _snapshot_bytes())
+    bucket.get_blob.return_value.metadata = {"sha256": "0" * 64}
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = _cleared_flag_response()
+
+    callbacks.start_scan(
+        RESUMED_SCAN,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+        snapshot_storage_settings=SNAPSHOT_SETTINGS,
+    )
+
+    assert runtime_mock.scan.call_args.kwargs["scan_snapshot"] is None
+
+
+def testStartScan_whenStorageIsUnreachable_raisesAndKeepsTheSnapshotForARetry(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A temporary error rolls the scan back: a later start, on any scanner, restores the snapshot."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    _, bucket = _fake_bucket(mocker, _snapshot_bytes())
+    bucket.get_blob.side_effect = gcloud_exceptions.ServiceUnavailable("try later")
+    scanner_api_runner = mocker.MagicMock()
+
+    with pytest.raises(callbacks.MissingScanSnapshotError):
+        callbacks.start_scan(
+            RESUMED_SCAN,
+            mocker.MagicMock(),
+            scanner_api_runner=scanner_api_runner,
+            snapshot_storage_settings=SNAPSHOT_SETTINGS,
+        )
+
+    runtime_mock.scan.assert_not_called()
+    scanner_api_runner.execute.assert_not_called()
+
+
+def testStartScan_whenScannerHasNoSnapshotStorage_raisesSoAnotherScannerResumesIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    runtime_mock = _setup_start_scan_mocks(mocker)
+
+    with pytest.raises(callbacks.MissingScanSnapshotError):
+        callbacks.start_scan(
+            RESUMED_SCAN,
+            mocker.MagicMock(),
+            scanner_api_runner=mocker.MagicMock(),
+        )
+
+    runtime_mock.scan.assert_not_called()
+
+
+def testStartScan_whenLostSnapshotFlagCannotBeCleared_raisesInsteadOfStartingOver(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Starting over while the flag stays set would make every later start look for the lost snapshot again."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    _fake_bucket(mocker, None)
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.side_effect = json.JSONDecodeError(
+        "Expecting value", "", 0
+    )
+
+    with pytest.raises(callbacks.MissingScanSnapshotError):
+        callbacks.start_scan(
+            RESUMED_SCAN,
+            mocker.MagicMock(),
+            scanner_api_runner=scanner_api_runner,
+            snapshot_storage_settings=SNAPSHOT_SETTINGS,
+        )
+
+    runtime_mock.scan.assert_not_called()
+
+
+def testStartScan_whenRestoredSnapshotFlagCannotBeCleared_keepsTheSnapshot(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The scan already runs; its snapshot is kept so a later start can still restore it."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    _, bucket = _fake_bucket(mocker, _snapshot_bytes())
+    scanner_api_runner = mocker.MagicMock()
+    scanner_api_runner.execute.return_value = {
+        "data": {"updateScan": {"success": False, "message": "Scan not found."}}
+    }
+
+    callbacks.start_scan(
+        RESUMED_SCAN,
+        mocker.MagicMock(),
+        scanner_api_runner=scanner_api_runner,
+        snapshot_storage_settings=SNAPSHOT_SETTINGS,
+    )
+
+    runtime_mock.scan.assert_called_once()
+    bucket.blob.return_value.delete.assert_not_called()

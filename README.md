@@ -114,6 +114,18 @@ To change the persisted log verbosity:
 oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-level DEBUG
 ```
 
+To let scans running on the scanner be paused and resumed, give it a bucket storing their snapshots and the key of a
+service account allowed to read, write and delete objects in it. Install the scanner extra requirements with
+`pip install ostorlab[scanner]`:
+
+```shell
+oxo scanner --scanner-id <scanner-uuid> \
+  --snapshot-bucket gs://<bucket>/<prefix> \
+  --snapshot-service-account /path/to/service-account.json
+```
+
+A scanner started without these options does not pause scans and leaves paused scans to the scanners that have them.
+
 # Assets
 
 OXO supports scanning multiple asset types, allowing for comprehensive security coverage across different platforms and protocols.

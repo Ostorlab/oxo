@@ -18,6 +18,7 @@ from ostorlab.apis import scans_discover
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.apis.runners import scanner_runner
+from ostorlab.runtimes.local import snapshot_storage
 from ostorlab.scanner import callbacks
 from ostorlab.scanner import resource_checker
 from ostorlab.scanner import scanner_conf
@@ -39,10 +40,13 @@ class ScanHandler:
         | None = None,
         gcp_logging_credential: str | None = None,
         max_concurrent_scans: int = 1,
+        snapshot_storage_settings: snapshot_storage.SnapshotStorageSettings
+        | None = None,
     ):
         self._state_reporter = state_reporter
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
+        self._snapshot_storage_settings = snapshot_storage_settings
         self._max_concurrent_scans = max_concurrent_scans
         self._docker_client = docker.from_env()
 
@@ -217,6 +221,8 @@ class ScanHandler:
                 state_reporter=self._state_reporter,
                 api_key=api_key,
                 gcp_logging_credential=self._gcp_logging_credential,
+                snapshot_storage_settings=self._snapshot_storage_settings,
+                scanner_api_runner=runner,
             )
             if started_scan_id is None:
                 logger.warning(
@@ -290,6 +296,7 @@ def start_scan_loop(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     gcp_logging_credential: str | None = None,
     max_concurrent_scans: int = 1,
+    snapshot_storage_settings: snapshot_storage.SnapshotStorageSettings | None = None,
 ) -> None:
     """Fetching the scanner configuration and starting the API polling loop.
 
@@ -299,6 +306,7 @@ def start_scan_loop(
         state_reporter: instance responsible for reporting the scanner state.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
         max_concurrent_scans: Number of universes the host may run at once.
+        snapshot_storage_settings: Bucket of the scan snapshots, None when scans cannot be paused on this scanner.
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
@@ -319,6 +327,7 @@ def start_scan_loop(
         scan_resource_requirements=config.scan_resource_requirements,
         gcp_logging_credential=gcp_logging_credential,
         max_concurrent_scans=max_concurrent_scans,
+        snapshot_storage_settings=snapshot_storage_settings,
     )
     try:
         scan_handler.handle_messages(runner=s_runner, api_key=api_key)
