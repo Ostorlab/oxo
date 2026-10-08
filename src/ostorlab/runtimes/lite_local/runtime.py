@@ -189,6 +189,7 @@ class LiteLocalRuntime(runtime.Runtime):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: list[base_asset.Asset] | None,
+        scan_snapshot: bytes | None = None,
     ) -> None:
         """Start scan on asset using the provided agent run definition.
 
@@ -203,6 +204,10 @@ class LiteLocalRuntime(runtime.Runtime):
         Returns:
             None
         """
+        if scan_snapshot is not None:
+            raise NotImplementedError(
+                "Only the local runtime resumes scans from a snapshot."
+            )
         try:
             console.info("Starting agents")
             self._start_agents(agent_group_definition)
