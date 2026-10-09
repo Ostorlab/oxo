@@ -15,6 +15,8 @@ MQ_MANAGEMENT_URL = "http://guest:guest@localhost:15672/"
 REDIS_URL = "redis://localhost:6379/0"
 EXCHANGE = "snapshot_test_exchange"
 QUEUE = "snapshot_test_queue"
+# A second queue restored in the same call: each queue must get its own messages back, nothing more.
+OTHER_QUEUE = "snapshot_test_other_queue"
 AGENT_KEY = b"snapshot_test:agent"
 TTL_KEY = b"snapshot_test:ttl"
 RUN_KEY = b"ostorlab:run:snapshot_test"
@@ -38,6 +40,11 @@ async def _set_up_queues() -> None:
             QUEUE, durable=True, arguments={"x-max-priority": 10}
         )
         await queue.bind(exchange, routing_key="v3.asset.ip.#")
+        other_queue = await channel.declare_queue(OTHER_QUEUE, durable=True)
+        await other_queue.bind(exchange, routing_key="v3.asset.domain_name.#")
+        await exchange.publish(
+            aio_pika.Message(body=b"domain"), routing_key="v3.asset.domain_name.a"
+        )
         # Bindings of the built-in amq.* exchanges are not captured, RabbitMQ recreates the exchanges.
         await queue.bind("amq.topic", routing_key="v3.#")
         await exchange.publish(
@@ -62,6 +69,7 @@ async def _delete_queues() -> None:
     async with await aio_pika.connect(MQ_URL) as connection:
         channel = await connection.channel()
         await channel.queue_delete(QUEUE)
+        await channel.queue_delete(OTHER_QUEUE)
         await channel.exchange_delete(EXCHANGE)
 
 
@@ -72,10 +80,12 @@ async def _message_count() -> int:
         return queue.declaration_result.message_count
 
 
-async def _pending_messages() -> list[aio_pika.abc.AbstractIncomingMessage]:
+async def _pending_messages(
+    queue_name: str = QUEUE,
+) -> list[aio_pika.abc.AbstractIncomingMessage]:
     async with await aio_pika.connect(MQ_URL) as connection:
         channel = await connection.channel()
-        queue = await channel.declare_queue(QUEUE, passive=True)
+        queue = await channel.declare_queue(queue_name, passive=True)
         messages = []
         while (message := await queue.get(no_ack=True, fail=False)) is not None:
             messages.append(message)
@@ -102,7 +112,7 @@ async def _restore_exchange_exists() -> bool:
 def _test_part(universe_snapshot: snapshot.Snapshot) -> snapshot.Snapshot:
     """Keep the items created by the test: the services are shared with other tests."""
     proto = universe_snapshot.proto
-    queues = [queue for queue in proto.queues if queue.name == QUEUE]
+    queues = [queue for queue in proto.queues if queue.name in (QUEUE, OTHER_QUEUE)]
     exchanges = [exchange for exchange in proto.exchanges if exchange.name == EXCHANGE]
     keys = [key for key in proto.redis_keys if key.key.startswith(b"snapshot_test:")]
     del proto.queues[:]
@@ -151,6 +161,10 @@ def testSnapshotState_whenTakenThenRestored_bringsBackQueuesMessagesAndRedisStat
             restored_from, mq_url=MQ_URL, redis_url=REDIS_URL
         )
 
+        assert len(restored_from.proto.queues) == 2
+        other_messages = asyncio.run(_pending_messages(OTHER_QUEUE))
+        assert [message.body for message in other_messages] == [b"domain"]
+        assert other_messages[0].routing_key == "v3.asset.domain_name.a"
         messages = asyncio.run(_pending_messages())
         assert [message.body for message in messages] == [
             b"\x0a\x04\x08\x08\x08\x08",

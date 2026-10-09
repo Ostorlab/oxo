@@ -36,6 +36,8 @@ RESTORE_QUEUE_HEADER = "ostorlab-snapshot-restore-queue"
 MANAGEMENT_API_TIMEOUT = datetime.timedelta(seconds=30)
 # Time to receive the pending messages of a queue, the agents are stopped so the queue does not grow meanwhile.
 READ_QUEUE_TIMEOUT = datetime.timedelta(minutes=5)
+# A queue delivering nothing for this long is drained: messages counted when it was declared may have expired since.
+READ_IDLE_TIMEOUT = datetime.timedelta(seconds=5)
 # Messages published concurrently, their publisher confirms are awaited together.
 PUBLISH_BATCH_SIZE = 500
 RESTORE_ATTEMPTS = 30
@@ -191,11 +193,20 @@ async def _receive_messages(
     queue: universe_snapshot_pb2.Queue,
     pending: int,
 ) -> None:
+    """Receive up to `pending` messages, stopping early once the queue is drained.
+
+    A message with a per-message TTL can expire between the declare counting it and its delivery, waiting for the
+    declared count would then stall the pause until `READ_QUEUE_TIMEOUT`.
+    """
     async with mq_queue.iterator(no_ack=False) as messages:
-        async for message in messages:
-            queue.messages.append(_serialize_message(message))
-            if len(queue.messages) >= pending:
+        while len(queue.messages) < pending:
+            try:
+                message = await asyncio.wait_for(
+                    anext(messages), timeout=READ_IDLE_TIMEOUT.total_seconds()
+                )
+            except TimeoutError:
                 return
+            queue.messages.append(_serialize_message(message))
 
 
 def _serialize_message(
