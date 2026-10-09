@@ -2,16 +2,23 @@
 
 import asyncio
 import datetime
+from typing import Iterator
 
 import aio_pika
+import httpx
 import pytest
 import redis
+from pytest_httpx import HTTPXMock
+from pytest_mock import plugin
 
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local import snapshot_state
+from ostorlab.runtimes.proto import universe_snapshot_pb2
 
 MQ_URL = "amqp://guest:guest@localhost:5672/"
 MQ_MANAGEMENT_URL = "http://guest:guest@localhost:15672/"
+# The docker tests start the RabbitMQ and Redis services and pull their images on the first run.
+DOCKER_TEST_TIMEOUT = 300
 REDIS_URL = "redis://localhost:6379/0"
 EXCHANGE = "snapshot_test_exchange"
 QUEUE = "snapshot_test_queue"
@@ -59,8 +66,9 @@ async def _set_up_queues() -> None:
             ),
             routing_key="v3.asset.ip.v4",
         )
+        # Same priority as the first message: the queue delivers them in the order they were restored.
         await exchange.publish(
-            aio_pika.Message(body=b"low priority", priority=1),
+            aio_pika.Message(body=b"second", priority=5),
             routing_key="v3.asset.ip.v6",
         )
 
@@ -124,69 +132,155 @@ def _test_part(universe_snapshot: snapshot.Snapshot) -> snapshot.Snapshot:
     return universe_snapshot
 
 
-@pytest.mark.docker
-def testSnapshotState_whenTakenThenRestored_bringsBackQueuesMessagesAndRedisState(
-    mq_service, redis_service
-) -> None:
+@pytest.fixture
+def universe_state(mq_service, redis_service) -> Iterator[redis.Redis]:
+    """Queues with pending messages and Redis keys, as left by the stopped agents of a universe."""
     del mq_service, redis_service
     asyncio.run(_set_up_queues())
     redis_client = redis.Redis.from_url(REDIS_URL)
     redis_client.set(AGENT_KEY, b"tested")
     redis_client.set(TTL_KEY, b"short lived", ex=1000)
     redis_client.set(RUN_KEY, b"tracker clock")
-    try:
-        universe_snapshot = snapshot_state.take_snapshot(
+    yield redis_client
+    asyncio.run(_delete_queues())
+    redis_client.delete(AGENT_KEY, TTL_KEY, RUN_KEY)
+    redis_client.close()
+
+
+def _take_snapshot() -> snapshot.Snapshot:
+    return snapshot_state.take_snapshot(
+        universe="42",
+        mq_url=MQ_URL,
+        mq_management_url=MQ_MANAGEMENT_URL,
+        mq_vhost="/",
+        redis_url=REDIS_URL,
+    )
+
+
+@pytest.mark.docker
+@pytest.mark.timeout(DOCKER_TEST_TIMEOUT)
+def testTakeSnapshot_whenAgentsAreStopped_capturesStateAndLeavesMessagesInQueues(
+    universe_state: redis.Redis,
+) -> None:
+    universe_snapshot = _take_snapshot()
+
+    assert asyncio.run(_message_count()) == 2
+    assert RUN_KEY not in [key.key for key in universe_snapshot.proto.redis_keys]
+    captured_queue = next(
+        queue for queue in universe_snapshot.proto.queues if queue.name == QUEUE
+    )
+    assert [binding.exchange for binding in captured_queue.bindings] == [EXCHANGE]
+    assert [message.body for message in captured_queue.messages] == [
+        b"\x0a\x04\x08\x08\x08\x08",
+        b"second",
+    ]
+
+
+@pytest.mark.docker
+@pytest.mark.timeout(DOCKER_TEST_TIMEOUT)
+def testRestoreSnapshot_whenStateWasRemoved_bringsBackQueuesMessagesAndRedisState(
+    universe_state: redis.Redis,
+) -> None:
+    restored_from = snapshot.Snapshot.from_bytes(
+        _test_part(_take_snapshot()).to_bytes()
+    )
+    asyncio.run(_delete_queues())
+    universe_state.delete(AGENT_KEY, TTL_KEY)
+
+    snapshot_state.restore_snapshot(restored_from, mq_url=MQ_URL, redis_url=REDIS_URL)
+
+    assert len(restored_from.proto.queues) == 2
+    other_messages = asyncio.run(_pending_messages(OTHER_QUEUE))
+    assert [message.body for message in other_messages] == [b"domain"]
+    assert other_messages[0].routing_key == "v3.asset.domain_name.a"
+    messages = asyncio.run(_pending_messages())
+    assert [message.body for message in messages] == [
+        b"\x0a\x04\x08\x08\x08\x08",
+        b"second",
+    ]
+    restored = messages[0]
+    assert restored.routing_key == "v3.asset.ip.v4"
+    assert restored.priority == 5
+    assert restored.expiration == 600
+    assert restored.timestamp == TIMESTAMP
+    assert restored.reply_to == "nmap_replies"
+    assert restored.message_id == "m-1"
+    assert restored.headers == HEADERS | {snapshot_state.RESTORE_QUEUE_HEADER: QUEUE}
+    # The binding is restored: a new message published to the exchange reaches the queue.
+    asyncio.run(_publish_to_exchange("v3.asset.ip.v4"))
+    assert asyncio.run(_message_count()) == 1
+    assert asyncio.run(_restore_exchange_exists()) is False
+    assert universe_state.get(AGENT_KEY) == b"tested"
+    assert 0 < universe_state.ttl(TTL_KEY) <= 1000
+
+
+def testRestoreSnapshot_whenBindingExchangeIsUnknown_raisesBeforeRestoringAnything(
+    mocker: plugin.MockerFixture,
+) -> None:
+    restore_redis = mocker.patch.object(snapshot_state, "_restore_redis")
+    restore_mq = mocker.patch.object(snapshot_state, "_restore_mq")
+    universe_snapshot = snapshot.Snapshot(
+        universe_snapshot_pb2.UniverseSnapshot(
+            version=snapshot.SNAPSHOT_VERSION,
             universe="42",
-            mq_url=MQ_URL,
-            mq_management_url=MQ_MANAGEMENT_URL,
-            mq_vhost="/",
-            redis_url=REDIS_URL,
+            queues=[
+                universe_snapshot_pb2.Queue(
+                    name=QUEUE,
+                    bindings=[universe_snapshot_pb2.Binding(exchange="missing")],
+                )
+            ],
         )
+    )
 
-        # Taking the snapshot leaves the messages in their queue.
-        assert asyncio.run(_message_count()) == 2
-        assert RUN_KEY not in [key.key for key in universe_snapshot.proto.redis_keys]
-        captured_queue = next(
-            queue for queue in universe_snapshot.proto.queues if queue.name == QUEUE
-        )
-        assert [binding.exchange for binding in captured_queue.bindings] == [EXCHANGE]
-
-        restored_from = snapshot.Snapshot.from_bytes(
-            _test_part(universe_snapshot).to_bytes()
-        )
-        asyncio.run(_delete_queues())
-        redis_client.delete(AGENT_KEY, TTL_KEY)
-
+    with pytest.raises(snapshot.InvalidSnapshotError):
         snapshot_state.restore_snapshot(
-            restored_from, mq_url=MQ_URL, redis_url=REDIS_URL
+            universe_snapshot, mq_url=MQ_URL, redis_url=REDIS_URL
         )
 
-        assert len(restored_from.proto.queues) == 2
-        other_messages = asyncio.run(_pending_messages(OTHER_QUEUE))
-        assert [message.body for message in other_messages] == [b"domain"]
-        assert other_messages[0].routing_key == "v3.asset.domain_name.a"
-        messages = asyncio.run(_pending_messages())
-        assert [message.body for message in messages] == [
-            b"\x0a\x04\x08\x08\x08\x08",
-            b"low priority",
-        ]
-        restored = messages[0]
-        assert restored.routing_key == "v3.asset.ip.v4"
-        assert restored.priority == 5
-        assert restored.expiration == 600
-        assert restored.timestamp == TIMESTAMP
-        assert restored.reply_to == "nmap_replies"
-        assert restored.message_id == "m-1"
-        assert restored.headers == HEADERS | {
-            snapshot_state.RESTORE_QUEUE_HEADER: QUEUE
-        }
-        # The binding is restored: a new message published to the exchange reaches the queue.
-        asyncio.run(_publish_to_exchange("v3.asset.ip.v4"))
-        assert asyncio.run(_message_count()) == 1
-        assert asyncio.run(_restore_exchange_exists()) is False
-        assert redis_client.get(AGENT_KEY) == b"tested"
-        assert 0 < redis_client.ttl(TTL_KEY) <= 1000
-    finally:
-        asyncio.run(_delete_queues())
-        redis_client.delete(AGENT_KEY, TTL_KEY, RUN_KEY)
-        redis_client.close()
+    restore_redis.assert_not_called()
+    restore_mq.assert_not_called()
+
+
+def testListMqTopology_whenManagementApiFails_keepsCredentialsOutOfTheError(
+    httpx_mock: HTTPXMock,
+) -> None:
+    httpx_mock.add_response(status_code=500)
+
+    with pytest.raises(httpx.HTTPStatusError) as error:
+        snapshot_state._list_mq_topology(
+            "http://guest:s3cret@localhost:15672/", mq_vhost="/"
+        )
+
+    assert "s3cret" not in str(error.value)
+    assert error.value.request.headers["authorization"].startswith("Basic ")
+
+
+def testListMqTopology_whenRestoreExchangeIsLeftOver_leavesItOutOfTheSnapshot(
+    httpx_mock: HTTPXMock,
+) -> None:
+    """A failed restore leaves its exchange and bindings behind, they are not part of the universe."""
+    httpx_mock.add_response(
+        url="http://localhost:15672/api/exchanges/%2F",
+        json=[
+            {"name": name, "type": "topic", "durable": True, "auto_delete": False}
+            for name in ("", "amq.topic", snapshot_state.RESTORE_EXCHANGE, EXCHANGE)
+        ],
+    )
+    httpx_mock.add_response(
+        url="http://localhost:15672/api/queues/%2F",
+        json=[{"name": QUEUE, "durable": True}],
+    )
+    httpx_mock.add_response(
+        url=f"http://localhost:15672/api/queues/%2F/{QUEUE}/bindings",
+        json=[
+            {"source": source, "routing_key": "v3.#"}
+            for source in ("", snapshot_state.RESTORE_EXCHANGE, EXCHANGE)
+        ],
+    )
+
+    exchanges, queues = snapshot_state._list_mq_topology(
+        MQ_MANAGEMENT_URL, mq_vhost="/"
+    )
+
+    assert [exchange.name for exchange in exchanges] == [EXCHANGE]
+    assert [binding.exchange for binding in queues[0].bindings] == [EXCHANGE]

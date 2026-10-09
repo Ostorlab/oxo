@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.runtimes.local.proto;
+package ostorlab.runtimes.proto;
 
 // State of a scan universe captured when its scan is paused, restored when the scan resumes.
 message UniverseSnapshot {
