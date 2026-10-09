@@ -1,6 +1,7 @@
 """Tests for scan update state API request."""
 
 import json
+import re
 
 from ostorlab.apis import scan_update_state
 
@@ -191,27 +192,23 @@ def testScanUpdateStateAPIRequest_whenFullDetails_multiAssetSelectsNoConflicting
     assert response_names & sibling_names == set()
 
 
-def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsExperimentalChannelOnScan() -> (
-    None
-):
-    """Test full details query selects experimentalChannel on the scan, not on its agent group."""
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsChannelOnScan() -> None:
+    """Test full details query selects channel on the scan, not on its agent group."""
     api_request = scan_update_state.ScanUpdateStateAPIRequest(
         scan_id=1, progress="locked", full_details=True
     )
 
     assert api_request.query is not None
     scan_selection, agent_group_selection = api_request.query.split("agentGroup {")
-    assert "experimentalChannel" in scan_selection
-    assert "experimentalChannel" not in agent_group_selection
+    assert re.search(r"\bchannel\b", scan_selection) is not None
+    assert re.search(r"\bchannel\b", agent_group_selection) is None
 
 
-def testScanUpdateStateAPIRequest_whenMinimal_queryDoesNotContainExperimentalChannel() -> (
-    None
-):
-    """Test minimal query does not select experimentalChannel."""
+def testScanUpdateStateAPIRequest_whenMinimal_queryDoesNotContainChannel() -> None:
+    """Test minimal query does not select channel."""
     api_request = scan_update_state.ScanUpdateStateAPIRequest(
         scan_id=1, progress="started"
     )
 
     assert api_request.query is not None
-    assert "experimentalChannel" not in api_request.query
+    assert re.search(r"\bchannel\b", api_request.query) is None

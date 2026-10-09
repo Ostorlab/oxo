@@ -81,8 +81,8 @@ from ostorlab.runtimes import registry
     hidden=True,
 )
 @click.option(
-    "--experimental-channel",
-    "experimental_channel",
+    "--channel",
+    "channel",
     default=None,
     help="Release channel to resolve agent versions from. Without it, stable versions are used.",
     hidden=True,
@@ -113,7 +113,7 @@ def scan(
     scan_id: str | None = None,
     labels: dict[str, str] | None = None,
     use_experimental_agents: bool = False,
-    experimental_channel: str | None = None,
+    channel: str | None = None,
     network: str | None = None,
     redis_url: str | None = None,
     tracing: bool = False,
@@ -151,7 +151,7 @@ def scan(
         )
         ctx.obj["runtime"] = runtime_instance
         ctx.obj["use_experimental_agents"] = use_experimental_agents
-        ctx.obj["experimental_channel"] = experimental_channel
+        ctx.obj["channel"] = channel
     except registry.RuntimeNotFoundError as e:
         raise click.ClickException(
             f"The selected runtime {runtime} is not supported."

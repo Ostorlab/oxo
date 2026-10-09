@@ -1299,27 +1299,23 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAgentGroupDefinitionFromYaml_whenExperimentalChannelProvided_parsedCorrectly() -> (
-    None
-):
-    """Test that the experimental_channel yaml key is parsed into the agent group definition."""
+def testAgentGroupDefinitionFromYaml_whenChannelProvided_parsedCorrectly() -> None:
+    """Test that the channel yaml key is parsed into the agent group definition."""
     valid_yaml = """
         kind: "AgentGroup"
         description: "test"
-        experimental_channel: "beta"
+        channel: "beta"
         agents:
           - key: "agent/ostorlab/nmap"
     """
 
     agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
 
-    assert agentgrp_def.experimental_channel == "beta"
+    assert agentgrp_def.channel == "beta"
 
 
-def testAgentGroupDefinitionFromYaml_whenExperimentalChannelMissing_defaultsToNone() -> (
-    None
-):
-    """Test that a yaml without experimental_channel has no channel, so stable versions are used."""
+def testAgentGroupDefinitionFromYaml_whenChannelMissing_defaultsToNone() -> None:
+    """Test that a yaml without channel has no channel, so stable versions are used."""
     valid_yaml = """
         kind: "AgentGroup"
         description: "test"
@@ -1329,4 +1325,4 @@ def testAgentGroupDefinitionFromYaml_whenExperimentalChannelMissing_defaultsToNo
 
     agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
 
-    assert agentgrp_def.experimental_channel is None
+    assert agentgrp_def.channel is None

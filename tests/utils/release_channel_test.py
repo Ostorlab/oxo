@@ -29,6 +29,6 @@ def testChannelPattern_always_matchesAgentGroupSchemaPattern() -> None:
     with open(loader.AGENT_GROUP_SPEC_PATH, "r") as schema_file:
         schema = json.load(schema_file)
 
-    schema_pattern = schema["properties"]["experimental_channel"]["pattern"]
+    schema_pattern = schema["properties"]["channel"]["pattern"]
 
     assert schema_pattern == release_channel.CHANNEL_PATTERN.pattern

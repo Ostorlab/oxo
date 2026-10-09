@@ -1018,19 +1018,19 @@ agents:
     return agent_group_yaml
 
 
-def testRunScan_whenExperimentalChannelOptionSet_resolvesAndInstallsFromChannel(
+def testRunScan_whenChannelOptionSet_resolvesAndInstallsFromChannel(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that --experimental-channel is used to resolve and install agents."""
+    """Test that --channel is used to resolve and install agents."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
-    agent_group_yaml = _write_agent_group(tmp_path, "experimental_channel: qa1")
+    agent_group_yaml = _write_agent_group(tmp_path, "channel: qa1")
 
     result = CliRunner().invoke(
         rootcli.rootcli,
         [
             "scan",
             "--runtime=local",
-            "--experimental-channel",
+            "--channel",
             "beta",
             "run",
             "-g",
@@ -1053,12 +1053,12 @@ def testRunScan_whenExperimentalChannelOptionSet_resolvesAndInstallsFromChannel(
     )
 
 
-def testRunScan_whenExperimentalChannelOptionNotSet_usesAgentGroupChannel(
+def testRunScan_whenChannelOptionNotSet_usesAgentGroupChannel(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that the agent group experimental_channel is used when the CLI option is not set."""
+    """Test that the agent group channel is used when the CLI option is not set."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
-    agent_group_yaml = _write_agent_group(tmp_path, "experimental_channel: qa1")
+    agent_group_yaml = _write_agent_group(tmp_path, "channel: qa1")
 
     result = CliRunner().invoke(
         rootcli.rootcli,
@@ -1081,10 +1081,10 @@ def testRunScan_whenExperimentalChannelOptionNotSet_usesAgentGroupChannel(
     assert mock_install.call_args.kwargs["channel"] == "qa1"
 
 
-def testRunScan_whenExperimentalChannelIsInvalid_exitsWithUsageError(
+def testRunScan_whenChannelIsInvalid_exitsWithUsageError(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that an invalid --experimental-channel is rejected before any agent install."""
+    """Test that an invalid --channel is rejected before any agent install."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
     agent_group_yaml = _write_agent_group(tmp_path)
 
@@ -1093,7 +1093,7 @@ def testRunScan_whenExperimentalChannelIsInvalid_exitsWithUsageError(
         [
             "scan",
             "--runtime=local",
-            "--experimental-channel",
+            "--channel",
             "Beta.2",
             "run",
             "-g",

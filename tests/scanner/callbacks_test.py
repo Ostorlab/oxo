@@ -1757,12 +1757,12 @@ def _start_scan_with_unpinned_agent(
 
 
 @pytest.mark.parametrize("channel", ["beta", "stable"])
-def testStartScan_whenExperimentalChannelIsSet_forwardsChannelToGetDetailsAndInstall(
+def testStartScan_whenChannelIsSet_forwardsChannelToGetDetailsAndInstall(
     mocker: plugin.MockerFixture, channel: str
 ) -> None:
     """The daemon resolves and installs unpinned agents from the scan release channel."""
     get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
-        mocker, {"experimentalChannel": channel}
+        mocker, {"channel": channel}
     )
 
     get_details_mock.assert_called_once_with(
@@ -1772,8 +1772,8 @@ def testStartScan_whenExperimentalChannelIsSet_forwardsChannelToGetDetailsAndIns
     assert install_agent_mock.call_args.kwargs["use_experimental"] is True
 
 
-@pytest.mark.parametrize("scan_fields", [{}, {"experimentalChannel": None}])
-def testStartScan_whenExperimentalChannelIsMissingOrNull_forwardsNoChannel(
+@pytest.mark.parametrize("scan_fields", [{}, {"channel": None}])
+def testStartScan_whenChannelIsMissingOrNull_forwardsNoChannel(
     mocker: plugin.MockerFixture, scan_fields: dict[str, object]
 ) -> None:
     """A scan without a release channel installs stable agent versions."""
@@ -1785,14 +1785,14 @@ def testStartScan_whenExperimentalChannelIsMissingOrNull_forwardsNoChannel(
     assert install_agent_mock.call_args.kwargs["channel"] is None
 
 
-def testStartScan_whenExperimentalChannelIsInvalid_logsWarningAndForwardsNoChannel(
+def testStartScan_whenChannelIsInvalid_logsWarningAndForwardsNoChannel(
     mocker: plugin.MockerFixture,
 ) -> None:
     """An invalid release channel from the API falls back to stable instead of failing the scan."""
     logger_mock = mocker.patch.object(callbacks.logger, "warning")
 
     get_details_mock, install_agent_mock = _start_scan_with_unpinned_agent(
-        mocker, {"experimentalChannel": "Beta.2"}
+        mocker, {"channel": "Beta.2"}
     )
 
     assert get_details_mock.call_args.kwargs["channel"] is None

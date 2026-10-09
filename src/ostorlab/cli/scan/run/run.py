@@ -196,9 +196,9 @@ def run(
                     ctx.obj.get("use_experimental_agents", False) is True
                     or agent_group.use_experimental_agents is True
                 )
-                channel = ctx.obj.get("experimental_channel")
+                channel = ctx.obj.get("channel")
                 if channel is None:
-                    channel = agent_group.experimental_channel
+                    channel = agent_group.channel
                 _install_agents_with_retry(
                     runtime_instance,
                     agent_group,

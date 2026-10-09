@@ -57,7 +57,7 @@ def validate_labels(
 def validate_release_channel(
     ctx: click.core.Context, param: str, value: str | None
 ) -> str | None:
-    """Validator for the experimental release channel flag.
+    """Validator for the release channel flag.
 
     Args:
         ctx: as per click callback convention, the calling click context.

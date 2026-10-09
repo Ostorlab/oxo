@@ -279,7 +279,7 @@ class AgentGroupDefinition:
     name: str | None = None
     description: str | None = None
     use_experimental_agents: bool = False
-    experimental_channel: str | None = None
+    channel: str | None = None
 
     @classmethod
     def from_yaml(cls, group: io.FileIO):
@@ -332,13 +332,13 @@ class AgentGroupDefinition:
             "description", f"""Agent group : {",".join(agents_names)}"""
         )
         use_experimental_agents = agent_group_def.get("use_experimental_agents", False)
-        experimental_channel = agent_group_def.get("experimental_channel")
+        channel = agent_group_def.get("channel")
         return cls(
             agent_settings,
             name,
             description,
             use_experimental_agents,
-            experimental_channel,
+            channel,
         )
 
     @classmethod

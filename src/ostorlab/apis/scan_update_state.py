@@ -33,7 +33,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                   id
                   progress
                   useExperimentalAgents
-                  experimentalChannel
+                  channel
                   asset {
                     __typename
                     ... on UrlAssetType { urls apiSchema apiSchemaUrl }
