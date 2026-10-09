@@ -609,8 +609,10 @@ def _clear_scan_snapshot(
         AttributeError,
         TypeError,
         KeyError,
+        IndexError,
     ):
-        # A malformed response, like a JSON null body or a non-mapping `data`, is a failed call.
+        # A malformed response, like a JSON null body, a non-mapping `data` or an empty `errors` list, is a failed
+        # call.
         logger.exception("Could not clear the snapshot flag of scan %s.", scan_id)
         return False
     if is_cleared is False:

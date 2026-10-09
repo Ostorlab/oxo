@@ -120,7 +120,7 @@ Pausing a scan frees the scanner machine and its devices; resuming continues the
 restarting it. To enable pause and resume on a scanner, point it at a snapshot bucket and at the key of a service
 account allowed to read, write and delete objects in that bucket. OXO stores one snapshot per paused scan at
 `<bucket>/<prefix>/<scan_id>/snapshot.pb.gz`, holding the scan's RabbitMQ queues and Redis state; resuming restores that
-state instead of injecting the assets again. A lifecycle rule on the bucket removes the snapshots of scans that are
+state instead of injecting the assets again. Set a lifecycle rule on the bucket to delete the snapshots of scans that are
 never resumed.
 
 First install the scanner extras:
@@ -129,7 +129,8 @@ First install the scanner extras:
 pip install ostorlab[scanner]
 ```
 
-Then start the scanner with the snapshot options:
+Then start the scanner with the snapshot options. Both options are required together; the scanner checks the pair at
+startup:
 
 ```shell
 oxo scanner --scanner-id <scanner-uuid> \

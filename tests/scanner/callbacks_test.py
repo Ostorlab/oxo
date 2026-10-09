@@ -1881,14 +1881,22 @@ def testStartScan_whenRestoredSnapshotFlagCannotBeCleared_keepsTheSnapshot(
     bucket.blob.return_value.delete.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "clear_failure",
+    [
+        {"return_value": {"data": "not a mapping"}},
+        # The runner reads the first error of an empty `errors` list.
+        {"side_effect": IndexError("list index out of range")},
+    ],
+)
 def testStartScan_whenClearResponseIsMalformed_keepsTheSnapshotAndTheStartedScan(
-    mocker: plugin.MockerFixture,
+    mocker: plugin.MockerFixture, clear_failure: dict
 ) -> None:
     """A malformed scanning engine answer is a failed clear: the scan runs on and its snapshot is kept."""
     runtime_mock = _setup_start_scan_mocks(mocker)
     _, bucket = _fake_bucket(mocker, _snapshot_bytes())
     scanner_api_runner = mocker.MagicMock()
-    scanner_api_runner.execute.return_value = {"data": "not a mapping"}
+    scanner_api_runner.execute.configure_mock(**clear_failure)
 
     callbacks.start_scan(
         RESUMED_SCAN,
