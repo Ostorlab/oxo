@@ -868,3 +868,27 @@ def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none"
+
+
+def testLiteLocalRuntimeScan_whenScanSnapshotIsPassed_raisesNotImplementedError() -> (
+    None
+):
+    """Only the local runtime runs the universe a snapshot restores."""
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="top",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+
+    with pytest.raises(NotImplementedError):
+        runtime.scan(
+            title="Lite local scan",
+            agent_group_definition=definitions.AgentGroupDefinition(agents=[]),
+            assets=None,
+            scan_snapshot=b"snapshot",
+        )
