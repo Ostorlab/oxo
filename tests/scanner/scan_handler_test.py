@@ -4,6 +4,7 @@ import docker
 import pytest
 from pytest_mock import plugin
 
+from ostorlab.runtimes.local import snapshot_storage
 from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter
 
@@ -278,6 +279,8 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         state_reporter=state_reporter,
         api_key="test-key",
         gcp_logging_credential="gcp-credential",
+        scanner_api_runner=runner,
+        snapshot_storage_settings=None,
     )
 
 
@@ -307,3 +310,62 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
 
     assert result == {"id": 99, "progress": "locked"}
     runner.execute.assert_called_once()
+
+
+def testReserveSingleScan_whenPausedScanAndNoSnapshotStorage_skipsItWithoutLockingIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Locking a scan this scanner cannot resume would only roll it back on every poll."""
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {
+        "data": {
+            "updateScan": {
+                "success": True,
+                "scan": {"id": 99, "progress": "locked"},
+            }
+        }
+    }
+    scans_list = [{"id": 42, "hasSnapshot": True}, {"id": 99, "hasSnapshot": False}]
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._reserve_single_scan(runner, scans_list)
+
+    assert result == {"id": 99, "progress": "locked"}
+    runner.execute.assert_called_once()
+    assert runner.execute.call_args.kwargs["request"]._scan_id == 99
+
+
+def testReserveSingleScan_whenPausedScanAndSnapshotStorage_reservesIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    runner = mocker.MagicMock()
+    runner.execute.return_value = {
+        "data": {
+            "updateScan": {
+                "success": True,
+                "scan": {"id": 42, "progress": "locked", "hasSnapshot": True},
+            }
+        }
+    }
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(
+        state_reporter=state_reporter,
+        snapshot_storage_settings=snapshot_storage.SnapshotStorageSettings(
+            bucket_path="gs://scan-snapshots", service_account_key="{}"
+        ),
+    )
+
+    result = scan_handler_instance._reserve_single_scan(
+        runner, [{"id": 42, "hasSnapshot": True}]
+    )
+
+    assert result == {"id": 42, "progress": "locked", "hasSnapshot": True}

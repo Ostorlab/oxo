@@ -133,7 +133,7 @@ class SnapshotStore:
         Raises:
             SnapshotNotFoundError: When the scan has no snapshot object.
             SnapshotCorruptedError: When the snapshot does not match its sha256.
-            SnapshotStorageError: When the download fails.
+            SnapshotStorageError: When the download fails or the bucket does not exist.
         """
         try:
             with self._client() as client:
@@ -141,6 +141,9 @@ class SnapshotStore:
                     self.object_name(scan_id)
                 )
                 if blob is None:
+                    # A missing bucket also reads as a missing object: a mistyped bucket must not make every
+                    # paused scan start over.
+                    self._check_bucket_exists(client)
                     raise SnapshotNotFoundError(
                         f"snapshot of scan {scan_id} not found."
                     )
@@ -182,6 +185,22 @@ class SnapshotStore:
         except (gcloud_exceptions.GoogleAPIError, auth_exceptions.GoogleAuthError) as e:
             raise SnapshotStorageError(
                 f"could not delete the snapshot of scan {scan_id}: {e}"
+            ) from e
+
+    def _check_bucket_exists(self, client: storage.Client) -> None:
+        """Raise when the bucket does not exist.
+
+        Listing objects only needs object permissions, unlike reading the bucket, and fails with `NotFound` on a
+        missing bucket.
+
+        Raises:
+            SnapshotStorageError: When the bucket does not exist.
+        """
+        try:
+            next(iter(client.list_blobs(self._bucket_name, max_results=1)), None)
+        except gcloud_exceptions.NotFound as e:
+            raise SnapshotStorageError(
+                f"snapshot bucket {self._bucket_name} does not exist."
             ) from e
 
     def _client(self) -> storage.Client:

@@ -16,6 +16,7 @@ class ScansDiscoverAPIRequest(request.APIRequest):
           scans(progresses: $progresses, oldLockedScans: $oldLockedScans, numberElements: $numberElements) {
             scans {
               id
+              hasSnapshot
             }
           }
         }

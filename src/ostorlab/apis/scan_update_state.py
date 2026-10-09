@@ -33,6 +33,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                   id
                   progress
                   useExperimentalAgents
+                  hasSnapshot
                   asset {
                     __typename
                     ... on UrlAssetType { urls apiSchema apiSchemaUrl }

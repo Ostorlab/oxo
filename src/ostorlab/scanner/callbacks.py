@@ -10,8 +10,11 @@ import logging
 from typing import Any
 
 import docker
+import httpx
 
 from ostorlab import exceptions
+from ostorlab.apis import scan_snapshot as scan_snapshot_api
+from ostorlab.apis.runners import runner as base_runner
 from ostorlab.assets import agent as agent_asset
 from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
@@ -42,9 +45,16 @@ from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import registry
 from ostorlab.runtimes import runtime
+from ostorlab.runtimes.local import snapshot
+from ostorlab.runtimes.local import snapshot_storage
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
+
+
+class MissingScanSnapshotError(exceptions.OstorlabError):
+    """The scan resumes from a snapshot that could not be fetched."""
+
 
 # Fields of the multi asset payload holding nested assets, each resolved through
 # `_extract_assets` by its own `__typename`. `apiSchemas` is deliberately absent: it
@@ -523,19 +533,140 @@ def _connect_containers_registry() -> docker.DockerClient:
     return docker.from_env()
 
 
+def _fetch_scan_snapshot(
+    snapshot_storage_settings: snapshot_storage.SnapshotStorageSettings | None,
+    scanner_api_runner: base_runner.APIRunner | None,
+    scan_id: int,
+) -> snapshot_storage.StoredSnapshot | None:
+    """Download the snapshot a paused scan resumes from.
+
+    Returns:
+        The snapshot, or None when it is lost for good (missing or corrupted): the scan no longer resumes from it and
+        starts over.
+
+    Raises:
+        MissingScanSnapshotError: When a retry may succeed, the scan is then rolled back to be picked up again: this
+            scanner has no snapshot storage, or the storage cannot be reached.
+    """
+    if snapshot_storage_settings is None:
+        raise MissingScanSnapshotError(
+            f"scan {scan_id} resumes from a snapshot but this scanner has no snapshot storage."
+        )
+    try:
+        store = snapshot_storage_settings.store()
+        stored_snapshot = store.download(scan_id)
+        parsed_snapshot = snapshot.Snapshot.from_bytes(stored_snapshot.data)
+        if parsed_snapshot.universe != str(scan_id):
+            # Restoring the state of another universe would mix two scans.
+            raise snapshot.InvalidSnapshotError(
+                f"snapshot of universe {parsed_snapshot.universe} stored for scan {scan_id}."
+            )
+    except (
+        snapshot_storage.SnapshotNotFoundError,
+        snapshot_storage.SnapshotCorruptedError,
+        snapshot.InvalidSnapshotError,
+    ):
+        logger.exception(
+            "The snapshot of scan %s is lost, the scan starts over.", scan_id
+        )
+        if _clear_scan_snapshot(scanner_api_runner, scan_id) is False:
+            raise MissingScanSnapshotError(
+                f"the lost snapshot of scan {scan_id} could not be cleared."
+            ) from None
+        return None
+    except snapshot_storage.SnapshotStorageError as e:
+        raise MissingScanSnapshotError(
+            f"snapshot of scan {scan_id} could not be fetched: {e}"
+        ) from e
+    logger.info(
+        "Fetched the snapshot of scan %s, %s bytes.",
+        scan_id,
+        len(stored_snapshot.data),
+    )
+    return stored_snapshot
+
+
+def _clear_scan_snapshot(
+    scanner_api_runner: base_runner.APIRunner | None, scan_id: int
+) -> bool:
+    """Tell the scanning engine the scan no longer resumes from a snapshot.
+
+    Returns:
+        True when the scanning engine cleared the flag.
+    """
+    if scanner_api_runner is None:
+        return False
+    try:
+        response = scanner_api_runner.execute(
+            request=scan_snapshot_api.ClearScanSnapshotAPIRequest(scan_id=scan_id)
+        )
+        update_scan = (response.get("data") or {}).get("updateScan") or {}
+        is_cleared = update_scan.get("success") is True
+    except (
+        base_runner.Error,
+        httpx.HTTPError,
+        ValueError,
+        AttributeError,
+        TypeError,
+        KeyError,
+        IndexError,
+    ):
+        # A malformed response, like a JSON null body, a non-mapping `data` or an empty `errors` list, is a failed
+        # call.
+        logger.exception("Could not clear the snapshot flag of scan %s.", scan_id)
+        return False
+    if is_cleared is False:
+        logger.error(
+            "The snapshot flag of scan %s was not cleared: %s",
+            scan_id,
+            update_scan.get("message"),
+        )
+        return False
+    return True
+
+
+def _release_scan_snapshot(
+    snapshot_storage_settings: snapshot_storage.SnapshotStorageSettings,
+    scanner_api_runner: base_runner.APIRunner | None,
+    scan_id: int,
+    stored_snapshot: snapshot_storage.StoredSnapshot,
+) -> None:
+    """Clear the snapshot flag of a restored scan, then delete the snapshot it was restored from.
+
+    The flag is cleared first: when it cannot be, the snapshot is kept so a later start of the scan can still restore
+    it. A snapshot that cannot be deleted is never used again, the bucket lifecycle removes it. The scan already runs,
+    so failures are only logged.
+    """
+    if _clear_scan_snapshot(scanner_api_runner, scan_id) is False:
+        return
+    try:
+        snapshot_storage_settings.store().delete(
+            scan_id, generation=stored_snapshot.generation
+        )
+    except snapshot_storage.SnapshotStorageError:
+        logger.exception("Could not delete the snapshot of scan %s.", scan_id)
+
+
 def start_scan(
     request: dict[str, Any],
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
     gcp_logging_credential: str | None = None,
+    scanner_api_runner: base_runner.APIRunner | None = None,
+    snapshot_storage_settings: snapshot_storage.SnapshotStorageSettings | None = None,
 ) -> str | None:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
+
+    A paused scan resumes from its snapshot instead of starting over.
 
     Args:
         request: API response data for the scan.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         api_key: Optional api key to fetch short-lived download tokens for agent images.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
+        scanner_api_runner: Runner of the scanner API, used to clear the snapshot flag of a resumed scan.
+        snapshot_storage_settings: Bucket of the scan snapshots: resumed scans are restored from it, and the stop
+            scan agent uploads the snapshot of a paused scan to it.
     """
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
@@ -548,6 +679,11 @@ def start_scan(
         # empty asset volume and starts the injection agent with nothing to inject.
         assets = extracted_assets if len(extracted_assets) > 0 else None
         scan_id = _extract_scan_id(request=request)
+        stored_snapshot = None
+        if request.get("hasSnapshot") is True:
+            stored_snapshot = _fetch_scan_snapshot(
+                snapshot_storage_settings, scanner_api_runner, scan_id
+            )
 
         state_reporter = _update_state_reporter(
             state_reporter=state_reporter, scan_id=scan_id
@@ -558,6 +694,7 @@ def start_scan(
             scan_id=str(scan_id),
             run_default_agents=False,
             gcp_logging_credential=gcp_logging_credential,
+            snapshot_storage_settings=snapshot_storage_settings,
         )
 
         if (
@@ -578,11 +715,21 @@ def start_scan(
                     agent_group_definition=agent_group_definition,
                     assets=assets,
                     title=None,
+                    scan_snapshot=(
+                        stored_snapshot.data if stored_snapshot is not None else None
+                    ),
                 )
             except exceptions.OstorlabError as e:
                 logger.error("An error was encountered while running the scan: %s", e)
                 raise
 
+            if stored_snapshot is not None and snapshot_storage_settings is not None:
+                _release_scan_snapshot(
+                    snapshot_storage_settings,
+                    scanner_api_runner,
+                    scan_id,
+                    stored_snapshot,
+                )
             return runtime_instance.name
         else:
             logger.error(

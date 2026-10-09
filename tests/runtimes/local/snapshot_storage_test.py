@@ -204,10 +204,26 @@ def testDownload_whenObjectIsMissing_raisesSnapshotNotFound(
 ) -> None:
     bucket = storage_client.return_value.__enter__.return_value.bucket.return_value
     bucket.get_blob.configure_mock(**missing)
+    storage_client.return_value.__enter__.return_value.list_blobs.return_value = []
     store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
 
     with pytest.raises(snapshot_storage.SnapshotNotFoundError):
         store.download(42)
+
+
+def testDownload_whenBucketDoesNotExist_raisesRetryableStorageError(
+    storage_client: mock.MagicMock,
+) -> None:
+    """A mistyped bucket reads as a missing object, it must not make the paused scan start over."""
+    client = storage_client.return_value.__enter__.return_value
+    client.bucket.return_value.get_blob.return_value = None
+    client.list_blobs.side_effect = gcloud_exceptions.NotFound("no such bucket")
+    store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
+
+    with pytest.raises(snapshot_storage.SnapshotStorageError, match="does not exist"):
+        store.download(42)
+
+    assert client.list_blobs.call_args.args[0] == "scan-snapshots"
 
 
 def testDownload_whenBytesDoNotMatchTheirChecksum_raisesSnapshotCorrupted(
