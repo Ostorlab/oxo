@@ -868,3 +868,38 @@ def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none"
+
+
+def testLiteLocalRuntimeScan_whenScanSnapshotIsPassed_raisesNotImplementedError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Only the local runtime runs the universe a snapshot restores."""
+    for check in (
+        "is_docker_installed",
+        "is_sys_arch_supported",
+        "is_user_permitted",
+        "is_docker_working",
+        "is_swarm_initialized",
+    ):
+        mocker.patch(
+            f"ostorlab.cli.docker_requirements_checker.{check}", return_value=True
+        )
+    mocker.patch("docker.from_env")
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="1",
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="top",
+        network="privnet",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+    )
+
+    with pytest.raises(NotImplementedError):
+        runtime.scan(
+            title="Lite local scan",
+            agent_group_definition=definitions.AgentGroupDefinition(agents=[]),
+            assets=None,
+            scan_snapshot=b"snapshot",
+        )
