@@ -212,7 +212,13 @@ def _serialize_message(
     if message.delivery_mode is not None:
         snapshot_message.delivery_mode = int(message.delivery_mode)
     if message.expiration is not None:
-        snapshot_message.expiration = float(message.expiration)
+        # aio-pika decodes the expiration as seconds; a timedelta is accepted as well.
+        expiration = message.expiration
+        snapshot_message.expiration = (
+            expiration.total_seconds()
+            if isinstance(expiration, datetime.timedelta)
+            else float(expiration)
+        )
     if message.timestamp is not None:
         snapshot_message.timestamp = int(message.timestamp.timestamp())
     # `user_id` is left out: RabbitMQ rejects a message whose user differs from the restoring connection user.
