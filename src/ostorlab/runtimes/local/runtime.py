@@ -682,36 +682,41 @@ class LocalRuntime(runtime.Runtime):
         volume_name = f"snapshot_{self.name}"
         restore_service = None
         try:
-            volumes.create_volume(
-                volume_name,
-                {snapshot.SNAPSHOT_FILENAME: scan_snapshot},
-                labels={"ostorlab.universe": self.name},
-            )
-            restore_service = self._docker_client.services.create(
-                image=snapshot_image,
-                command=[
-                    "python3",
-                    "-m",
-                    snapshot.RESTORE_MODULE,
-                    "restore",
-                    "--mq-url",
-                    self._mq_service.url,
-                    "--redis-url",
-                    self._redis_service.url,
-                ],
-                name=f"snapshot_restore_{self.name}",
-                networks=[self.network],
-                mounts=[
-                    docker.types.Mount(
-                        target=snapshot.SNAPSHOT_MOUNT_PATH,
-                        source=volume_name,
-                        type="volume",
-                        read_only=True,
-                    )
-                ],
-                restart_policy=docker.types.RestartPolicy(condition="none"),
-                labels={"ostorlab.universe": self.name},
-            )
+            try:
+                volumes.create_volume(
+                    volume_name,
+                    {snapshot.SNAPSHOT_FILENAME: scan_snapshot},
+                    labels={"ostorlab.universe": self.name},
+                )
+                restore_service = self._docker_client.services.create(
+                    image=snapshot_image,
+                    command=[
+                        "python3",
+                        "-m",
+                        snapshot.RESTORE_MODULE,
+                        "restore",
+                        "--mq-url",
+                        self._mq_service.url,
+                        "--redis-url",
+                        self._redis_service.url,
+                    ],
+                    name=f"snapshot_restore_{self.name}",
+                    networks=[self.network],
+                    mounts=[
+                        docker.types.Mount(
+                            target=snapshot.SNAPSHOT_MOUNT_PATH,
+                            source=volume_name,
+                            type="volume",
+                            read_only=True,
+                        )
+                    ],
+                    restart_policy=docker.types.RestartPolicy(condition="none"),
+                    labels={"ostorlab.universe": self.name},
+                )
+            except (docker_errors.DockerException, requests.RequestException) as e:
+                raise SnapshotRestoreError(
+                    f"snapshot restore could not start: {e}"
+                ) from e
             task = self._wait_run_once_service(restore_service)
             if task is None:
                 raise SnapshotRestoreError(

@@ -819,13 +819,13 @@ def testRestoreSnapshot_whenRestoreServiceCannotBeRemoved_raisesRestoreErrorAndR
     docker_client.volumes.get.return_value.remove.assert_called_once()
 
 
-def testRestoreSnapshot_whenRestoreServiceCannotBeCreated_removesTheSnapshotVolume(
+def testRestoreSnapshot_whenRestoreServiceCannotBeCreated_raisesRestoreErrorAndRemovesTheSnapshotVolume(
     snapshot_runtime: local_runtime.LocalRuntime,
     docker_client: mock.MagicMock,
 ) -> None:
     docker_client.services.create.side_effect = docker.errors.APIError("no node")
 
-    with pytest.raises(docker.errors.APIError):
+    with pytest.raises(local_runtime.SnapshotRestoreError, match="could not start"):
         snapshot_runtime._restore_snapshot(b"snapshot", SNAPSHOT_AGENT_GROUP)
 
     docker_client.volumes.get.assert_called_with("snapshot_42")
@@ -996,3 +996,17 @@ def testLocalRuntimeScan_always_checksServicesHealthyBeforeStartingAgents(
     assert call_names.index("_check_services_healthy") < call_names.index(
         "_start_agents"
     )
+
+
+def testRestoreSnapshot_whenSnapshotVolumeCannotBeWritten_raisesSnapshotRestoreError(
+    snapshot_runtime: local_runtime.LocalRuntime,
+    docker_client: mock.MagicMock,
+) -> None:
+    local_runtime.volumes.create_volume.side_effect = requests.ConnectionError(
+        "daemon down"
+    )
+
+    with pytest.raises(local_runtime.SnapshotRestoreError, match="could not start"):
+        snapshot_runtime._restore_snapshot(b"snapshot", SNAPSHOT_AGENT_GROUP)
+
+    docker_client.services.create.assert_not_called()
