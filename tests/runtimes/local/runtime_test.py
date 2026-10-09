@@ -1010,3 +1010,24 @@ def testRestoreSnapshot_whenSnapshotVolumeCannotBeWritten_raisesSnapshotRestoreE
         snapshot_runtime._restore_snapshot(b"snapshot", SNAPSHOT_AGENT_GROUP)
 
     docker_client.services.create.assert_not_called()
+
+
+def testRestoreSnapshot_whenSnapshotAgentImageCannotBeLookedUp_raisesSnapshotRestoreError(
+    mocker: plugin.MockerFixture,
+    snapshot_runtime: local_runtime.LocalRuntime,
+    docker_client: mock.MagicMock,
+) -> None:
+    """Resolving the image of the snapshot agent talks to the docker daemon, which may be down."""
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        side_effect=docker.errors.DockerException("daemon down"),
+        new_callable=mocker.PropertyMock,
+    )
+
+    with pytest.raises(
+        local_runtime.SnapshotRestoreError, match="could not be looked up"
+    ):
+        snapshot_runtime._restore_snapshot(b"snapshot", SNAPSHOT_AGENT_GROUP)
+
+    docker_client.services.create.assert_not_called()
+    local_runtime.volumes.create_volume.assert_not_called()
