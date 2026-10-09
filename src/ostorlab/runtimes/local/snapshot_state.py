@@ -25,7 +25,7 @@ import redis
 import tenacity
 
 from ostorlab.runtimes.local import snapshot
-from ostorlab.runtimes.local.proto import universe_snapshot_pb2
+from ostorlab.runtimes.proto import universe_snapshot_pb2
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,8 @@ RESTORE_QUEUE_HEADER = "ostorlab-snapshot-restore-queue"
 MANAGEMENT_API_TIMEOUT = datetime.timedelta(seconds=30)
 # Time to receive the pending messages of a queue, the agents are stopped so the queue does not grow meanwhile.
 READ_QUEUE_TIMEOUT = datetime.timedelta(minutes=5)
+# A queue delivering nothing for this long is drained: messages counted when it was declared may have expired since.
+READ_IDLE_TIMEOUT = datetime.timedelta(seconds=5)
 # Messages published concurrently, their publisher confirms are awaited together.
 PUBLISH_BATCH_SIZE = 500
 RESTORE_ATTEMPTS = 30
@@ -97,7 +99,12 @@ def restore_snapshot(
         universe_snapshot: The snapshot to restore.
         mq_url: AMQP URL of the universe RabbitMQ.
         redis_url: URL of the universe Redis.
+
+    Raises:
+        snapshot.InvalidSnapshotError: When a queue is bound to an exchange missing from the snapshot. Nothing is
+            restored then.
     """
+    _check_bindings(universe_snapshot)
     _restore_redis(redis_url, universe_snapshot)
     asyncio.run(_restore_mq(mq_url, universe_snapshot))
     logger.info(
@@ -109,13 +116,34 @@ def restore_snapshot(
     )
 
 
+def _check_bindings(universe_snapshot: snapshot.Snapshot) -> None:
+    """Check every binding before restoring, a snapshot failing midway would leave the universe half restored."""
+    exchanges = {exchange.name for exchange in universe_snapshot.proto.exchanges}
+    for queue in universe_snapshot.proto.queues:
+        for binding in queue.bindings:
+            if binding.exchange not in exchanges:
+                raise snapshot.InvalidSnapshotError(
+                    f"queue {queue.name} is bound to unknown exchange {binding.exchange}"
+                )
+
+
 def _list_mq_topology(
     mq_management_url: str, mq_vhost: str
 ) -> tuple[list[universe_snapshot_pb2.Exchange], list[universe_snapshot_pb2.Queue]]:
     """List the exchanges and the queues with their bindings using the RabbitMQ management API."""
     vhost = parse.quote(mq_vhost, safe="")
+    # The credentials are sent as basic auth instead of in the URL: httpx errors carry the request URL, they would
+    # end up in the logs.
+    management_url = httpx.URL(mq_management_url)
+    auth = (
+        (management_url.username, management_url.password)
+        if management_url.username != ""
+        else None
+    )
     with httpx.Client(
-        base_url=mq_management_url, timeout=MANAGEMENT_API_TIMEOUT.total_seconds()
+        base_url=management_url.copy_with(userinfo=b""),
+        auth=auth,
+        timeout=MANAGEMENT_API_TIMEOUT.total_seconds(),
     ) as client:
         exchanges = [
             universe_snapshot_pb2.Exchange(
@@ -126,7 +154,7 @@ def _list_mq_topology(
                 arguments=_to_field_table(exchange.get("arguments") or {}),
             )
             for exchange in _get_json(client, f"api/exchanges/{vhost}")
-            if exchange["name"] != "" and exchange["name"].startswith("amq.") is False
+            if _is_captured_exchange(exchange["name"]) is True
         ]
         queues = []
         for queue in _get_json(client, f"api/queues/{vhost}"):
@@ -140,9 +168,8 @@ def _list_mq_topology(
                 for binding in _get_json(
                     client, f"api/queues/{vhost}/{parse.quote(name, safe='')}/bindings"
                 )
-                # The default exchange and the excluded amq.* exchanges are not captured, neither are their bindings.
-                if binding["source"] != ""
-                and binding["source"].startswith("amq.") is False
+                # The bindings of the exchanges left out of the snapshot are left out as well.
+                if _is_captured_exchange(binding["source"]) is True
             ]
             queues.append(
                 universe_snapshot_pb2.Queue(
@@ -153,6 +180,15 @@ def _list_mq_topology(
                 )
             )
     return exchanges, queues
+
+
+def _is_captured_exchange(name: str) -> bool:
+    """Whether the snapshot keeps the exchange.
+
+    The default exchange and the built-in amq.* exchanges are recreated by RabbitMQ, and the restore exchange left by
+    a failed restore is not part of the universe.
+    """
+    return name != "" and name.startswith("amq.") is False and name != RESTORE_EXCHANGE
 
 
 def _get_json(client: httpx.Client, path: str) -> list[dict[str, Any]]:
@@ -191,11 +227,20 @@ async def _receive_messages(
     queue: universe_snapshot_pb2.Queue,
     pending: int,
 ) -> None:
+    """Receive up to `pending` messages, stopping early once the queue is drained.
+
+    A message with a per-message TTL can expire between the declare counting it and its delivery, waiting for the
+    declared count would then stall the pause until `READ_QUEUE_TIMEOUT`.
+    """
     async with mq_queue.iterator(no_ack=False) as messages:
-        async for message in messages:
-            queue.messages.append(_serialize_message(message))
-            if len(queue.messages) >= pending:
+        while len(queue.messages) < pending:
+            try:
+                message = await asyncio.wait_for(
+                    anext(messages), timeout=READ_IDLE_TIMEOUT.total_seconds()
+                )
+            except TimeoutError:
                 return
+            queue.messages.append(_serialize_message(message))
 
 
 def _serialize_message(
@@ -212,13 +257,8 @@ def _serialize_message(
     if message.delivery_mode is not None:
         snapshot_message.delivery_mode = int(message.delivery_mode)
     if message.expiration is not None:
-        # aio-pika decodes the expiration as seconds; a timedelta is accepted as well.
-        expiration = message.expiration
-        snapshot_message.expiration = (
-            expiration.total_seconds()
-            if isinstance(expiration, datetime.timedelta)
-            else float(expiration)
-        )
+        # aio-pika decodes the expiration of a received message as seconds.
+        snapshot_message.expiration = float(message.expiration)
     if message.timestamp is not None:
         snapshot_message.timestamp = int(message.timestamp.timestamp())
     # `user_id` is left out: RabbitMQ rejects a message whose user differs from the restoring connection user.
@@ -357,13 +397,8 @@ async def _restore_queue(
         arguments=_from_field_table(queue.arguments),
     )
     for binding in queue.bindings:
-        exchange = exchanges.get(binding.exchange)
-        if exchange is None:
-            raise snapshot.InvalidSnapshotError(
-                f"queue {queue.name} is bound to unknown exchange {binding.exchange}"
-            )
         await mq_queue.bind(
-            exchange,
+            exchanges[binding.exchange],
             routing_key=binding.routing_key,
             arguments=_from_field_table(binding.arguments),
         )
@@ -371,15 +406,16 @@ async def _restore_queue(
     await mq_queue.bind(restore_exchange, arguments=restore_binding)
     messages = list(queue.messages)
     for start in range(0, len(messages), PUBLISH_BATCH_SIZE):
-        await asyncio.gather(
-            *(
-                restore_exchange.publish(
-                    _build_message(message, queue_name=queue.name),
-                    routing_key=message.routing_key,
+        # A failed publish cancels the rest of the batch, they would otherwise keep publishing while the restore
+        # exchange is deleted.
+        async with asyncio.TaskGroup() as publishes:
+            for message in messages[start : start + PUBLISH_BATCH_SIZE]:
+                publishes.create_task(
+                    restore_exchange.publish(
+                        _build_message(message, queue_name=queue.name),
+                        routing_key=message.routing_key,
+                    )
                 )
-                for message in messages[start : start + PUBLISH_BATCH_SIZE]
-            )
-        )
     await mq_queue.unbind(restore_exchange, arguments=restore_binding)
 
 

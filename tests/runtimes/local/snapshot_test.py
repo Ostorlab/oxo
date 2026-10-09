@@ -5,10 +5,11 @@ import gzip
 from unittest import mock
 
 import pytest
+from docker import errors as docker_errors
 from pytest_mock import plugin
 
 from ostorlab.runtimes.local import snapshot
-from ostorlab.runtimes.local.proto import universe_snapshot_pb2
+from ostorlab.runtimes.proto import universe_snapshot_pb2
 
 
 def _service(
@@ -183,6 +184,38 @@ def testStopUniverseAgents_whenAgentWasStoppedByAnEarlierAttempt_keepsItsOrigina
 
     assert replicas == {"nmap_42": 3}
     nmap.update.assert_not_called()
+
+
+def testStopUniverseAgents_whenAgentStoppedEarlierWasStartedAgain_scalesItDownKeepingItsReplicas(
+    mocker: plugin.MockerFixture,
+) -> None:
+    nmap = _service(
+        mocker, "nmap_42", replicas=2, labels={snapshot.REPLICAS_LABEL: "3"}
+    )
+    docker_client = mocker.MagicMock()
+    docker_client.services.list.return_value = [nmap]
+    docker_client.services.get.return_value.tasks.return_value = []
+
+    replicas = snapshot.stop_universe_agents(docker_client, universe="42")
+
+    assert replicas == {"nmap_42": 3}
+    assert nmap.update.call_args.kwargs["mode"].replicas == 0
+    assert nmap.update.call_args.kwargs["labels"][snapshot.REPLICAS_LABEL] == "3"
+
+
+def testStopUniverseAgents_whenServiceIsRemovedWhileWaiting_treatsItAsStopped(
+    mocker: plugin.MockerFixture,
+) -> None:
+    inject_asset = _service(
+        mocker, "inject_asset_42", replicas=1, restart_condition="none"
+    )
+    docker_client = mocker.MagicMock()
+    docker_client.services.list.return_value = [inject_asset]
+    docker_client.services.get.side_effect = docker_errors.NotFound("removed")
+
+    replicas = snapshot.stop_universe_agents(docker_client, universe="42")
+
+    assert replicas == {}
 
 
 def testStopUniverseAgents_whenAgentsKeepRunning_raisesAgentsNotStopped(

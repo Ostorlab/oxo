@@ -670,10 +670,17 @@ class LocalRuntime(runtime.Runtime):
             ),
             None,
         )
-        # The image lookup scans the local images, it is read once.
-        snapshot_image = (
-            snapshot_agent.container_image if snapshot_agent is not None else None
-        )
+        if snapshot_agent is None:
+            raise SnapshotRestoreError(
+                f"agent {SNAPSHOT_AGENT} is required to restore the scan snapshot."
+            )
+        try:
+            # The image lookup scans the local images, it is read once.
+            snapshot_image = snapshot_agent.container_image
+        except (docker_errors.DockerException, requests.RequestException) as e:
+            raise SnapshotRestoreError(
+                f"image of agent {SNAPSHOT_AGENT} could not be looked up: {e}"
+            ) from e
         if snapshot_image is None:
             raise SnapshotRestoreError(
                 f"agent {SNAPSHOT_AGENT} is required to restore the scan snapshot."

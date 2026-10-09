@@ -6,9 +6,9 @@ snapshot. The state of a universe is held by two services:
 - RabbitMQ: the pending agent messages, in one durable queue per agent.
 - Redis: the agents persisted state, like deduplication sets and the tracker bookkeeping.
 
-The snapshot is a gzip-compressed `UniverseSnapshot` protobuf message (see `proto/universe_snapshot.proto`) holding
-the exchanges, the queues with their bindings and pending messages, and the Redis keys. Message bodies, Redis keys
-and Redis values are kept as raw bytes. The agents of the universe are stopped before the snapshot is taken, so their
+The snapshot is a gzip-compressed `UniverseSnapshot` protobuf message (see `runtimes/proto/universe_snapshot.proto`)
+holding the exchanges, the queues with their bindings and pending messages, and the Redis keys. Message bodies, Redis
+keys and Redis values are kept as raw bytes. The agents of the universe are stopped before the snapshot is taken, so their
 unacknowledged messages are requeued and captured.
 
 This module holds the snapshot format and the stop and start of the agents, it only needs the core requirements.
@@ -27,11 +27,13 @@ import time
 import zlib
 
 import docker
+from docker import errors as docker_errors
 from docker import types as docker_types
 from docker.models import services as docker_services
 from google.protobuf import message as protobuf_message
 
-from ostorlab.runtimes.local.proto import universe_snapshot_pb2
+from ostorlab import exceptions
+from ostorlab.runtimes.proto import universe_snapshot_pb2
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +59,7 @@ STOP_AGENTS_TIMEOUT = datetime.timedelta(minutes=2)
 STOP_AGENTS_CHECK_INTERVAL = datetime.timedelta(seconds=2)
 
 
-class Error(Exception):
+class Error(exceptions.OstorlabError):
     """Base error of the universe snapshot."""
 
 
@@ -99,7 +101,9 @@ class Snapshot:
                 gzip.decompress(data)
             )
         except (OSError, EOFError, zlib.error, protobuf_message.DecodeError) as e:
-            raise InvalidSnapshotError(f"snapshot is not a gzip protobuf message: {e}")
+            raise InvalidSnapshotError(
+                f"snapshot is not a gzip protobuf message: {e}"
+            ) from e
         if proto.version != SNAPSHOT_VERSION:
             raise InvalidSnapshotError(f"unsupported snapshot version {proto.version}")
         return cls(proto)
@@ -145,8 +149,14 @@ def stop_universe_agents(
         labels = dict(service.attrs["Spec"].get("Labels") or {})
         stored_replicas = labels.get(REPLICAS_LABEL)
         if stored_replicas is not None:
-            # Stopped by an earlier attempt, its replicas are already kept.
+            # Stopped by an earlier attempt, its replicas are already kept. It is scaled down again when something
+            # started it since, the stored replicas stay the ones it had before the first attempt.
             stopped_services[service.name] = int(stored_replicas)
+            if _service_replicas(service) > 0:
+                service.update(
+                    mode=docker_types.ServiceMode("replicated", replicas=0),
+                    labels=labels,
+                )
             continue
         replicas = _service_replicas(service)
         if replicas == 0:
@@ -216,7 +226,11 @@ def _has_active_tasks(
     so only the final states count as stopped.
     """
     for service_name in service_names:
-        service = docker_client.services.get(service_name)
+        try:
+            service = docker_client.services.get(service_name)
+        except docker_errors.NotFound:
+            # A service removed while waiting, like a finished run-once service, has no task left.
+            continue
         for task in service.tasks():
             if task.get("Status", {}).get("State") not in FINAL_TASK_STATES:
                 return True
