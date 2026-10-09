@@ -11,6 +11,7 @@ import logging
 import threading
 import time
 from concurrent import futures
+from typing import Any
 
 import click
 import docker
@@ -62,6 +63,7 @@ SNAPSHOT_AGENT = "agent/ostorlab/stop_scan"
 SNAPSHOT_VOLUME_RELEASE_TIMEOUT = datetime.timedelta(seconds=30)
 SNAPSHOT_RESTORE_TIMEOUT = datetime.timedelta(minutes=10)
 SNAPSHOT_RESTORE_CHECK_INTERVAL = datetime.timedelta(seconds=2)
+SNAPSHOT_RESTORE_LOGS_TAIL = 50
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -258,6 +260,8 @@ class LocalRuntime(runtime.Runtime):
                 self.prepare_scan(title=title)
             console.info("Creating network")
             self._create_network()
+            if scan_snapshot is not None:
+                self._remove_leftover_mq_volume()
             console.info("Starting services")
             self._start_services()
             console.info("Checking services are healthy")
@@ -708,20 +712,26 @@ class LocalRuntime(runtime.Runtime):
                 restart_policy=docker.types.RestartPolicy(condition="none"),
                 labels={"ostorlab.universe": self.name},
             )
-            state = self._wait_run_once_service(restore_service)
-            if state != "complete":
-                logs = b"".join(
-                    restore_service.logs(stdout=True, stderr=True, tail=50)
-                ).decode(errors="replace")
+            task = self._wait_run_once_service(restore_service)
+            if task is None:
                 raise SnapshotRestoreError(
-                    f"snapshot restore finished with state {state}: {logs}"
+                    f"snapshot restore did not finish within {SNAPSHOT_RESTORE_TIMEOUT}: "
+                    f"{self._service_logs(restore_service)}"
+                )
+            status = task.get("Status", {})
+            if status.get("State") != "complete":
+                # A task rejected before its container started, like a missing image, only explains itself in `Err`.
+                exit_code = (status.get("ContainerStatus") or {}).get("ExitCode")
+                raise SnapshotRestoreError(
+                    f"snapshot restore finished with state {status.get('State')}, exit code {exit_code}, "
+                    f"error {status.get('Err')!r}: {self._service_logs(restore_service)}"
                 )
             console.success("Scan snapshot restored")
         finally:
             try:
                 if restore_service is not None:
                     restore_service.remove()
-            except docker_errors.DockerException as e:
+            except (docker_errors.DockerException, requests.RequestException) as e:
                 # Best effort: a cleanup failure must not hide the restore outcome, the scan cleanup removes it.
                 logger.warning(
                     "Could not remove the snapshot restore service of %s: %s",
@@ -757,16 +767,52 @@ class LocalRuntime(runtime.Runtime):
 
     def _wait_run_once_service(
         self, service: docker_models_services.Service
-    ) -> str | None:
-        """Wait for the task of a run-once service to finish and return its final state."""
+    ) -> dict[str, Any] | None:
+        """Wait for the task of a run-once service to finish.
+
+        Returns:
+            The finished task, or None when it did not finish within `SNAPSHOT_RESTORE_TIMEOUT`.
+        """
         deadline = time.monotonic() + SNAPSHOT_RESTORE_TIMEOUT.total_seconds()
         while time.monotonic() < deadline:
             for task in service.tasks():
-                state = task.get("Status", {}).get("State")
-                if state in snapshot.FINAL_TASK_STATES:
-                    return state
+                if task.get("Status", {}).get("State") in snapshot.FINAL_TASK_STATES:
+                    return task
             time.sleep(SNAPSHOT_RESTORE_CHECK_INTERVAL.total_seconds())
         return None
+
+    def _service_logs(self, service: docker_models_services.Service) -> str:
+        """Last lines of the logs of a service, empty when they cannot be read: they only explain a restore error."""
+        try:
+            return b"".join(
+                service.logs(stdout=True, stderr=True, tail=SNAPSHOT_RESTORE_LOGS_TAIL)
+            ).decode(errors="replace")
+        except (docker_errors.DockerException, requests.RequestException) as e:
+            logger.warning("Could not read the logs of service %s: %s", service.name, e)
+            return ""
+
+    def _remove_leftover_mq_volume(self) -> None:
+        """Remove the MQ volume left by an earlier start of a resumed scan whose cleanup failed.
+
+        The volume keeps the durable queues and the messages an earlier restore published: restoring the snapshot on
+        top of them would hold every message twice.
+
+        Raises:
+            SnapshotRestoreError: When the leftover volume cannot be removed, the restore must not run on top of it.
+        """
+        volume_name = mq.mq_volume_name(self.name)
+        try:
+            self._docker_client.volumes.get(volume_name).remove()
+        except docker_errors.NotFound:
+            return
+        except (docker_errors.DockerException, requests.RequestException) as e:
+            raise SnapshotRestoreError(
+                f"leftover MQ volume {volume_name} of an earlier start could not be removed: {e}"
+            ) from e
+        logger.warning(
+            "Removed the leftover MQ volume %s of an earlier start of the scan.",
+            volume_name,
+        )
 
     def _inject_assets(
         self,
