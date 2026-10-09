@@ -659,6 +659,7 @@ def testLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
 
 
+@pytest.mark.docker
 def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAssetInjection(
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
@@ -736,6 +737,7 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassed_restoresSnapshotAndSkipsAsse
     assert started_agents == ["agent/ostorlab/stop_scan"]
 
 
+@pytest.mark.docker
 def testScanInLocalRuntime_whenScannerHasSnapshotStorage_givesItToTheStopScanAgentOnly(
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
@@ -798,6 +800,7 @@ def testScanInLocalRuntime_whenScannerHasSnapshotStorage_givesItToTheStopScanAge
     assert extra_env["agent/ostorlab/nmap"] == {}
 
 
+@pytest.mark.docker
 def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSnapshotRestoreError(
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:
@@ -836,6 +839,7 @@ def testScanInLocalRuntime_whenScanSnapshotIsPassedWithoutSnapshotAgent_raisesSn
         )
 
 
+@pytest.mark.docker
 def testScanInLocalRuntime_whenRestoreFailsAndItsServiceCannotBeRemoved_raisesRestoreErrorAndRemovesVolume(
     mocker: plugin.MockerFixture, local_runtime_mocks: Any
 ) -> None:

@@ -14,6 +14,7 @@ from concurrent import futures
 
 import click
 import docker
+import requests
 import rich
 import sqlalchemy
 import tenacity
@@ -739,12 +740,19 @@ class LocalRuntime(runtime.Runtime):
                     SNAPSHOT_VOLUME_RELEASE_TIMEOUT.total_seconds()
                 ),
                 wait=tenacity.wait_fixed(1),
-                retry=tenacity.retry_if_exception_type(docker_errors.APIError),
+                # `NotFound` is an `APIError`: a volume already removed is not retried.
+                retry=tenacity.retry_if_exception(
+                    lambda e: (
+                        isinstance(e, docker_errors.APIError)
+                        and not isinstance(e, docker_errors.NotFound)
+                    )
+                ),
                 reraise=True,
             )(self._docker_client.volumes.get(volume_name).remove)()
         except docker_errors.NotFound:
             pass
-        except docker_errors.APIError as e:
+        except (docker_errors.DockerException, requests.RequestException) as e:
+            # Runs in the cleanup of every restore: a failure must not hide the restore outcome.
             logger.warning("Could not remove snapshot volume %s: %s", volume_name, e)
 
     def _wait_run_once_service(
