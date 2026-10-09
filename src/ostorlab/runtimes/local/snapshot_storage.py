@@ -240,7 +240,7 @@ def _load_credentials(service_account_key: str) -> service_account.Credentials:
         raise SnapshotStorageError(
             "snapshot service account key is not valid JSON."
         ) from e
-    if not isinstance(key_info, dict):
+    if isinstance(key_info, dict) is False:
         raise SnapshotStorageError(
             "snapshot service account key is not a service account key."
         )
