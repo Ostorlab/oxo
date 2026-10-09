@@ -80,6 +80,7 @@ class CloudRuntime(runtime.Runtime):
         title: str | None,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: list[base_asset.Asset] | None,
+        scan_snapshot: bytes | None = None,
     ) -> None:
         """Triggers a scan using the provided agent group definition and asset target.
 
@@ -91,6 +92,10 @@ class CloudRuntime(runtime.Runtime):
         Returns:
             None
         """
+        if scan_snapshot is not None:
+            raise NotImplementedError(
+                "Only the local runtime resumes scans from a snapshot."
+            )
         try:
             # Support multiple link assets for local runtime for the cloud runtime.
             if all(isinstance(a, link.Link) for a in assets) is True:

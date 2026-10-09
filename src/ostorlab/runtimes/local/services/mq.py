@@ -22,6 +22,11 @@ MQ_READINESS_WAIT_SECONDS = 1
 MQ_ADVANCED_CONF_PATH = "/etc/rabbitmq/advanced.config"
 
 
+def mq_volume_name(name: str) -> str:
+    """Name of the volume keeping the RabbitMQ data of a universe."""
+    return f"{name}_mq_data"
+
+
 class LocalRabbitMQ:
     """RabbitMQ service spawned a docker swarm service."""
 
@@ -144,7 +149,7 @@ class LocalRabbitMQ:
             mq_advanced_configuration = self._create_mq_advanced_config()
             configs = [mq_advanced_configuration]
             persistent_storage = docker.types.Mount(
-                target="/var/lib/rabbitmq", source=f"{self._name}_mq_data"
+                target="/var/lib/rabbitmq", source=mq_volume_name(self._name)
             )
             return self._docker_client.services.create(
                 image=self._mq_image,

@@ -840,3 +840,47 @@ def testCreateAgentService_always_serviceCreatedWithSwarmDefaultsSetExplicitly(
     assert kwargs["update_config"]["Order"] == agent_runtime.UPDATE_ORDER
     assert kwargs["rollback_config"]["Parallelism"] == agent_runtime.UPDATE_PARALLELISM
     assert kwargs["rollback_config"]["Order"] == agent_runtime.UPDATE_ORDER
+
+
+def testCreateAgentService_whenExtraEnvIsGiven_addsItToTheServiceEnvironment(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The stop scan agent receives the snapshot storage settings this way, other agents get none."""
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_definitions.AgentDefinition(name="stop_scan"),
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        definitions.AgentSettings(key="agent/ostorlab/stop_scan"),
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+        labels={},
+        extra_env={"OSTORLAB_SNAPSHOT_BUCKET": "gs://scan-snapshots"},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    env = docker_client.services.create.call_args.kwargs["env"]
+    assert "OSTORLAB_SNAPSHOT_BUCKET=gs://scan-snapshots" in env
+    assert "UNIVERSE=42" in env
