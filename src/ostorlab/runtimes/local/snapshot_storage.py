@@ -17,6 +17,8 @@ import hashlib
 import json
 from urllib import parse
 
+from ostorlab import exceptions
+
 try:
     from google.api_core import exceptions as gcloud_exceptions
     from google.auth import exceptions as auth_exceptions
@@ -37,7 +39,7 @@ BUCKET_ENV = "OSTORLAB_SNAPSHOT_BUCKET"
 SERVICE_ACCOUNT_ENV = "OSTORLAB_SNAPSHOT_SERVICE_ACCOUNT"
 
 
-class Error(Exception):
+class Error(exceptions.OstorlabError):
     """Base error of the snapshot storage."""
 
 
@@ -110,7 +112,7 @@ class SnapshotStore:
             SnapshotStorageError: When the upload fails.
         """
         try:
-            with storage.Client(credentials=self._credentials) as client:
+            with self._client() as client:
                 blob = client.bucket(self._bucket_name).blob(self.object_name(scan_id))
                 blob.metadata = {SHA256_METADATA_KEY: hashlib.sha256(data).hexdigest()}
                 blob.upload_from_string(data, content_type="application/gzip")
@@ -134,7 +136,7 @@ class SnapshotStore:
             SnapshotStorageError: When the download fails.
         """
         try:
-            with storage.Client(credentials=self._credentials) as client:
+            with self._client() as client:
                 blob = client.bucket(self._bucket_name).get_blob(
                     self.object_name(scan_id)
                 )
@@ -142,18 +144,7 @@ class SnapshotStore:
                     raise SnapshotNotFoundError(
                         f"snapshot of scan {scan_id} not found."
                     )
-                # The blob read above pins its generation in the download, and the precondition fails the download
-                # if the object was replaced meanwhile: the bytes always match the metadata read.
-                try:
-                    data = blob.download_as_bytes(
-                        if_generation_match=blob.generation, checksum="crc32c"
-                    )
-                except resumable_media_common.DataCorruption:
-                    # A damaged transfer or an object corrupted for good: downloaded again without the crc32c check,
-                    # the sha256 below tells them apart.
-                    data = blob.download_as_bytes(
-                        if_generation_match=blob.generation, checksum=None
-                    )
+                data = _download_blob(blob, scan_id)
         except gcloud_exceptions.NotFound as e:
             raise SnapshotNotFoundError(f"snapshot of scan {scan_id} not found.") from e
         except (
@@ -164,8 +155,11 @@ class SnapshotStore:
             raise SnapshotStorageError(
                 f"could not download the snapshot of scan {scan_id}: {e}"
             ) from e
-        expected_sha256 = (blob.metadata or {}).get(SHA256_METADATA_KEY)
-        if expected_sha256 != hashlib.sha256(data).hexdigest():
+        if blob.metadata is None or SHA256_METADATA_KEY not in blob.metadata:
+            raise SnapshotCorruptedError(
+                f"snapshot of scan {scan_id} has no {SHA256_METADATA_KEY} metadata."
+            )
+        if blob.metadata[SHA256_METADATA_KEY] != hashlib.sha256(data).hexdigest():
             raise SnapshotCorruptedError(
                 f"snapshot of scan {scan_id} does not match its checksum."
             )
@@ -178,7 +172,7 @@ class SnapshotStore:
             SnapshotStorageError: When the deletion fails for another reason than the object being gone or replaced.
         """
         try:
-            with storage.Client(credentials=self._credentials) as client:
+            with self._client() as client:
                 client.bucket(self._bucket_name).blob(self.object_name(scan_id)).delete(
                     if_generation_match=generation
                 )
@@ -189,6 +183,38 @@ class SnapshotStore:
             raise SnapshotStorageError(
                 f"could not delete the snapshot of scan {scan_id}: {e}"
             ) from e
+
+    def _client(self) -> storage.Client:
+        # The project is taken from the key: without it the client looks it up in the environment and raises an
+        # `OSError` when it is not found. A key without project still works, bucket requests do not need one.
+        return storage.Client(
+            credentials=self._credentials, project=self._credentials.project_id
+        )
+
+
+def _download_blob(blob: storage.Blob, scan_id: int) -> bytes:
+    """Download the generation of the blob that was read, so the bytes always match the metadata read with it.
+
+    Raises:
+        SnapshotStorageError: When the object was replaced or deleted since it was read, a retry reads it again.
+    """
+    try:
+        try:
+            return blob.download_as_bytes(
+                if_generation_match=blob.generation, checksum="crc32c"
+            )
+        except resumable_media_common.DataCorruption:
+            # A damaged transfer or an object corrupted for good: downloaded again without the crc32c check, the
+            # sha256 tells them apart.
+            return blob.download_as_bytes(
+                if_generation_match=blob.generation, checksum=None
+            )
+    except gcloud_exceptions.NotFound as e:
+        # The download fetches the generation read, a bucket without versioning drops it once the object is
+        # replaced. The snapshot is not lost, a retry fetches the new one.
+        raise SnapshotStorageError(
+            f"snapshot of scan {scan_id} changed during its download: {e}"
+        ) from e
 
 
 def _parse_bucket_path(bucket_path: str) -> tuple[str, str]:
@@ -214,7 +240,7 @@ def _load_credentials(service_account_key: str) -> service_account.Credentials:
         raise SnapshotStorageError(
             "snapshot service account key is not valid JSON."
         ) from e
-    if isinstance(key_info, dict) is False:
+    if not isinstance(key_info, dict):
         raise SnapshotStorageError(
             "snapshot service account key is not a service account key."
         )
