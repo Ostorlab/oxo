@@ -116,20 +116,34 @@ def testSnapshotStore_whenKeyMissesServiceAccountFields_raisesSnapshotStorageErr
         )
 
 
-def testDownload_whenTransferIsCorrupted_raisesRetryableStorageError(
-    storage_client,
+@pytest.mark.parametrize(
+    "second_download, expected_error",
+    [
+        (
+            b"snapshot",
+            None,
+        ),  # Damaged transfer: the second download matches the sha256.
+        (b"tampered", snapshot_storage.SnapshotCorruptedError),  # Corrupted for good.
+    ],
+)
+def testDownload_whenCrc32cDoesNotMatch_letsTheSha256Decide(
+    storage_client, second_download: bytes, expected_error: type | None
 ) -> None:
-    bucket = storage_client.return_value.__enter__.return_value.bucket.return_value
-    blob = bucket.get_blob.return_value
+    blob = storage_client.return_value.__enter__.return_value.bucket.return_value.get_blob.return_value
     blob.generation = 7
-    blob.metadata = {"sha256": "0" * 64}
-    blob.download_as_bytes.side_effect = resumable_media_common.DataCorruption(
-        None, "crc32c mismatch"
-    )
+    blob.metadata = {"sha256": hashlib.sha256(b"snapshot").hexdigest()}
+    blob.download_as_bytes.side_effect = [
+        resumable_media_common.DataCorruption(None, "crc32c mismatch"),
+        second_download,
+    ]
     store = snapshot_storage.SnapshotStore("gs://scan-snapshots", SERVICE_ACCOUNT_KEY)
 
-    with pytest.raises(snapshot_storage.SnapshotStorageError):
-        store.download(42)
+    if expected_error is None:
+        assert store.download(42).data == b"snapshot"
+    else:
+        with pytest.raises(expected_error):
+            store.download(42)
+    assert blob.download_as_bytes.call_args.kwargs["checksum"] is None
 
 
 def testUpload_whenTransferIsCorrupted_raisesRetryableStorageError(
@@ -174,3 +188,19 @@ def testDownload_whenBytesDoNotMatchTheirChecksum_raisesSnapshotCorrupted(
 
     with pytest.raises(snapshot_storage.SnapshotCorruptedError):
         store.download(42)
+
+
+def testSnapshotStore_whenBucketPathIsMalformed_raisesSnapshotStorageError(
+    storage_client,
+) -> None:
+    with pytest.raises(snapshot_storage.SnapshotStorageError):
+        snapshot_storage.SnapshotStore("gs://[bucket", SERVICE_ACCOUNT_KEY)
+
+
+def testSnapshotStorageSettings_always_keepsTheKeyOutOfItsRepresentation() -> None:
+    settings = snapshot_storage.SnapshotStorageSettings(
+        bucket_path="gs://scan-snapshots",
+        service_account_key='{"private_key": "secret"}',
+    )
+
+    assert "secret" not in repr(settings)

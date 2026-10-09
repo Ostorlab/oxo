@@ -66,7 +66,8 @@ class SnapshotStorageSettings:
     """Snapshot storage settings of a scanner, passed down to its scans and to their stop scan agent."""
 
     bucket_path: str
-    service_account_key: str
+    # Kept out of the representation: the settings may be logged or appear in an error.
+    service_account_key: str = dataclasses.field(repr=False)
 
     def store(self) -> SnapshotStore:
         return SnapshotStore(self.bucket_path, self.service_account_key)
@@ -143,15 +144,21 @@ class SnapshotStore:
                     )
                 # The blob read above pins its generation in the download, and the precondition fails the download
                 # if the object was replaced meanwhile: the bytes always match the metadata read.
-                data = blob.download_as_bytes(
-                    if_generation_match=blob.generation, checksum="crc32c"
-                )
+                try:
+                    data = blob.download_as_bytes(
+                        if_generation_match=blob.generation, checksum="crc32c"
+                    )
+                except resumable_media_common.DataCorruption:
+                    # A damaged transfer or an object corrupted for good: downloaded again without the crc32c check,
+                    # the sha256 below tells them apart.
+                    data = blob.download_as_bytes(
+                        if_generation_match=blob.generation, checksum=None
+                    )
         except gcloud_exceptions.NotFound as e:
             raise SnapshotNotFoundError(f"snapshot of scan {scan_id} not found.") from e
         except (
             gcloud_exceptions.GoogleAPIError,
             auth_exceptions.GoogleAuthError,
-            # The crc32c of the transfer did not match: the download is retried, the stored object may be intact.
             resumable_media_common.DataCorruption,
         ) as e:
             raise SnapshotStorageError(
@@ -185,9 +192,14 @@ class SnapshotStore:
 
 
 def _parse_bucket_path(bucket_path: str) -> tuple[str, str]:
-    parsed = parse.urlparse(
-        bucket_path if "://" in bucket_path else f"gs://{bucket_path}"
-    )
+    try:
+        parsed = parse.urlparse(
+            bucket_path if "://" in bucket_path else f"gs://{bucket_path}"
+        )
+    except ValueError as e:
+        raise SnapshotStorageError(
+            f"snapshot bucket must look like gs://<bucket>[/<prefix>], got {bucket_path!r}."
+        ) from e
     if parsed.scheme != "gs" or parsed.netloc == "":
         raise SnapshotStorageError(
             f"snapshot bucket must look like gs://<bucket>[/<prefix>], got {bucket_path!r}."
