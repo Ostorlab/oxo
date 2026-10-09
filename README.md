@@ -116,12 +116,22 @@ oxo scanner --scanner-id <scanner-uuid> --persist-logs --log-level DEBUG
 
 # Pausing and Resuming Scans
 
-Pausing a scan frees the scanner machine and its devices; resuming continues the scan where it stopped instead of
-restarting it. To enable pause and resume on a scanner, point it at a snapshot bucket and at the key of a service
-account allowed to read, write and delete objects in that bucket. OXO stores one snapshot per paused scan at
-`<bucket>/<prefix>/<scan_id>/snapshot.pb.gz`, holding the scan's RabbitMQ queues and Redis state; resuming restores that
-state instead of injecting the assets again. Set a lifecycle rule on the bucket to delete the snapshots of scans that are
-never resumed.
+Pausing a scan frees the scanner machine and its devices. Resuming continues the scan where it stopped instead of
+restarting it.
+
+To enable pause and resume on a scanner, give it a snapshot bucket and the key of a service account with the
+`roles/storage.objectAdmin` role on that bucket (read, list, write and delete objects).
+
+OXO stores one snapshot per paused scan at `<bucket>/<prefix>/<scan_id>/snapshot.pb.gz`. The snapshot holds the scan's
+RabbitMQ queues and Redis state, so resuming restores that state instead of injecting the assets again.
+
+What a resume does not keep or cannot restore:
+
+- Run timeouts restart: the cloud tracker clock (`ostorlab:run:*` Redis keys) is left out of snapshots.
+- A missing or corrupted snapshot makes the scan start over from scratch.
+- A temporary storage error, or a missing bucket, keeps the scan queued and the next attempt retries the restore.
+
+Set a lifecycle rule on the bucket to delete the snapshots of scans that are never resumed.
 
 First install the scanner extras:
 
@@ -138,8 +148,8 @@ oxo scanner --scanner-id <scanner-uuid> \
   --snapshot-service-account /path/to/service-account.json
 ```
 
-A scanner started without these options cannot pause or resume scans. Paused scans stay queued until a scanner with
-snapshot storage picks them up.
+A scanner started without the snapshot options cannot pause or resume scans. A resumed scan stays queued until a
+scanner with snapshot storage picks it up.
 
 # Assets
 

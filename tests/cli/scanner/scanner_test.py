@@ -381,6 +381,7 @@ def testScannerCommandInvocation_whenSnapshotStorageIsGiven_forwardsItToEveryPro
 ) -> None:
     """Scanners holding the snapshot storage settings upload and restore the snapshots of paused scans."""
     create_process_mock = mocker.patch("multiprocessing.Process")
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
     mocker.patch("google.oauth2.service_account.Credentials.from_service_account_info")
     key_path = tmp_path / "snapshot-sa.json"
     key_path.write_text('{"type": "service_account"}')

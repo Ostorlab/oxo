@@ -141,6 +141,17 @@ class ScanHandler:
                 )
                 continue
 
+            if (
+                scan_item.get("hasSnapshot") is True
+                and self._snapshot_storage_settings is None
+            ):
+                # Locking it would only roll it back on every poll: it resumes on a scanner with snapshot storage.
+                logger.debug(
+                    "Skipping scan %s, it resumes from a snapshot and this scanner has no snapshot storage.",
+                    candidate_id,
+                )
+                continue
+
             logger.debug("Attempting to reserve candidate scan ID: %s...", candidate_id)
 
             try:
