@@ -2,6 +2,7 @@
 
 import pathlib
 import warnings
+from unittest import mock
 
 import httpx
 import pytest
@@ -980,6 +981,161 @@ agents:
     )
 
     mock_get_details.assert_called_once_with(
-        "agent/ostorlab/nmap", use_experimental=True
+        "agent/ostorlab/nmap", use_experimental=True, channel=None
     )
     assert result.exit_code == 0
+
+
+def _mock_install_scan_run(
+    mocker: plugin.MockerFixture,
+) -> tuple[mock.MagicMock, mock.MagicMock]:
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
+    mock_install = mocker.patch("ostorlab.cli.install_agent.install")
+    mock_get_details = mocker.patch(
+        "ostorlab.cli.agent_fetcher.get_details",
+        return_value={"versions": {"versions": [{"version": "0.4.1-beta"}]}},
+    )
+    return mock_get_details, mock_install
+
+
+def _write_agent_group(tmp_path: pathlib.Path, header: str = "") -> pathlib.Path:
+    agent_group_yaml = tmp_path / "agent_group.yaml"
+    agent_group_yaml.write_text(
+        f"""
+kind: AgentGroup
+description: Test agent group
+{header}
+agents:
+  - key: agent/ostorlab/nmap
+"""
+    )
+    return agent_group_yaml
+
+
+def testRunScan_whenChannelOptionSet_resolvesAndInstallsFromChannel(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that --channel is used to resolve and install agents."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    agent_group_yaml = _write_agent_group(tmp_path, "channel: qa1")
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "--channel",
+            "beta",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_get_details.assert_called_once_with(
+        "agent/ostorlab/nmap", use_experimental=False, channel="beta"
+    )
+    mock_install.assert_called_once_with(
+        "agent/ostorlab/nmap",
+        "0.4.1-beta",
+        use_experimental=False,
+        channel="beta",
+    )
+
+
+def testRunScan_whenChannelOptionNotSet_usesAgentGroupChannel(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that the agent group channel is used when the CLI option is not set."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    agent_group_yaml = _write_agent_group(tmp_path, "channel: qa1")
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_get_details.assert_called_once_with(
+        "agent/ostorlab/nmap", use_experimental=False, channel="qa1"
+    )
+    assert mock_install.call_args.kwargs["channel"] == "qa1"
+
+
+def testRunScan_whenChannelIsInvalid_exitsWithUsageError(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that an invalid --channel is rejected before any agent install."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    agent_group_yaml = _write_agent_group(tmp_path)
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "--channel",
+            "Beta.2",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "Invalid release channel 'Beta.2'" in result.output
+    mock_get_details.assert_not_called()
+    mock_install.assert_not_called()
+
+
+def testRunScan_whenInstallAndUseExperimentalFlagSet_forwardsUseExperimentalAndChannelToInstall(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that the install step receives use_experimental and no channel."""
+    _, mock_install = _mock_install_scan_run(mocker)
+    agent_group_yaml = _write_agent_group(tmp_path)
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "--experimental",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_install.assert_called_once_with(
+        "agent/ostorlab/nmap",
+        "0.4.1-beta",
+        use_experimental=True,
+        channel=None,
+    )

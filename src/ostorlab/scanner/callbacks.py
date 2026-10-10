@@ -42,6 +42,7 @@ from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import registry
 from ostorlab.runtimes import runtime
+from ostorlab.utils import release_channel
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,7 @@ def _install_agents(
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
     use_experimental_agents: bool = False,
+    channel: str | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -92,6 +94,7 @@ def _install_agents(
                         agent.key,
                         use_experimental=use_experimental_agents,
                         api_key=api_key,
+                        channel=channel,
                     )
                     versions = agent_details.get("versions", {}).get("versions", [])
                     if len(versions) > 0:
@@ -107,6 +110,7 @@ def _install_agents(
                 docker_client=docker_client,
                 api_key=api_key,
                 use_experimental=use_experimental_agents,
+                channel=channel,
             )
     except agent_fetcher.AgentDetailsNotFound:
         logger.warning("agent %s not found on the store", agent.key)
@@ -506,6 +510,16 @@ def _extract_scan_id(request: dict[str, Any]) -> int:
     return scan_id
 
 
+def _extract_channel(request: dict[str, Any]) -> str | None:
+    channel = request.get("channel")
+    if channel is None:
+        return None
+    if isinstance(channel, str) and release_channel.is_valid(channel) is True:
+        return channel
+    logger.warning("Invalid channel %r, installing stable agent versions.", channel)
+    return None
+
+
 def _update_state_reporter(
     state_reporter: scanner_state_reporter.ScannerStateReporter, scan_id: int
 ) -> scanner_state_reporter.ScannerStateReporter:
@@ -571,6 +585,7 @@ def start_scan(
                 api_key=api_key,
                 use_experimental_agents=request.get("useExperimentalAgents", False)
                 is True,
+                channel=_extract_channel(request=request),
             )
 
             try:

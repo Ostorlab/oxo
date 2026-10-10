@@ -94,6 +94,16 @@
       "type": "string",
       "pattern": "((?:[^/]*/)*)(.*)"
     },
+    "use_experimental_agents": {
+      "description": "[Optional] - When true, experimental (prerelease) agent versions are eligible during install.",
+      "type": "boolean",
+      "default": false
+    },
+    "channel": {
+      "description": "[Optional] - Release channel to resolve agent versions from. Without it, stable versions are used.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,31}$"
+    },
     "agents": {
       "description": "[Required] - List of dictionary-like objects explaining the agents belonging to the current agent group.",
       "type": "array",

@@ -196,10 +196,14 @@ def run(
                     ctx.obj.get("use_experimental_agents", False) is True
                     or agent_group.use_experimental_agents is True
                 )
+                channel = ctx.obj.get("channel")
+                if channel is None:
+                    channel = agent_group.channel
                 _install_agents_with_retry(
                     runtime_instance,
                     agent_group,
                     use_experimental=use_experimental,
+                    channel=channel,
                 )
             except httpx.HTTPError as e:
                 console.error(f"Could not install the agents: {e}")
@@ -241,6 +245,7 @@ def _install_agents_with_retry(
     runtime_instance: runtime.Runtime,
     agent_group: definitions.AgentGroupDefinition,
     use_experimental: bool = False,
+    channel: str | None = None,
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
@@ -249,7 +254,7 @@ def _install_agents_with_retry(
             if ag.version is None:
                 try:
                     agent_details = agent_fetcher.get_details(
-                        ag.key, use_experimental=use_experimental
+                        ag.key, use_experimental=use_experimental, channel=channel
                     )
                     ag.version = agent_details["versions"]["versions"][0]["version"]
                 except agent_fetcher.AgentDetailsNotFound:
@@ -257,7 +262,12 @@ def _install_agents_with_retry(
                         "agent %s not found on the store, skipping version fetch",
                         ag.key,
                     )
-            install_agent.install(ag.key, ag.version)
+            install_agent.install(
+                ag.key,
+                ag.version,
+                use_experimental=use_experimental,
+                channel=channel,
+            )
         except agent_fetcher.AgentDetailsNotFound:
             console.warning(f"agent {ag.key} not found on the store")
 

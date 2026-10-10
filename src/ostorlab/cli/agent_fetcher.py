@@ -29,7 +29,10 @@ class AgentDetailsNotFound(Error):
 
 
 def get_details(
-    agent_key: str, use_experimental: bool = False, api_key: str | None = None
+    agent_key: str,
+    use_experimental: bool = False,
+    api_key: str | None = None,
+    channel: str | None = None,
 ) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
@@ -38,6 +41,8 @@ def get_details(
         use_experimental: when True, the server includes experimental (prerelease)
             versions in the result set for this agent.
         api_key: the API key for RE authentication
+        channel: the release channel to resolve the latest version from, None meaning
+            stable versions.
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
@@ -57,7 +62,7 @@ def get_details(
     try:
         response = runner.execute(
             agent_details_api.AgentDetailsAPIRequest(
-                agent_key, use_experimental=use_experimental
+                agent_key, use_experimental=use_experimental, channel=channel
             )
         )
     except base_runner.ResponseError as e:
