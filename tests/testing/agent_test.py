@@ -38,7 +38,7 @@ def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):
     test_agent = StartTestAgent(definition, settings)
     test_agent.emit(
         "v3.healthcheck.ping",
-        {"body": f"from test agent at {datetime.datetime.now(datetime.timezone.utc)}"},
+        {"body": f"from test agent at {datetime.datetime.now(datetime.UTC)}"},
     )
     assert len(agent_mock) == 1
     assert agent_mock[0].selector == "v3.healthcheck.ping"

@@ -49,9 +49,9 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         scan.created_time = (
             datetime.datetime.strptime(
                 scan_dict.get("created_time"), "%Y-%m-%d %H:%M:%S"
-            ).replace(tzinfo=datetime.timezone.utc)
+            ).replace(tzinfo=datetime.UTC)
             if scan_dict.get("created_time") is not None
-            else datetime.datetime.now(datetime.timezone.utc)
+            else datetime.datetime.now(datetime.UTC)
         )
         last_status: str | None = None
         if scan.id is None:

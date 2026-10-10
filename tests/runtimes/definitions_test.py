@@ -177,8 +177,11 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
     assert new_instance.args[0].value == b'"fast"'
 
 
-def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
+def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+    mocker.patch("docker.models.images.ImageCollection.list", return_value=[])
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
         bus_url="mq",

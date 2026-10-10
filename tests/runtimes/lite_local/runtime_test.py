@@ -202,6 +202,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
@@ -276,6 +277,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
@@ -348,6 +350,7 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
@@ -528,6 +531,7 @@ def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContai
     mocker: plugin.MockerFixture,
 ) -> None:
     """Container labels should be merged into the container_labels dict when provided."""
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=[],
@@ -868,38 +872,3 @@ def testLiteLocalRuntimeInjectAssets_whenAgentSettingsNone_usesDefaultSettings(
     _args, kwargs = mock_start_agent.call_args
     assert kwargs["agent"].key == "agent/ostorlab/inject_asset"
     assert kwargs["agent"].restart_policy == "none"
-
-
-def testLiteLocalRuntimeScan_whenScanSnapshotIsPassed_raisesNotImplementedError(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """Only the local runtime runs the universe a snapshot restores."""
-    for check in (
-        "is_docker_installed",
-        "is_sys_arch_supported",
-        "is_user_permitted",
-        "is_docker_working",
-        "is_swarm_initialized",
-    ):
-        mocker.patch(
-            f"ostorlab.cli.docker_requirements_checker.{check}", return_value=True
-        )
-    mocker.patch("docker.from_env")
-    runtime = lite_local_runtime.LiteLocalRuntime(
-        scan_id="1",
-        bus_url="bus",
-        bus_vhost="/",
-        bus_management_url="mgmt",
-        bus_exchange_topic="top",
-        network="privnet",
-        redis_url="redis://redis",
-        tracing_collector_url="jaeger://localhost/",
-    )
-
-    with pytest.raises(NotImplementedError):
-        runtime.scan(
-            title="Lite local scan",
-            agent_group_definition=definitions.AgentGroupDefinition(agents=[]),
-            assets=None,
-            scan_snapshot=b"snapshot",
-        )

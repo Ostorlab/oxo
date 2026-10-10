@@ -80,9 +80,7 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
         def start(self) -> None:
             self.emit(
                 "v3.healthcheck.ping",
-                {
-                    "body": f"from test agent at {datetime.datetime.now(datetime.timezone.utc)}"
-                },
+                {"body": f"from test agent at {datetime.datetime.now(datetime.UTC)}"},
             )
 
     class ProcessTestAgent(agent.Agent):

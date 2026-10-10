@@ -168,7 +168,6 @@ class AgentRuntime:
         jaeger_service: jaeger.LocalJaeger,
         gcp_logging_credential: str | None = None,
         labels: dict[str, str] | None = None,
-        extra_env: dict[str, str] | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -176,7 +175,6 @@ class AgentRuntime:
             agent: an agent definition containing all the settings of how agent should run and what arguments to pass.
             runtime_name: local runtime instance name.
             docker_client: docker client.
-            extra_env: Environment variables set on this agent only.
         """
         # Unique identifier to allow running multiple instance of the same agent with different configs.
         self._uuid = uuid.uuid4()
@@ -189,7 +187,6 @@ class AgentRuntime:
         self.redis_service = redis_service
         self.jaeger_service = jaeger_service
         self._gcp_logging_credential = gcp_logging_credential
-        self._extra_env = extra_env if extra_env is not None else {}
         self._host_hostname = self._docker_client.info().get("Name")
         self.update_agent_settings()
 
@@ -440,7 +437,6 @@ class AgentRuntime:
             env.append(
                 f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
             )
-        env.extend(f"{name}={value}" for name, value in self._extra_env.items())
 
         agent_service = self._docker_client.services.create(
             image=self.agent.container_image,

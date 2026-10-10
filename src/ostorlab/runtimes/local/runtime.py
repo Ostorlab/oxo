@@ -4,18 +4,13 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 
-import base64
 import builtins
-import datetime
 import logging
 import threading
-import time
 from concurrent import futures
-from typing import Any
 
 import click
 import docker
-import requests
 import rich
 import sqlalchemy
 import tenacity
@@ -37,8 +32,6 @@ from ostorlab.runtimes import docker_cleanup
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
-from ostorlab.runtimes.local import snapshot
-from ostorlab.runtimes.local import snapshot_storage
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
@@ -57,13 +50,6 @@ ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
-# The stop scan agent takes the snapshot of a universe when its scan is paused. Its image ships the snapshot module,
-# so it also restores the snapshot when the scan resumes.
-SNAPSHOT_AGENT = "agent/ostorlab/stop_scan"
-SNAPSHOT_VOLUME_RELEASE_TIMEOUT = datetime.timedelta(seconds=30)
-SNAPSHOT_RESTORE_TIMEOUT = datetime.timedelta(minutes=10)
-SNAPSHOT_RESTORE_CHECK_INTERVAL = datetime.timedelta(seconds=2)
-SNAPSHOT_RESTORE_LOGS_TAIL = 50
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -86,10 +72,6 @@ class AgentNotHealthy(exceptions.OstorlabError):
 
 class MissingAgentDefinition(exceptions.OstorlabError):
     """Agent definition is missing."""
-
-
-class SnapshotRestoreError(exceptions.OstorlabError):
-    """The snapshot of a paused scan could not be restored."""
 
 
 def _has_container_image(agent: definitions.AgentSettings):
@@ -124,8 +106,6 @@ class LocalRuntime(runtime.Runtime):
         mq_exposed_ports: dict[int, int] | None = None,
         gcp_logging_credential: str | None = None,
         run_default_agents: bool = True,
-        snapshot_storage_settings: snapshot_storage.SnapshotStorageSettings
-        | None = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -140,7 +120,6 @@ class LocalRuntime(runtime.Runtime):
         self._scan_db: models.Scan | None = None
         self._mq_exposed_ports: dict[int, int] | None = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
-        self._snapshot_storage_settings = snapshot_storage_settings
         self._run_default_agents: bool = run_default_agents
         self._log_streamer: log_streamer.LogStream | None = None
         self._docker_client: docker.DockerClient | None = None
@@ -235,21 +214,16 @@ class LocalRuntime(runtime.Runtime):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: list[base_asset.Asset] | None,
-        scan_snapshot: bytes | None = None,
     ) -> models.Scan | None:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
          agents, ensuring they are healthy and then injects the target asset.
 
-        A paused scan resumes from its snapshot: the snapshot is restored in the scan services before the agents
-        start, and the assets are not injected again.
-
         Args:
             title: Scan title
             agent_group_definition: Agent run definition defines the set of agents and how agents are configured.
             assets: the target asset to scan.
-            scan_snapshot: Snapshot of the paused scan to resume from.
 
         Returns:
             The scan object.
@@ -260,16 +234,10 @@ class LocalRuntime(runtime.Runtime):
                 self.prepare_scan(title=title)
             console.info("Creating network")
             self._create_network()
-            if scan_snapshot is not None:
-                self._remove_leftover_mq_volume()
             console.info("Starting services")
             self._start_services()
             console.info("Checking services are healthy")
             self._check_services_healthy()
-
-            if scan_snapshot is not None:
-                console.info("Restoring the scan snapshot")
-                self._restore_snapshot(scan_snapshot, agent_group_definition)
 
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
@@ -287,7 +255,7 @@ class LocalRuntime(runtime.Runtime):
             if is_healthy is False:
                 raise AgentNotHealthy()
 
-            if assets is not None and scan_snapshot is None:
+            if assets is not None:
                 inject_asset_agent_settings = next(
                     (
                         agent
@@ -320,9 +288,6 @@ class LocalRuntime(runtime.Runtime):
             message = f"Unhealthy service {e}"
             self._handle_scan_error()
             raise UnhealthyService(message)
-        except SnapshotRestoreError:
-            self._handle_scan_error()
-            raise
         except agent_runtime.MissingAgentDefinitionLabel as e:
             message = (
                 f"Missing agent definition {e}. This is probably due to building the image directly with"
@@ -560,7 +525,6 @@ class LocalRuntime(runtime.Runtime):
             jaeger_service=self._jaeger_service,
             gcp_logging_credential=self._gcp_logging_credential,
             labels=self._labels,
-            extra_env=self._agent_extra_env(agent),
         )
         agent_service = runtime_agent.create_agent_service(
             network_name=self.network,
@@ -637,187 +601,6 @@ class LocalRuntime(runtime.Runtime):
             key=LOCAL_PERSIST_VULNZ_AGENT_DEFAULT, mounts=[]
         )
         self._start_agent(agent=persist_vulnz_agent_settings, extra_configs=[])
-
-    def _agent_extra_env(self, agent: definitions.AgentSettings) -> dict[str, str]:
-        """Environment of an agent beyond the common one: the stop scan agent gets the snapshot storage settings.
-
-        Only that agent uploads the snapshot of a paused scan, the service account key is not given to other agents.
-        """
-        if agent.key != SNAPSHOT_AGENT or self._snapshot_storage_settings is None:
-            return {}
-        return {
-            snapshot_storage.BUCKET_ENV: self._snapshot_storage_settings.bucket_path,
-            snapshot_storage.SERVICE_ACCOUNT_ENV: base64.b64encode(
-                self._snapshot_storage_settings.service_account_key.encode()
-            ).decode(),
-        }
-
-    def _restore_snapshot(
-        self,
-        scan_snapshot: bytes,
-        agent_group_definition: definitions.AgentGroupDefinition,
-    ) -> None:
-        """Restore the snapshot in the scan services with a run-once service attached to the scan network.
-
-        The MQ and Redis services are only reachable from the scan network, the restore runs from the image of the
-        snapshot agent, which ships the snapshot module.
-        """
-        snapshot_agent = next(
-            (
-                agent
-                for agent in agent_group_definition.agents
-                if agent.key == SNAPSHOT_AGENT
-            ),
-            None,
-        )
-        # The image lookup scans the local images, it is read once.
-        snapshot_image = (
-            snapshot_agent.container_image if snapshot_agent is not None else None
-        )
-        if snapshot_image is None:
-            raise SnapshotRestoreError(
-                f"agent {SNAPSHOT_AGENT} is required to restore the scan snapshot."
-            )
-
-        volume_name = f"snapshot_{self.name}"
-        restore_service = None
-        try:
-            try:
-                volumes.create_volume(
-                    volume_name,
-                    {snapshot.SNAPSHOT_FILENAME: scan_snapshot},
-                    labels={"ostorlab.universe": self.name},
-                )
-                restore_service = self._docker_client.services.create(
-                    image=snapshot_image,
-                    command=[
-                        "python3",
-                        "-m",
-                        snapshot.RESTORE_MODULE,
-                        "restore",
-                        "--mq-url",
-                        self._mq_service.url,
-                        "--redis-url",
-                        self._redis_service.url,
-                    ],
-                    name=f"snapshot_restore_{self.name}",
-                    networks=[self.network],
-                    mounts=[
-                        docker.types.Mount(
-                            target=snapshot.SNAPSHOT_MOUNT_PATH,
-                            source=volume_name,
-                            type="volume",
-                            read_only=True,
-                        )
-                    ],
-                    restart_policy=docker.types.RestartPolicy(condition="none"),
-                    labels={"ostorlab.universe": self.name},
-                )
-            except (docker_errors.DockerException, requests.RequestException) as e:
-                raise SnapshotRestoreError(
-                    f"snapshot restore could not start: {e}"
-                ) from e
-            task = self._wait_run_once_service(restore_service)
-            if task is None:
-                raise SnapshotRestoreError(
-                    f"snapshot restore did not finish within {SNAPSHOT_RESTORE_TIMEOUT}: "
-                    f"{self._service_logs(restore_service)}"
-                )
-            status = task.get("Status", {})
-            if status.get("State") != "complete":
-                # A task rejected before its container started, like a missing image, only explains itself in `Err`.
-                exit_code = (status.get("ContainerStatus") or {}).get("ExitCode")
-                raise SnapshotRestoreError(
-                    f"snapshot restore finished with state {status.get('State')}, exit code {exit_code}, "
-                    f"error {status.get('Err')!r}: {self._service_logs(restore_service)}"
-                )
-            console.success("Scan snapshot restored")
-        finally:
-            try:
-                if restore_service is not None:
-                    restore_service.remove()
-            except (docker_errors.DockerException, requests.RequestException) as e:
-                # Best effort: a cleanup failure must not hide the restore outcome, the scan cleanup removes it.
-                logger.warning(
-                    "Could not remove the snapshot restore service of %s: %s",
-                    self.name,
-                    e,
-                )
-            finally:
-                # The snapshot is no longer needed on the scanner once restored.
-                self._remove_snapshot_volume(volume_name)
-
-    def _remove_snapshot_volume(self, volume_name: str) -> None:
-        """Remove the snapshot volume once the restore container released it, the scan cleanup removes a leftover."""
-        try:
-            tenacity.retry(
-                stop=tenacity.stop_after_delay(
-                    SNAPSHOT_VOLUME_RELEASE_TIMEOUT.total_seconds()
-                ),
-                wait=tenacity.wait_fixed(1),
-                # `NotFound` is an `APIError`: a volume already removed is not retried.
-                retry=tenacity.retry_if_exception(
-                    lambda e: (
-                        isinstance(e, docker_errors.APIError)
-                        and not isinstance(e, docker_errors.NotFound)
-                    )
-                ),
-                reraise=True,
-            )(self._docker_client.volumes.get(volume_name).remove)()
-        except docker_errors.NotFound:
-            pass
-        except (docker_errors.DockerException, requests.RequestException) as e:
-            # Runs in the cleanup of every restore: a failure must not hide the restore outcome.
-            logger.warning("Could not remove snapshot volume %s: %s", volume_name, e)
-
-    def _wait_run_once_service(
-        self, service: docker_models_services.Service
-    ) -> dict[str, Any] | None:
-        """Wait for the task of a run-once service to finish.
-
-        Returns:
-            The finished task, or None when it did not finish within `SNAPSHOT_RESTORE_TIMEOUT`.
-        """
-        deadline = time.monotonic() + SNAPSHOT_RESTORE_TIMEOUT.total_seconds()
-        while time.monotonic() < deadline:
-            for task in service.tasks():
-                if task.get("Status", {}).get("State") in snapshot.FINAL_TASK_STATES:
-                    return task
-            time.sleep(SNAPSHOT_RESTORE_CHECK_INTERVAL.total_seconds())
-        return None
-
-    def _service_logs(self, service: docker_models_services.Service) -> str:
-        """Last lines of the logs of a service, empty when they cannot be read: they only explain a restore error."""
-        try:
-            return b"".join(
-                service.logs(stdout=True, stderr=True, tail=SNAPSHOT_RESTORE_LOGS_TAIL)
-            ).decode(errors="replace")
-        except (docker_errors.DockerException, requests.RequestException) as e:
-            logger.warning("Could not read the logs of service %s: %s", service.name, e)
-            return ""
-
-    def _remove_leftover_mq_volume(self) -> None:
-        """Remove the MQ volume left by an earlier start of a resumed scan whose cleanup failed.
-
-        The volume keeps the durable queues and the messages an earlier restore published: restoring the snapshot on
-        top of them would hold every message twice.
-
-        Raises:
-            SnapshotRestoreError: When the leftover volume cannot be removed, the restore must not run on top of it.
-        """
-        volume_name = mq.mq_volume_name(self.name)
-        try:
-            self._docker_client.volumes.get(volume_name).remove()
-        except docker_errors.NotFound:
-            return
-        except (docker_errors.DockerException, requests.RequestException) as e:
-            raise SnapshotRestoreError(
-                f"leftover MQ volume {volume_name} of an earlier start could not be removed: {e}"
-            ) from e
-        logger.warning(
-            "Removed the leftover MQ volume %s of an earlier start of the scan.",
-            volume_name,
-        )
 
     def _inject_assets(
         self,

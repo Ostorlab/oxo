@@ -45,6 +45,17 @@ from ostorlab.serve_app import types
 from ostorlab.utils import risk_rating
 
 
+@pytest.fixture(autouse=True)
+def mock_docker_api_version(
+    request: pytest.FixtureRequest, mocker: plugin.MockerFixture
+) -> None:
+    """Keep unit-test client construction independent of a Docker daemon."""
+    if request.node.get_closest_marker("docker") is None:
+        mocker.patch(
+            "docker.api.client.APIClient._retrieve_server_version", return_value="1.42"
+        )
+
+
 @pytest.fixture(scope="session")
 def mq_service():
     """Start MQ Docker service"""
@@ -629,7 +640,7 @@ def web_scan(
         scan = models.Scan(
             title="Web Scan",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(scan)
         session.commit()
@@ -682,13 +693,13 @@ def ios_scans(
         scan1 = models.Scan(
             title="iOS Scan 1 ",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             risk_rating=risk_rating.RiskRating.HIGH,
         )
         scan2 = models.Scan(
             title="iOS Scan 2",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             risk_rating=risk_rating.RiskRating.MEDIUM,
         )
         session.add(scan1)
@@ -814,7 +825,7 @@ def android_scan(
         scan = models.Scan(
             title="Android Scan 1 ",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(scan)
         session.commit()
@@ -826,7 +837,7 @@ def android_scan(
         session.add(asset)
         session.commit()
         scan_status = models.ScanStatus(
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             key="dummy-key",
             value="dummy-value",
             scan_id=scan.id,
@@ -925,16 +936,12 @@ def agent_groups(
         agent_group1 = models.AgentGroup(
             name="Agent Group 1",
             description="Agent Group 1",
-            created_time=datetime.datetime(
-                2024, 5, 30, 12, 0, 0, tzinfo=datetime.timezone.utc
-            ),
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0, tzinfo=datetime.UTC),
         )
         agent_group2 = models.AgentGroup(
             name="Agent Group 2",
             description="Agent Group 2",
-            created_time=datetime.datetime(
-                2024, 5, 30, 12, 0, 0, tzinfo=datetime.timezone.utc
-            ),
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0, tzinfo=datetime.UTC),
         )
         session.add(agent_group1)
         session.add(agent_group2)
@@ -1000,7 +1007,7 @@ def agent_group_multiple_agents(
         agent_group = models.AgentGroup(
             name="Agent Group 1",
             description="Agent Group 1 description",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1026,7 +1033,7 @@ def multiple_assets_scan(
         scan = models.Scan(
             title="Multiple Assets Scan",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             risk_rating=risk_rating.RiskRating.HIGH,
         )
         session.add(scan)
@@ -1064,7 +1071,7 @@ def agent_group_nmap(
         agent_group = models.AgentGroup(
             name="Agent Group Nmap",
             description="Agent Group Nmap",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1091,7 +1098,7 @@ def agent_group_trufflehog(
         agent_group = models.AgentGroup(
             name="Agent Group Trufflehog",
             description="Agent Group Trufflehog",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1118,7 +1125,7 @@ def agent_group_inject_asset(
         agent_group = models.AgentGroup(
             name="Agent Group Inject Asset",
             description="Agent Group Inject Asset",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1147,7 +1154,7 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
         scan = models.Scan(
             title="Scan 1",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(scan)
         session.commit()
