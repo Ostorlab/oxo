@@ -202,6 +202,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
@@ -276,6 +277,7 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
@@ -348,6 +350,7 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=["def_mount1", "def_mount2"],
@@ -528,6 +531,7 @@ def testLiteLocalCreateAgentService_whenContainerLabelsProvided_mergesIntoContai
     mocker: plugin.MockerFixture,
 ) -> None:
     """Container labels should be merged into the container_labels dict when provided."""
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
         mounts=[],

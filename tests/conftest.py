@@ -45,6 +45,17 @@ from ostorlab.serve_app import types
 from ostorlab.utils import risk_rating
 
 
+@pytest.fixture(autouse=True)
+def mock_docker_api_version(
+    request: pytest.FixtureRequest, mocker: plugin.MockerFixture
+) -> None:
+    """Keep unit-test client construction independent of a Docker daemon."""
+    if request.node.get_closest_marker("docker") is None:
+        mocker.patch(
+            "docker.api.client.APIClient._retrieve_server_version", return_value="1.42"
+        )
+
+
 @pytest.fixture(scope="session")
 def mq_service():
     """Start MQ Docker service"""
