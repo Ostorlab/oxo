@@ -234,14 +234,3 @@ def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
                 ],
             }
         )
-
-
-def testCloudRuntimeScan_whenScanSnapshotIsPassed_raisesNotImplementedError() -> None:
-    """Only the local runtime runs the universe a snapshot restores."""
-    with pytest.raises(NotImplementedError):
-        cloud_runtime.CloudRuntime().scan(
-            title="Cloud scan",
-            agent_group_definition=definitions.AgentGroupDefinition(agents=[]),
-            assets=[],
-            scan_snapshot=b"snapshot",
-        )

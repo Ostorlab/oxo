@@ -46,7 +46,6 @@ class Runtime(abc.ABC):
         title: str,
         agent_group_definition: definitions.AgentGroupDefinition,
         assets: list[base_asset.Asset] | None,
-        scan_snapshot: bytes | None = None,
     ) -> None:
         """Triggers a scan using the provided agent run definition and asset target.
 
@@ -54,8 +53,6 @@ class Runtime(abc.ABC):
             title: Scan title
             agent_group_definition: The agent run definition from a set of agents and agent groups.
             assets: The scan target assets.
-            scan_snapshot: Snapshot of a paused scan to resume from, only supported by runtimes running the universe
-                locally.
 
         Returns:
             None
