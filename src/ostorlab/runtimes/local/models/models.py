@@ -200,7 +200,7 @@ class Scan(Base):
         with Database() as session:
             scan = Scan(
                 title=title,
-                created_time=datetime.datetime.now(datetime.timezone.utc),
+                created_time=datetime.datetime.now(datetime.UTC),
                 progress=progress,
                 agent_group_id=agent_group_id,
             )
@@ -379,7 +379,7 @@ class ScanStatus(Base):
         """
         scan_status = ScanStatus(
             key=key,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             value=value,
             scan_id=scan_id,
         )
@@ -599,7 +599,7 @@ class AgentGroup(Base):
             agent_group = AgentGroup(
                 name=name,
                 description=description,
-                created_time=datetime.datetime.now(datetime.timezone.utc),
+                created_time=datetime.datetime.now(datetime.UTC),
                 asset_types=created_asset_types,
             )
 
