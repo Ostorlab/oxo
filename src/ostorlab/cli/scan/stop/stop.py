@@ -26,7 +26,7 @@ console = cli_console.Console()
     "-l",
     "stop_last",
     is_flag=True,
-    help="Stop the last created scan",
+    help="Stop the last created scan if running",
     default=False,
 )
 @click.pass_context
@@ -69,6 +69,9 @@ def stop(
             console.warning("No scans found.")
             return
         last_scan = max(scans_list, key=lambda s: s.created_time)
+        if last_scan.progress not in ("in_progress", "not_started"):
+            console.warning("Last scan is not running.")
+            return
         ids_to_stop = [last_scan.id]
     else:
         ids_to_stop = list(scan_ids)
