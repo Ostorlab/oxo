@@ -47,12 +47,14 @@ def testAgentInstallCLI_whenAgentDoesNotExist_commandExitsWithError(
         ]
     }
 
-    def _custom_matcher(request):
+    def _custom_matcher(request: httpx.Request) -> httpx.Response | None:
         matcher = re.compile(r"http\+docker://(.*)/version")
         if re.match(matcher, str(request.url)) is not None:
             return httpx.Response(200, json={"ApiVersion": "1.42"})
         if str(request.url) == public_runner.PUBLIC_GRAPHQL_ENDPOINT:
             return httpx.Response(200, json=api_call_response)
+
+        return None
 
     httpx_mock.add_callback(_custom_matcher)
 
@@ -92,7 +94,7 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(
         }
     }
 
-    def _custom_matcher(request):
+    def _custom_matcher(request: httpx.Request) -> httpx.Response | None:
         matcher_version = re.compile(r"http\+docker://(.*)/version")
         matcher_json = re.compile(r"http\+docker://(.*)/json")
         if re.match(matcher_version, str(request.url)) is not None:
@@ -101,6 +103,8 @@ def testAgentInstallCLI_whenAgentExists_installsAgent(
             return httpx.Response(200, json={})
         if str(request.url) == public_runner.PUBLIC_GRAPHQL_ENDPOINT:
             return httpx.Response(200, json=api_call_response)
+
+        return None
 
     httpx_mock.add_callback(_custom_matcher)
 
@@ -218,7 +222,9 @@ def testAgentInstallCLI_whenPullFails_retries(
     mocker.patch("docker.from_env", return_value=mock_client)
 
     # Patch wait to be fast
-    mocker.patch.object(install_agent._do_install.retry, "wait", tenacity.wait_fixed(0))
+    mocker.patch(
+        "ostorlab.cli.install_agent._do_install.retry.wait", tenacity.wait_fixed(0)
+    )
 
     runner = testing.CliRunner()
     result = runner.invoke(
@@ -267,7 +273,9 @@ def testAgentInstallCLI_whenPullSucceedsAfterRetry_installsSuccessfully(
     mock_image = mocker.MagicMock()
     mocker.patch("ostorlab.cli.install_agent._get_image", return_value=mock_image)
 
-    mocker.patch.object(install_agent._do_install.retry, "wait", tenacity.wait_fixed(0))
+    mocker.patch(
+        "ostorlab.cli.install_agent._do_install.retry.wait", tenacity.wait_fixed(0)
+    )
 
     runner = testing.CliRunner()
     result = runner.invoke(

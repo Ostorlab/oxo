@@ -3,6 +3,7 @@
 from unittest import mock
 
 import click
+import pytest_httpx
 from click.testing import CliRunner
 
 from ostorlab import configuration_manager
@@ -13,8 +14,8 @@ from ostorlab.cli import rootcli
 
 @mock.patch.object(authenticated_runner.AuthenticationError, "__init__")
 def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthenticationException(
-    mock_authentication_error_init, httpx_mock
-):
+    mock_authentication_error_init: mock.MagicMock, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test ostorlab auth login command with wrong login credentials.
     Should raise AuthenticationError.
     """
@@ -36,8 +37,8 @@ def testOstorlabAuthLoginCLI_whenInvalidLoginCredentialsAreProvided_raisesAuthen
 
 
 def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab auth login command with valid login credentials (no otp required).
     Should set authorization token.
     """
@@ -60,8 +61,8 @@ def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvided_tokenSet(
 
 @mock.patch.object(click, "prompt")
 def testOstorlabAuthLoginCLI_whenValidLoginCredentialsAreProvidedWithoutOtp_promptOtp(
-    mock_prompt, httpx_mock
-):
+    mock_prompt: mock.MagicMock, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test ostorlab auth login command with correct login credentials without OTP.
     Should assert that the otp prompt is called.
     """

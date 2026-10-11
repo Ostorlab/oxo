@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.fingerprint.file.ios.metadata import metadata_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     msg = metadata_pb2.Message()
     msg.bundle_id = "com.example.test"
 
@@ -29,14 +31,14 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     )
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     msg = metadata_pb2.Message()
 
     assert msg.bundle_id == ""
     assert len(msg.permissions) == 0
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     msg = metadata_pb2.Message()
 
     serialized = msg.SerializeToString()

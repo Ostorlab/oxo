@@ -10,8 +10,14 @@ import socket
 import sys
 import threading
 import time
+from collections.abc import Callable
+from typing import Any
+from typing import NoReturn
+from typing import cast
 
 import click
+
+from ostorlab.cli import types as cli_types
 
 try:
     from google.api_core import exceptions as google_api_exceptions
@@ -20,11 +26,9 @@ try:
     from google.cloud.logging import handlers as gcp_logging_handlers
     from google.oauth2 import service_account
 except ImportError:
-    google_api_exceptions = None
-    google_auth_exceptions = None
-    gcp_logging = None
-    gcp_logging_handlers = None
-    service_account = None
+    _GCP_LOGGING_AVAILABLE = False
+else:
+    _GCP_LOGGING_AVAILABLE = True
 
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
@@ -56,7 +60,7 @@ def _configure_file_logging(
 
     root_logger = logging.getLogger()
     for handler in root_logger.handlers:
-        if getattr(handler, "name", None) == SCANNER_FILE_HANDLER_NAME:
+        if handler.name == SCANNER_FILE_HANDLER_NAME:
             return
 
     file_handler = logging.FileHandler(log_file_path)
@@ -82,13 +86,7 @@ def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) 
     if gcp_logging_credential is None:
         return
 
-    if (
-        gcp_logging is None
-        or gcp_logging_handlers is None
-        or service_account is None
-        or google_api_exceptions is None
-        or google_auth_exceptions is None
-    ):
+    if _GCP_LOGGING_AVAILABLE is False:
         logger.error(
             "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
         )
@@ -100,12 +98,15 @@ def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) 
             root_logger.removeHandler(handler)
 
     try:
-        credentials = service_account.Credentials.from_service_account_info(
-            json.loads(gcp_logging_credential)
-        )
+        credentials = cast(
+            Callable[[dict[str, Any]], object],
+            service_account.Credentials.from_service_account_info,
+        )(json.loads(gcp_logging_credential))
         # The gRPC channel opened by the parent process does not survive the fork, and reusing it silently
         # drops every record, so workers ship over HTTP instead.
-        client = gcp_logging.Client(credentials=credentials, _use_grpc=False)
+        client = cast(cli_types.CloudLoggingClientFactory, gcp_logging.Client)(
+            credentials=credentials, _use_grpc=False
+        )
         client.setup_logging(
             labels={
                 "scanner_id": scanner_id,
@@ -128,7 +129,7 @@ def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) 
 
 def _start_periodic_persist_state(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
-):
+) -> NoReturn:
     while True:
         try:
             state_reporter.report()
@@ -187,7 +188,7 @@ def scanner(
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
     gcp_logging_credential = ctx.obj.get("gcp_logging_credential")
     scanner_log_file = log_file if persist_logs is True else None
-    scanner_log_level = getattr(logging, log_level.upper())
+    scanner_log_level = logging.getLevelNamesMapping()[log_level.upper()]
     _configure_file_logging(scanner_log_file, scanner_log_level)
 
     # The import is done for Windows compatibility.

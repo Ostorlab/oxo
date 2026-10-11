@@ -19,7 +19,7 @@ from ostorlab.runtimes.local.models import models
 
 @pytest.mark.skip(reason="Missing inject asset agent.")
 @pytest.mark.docker
-def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
+def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning() -> None:
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = android_apk.AndroidApk(content=b"APK")
     agent_group_definition = definitions.AgentGroupDefinition(agents=[])
@@ -40,7 +40,9 @@ def testRuntimeScan_whenEmptyRunDefinition_runtimeServicesAreRunning():
 
 @pytest.mark.skip(reason="Missing sample agents to test with.")
 @pytest.mark.docker
-def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning():
+def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning() -> (
+    None
+):
     local_runtime_instance = local_runtime.LocalRuntime()
     asset = android_apk.AndroidApk(content=b"APK")
     agent_group_definition = definitions.AgentGroupDefinition(agents=[])
@@ -57,14 +59,16 @@ def testRuntimeScan_whenValidAgentRunDefinitionAndAssetAreProvided_scanIsRunning
         filters={"label": f"ostorlab.universe={local_runtime_instance.name}"}
     )
     assert any(s.name.startswith("mq_") for s in services)
-    assert any(s.name.starts_with("agent_") for s in services)
+    assert any(s.name.startswith("agent_") for s in services)
     # TODO(alaeddine): check for asset injection.
     configs = docker_client.configs.list()
-    assert any(c.name.starts_with("agent_") for c in configs)
+    assert any(c.name.startswith("agent_") for c in configs)
 
 
 @pytest.mark.docker
-def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_path):
+def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Unittest for the scan stop method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
@@ -73,10 +77,11 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_p
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
 
-    def docker_services():
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
+            assert scan is not None
         services = [
             {
                 "ID": "0099i5n1y3gycuekvksyqyxav",
@@ -111,15 +116,15 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker, db_engine_p
 
 @pytest.mark.docker
 def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Unittest for the scan stop method when the scan id is invalid.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
     Does not remove any service.
     """
 
-    def docker_services():
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the services list response."""
 
         services = [
@@ -155,8 +160,8 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
 
 @pytest.mark.docker
 def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Stopping a scan should remove only volumes labeled for that scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
@@ -186,14 +191,16 @@ def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
     other_volume.remove.assert_not_called()
 
 
-def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
+def testRuntimeScanList_whenScansArePresent_showsScans(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Unittest for the scan list method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels.
     Shows the list of scans.
     """
 
-    def docker_services():
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the scan list response."""
         services = [
             {
@@ -219,6 +226,7 @@ def testRuntimeScanList_whenScansArePresent_showsScans(mocker, db_engine_path):
     mocker.patch("docker.from_env", return_value=mock_client)
 
     scans = local_runtime.LocalRuntime().list()
+    assert scans is not None
 
     assert len(scans) == 0
 
@@ -314,6 +322,7 @@ def testScanInLocalRuntime_whenScanIdIsPassed_shouldUseTheScanIdAsUniverseLabelI
     with models.Database() as session:
         assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.id != 42
 
 
@@ -361,7 +370,9 @@ def testRuntimeScanList_whenDockerIsDown_DoesNotCrash(
     assert scans is None
 
 
-def testRuntimeScanList_whenStateIsProvided_filtersScansByState(mocker, db_engine_path):
+def testRuntimeScanList_whenStateIsProvided_filtersScansByState(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Unittest for the scan list method with state filter.
     Should return only scans matching the provided state.
     """
@@ -378,8 +389,11 @@ def testRuntimeScanList_whenStateIsProvided_filtersScansByState(mocker, db_engin
     models.Scan.create(title="scan3", progress=models.ScanProgress.ERROR)
 
     done_scans = local_runtime.LocalRuntime().list(state="done")
+    assert done_scans is not None
     in_progress_scans = local_runtime.LocalRuntime().list(state="in_progress")
+    assert in_progress_scans is not None
     all_scans = local_runtime.LocalRuntime().list()
+    assert all_scans is not None
 
     assert len(done_scans) == 1
     assert done_scans[0].progress == "done"
@@ -391,7 +405,7 @@ def testRuntimeScanList_whenStateIsProvided_filtersScansByState(mocker, db_engin
 @pytest.mark.docker
 def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
     mocker: plugin.MockerFixture, db_engine_path: str
-):
+) -> None:
     """Unittest for the scan stop method when there are networks not related to the scan, the process shouldn't crash"""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
@@ -400,6 +414,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
+            assert scan is not None
         services = [
             {
                 "ID": "0099i5n1y3gycuekvksyqyxav",
@@ -419,6 +434,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
         """Method for mocking the services list response."""
         with models.Database() as session:
             scan = session.query(models.Scan).first()
+            assert scan is not None
         networks = [
             {
                 "ID": "0099i5n1y3gycuekvksyqyxav",
@@ -453,7 +469,7 @@ def testRuntimeScanStop_whenUnrelatedNetworks_removesScanServiceWithoutCrash(
     docker_network_remove.assert_called_once()
 
 
-def testLocalRuntimeInit_always_setsMaxPoolSize(mocker):
+def testLocalRuntimeInit_always_setsMaxPoolSize(mocker: plugin.MockerFixture) -> None:
     """Test LocalRuntime initializes docker client with increased pool size."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True

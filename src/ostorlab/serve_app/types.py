@@ -1,14 +1,22 @@
 """Graphene types for the local runtime."""
 
+from __future__ import annotations
+
 import collections
 import enum
 import io
+from typing import Any
+from typing import Optional
+from typing import Protocol
+from typing import cast
 
 import graphene
 import graphene_sqlalchemy
 import ruamel
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
+from sqlalchemy import orm
+from werkzeug import datastructures
 
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import common
@@ -16,15 +24,15 @@ from ostorlab.utils import risk_rating as utils_rik_rating
 
 DEFAULT_NUMBER_ELEMENTS = 15
 RISK_RATINGS_ORDER = {
-    common.RiskRatingEnum.CRITICAL.name: 8,
-    common.RiskRatingEnum.HIGH.name: 7,
-    common.RiskRatingEnum.MEDIUM.name: 6,
-    common.RiskRatingEnum.LOW.name: 5,
-    common.RiskRatingEnum.POTENTIALLY.name: 4,
-    common.RiskRatingEnum.HARDENING.name: 3,
-    common.RiskRatingEnum.SECURE.name: 2,
-    common.RiskRatingEnum.IMPORTANT.name: 1,
-    common.RiskRatingEnum.INFO.name: 0,
+    "CRITICAL": 8,
+    "HIGH": 7,
+    "MEDIUM": 6,
+    "LOW": 5,
+    "POTENTIALLY": 4,
+    "HARDENING": 3,
+    "SECURE": 2,
+    "IMPORTANT": 1,
+    "INFO": 0,
 }
 YAML_WIDTH = 100000000
 
@@ -47,14 +55,14 @@ class AgentGroupOrderByEnum(graphene.Enum):
     CreatedTime = enum.auto()
 
 
-class OxoReferenceType(graphene.ObjectType):
+class OxoReferenceType(common.ObjectType):
     """Graphene object type for a reference."""
 
     title = graphene.String()
     url = graphene.String()
 
 
-class OxoKnowledgeBaseVulnerabilityType(graphene.ObjectType):
+class OxoKnowledgeBaseVulnerabilityType(common.ObjectType):
     """SQLAlchemy object type for a knowledge base vulnerability."""
 
     references = graphene.List(OxoReferenceType)
@@ -89,9 +97,10 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
             "dna",
         )
 
+    @staticmethod
     def resolve_cvss_v3_base_score(
-        self: models.Vulnerability, info: graphql_base.ResolveInfo
-    ) -> float:
+        root: models.Vulnerability, info: graphql_base.ResolveInfo
+    ) -> Optional[float]:
         """Resolve CVSS v3 base score query.
 
         Args:
@@ -101,10 +110,11 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             float: The CVSS v3 base score.
         """
-        return common.compute_cvss_v3_base_score(self.cvss_v3_vector)
+        return common.compute_cvss_v3_base_score(root.cvss_v3_vector)
 
+    @staticmethod
     def resolve_detail(
-        self: models.Vulnerability, info: graphql_base.ResolveInfo
+        root: models.Vulnerability, info: graphql_base.ResolveInfo
     ) -> OxoKnowledgeBaseVulnerabilityType:
         """Resolve detail query.
 
@@ -118,38 +128,41 @@ class OxoVulnerabilityType(graphene_sqlalchemy.SQLAlchemyObjectType):
         with models.Database() as session:
             references = (
                 session.query(models.Reference)
-                .filter(models.Reference.vulnerability_id == self.id)
+                .filter(models.Reference.vulnerability_id == root.id)
                 .all()
             )
 
             return OxoKnowledgeBaseVulnerabilityType(
-                title=self.title,
-                short_description=self.short_description,
-                description=self.description,
-                recommendation=self.recommendation,
+                title=root.title,
+                short_description=root.short_description,
+                description=root.description,
+                recommendation=root.recommendation,
                 references=[
                     OxoReferenceType(title=ref.title, url=ref.url) for ref in references
                 ],
             )
 
+    @staticmethod
     def resolve_risk_rating(
-        self: models.Vulnerability, info: graphql_base.ResolveInfo
-    ) -> OxoRiskRatingEnum | None:
+        root: models.Vulnerability, info: graphql_base.ResolveInfo
+    ) -> Optional[enum.Enum]:
         """Resolve risk rating of vulnerability"""
         try:
-            return OxoRiskRatingEnum[self.risk_rating.name]
+            return cast(EnumLookup, OxoRiskRatingEnum)[
+                cast(utils_rik_rating.RiskRating, root.risk_rating).name
+            ]
         except KeyError:
             return None
 
 
-class OxoVulnerabilitiesType(graphene.ObjectType):
+class OxoVulnerabilitiesType(common.ObjectType):
     """Graphene object type for a list of vulnerabilities."""
 
     vulnerabilities = graphene.List(OxoVulnerabilityType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
 
 
-class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
+class OxoAggregatedKnowledgeBaseVulnerabilityType(common.ObjectType):
     """Graphene object type for an aggregated knowledge base vulnerability."""
 
     highest_risk_rating = graphene.Field(OxoRiskRatingEnum)
@@ -164,14 +177,18 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         description="List of vulnerabilities.",
     )
 
-    def resolve_highest_risk_rating(self, info) -> OxoRiskRatingEnum | None:
+    @staticmethod
+    def resolve_highest_risk_rating(
+        root: AggregatedKnowledgeBase, info: graphql_base.ResolveInfo
+    ) -> Optional[enum.Enum]:
         try:
-            return OxoRiskRatingEnum[self.highest_risk_rating.name]
+            return cast(EnumLookup, OxoRiskRatingEnum)[root.highest_risk_rating.name]
         except KeyError:
             return None
 
+    @staticmethod
     def resolve_vulnerabilities(
-        self: models.Scan,
+        root: AggregatedKnowledgeBase,
         info: graphql_base.ResolveInfo,
         detail_titles: list[str] | None = None,
         page: int | None = None,
@@ -192,7 +209,7 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
         if number_elements <= 0:
             return OxoVulnerabilitiesType(vulnerabilities=[])
 
-        vulnerabilities = self.vulnerabilities.vulnerabilities.order_by(
+        vulnerabilities = root.vulnerabilities.vulnerabilities.order_by(
             models.Vulnerability.id
         )
 
@@ -203,14 +220,16 @@ class OxoAggregatedKnowledgeBaseVulnerabilityType(graphene.ObjectType):
 
         if page is not None and number_elements > 0:
             p = common.Paginator(vulnerabilities, number_elements)
-            page = p.get_page(page)
+            result_page = p.get_page(page)
             page_info = common.PageInfo(
                 count=p.count,
                 num_pages=p.num_pages,
-                has_next=page.has_next(),
-                has_previous=page.has_previous(),
+                has_next=result_page.has_next(),
+                has_previous=result_page.has_previous(),
             )
-            return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
+            return OxoVulnerabilitiesType(
+                vulnerabilities=result_page, page_info=page_info
+            )
         else:
             return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
@@ -220,13 +239,23 @@ class OxoAndroidStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.AndroidStore
         only_fields = ("id", "package_name", "application_name")
 
-    def resolve_package_name(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_package_name(
+        root: models.AndroidStore, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.AndroidStore).get(self.id).package_name
+            return cast(
+                models.AndroidStore, session.query(models.AndroidStore).get(root.id)
+            ).package_name
 
-    def resolve_application_name(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_application_name(
+        root: models.AndroidStore, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.AndroidStore).get(self.id).application_name
+            return cast(
+                models.AndroidStore, session.query(models.AndroidStore).get(root.id)
+            ).application_name
 
 
 class OxoAndroidStoreAssetInputType(graphene.InputObjectType):
@@ -239,13 +268,23 @@ class OxoIOSStoreAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.IosStore
         only_fields = ("id", "bundle_id", "application_name")
 
-    def resolve_bundle_id(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_bundle_id(
+        root: models.IosStore, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.IosStore).get(self.id).bundle_id
+            return cast(
+                models.IosStore, session.query(models.IosStore).get(root.id)
+            ).bundle_id
 
-    def resolve_application_name(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_application_name(
+        root: models.IosStore, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.IosStore).get(self.id).application_name
+            return cast(
+                models.IosStore, session.query(models.IosStore).get(root.id)
+            ).application_name
 
 
 class OxoIOSStoreAssetInputType(graphene.InputObjectType):
@@ -258,13 +297,23 @@ class OxoAndroidFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.AndroidFile
         only_fields = ("id", "package_name", "path")
 
-    def resolve_package_name(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_package_name(
+        root: models.AndroidFile, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.AndroidFile).get(self.id).package_name
+            return cast(
+                models.AndroidFile, session.query(models.AndroidFile).get(root.id)
+            ).package_name
 
-    def resolve_path(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_path(
+        root: models.AndroidFile, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.AndroidFile).get(self.id).path
+            return cast(
+                models.AndroidFile, session.query(models.AndroidFile).get(root.id)
+            ).path
 
 
 class OxoAndroidFileAssetInputType(graphene.InputObjectType):
@@ -277,13 +326,21 @@ class OxoIOSFileAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.IosFile
         only_fields = ("id", "bundle_id", "path")
 
-    def resolve_bundle_id(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_bundle_id(
+        root: models.IosFile, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.IosFile).get(self.id).bundle_id
+            return cast(
+                models.IosFile, session.query(models.IosFile).get(root.id)
+            ).bundle_id
 
-    def resolve_path(self, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_path(
+        root: models.IosFile, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         with models.Database() as session:
-            return session.query(models.IosFile).get(self.id).path
+            return cast(models.IosFile, session.query(models.IosFile).get(root.id)).path
 
 
 class OxoIOSFileAssetInputType(graphene.InputObjectType):
@@ -304,9 +361,12 @@ class OxoUrlsAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.Urls
         only_fields = ("id",)
 
-    def resolve_links(self, info) -> list[OxoLinkAssetType]:
+    @staticmethod
+    def resolve_links(
+        root: models.Urls, info: graphql_base.ResolveInfo
+    ) -> list[OxoLinkAssetType]:
         with models.Database() as session:
-            links = session.query(models.Link).filter_by(urls_asset_id=self.id).all()
+            links = session.query(models.Link).filter_by(urls_asset_id=root.id).all()
             return [
                 OxoLinkAssetType(url=link.url, method=link.method) for link in links
             ]
@@ -325,10 +385,13 @@ class OxoNetworkAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.Network
         only_fields = ("id",)
 
-    def resolve_networks(self, info) -> list[OxoIPRangeAssetType]:
+    @staticmethod
+    def resolve_networks(
+        root: models.Network, info: graphql_base.ResolveInfo
+    ) -> list[OxoIPRangeAssetType]:
         with models.Database() as session:
             ips = (
-                session.query(models.IPRange).filter_by(network_asset_id=self.id).all()
+                session.query(models.IPRange).filter_by(network_asset_id=root.id).all()
             )
             return [OxoIPRangeAssetType(host=ip.host, mask=ip.mask) for ip in ips]
 
@@ -346,8 +409,9 @@ class OxoDomainNameAssetsType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.DomainAsset
         only_fields = ("id",)
 
+    @staticmethod
     def resolve_domain_names(
-        self, info: graphql_base.ResolveInfo
+        root: models.DomainAsset, info: graphql_base.ResolveInfo
     ) -> list[OxoDomainNameAssetType]:
         """Resolve domain names query.
 
@@ -361,7 +425,7 @@ class OxoDomainNameAssetsType(graphene_sqlalchemy.SQLAlchemyObjectType):
         with models.Database() as session:
             domain_names = (
                 session.query(models.DomainName)
-                .filter_by(domain_asset_id=self.id)
+                .filter_by(domain_asset_id=root.id)
                 .all()
             )
             return [
@@ -399,9 +463,10 @@ class OxoAgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
             "description",
         )
 
+    @staticmethod
     def resolve_value(
-        self: models.AgentArgument, info: graphql_base.ResolveInfo
-    ) -> bytes:
+        root: models.AgentArgument, info: graphql_base.ResolveInfo
+    ) -> Optional[bytes]:
         """Resolve agent argument value query.
 
         Args:
@@ -411,10 +476,10 @@ class OxoAgentArgumentType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             common.Bytes: The value of the agent argument.
         """
-        return self.value
+        return root.value
 
 
-class OxoAgentArgumentsType(graphene.ObjectType):
+class OxoAgentArgumentsType(common.ObjectType):
     """Graphene object type for a list of agent arguments."""
 
     args = graphene.List(OxoAgentArgumentType, required=True)
@@ -431,8 +496,9 @@ class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.Agent
         only_fields = ("key",)
 
+    @staticmethod
     def resolve_args(
-        self: models.Agent, info: graphql_base.ResolveInfo
+        root: models.Agent, info: graphql_base.ResolveInfo
     ) -> OxoAgentArgumentsType:
         """Resolve agent arguments query.
 
@@ -445,12 +511,12 @@ class OxoAgentType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
         with models.Database() as session:
             args = session.query(models.AgentArgument).filter(
-                models.AgentArgument.agent_id == self.id
+                models.AgentArgument.agent_id == root.id
             )
             return OxoAgentArgumentsType(args=args)
 
 
-class OxoAgentsType(graphene.ObjectType):
+class OxoAgentsType(common.ObjectType):
     """Graphene object type for a list of agents."""
 
     agents = graphene.List(OxoAgentType, required=True)
@@ -485,7 +551,8 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             "created_time",
         )
 
-    def resolve_key(self: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_key(root: models.AgentGroup, info: graphql_base.ResolveInfo) -> str:
         """Resolve key query.
         Args:
             self (models.AgentGroup): The agent group object.
@@ -494,13 +561,14 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             str: The key of the agent group.
         """
         return (
-            f"agentgroup//{self.name}"
-            if self.name is not None
-            else f"agentgroup//{self.id}"
+            f"agentgroup//{root.name}"
+            if root.name is not None
+            else f"agentgroup//{root.id}"
         )
 
+    @staticmethod
     def resolve_agents(
-        self: models.AgentGroup,
+        root: models.AgentGroup,
         info: graphql_base.ResolveInfo,
         page: int | None = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
@@ -516,27 +584,29 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             return OxoAgentsType(agents=[])
 
         with models.Database() as session:
-            agents = (
+            group = cast(
+                models.AgentGroup,
                 session.query(models.AgentGroup)
-                .filter(models.AgentGroup.id == self.id)
-                .first()
-                .agents
+                .filter(models.AgentGroup.id == root.id)
+                .first(),
             )
+            agents = group.agents
             if page is not None and number_elements > 0:
                 p = common.Paginator(agents, number_elements)
-                page = p.get_page(page)
+                result_page = p.get_page(page)
                 page_info = common.PageInfo(
                     count=p.count,
                     num_pages=p.num_pages,
-                    has_next=page.has_next(),
-                    has_previous=page.has_previous(),
+                    has_next=result_page.has_next(),
+                    has_previous=result_page.has_previous(),
                 )
-                return OxoAgentsType(agents=page, page_info=page_info)
+                return OxoAgentsType(agents=result_page, page_info=page_info)
             else:
                 return OxoAgentsType(agents=agents)
 
+    @staticmethod
     def resolve_asset_types(
-        self: models.AgentGroup, info: graphql_base.ResolveInfo
+        root: models.AgentGroup, info: graphql_base.ResolveInfo
     ) -> list[str]:
         """Resolve asset types query.
         Args:
@@ -546,11 +616,16 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
             List[str]: The asset types of the agent group.
         """
         with models.Database() as session:
-            asset_types = session.query(models.AgentGroup).get(self.id).asset_types
-            return [asset.type.name for asset in asset_types]
+            asset_types = cast(
+                models.AgentGroup, session.query(models.AgentGroup).get(root.id)
+            ).asset_types
+            return [
+                cast(models.AssetTypeEnum, asset.type).name for asset in asset_types
+            ]
 
+    @staticmethod
     def resolve_yaml_source(
-        self: models.AgentGroup, info: graphql_base.ResolveInfo
+        root: models.AgentGroup, info: graphql_base.ResolveInfo
     ) -> str:
         """Resolve yaml source query.
         Args:
@@ -561,19 +636,21 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
         yaml = ruamel.yaml.YAML(typ="safe")
         yaml.width = YAML_WIDTH
-        agent_group_definition = {"kind": "AgentGroup", "agents": []}
+        agent_group_definition: dict[str, Any] = {"kind": "AgentGroup", "agents": []}
 
-        if self.name is not None:
-            agent_group_definition["name"] = self.name
+        if root.name is not None:
+            agent_group_definition["name"] = root.name
 
-        if self.description is not None:
-            agent_group_definition["description"] = self.description
+        if root.description is not None:
+            agent_group_definition["description"] = root.description
 
         with models.Database() as session:
-            agent_group = session.query(models.AgentGroup).get(self.id)
+            agent_group = cast(
+                models.AgentGroup, session.query(models.AgentGroup).get(root.id)
+            )
             agents = agent_group.agents
             for agent in agents:
-                agent_definition = {
+                agent_definition: dict[str, Any] = {
                     "key": agent.key,
                     "args": [],
                 }
@@ -602,7 +679,7 @@ class OxoAgentGroupType(graphene_sqlalchemy.SQLAlchemyObjectType):
         return agent_group_definition_yaml
 
 
-class OxoAgentGroupsType(graphene.ObjectType):
+class OxoAgentGroupsType(common.ObjectType):
     agent_groups = graphene.List(OxoAgentGroupType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
 
@@ -698,7 +775,8 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             "created_time",
         )
 
-    def resolve_progress(self: models.Scan, info: graphql_base.ResolveInfo) -> str:
+    @staticmethod
+    def resolve_progress(root: models.Scan, info: graphql_base.ResolveInfo) -> str:
         """Resolve progress query.
 
         Args:
@@ -709,10 +787,11 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             str: The progress of the scan.
         """
 
-        return self.progress.name
+        return cast(models.ScanProgress, root.progress).name
 
+    @staticmethod
     def resolve_risk_rating(
-        self: models.Scan, info: graphql_base.ResolveInfo
+        root: models.Scan, info: graphql_base.ResolveInfo
     ) -> str | None:
         """Resolve risk rating query.
         Args:
@@ -721,12 +800,13 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             str: The risk rating of the scan.
         """
-        return self.risk_rating.name if self.risk_rating is not None else None
+        return root.risk_rating.name if root.risk_rating is not None else None
 
+    @staticmethod
     def resolve_assets(
-        self,
+        root: models.Scan,
         info: graphql_base.ResolveInfo,
-    ):
+    ) -> list[models.Asset]:
         """Resolve asset query.
 
         Args:
@@ -737,11 +817,16 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             List[OxoAssetType]: The asset of the scan.
         """
         with models.Database() as session:
-            assets = session.query(models.Asset).filter_by(scan_id=self.id).all()
+            assets = (
+                cast("orm.Query[models.Asset]", session.query(models.Asset))
+                .filter_by(scan_id=root.id)
+                .all()
+            )
             return assets
 
+    @staticmethod
     def resolve_vulnerabilities(
-        self: models.Scan,
+        root: models.Scan,
         info: graphql_base.ResolveInfo,
         detail_titles: list[str] | None = None,
         vuln_ids: list[int] | None = None,
@@ -766,7 +851,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
         with models.Database() as session:
             vulnerabilities = session.query(models.Vulnerability).filter(
-                models.Vulnerability.scan_id == self.id
+                models.Vulnerability.scan_id == root.id
             )
 
             if vuln_ids is not None and len(vuln_ids) > 0:
@@ -783,19 +868,22 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
 
             if page is not None and number_elements > 0:
                 p = common.Paginator(vulnerabilities, number_elements)
-                page = p.get_page(page)
+                result_page = p.get_page(page)
                 page_info = common.PageInfo(
                     count=p.count,
                     num_pages=p.num_pages,
-                    has_next=page.has_next(),
-                    has_previous=page.has_previous(),
+                    has_next=result_page.has_next(),
+                    has_previous=result_page.has_previous(),
                 )
-                return OxoVulnerabilitiesType(vulnerabilities=page, page_info=page_info)
+                return OxoVulnerabilitiesType(
+                    vulnerabilities=result_page, page_info=page_info
+                )
             else:
                 return OxoVulnerabilitiesType(vulnerabilities=vulnerabilities)
 
+    @staticmethod
     def resolve_kb_vulnerabilities(
-        self: models.Scan,
+        root: models.Scan,
         info: graphql_base.ResolveInfo,
         detail_title: str | None = None,
         page: int | None = None,
@@ -811,12 +899,13 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         Returns:
             list[OxoAggregatedKnowledgeBaseVulnerabilityType]: List of aggregated knowledge base vulnerabilities.
         """
-        aggregated_kb = OxoScanType._build_kb_vulnerabilities(self, detail_title)
+        aggregated_kb = OxoScanType._build_kb_vulnerabilities(root, detail_title)
         return aggregated_kb
 
+    @staticmethod
     def resolve_message_status(
-        self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> str:
+        root: models.Scan, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
         """Resolve message status query.
 
         Args:
@@ -828,17 +917,19 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
         """
         with models.Database() as session:
             scan_statuses = session.query(models.ScanStatus).filter(
-                models.ScanStatus.scan_id == self.id
+                models.ScanStatus.scan_id == root.id
             )
             message_statuses = [
                 s.value for s in scan_statuses if s.key == "message_status"
             ]
             if message_statuses is not None and len(message_statuses) > 0:
-                return message_statuses[-1]
+                return cast(Optional[str], message_statuses[-1])
+        return None
 
+    @staticmethod
     def resolve_agent_group(
-        self: models.Scan, info: graphql_base.ResolveInfo
-    ) -> OxoAgentGroupType | None:
+        root: models.Scan, info: graphql_base.ResolveInfo
+    ) -> Optional[models.AgentGroup]:
         """Resolve agent group.
 
         Args:
@@ -849,8 +940,12 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             str: The message status of the scan.
         """
         with models.Database() as session:
-            if self.agent_group_id is not None:
-                return session.query(models.AgentGroup).get(self.agent_group_id)
+            if root.agent_group_id is not None:
+                return cast(
+                    Optional[models.AgentGroup],
+                    session.query(models.AgentGroup).get(root.agent_group_id),
+                )
+        return None
 
     @staticmethod
     def _build_kb_vulnerabilities(
@@ -910,7 +1005,9 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                 if len(cvss_v3_vectors) > 0:
                     highest_cvss_v3_vector = max(
                         cvss_v3_vectors,
-                        key=lambda vector: common.compute_cvss_v3_base_score(vector),
+                        key=lambda vector: cast(
+                            float, common.compute_cvss_v3_base_score(vector)
+                        ),
                     )
                 else:
                     highest_cvss_v3_vector = kb.cvss_v3_vector or None
@@ -918,7 +1015,7 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
                     session.query(models.Reference)
                     .filter(
                         models.Reference.vulnerability_id
-                        == kb_vulnerabilities.first().id
+                        == cast(models.Vulnerability, kb_vulnerabilities.first()).id
                     )
                     .distinct(models.Reference.title)
                 ).all()
@@ -948,8 +1045,85 @@ class OxoScanType(graphene_sqlalchemy.SQLAlchemyObjectType):
             return aggregated_kb
 
 
-class OxoScansType(graphene.ObjectType):
+class OxoScansType(common.ObjectType):
     """Graphene object type for a list of scans."""
 
     scans = graphene.List(OxoScanType, required=True)
     page_info = graphene.Field(common.PageInfo, required=False)
+
+
+class EnumLookup(Protocol):
+    """Name lookup on a dynamically constructed Graphene enum."""
+
+    def __getitem__(self, name: str) -> enum.Enum: ...
+
+
+class VulnerabilitiesData(Protocol):
+    """Query backing a GraphQL vulnerability list."""
+
+    vulnerabilities: orm.Query[models.Vulnerability]
+
+
+class AggregatedKnowledgeBase(Protocol):
+    """Data passed to aggregated vulnerability resolvers."""
+
+    highest_risk_rating: utils_rik_rating.RiskRating
+    vulnerabilities: VulnerabilitiesData
+
+
+class AndroidStoreInput(Protocol):
+    """Decoded Android store input."""
+
+    package_name: str
+    application_name: Optional[str]
+
+
+class IOSStoreInput(Protocol):
+    """Decoded iOS store input."""
+
+    bundle_id: str
+    application_name: Optional[str]
+
+
+class AndroidFileInput(Protocol):
+    """Decoded uploaded Android input."""
+
+    file: datastructures.FileStorage
+    package_name: Optional[str]
+
+
+class IOSFileInput(Protocol):
+    """Decoded uploaded iOS input."""
+
+    file: datastructures.FileStorage
+    bundle_id: Optional[str]
+
+
+class AssetInput(Protocol):
+    """Decoded GraphQL asset input container."""
+
+    android_apk_file: Optional[list[AndroidFileInput]]
+    android_aab_file: Optional[list[AndroidFileInput]]
+    ios_file: Optional[list[IOSFileInput]]
+    android_store: Optional[list[AndroidStoreInput]]
+    ios_store: Optional[list[IOSStoreInput]]
+    link: Optional[list[dict[str, str]]]
+    ip: Optional[list[dict[str, str | int | None]]]
+    domain: Optional[list[dict[str, str]]]
+
+
+class AgentGroupInput(Protocol):
+    """Decoded GraphQL agent group input container."""
+
+    name: Optional[str]
+    description: str
+    agents: list[models.AgentGroupAgent]
+    asset_types: list[str]
+
+
+class AgentScanInput(Protocol):
+    """Decoded GraphQL scan input container."""
+
+    title: Optional[str]
+    asset_ids: list[int]
+    agent_group_id: int

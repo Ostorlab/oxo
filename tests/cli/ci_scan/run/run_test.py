@@ -1,10 +1,13 @@
 """Tests for scan run command."""
 
+import multiprocessing
 import os
 import pathlib
 import re
+from collections.abc import Callable
+from typing import Optional
 
-from click import testing as click_testing
+import pytest_httpx
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -19,18 +22,7 @@ def _strip_ansi(text: str) -> str:
     return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 
-_RESULT_OUTPUT_GETTER = click_testing.Result.output.fget
-
-
-def _normalized_result_output(self) -> str:
-    """Return click result output with ANSI codes stripped for stable assertions."""
-    return _strip_ansi(_RESULT_OUTPUT_GETTER(self))
-
-
-click_testing.Result.output = property(_normalized_result_output)
-
-
-def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
+def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker: plugin.MockerFixture) -> None:
     """Test ostorlab ci_scan with no api key. it should exit with error exit_code = 2."""
     mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
@@ -50,10 +42,12 @@ def testRunScanCLI_WhenApiKeyIsMissing_ShowError(mocker):
     )
 
     assert isinstance(result.exception, BaseException)
-    assert "API key not not provided." in result.output
+    assert "API key not not provided." in _strip_ansi(result.output)
 
 
-def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
+def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with no break_on_risk_rating. it should create the scan and returns its id."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -75,10 +69,12 @@ def testRunScanCLI_whenBreakOnRiskRatingIsNotSet_ReturnsIdScan(mocker):
         ],
     )
 
-    assert "Scan created with id 1." in result.output
+    assert "Scan created with id 1." in _strip_ansi(result.output)
 
 
-def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
+def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
     mocker.patch(
@@ -100,12 +96,14 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetWithInvalidValue_ShowError(mocker):
         ],
     )
 
-    assert "Scan created with id 1." in result.output
-    assert "Incorrect risk rating value toto." in result.output
+    assert "Scan created with id 1." in _strip_ansi(result.output)
+    assert "Incorrect risk rating value toto." in _strip_ansi(result.output)
     assert isinstance(result.exception, BaseException)
 
 
-def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
+def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -125,22 +123,26 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
     class MockProcess:
         """Mock process to deterministically trigger timeout handling in tests."""
 
-        def __init__(self, target=None, args=()):
+        def __init__(
+            self,
+            target: Optional[Callable[..., object]] = None,
+            args: tuple[object, ...] = (),
+        ) -> None:
             self._alive = True
 
-        def start(self):
+        def start(self) -> None:
             return None
 
-        def join(self, timeout=None):
+        def join(self, timeout: Optional[float] = None) -> None:
             return None
 
-        def is_alive(self):
+        def is_alive(self) -> bool:
             return self._alive
 
-        def kill(self):
+        def kill(self) -> None:
             self._alive = False
 
-    mocker.patch.object(run.run.multiprocessing, "Process", MockProcess)
+    mocker.patch.object(multiprocessing, "Process", MockProcess)
     mocker.patch.object(run.run, "MINUTE", 1)
     mocker.patch.object(run.run, "SLEEP_CHECKS", 5)
 
@@ -160,13 +162,15 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanTimeout_WaitScan(mocker):
         ],
     )
 
-    output = _strip_ansi(result.output)
+    output = _strip_ansi(_strip_ansi(result.output))
     assert "Scan created with id 1." in output
     assert "The scan is still running." in output
     assert isinstance(result.exception, BaseException)
 
 
-def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
+def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -200,11 +204,13 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDone_ScanDone(mocker):
         ],
     )
 
-    assert "Scan created with id 1." in result.output
-    assert "Scan done with risk rating info." in result.output
+    assert "Scan created with id 1." in _strip_ansi(result.output)
+    assert "Scan done with risk rating info." in _strip_ansi(result.output)
 
 
-def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(mocker):
+def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -238,12 +244,14 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(moc
         ],
     )
 
-    assert "Scan created with id 1." in result.output
-    assert "The scan risk rating is high." in result.output
+    assert "Scan created with id 1." in _strip_ansi(result.output)
+    assert "The scan risk rating is high." in _strip_ansi(result.output)
     assert isinstance(result.exception, BaseException)
 
 
-def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
+def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -278,13 +286,15 @@ def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(mocker):
         ],
     )
 
-    assert "Scan created with id 1." in result.output
-    assert "::set-output name=scan_id::1" in result.output
-    assert "The scan risk rating is high." in result.output
+    assert "Scan created with id 1." in _strip_ansi(result.output)
+    assert "::set-output name=scan_id::1" in _strip_ansi(result.output)
+    assert "The scan risk rating is high." in _strip_ansi(result.output)
     assert isinstance(result.exception, BaseException)
 
 
-def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
+def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab ci_scan with invalid break_on_risk_rating. it should exit with error exit_code = 2."""
 
     test_credentials_create_dict = {
@@ -330,10 +340,10 @@ def testRunScanCLI_withTestCredentials_callsCreateTestCredentials(mocker):
             TEST_FILE_PATH,
         ],
     )
-    assert "Created test credentials" in result.output
-    assert "Scan created with id 1." in result.output
-    assert "password='pass'" not in result.output
-    assert "************" in result.output
+    assert "Created test credentials" in _strip_ansi(result.output)
+    assert "Scan created with id 1." in _strip_ansi(result.output)
+    assert "password='pass'" not in _strip_ansi(result.output)
+    assert "************" in _strip_ansi(result.output)
 
 
 def testRunScanCLI_withNewTestCredentials_callsCreateTestCredentials(
@@ -387,8 +397,8 @@ def testRunScanCLI_withNewTestCredentials_callsCreateTestCredentials(
     )
 
     assert result.exit_code == 0
-    assert "Created test credentials" in result.output
-    assert "Scan created with id 1." in result.output
+    assert "Created test credentials" in _strip_ansi(result.output)
+    assert "Scan created with id 1." in _strip_ansi(result.output)
 
 
 def testRunScanCLI_withInvalidEmail2FAArgs_exitsWithError(
@@ -411,7 +421,7 @@ def testRunScanCLI_withInvalidEmail2FAArgs_exitsWithError(
         ],
     )
     assert result.exit_code == 2
-    assert "Email 2FA credentials are not matching count." in result.output
+    assert "Email 2FA credentials are not matching count." in _strip_ansi(result.output)
 
 
 def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
@@ -455,7 +465,9 @@ def testRunScanCLI_withLogLfavorCircleCi_setExpectedEnvVariable(
     assert os.environ.get("SCAN_ID") == "1"
 
 
-def testRunScanCLI_withsboms_callApi(mocker: plugin.MockerFixture, httpx_mock) -> None:
+def testRunScanCLI_withsboms_callApi(
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test ostorlab ci_scan with LogFlavor circleci."""
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
 
@@ -497,7 +509,7 @@ def testRunScanCLI_withsboms_callApi(mocker: plugin.MockerFixture, httpx_mock) -
 
 
 def testRunWebScanCLI_withsboms_callApi(
-    mocker: plugin.MockerFixture, httpx_mock
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
 ) -> None:
     """Test ostorlab ci_scan with sbom circleci."""
     scan_create_dict = {"data": {"createWebScan": {"scan": {"id": "1"}}}}
@@ -663,11 +675,11 @@ def testRunScanCLI_withUIPromptIds_usesExistingPrompts(
         ],
     )
 
-    assert "Using existing UI prompts with IDs" in result.output
-    assert "123" in result.output
-    assert "456" in result.output
-    assert "Creating UI prompts" not in result.output
-    assert "Scan created with id" in result.output
+    assert "Using existing UI prompts with IDs" in _strip_ansi(result.output)
+    assert "123" in _strip_ansi(result.output)
+    assert "456" in _strip_ansi(result.output)
+    assert "Creating UI prompts" not in _strip_ansi(result.output)
+    assert "Scan created with id" in _strip_ansi(result.output)
     assert api_caller_mock.call_count == 1
 
 
@@ -709,13 +721,13 @@ def testRunScanCLI_withBothUIPromptsAndIds_combinesBothTypes(
         ],
     )
 
-    assert "Using existing UI prompts with IDs" in result.output
-    assert "123" in result.output
-    assert "456" in result.output
-    assert "Creating UI prompts" in result.output
-    assert "Created UI prompts with IDs" in result.output
-    assert "789" in result.output
-    assert "Scan created with id" in result.output
+    assert "Using existing UI prompts with IDs" in _strip_ansi(result.output)
+    assert "123" in _strip_ansi(result.output)
+    assert "456" in _strip_ansi(result.output)
+    assert "Creating UI prompts" in _strip_ansi(result.output)
+    assert "Created UI prompts with IDs" in _strip_ansi(result.output)
+    assert "789" in _strip_ansi(result.output)
+    assert "Scan created with id" in _strip_ansi(result.output)
     assert api_caller_mock.call_count == 2
 
 
@@ -758,11 +770,11 @@ def testRunScanCLI_withNamedUIPrompts_createsNamedPrompts(
         ],
     )
 
-    assert "Creating UI prompts" in result.output
-    assert "Created UI prompts with IDs" in result.output
-    assert "789" in result.output
-    assert "790" in result.output
-    assert "Scan created with id" in result.output
+    assert "Creating UI prompts" in _strip_ansi(result.output)
+    assert "Created UI prompts with IDs" in _strip_ansi(result.output)
+    assert "789" in _strip_ansi(result.output)
+    assert "790" in _strip_ansi(result.output)
+    assert "Scan created with id" in _strip_ansi(result.output)
     assert api_caller_mock.call_count == 2
     named_prompts_call = api_caller_mock.call_args_list[0]
     assert named_prompts_call.args[0]._ui_prompts == [
@@ -793,5 +805,7 @@ def testRunScanCLI_withMismatchedNamedPrompts_showsError(
         ],
     )
 
-    assert "UI prompt names and actions are not matching count" in result.output
+    assert "UI prompt names and actions are not matching count" in _strip_ansi(
+        result.output
+    )
     assert isinstance(result.exception, BaseException)

@@ -1,8 +1,11 @@
 """Unittest for cloud runtime."""
 
 import io
+import typing
 
 import pytest
+import pytest_httpx
+from pytest_mock import plugin
 
 from ostorlab.apis import request
 from ostorlab.apis.runners import authenticated_runner
@@ -17,7 +20,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
         self,
         name: str | None,
         description: str,
-        agents: list[dict[str, str | list]],
+        agents: list[dict[str, typing.Any]],
     ) -> None:
         """Initializer"""
         self._name = name
@@ -42,7 +45,7 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> dict | None:
+    def data(self) -> typing.Optional[dict[str, typing.Any]]:
         """Sets the body of the API request.
 
         Returns:
@@ -53,8 +56,12 @@ class MockCreateAgentGroupAPIRequest(request.APIRequest):
 
 @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
-    mocker, httpx_mock, data_list_agent, data_create_agent_group, data_create_asset
-):
+    mocker: plugin.MockerFixture,
+    httpx_mock: pytest_httpx.HTTPXMock,
+    data_list_agent: dict[str, typing.Any],
+    data_create_agent_group: dict[str, typing.Any],
+    data_create_asset: dict[str, typing.Any],
+) -> None:
     """Unittest for the scan stop method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
@@ -120,7 +127,9 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
     )
 
 
-def testRuntimeScanList_whenNoStateIsProvided_returnsAllScans(httpx_mock):
+def testRuntimeScanList_whenNoStateIsProvided_returnsAllScans(
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Unittest for the scan list method without state filter.
     Should return all scans.
     """
@@ -148,6 +157,7 @@ def testRuntimeScanList_whenNoStateIsProvided_returnsAllScans(httpx_mock):
     )
 
     scans = cloud_runtime.CloudRuntime().list()
+    assert scans is not None
 
     assert len(scans) == 1
     assert scans[0].id == "58215"
@@ -159,7 +169,9 @@ def testRuntimeScanList_whenNoStateIsProvided_returnsAllScans(httpx_mock):
     assert "%22state%22" not in request_body
 
 
-def testRuntimeScanList_whenStateIsProvided_forwardsStateToApi(httpx_mock):
+def testRuntimeScanList_whenStateIsProvided_forwardsStateToApi(
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Unittest for the scan list method with state filter.
     Should forward the state parameter to the GraphQL API.
     """
@@ -187,6 +199,7 @@ def testRuntimeScanList_whenStateIsProvided_forwardsStateToApi(httpx_mock):
     )
 
     scans = cloud_runtime.CloudRuntime().list(state="in_progress")
+    assert scans is not None
 
     assert len(scans) == 1
     assert scans[0].id == "58215"
@@ -198,7 +211,9 @@ def testRuntimeScanList_whenStateIsProvided_forwardsStateToApi(httpx_mock):
     assert "%22state%22%3A+%22in_progress%22" in request_body
 
 
-def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormattedValue():
+def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormattedValue() -> (
+    None
+):
     """Ensure cloud formatter supports HarmonyOS asset payloads."""
     runtime = cloud_runtime.CloudRuntime()
 
@@ -218,7 +233,7 @@ def testPrepareVulnLocationMarkdown_whenHarmonyOSBundleName_shouldReturnFormatte
     assert "CODE_LOCATION: Main.ets:42" in formatted
 
 
-def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError():
+def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError() -> None:
     """Ensure cloud formatter raises on unknown asset shapes."""
     runtime = cloud_runtime.CloudRuntime()
 

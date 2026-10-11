@@ -27,6 +27,7 @@ def testExportScan_whenNetworkScan_shouldExportScan(
     with models.Database() as session:
         import_utils.import_scan(append_to_scan=network_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "Network Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         assert scan.risk_rating == risk_rating.RiskRating.HIGH
@@ -63,6 +64,7 @@ def testExportScan_whenWebScan_shouldExportScan(
     with models.Database() as session:
         import_utils.import_scan(append_to_scan=web_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "Web Scan"
         assert scan.progress == models.ScanProgress.DONE
         assert scan.risk_rating == risk_rating.RiskRating.HIGH
@@ -99,6 +101,7 @@ def testExportScan_whenAndroidFileScan_shouldExportScan(
     with models.Database() as session:
         import_utils.import_scan(append_to_scan=android_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "Android File Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
@@ -136,6 +139,7 @@ def testExportScan_whenIOSFileScan_shouldExportScan(
     with models.Database() as session:
         import_utils.import_scan(append_to_scan=ios_file_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "IOS File Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
@@ -173,6 +177,7 @@ def testExportScan_whenAndroidStoreScan_shouldExportScan(
     with models.Database() as session:
         import_utils.import_scan(append_to_scan=android_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "Android Store Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
@@ -210,6 +215,7 @@ def testExportScan_whenIOSStoreScan_shouldExportScan(
     with models.Database() as session:
         import_utils.import_scan(append_to_scan=ios_store_scan, file_data=fd.read())
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "IOS Store Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         assert scan.risk_rating == risk_rating.RiskRating.MEDIUM
@@ -248,6 +254,7 @@ def testExportScan_whenMultipleAssets_shouldExportScan(
             append_to_scan=multiple_assets_scan, file_data=fd.read()
         )
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "Multiple Assets Scan"
         assert scan.progress == models.ScanProgress.IN_PROGRESS
         assert scan.risk_rating == risk_rating.RiskRating.HIGH

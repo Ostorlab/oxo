@@ -9,7 +9,7 @@ from ostorlab.apis import request
 class ScanStopAPIRequest(request.APIRequest):
     """Stops a remote scan."""
 
-    def __init__(self, scan_id: int):
+    def __init__(self, scan_id: int) -> None:
         self._scan_id = scan_id
 
     @property

@@ -30,10 +30,13 @@ logger = logging.getLogger(__name__)
     default="jsonl",
 )
 @click.pass_context
-def dump(ctx, scan_id: int, output: str, output_format: str) -> None:
+def dump(
+    ctx: click.core.Context, scan_id: int, output: str, output_format: str
+) -> None:
     """Dump found vulnerabilities of a scan in a specific format."""
     try:
         runtime_instance = ctx.obj["runtime"]
+        dumper: dumpers.VulnzDumper
         if output_format == "csv":
             dumper = dumpers.VulnzCsvDumper(output)
         else:

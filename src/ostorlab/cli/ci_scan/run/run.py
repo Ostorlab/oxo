@@ -4,9 +4,12 @@ Example of usage:
            --break-on-risk-rating=medium --title=test_scan [asset] [options].
 """
 
-import io
 import multiprocessing
 import time
+from collections.abc import Callable
+from collections.abc import Sequence
+from typing import BinaryIO
+from typing import Optional
 
 import click
 
@@ -26,7 +29,7 @@ SLEEP_CHECKS = 10  # seconds
 SCAN_PROGRESS_NOT_STARTED = "not_started"
 SCAN_PROGRESS_DONE = "done"
 
-CI_LOGGER = {
+CI_LOGGER: dict[str, Callable[[], logger.Logger]] = {
     "console": console_logger.Logger,
     "github": github_logger.Logger,
     "circleci": circleci_logger.Logger,
@@ -215,30 +218,30 @@ CI_LOGGER = {
 def run(
     ctx: click.core.Context,
     scan_profile: str,
-    title: str,
-    break_on_risk_rating: str,
+    title: Optional[str],
+    break_on_risk_rating: Optional[str],
     max_wait_minutes: int,
     log_flavor: str,
-    test_credentials_login: list[str],
-    test_credentials_password: list[str],
-    test_credentials_url: list[str],
-    test_credentials_role: list[str],
-    test_credentials_name: list[str],
-    test_credentials_value: list[str],
-    email_2fa_sender_email_address: list[str],
-    email_2fa_email_address: list[str],
-    email_2fa_password: list[str],
-    sms_2fa_sender: list[str],
-    totp_2fa_seed: list[str],
-    sboms: list[io.FileIO],
-    api_schema: io.FileIO,
-    filtered_url_regexes: list[str],
-    scope_urls_regexes: list[str],
-    proxy: str,
-    qps: int,
-    ui_prompt_ids: list[int],
-    ui_prompt_names: list[str],
-    ui_prompt_actions: list[str],
+    test_credentials_login: Sequence[str],
+    test_credentials_password: Sequence[str],
+    test_credentials_url: Sequence[str],
+    test_credentials_role: Sequence[str],
+    test_credentials_name: Sequence[str],
+    test_credentials_value: Sequence[str],
+    email_2fa_sender_email_address: Sequence[str],
+    email_2fa_email_address: Sequence[str],
+    email_2fa_password: Sequence[str],
+    sms_2fa_sender: Sequence[str],
+    totp_2fa_seed: Sequence[str],
+    sboms: Sequence[BinaryIO],
+    api_schema: Optional[BinaryIO],
+    filtered_url_regexes: Sequence[str],
+    scope_urls_regexes: Sequence[str],
+    proxy: Optional[str],
+    qps: Optional[str],
+    ui_prompt_ids: Sequence[int],
+    ui_prompt_names: Sequence[str],
+    ui_prompt_actions: Sequence[str],
     source: str | None = None,
     repository: str | None = None,
     pr_number: str | None = None,
@@ -253,7 +256,7 @@ def run(
         )
         raise click.exceptions.Exit(2)
 
-    ci_logger = CI_LOGGER.get(log_flavor)()
+    ci_logger = CI_LOGGER[log_flavor]()
 
     if len(test_credentials_login) != len(test_credentials_password):
         ci_logger.error("Login and password credentials are not matching count.")
@@ -319,11 +322,11 @@ def run(
 
 def apply_break_scan_risk_rating(
     break_on_risk_rating: str,
-    scan_id: int,
+    scan_id: int | str,
     max_wait_minutes: int,
     runner: authenticated_runner.AuthenticatedAPIRunner,
     ci_logger: logger.Logger,
-):
+) -> None:
     """Wait for the scan to finish and raise an exception if its risk is higher than the defined value."""
     if risk_rating.RiskRating.has_value(break_on_risk_rating.upper()):
         # run the check on a separate process and join it with a timeout. An exception is raised after the timeout.
@@ -351,7 +354,7 @@ def apply_break_scan_risk_rating(
 
 
 def _check_scan_periodically(
-    runner: authenticated_runner.AuthenticatedAPIRunner, scan_id: int
+    runner: authenticated_runner.AuthenticatedAPIRunner, scan_id: int | str
 ) -> None:
     """Retrieve the scan progress using the API and wait if the progress is different than done"""
     scan_done = False
@@ -364,7 +367,7 @@ def _check_scan_periodically(
 
 
 def _check_scan_risk_rating(
-    scan_risk_rating: str, break_on_risk_rating, ci_logger: logger.Logger
+    scan_risk_rating: str, break_on_risk_rating: str, ci_logger: logger.Logger
 ) -> None:
     """Compare the scan risk and raise an exception if the scan risk is higher than the defined value"""
     if _is_scan_risk_rating_higher(scan_risk_rating, break_on_risk_rating):
@@ -387,7 +390,7 @@ def _is_scan_risk_rating_higher(
 
 def _handle_scan_timeout(
     runner: authenticated_runner.AuthenticatedAPIRunner,
-    scan_id: int,
+    scan_id: int | str,
     break_on_risk_rating: str,
     ci_logger: logger.Logger,
 ) -> None:

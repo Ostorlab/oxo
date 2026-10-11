@@ -2,7 +2,7 @@
 This module takes care of preparing a file of type .IPA before calling the create mobile scan API.
 """
 
-import io
+from typing import BinaryIO
 
 import click
 
@@ -14,6 +14,6 @@ from ostorlab.cli.ci_scan.run.assets import mobile
 @run.run.command()
 @click.argument("file", type=click.File(mode="rb"), required=True)
 @click.pass_context
-def ios_ipa(ctx: click.core.Context, file: io.FileIO):
+def ios_ipa(ctx: click.core.Context, file: BinaryIO) -> None:
     """Create scan for iOS .IPA package file."""
     mobile.run_mobile_scan(ctx, file, scan_create_api.MobileAssetType.IOS)

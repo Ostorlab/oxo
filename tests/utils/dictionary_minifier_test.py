@@ -5,7 +5,7 @@ import json
 from ostorlab.utils import dictionary_minifier
 
 
-def testMinifyDict_whenSimpleDict_shouldMinifyStringValues():
+def testMinifyDict_whenSimpleDict_shouldMinifyStringValues() -> None:
     """Ensure the minify dict method return correct values for a simple dictionary."""
     input_dict = {
         "key1": "very long string value.....",
@@ -25,7 +25,7 @@ def testMinifyDict_whenSimpleDict_shouldMinifyStringValues():
     }
 
 
-def testMinifyDict_whenNestedDict_shouldMinifyStringValues():
+def testMinifyDict_whenNestedDict_shouldMinifyStringValues() -> None:
     """Ensure the minify dict method return correct values for nested dictionaries."""
     input_dict = {
         "key1": "very long string value.....",
@@ -45,7 +45,7 @@ def testMinifyDict_whenNestedDict_shouldMinifyStringValues():
     }
 
 
-def testMinifyDict_whenNestedDictsAndList_shouldMinifyStringValues():
+def testMinifyDict_whenNestedDictsAndList_shouldMinifyStringValues() -> None:
     """Ensure the minify dict method return correct values for nested dictionaries and lists."""
     input_dict = {
         "key1": "very long string value.....",
@@ -82,7 +82,7 @@ def testMinifyDict_whenNestedDictsAndList_shouldMinifyStringValues():
     }
 
 
-def testMinifyDict_whenBytesValues_shouldConvertToStringAndPassJsonEncoding():
+def testMinifyDict_whenBytesValues_shouldConvertToStringAndPassJsonEncoding() -> None:
     """Ensure the minify dict method returns a json encodable dictionary."""
     input_dict = {"key1": b"very long string value....."}
     dictionary_minifier.TRUNCATE_SIZE = 3

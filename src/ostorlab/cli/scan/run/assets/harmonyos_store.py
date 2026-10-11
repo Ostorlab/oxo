@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="harmonyos-store")
 @click.option("--bundle-name", multiple=True, required=False)
 @click.pass_context
-def harmonyos_store(
-    ctx: click.core.Context, bundle_name: tuple[str] | None = ()
-) -> None:
+def harmonyos_store(ctx: click.core.Context, bundle_name: tuple[str, ...] = ()) -> None:
     """Run scan for a bundle_name."""
     runtime = ctx.obj["runtime"]
     assets = []

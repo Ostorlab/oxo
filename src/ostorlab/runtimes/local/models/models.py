@@ -1,5 +1,7 @@
 """models contain the database engine logic and all the db models and the related operations."""
 
+from __future__ import annotations
+
 import datetime
 import enum
 import ipaddress
@@ -9,6 +11,7 @@ import pathlib
 import struct
 import threading
 import types
+import typing
 import uuid
 from typing import Any
 from typing import ClassVar
@@ -40,6 +43,7 @@ from ostorlab.assets import multi_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local.models import utils
+from ostorlab.utils import definitions as utils_definitions
 from ostorlab.utils import risk_rating as risk_rating_utils
 
 ENGINE_URL = f"sqlite:///{config_manager.ConfigurationManager().conf_path}/db.sqlite"
@@ -84,15 +88,41 @@ class AssetTypeEnum(enum.Enum):
     FILE = "FILE"
 
 
+class AgentGroupArgument(typing.Protocol):
+    """Argument fields consumed when persisting an agent group."""
+
+    @property
+    def name(self) -> str: ...
+
+    @property
+    def type(self) -> str: ...
+
+    @property
+    def description(self) -> typing.Optional[str]: ...
+
+    @property
+    def value(self) -> utils_definitions.ArgumentValue: ...
+
+
+class AgentGroupAgent(typing.Protocol):
+    """Agent fields shared by runtime settings and API inputs."""
+
+    @property
+    def key(self) -> str: ...
+
+    @property
+    def args(self) -> typing.Sequence[AgentGroupArgument]: ...
+
+
 class Database:
     """Handles all Database instantiation and calls."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Constructs the database engine."""
         self._db_engine = sqlalchemy.create_engine(
             ENGINE_URL, connect_args={"check_same_thread": False}
         )
-        self._db_session = None
+        self._db_session: typing.Optional[orm.Session] = None
         self._alembic_ini_path = (
             pathlib.Path(__file__).parent.absolute() / "alembic.ini"
         )
@@ -107,9 +137,9 @@ class Database:
 
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_traceback: types.TracebackType | None,
+        exc_type: typing.Optional[type[BaseException]],
+        exc_val: typing.Optional[BaseException],
+        exc_traceback: typing.Optional[types.TracebackType],
     ) -> None:
         """Context manager exit method, responsible for closing the local database session"""
         if self._db_session is not None:
@@ -157,13 +187,13 @@ class Database:
         else:
             return self._db_session
 
-    def create_db_tables(self):
+    def create_db_tables(self) -> None:
         """Create the database tables."""
         with self._db_engine.begin() as conn:
             metadata.create_all(conn)
             logger.info("Tables created")
 
-    def drop_db_tables(self):
+    def drop_db_tables(self) -> None:
         """Drop the database tables."""
         metadata.drop_all(self._db_engine)
         logger.info("Tables dropped")
@@ -173,7 +203,7 @@ class Scan(Base):
     """The Scan model"""
 
     __tablename__ = "scan"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String(255))
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     progress = sqlalchemy.Column(sqlalchemy.Enum(ScanProgress))
@@ -184,10 +214,10 @@ class Scan(Base):
 
     @staticmethod
     def create(
-        title: str = "",
-        agent_group_id: int | None = None,
-        progress: sqlalchemy.Enum(ScanProgress) = ScanProgress.NOT_STARTED,
-    ) -> "Scan":
+        title: typing.Optional[str] = "",
+        agent_group_id: typing.Optional[int] = None,
+        progress: ScanProgress = ScanProgress.NOT_STARTED,
+    ) -> Scan:
         """Persist the scan in the database.
 
         Args:
@@ -213,7 +243,7 @@ class Vulnerability(Base):
     """The Vulnerability model"""
 
     __tablename__ = "vulnerability"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     technical_detail = sqlalchemy.Column(sqlalchemy.Text)
     exploitation_detail = sqlalchemy.Column(sqlalchemy.Text)
     post_exploitation_detail = sqlalchemy.Column(sqlalchemy.Text)
@@ -232,7 +262,9 @@ class Vulnerability(Base):
     location = sqlalchemy.Column(sqlalchemy.Text)
 
     @staticmethod
-    def _prepare_references_markdown(references: list[dict[str, str]]) -> str:
+    def _prepare_references_markdown(
+        references: typing.Optional[list[dict[str, str]]],
+    ) -> str:
         """Returns a markdown display of the references of a vulnerability."""
         if references is None or len(references) == 0:
             return ""
@@ -247,7 +279,9 @@ class Vulnerability(Base):
         return references_markdwon_value
 
     @staticmethod
-    def _prepare_vuln_location_markdown(location: dict[str, Any]) -> str:
+    def _prepare_vuln_location_markdown(
+        location: typing.Optional[dict[str, Any]],
+    ) -> str:
         """Returns a markdown display of the exact target where the vulnerability was found."""
         if location is None:
             return ""
@@ -288,13 +322,13 @@ class Vulnerability(Base):
         recommendation: str,
         technical_detail: str,
         risk_rating: str,
-        exploitation_detail: str | None = None,
-        post_exploitation_detail: str | None = None,
-        cvss_v3_vector: str | None = None,
-        dna: str | None = None,
-        references: list[dict[str, str]] | None = None,
-        location: dict[str, Any] | None = None,
-    ):
+        exploitation_detail: typing.Optional[str] = None,
+        post_exploitation_detail: typing.Optional[str] = None,
+        cvss_v3_vector: typing.Optional[str] = None,
+        dna: typing.Optional[str] = None,
+        references: typing.Optional[list[dict[str, str]]] = None,
+        location: typing.Optional[dict[str, Any]] = None,
+    ) -> Vulnerability:
         """Persist the vulnerability in the database.
 
         Args:
@@ -337,17 +371,25 @@ class Vulnerability(Base):
             session.add(vuln)
             session.commit()
 
-            scan = session.query(Scan).get(scan_id)
-            scan_vulns = session.query(Vulnerability).filter_by(scan_id=scan_id).all()
+            scan = typing.cast(
+                Scan, typing.cast("orm.Query[Scan]", session.query(Scan)).get(scan_id)
+            )
+            scan_vulns = (
+                typing.cast("orm.Query[Vulnerability]", session.query(Vulnerability))
+                .filter_by(scan_id=scan_id)
+                .all()
+            )
 
             scan.risk_rating = min(
                 scan_vulns,
-                key=lambda vuln: risk_rating_utils.RATINGS_ORDER[vuln.risk_rating.name],
+                key=lambda vuln: risk_rating_utils.RATINGS_ORDER[
+                    typing.cast(risk_rating_utils.RiskRating, vuln.risk_rating).name
+                ],
             ).risk_rating
             session.merge(scan)
             session.commit()
 
-        for reference in references:
+        for reference in references if references is not None else []:
             Reference.create(
                 title=reference.get("title", ""),
                 url=reference.get("url", ""),
@@ -361,14 +403,14 @@ class ScanStatus(Base):
     """The Scan Status model"""
 
     __tablename__ = "scan_status"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
     key = sqlalchemy.Column(sqlalchemy.String(255))
     value = sqlalchemy.Column(sqlalchemy.Text)
     scan_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("scan.id"))
 
     @staticmethod
-    def create(key: str, value: str, scan_id: int):
+    def create(key: str, value: str, scan_id: int) -> ScanStatus:
         """Persist the scan status in the database.
 
         Args:
@@ -393,7 +435,7 @@ class Reference(Base):
     """The Reference model"""
 
     __tablename__ = "reference"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     title = sqlalchemy.Column(sqlalchemy.String(255))
     url = sqlalchemy.Column(sqlalchemy.String(4096))
     vulnerability_id = sqlalchemy.Column(
@@ -401,7 +443,7 @@ class Reference(Base):
     )
 
     @staticmethod
-    def create(title: str, url: str, vulnerability_id: int) -> "Reference":
+    def create(title: str, url: str, vulnerability_id: int) -> Reference:
         """Persist the reference in the database.
 
         Args:
@@ -422,15 +464,15 @@ class Agent(Base):
     """The Agent model"""
 
     __tablename__ = "agent"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     key = sqlalchemy.Column(sqlalchemy.String(255))
 
-    agent_groups = orm.relationship(
+    agent_groups: orm.Mapped[list[AgentGroup]] = orm.relationship(
         "AgentGroup", secondary="agent_group_mapping", back_populates="agents"
     )
 
     @staticmethod
-    def create(key: str) -> "Agent":
+    def create(key: str) -> Agent:
         """Persist the agent in the database.
 
         Args:
@@ -449,7 +491,7 @@ class AgentArgument(Base):
     """The Agent Argument model"""
 
     __tablename__ = "agent_argument"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.String(255))
     type = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
@@ -462,9 +504,11 @@ class AgentArgument(Base):
         agent_id: int,
         name: str,
         type: str,
-        description: str | None = None,
-        value: bytes | float | str | bool | list | dict | None = None,
-    ) -> "AgentArgument":
+        description: typing.Optional[str] = None,
+        value: typing.Optional[
+            bytes | float | str | bool | list[Any] | dict[str, Any]
+        ] = None,
+    ) -> AgentArgument:
         """Persist the agent argument in the database.
 
         Args:
@@ -483,7 +527,7 @@ class AgentArgument(Base):
             type=type,
             description=description,
             value=value
-            if isinstance(value, bytes) is True or value is None
+            if isinstance(value, bytes) or value is None
             else AgentArgument.to_bytes(type, value),
         )
         with Database() as session:
@@ -492,10 +536,13 @@ class AgentArgument(Base):
             return agent_argument
 
     @staticmethod
-    def to_bytes(type: str, value: float | str | bool | list | dict | None) -> bytes:
+    def to_bytes(
+        type: str,
+        value: typing.Optional[float | str | bool | list[Any] | dict[str, Any]],
+    ) -> bytes:
         """Convert the value to bytes."""
         if type == "string":
-            return value.encode(encoding="utf-8")
+            return typing.cast(str, value).encode(encoding="utf-8")
         elif type in ("boolean", "bool"):
             return (1 if value is True else 0).to_bytes(1, byteorder="big")
         elif type == "number":
@@ -527,15 +574,15 @@ class AssetType(Base):
     """The Asset Type model"""
 
     __tablename__ = "asset_type"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     type = sqlalchemy.Column(sqlalchemy.Enum(AssetTypeEnum))
 
-    asset_agent_groups = orm.relationship(
+    asset_agent_groups: orm.Mapped[list[AgentGroup]] = orm.relationship(
         "AgentGroup", secondary="agent_group_asset_type", back_populates="asset_types"
     )
 
     @staticmethod
-    def create(type: AssetTypeEnum) -> "AssetType":
+    def create(type: AssetTypeEnum) -> AssetType:
         """Persist the asset type in the database.
 
         Args:
@@ -554,16 +601,16 @@ class AgentGroup(Base):
     """The Agent Group model"""
 
     __tablename__ = "agent_group"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.String(255))
     description = sqlalchemy.Column(sqlalchemy.Text)
     created_time = sqlalchemy.Column(sqlalchemy.DateTime)
 
-    agents = orm.relationship(
+    agents: orm.Mapped[list[Agent]] = orm.relationship(
         "Agent", secondary="agent_group_mapping", back_populates="agent_groups"
     )
 
-    asset_types = orm.relationship(
+    asset_types: orm.Mapped[list[AssetType]] = orm.relationship(
         "AssetType",
         secondary="agent_group_asset_type",
         back_populates="asset_agent_groups",
@@ -571,11 +618,11 @@ class AgentGroup(Base):
 
     @staticmethod
     def create(
-        description: str,
-        agents: Any,
-        name: str | None = None,
-        asset_types: list[AssetTypeEnum] | None = None,
-    ) -> "AgentGroup":
+        description: typing.Optional[str],
+        agents: typing.Sequence[AgentGroupAgent],
+        name: typing.Optional[str] = None,
+        asset_types: typing.Optional[list[AssetTypeEnum]] = None,
+    ) -> AgentGroup:
         """Persist the agent group in the database.
 
         Args:
@@ -590,7 +637,9 @@ class AgentGroup(Base):
         with Database() as session:
             for asset_type in asset_types or []:
                 asset_type_model = (
-                    session.query(AssetType).filter_by(type=asset_type).first()
+                    typing.cast("orm.Query[AssetType]", session.query(AssetType))
+                    .filter_by(type=asset_type)
+                    .first()
                 )
                 if asset_type_model is None:
                     asset_type_model = AssetType.create(type=asset_type)
@@ -622,8 +671,8 @@ class AgentGroup(Base):
     @staticmethod
     def create_from_agent_group_definition(
         agent_group_definition: definitions.AgentGroupDefinition,
-        asset_types: list[AssetTypeEnum] | None = None,
-    ) -> "AgentGroup":
+        asset_types: typing.Optional[list[AssetTypeEnum]] = None,
+    ) -> AgentGroup:
         """Create an agent group from an agent group definition.
 
         Args:
@@ -660,7 +709,7 @@ class AgentGroup(Base):
             return agent_group
 
     @staticmethod
-    def create_from_directory(agent_groups_path: pathlib.Path) -> list["AgentGroup"]:
+    def create_from_directory(agent_groups_path: pathlib.Path) -> list[AgentGroup]:
         """Create agent groups from a directory.
 
         Args:
@@ -681,7 +730,9 @@ class AgentGroup(Base):
                             definitions.AgentGroupDefinition.from_yaml(file)
                         )
                         count_agent_group = (
-                            session.query(AgentGroup)
+                            typing.cast(
+                                "orm.Query[AgentGroup]", session.query(AgentGroup)
+                            )
                             .filter_by(
                                 name=agent_group_definition.name,
                             )
@@ -713,15 +764,15 @@ class AgentGroupMapping(Base):
     """The Agent Group Mapping model"""
 
     __tablename__ = "agent_group_mapping"
-    agent_id = sqlalchemy.Column(
+    agent_id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent.id"), primary_key=True
     )
-    agent_group_id = sqlalchemy.Column(
+    agent_group_id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id"), primary_key=True
     )
 
     @staticmethod
-    def create(agent_id: int, agent_group_id: int) -> "AgentGroupMapping":
+    def create(agent_id: int, agent_group_id: int) -> AgentGroupMapping:
         """Persist the agent group mapping in the database.
 
         Args:
@@ -743,15 +794,15 @@ class AgentGroupAssetType(Base):
     """The Agent Group Asset Type model"""
 
     __tablename__ = "agent_group_asset_type"
-    agent_group_id = sqlalchemy.Column(
+    agent_group_id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("agent_group.id"), primary_key=True
     )
-    asset_type_id = sqlalchemy.Column(
+    asset_type_id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset_type.id"), primary_key=True
     )
 
     @staticmethod
-    def create(agent_group_id: int, asset_type_id: int) -> "AgentGroupAssetType":
+    def create(agent_group_id: int, asset_type_id: int) -> AgentGroupAssetType:
         """Persist the agent group asset type in the database.
 
         Args:
@@ -773,12 +824,12 @@ class APIKey(Base):
     """The API Key model"""
 
     __tablename__ = "api_key"
-    key = sqlalchemy.Column(
+    key: orm.Mapped[str] = sqlalchemy.Column(
         sqlalchemy.String(150), unique=True, nullable=False, primary_key=True
     )
 
     @staticmethod
-    def create() -> "APIKey":
+    def create() -> APIKey:
         """Persist the API key in the database.
 
         Returns:
@@ -791,14 +842,14 @@ class APIKey(Base):
             return api_key
 
     @staticmethod
-    def get_or_create() -> "APIKey":
+    def get_or_create() -> APIKey:
         """Get or create the API key in the database.
 
         Returns:
             APIKey object.
         """
         with Database() as session:
-            api_key = session.query(APIKey).first()
+            api_key = typing.cast("orm.Query[APIKey]", session.query(APIKey)).first()
             if api_key is None:
                 api_key = APIKey.create()
             return api_key
@@ -813,14 +864,18 @@ class APIKey(Base):
             Boolean.
         """
         with Database() as session:
-            api_key = session.query(APIKey).filter_by(key=api_key).first()
-            return api_key is not None
+            stored_api_key = (
+                typing.cast("orm.Query[APIKey]", session.query(APIKey))
+                .filter_by(key=api_key)
+                .first()
+            )
+            return stored_api_key is not None
 
     @staticmethod
-    def refresh() -> "APIKey":
+    def refresh() -> APIKey:
         """Revoke the current API key and create a new one."""
         with Database() as session:
-            session.query(APIKey).delete()
+            typing.cast("orm.Query[APIKey]", session.query(APIKey)).delete()
             session.commit()
             api_key = APIKey.create()
             return api_key
@@ -828,7 +883,7 @@ class APIKey(Base):
 
 class Asset(Base):
     __tablename__ = "asset"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     type = sqlalchemy.Column(sqlalchemy.String(50))
     __mapper_args__: ClassVar[dict[str, Any]] = {
         "polymorphic_identity": "asset",
@@ -840,13 +895,14 @@ class Asset(Base):
 
     @staticmethod
     def _create_from_assets_definition(
-        assets: list[base_asset.Asset] | None, scan_id: int | None = None
+        assets: typing.Optional[list[base_asset.Asset]],
+        scan_id: typing.Optional[int] = None,
     ) -> None:
         """Create the assets from the asset definition without multi_asset handling."""
         if assets is None or len(assets) == 0:
             return
 
-        networks: list[dict[str, str | int]] = []
+        networks: list[dict[str, typing.Optional[str | int]]] = []
         links: list[dict[str, str]] = []
         domains: list[dict[str, str]] = []
         for asset in assets:
@@ -888,7 +944,8 @@ class Asset(Base):
 
     @staticmethod
     def create_from_assets_definition(
-        assets: list[base_asset.Asset] | None, scan_id: int | None = None
+        assets: typing.Optional[list[base_asset.Asset]],
+        scan_id: typing.Optional[int] = None,
     ) -> None:
         """Create the assets from the asset definition.
 
@@ -913,7 +970,7 @@ class Asset(Base):
 
 class AndroidFile(Asset):
     __tablename__ = "android_file"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
     package_name = sqlalchemy.Column(sqlalchemy.String(255))
@@ -925,8 +982,10 @@ class AndroidFile(Asset):
 
     @staticmethod
     def create(
-        package_name: str = "", path: str = "", scan_id: int | None = None
-    ) -> "AndroidFile":
+        package_name: typing.Optional[str] = "",
+        path: typing.Optional[str] = "",
+        scan_id: typing.Optional[int] = None,
+    ) -> AndroidFile:
         """Persist the android file information in the database.
 
         Args:
@@ -950,7 +1009,7 @@ class AndroidFile(Asset):
 
 class AndroidStore(Asset):
     __tablename__ = "android_store"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
     package_name = sqlalchemy.Column(sqlalchemy.String(255))
@@ -962,10 +1021,10 @@ class AndroidStore(Asset):
 
     @staticmethod
     def create(
-        package_name: str = "",
-        application_name: str = "",
-        scan_id: int | None = None,
-    ) -> "AndroidStore":
+        package_name: typing.Optional[str] = "",
+        application_name: typing.Optional[str] = "",
+        scan_id: typing.Optional[int] = None,
+    ) -> AndroidStore:
         """Persist the android store information in the database.
 
         Args:
@@ -989,7 +1048,7 @@ class AndroidStore(Asset):
 
 class IosFile(Asset):
     __tablename__ = "ios_file"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
     bundle_id = sqlalchemy.Column(sqlalchemy.String(255))
@@ -1001,8 +1060,10 @@ class IosFile(Asset):
 
     @staticmethod
     def create(
-        bundle_id: str = "", path: str = "", scan_id: int | None = None
-    ) -> "IosFile":
+        bundle_id: typing.Optional[str] = "",
+        path: typing.Optional[str] = "",
+        scan_id: typing.Optional[int] = None,
+    ) -> IosFile:
         """Persist the iOS file information in the database.
 
         Args:
@@ -1026,7 +1087,7 @@ class IosFile(Asset):
 
 class IosStore(Asset):
     __tablename__ = "ios_store"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
     bundle_id = sqlalchemy.Column(sqlalchemy.String(255))
@@ -1038,8 +1099,10 @@ class IosStore(Asset):
 
     @staticmethod
     def create(
-        bundle_id: str = "", application_name: str = "", scan_id: int | None = None
-    ) -> "IosStore":
+        bundle_id: typing.Optional[str] = "",
+        application_name: typing.Optional[str] = "",
+        scan_id: typing.Optional[int] = None,
+    ) -> IosStore:
         """Persist the iOS store information in the database.
 
         Args:
@@ -1063,7 +1126,7 @@ class IosStore(Asset):
 
 class Link(Base):
     __tablename__ = "link"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     url = sqlalchemy.Column(sqlalchemy.String(4096))
     method = sqlalchemy.Column(sqlalchemy.String(8))
     urls_asset_id = sqlalchemy.Column(
@@ -1071,7 +1134,9 @@ class Link(Base):
     )
 
     @staticmethod
-    def create(url: str, method: str, urls_asset_id: int | None = None) -> "Link":
+    def create(
+        url: str, method: str, urls_asset_id: typing.Optional[int] = None
+    ) -> Link:
         """Persist the link information in the database.
 
         Args:
@@ -1091,7 +1156,7 @@ class Link(Base):
 
 class Urls(Asset):
     __tablename__ = "urls"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
 
@@ -1100,7 +1165,9 @@ class Urls(Asset):
     }
 
     @staticmethod
-    def create(links: list[dict[str, str]], scan_id: int | None = None) -> "Urls":
+    def create(
+        links: list[dict[str, str]], scan_id: typing.Optional[int] = None
+    ) -> Urls:
         """Persist the URL information in the database.
 
         Args:
@@ -1135,14 +1202,18 @@ class Urls(Asset):
             urls_asset_id: The URL id.
         """
         with Database() as session:
-            session.query(Urls).filter_by(id=urls_asset_id).delete()
-            session.query(Link).filter_by(urls_asset_id=urls_asset_id).delete()
+            typing.cast("orm.Query[Urls]", session.query(Urls)).filter_by(
+                id=urls_asset_id
+            ).delete()
+            typing.cast("orm.Query[Link]", session.query(Link)).filter_by(
+                urls_asset_id=urls_asset_id
+            ).delete()
             session.commit()
 
 
 class IPRange(Base):
     __tablename__ = "ip"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     host = sqlalchemy.Column(sqlalchemy.String(50))
     mask = sqlalchemy.Column(sqlalchemy.String(50))
     network_asset_id = sqlalchemy.Column(
@@ -1150,7 +1221,9 @@ class IPRange(Base):
     )
 
     @staticmethod
-    def create(host: str, mask: str, network_asset_id: int | None = None) -> "IPRange":
+    def create(
+        host: str, mask: str, network_asset_id: typing.Optional[int] = None
+    ) -> IPRange:
         """Persist the IP information in the database.
 
         Args:
@@ -1170,7 +1243,7 @@ class IPRange(Base):
 
 class Network(Asset):
     __tablename__ = "network"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
 
@@ -1180,8 +1253,9 @@ class Network(Asset):
 
     @staticmethod
     def create(
-        networks: list[dict[str, str | int]], scan_id: int | None = None
-    ) -> "Network":
+        networks: list[dict[str, typing.Optional[str | int]]],
+        scan_id: typing.Optional[int] = None,
+    ) -> Network:
         """Persist the Network information in the database.
 
         Args:
@@ -1198,9 +1272,17 @@ class Network(Asset):
 
             network_items = [
                 IPRange(
-                    host=network.get("host"),
-                    mask=network.get(
-                        "mask", str(ipaddress.ip_network(network.get("host")).prefixlen)
+                    host=typing.cast(typing.Optional[str], network.get("host")),
+                    mask=typing.cast(
+                        typing.Optional[str],
+                        network.get(
+                            "mask",
+                            str(
+                                ipaddress.ip_network(
+                                    typing.cast(str, network.get("host"))
+                                ).prefixlen
+                            ),
+                        ),
                     ),
                     network_asset_id=network_instance.id,
                 )
@@ -1218,21 +1300,25 @@ class Network(Asset):
             network_id: The network id.
         """
         with Database() as session:
-            session.query(Network).filter_by(id=network_id).delete()
-            session.query(IPRange).filter_by(network_asset_id=network_id).delete()
+            typing.cast("orm.Query[Network]", session.query(Network)).filter_by(
+                id=network_id
+            ).delete()
+            typing.cast("orm.Query[IPRange]", session.query(IPRange)).filter_by(
+                network_asset_id=network_id
+            ).delete()
             session.commit()
 
 
 class DomainName(Base):
     __tablename__ = "domain_name"
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
+    id: orm.Mapped[int] = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.String(255))
     domain_asset_id = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("domain_asset.id")
     )
 
     @staticmethod
-    def create(name: str, domain_asset_id: int | None = None) -> "DomainName":
+    def create(name: str, domain_asset_id: typing.Optional[int] = None) -> DomainName:
         """Persist the domain name information in the database.
 
         Args:
@@ -1251,7 +1337,7 @@ class DomainName(Base):
 
 class DomainAsset(Asset):
     __tablename__ = "domain_asset"
-    id = sqlalchemy.Column(
+    id: orm.Mapped[int] = sqlalchemy.Column(
         sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
     )
 
@@ -1261,8 +1347,8 @@ class DomainAsset(Asset):
 
     @staticmethod
     def create(
-        domains: list[dict[str, str]], scan_id: int | None = None
-    ) -> "DomainAsset":
+        domains: list[dict[str, str]], scan_id: typing.Optional[int] = None
+    ) -> DomainAsset:
         """Persist the domain asset information in the database.
 
         Args:
@@ -1279,7 +1365,8 @@ class DomainAsset(Asset):
 
             for domain in domains:
                 DomainName.create(
-                    name=domain.get("name"), domain_asset_id=domain_asset_instance.id
+                    name=typing.cast(str, domain.get("name")),
+                    domain_asset_id=domain_asset_instance.id,
                 )
             return domain_asset_instance
 
@@ -1291,8 +1378,10 @@ class DomainAsset(Asset):
             domain_asset_id: The domain asset id.
         """
         with Database() as session:
-            session.query(DomainAsset).filter_by(id=domain_asset_id).delete()
-            session.query(DomainName).filter_by(
+            typing.cast("orm.Query[DomainAsset]", session.query(DomainAsset)).filter_by(
+                id=domain_asset_id
+            ).delete()
+            typing.cast("orm.Query[DomainName]", session.query(DomainName)).filter_by(
                 domain_asset_id=domain_asset_id
             ).delete()
             session.commit()

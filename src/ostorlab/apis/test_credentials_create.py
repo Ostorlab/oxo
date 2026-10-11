@@ -119,7 +119,7 @@ class TestCredentialTOTP2FA(TestCredential):
 class CreateTestCredentialAPIRequest(request.APIRequest):
     """Create mobile scan API from a file."""
 
-    def __init__(self, test_credential: TestCredential):
+    def __init__(self, test_credential: TestCredential) -> None:
         self._test_credential = test_credential
 
     @property

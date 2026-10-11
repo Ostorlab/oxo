@@ -1,7 +1,7 @@
 """Agent and Agent group definitions and settings dataclasses."""
 
 import dataclasses
-import io
+from typing import IO
 from typing import Any
 
 from ostorlab.agent.schema import loader
@@ -36,7 +36,7 @@ class AgentDefinition:
     supported_architectures: list[str] | None = None
 
     @classmethod
-    def from_yaml(cls, file: io.TextIOWrapper) -> "AgentDefinition":
+    def from_yaml(cls, file: IO[str] | IO[bytes]) -> "AgentDefinition":
         """Constructs an agent definition from a yaml definition file.
 
         Args:

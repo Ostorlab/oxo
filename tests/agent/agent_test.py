@@ -1,6 +1,7 @@
 """Agent class unit tests."""
 
 import base64
+import collections.abc
 import datetime
 import json
 import logging
@@ -10,7 +11,9 @@ import pathlib
 import signal
 import sys
 import time
+import typing
 import uuid
+from multiprocessing import synchronize
 
 import pytest
 from pytest_mock import plugin
@@ -19,6 +22,8 @@ from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message as agent_message
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.testing import agent as agent_testing
 from ostorlab.utils import definitions as utils_definitions
 from ostorlab.utils import system
@@ -30,7 +35,7 @@ def _run_agent_until_signal(
     agent_definition: agent_definitions.AgentDefinition,
     agent_settings_proto: bytes,
     message: agent_message.Message,
-    mp_event,
+    mp_event: synchronize.Event,
 ) -> None:
     """Run the test agent in a separate process until it is terminated."""
 
@@ -39,7 +44,12 @@ def _run_agent_until_signal(
     class TestAgent(agent.Agent):
         """Helper class to test Agent at exit implementation."""
 
-        def __init__(self, agent_definition, agent_settings, mp_event) -> None:
+        def __init__(
+            self,
+            agent_definition: agent_definitions.AgentDefinition,
+            agent_settings: runtime_definitions.AgentSettings,
+            mp_event: synchronize.Event,
+        ) -> None:
             super().__init__(agent_definition, agent_settings)
             self.mp_event = mp_event
 
@@ -61,8 +71,8 @@ def _run_agent_until_signal(
 @pytest.mark.timeout(60)
 @pytest.mark.docker
 def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt(
-    mq_service, redis_service
-):
+    mq_service: mq.LocalRabbitMQ, redis_service: local_redis_service.LocalRedis
+) -> None:
     """The setup of this test seems complicated, but it is the most robust implementation iteration.
 
     The test also tests for many things at the same time, like start and process lifecycle, message emit and message
@@ -124,14 +134,16 @@ def testAgent_whenAnAgentSendAMessageFromStartAgent_listeningToMessageReceivesIt
     assert mp_event.is_set() is True
 
 
-def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
+def testAgentMain_whenPassedArgsAreValid_runsAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test agent main with proper arguments, agent runs."""
 
     class SampleAgent(agent.Agent):
         """Sample agent"""
 
-    mocker.patch("ostorlab.agent.agent.Agent.__init__", return_value=None)
-    mocker.patch("ostorlab.agent.agent.Agent.run", return_value=None)
+    init_mock = mocker.patch("ostorlab.agent.agent.Agent.__init__", return_value=None)
+    run_mock = mocker.patch("ostorlab.agent.agent.Agent.run", return_value=None)
     mocker.patch.object(
         agent,
         "AGENT_DEFINITION_PATH",
@@ -142,28 +154,30 @@ def testAgentMain_whenPassedArgsAreValid_runsAgent(mocker):
         ["--settings", str(pathlib.Path(__file__).parent / "settings.binproto")]
     )
 
-    SampleAgent.run.assert_called()
-    SampleAgent.__init__.assert_called()
+    run_mock.assert_called()
+    init_mock.assert_called()
 
 
-def testAgentMain_withNonExistingFile_exits(mocker):
+def testAgentMain_withNonExistingFile_exits(mocker: plugin.MockerFixture) -> None:
     """Test agent when missing definition or settings files to ensure the command exits."""
 
     class SampleAgent(agent.Agent):
         """Sample agent"""
 
-    mocker.patch("ostorlab.agent.agent.Agent.__init__", return_value=None)
-    mocker.patch("ostorlab.agent.agent.Agent.run", return_value=None)
+    init_mock = mocker.patch("ostorlab.agent.agent.Agent.__init__", return_value=None)
+    run_mock = mocker.patch("ostorlab.agent.agent.Agent.run", return_value=None)
     with pytest.raises(SystemExit) as wrapper_exception:
         SampleAgent.main(["--definition", "random", "--settings", "random"])
 
-        SampleAgent.run.assert_not_called()
-        SampleAgent.__init__.assert_not_called()
+        run_mock.assert_not_called()
+        init_mock.assert_not_called()
         assert isinstance(wrapper_exception.type, SystemExit) is True
         assert wrapper_exception.value.code == 42
 
 
-def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(agent_mock):
+def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(
+    agent_mock: list[agent_message.Message],
+) -> None:
     class TestAgent(agent.Agent):
         """Test Agent"""
 
@@ -193,7 +207,9 @@ def testAgent_withDefaultAndSettingsArgs_returnsExpectedArgs(agent_mock):
     assert test_agent.args == {"color": "red", "speed": b"slow"}
 
 
-def testAgent_whenMaxPriorityProvided_raisesTypeError(mocker):
+def testAgent_whenMaxPriorityProvided_raisesTypeError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test agent init rejects unsupported explicit queue priority override."""
 
     mq_init = mocker.patch("ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.__init__")
@@ -218,12 +234,16 @@ def testAgent_whenMaxPriorityProvided_raisesTypeError(mocker):
     )
 
     with pytest.raises(TypeError):
-        TestAgent(agent_definition, agent_settings, max_priority=4)
+        typing.cast(collections.abc.Callable[..., agent.Agent], TestAgent)(
+            agent_definition, agent_settings, max_priority=4
+        )
 
     mq_init.assert_not_called()
 
 
-def testAgent_whenMaxPriorityNotProvided_defaultsToMqPriorityQueue(mocker):
+def testAgent_whenMaxPriorityNotProvided_defaultsToMqPriorityQueue(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test agent init always configures the MQ mixin with the hardcoded priority queue."""
 
     mq_init = mocker.patch("ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.__init__")
@@ -259,7 +279,9 @@ def testAgent_whenMaxPriorityNotProvided_defaultsToMqPriorityQueue(mocker):
 
 
 @pytest.mark.xfail(reason="OS-5119: Awaiting deprecation.")
-def testAgent_withArgMissingFromDefinition_raisesException(agent_mock):
+def testAgent_withArgMissingFromDefinition_raisesException(
+    agent_mock: list[agent_message.Message],
+) -> None:
     class TestAgent(agent.Agent):
         """Test Agent"""
 
@@ -331,7 +353,7 @@ def testEmit_whenEmitFromNoProcess_willSendTheAgentNameInControlAgents(
 
 
 def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
-    agent_run_mock: agent_testing.AgentRunInstance, mocker
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
 ) -> None:
     """When cyclic limit is set, the process should trigger a callback."""
 
@@ -379,7 +401,7 @@ def testProcessMessage_whenCyclicMaxIsSet_callbackCalled(
 
 
 def testProcessMessage_whenCyclicMaxIsSetFromDefaultProtoValue_callbackNotCalled(
-    agent_run_mock: agent_testing.AgentRunInstance, mocker
+    agent_run_mock: agent_testing.AgentRunInstance, mocker: plugin.MockerFixture
 ) -> None:
     """When cyclic limit is not set, the proto default value is 0, the agent behavior must not trigger a callback."""
 
@@ -563,7 +585,12 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
     class TestAgent(agent.Agent):
         """Helper class to test Agent at exit implementation."""
 
-        def __init__(self, agent_definition, agent_settings, mp_event) -> None:
+        def __init__(
+            self,
+            agent_definition: agent_definitions.AgentDefinition,
+            agent_settings: runtime_definitions.AgentSettings,
+            mp_event: synchronize.Event,
+        ) -> None:
             super().__init__(agent_definition, agent_settings)
             self.mp_event = mp_event
 
@@ -597,6 +624,7 @@ def testAgentAtExist_whenTerminationSignalIsSent_shouldInterceptSignalExecuteAtE
     mp_event.clear()
     agent_process.start()
     time.sleep(3)
+    assert agent_process.pid is not None
     os.kill(agent_process.pid, signal.SIGTERM)
     agent_process.join()
 
@@ -1065,7 +1093,7 @@ def testEmit_whenOutSelectorIsNotExact_emitsMessage(
 
 
 def testAgentMixin_whenServiceNameInSettings_usesItAsName(
-    agent_mock,
+    agent_mock: list[agent_message.Message],
 ) -> None:
     """When service_name is set in AgentSettings, it must be used as the MQ queue name so each
     named instance gets its own queue and receives all published messages instead of competing
@@ -1091,7 +1119,7 @@ def testAgentMixin_whenServiceNameInSettings_usesItAsName(
 
 
 def testAgentMixin_whenServiceNameNotInSettings_usesAgentDefinitionNameAsFallback(
-    agent_mock,
+    agent_mock: list[agent_message.Message],
 ) -> None:
     """Without service_name in AgentSettings the queue name falls back to the agent definition name."""
 
@@ -1146,7 +1174,7 @@ def testEmit_whenOutSelectorIsNotParent_dontEmitMessage(
 
 
 def testEmitRaw_whenMessagePriorityIsProvided_forwardsPriorityToMqSendMessage(
-    mocker,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test that emit_raw forwards the message priority to MQ publishing."""
 
@@ -1175,7 +1203,9 @@ def testEmitRaw_whenMessagePriorityIsProvided_forwardsPriorityToMqSendMessage(
     assert mock_send_message.call_args.args[1] is not None
 
 
-def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(mocker):
+def testSetupLogging_whenMachineNameIsProvided_addsToLogMetadata(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test the _setup_logging directly."""
     mock_client_instance = mocker.MagicMock()
     mocker.patch("google.cloud.logging.Client", return_value=mock_client_instance)

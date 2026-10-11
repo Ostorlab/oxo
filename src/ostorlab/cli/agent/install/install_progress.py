@@ -1,6 +1,8 @@
 """Display the agent install progress."""
 
 from collections.abc import Iterator
+from typing import Optional
+from typing import TypedDict
 
 from rich import progress
 
@@ -9,10 +11,25 @@ from ostorlab.cli import console as cli_console
 console = cli_console.Console()
 
 
+class ProgressDetail(TypedDict, total=False):
+    """Byte counts emitted by Docker for a layer."""
+
+    total: int
+    current: int
+
+
+class PullLog(TypedDict, total=False):
+    """A decoded Docker image pull progress event."""
+
+    id: str
+    status: str | list[str]
+    progressDetail: Optional[ProgressDetail]
+
+
 class AgentInstallProgress(progress.Progress):
     """Class responsible for displaying the progress of the agent installation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             "[progress.description]{task.description}",
             progress.BarColumn(bar_width=None),
@@ -25,7 +42,7 @@ class AgentInstallProgress(progress.Progress):
             progress.TimeRemainingColumn(),
         )
 
-    def display(self, logs_generator: Iterator[dict]) -> None:
+    def display(self, logs_generator: Iterator[PullLog]) -> None:
         """Display the progress of the agent install command.
 
         Args:

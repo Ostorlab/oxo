@@ -18,7 +18,10 @@ import signal
 import sys
 import threading
 import uuid
+from collections.abc import Callable
 from typing import Any
+from typing import Optional
+from typing import cast
 
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
@@ -50,10 +53,10 @@ class MaximumDepthProcessReachedError(exceptions.OstorlabError):
 
 
 def _setup_logging(
-    hostname: str,
+    hostname: Optional[str],
     agent_key: str,
     agent_version: str,
-    universe: str,
+    universe: Optional[str],
     host_hostname: str | None = None,
     service_name: str | None = None,
 ) -> None:
@@ -66,8 +69,15 @@ def _setup_logging(
             info = json.loads(
                 base64.b64decode(gcp_logging_credential.encode()).decode()
             )
-            credentials = service_account.Credentials.from_service_account_info(info)
-            client = google.cloud.logging.Client(credentials=credentials)
+            credentials_factory = cast(
+                Callable[[dict[str, Any]], service_account.Credentials],
+                service_account.Credentials.from_service_account_info,
+            )
+            credentials = credentials_factory(info)
+            client_factory = cast(
+                Callable[..., google.cloud.logging.Client], google.cloud.logging.Client
+            )
+            client = client_factory(credentials=credentials)
             labels = {
                 "agent_key": agent_key,
                 "agent_version": agent_version,
@@ -78,7 +88,7 @@ def _setup_logging(
                 labels["service_name"] = service_name
             if host_hostname is not None:
                 labels["host_hostname"] = host_hostname
-            client.setup_logging(labels=labels)
+            cast(Callable[..., None], client.setup_logging)(labels=labels)
         except ImportError:
             logger.error(
                 "Could not import Google Cloud Logging, install it with `pip install 'ostorlab[google-cloud-logging]'"
@@ -116,7 +126,8 @@ class AgentMixin(
         self.name = agent_definition.name
         self.in_selectors = (
             agent_settings.in_selectors
-            if len(agent_settings.in_selectors) > 0
+            if agent_settings.in_selectors is not None
+            and len(agent_settings.in_selectors) > 0
             else agent_definition.in_selectors
         )
         self.out_selectors = agent_definition.out_selectors
@@ -135,9 +146,9 @@ class AgentMixin(
         agent_mq_mixin.AgentMQMixin.__init__(
             self,
             name=queue_name,
-            keys=[f"{s}.#" for s in self.in_selectors],
-            url=self.bus_url,
-            topic=self.bus_exchange_topic,
+            keys=[f"{s}.#" for s in self.in_selectors or []],
+            url=cast(str, self.bus_url),
+            topic=cast(str, self.bus_exchange_topic),
         )
         agent_healthcheck_mixin.AgentHealthcheckMixin.__init__(
             self,
@@ -165,20 +176,22 @@ class AgentMixin(
         for a in self.definition.args:
             arguments[a["name"]] = a.get("value")
         # Override the default values from settings.
-        for a in self.settings.args:
+        for argument in self.settings.args:
             # Enforce that only declared arguments are accepted.
-            if a.name not in arguments:
+            if argument.name not in arguments:
                 # TODO(OS-5119): Change behavior to fail of the argument is missing from definition.
                 logger.warning(
                     "Argument %s is defined in the agent settings but not in the agent definition. "
                     "Please update your definition file or the agent will fail in the future.",
-                    a.name,
+                    argument.name,
                 )
 
-            if a.type == "binary":
-                arguments[a.name] = a.value
+            if argument.type == "binary":
+                arguments[argument.name] = argument.value
             else:
-                arguments[a.name] = json.loads(a.value.decode())
+                arguments[argument.name] = json.loads(
+                    cast(bytes, argument.value).decode()
+                )
 
         return arguments
 
@@ -274,8 +287,10 @@ class AgentMixin(
 
     def _is_valid_message(self) -> bool:
         """Check the message received is valid, currently only check for cyclic processing limit."""
-        control_agents: list[str] = self._control_message.data.get("control", {}).get(
-            "agents", []
+        control_agents: list[str] = (
+            cast(agent_message.Message, self._control_message)
+            .data.get("control", {})
+            .get("agents", [])
         )
         if (
             self.cyclic_processing_limit is not None
@@ -316,7 +331,7 @@ class AgentMixin(
         """
         raise NotImplementedError()
 
-    def _handle_signal(self, *args) -> None:
+    def _handle_signal(self, *args: object) -> None:
         """Call the Agent `at_exit` method responsible for executing cleanup
         in the case of unexpected agent termination.
         """

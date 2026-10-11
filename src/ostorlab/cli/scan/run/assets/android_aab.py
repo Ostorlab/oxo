@@ -1,8 +1,8 @@
 """Asset of type .AAB package file.
 This module takes care of preparing a file of type .aab before injecting it to the runtime instance."""
 
-import io
 import logging
+from typing import BinaryIO
 
 import click
 
@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def android_aab(
     ctx: click.core.Context,
-    file: tuple[io.FileIO] | None = (),
-    url: tuple[str] | None = (),
+    file: tuple[BinaryIO, ...] = (),
+    url: tuple[str, ...] = (),
 ) -> None:
     """Run scan for android .AAB package file."""
     runtime = ctx.obj["runtime"]

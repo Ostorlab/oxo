@@ -6,7 +6,7 @@ from ostorlab.apis import test_credentials_create as test_credentials_create_api
 from ostorlab.cli.ci_scan.run.assets import link
 
 
-def test_prepare_test_credentials_link_with_single_credential():
+def test_prepare_test_credentials_link_with_single_credential() -> None:
     """Test _prepare_test_credentials in link.py with only TOTP."""
     ctx = mock.MagicMock(spec=click.Context)
     ctx.obj = {

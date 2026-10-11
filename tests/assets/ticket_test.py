@@ -1,10 +1,11 @@
 """Unit tests for Ticket asset."""
 
 from ostorlab.agent.message import serializer
+from ostorlab.agent.message.proto.v3.report.ticket import ticket_pb2
 from ostorlab.assets import ticket
 
 
-def testTicketToProto_whenValidData_generatesProto():
+def testTicketToProto_whenValidData_generatesProto() -> None:
     asset = ticket.Ticket(
         title="Sample Ticket",
         ticket_id="TCK-123",
@@ -19,6 +20,7 @@ def testTicketToProto_whenValidData_generatesProto():
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize("v3.report.ticket", raw)
+    assert isinstance(unraw, ticket_pb2.Message)
     assert unraw.title == "Sample Ticket"
     assert unraw.ticket_id == "TCK-123"
     assert unraw.ticket_key == "PROJ-123"

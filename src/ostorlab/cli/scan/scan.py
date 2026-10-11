@@ -119,9 +119,10 @@ def scan(
         oxo scan stop <scan-id>\n
     """
     try:
+        exposed_ports: dict[int, int] | None = None
         if mq_exposed_ports is not None:
             exposed_ports_list = mq_exposed_ports.split(",")
-            mq_exposed_ports = {
+            exposed_ports = {
                 int(port.split(":")[0]): int(port.split(":")[1])
                 for port in exposed_ports_list
             }
@@ -137,7 +138,7 @@ def scan(
             redis_url=redis_url,
             tracing=tracing,
             tracing_collector_url=tracing_collector_url,
-            mq_exposed_ports=mq_exposed_ports,
+            mq_exposed_ports=exposed_ports,
             gcp_logging_credential=ctx.obj.get("gcp_logging_credential"),
         )
         ctx.obj["runtime"] = runtime_instance

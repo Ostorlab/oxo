@@ -21,7 +21,7 @@ from ostorlab.runtimes import registry
     required=True,
 )
 @click.pass_context
-def vulnz(ctx, runtime: str = "local") -> None:
+def vulnz(ctx: click.core.Context, runtime: str = "local") -> None:
     """You can use vulnz to list and describe vulnerabilities.\n"""
     try:
         runtime_instance = registry.select_runtime(

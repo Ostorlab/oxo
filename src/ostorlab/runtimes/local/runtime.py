@@ -4,9 +4,12 @@ The local runtime requires Docker Swarm to run robust long-running services with
 a local RabbitMQ.
 """
 
+from __future__ import annotations
+
 import builtins
 import logging
 import threading
+import typing
 from concurrent import futures
 
 import click
@@ -19,6 +22,7 @@ from docker.models import services as docker_models_services
 from rich import markdown
 from rich import panel
 from sqlalchemy import case
+from sqlalchemy import orm
 
 from ostorlab import exceptions
 from ostorlab.assets import asset as base_asset
@@ -74,7 +78,7 @@ class MissingAgentDefinition(exceptions.OstorlabError):
     """Agent definition is missing."""
 
 
-def _has_container_image(agent: definitions.AgentSettings):
+def _has_container_image(agent: definitions.AgentSettings) -> bool:
     """Check if container image is available"""
     return agent.container_image is not None
 
@@ -88,10 +92,15 @@ def _is_service_type_run(service: docker_models_services.Service) -> bool:
     Returns:
         Bool indicating if the service is run-once or long-running.
     """
-    return service.attrs["Spec"]["TaskTemplate"]["RestartPolicy"]["Condition"] == "none"
+    return (
+        typing.cast(
+            str, service.attrs["Spec"]["TaskTemplate"]["RestartPolicy"]["Condition"]
+        )
+        == "none"
+    )
 
 
-class LocalRuntime(runtime.Runtime):
+class LocalRuntime(runtime.Runtime[int | str]):
     """Local runtime runs agents locally using Docker Swarm.
     Local runtime starts a Vanilla RabbitMQ service, starts all the agents listed in the `AgentRunDefinition`, checks
     their status and then inject the target asset.
@@ -99,14 +108,14 @@ class LocalRuntime(runtime.Runtime):
 
     def __init__(
         self,
-        *args,
-        scan_id: str | None = None,
-        labels: dict[str, str] | None = None,
-        tracing: bool | None = False,
-        mq_exposed_ports: dict[int, int] | None = None,
-        gcp_logging_credential: str | None = None,
+        *args: object,
+        scan_id: typing.Optional[int | str] = None,
+        labels: typing.Optional[dict[str, str]] = None,
+        tracing: typing.Optional[bool] = False,
+        mq_exposed_ports: typing.Optional[dict[int, int]] = None,
+        gcp_logging_credential: typing.Optional[str] = None,
         run_default_agents: bool = True,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         super().__init__()
         del args, kwargs
@@ -114,18 +123,18 @@ class LocalRuntime(runtime.Runtime):
         self._labels = labels if labels is not None else {}
         self.follow = []
         self._tracing = tracing
-        self._mq_service: mq.LocalRabbitMQ | None = None
-        self._redis_service: redis.LocalRedis | None = None
-        self._jaeger_service: jaeger.LocalJaeger | None = None
-        self._scan_db: models.Scan | None = None
-        self._mq_exposed_ports: dict[int, int] | None = mq_exposed_ports
+        self._mq_service: typing.Optional[mq.LocalRabbitMQ] = None
+        self._redis_service: typing.Optional[redis.LocalRedis] = None
+        self._jaeger_service: typing.Optional[jaeger.LocalJaeger] = None
+        self._scan_db: typing.Optional[models.Scan] = None
+        self._mq_exposed_ports: typing.Optional[dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
-        self._log_streamer: log_streamer.LogStream | None = None
-        self._docker_client: docker.DockerClient | None = None
+        self._log_streamer: typing.Optional[log_streamer.LogStream] = None
+        self._docker_client: typing.Optional[docker.DockerClient] = None
 
     @property
-    def name(self) -> str:
+    def name(self) -> int | str:
         """Local runtime instance name."""
         if self._scan_id is not None:
             return self._scan_id
@@ -156,7 +165,7 @@ class LocalRuntime(runtime.Runtime):
         self._docker_checks()
         return True
 
-    def _docker_checks(self):
+    def _docker_checks(self) -> None:
         """checking the requirements (docker,swarm,arch,permissions) for ostorlab."""
         if not docker_requirements_checker.is_docker_installed():
             console.error("Docker is not installed.")
@@ -176,7 +185,7 @@ class LocalRuntime(runtime.Runtime):
 
         self._docker_client = docker.from_env(max_pool_size=100)
 
-    def prepare_scan(self, title: str) -> models.Scan:
+    def prepare_scan(self, title: typing.Optional[str]) -> models.Scan:
         """Prepare scan entry in the database.
 
         Args:
@@ -211,10 +220,10 @@ class LocalRuntime(runtime.Runtime):
 
     def scan(
         self,
-        title: str,
+        title: typing.Optional[str],
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: list[base_asset.Asset] | None,
-    ) -> models.Scan | None:
+        assets: typing.Optional[typing.Sequence[base_asset.Asset]],
+    ) -> typing.Optional[models.Scan]:
         """Start scan on asset using the provided agent run definition.
 
         The scan takes care of starting all the scan required services, ensuring they are healthy, starting all the
@@ -228,7 +237,9 @@ class LocalRuntime(runtime.Runtime):
         Returns:
             The scan object.
         """
-        self._log_streamer = log_streamer.LogStream(self._docker_client)
+        self._log_streamer = log_streamer.LogStream(
+            typing.cast(docker.DockerClient, self._docker_client)
+        )
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title)
@@ -302,9 +313,12 @@ class LocalRuntime(runtime.Runtime):
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
-        threading.Thread(target=self._log_streamer.wait, daemon=False).start()
+        threading.Thread(
+            target=typing.cast(log_streamer.LogStream, self._log_streamer).wait,
+            daemon=False,
+        ).start()
 
-    def cleanup(self, scan_id: int | None = None) -> bool:
+    def cleanup(self, scan_id: typing.Optional[int | str] = None) -> bool:
         """Remove all Docker services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
 
         Args:
@@ -336,12 +350,12 @@ class LocalRuntime(runtime.Runtime):
                 return False
 
         return docker_cleanup.cleanup_scan_docker_resources(
-            self._docker_client, scan_id
+            typing.cast(docker.DockerClient, self._docker_client), scan_id
         )
 
     def stop(
         self,
-        scan_id: int | None = None,
+        scan_id: typing.Optional[int | str] = None,
         update_scan_status: bool = True,
     ) -> None:
         """Remove all services, networks, configs, and volumes belonging to universe with scan_id (Universe Id).
@@ -374,7 +388,9 @@ class LocalRuntime(runtime.Runtime):
 
             if target_db_id is not None:
                 with models.Database() as session:
-                    scan = session.query(models.Scan).get(target_db_id)
+                    scan = typing.cast(
+                        "orm.Query[models.Scan]", session.query(models.Scan)
+                    ).get(target_db_id)
                     if scan is not None:
                         scan.progress = models.ScanProgress.STOPPED
                         session.commit()
@@ -387,7 +403,7 @@ class LocalRuntime(runtime.Runtime):
                 scan_id,
             )
 
-    def _create_scan_db(self, title: str):
+    def _create_scan_db(self, title: typing.Optional[str]) -> models.Scan:
         """Persist the scan in the database"""
         return models.Scan.create(title=title)
 
@@ -396,60 +412,75 @@ class LocalRuntime(runtime.Runtime):
         if self._scan_db is None:
             return
         with models.Database() as session:
-            scan = session.query(models.Scan).get(self._scan_db.id)
+            scan = typing.cast(
+                "orm.Query[models.Scan]", session.query(models.Scan)
+            ).get(self._scan_db.id)
             if scan is not None:
                 scan.progress = progress
                 session.commit()
 
-    def _create_network(self):
+    def _create_network(self) -> typing.Optional[docker.models.networks.Network]:
         """Creates a docker swarm network where all services and agents can communicate."""
         if any(
             network.name == self.network
-            for network in self._docker_client.networks.list()
+            for network in typing.cast(
+                docker.DockerClient, self._docker_client
+            ).networks.list()
         ):
             logger.warning("network already exists.")
         else:
             logger.info("creating private network %s", self.network)
-            return self._docker_client.networks.create(
+            return typing.cast(
+                docker.DockerClient, self._docker_client
+            ).networks.create(
                 name=self.network,
                 driver="overlay",
                 attachable=True,
                 labels={"ostorlab.universe": self.name},
                 check_duplicate=True,
             )
+        return None
 
-    def _start_services(self):
+    def _start_services(self) -> None:
         """Start all the local runtime services."""
         self._start_mq_service()
         self._start_redis_service()
         if self._tracing is True:
             self._start_jaeger_service()
 
-    def _start_mq_service(self):
+    def _start_mq_service(self) -> None:
         """Start a local rabbitmq service."""
         self._mq_service = mq.LocalRabbitMQ(
             name=self.name, network=self.network, exposed_ports=self._mq_exposed_ports
         )
         self._mq_service.start()
         if "mq" in self.follow:
-            self._log_streamer.stream(self._mq_service.service)
+            typing.cast(log_streamer.LogStream, self._log_streamer).stream(
+                typing.cast(docker_models_services.Service, self._mq_service.service)
+            )
 
-    def _start_redis_service(self):
+    def _start_redis_service(self) -> None:
         """Start a local Redis service."""
         self._redis_service = redis.LocalRedis(name=self.name, network=self.network)
         self._redis_service.start()
         if "redis" in self.follow:
-            self._log_streamer.stream(self._redis_service.service)
+            typing.cast(log_streamer.LogStream, self._log_streamer).stream(
+                typing.cast(docker_models_services.Service, self._redis_service.service)
+            )
 
-    def _start_jaeger_service(self):
+    def _start_jaeger_service(self) -> None:
         """Start a local Jaeger service."""
         self._jaeger_service = jaeger.LocalJaeger(name=self.name, network=self.network)
         self._jaeger_service.start()
         click.launch(self._jaeger_service.management_interface_ui)
         if "jaeger" in self.follow:
-            self._log_streamer.stream(self._jaeger_service.service)
+            typing.cast(log_streamer.LogStream, self._log_streamer).stream(
+                typing.cast(
+                    docker_models_services.Service, self._jaeger_service.service
+                )
+            )
 
-    def _check_services_healthy(self):
+    def _check_services_healthy(self) -> None:
         """Check if the core services are running and healthy."""
         return self._are_services_ready()
 
@@ -459,7 +490,7 @@ class LocalRuntime(runtime.Runtime):
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def _are_services_ready(self) -> bool:
+    def _are_services_ready(self) -> None:
         if self._mq_service is None or self._mq_service.is_service_healthy() is False:
             raise UnhealthyService("MQ service is unhealthy.")
         if (
@@ -473,7 +504,7 @@ class LocalRuntime(runtime.Runtime):
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
 
-    def _check_agents_healthy(self):
+    def _check_agents_healthy(self) -> bool | tenacity.Future:
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
@@ -490,12 +521,12 @@ class LocalRuntime(runtime.Runtime):
             for future in futures.as_completed(future_to_agent):
                 future.result()
 
-    def _start_pre_agents(self):
+    def _start_pre_agents(self) -> None:
         """Starting pre-agents that must exist before other agents. This applies to all persistence
         agents that can start sending data at the start of the agent."""
         self._start_persist_vulnz_agent()
 
-    def _start_post_agents(self):
+    def _start_post_agents(self) -> None:
         """Starting post-agents that must exist after other agents. This applies to the tracker
         that needs to monitor other agents."""
         self._start_tracker_agent()
@@ -503,8 +534,8 @@ class LocalRuntime(runtime.Runtime):
     def _start_agent(
         self,
         agent: definitions.AgentSettings,
-        extra_configs: list[docker.types.ConfigReference] | None = None,
-        extra_mounts: list[docker.types.Mount] | None = None,
+        extra_configs: typing.Optional[list[docker.types.ConfigReference]] = None,
+        extra_mounts: typing.Optional[list[docker.types.Mount]] = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -519,7 +550,7 @@ class LocalRuntime(runtime.Runtime):
         runtime_agent = agent_runtime.AgentRuntime(
             agent_settings=agent,
             runtime_name=self.name,
-            docker_client=self._docker_client,
+            docker_client=typing.cast(docker.DockerClient, self._docker_client),
             mq_service=self._mq_service,
             redis_service=self._redis_service,
             jaeger_service=self._jaeger_service,
@@ -533,7 +564,9 @@ class LocalRuntime(runtime.Runtime):
             replicas=agent.replicas or 1,
         )
         if agent.key in self.follow:
-            self._log_streamer.stream(agent_service)
+            typing.cast(log_streamer.LogStream, self._log_streamer).stream(
+                agent_service
+            )
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
@@ -543,33 +576,39 @@ class LocalRuntime(runtime.Runtime):
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
-        self, service: docker_models_services.Service, replicas=None
-    ) -> bool:
+        self,
+        service: docker_models_services.Service,
+        replicas: typing.Optional[int] = None,
+    ) -> bool | tenacity.Future:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
         try:
             if not replicas:
-                replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+                replicas = typing.cast(
+                    int, service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+                )
             return replicas == len(
                 [
                     task
-                    for task in service.tasks()
+                    for task in typing.cast(
+                        typing.Callable[[], list[dict[str, typing.Any]]], service.tasks
+                    )()
                     if task["Status"]["State"] == "running"
                 ]
             )
         except docker.errors.NotFound:
             return False
 
-    def _list_agent_services(self):
+    def _list_agent_services(self) -> typing.Iterator[docker_models_services.Service]:
         """List the services of type agents. All agent service must start with agent_."""
-        services = self._docker_client.services.list(
+        services = typing.cast(docker.DockerClient, self._docker_client).services.list(
             filters={"label": f"ostorlab.universe={self.name}"}
         )
         for service in services:
             if service.name.startswith("agent_"):
                 yield service
 
-    def _start_tracker_agent(self):
+    def _start_tracker_agent(self) -> None:
         """Start the tracker agent to handle the scan lifecycle."""
         if self.has_tracker is False:
             return
@@ -595,7 +634,7 @@ class LocalRuntime(runtime.Runtime):
             )
         self._start_agent(agent=tracker_agent_settings, extra_configs=[])
 
-    def _start_persist_vulnz_agent(self):
+    def _start_persist_vulnz_agent(self) -> None:
         """Start the local persistence agent to dump vulnerabilities in the local config."""
         persist_vulnz_agent_settings = definitions.AgentSettings(
             key=LOCAL_PERSIST_VULNZ_AGENT_DEFAULT, mounts=[]
@@ -604,9 +643,9 @@ class LocalRuntime(runtime.Runtime):
 
     def _inject_assets(
         self,
-        assets: list[base_asset.Asset],
-        agent_settings: definitions.AgentSettings | None,
-    ):
+        assets: typing.Sequence[base_asset.Asset],
+        agent_settings: typing.Optional[definitions.AgentSettings],
+    ) -> None:
         """Injects the scan target assets."""
         contents = {}
         for i, asset in enumerate(assets):
@@ -617,7 +656,7 @@ class LocalRuntime(runtime.Runtime):
         volumes.create_volume(
             f"asset_{self.name}",
             contents,
-            labels={"ostorlab.universe": self.name},
+            labels=typing.cast(dict[str, str], {"ostorlab.universe": self.name}),
         )
 
         if agent_settings is None:
@@ -638,8 +677,8 @@ class LocalRuntime(runtime.Runtime):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: str | None = None,
-    ) -> list[runtime.Scan]:
+        state: typing.Optional[str] = None,
+    ) -> typing.Optional[list[runtime.Scan]]:
         """Lists scans managed by runtime.
 
         Args:
@@ -655,14 +694,14 @@ class LocalRuntime(runtime.Runtime):
 
         scans = {}
         with models.Database() as session:
-            query = session.query(models.Scan)
+            query = typing.cast("orm.Query[models.Scan]", session.query(models.Scan))
             if state is not None:
                 query = query.filter(models.Scan.progress == models.ScanProgress(state))
             for scan in query:
                 scans[scan.id] = runtime.Scan(
                     id=scan.id,
                     created_time=scan.created_time,
-                    progress=scan.progress.value,
+                    progress=typing.cast(models.ScanProgress, scan.progress).value,
                     risk_rating=scan.risk_rating,
                 )
 
@@ -692,6 +731,7 @@ class LocalRuntime(runtime.Runtime):
             return list(scans.values())
         except docker_errors.DockerException as e:
             console.error(f"Error calling the Docker API: {e}")
+            return None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
@@ -700,7 +740,7 @@ class LocalRuntime(runtime.Runtime):
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def _are_agents_ready(self, fail_fast=True) -> bool:
+    def _are_agents_ready(self, fail_fast: bool = True) -> bool | tenacity.Future:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
         (once vs long-running)."""
         logger.info("listing services ...")
@@ -716,7 +756,9 @@ class LocalRuntime(runtime.Runtime):
                         return False
         return True
 
-    def install(self, docker_client: docker.DockerClient | None = None) -> None:
+    def install(
+        self, docker_client: typing.Optional[docker.DockerClient] = None
+    ) -> None:
         """Installs the default agents.
 
         Args:
@@ -734,13 +776,16 @@ class LocalRuntime(runtime.Runtime):
     def list_vulnz(
         self,
         scan_id: int,
-        filter_risk_rating: builtins.list[str] | None = None,
-        search: str | None = None,
+        filter_risk_rating: typing.Optional[builtins.list[str]] = None,
+        search: typing.Optional[str] = None,
         order_by: str = "risk_rating",
     ) -> None:
         try:
             with models.Database() as session:
-                query = session.query(models.Vulnerability).filter_by(scan_id=scan_id)
+                query = typing.cast(
+                    "orm.Query[models.Vulnerability]",
+                    session.query(models.Vulnerability),
+                ).filter_by(scan_id=scan_id)
                 if filter_risk_rating is not None:
                     filter_risk_rating = [r.upper() for r in filter_risk_rating]
                     query = query.filter(
@@ -759,12 +804,14 @@ class LocalRuntime(runtime.Runtime):
                     )
 
                 if order_by == "risk_rating":
-                    case_ordering = case(
-                        [
-                            (models.Vulnerability.risk_rating == rating, order)
-                            for rating, order in risk_rating.RATINGS_ORDER.items()
-                        ],
-                        else_=len(risk_rating.RATINGS_ORDER),
+                    case_ordering: sqlalchemy.sql.elements.Case[sqlalchemy.Integer] = (
+                        case(
+                            [
+                                (models.Vulnerability.risk_rating == rating, order)
+                                for rating, order in risk_rating.RATINGS_ORDER.items()
+                            ],
+                            else_=len(risk_rating.RATINGS_ORDER),
+                        )
                     )
                     vulnerabilities = query.order_by(
                         case_ordering, models.Vulnerability.title
@@ -781,12 +828,14 @@ class LocalRuntime(runtime.Runtime):
                     {
                         "id": str(vulnerability.id),
                         "risk_rating": styles.style_risk(
-                            vulnerability.risk_rating.value.upper()
+                            typing.cast(
+                                risk_rating.RiskRating, vulnerability.risk_rating
+                            ).value.upper()
                         ),
                         "cvss_v3_vector": vulnerability.cvss_v3_vector,
                         "title": vulnerability.title,
                         "short_description": markdown.Markdown(
-                            vulnerability.short_description
+                            typing.cast(str, vulnerability.short_description)
                         ),
                         "location": markdown.Markdown(vulnerability_location),
                     }
@@ -810,7 +859,9 @@ class LocalRuntime(runtime.Runtime):
         except sqlalchemy.exc.OperationalError:
             console.error(f"scan with id {scan_id} does not exist.")
 
-    def _print_vulnerability(self, vulnerability):
+    def _print_vulnerability(
+        self, vulnerability: typing.Optional[models.Vulnerability]
+    ) -> None:
         """Print vulnerability details"""
         if vulnerability is None:
             return
@@ -820,11 +871,15 @@ class LocalRuntime(runtime.Runtime):
             {
                 "id": str(vulnerability.id),
                 "risk_rating": styles.style_risk(
-                    vulnerability.risk_rating.value.upper()
+                    typing.cast(
+                        risk_rating.RiskRating, vulnerability.risk_rating
+                    ).value.upper()
                 ),
                 "cvss_v3_vector": vulnerability.cvss_v3_vector,
                 "title": vulnerability.title,
-                "short_description": markdown.Markdown(vulnerability.short_description),
+                "short_description": markdown.Markdown(
+                    typing.cast(str, vulnerability.short_description)
+                ),
                 "location": markdown.Markdown(vulnerability_location),
             }
         ]
@@ -840,12 +895,14 @@ class LocalRuntime(runtime.Runtime):
         console.table(columns=columns, data=vulnz_list, title=title)
         rich.print(
             panel.Panel(
-                markdown.Markdown(vulnerability.description), title="Description"
+                markdown.Markdown(typing.cast(str, vulnerability.description)),
+                title="Description",
             )
         )
         rich.print(
             panel.Panel(
-                markdown.Markdown(vulnerability.recommendation), title="Recommendation"
+                markdown.Markdown(typing.cast(str, vulnerability.recommendation)),
+                title="Recommendation",
             )
         )
         if vulnerability.references is not None:
@@ -856,7 +913,7 @@ class LocalRuntime(runtime.Runtime):
             )
         rich.print(
             panel.Panel(
-                markdown.Markdown(vulnerability.technical_detail),
+                markdown.Markdown(typing.cast(str, vulnerability.technical_detail)),
                 title="Technical details",
             )
         )
@@ -875,16 +932,22 @@ class LocalRuntime(runtime.Runtime):
                 )
             )
 
-    def describe_vuln(self, scan_id: int, vuln_id: int):
+    def describe_vuln(self, scan_id: int, vuln_id: int) -> None:
         try:
             with models.Database() as session:
                 vulnerabilities = []
                 if vuln_id is not None:
-                    vulnerability = session.query(models.Vulnerability).get(vuln_id)
+                    vulnerability = typing.cast(
+                        "orm.Query[models.Vulnerability]",
+                        session.query(models.Vulnerability),
+                    ).get(vuln_id)
                     vulnerabilities.append(vulnerability)
                 elif scan_id is not None:
                     vulnerabilities = (
-                        session.query(models.Vulnerability)
+                        typing.cast(
+                            "orm.Query[models.Vulnerability]",
+                            session.query(models.Vulnerability),
+                        )
                         .filter_by(scan_id=scan_id)
                         .order_by(models.Vulnerability.title)
                         .all()
@@ -895,15 +958,21 @@ class LocalRuntime(runtime.Runtime):
         except sqlalchemy.exc.OperationalError:
             console.error("Vulnerability / scan not Found.")
 
-    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
+    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper) -> None:
         """Dump found vulnerabilities of a scan in a specific format."""
         vulnerabilities = []
         with models.Database() as session:
-            severity_sort_logic = case(
-                value=models.Vulnerability.risk_rating, whens=risk_rating.RATINGS_ORDER
-            ).label("severity")
+            severity_sort_logic: sqlalchemy.sql.elements.Label[sqlalchemy.Integer] = (
+                case(
+                    value=models.Vulnerability.risk_rating,
+                    whens=risk_rating.RATINGS_ORDER,
+                ).label("severity")
+            )
             vulnerabilities = (
-                session.query(models.Vulnerability)
+                typing.cast(
+                    "orm.Query[models.Vulnerability]",
+                    session.query(models.Vulnerability),
+                )
                 .filter_by(scan_id=scan_id)
                 .order_by(severity_sort_logic)
                 .all()
@@ -912,7 +981,9 @@ class LocalRuntime(runtime.Runtime):
         for vulnerability in vulnerabilities:
             vuln = {
                 "id": vulnerability.id,
-                "risk_rating": vulnerability.risk_rating.value,
+                "risk_rating": typing.cast(
+                    risk_rating.RiskRating, vulnerability.risk_rating
+                ).value,
                 "cvss_v3_vector": vulnerability.cvss_v3_vector,
                 "title": vulnerability.title,
                 "short_description": vulnerability.short_description,
@@ -948,7 +1019,9 @@ class LocalRuntime(runtime.Runtime):
             session.commit()
 
     def link_assets_scan(
-        self, scan_id: int, assets: builtins.list[base_asset.Asset] | None = None
+        self,
+        scan_id: int,
+        assets: typing.Optional[builtins.list[base_asset.Asset]] = None,
     ) -> None:
         """Link the assets to the scan in the database.
 

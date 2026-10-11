@@ -45,18 +45,18 @@ tox -e ruff
 
 ### Type Checking
 ```bash
-# Run mypy type checking on specific modules (as done in CI)
-mypy src/ostorlab/agent/schema
-mypy src/ostorlab/agent/kb
-mypy src/ostorlab/agent/message
-mypy src/ostorlab/utils
-mypy src/ostorlab/apis/runners
-mypy src/ostorlab/agent/mixins/agent_report_vulnerability_mixin.py
-mypy src/ostorlab/assets
-mypy src/ostorlab/ai tests/ai
+# Check all maintained Python source, tests, and tooling (as done in CI)
+mypy
+
+# Regenerate protobuf type stubs after changing schemas
+python tools/generate_proto_stubs.py
+
+# Run the typing environment with all optional dependencies
+tox -e typing
 
 # Install typing dependencies
 pip install -r typing_requirements.txt
+pip install -e ".[agent,scanner,serve,testing]"
 ```
 
 ### Other Commands

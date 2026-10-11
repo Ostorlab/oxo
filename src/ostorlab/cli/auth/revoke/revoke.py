@@ -14,7 +14,7 @@ console = cli_console.Console()
 
 
 @auth.auth.command()
-def revoke():
+def revoke() -> None:
     """Use this to log out."""
     config_manager = configuration_manager.ConfigurationManager()
 
