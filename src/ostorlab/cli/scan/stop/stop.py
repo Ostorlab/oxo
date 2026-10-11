@@ -10,6 +10,8 @@ from ostorlab.cli.scan.scan import scan
 
 console = cli_console.Console()
 
+RUNNING_PROGRESS_STATES = ("in_progress", "not_started")
+
 
 @scan.command()
 @click.argument("scan_ids", nargs=-1, type=int, required=False)
@@ -56,9 +58,7 @@ def stop(
     if stop_all is True:
         scans_list = runtime_instance.list()
         ids_to_stop = [
-            s.id
-            for s in scans_list
-            if s.progress == "in_progress" or s.progress == "not_started"
+            s.id for s in scans_list if s.progress in RUNNING_PROGRESS_STATES
         ]
         if len(ids_to_stop) == 0:
             console.warning("No running scans found.")
@@ -69,7 +69,7 @@ def stop(
             console.warning("No scans found.")
             return
         last_scan = max(scans_list, key=lambda s: s.created_time)
-        if last_scan.progress not in ("in_progress", "not_started"):
+        if last_scan.progress not in RUNNING_PROGRESS_STATES:
             console.warning("Last scan is not running.")
             return
         ids_to_stop = [last_scan.id]
