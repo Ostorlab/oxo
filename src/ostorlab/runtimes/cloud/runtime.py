@@ -5,10 +5,13 @@ improved data visualization, automated scaling for improved performance, agent i
 detection and several other improvements.
 """
 
+from __future__ import annotations
+
 import builtins
 import ipaddress
 import json
 import logging
+import typing
 from typing import Any
 
 import click
@@ -33,18 +36,19 @@ from ostorlab.cli import console as cli_console
 from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import runtime
+from ostorlab.runtimes.local.models import models
 from ostorlab.utils import styles
 
 logger = logging.getLogger(__name__)
 
-AgentType = dict[str, str | list]
+AgentType = dict[str, Any]
 console = cli_console.Console()
 
 
-class CloudRuntime(runtime.Runtime):
+class CloudRuntime(runtime.Runtime[int]):
     """Cloud runtime runs agents from Ostorlab Cloud."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         """cloud runtime instance running on Ostorlab cloud.
         cloud runtime communicates over a GraphQL API.
         """
@@ -72,14 +76,14 @@ class CloudRuntime(runtime.Runtime):
             do_agents_exist = self._check_agents_exist(agent_group_definition)
             return do_agents_exist
         except runner.ResponseError as error_msg:
-            console.error(error_msg)
+            console.error(str(error_msg))
             return False
 
     def scan(
         self,
-        title: str | None,
+        title: typing.Optional[str],
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: list[base_asset.Asset] | None,
+        assets: typing.Optional[typing.Sequence[base_asset.Asset]],
     ) -> None:
         """Triggers a scan using the provided agent group definition and asset target.
 
@@ -93,15 +97,17 @@ class CloudRuntime(runtime.Runtime):
         """
         try:
             # Support multiple link assets for local runtime for the cloud runtime.
-            if all(isinstance(a, link.Link) for a in assets) is True:
-                asset = assets
-            elif len(assets) > 1:
+            scan_assets = typing.cast(typing.Sequence[base_asset.Asset], assets)
+            asset: base_asset.Asset | builtins.list[link.Link]
+            if all(isinstance(a, link.Link) for a in scan_assets) is True:
+                asset = typing.cast(builtins.list[link.Link], assets)
+            elif len(scan_assets) > 1:
                 logger.warning(
                     "Assets has more than one, scan will only target first asset."
                 )
-                asset = assets[0]
+                asset = scan_assets[0]
             else:
-                asset = assets[0]
+                asset = scan_assets[0]
             api_runner = authenticated_runner.AuthenticatedAPIRunner()
 
             agents = self._agents_from_agent_group_def(
@@ -123,7 +129,7 @@ class CloudRuntime(runtime.Runtime):
 
             console.success("Scan created successfully.")
         except runner.ResponseError as error_msg:
-            console.error(error_msg)
+            console.error(str(error_msg))
 
     def stop(self, scan_id: int) -> None:
         """Stops a scan.
@@ -145,8 +151,8 @@ class CloudRuntime(runtime.Runtime):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: str | None = None,
-    ) -> list[runtime.Scan]:
+        state: typing.Optional[str] = None,
+    ) -> typing.Optional[list[runtime.Scan]]:
         """Lists scans managed by runtime.
 
         Args:
@@ -177,6 +183,7 @@ class CloudRuntime(runtime.Runtime):
 
         except runner.Error:
             console.error("Could not fetch scans.")
+            return None
 
     def install(self) -> None:
         """No installation action.
@@ -185,7 +192,9 @@ class CloudRuntime(runtime.Runtime):
             None
         """
 
-    def _prepare_vuln_location_markdown(self, location: dict[str, Any]) -> str:
+    def _prepare_vuln_location_markdown(
+        self, location: typing.Optional[dict[str, Any]]
+    ) -> str:
         """Returns a markdown display of the exact target where the vulnerability was found."""
         location = location or {}
         asset_data = location.get("asset")
@@ -270,9 +279,9 @@ class CloudRuntime(runtime.Runtime):
         scan_id: int,
         page: int = 1,
         number_elements: int = 10,
-        filter_risk_rating: builtins.list[str] | None = None,
-        search: str | None = None,
-        order_by: str | None = None,
+        filter_risk_rating: typing.Optional[builtins.list[str]] = None,
+        search: typing.Optional[str] = None,
+        order_by: typing.Optional[str] = None,
     ) -> None:
         """List vulnz from the cloud using and render them in a table.
 
@@ -370,7 +379,7 @@ class CloudRuntime(runtime.Runtime):
 
     def _prepare_references_markdown(
         self, references: builtins.list[dict[str, str]]
-    ) -> str | None:
+    ) -> typing.Optional[str]:
         """Returns a markdown display of the references of a vulnerability."""
         if references is None or len(references) == 0:
             return None
@@ -384,7 +393,9 @@ class CloudRuntime(runtime.Runtime):
 
         return references_markdwon_value
 
-    def _print_vulnerability(self, vulnerability):
+    def _print_vulnerability(
+        self, vulnerability: typing.Optional[dict[str, Any]]
+    ) -> None:
         """Print vulnerability details"""
         if vulnerability is None:
             return
@@ -445,7 +456,9 @@ class CloudRuntime(runtime.Runtime):
         if vulnerability.get("exploitationDetail") is not None:
             rich.print(
                 panel.Panel(
-                    markdown.Markdown(vulnerability.get("exploitationDetail")),
+                    markdown.Markdown(
+                        typing.cast(str, vulnerability.get("exploitationDetail"))
+                    ),
                     title="Exploitation details",
                 )
             )
@@ -453,10 +466,10 @@ class CloudRuntime(runtime.Runtime):
     def describe_vuln(
         self,
         scan_id: int,
-        vuln_id: int | None,
+        vuln_id: typing.Optional[int],
         page: int = 1,
         number_elements: int = 10,
-    ):
+    ) -> None:
         """Fetch and show the full details of specific vuln from the cloud, or all the vulnz for a specific scan.
 
         Args:
@@ -504,7 +517,9 @@ class CloudRuntime(runtime.Runtime):
         except runner.ResponseError:
             console.error("Vulnerability / scan not Found.")
 
-    def _fetch_scan_vulnz(self, scan_id: int, page: int = 1, number_elements: int = 10):
+    def _fetch_scan_vulnz(
+        self, scan_id: int, page: int = 1, number_elements: int = 10
+    ) -> dict[str, Any]:
         api_runner = authenticated_runner.AuthenticatedAPIRunner()
         return api_runner.execute(
             vulnz_list.VulnzListAPIRequest(
@@ -518,7 +533,7 @@ class CloudRuntime(runtime.Runtime):
         dumper: dumpers.VulnzDumper,
         page: int = 1,
         number_elements: int = 10,
-    ):
+    ) -> None:
         """fetch vulnz from the cloud runtime.
         fetching all vulnz for a specific scan and saving in a specific format, in order to fetch all vulnerabilities
         {number_elements|10} for each request, this function run in an infinity loop (recursive)
@@ -534,7 +549,7 @@ class CloudRuntime(runtime.Runtime):
                 response = self._fetch_scan_vulnz(
                     scan_id, page=page, number_elements=number_elements
                 )
-                has_next_page: bool = (
+                has_next_page = (
                     response["data"]["scan"]["vulnerabilities"]["pageInfo"]["hasNext"]
                     | False
                 )
@@ -587,18 +602,19 @@ class CloudRuntime(runtime.Runtime):
                 return False
         return True
 
-    def _to_serialized(self, value) -> bytes | memoryview | builtins.list[Any] | str:
-        if isinstance(value, (bytes, memoryview)) is True:
+    def _to_serialized(self, value: Any) -> typing.Optional[bytes | memoryview[int]]:
+        if isinstance(value, (bytes, memoryview)):
             return value
-        elif isinstance(value, (list, bool)) is True:
+        elif isinstance(value, (list, bool)):
             try:
                 return json.dumps(value).encode()
             except TypeError as e:
                 raise ValueError(f"type {value} is not JSON serializable") from e
-        elif isinstance(value, (int, float)) is True:
+        elif isinstance(value, (int, float)):
             return str(value).encode()
-        elif isinstance(value, str) is True:
+        elif isinstance(value, str):
             return value.encode()
+        return None
 
     def _agents_from_agent_group_def(
         self,
@@ -614,7 +630,7 @@ class CloudRuntime(runtime.Runtime):
             agent_version = agent_detail["data"]["agent"]["versions"]["versions"][0][
                 "version"
             ]
-            agent = {}
+            agent: AgentType = {}
             agent["agentKey"] = agent_def.key
             agent["version"] = agent_version
 
@@ -633,11 +649,11 @@ class CloudRuntime(runtime.Runtime):
 
     def _create_agent_group(
         self,
-        api_runner: runner.APIRunner,
-        name: str,
-        description: str,
+        api_runner: authenticated_runner.AuthenticatedAPIRunner,
+        name: typing.Optional[str],
+        description: typing.Optional[str],
         agents: builtins.list[AgentType],
-    ):
+    ) -> int | str:
         """Sends an API request to create an agent group.
 
         Returns:
@@ -646,13 +662,13 @@ class CloudRuntime(runtime.Runtime):
         request = agent_group.CreateAgentGroupAPIRequest(name, description, agents)
         response = api_runner.execute_ubjson_request(request)
         agent_group_id = response["data"]["publishAgentGroup"]["agentGroup"]["id"]
-        return agent_group_id
+        return typing.cast(int | str, agent_group_id)
 
     def _create_asset(
         self,
         api_runner: runner.APIRunner,
         asset: base_asset.Asset | builtins.list[link.Link],
-    ):
+    ) -> int | str:
         """Sends an API request to create an asset.
 
         Returns:
@@ -661,15 +677,15 @@ class CloudRuntime(runtime.Runtime):
         request = api_assets.CreateAssetAPIRequest(asset)
         response = api_runner.execute(request)
         asset_id = response["data"]["createAsset"]["asset"]["id"]
-        return asset_id
+        return typing.cast(int | str, asset_id)
 
     def _create_scan(
         self,
         api_runner: runner.APIRunner,
-        asset_id: int,
-        agent_group_id: int,
-        title: str,
-    ):
+        asset_id: int | str,
+        agent_group_id: int | str,
+        title: typing.Optional[str],
+    ) -> None:
         """Sends an API request to create a scan."""
         request = create_agent_scan.CreateAgentScanAPIRequest(
             title, asset_id, agent_group_id
@@ -678,7 +694,7 @@ class CloudRuntime(runtime.Runtime):
 
     def link_agent_group_scan(
         self,
-        scan,
+        scan: models.Scan,
         agent_group_definition: definitions.AgentGroupDefinition,
     ) -> None:
         """Link the agent group to the scan in the database.
@@ -689,7 +705,7 @@ class CloudRuntime(runtime.Runtime):
         """
 
     def link_assets_scan(
-        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+        self, scan_id: int, assets: typing.Optional[builtins.list[base_asset.Asset]]
     ) -> None:
         """Link the assets to the scan in the database.
 

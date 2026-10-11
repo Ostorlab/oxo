@@ -36,6 +36,7 @@ def testScannerConfigFromJson_whenReceivingConfApiResponse_shouldCreateConfInsta
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(
         config=api_response_data,
     )
+    assert scanner_conf_instance is not None
     assert scanner_conf_instance.api_key == "test-api-key"
     requirements = scanner_conf_instance.scan_resource_requirements[
         "agentgroup/ostorlab/agent_group42"
@@ -75,6 +76,7 @@ def testScannerConfigFromJson_whenResourceRequirementsMalformed_shouldSkipEntry(
     warning = mocker.patch.object(scanner_conf.logger, "warning")
 
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+    assert scanner_conf_instance is not None
 
     assert scanner_conf_instance.scan_resource_requirements == {}
     assert warning.call_args_list == [
@@ -110,6 +112,7 @@ def testScannerConfigFromJson_whenResourceRequirementsJsonString_shouldParseEntr
     }
 
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+    assert scanner_conf_instance is not None
 
     assert scanner_conf_instance.scan_resource_requirements == {
         "agentgroup/ostorlab/test": scanner_conf.ScanResourceRequirements(
@@ -134,6 +137,7 @@ def testScannerConfigFromJson_whenResourceRequirementsInvalidJson_shouldLogWarni
     warning = mocker.patch.object(scanner_conf.logger, "warning")
 
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+    assert scanner_conf_instance is not None
 
     assert scanner_conf_instance.scan_resource_requirements == {}
     warning.assert_called_once_with("Invalid JSON in scanResourceRequirements")
@@ -145,5 +149,6 @@ def testScannerConfigFromJson_whenResourceRequirementsAbsent_returnsEmptyDict() 
     }
 
     scanner_conf_instance = scanner_conf.ScannerConfig.from_json(api_response_data)
+    assert scanner_conf_instance is not None
 
     assert scanner_conf_instance.scan_resource_requirements == {}

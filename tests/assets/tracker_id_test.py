@@ -1,14 +1,16 @@
 """Unit tests for TrackerId asset."""
 
 from ostorlab.agent.message import serializer
+from ostorlab.agent.message.proto.v3.asset.tracker_id import tracker_id_pb2
 from ostorlab.assets import tracker_id
 
 
-def testAssetToProto_whenTrackerId_generatesProto():
+def testAssetToProto_whenTrackerId_generatesProto() -> None:
     asset = tracker_id.TrackerId(id="a1b2c3", source="reverse_search")
     raw = asset.to_proto()
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize("v3.asset.tracker_id", raw)
+    assert isinstance(unraw, tracker_id_pb2.Message)
     assert unraw.id == "a1b2c3"
     assert unraw.source == "reverse_search"

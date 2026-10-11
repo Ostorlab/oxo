@@ -14,6 +14,7 @@ def testToProto_whenRepositoryUrlSet_returnsSerializedBytes() -> None:
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize("v3.asset.repository", raw)
+    assert isinstance(unraw, repository_pb2.Message)
     assert unraw.repository_url == "https://github.com/org/repo.git"
     assert unraw.commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"
     assert unraw.provider == repository_pb2.Message.GITHUB
@@ -28,6 +29,7 @@ def testToProto_whenRepositoryUrlSetAndDifferentCommit_returnsSerializedBytes() 
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize("v3.asset.repository", raw)
+    assert isinstance(unraw, repository_pb2.Message)
     assert unraw.repository_url == "https://gitlab.com/org/repo.git"
     assert unraw.commit_hash == "b2b20cdbc6551ba359169a3033f193b7f8c1b95e"
     assert unraw.provider == repository_pb2.Message.AZURE
@@ -44,5 +46,6 @@ def testToProto_whenProviderIsNotSet_returnsSerializedBytes() -> None:
     assert isinstance(raw, bytes)
     assert "provider" not in asset.__dict__
     unraw = serializer.deserialize("v3.asset.repository", raw)
+    assert isinstance(unraw, repository_pb2.Message)
     assert unraw.repository_url == "https://github.com/org/repo.git"
     assert unraw.commit_hash == "a1a10cdbc6551ba359169a3033f193b7f8c1b95d"

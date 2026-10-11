@@ -1,9 +1,9 @@
-from src.ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql import (
-    graphql_pb2,
-)
+from ostorlab.agent.message.proto.v3.asset.file.api_schema.graphql import graphql_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = graphql_pb2.Message()
     message.content = b"type Query { hello: String }"
     message.path = "/graphql/schema.graphql"
@@ -18,7 +18,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.schema_type == "graphql"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = graphql_pb2.Message()
 
     assert message.content == b""
@@ -26,7 +26,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.schema_type == "graphql"
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = graphql_pb2.Message()
 
     serialized = message.SerializeToString()

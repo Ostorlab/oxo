@@ -1,8 +1,14 @@
 """mock agent implements the required methods to test the agent's behavior without using external components."""
 
+from __future__ import annotations
+
 import dataclasses
+from collections.abc import Iterator
+from typing import Optional
+from typing import cast
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.agent.message import message as msg
 
@@ -24,8 +30,13 @@ class AgentRunInstance:
     raw_messages: list[RawMessage] = dataclasses.field(default_factory=list)
 
 
+StorageKey = str | bytes
+StorageValue = bytes | set[str | bytes] | dict[str | bytes, bytes]
+Storage = dict[StorageKey, StorageValue]
+
+
 @pytest.fixture(scope="function")
-def agent_mock(mocker) -> list[object]:
+def agent_mock(mocker: plugin.MockerFixture) -> Iterator[list[msg.Message]]:
     """Fixture patches all the Agent components and returns the list of messages emitted"""
     emitted_messages: list[msg.Message] = []
     mocker.patch(
@@ -47,7 +58,9 @@ def agent_mock(mocker) -> list[object]:
         return_value=None,
     )
 
-    def mq_send_message(key, message, message_priority=None):
+    def mq_send_message(
+        key: str, message: bytes, message_priority: Optional[int] = None
+    ) -> None:
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
         control_message = msg.Message.from_raw("v3.control", message)
         agent_message = msg.Message.from_raw(
@@ -64,34 +77,37 @@ def agent_mock(mocker) -> list[object]:
 
 
 @pytest.fixture(scope="function")
-def agent_persist_mock(mocker):
+def agent_persist_mock(mocker: plugin.MockerFixture) -> Iterator[Storage]:
     """This fixture patches the Agent persist component and returns the list storage state"""
-    storage = {}
+    storage: Storage = {}
 
-    def _set_is_member(key, value):
+    def _set_is_member(key: StorageKey, value: str | bytes) -> bool:
         """Check values are present in the storage dict."""
-        return key in storage and value in storage[key]
+        return key in storage and value in cast(set[str | bytes], storage[key])
 
-    def _set_add(key, *value):
+    def _set_add(key: StorageKey, *value: str | bytes) -> bool:
         """Add members to the storage dict and emulate return value."""
         if all(_set_is_member(key, v) for v in value):
             return False
         else:
             for v in value:
-                storage.setdefault(key, set()).add(v)
+                cast(set[str | bytes], storage.setdefault(key, set())).add(v)
             return True
 
-    def _set_len(key):
+    def _set_len(key: StorageKey) -> Optional[int]:
         if key in storage:
             return len(storage[key])
+        return None
 
-    def _set_members(key):
+    def _set_members(key: StorageKey) -> Optional[set[str | bytes]]:
+        if key in storage:
+            return cast(set[str | bytes], storage[key])
+        return None
+
+    def _get(key: StorageKey) -> Optional[StorageValue]:
         if key in storage:
             return storage[key]
-
-    def _get(key):
-        if key in storage:
-            return storage[key]
+        return None
 
     def _add(key: str | bytes, value: bytes) -> None:
         """Check values are present in the storage dict."""
@@ -103,30 +119,30 @@ def agent_persist_mock(mocker):
         """Check if thr key is present in the storage dict."""
         return key in storage
 
-    def _hash_add(hash_name, mapping):
+    def _hash_add(hash_name: StorageKey, mapping: dict[StorageKey, bytes]) -> None:
         for k, v in mapping.items():
             if isinstance(v, bytes) is False:
                 mapping[k] = str(v).encode()
-        storage.setdefault(hash_name, {}).update(mapping)
+        cast(dict[StorageKey, bytes], storage.setdefault(hash_name, {})).update(mapping)
 
-    def _hash_exists(hash_name, key):
+    def _hash_exists(hash_name: StorageKey, key: StorageKey) -> bool:
         if isinstance(storage.get(hash_name), dict):
-            return key in storage.get(hash_name)
+            return key in cast(dict[StorageKey, bytes], storage.get(hash_name))
         return False
 
-    def _hash_get(hash_name, key):
+    def _hash_get(hash_name: StorageKey, key: StorageKey) -> Optional[bytes]:
         if isinstance(storage.get(hash_name), dict):
-            return storage.get(hash_name).get(key, None)
+            return cast(dict[StorageKey, bytes], storage.get(hash_name)).get(key, None)
         else:
             return None
 
-    def _hash_get_all(hash_name):
+    def _hash_get_all(hash_name: StorageKey) -> StorageValue:
         return storage.get(hash_name, {})
 
-    def _delete(key):
+    def _delete(key: StorageKey) -> None:
         storage.pop(key)
 
-    def _value_type(key):
+    def _value_type(key: StorageKey) -> str:
         if isinstance(storage.get(key), set):
             return "set"
         elif isinstance(storage.get(key), bytes):
@@ -194,7 +210,7 @@ def agent_persist_mock(mocker):
 
 
 @pytest.fixture(scope="function")
-def agent_run_mock(mocker) -> AgentRunInstance:
+def agent_run_mock(mocker: plugin.MockerFixture) -> Iterator[AgentRunInstance]:
     """Improved fixture implementation to capture all aspects of an agent run in an `AgentRunInstance` object."""
 
     agent_run_instance = AgentRunInstance(raw_messages=[], emitted_messages=[])
@@ -218,7 +234,9 @@ def agent_run_mock(mocker) -> AgentRunInstance:
         return_value=None,
     )
 
-    def mq_send_message(key, message, message_priority=None):
+    def mq_send_message(
+        key: str, message: bytes, message_priority: Optional[int] = None
+    ) -> None:
         # we need to remove the last part of the key f'{selector}.{uuid.uuid1()}'
         # Control Message.
         control_message = msg.Message.from_raw("v3.control", message)

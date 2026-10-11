@@ -40,7 +40,7 @@ class AgentSearchAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> dict | None:
+    def data(self) -> dict[str, str | None] | None:
         """Sets the body of the API request, to fetch the specific agent.
 
         Returns:

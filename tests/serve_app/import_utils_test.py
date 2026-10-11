@@ -7,6 +7,7 @@ from ostorlab.utils import risk_rating
 
 def testImportScan_always_shouldImportScan(
     zip_file_bytes: bytes,
+    clean_db: None,
 ) -> None:
     """Test import_scan function when the scan does not exist."""
     with models.Database() as session:

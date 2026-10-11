@@ -1,6 +1,7 @@
 """Asset of type ticket for scanning."""
 
 import logging
+from collections.abc import Sequence
 
 import click
 
@@ -32,7 +33,7 @@ def ticket(
     description: str,
     ticket_id: str | None = None,
     ticket_key: str | None = None,
-    comments: list[str] | None = None,
+    comments: Sequence[str] | None = None,
 ) -> None:
     """Run scan for ticket."""
     runtime = ctx.obj["runtime"]

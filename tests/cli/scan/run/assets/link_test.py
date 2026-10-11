@@ -1,11 +1,14 @@
 """Tests for scan run link command."""
 
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testScanRunLink_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):
+def testScanRunLink_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run link command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
@@ -21,8 +24,8 @@ def testScanRunLink_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocke
 
 
 def testRunScanLink_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run link with non-supported runtime, should exit with return code 1."""
 
     mocker.patch(

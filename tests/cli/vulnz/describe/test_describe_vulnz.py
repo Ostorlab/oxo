@@ -2,7 +2,9 @@
 
 from unittest import mock
 
+import pytest_httpx
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import rootcli
@@ -10,14 +12,15 @@ from ostorlab.runtimes.local.models import models
 
 
 def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test oxo vulnz describe command with correct commands and options.
     Should show vulnz details.
     """
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
+    assert create_scan_db.id is not None
     vuln_db = models.Vulnerability.create(
         title="Secure TLS certificate validation",
         short_description="Application performs proper server certificate validation",
@@ -51,8 +54,8 @@ def testOstorlabVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVuln
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsProvided_showsVulnzInfo(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab describe command when Correct command and correct scan id should show list of vulnz."""
     mock_response = {
         "data": {
@@ -125,8 +128,8 @@ def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenCorrectCommandsAndOptionsPr
 
 
 def testOstorlabCloudRuntimeScanVulnzDescribeCLI_whenScanNotFound_showNotFoundError(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab describe command when Correct command and scan does not exist."""
     mock_response = {
         "errors": [
@@ -161,6 +164,7 @@ def testOstorlabVulnzDescribeCLI_whenVulnHasExploitationAndPostExploitationDetai
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
+    assert create_scan_db.id is not None
     vuln_db = models.Vulnerability.create(
         title="Secure TLS certificate validation",
         short_description="Application performs proper server certificate validation",

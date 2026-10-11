@@ -1,6 +1,7 @@
 """Agent Build commands."""
 
 import io
+from typing import BinaryIO
 import logging
 import pathlib
 
@@ -36,7 +37,7 @@ def _build_image(
     container_name: str,
     dockerfile_path: str,
     docker_build_root: str,
-    agent_definition_file: io.FileIO,
+    agent_definition_file: BinaryIO,
     no_cache: bool,
 ) -> None:
     """Build agent image from agent settings."""
@@ -84,7 +85,7 @@ def _build_image(
 @click.option("--force/--no-force", default=False)
 @click.option("--no-cache", is_flag=True, default=False)
 def build(
-    file: io.FileIO, organization: str = "", force: bool = False, no_cache: bool = False
+    file: BinaryIO, organization: str = "", force: bool = False, no_cache: bool = False
 ) -> None:
     """CLI command to build the agent container from a definition.yaml file.
     Usage : Ostorlab agent build -f path/to/definition.yaml -org organization_name
@@ -145,7 +146,7 @@ def build(
         raise click.exceptions.Exit(2) from e
 
 
-def _resolve_build_root(docker_build_root: str, file: io.FileIO) -> str:
+def _resolve_build_root(docker_build_root: str, file: BinaryIO) -> str:
     """Resolve the Docker build root relative to the agent definition."""
     yaml_file_dir = pathlib.Path(file.name).parent.resolve()
     docker_build_root_path = (yaml_file_dir / docker_build_root).resolve()

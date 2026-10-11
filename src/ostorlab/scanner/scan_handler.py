@@ -39,7 +39,7 @@ class ScanHandler:
         | None = None,
         gcp_logging_credential: str | None = None,
         max_concurrent_scans: int = 1,
-    ):
+    ) -> None:
         self._state_reporter = state_reporter
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
@@ -173,7 +173,7 @@ class ScanHandler:
         runner: scanner_runner.ScannerAPIRunner,
         reserved_scan: dict[str, Any],
         api_key: str | None,
-    ) -> str | None:
+    ) -> int | str | None:
         """Attempts to start the scan locally, rolling back the API state if it fails."""
         raw_id = reserved_scan.get("id")
         if raw_id is None:

@@ -1,5 +1,6 @@
 """Tests for scanner host resource checks."""
 
+import pathlib
 from types import SimpleNamespace
 
 from pytest_mock import plugin
@@ -145,7 +146,7 @@ def testCanRunScan_whenDiskPathMissing_checksCurrentFilesystemRoot(
     disk_usage = mocker.patch(
         "psutil.disk_usage", return_value=SimpleNamespace(free=30_000)
     )
-    current_path = mocker.patch.object(resource_checker.pathlib.Path, "cwd")
+    current_path = mocker.patch.object(pathlib.Path, "cwd")
     current_path.return_value.anchor = "C:\\"
     requirements = {
         "default": scanner_conf.ScanResourceRequirements(

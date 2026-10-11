@@ -1,6 +1,8 @@
 """Risk message asset for injecting risk reports onto the message bus."""
 
 import dataclasses
+from typing import Any
+from typing import Optional
 
 from ostorlab.agent.message import serializer
 from ostorlab.assets import android_aab as android_aab_asset
@@ -33,26 +35,30 @@ class Risk(asset.Asset):
 
     description: str
     rating: str
-    domain_name: domain_name_asset.DomainName | None = None
-    ipv4: ipv4_asset.IPv4 | None = None
-    ipv6: ipv6_asset.IPv6 | None = None
-    link: link_asset.Link | None = None
-    android_store: android_store_asset.AndroidStore | None = None
-    ios_store: ios_store_asset.IOSStore | None = None
-    ios_testflight: ios_testflight_asset.IOSTestflight | None = None
-    android_aab: android_aab_asset.AndroidAab | None = None
-    android_apk: android_apk_asset.AndroidApk | None = None
-    ios_ipa: ios_ipa_asset.IOSIpa | None = None
-    api_schema: api_schema_asset.ApiSchema | None = None
-    repository: repository_asset.Repository | None = None
-    repository_archive: repository_archive_asset.RepositoryArchive | None = None
-    harmonyos_store: harmonyos_store_asset.HarmonyOSStore | None = None
-    harmonyos_apk: harmonyos_apk_asset.HarmonyOSApk | None = None
-    harmonyos_aab: harmonyos_aab_asset.HarmonyOSAab | None = None
-    harmonyos_hap: harmonyos_hap_asset.HarmonyOSHap | None = None
-    harmonyos_app: harmonyos_app_asset.HarmonyOSApp | None = None
-    harmonyos_rpk: harmonyos_rpk_asset.HarmonyOSRpk | None = None
-    multi_asset: multi_asset_asset.MultiAsset | None = None
+    domain_name: Optional[domain_name_asset.DomainName | dict[str, Any]] = None
+    ipv4: Optional[ipv4_asset.IPv4 | dict[str, Any]] = None
+    ipv6: Optional[ipv6_asset.IPv6 | dict[str, Any]] = None
+    link: Optional[link_asset.Link | dict[str, Any]] = None
+    android_store: Optional[android_store_asset.AndroidStore | dict[str, Any]] = None
+    ios_store: Optional[ios_store_asset.IOSStore | dict[str, Any]] = None
+    ios_testflight: Optional[ios_testflight_asset.IOSTestflight | dict[str, Any]] = None
+    android_aab: Optional[android_aab_asset.AndroidAab | dict[str, Any]] = None
+    android_apk: Optional[android_apk_asset.AndroidApk | dict[str, Any]] = None
+    ios_ipa: Optional[ios_ipa_asset.IOSIpa | dict[str, Any]] = None
+    api_schema: Optional[api_schema_asset.ApiSchema | dict[str, Any]] = None
+    repository: Optional[repository_asset.Repository | dict[str, Any]] = None
+    repository_archive: Optional[
+        repository_archive_asset.RepositoryArchive | dict[str, Any]
+    ] = None
+    harmonyos_store: Optional[harmonyos_store_asset.HarmonyOSStore | dict[str, Any]] = (
+        None
+    )
+    harmonyos_apk: Optional[harmonyos_apk_asset.HarmonyOSApk | dict[str, Any]] = None
+    harmonyos_aab: Optional[harmonyos_aab_asset.HarmonyOSAab | dict[str, Any]] = None
+    harmonyos_hap: Optional[harmonyos_hap_asset.HarmonyOSHap | dict[str, Any]] = None
+    harmonyos_app: Optional[harmonyos_app_asset.HarmonyOSApp | dict[str, Any]] = None
+    harmonyos_rpk: Optional[harmonyos_rpk_asset.HarmonyOSRpk | dict[str, Any]] = None
+    multi_asset: Optional[multi_asset_asset.MultiAsset | dict[str, Any]] = None
 
     def to_proto(self) -> bytes:
         data = {

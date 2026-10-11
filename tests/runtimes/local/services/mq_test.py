@@ -4,6 +4,8 @@ Tests marked with `docker` require access to working docker instance (socket or 
 on instances missing docker.
 """
 
+from unittest import mock
+
 import docker
 import pytest
 from pytest_mock import plugin
@@ -12,7 +14,7 @@ from ostorlab.runtimes.local.services import mq
 
 
 @pytest.mark.docker
-def testLocalRabbitMQStart_onOperationalConditions_rabbitMQServiceIsStarted():
+def testLocalRabbitMQStart_onOperationalConditions_rabbitMQServiceIsStarted() -> None:
     """Test service is healthy after start and unhealthy after stop."""
     lrm = mq.LocalRabbitMQ(name="test_mq", network="test_network")
     lrm.start()
@@ -40,7 +42,7 @@ def testLocalRabbitMQStart_always_rabbitMQServiceIsStartedWithFixedHostname(
 
 def _mock_mq_with_task(
     mocker: plugin.MockerFixture, task_state: str, exit_code: int
-) -> tuple[mq.LocalRabbitMQ, object]:
+) -> tuple[mq.LocalRabbitMQ, mock.MagicMock]:
     docker_client = mocker.MagicMock()
     docker_client.containers.get.return_value.exec_run.return_value = mocker.Mock(
         exit_code=exit_code

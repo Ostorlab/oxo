@@ -1,11 +1,14 @@
 """Tests for CLI agent delete command."""
 
 from click import testing
+from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testAgentDeleteCLI_always_listDockerImagesWithAgent(mocker):
+def testAgentDeleteCLI_always_listDockerImagesWithAgent(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo agent delete CLI command.
 
     This is just a smoke test to avoid a complex mock.

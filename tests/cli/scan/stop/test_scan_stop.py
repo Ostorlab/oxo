@@ -3,6 +3,7 @@
 from unittest import mock
 
 import pytest
+import pytest_httpx
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -12,8 +13,8 @@ from ostorlab.runtimes.local import runtime as local_runtime
 
 
 def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab scan stop command with valid scan id.
     Should stop the scan with the given scan id.
     """
@@ -36,8 +37,8 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsValid_stopsScan(
 
 
 def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab scan stop command with invalid scan id.
     Should show error message.
     """
@@ -61,8 +62,8 @@ def testOstorlabScanStopCLI_whenRuntimeIsRemoteAndScanIdIsInValid_stopsScan(
 
 @mock.patch.object(local_runtime.LocalRuntime, "stop")
 def testOstorlabScanStopCLI_whenRuntimeIsLocal_callsStopMethodWithProvidedId(
-    mock_scan_stop, mocker
-):
+    mock_scan_stop: mock.MagicMock, mocker: plugin.MockerFixture
+) -> None:
     """Test ostorlab scan stop command with a scan id.
     Should call stop method with provided scan id.
     """

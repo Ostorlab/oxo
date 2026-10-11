@@ -3,7 +3,7 @@
 from ostorlab.apis import scan_list
 
 
-def testScansListAPIRequest_whenNoStateIsProvided_generatesCorrectQuery():
+def testScansListAPIRequest_whenNoStateIsProvided_generatesCorrectQuery() -> None:
     """Test scan list API request without state filter."""
     api_request = scan_list.ScansListAPIRequest(page=1, elements=10)
 
@@ -13,7 +13,7 @@ def testScansListAPIRequest_whenNoStateIsProvided_generatesCorrectQuery():
     assert '"state"' not in api_request.data["variables"]
 
 
-def testScansListAPIRequest_whenStateIsProvided_generatesCorrectQuery():
+def testScansListAPIRequest_whenStateIsProvided_generatesCorrectQuery() -> None:
     """Test scan list API request with state filter."""
     api_request = scan_list.ScansListAPIRequest(page=1, elements=10, state="done")
 

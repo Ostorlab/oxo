@@ -1,6 +1,7 @@
 """Asset of type Phone Number."""
 
 import logging
+from collections.abc import Sequence
 
 import click
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="phone-number")
 @click.argument("numbers", required=True, nargs=-1)
 @click.pass_context
-def phone_number_cli(ctx: click.core.Context, numbers: list[str]) -> None:
+def phone_number_cli(ctx: click.core.Context, numbers: Sequence[str]) -> None:
     """Run scan for Phone Number asset."""
     runtime = ctx.obj["runtime"]
     assets = []

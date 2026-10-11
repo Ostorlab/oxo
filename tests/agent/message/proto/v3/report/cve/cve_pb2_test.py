@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.report.cve import cve_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     msg = cve_pb2.Message()
     msg.cve_id = "CVE-2023-1234"
     msg.cwe = 79
@@ -37,7 +39,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized_msg.references[0].url == "https://example.com/vuln"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     msg = cve_pb2.Message()
 
     assert msg.cve_id == ""
@@ -49,7 +51,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert len(msg.references) == 0
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     msg = cve_pb2.Message()
 
     serialized = msg.SerializeToString()

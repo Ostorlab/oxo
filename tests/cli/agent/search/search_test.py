@@ -2,14 +2,18 @@
 
 from unittest import mock
 
+import pytest_httpx
 from click import testing
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import public_runner
 from ostorlab.cli import rootcli
 
 
-def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, httpx_mock):
+def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test oxo agent search CLI command with Authenticated API returns list of agents."""
     mock.patch("ostorlab.api.runners.authenticated_runner")
     mocker.patch(
@@ -54,7 +58,9 @@ def testAgentSearchCLI_WhenAuthenticatedRunner_listAgents(mocker, httpx_mock):
     assert "vuln" in result.output
 
 
-def testAgentSearchCLI_WhenPublicRunner_listAgents(mocker, httpx_mock):
+def testAgentSearchCLI_WhenPublicRunner_listAgents(
+    mocker: plugin.MockerFixture, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test oxo agent search CLI command with Public API returns list of agents."""
     agents_dict = {
         "data": {

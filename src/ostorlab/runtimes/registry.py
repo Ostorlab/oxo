@@ -1,5 +1,9 @@
 """Runtime registry that references all supported runtimes."""
 
+from __future__ import annotations
+
+import typing
+
 from ostorlab import exceptions
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.cloud import runtime as cloud_runtime
@@ -11,7 +15,9 @@ class RuntimeNotFoundError(exceptions.OstorlabError):
     """Specified runtime is not found."""
 
 
-def select_runtime(runtime_type: str, *args, **kwargs) -> runtime.Runtime:
+def select_runtime(
+    runtime_type: str, *args: typing.Any, **kwargs: typing.Any
+) -> runtime.Runtime[typing.Any]:
     """Selects and instantiate runtime by type.
 
     Args:

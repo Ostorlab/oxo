@@ -1,11 +1,14 @@
 """Tests for scan runs ios_store command."""
 
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testScanRunIOSStore_whenNoOptionsProvided_shouldExitAndShowError(mocker):
+def testScanRunIOSStore_whenNoOptionsProvided_shouldExitAndShowError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run ios-store command with no options and no sub command.
     Should show error message and exit with exit_code = 2."""
 
@@ -20,7 +23,9 @@ def testScanRunIOSStore_whenNoOptionsProvided_shouldExitAndShowError(mocker):
     assert result.exit_code == 2
 
 
-def testScanRunIOSStore_whenOptionsProvided_shouldRunCommand(mocker):
+def testScanRunIOSStore_whenOptionsProvided_shouldRunCommand(
+    mocker: plugin.MockerFixture,
+) -> None:
     runner = CliRunner()
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
     result = runner.invoke(

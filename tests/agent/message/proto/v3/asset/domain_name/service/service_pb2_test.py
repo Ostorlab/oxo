@@ -1,7 +1,9 @@
-from src.ostorlab.agent.message.proto.v3.asset.domain_name.service import service_pb2
+from ostorlab.agent.message.proto.v3.asset.domain_name.service import service_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = service_pb2.Message()
     message.name = "HTTP"
     message.port = 80
@@ -18,7 +20,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.state == "open"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = service_pb2.Message()
 
     assert message.name == ""
@@ -27,7 +29,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.state == ""
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = service_pb2.Message()
 
     serialized = message.SerializeToString()

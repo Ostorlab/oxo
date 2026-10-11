@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import logging
 from typing import Any
+from typing import cast
 
 import docker
 import docker.errors
@@ -47,6 +48,7 @@ def get_details(
     """
     config_manager = configuration_manager.ConfigurationManager()
 
+    runner: base_runner.APIRunner
     if config_manager.is_authenticated is True:
         runner = authenticated_runner.AuthenticatedAPIRunner()
     elif api_key is not None:
@@ -70,7 +72,7 @@ def get_details(
         raise AgentDetailsNotFound(error_message)
     else:
         agent_details = response["data"]["agent"]
-        return agent_details
+        return cast(dict[str, Any], agent_details)
 
 
 def get_definition(

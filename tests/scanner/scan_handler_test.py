@@ -1,5 +1,7 @@
 """Unit tests for scan handler module."""
 
+from typing import Any
+
 import docker
 import pytest
 from pytest_mock import plugin
@@ -63,8 +65,9 @@ def testCountRunningUniverses_whenServicesShareUniverses_countsDistinctValues(
         ip="192.168.0.1",
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
-    scan_handler_instance._docker_client = mocker.MagicMock()
-    scan_handler_instance._docker_client.services.list.return_value = [
+    docker_client_mock = mocker.MagicMock()
+    scan_handler_instance._docker_client = docker_client_mock
+    docker_client_mock.services.list.return_value = [
         mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
         mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}}),
         mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "43"}}}),
@@ -88,10 +91,9 @@ def testCountRunningUniverses_whenDockerFails_returnsLimitSoHostLooksFull(
     scan_handler_instance = scan_handler.ScanHandler(
         state_reporter=state_reporter, max_concurrent_scans=3
     )
-    scan_handler_instance._docker_client = mocker.MagicMock()
-    scan_handler_instance._docker_client.services.list.side_effect = (
-        docker.errors.DockerException("boom")
-    )
+    docker_client_mock = mocker.MagicMock()
+    scan_handler_instance._docker_client = docker_client_mock
+    docker_client_mock.services.list.side_effect = docker.errors.DockerException("boom")
 
     result = scan_handler_instance._count_running_universes()
 
@@ -132,11 +134,7 @@ def testReserveSingleScan_whenReservationFails_skipsAndTriesNext(
     mocker: plugin.MockerFixture,
 ) -> None:
     """_reserve_single_scan should try the next scan when reservation fails."""
-    mocker.patch.object(
-        scan_handler,
-        "random",
-    )
-    scan_handler.random.shuffle = lambda x: None
+    mocker.patch("random.shuffle", return_value=None)
 
     runner = mocker.MagicMock()
     runner.execute.side_effect = [
@@ -294,7 +292,7 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
             }
         }
     }
-    scans_list = [{"no_id": True}, {"id": 99}]
+    scans_list: list[dict[str, Any]] = [{"no_id": True}, {"id": 99}]
 
     state_reporter = scanner_state_reporter.ScannerStateReporter(
         scanner_id="GGBD-DJJD-DKJK-DJDD",

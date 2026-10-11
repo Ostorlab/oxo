@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="ios-store")
 @click.option("--bundle-id", multiple=True, required=False)
 @click.pass_context
-def ios_store(ctx: click.core.Context, bundle_id: tuple[str] | None = ()) -> None:
+def ios_store(ctx: click.core.Context, bundle_id: tuple[str, ...] = ()) -> None:
     """Run scan for a bundle_id."""
     runtime = ctx.obj["runtime"]
     assets = []

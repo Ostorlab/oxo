@@ -50,14 +50,13 @@ def testScanRunApiSchema_whenSchemaFileIsProvided_callScanWithValidAsset(
         assert schema.proto_field == "api_schema"
         assert schema.schema_type is None
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].content
-            == schema.content
+            scan_mocked.call_args_list[0].kwargs["assets"][0].content == schema.content
         )
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].endpoint_url
+            scan_mocked.call_args_list[0].kwargs["assets"][0].endpoint_url
             == schema.endpoint_url
         )
-        assert scan_mocked.call_args_list[0].kwargs.get("assets")[0].content_url is None
+        assert scan_mocked.call_args_list[0].kwargs["assets"][0].content_url is None
 
 
 def testScanRunApiSchema_whenSchemaUrlIsProvided_callScanWithValidAsset(
@@ -99,14 +98,14 @@ def testScanRunApiSchema_whenSchemaUrlIsProvided_callScanWithValidAsset(
     assert schema.proto_field == "api_schema"
     assert schema.schema_type is None
     assert (
-        scan_mocked.call_args_list[0].kwargs.get("assets")[0].content_url
+        scan_mocked.call_args_list[0].kwargs["assets"][0].content_url
         == schema.content_url
     )
     assert (
-        scan_mocked.call_args_list[0].kwargs.get("assets")[0].endpoint_url
+        scan_mocked.call_args_list[0].kwargs["assets"][0].endpoint_url
         == schema.endpoint_url
     )
-    assert scan_mocked.call_args_list[0].kwargs.get("assets")[0].content is None
+    assert scan_mocked.call_args_list[0].kwargs["assets"][0].content is None
 
 
 def testScanRunApiSchema_whenBothSchemaUrlAndSchemaFileAreProvided_callScanWithValidAsset(
@@ -158,15 +157,14 @@ def testScanRunApiSchema_whenBothSchemaUrlAndSchemaFileAreProvided_callScanWithV
         assert schema.proto_field == "api_schema"
         assert schema.schema_type is None
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].content_url
+            scan_mocked.call_args_list[0].kwargs["assets"][0].content_url
             == schema.content_url
         )
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].content
-            == schema.content
+            scan_mocked.call_args_list[0].kwargs["assets"][0].content == schema.content
         )
         assert (
-            scan_mocked.call_args_list[0].kwargs.get("assets")[0].endpoint_url
+            scan_mocked.call_args_list[0].kwargs["assets"][0].endpoint_url
             == schema.endpoint_url
         )
 

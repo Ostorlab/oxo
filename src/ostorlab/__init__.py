@@ -25,5 +25,5 @@ logging.basicConfig(
 logger = logging.getLogger("CLI")
 
 
-def main():
+def main() -> None:
     rootcli(None)

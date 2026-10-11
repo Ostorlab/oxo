@@ -1,7 +1,7 @@
 """Agent and Agent Group loader helper methods that handles schema validation and safe loading."""
 
-import io
 import pathlib
+from typing import IO
 from typing import Any
 
 import ruamel.yaml
@@ -13,7 +13,7 @@ AGENT_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / "agent_group_schema.json
 TARGET_GROUP_SPEC_PATH = pathlib.Path(__file__).parent / "target_group_schema.json"
 
 
-def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> dict[str, Any]:
+def _load_spec_yaml(file: IO[str] | IO[bytes], spec: pathlib.Path) -> dict[str, Any]:
     """Loads file based on spec"""
     with open(spec, "r", encoding="utf8") as schema_specs:
         yaml_def_validator = validator.Validator(schema_specs)
@@ -24,7 +24,7 @@ def _load_spec_yaml(file: io.TextIOWrapper, spec: pathlib.Path) -> dict[str, Any
         return agent_def
 
 
-def load_agent_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
+def load_agent_yaml(file: IO[str] | IO[bytes]) -> dict[str, Any]:
     """Loads and validates agent yaml definition file.
 
     Args:
@@ -38,7 +38,7 @@ def load_agent_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
     return _load_spec_yaml(file, spec)
 
 
-def load_agent_group_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
+def load_agent_group_yaml(file: IO[str] | IO[bytes]) -> dict[str, Any]:
     """Loads and validates agent group yaml definition file.
 
     Args:
@@ -51,7 +51,7 @@ def load_agent_group_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
     return _load_spec_yaml(file, spec)
 
 
-def load_target_group_yaml(file: io.TextIOWrapper) -> dict[str, Any]:
+def load_target_group_yaml(file: IO[str] | IO[bytes]) -> dict[str, Any]:
     """Loads and validates target group yaml definition file.
 
     Args:

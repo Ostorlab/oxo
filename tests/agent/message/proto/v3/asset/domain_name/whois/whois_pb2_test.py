@@ -1,7 +1,9 @@
-from src.ostorlab.agent.message.proto.v3.asset.domain_name.whois import whois_pb2
+from ostorlab.agent.message.proto.v3.asset.domain_name.whois import whois_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = whois_pb2.Message()
     message.name = "example.com"
     message.registrar = "Example Registrar"
@@ -16,7 +18,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.whois_server == "whois.example.com"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = whois_pb2.Message()
 
     assert message.name == ""
@@ -24,7 +26,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.whois_server == ""
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = whois_pb2.Message()
 
     serialized = message.SerializeToString()

@@ -1,5 +1,7 @@
 """Tests for CLI agent build command."""
 
+from pytest_mock import plugin
+
 import pathlib
 
 import docker
@@ -10,7 +12,7 @@ from ostorlab.cli import rootcli
 from ostorlab.cli.agent.build import build as agent_build
 
 
-def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage():
+def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage() -> None:
     """Test oxo agent build CLI command without the required file option. Should show help message, and confirm
     the --file option is missing.
     """
@@ -23,7 +25,7 @@ def testAgentBuildCLI_whenRequiredOptionFileIsMissing_showMessage():
     assert "Error: Missing option '--file' / '-f'." in result.output
 
 
-def _is_docker_image_present(image: str):
+def _is_docker_image_present(image: str) -> bool:
     docker_sdk_client = docker.from_env()
     try:
         docker_sdk_client.images.get(image)
@@ -33,8 +35,8 @@ def _is_docker_image_present(image: str):
 
 
 def testAgentBuildCLI_whenBuildRootIsConfigured_useAgentDefinitionDirectory(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Resolve the configured Docker build root from the agent definition."""
     dummy_def_yaml_file_path = (
         pathlib.Path(__file__).parent / "assets/nested_build_root_dummydef.yaml"
@@ -52,7 +54,7 @@ def testAgentBuildCLI_whenBuildRootIsConfigured_useAgentDefinitionDirectory(
         return_value=True,
     )
     mocker.patch.object(agent_build, "_image_exists", return_value=False)
-    mocker.patch.object(agent_build.docker, "from_env")
+    mocker.patch.object(docker, "from_env")
     build_image = mocker.patch.object(agent_build, "_build_image")
     runner = testing.CliRunner()
 
@@ -73,8 +75,8 @@ def testAgentBuildCLI_whenBuildRootIsConfigured_useAgentDefinitionDirectory(
 
 
 def testAgentBuildCLI_whenBuildRootIsMissing_useAgentDefinitionDirectory(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Use the agent definition directory when the build root is omitted."""
     dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
     mocker.patch(
@@ -90,7 +92,7 @@ def testAgentBuildCLI_whenBuildRootIsMissing_useAgentDefinitionDirectory(
         return_value=True,
     )
     mocker.patch.object(agent_build, "_image_exists", return_value=False)
-    mocker.patch.object(agent_build.docker, "from_env")
+    mocker.patch.object(docker, "from_env")
     build_image = mocker.patch.object(agent_build, "_build_image")
     runner = testing.CliRunner()
 
@@ -110,7 +112,7 @@ def testAgentBuildCLI_whenBuildRootIsMissing_useAgentDefinitionDirectory(
     )
 
 
-def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
+def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage() -> None:
     """Reject a Docker build root outside the agent definition directory."""
     dummy_def_yaml_file_path = (
         pathlib.Path(__file__).parent / "assets/illegal_build_root_dummydef.yaml"
@@ -133,8 +135,8 @@ def testAgentBuildCLI_whenParentBuildRootPath_failShowErrorMessage():
 @pytest.mark.docker
 @pytest.mark.parametrize("image_cleanup", ["dummy"], indirect=True)
 def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundExcep(
-    image_cleanup,
-):
+    image_cleanup: None,
+) -> None:
     """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     del image_cleanup
     dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
@@ -154,8 +156,8 @@ def testAgentBuildCLI_whenCommandIsValid_buildCompletedAndNoRaiseImageNotFoundEx
 @pytest.mark.docker
 @pytest.mark.parametrize("image_cleanup", ["dummy"], indirect=True)
 def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_showsMessageAndExists(
-    image_cleanup,
-):
+    image_cleanup: None,
+) -> None:
     """Test oxo agent build CLI command : Case where the command is valid. The agent container should be built."""
     del image_cleanup
     dummy_def_yaml_file_path = pathlib.Path(__file__).parent / "assets/dummydef.yaml"
@@ -185,8 +187,8 @@ def testAgentBuildCLI_whenCommandIsValidAndImageAlreadyExists_showsMessageAndExi
 @pytest.mark.docker
 @pytest.mark.parametrize("image_cleanup", ["dummy"], indirect=True)
 def testAgentBuildCLI_whenImageAlreadyExistsAndForceFlagPassed_buildCompletedAndNoRaiseImageNotFoundExcep(
-    image_cleanup,
-):
+    image_cleanup: None,
+) -> None:
     """Test oxo agent build CLI command : Case where the command is valid, the image exists and force flag is
     passed. The agent container should be built.
     """

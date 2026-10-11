@@ -6,6 +6,8 @@ Definition of the main methods to publish and consume MQ messages by the agents.
 import asyncio
 import concurrent.futures
 import logging
+import typing
+from collections.abc import Sequence
 
 import aio_pika
 import tenacity
@@ -23,11 +25,11 @@ class AgentMQMixin:
     def __init__(
         self,
         name: str,
-        keys: list[str],
+        keys: Sequence[str],
         url: str,
         topic: str,
         loop: asyncio.AbstractEventLoop | None = None,
-    ):
+    ) -> None:
         """Initialize the MQ parameters, the channel pools and the executors to process the messages.
         Args:
             name: Name of the queue.
@@ -49,12 +51,12 @@ class AgentMQMixin:
                 self._loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self._loop)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-        self._queue: aio_pika.Queue | None = None
-        self._connection_pool: aio_pika.pool.Pool[aio_pika.Connection] = (
-            aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
-        )
-        self._channel_pool: aio_pika.pool.Pool[aio_pika.Channel] = aio_pika.pool.Pool(
-            self._get_channel, max_size=64, loop=self._loop
+        self._queue: aio_pika.abc.AbstractRobustQueue | None = None
+        self._connection_pool: aio_pika.pool.Pool[
+            aio_pika.abc.AbstractRobustConnection
+        ] = aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
+        self._channel_pool: aio_pika.pool.Pool[aio_pika.abc.AbstractRobustChannel] = (
+            aio_pika.pool.Pool(self._get_channel, max_size=64, loop=self._loop)
         )
 
     @property
@@ -67,9 +69,9 @@ class AgentMQMixin:
             url=self._url, loop=self._loop, fail_fast=False
         )
 
-    async def _get_channel(self) -> aio_pika.Channel:
+    async def _get_channel(self) -> aio_pika.abc.AbstractRobustChannel:
         async with self._connection_pool.acquire() as connection:
-            channel: aio_pika.Channel = await connection.channel()
+            channel = await connection.channel()
             return channel
 
     async def _get_exchange(
@@ -145,7 +147,7 @@ class AgentMQMixin:
                 await self._loop.run_in_executor(
                     self._executor,
                     self.process_message,
-                    message.routing_key,
+                    typing.cast(str, message.routing_key),
                     message.body,
                 )
         except aio_pika.exceptions.ChannelInvalidStateError:

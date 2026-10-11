@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.fingerprint.file.android.feature import feature_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = feature_pb2.Message()
     message.path = "/system/app/TestApp.apk"
     message.package_name = "com.example.test"
@@ -20,7 +22,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.detail == "Detailed information about the test feature"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = feature_pb2.Message()
 
     assert message.path == ""
@@ -30,7 +32,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.detail == ""
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = feature_pb2.Message()
     message.package_name = ""
 

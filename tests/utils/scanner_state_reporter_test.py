@@ -49,7 +49,6 @@ def testReportMethod_whenCalled_updateValuesCorrectly(
         reporting_engine_api_key="reporting-engine-api-key",
     )
     report.scan_id = 1
-    report.errors = ""
 
     report.report()
 

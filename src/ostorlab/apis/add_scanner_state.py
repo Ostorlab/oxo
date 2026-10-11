@@ -10,7 +10,7 @@ from ostorlab.utils import definitions
 class AddScannerStateAPIRequest(request.APIRequest):
     """Report the scanner state."""
 
-    def __init__(self, state: definitions.ScannerState):
+    def __init__(self, state: definitions.ScannerState) -> None:
         """Sets the state values.
 
         Args:

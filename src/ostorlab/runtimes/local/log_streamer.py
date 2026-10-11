@@ -1,7 +1,10 @@
 """Stream logs of a service from a thread."""
 
+from __future__ import annotations
+
 import threading
 import time
+import typing
 
 import docker.errors
 from docker.models import services as docker_service
@@ -35,7 +38,7 @@ class _ServiceLogStream:
         self._service: docker_service.Service = service
         self._color: str = color
         self._stop_event = threading.Event()
-        self._thread: threading.Thread | None = None
+        self._thread: typing.Optional[threading.Thread] = None
 
     def start(self) -> None:
         """Starts the service log stream, in the background."""
@@ -80,7 +83,7 @@ class LogStream:
             service: Docker service.
         """
         color = self._select_color(service)
-        service_id = service.id
+        service_id = typing.cast(str, service.id)
 
         if service_id in self._log_streams:
             return
@@ -100,7 +103,7 @@ class LogStream:
                     del self._log_streams[service_id]
             time.sleep(1)
 
-    def _select_color(self, service):
+    def _select_color(self, service: docker_service.Service) -> str:
         """Select color for console output of service."""
         if service.name in self._color_map:
             color = self._color_map[service.name]
@@ -110,9 +113,12 @@ class LogStream:
             COLOR_POOL.insert(0, color)
         return color
 
-    def _service_exists(self, service_id) -> bool:
+    def _service_exists(self, service_id: str) -> bool:
         try:
-            self._docker_client.services.get(service_id)
+            typing.cast(
+                typing.Callable[[str], docker_service.Service],
+                self._docker_client.services.get,
+            )(service_id)
             return True
         except docker.errors.NotFound:
             return False

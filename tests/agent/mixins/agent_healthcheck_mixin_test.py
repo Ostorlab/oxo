@@ -7,7 +7,9 @@ import httpx
 from ostorlab.agent.mixins import agent_healthcheck_mixin
 
 
-def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsTrue_statusReturnsOK():
+def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsTrue_statusReturnsOK() -> (
+    None
+):
     """Checks status endpoint return if status is True."""
     status_agent = agent_healthcheck_mixin.AgentHealthcheckMixin(
         host="127.0.1.2", port=5006
@@ -21,7 +23,9 @@ def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsTrue_statusReturnsOK
     status_agent.stop_healthcheck()
 
 
-def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsFalse_statusReturnsNOK():
+def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsFalse_statusReturnsNOK() -> (
+    None
+):
     """Checks status endpoint return if status is False."""
     status_agent = agent_healthcheck_mixin.AgentHealthcheckMixin(
         host="127.0.1.3", port=5006
@@ -35,7 +39,9 @@ def testHealthcheckAgentMixin_whenHealthcheckCallbackReturnsFalse_statusReturnsN
     status_agent.stop_healthcheck()
 
 
-def testHealthcheckAgentMixin_whenMultipleHealthcheckCallbacksAndOneReturnsFalse_statusReturnsNOK():
+def testHealthcheckAgentMixin_whenMultipleHealthcheckCallbacksAndOneReturnsFalse_statusReturnsNOK() -> (
+    None
+):
     """Checks status endpoint return if status when multiple check and one returns False."""
     status_agent = agent_healthcheck_mixin.AgentHealthcheckMixin(
         host="127.0.1.4", port=5006

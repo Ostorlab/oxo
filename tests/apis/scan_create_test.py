@@ -270,3 +270,57 @@ def testCreateWebScanAPIRequest_withNoFilesButUIAutomationRuleIds_usesSimpleForm
     assert variables["uiAutomationRuleInstances"] == [
         {"ruleId": 7, "args": [{"name": "Rule 7"}]}
     ]
+
+
+def testCreateMobileScanAPIRequest_whenSbomsOmitted_shouldUploadOnlyApplication() -> (
+    None
+):
+    """Omitting optional SBOMs keeps the mobile application upload valid."""
+    application = io.BytesIO(b"application")
+    api_request = scan_create.CreateMobileScanAPIRequest(
+        title="Mobile scan",
+        asset_type=scan_create.MobileAssetType.ANDROID,
+        scan_profile="Full Scan",
+        application=application,
+    )
+
+    data = api_request.data
+
+    assert json.loads(data["operations"])["variables"]["sboms"] == []
+    assert json.loads(data["map"]) == {"0": ["variables.application"]}
+    assert api_request.files == {"0": application}
+
+
+def testCreateWebScanAPIRequest_whenSbomsOmitted_shouldProduceRequestWithoutUploads() -> (
+    None
+):
+    """Omitting optional SBOMs produces the web request without files."""
+    api_request = scan_create.CreateWebScanAPIRequest(
+        title="Web scan",
+        urls=["https://example.com"],
+        scan_profile="Full Web Scan",
+    )
+
+    data = api_request.data
+
+    assert json.loads(data["variables"])["sboms"] == []
+    assert api_request.files == {}
+
+
+def testCreateWebScanAPIRequest_whenSbomsOmittedWithSchema_shouldUploadSchemaAtFirstSlot() -> (
+    None
+):
+    """The API schema remains mapped correctly without preceding SBOMs."""
+    api_schema = io.BytesIO(b"api schema")
+    api_request = scan_create.CreateWebScanAPIRequest(
+        title="Web scan",
+        urls=["https://example.com"],
+        scan_profile="Full Web Scan",
+        api_schema=api_schema,
+    )
+
+    data = api_request.data
+
+    assert json.loads(data["operations"])["variables"]["sboms"] == []
+    assert json.loads(data["map"]) == {"0": ["variables.apiSchema"]}
+    assert api_request.files == {"0": api_schema}

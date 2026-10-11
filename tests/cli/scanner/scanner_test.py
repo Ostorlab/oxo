@@ -3,7 +3,11 @@
 import inspect
 import logging
 import os
+import pathlib
 import sys
+from typing import Optional
+from typing import TypedDict
+from typing import Unpack
 
 import pytest
 from click import testing as click_testing
@@ -18,12 +22,21 @@ from ostorlab.cli.scanner import scanner as scanner_cli
 def _remove_scanner_file_handlers() -> None:
     root_logger = logging.getLogger()
     for handler in list(root_logger.handlers):
-        if getattr(handler, "name", None) == scanner_cli.SCANNER_FILE_HANDLER_NAME:
+        if handler.name == scanner_cli.SCANNER_FILE_HANDLER_NAME:
             root_logger.removeHandler(handler)
             handler.close()
 
 
-def _start_scanner_sync(mocker: plugin.MockerFixture, **kwargs) -> None:
+class _ScannerOptions(TypedDict, total=False):
+    log_file: Optional[str]
+    log_level: int
+    gcp_logging_credential: Optional[str]
+    max_concurrent_scans: int
+
+
+def _start_scanner_sync(
+    mocker: plugin.MockerFixture, **kwargs: Unpack[_ScannerOptions]
+) -> None:
     mocker.patch("ostorlab.cli.scanner.scanner.scan_handler.start_scan_loop")
 
     scanner_cli.start_scanner(
@@ -149,7 +162,7 @@ def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorre
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
-        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--parallel", 42],
+        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--parallel", "42"],
     )
 
     assert create_process_mock.call_count == 42
@@ -165,7 +178,7 @@ def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAnd
     runner = click_testing.CliRunner()
     result = runner.invoke(
         rootcli.rootcli,
-        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--parallel", -42],
+        ["scanner", "--no-daemon", "--scanner-id", "11226DS", "--parallel", "-42"],
     )
 
     assert create_process_mock.call_count == 0
@@ -177,7 +190,7 @@ def testScannerCommandInvocation_whenParallelScanNumberIsNegative_shouldExistAnd
 
 def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
     mocker: plugin.MockerFixture,
-    tmp_path,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Ensure scanner logs can be persisted to a file."""
     _remove_scanner_file_handlers()
@@ -197,7 +210,7 @@ def testConfigureFileLogging_whenLogFileIsProvided_persistsLogs(
 
 def testConfigureFileLogging_whenDebugLevelIsProvided_persistsDebugLogs(
     mocker: plugin.MockerFixture,
-    tmp_path,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Ensure scanner file logs honor the configured log level."""
     _remove_scanner_file_handlers()
@@ -219,7 +232,7 @@ def testConfigureFileLogging_whenDebugLevelIsProvided_persistsDebugLogs(
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker(
     mocker: plugin.MockerFixture,
-    tmp_path,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Ensure persisted log file path is passed to scanner workers."""
     _remove_scanner_file_handlers()
@@ -255,7 +268,7 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
     mocker: plugin.MockerFixture,
-    tmp_path,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Ensure persisted scanner logs use the requested verbosity."""
     _remove_scanner_file_handlers()

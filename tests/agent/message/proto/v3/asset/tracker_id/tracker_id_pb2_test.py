@@ -1,7 +1,9 @@
-from src.ostorlab.agent.message.proto.v3.asset.tracker_id import tracker_id_pb2
+from ostorlab.agent.message.proto.v3.asset.tracker_id import tracker_id_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = tracker_id_pb2.Message()
     message.id = "a1b2c3"
     message.source = "reverse_search"
@@ -14,14 +16,14 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.source == "reverse_search"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = tracker_id_pb2.Message()
 
     assert message.id == ""
     assert message.source == ""
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = tracker_id_pb2.Message()
 
     serialized = message.SerializeToString()

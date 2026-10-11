@@ -177,7 +177,7 @@ def testScanUpdateStateAPIRequest_whenFullDetails_multiAssetSelectsNoConflicting
         for line in lines[multi_asset_start + 1 : multi_asset_end]
         if line.strip() != ""
     }
-    sibling_names = set()
+    sibling_names: set[str] = set()
     for line in lines[:multi_asset_start]:
         stripped = line.strip()
         if stripped.startswith("... on ") is True and stripped.endswith("}") is True:

@@ -6,6 +6,7 @@ import pytest_mock
 from click import testing
 
 from ostorlab.agent.message import serializer
+from ostorlab.agent.message.proto.v3.report.risk import risk_pb2
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import link as link_asset
@@ -402,6 +403,7 @@ def testScanRunRisk_whenAndroidApkProvided_shouldCallScanWithRiskAssetContaining
     assets = scan_mocked.call_args[1].get("assets")
     assert len(assets) == 1
     assert isinstance(assets[0], risk_asset.Risk)
+    assert isinstance(assets[0].android_apk, dict)
     assert assets[0].android_apk["content"] == b"apk content"
     assert assets[0].android_apk["path"] == str(apk_file)
 
@@ -489,6 +491,7 @@ def testRiskAsset_whenMultiAssetProvided_shouldSerializeAndDeserialize() -> None
 
     message = serializer.deserialize("v3.report.risk", r.to_proto())
 
+    assert isinstance(message, risk_pb2.Message)
     assert message.HasField("multi_asset") is True
     assert message.multi_asset.android_apk.path == "/a.apk"
     assert message.multi_asset.android_apk.content == b"apk content"
@@ -589,6 +592,7 @@ def testScanRunRisk_whenRepositoryArchiveFileProvided_shouldCallScanWithContentA
     assets = scan_mocked.call_args[1].get("assets")
     assert len(assets) == 1
     assert isinstance(assets[0], risk_asset.Risk)
+    assert isinstance(assets[0].repository_archive, dict)
     assert assets[0].repository_archive["content"] == b"archive content"
     assert assets[0].repository_archive["path"] == str(archive_file)
 
@@ -759,6 +763,7 @@ def testScanRunRisk_whenLinkHeadersProvided_shouldCallScanWithHeaders(
     assert scan_mocked.call_count == 1
     assets = scan_mocked.call_args[1].get("assets")
     assert isinstance(assets[0], risk_asset.Risk)
+    assert isinstance(assets[0].link, dict)
     assert assets[0].link["extra_headers"] == [
         {"name": "X-Api-Key", "value": "secret"},
         {"name": "Accept", "value": "application/json"},
@@ -815,6 +820,7 @@ def testScanRunRisk_whenApiSchemaFileProvided_shouldCallScanWithContentAndPath(
     assert scan_mocked.call_count == 1
     assets = scan_mocked.call_args[1].get("assets")
     assert isinstance(assets[0], risk_asset.Risk)
+    assert isinstance(assets[0].api_schema, dict)
     assert assets[0].api_schema["content"] == b"openapi: 3.0.0"
     assert assets[0].api_schema["path"] == str(schema_file)
 
@@ -875,6 +881,7 @@ def testScanRunRisk_whenApiSchemaEndpointAndTypeProvided_shouldCallScanWithField
     assert scan_mocked.call_count == 1
     assets = scan_mocked.call_args[1].get("assets")
     assert isinstance(assets[0], risk_asset.Risk)
+    assert isinstance(assets[0].api_schema, dict)
     assert assets[0].api_schema["endpoint_url"] == "https://api.example.com"
     assert assets[0].api_schema["schema_type"] == "openapi"
 
@@ -906,6 +913,7 @@ def testScanRunRisk_whenApiSchemaHeadersProvided_shouldCallScanWithExtraHeaders(
     assert scan_mocked.call_count == 1
     assets = scan_mocked.call_args[1].get("assets")
     assert isinstance(assets[0], risk_asset.Risk)
+    assert isinstance(assets[0].api_schema, dict)
     assert assets[0].api_schema["extra_headers"] == [
         {"name": "Authorization", "value": "Bearer token"}
     ]

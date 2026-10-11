@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.fingerprint.file.feature import feature_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     msg = feature_pb2.Message()
     msg.path = "test/path"
     msg.name = "test_feature"
@@ -18,7 +20,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized_msg.detail == "Test feature detail"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     msg = feature_pb2.Message()
 
     assert msg.path == ""
@@ -27,7 +29,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert msg.detail == ""
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     msg = feature_pb2.Message()
 
     serialized = msg.SerializeToString()

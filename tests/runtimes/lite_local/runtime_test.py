@@ -14,20 +14,22 @@ from ostorlab.runtimes.lite_local import runtime as lite_local_runtime
 from ostorlab.utils import definitions as utils_definitions
 
 
-def container_name_mock(name):
+def container_name_mock(name: str) -> str:
     del name
     return "name"
 
 
 @pytest.mark.docker
-def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
+def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Unittest for the scan stop method when there are local scans available.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
     Removes the scan service matching the provided id.
     """
 
-    def docker_services():
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the services list response."""
 
         services = [
@@ -72,15 +74,15 @@ def testRuntimeScanStop_whenScanIdIsValid_RemovesScanService(mocker):
 
 @pytest.mark.docker
 def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Unittest for the scan stop method when the scan id is invalid.
     Gets the docker services and checks for those with ostorlab.universe
     as one of the labels to find the service with the given scan id.
     Does not remove any service.
     """
 
-    def docker_services():
+    def docker_services() -> list[services_model.Service]:
         """Method for mocking the services list response."""
 
         services = [
@@ -124,7 +126,9 @@ def testRuntimeScanStop_whenScanIdIsInvalid_DoesNotRemoveAnyService(
 
 
 @pytest.mark.docker
-def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(mocker):
+def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Stopping a scan should remove only volumes labeled for that scan."""
     matching_volume = mocker.MagicMock(
         name="matching_volume",
@@ -161,7 +165,9 @@ def testRuntimeScanStop_whenMatchingVolumeExists_removesOnlyScanVolume(mocker):
     other_volume.remove.assert_not_called()
 
 
-def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(mocker):
+def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Ensure LiteLocalRuntime.list() accepts the state parameter without TypeError."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",
@@ -197,8 +203,8 @@ def testLiteLocalRuntimeList_whenStateIsProvided_acceptsStateParameter(mocker):
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreatedWithAgentSettings(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
@@ -272,8 +278,8 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
 
 
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
@@ -345,8 +351,8 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_
 
 
 def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithReplicas(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test creation of the agent service : Case where agent definitions & agent settings have different values for
     some attributes, the agent settings values should override.
     """
@@ -414,7 +420,7 @@ def testLiteLocalCreateAgentService_whenReplicasProvided_serviceCreatedWithRepli
 
 
 def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
-    mocker,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """SERVICE_NAME env var must equal the docker service name so agents can label GCP logs."""
     agent_def = agent_definitions.AgentDefinition(
@@ -468,7 +474,7 @@ def testLiteLocalCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEn
 
 def testLiteLocalCreateAgentService_whenAgentServiceCreated_addsMachineNameAndUniverseToEnv(
     mocker: plugin.MockerFixture,
-):
+) -> None:
     """Test creation of the agent service includes HOST_HOSTNAME and UNIVERSE in env."""
     mock_host_hostname = "test-mocked-hostname"
     mocker.patch("docker.DockerClient.info", return_value={"Name": mock_host_hostname})
@@ -603,7 +609,10 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
     )
     mount_mock = mocker.patch(
         "ostorlab.runtimes.lite_local.agent_runtime.docker_types_services.Mount",
-        side_effect=["mount-1", "mount-2"],
+        side_effect=[
+            mocker.Mock(spec=docker.types.Mount),
+            mocker.Mock(spec=docker.types.Mount),
+        ],
     )
 
     runtime_agent = agent_runtime.AgentRuntime(
@@ -628,7 +637,8 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         ]
     )
 
-    assert mounts == ["mount-1", "mount-2"]
+    assert len(mounts) == 2
+    assert all(isinstance(mount, docker.types.Mount) for mount in mounts)
     mock_docker_client.volumes.get.assert_any_call("repository_code_scan-42")
     mock_docker_client.volumes.get.assert_any_call("shared_cache_scan-42")
     create_volume_mock.assert_called_once_with(
@@ -643,7 +653,9 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
     }
 
 
-def testLiteLocalRuntimeInit_always_setsMaxPoolSize(mocker):
+def testLiteLocalRuntimeInit_always_setsMaxPoolSize(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test LiteLocalRuntime initializes docker client with increased pool size."""
     mocker.patch(
         "ostorlab.cli.docker_requirements_checker.is_docker_installed",

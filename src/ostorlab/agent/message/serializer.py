@@ -8,8 +8,10 @@ import pathlib
 import re
 import sys
 from typing import Any
+from typing import cast
 
 from google.protobuf import json_format
+from google.protobuf import message as protobuf_message
 
 from ostorlab import exceptions
 
@@ -73,7 +75,7 @@ def _list_message_proto_files() -> list[str]:
     # r=root, d=directories, f = files
     for r, d, f in os.walk(MESSAGE_CODE_PATH):
         for file in f:
-            if MESSAGE_PROTO in file:
+            if MESSAGE_PROTO in file and file.endswith((".py", ".pyc")):
                 files.append(os.path.join(r, file))
         del d
     return files
@@ -96,7 +98,7 @@ def _selector_to_package_regex(subject: str) -> str:
         )
 
 
-def serialize(selector: str, values: dict[str, Any]) -> Any:
+def serialize(selector: str, values: dict[str, Any]) -> protobuf_message.Message:
     """Serializes a Request message using the proper format defined using the seelctor value.
     If the subject is a.b.c. The corresponding proto is located at message/a/b/c/xxx.proto.
 
@@ -113,10 +115,15 @@ def serialize(selector: str, values: dict[str, Any]) -> Any:
         raise SerializationError("Error serializing message") from e
 
 
-def _serialize(selector: str, class_name: str, values: dict[str, Any]) -> Any:
+def _serialize(
+    selector: str, class_name: str, values: dict[str, Any]
+) -> protobuf_message.Message:
     """Serializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
-    class_object = getattr(importlib.import_module(package_name), class_name)
+    class_object = cast(
+        type[protobuf_message.Message],
+        getattr(importlib.import_module(package_name), class_name),
+    )
     proto_message = class_object()
     _parse_dict(values, proto_message)
     return proto_message
@@ -140,7 +147,7 @@ def _parse_list(values: Any, message: Any) -> None:
         message.extend(values)
 
 
-def _parse_dict(values: Any, message: Any) -> None:
+def _parse_dict(values: dict[str, Any], message: protobuf_message.Message) -> None:
     """Parse dict to protobuf message."""
     for k, v in values.items():
         if dataclasses.is_dataclass(v) is True:  # nested asset, parse recursively
@@ -163,11 +170,10 @@ def _parse_dict(values: Any, message: Any) -> None:
                 # if is of type ENUM.
                 if message.DESCRIPTOR.fields_by_name[k].type == 14:
                     # For type enum, we introspect the type to get enum type, and then get the string mapping to int.
-                    enum_v = (
-                        message.DESCRIPTOR.fields_by_name[k]
-                        .enum_type.values_by_name[v]
-                        .number
-                    )
+                    enum_type = message.DESCRIPTOR.fields_by_name[k].enum_type
+                    if enum_type is None:
+                        raise AttributeError(f"Missing enum descriptor for {k}")
+                    enum_v = enum_type.values_by_name[v].number
                     setattr(message, k, enum_v)
                 elif v is None:
                     # Optional values don't need to be set.
@@ -180,7 +186,7 @@ def _parse_dict(values: Any, message: Any) -> None:
                 raise SerializationError(f"invalid attribute {k}") from e
 
 
-def deserialize(selector: str, serialized: bytes) -> Any:
+def deserialize(selector: str, serialized: bytes) -> protobuf_message.Message:
     """Deserializes a Request message using the proper format defined using the selector value.
 
     Args:
@@ -188,15 +194,20 @@ def deserialize(selector: str, serialized: bytes) -> Any:
         serialized: Raw message to deserialize.
 
     Returns:
-        Dict
+        Deserialized protobuf message.
     """
     return _deserialize(selector, PROTO_CLASS_NAME, serialized)
 
 
-def _deserialize(selector: str, class_name: str, serialized: bytes) -> Any:
+def _deserialize(
+    selector: str, class_name: str, serialized: bytes
+) -> protobuf_message.Message:
     """Deserializes message using the selector and defined class name."""
     package_name = _find_package_name(selector)
-    class_object = getattr(importlib.import_module(package_name), class_name)
+    class_object = cast(
+        type[protobuf_message.Message],
+        getattr(importlib.import_module(package_name), class_name),
+    )
     proto_message = class_object()
     proto_message.ParseFromString(serialized)
     return proto_message

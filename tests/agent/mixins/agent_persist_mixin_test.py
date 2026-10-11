@@ -1,7 +1,6 @@
 """Tests for AgentPersistMixin module."""
 
 import ipaddress
-from collections.abc import Generator
 
 import pytest
 from pytest_mock import plugin
@@ -15,8 +14,8 @@ from ostorlab.runtimes.local.services import redis as local_redis_service
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
-    redis_service, clean_redis_data
-):
+    redis_service: local_redis_service.LocalRedis, clean_redis_data: None
+) -> None:
     """Test proper storage and access of set API."""
     del redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
@@ -44,8 +43,8 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
-    redis_service: Generator[None, None, None],
-    clean_redis_data: Generator[local_redis_service.LocalRedis, None, None],
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
 ) -> None:
     """Test AgentPersistMixin exists method."""
     settings = runtime_definitions.AgentSettings(
@@ -63,8 +62,10 @@ async def testAgentPersistMixinExists_whenKeyExists_returnTrue(
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinDeleteKey_whenKeyExists_keyIsDeleted(
-    mocker, redis_service, clean_redis_data
-):
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
     """Test proper storage and access of set API."""
     del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
@@ -81,8 +82,10 @@ async def testAgentPersistMixinDeleteKey_whenKeyExists_keyIsDeleted(
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(
-    mocker, redis_service, clean_redis_data
-):
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
     """Test proper storage and access of Hash API."""
     del mocker, redis_service, clean_redis_data
     settings = runtime_definitions.AgentSettings(
@@ -103,8 +106,10 @@ async def testAgentPersistMixin_whenHashIsAdded_hashIsPersisted(
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue(
-    mocker, redis_service, clean_redis_data
-):
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
     """Test mixin.add_ip_network returns True if ip_range is added and False if the ip_range
     or one of his supersets already exits"""
     del mocker, redis_service, clean_redis_data
@@ -131,8 +136,10 @@ async def testAgentPersistMixinCheckIpRangeExist_whenIpRangeIsCovered_returnTrue
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(
-    mocker, redis_service, clean_redis_data
-):
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
     """Test mixin.add_ip_network returns True if ip_range is added and False if the ip_range
     or one of his supersets already exits"""
     del mocker, redis_service, clean_redis_data
@@ -197,8 +204,8 @@ async def testAgentPersistMixinCheckIpRangeExist_withCallableKey_returnTrue(
 async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTrue(
     mocker: plugin.MockerFixture,
     redis_service: local_redis_service.LocalRedis,
-    clean_redis_data,
-):
+    clean_redis_data: None,
+) -> None:
     """Test mixin.ip_network_exist returns True if ip_range is added and False if the ip_range
     or one of his supersets already exits"""
     del mocker, redis_service, clean_redis_data

@@ -6,7 +6,7 @@ from ostorlab.agent import definitions
 from ostorlab.utils import definitions as utils_defintions
 
 
-def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition():
+def testAgentDefinitionFromYaml_whenYamlIsValid_returnsValidAgentDefinition() -> None:
     """Tests the creation of an agent definition from a valid yaml definition file."""
     valid_yaml_data = """
             kind: Agent

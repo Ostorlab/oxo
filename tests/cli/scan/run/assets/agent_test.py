@@ -1,11 +1,14 @@
 """Tests for scan run domain-name command."""
 
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testScanRunAgent_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):
+def testScanRunAgent_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run agent command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
@@ -21,8 +24,8 @@ def testScanRunAgent_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mock
 
 
 def testRunScanAgent__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run agent with non-supported runtime, should exit with return code 1."""
 
     mocker.patch(
