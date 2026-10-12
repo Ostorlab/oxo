@@ -43,8 +43,8 @@ from ostorlab.cli import agent_fetcher
 from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import registry
-from ostorlab.utils import release_channel
 from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.utils import release_channel
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
