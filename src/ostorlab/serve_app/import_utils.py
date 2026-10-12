@@ -6,6 +6,8 @@ import ipaddress
 import json
 import uuid
 import zipfile
+from typing import Any
+from typing import cast
 
 from ostorlab import configuration_manager
 from ostorlab.runtimes.local.models import models
@@ -49,9 +51,9 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         scan.created_time = (
             datetime.datetime.strptime(
                 scan_dict.get("created_time"), "%Y-%m-%d %H:%M:%S"
-            ).replace(tzinfo=datetime.timezone.utc)
+            ).replace(tzinfo=datetime.UTC)
             if scan_dict.get("created_time") is not None
-            else datetime.datetime.now(datetime.timezone.utc)
+            else datetime.datetime.now(datetime.UTC)
         )
         last_status: str | None = None
         if scan.id is None:
@@ -64,7 +66,7 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
             )
             if status["key"] == "progress":
                 last_status = status["value"].upper()
-        scan.progress = models.ScanProgress[last_status]
+        scan.progress = models.ScanProgress[cast(str, last_status)]
         scan.risk_rating = (
             risk_rating.RiskRating[scan_dict.get("risk_rating").upper()]
             if scan_dict.get("risk_rating") is not None
@@ -76,7 +78,7 @@ def _import_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         _import_asset(scan.id, asset_dicts, archive)
 
 
-def _get_asset_str(asset_dicts: list) -> str:
+def _get_asset_str(asset_dicts: list[dict[str, Any]]) -> str:
     """Get the asset string from the given asset dictionaries.
 
     Args:
@@ -93,10 +95,10 @@ def _get_asset_str(asset_dicts: list) -> str:
         elif "ios file" in asset_dict["type"].lower():
             asset_str.append("IOS File")
         elif "url" in asset_dict["type"].lower():
-            urls_str = ", ".join(asset_dict.get("urls"))
+            urls_str = ", ".join(cast(list[str], asset_dict.get("urls")))
             asset_str.append(f"Url(s): {urls_str}")
         elif "network" in asset_dict["type"].lower():
-            networks_str = ", ".join(asset_dict.get("networks"))
+            networks_str = ", ".join(cast(list[str], asset_dict.get("networks")))
             asset_str.append(f"Network(s): {networks_str}")
         elif "android store" in asset_dict["type"].lower():
             asset_str.append(
@@ -128,7 +130,7 @@ def _import_vulnz(scan: models.Scan, archive: zipfile.ZipFile) -> None:
 
 
 def _import_asset(
-    scan_id: int, asset_dicts: list[dict[str, str]], archive: zipfile.ZipFile
+    scan_id: int, asset_dicts: list[dict[str, Any]], archive: zipfile.ZipFile
 ) -> None:
     config_manager = configuration_manager.ConfigurationManager()
 
@@ -167,7 +169,7 @@ def _import_asset(
             )
 
         elif "network" in asset_dict["type"].lower():
-            networks = []
+            networks: list[dict[str, str | int | None]] = []
             for network in asset_dict["networks"]:
                 ip_network = ipaddress.ip_network(network, strict=False)
                 networks.append(

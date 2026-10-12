@@ -10,3 +10,14 @@ types-graphene
 pytest
 pytest-httpx==0.35.0
 cryptography
+
+pytest-mock
+sqlalchemy2-stubs==0.0.2a38
+types-docker
+types-jsonschema
+types-requests
+types-deprecated
+types-setuptools
+# Match the checked-in protobuf stub generator.
+grpcio-tools==1.78.0
+mypy-protobuf==5.1.0

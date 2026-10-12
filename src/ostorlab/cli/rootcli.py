@@ -2,10 +2,14 @@
 
 import json
 import logging
+from collections.abc import Callable
+from typing import Any
+from typing import cast
 
 import click
 
 from ostorlab import configuration_manager
+from ostorlab.cli import types as cli_types
 
 logger = logging.getLogger("CLI")
 
@@ -78,8 +82,13 @@ def rootcli(
                 content = source.read()
                 info = json.loads(content)
 
-            credentials = service_account.Credentials.from_service_account_info(info)
-            client = google.cloud.logging.Client(credentials=credentials)
+            credentials = cast(
+                Callable[[dict[str, Any]], object],
+                service_account.Credentials.from_service_account_info,
+            )(info)
+            client = cast(
+                cli_types.CloudLoggingClientFactory, google.cloud.logging.Client
+            )(credentials=credentials)
             client.setup_logging()
             ctx.obj["gcp_logging_credential"] = content
         except ImportError:

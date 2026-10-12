@@ -1,13 +1,15 @@
 """Agent and Agent group definitions and settings dataclasses."""
 
+from __future__ import annotations
+
 import base64
 import binascii
 import dataclasses
-import io
 import ipaddress
 import json
 import logging
 import pathlib
+import typing
 from typing import Any
 from typing import NamedTuple
 
@@ -74,12 +76,25 @@ _MULTI_ASSET_REPEATED_FIELDS: dict[type[base_asset.Asset], str] = {
 
 _MULTI_ASSET_IP_KEYS = ("ip", "ipv4", "ipv6")
 
-_MULTI_ASSET_REPEATED_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
+
+class _FileAssetFactory(typing.Protocol):
+    """Constructor shared by file-backed asset classes."""
+
+    def __call__(
+        self,
+        *,
+        content: typing.Optional[bytes],
+        path: typing.Optional[str],
+        content_url: typing.Optional[str],
+    ) -> base_asset.Asset: ...
+
+
+_MULTI_ASSET_REPEATED_FILE_CLASSES: dict[str, _FileAssetFactory] = {
     "file": file_asset.File,
     "repositoryArchive": repository_archive_asset.RepositoryArchive,
 }
 
-_MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, type[base_asset.Asset]] = {
+_MULTI_ASSET_MOBILE_FILE_CLASSES: dict[str, _FileAssetFactory] = {
     "androidApkFile": android_apk_asset.AndroidApk,
     "androidAabFile": android_aab_asset.AndroidAab,
     "iosFile": ios_ipa_asset.IOSIpa,
@@ -128,35 +143,41 @@ class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
 
     key: str
-    version: str | None = None
-    bus_url: str | None = ""
-    bus_exchange_topic: str | None = ""
-    bus_management_url: str | None = ""
-    bus_vhost: str | None = ""
+    version: typing.Optional[str] = None
+    bus_url: typing.Optional[str] = ""
+    bus_exchange_topic: typing.Optional[str] = ""
+    bus_management_url: typing.Optional[str] = ""
+    bus_vhost: typing.Optional[str] = ""
     args: list[definitions.Arg] = dataclasses.field(default_factory=list)
-    constraints: list[str] | None = dataclasses.field(default_factory=list)
-    mounts: list[str] | None = dataclasses.field(default_factory=list)
+    constraints: typing.Optional[typing.Sequence[str]] = dataclasses.field(
+        default_factory=list
+    )
+    mounts: typing.Optional[typing.Sequence[str]] = dataclasses.field(
+        default_factory=list
+    )
     restart_policy: str = ""
-    mem_limit: int | None = None
+    mem_limit: typing.Optional[int] = None
     open_ports: list[definitions.PortMapping] = dataclasses.field(default_factory=list)
     replicas: int = 1
     healthcheck_host: str = "0.0.0.0"
     healthcheck_port: int = 5000
-    redis_url: str | None = None
-    tracing_collector_url: str | None = None
-    caps: list[str] | None = None
-    cyclic_processing_limit: int | None = None
-    depth_processing_limit: int | None = None
-    accepted_agents: list[str] | None = None
-    in_selectors: list[str] | None = dataclasses.field(default_factory=list)
-    service_name: str | None = None
+    redis_url: typing.Optional[str] = None
+    tracing_collector_url: typing.Optional[str] = None
+    caps: typing.Optional[typing.Sequence[str]] = None
+    cyclic_processing_limit: typing.Optional[int] = None
+    depth_processing_limit: typing.Optional[int] = None
+    accepted_agents: typing.Optional[typing.Sequence[str]] = None
+    in_selectors: typing.Optional[typing.Sequence[str]] = dataclasses.field(
+        default_factory=list
+    )
+    service_name: typing.Optional[str] = None
 
     @property
-    def container_image(self):
+    def container_image(self) -> typing.Optional[str]:
         return agent_fetcher.get_container_image(self.key, self.version)
 
     @classmethod
-    def from_proto(cls, proto: bytes) -> "AgentSettings":
+    def from_proto(cls, proto: bytes) -> AgentSettings:
         """Constructs an agent definition from a binary proto settings.
 
         Args:
@@ -208,10 +229,14 @@ class AgentSettings:
         """
         instance = agent_instance_settings_pb2.AgentInstanceSettings()
         instance.key = self.key
-        instance.bus_url = self.bus_url
-        instance.bus_exchange_topic = self.bus_exchange_topic
-        instance.bus_management_url = self.bus_management_url
-        instance.bus_vhost = self.bus_vhost
+        if self.bus_url is not None:
+            instance.bus_url = self.bus_url
+        if self.bus_exchange_topic is not None:
+            instance.bus_exchange_topic = self.bus_exchange_topic
+        if self.bus_management_url is not None:
+            instance.bus_management_url = self.bus_management_url
+        if self.bus_vhost is not None:
+            instance.bus_vhost = self.bus_vhost
 
         for arg in self.args:
             arg_instance = instance.args.add()
@@ -229,13 +254,16 @@ class AgentSettings:
                     arg_instance.value = json.dumps(arg.value).encode()
                 except TypeError as e:
                     raise ValueError(
-                        f"type {arg_instance.value} is not JSON serializable"
+                        f"type {arg_instance.value!s} is not JSON serializable"
                     ) from e
 
-        instance.constraints.extend(self.constraints)
-        instance.mounts.extend(self.mounts)
+        if self.constraints is not None:
+            instance.constraints.extend(self.constraints)
+        if self.mounts is not None:
+            instance.mounts.extend(self.mounts)
         instance.restart_policy = self.restart_policy
-        instance.in_selectors.extend(self.in_selectors)
+        if self.in_selectors is not None:
+            instance.in_selectors.extend(self.in_selectors)
         if self.mem_limit is not None:
             instance.mem_limit = self.mem_limit
 
@@ -276,13 +304,13 @@ class AgentGroupDefinition:
     """Data class holding the attributes of an agent."""
 
     agents: list[AgentSettings]
-    name: str | None = None
-    description: str | None = None
+    name: typing.Optional[str] = None
+    description: typing.Optional[str] = None
     use_experimental_agents: bool = False
     channel: str | None = None
 
     @classmethod
-    def from_yaml(cls, group: io.FileIO):
+    def from_yaml(cls, group: typing.IO[str] | typing.IO[bytes]) -> typing.Self:
         """Construct AgentGroupDefinition from yaml file.
 
         Args:
@@ -342,7 +370,7 @@ class AgentGroupDefinition:
         )
 
     @classmethod
-    def from_api_response(cls, agent_group: dict[str, Any]) -> "AgentGroupDefinition":
+    def from_api_response(cls, agent_group: dict[str, Any]) -> AgentGroupDefinition:
         """Construct AgentGroupDefinition directly from the GraphQL agentGroup response.
 
         Args:
@@ -415,11 +443,11 @@ class AgentGroupDefinition:
 @dataclasses.dataclass
 class AssetsDefinition:
     targets: list[base_asset.Asset]
-    name: str | None = None
-    description: str | None = None
+    name: typing.Optional[str] = None
+    description: typing.Optional[str] = None
 
     @classmethod
-    def from_yaml(cls, group: io.FileIO):
+    def from_yaml(cls, group: typing.IO[str] | typing.IO[bytes]) -> typing.Self:
         """Construct TargetGroupDefinition from yaml file.
 
         Args:
@@ -441,7 +469,7 @@ class AssetsDefinition:
         repository_assets = assets.get("repository", [])
         repository_archive_assets = assets.get("repositoryArchive", [])
 
-        assets_def: list[assets.Asset] = []
+        assets_def: list[base_asset.Asset] = []
 
         for asset in android_aab_file_assets:
             parsed_file = _parse_file_asset(asset)
@@ -609,7 +637,7 @@ def build_multi_asset(
 
 def _parse_multi_asset(
     multi_asset_group: dict[str, Any],
-) -> multi_asset_asset.MultiAsset | None:
+) -> typing.Optional[multi_asset_asset.MultiAsset]:
     """Build a single multi asset from the target group's multi_asset section.
 
     Returns None when the section holds no asset, so no empty message is injected."""
@@ -771,7 +799,9 @@ def _parse_repository_asset(entry: dict[str, Any]) -> repository_asset.Repositor
 
 
 def _build_multi_asset_file(
-    entry: dict[str, Any], yaml_key: str, asset_class: type[base_asset.Asset]
+    entry: dict[str, Any],
+    yaml_key: str,
+    asset_class: _FileAssetFactory,
 ) -> base_asset.Asset:
     """Build a file-backed multi asset target, rejecting entries with no path nor url."""
     parsed_file = _parse_file_asset(entry)
@@ -790,12 +820,12 @@ def _build_multi_asset_file(
 class ParsedFileAsset(NamedTuple):
     """A file asset resolved into its content, local path and remote URL."""
 
-    content: bytes | None
-    path: str | None
-    url: str | None
+    content: typing.Optional[bytes]
+    path: typing.Optional[str]
+    url: typing.Optional[str]
 
 
-def _parse_file_asset(file_asset: dict[str, Any]) -> ParsedFileAsset | None:
+def _parse_file_asset(file_asset: dict[str, Any]) -> typing.Optional[ParsedFileAsset]:
     """Resolve a file asset entry into its content, path and url.
 
     Returns None when the entry has neither readable content nor a URL, so the
@@ -970,8 +1000,8 @@ def _parse_risk_asset(risk_entry: dict[str, Any]) -> risk_asset.Risk:
     return risk_asset.Risk(**risk_kwargs)
 
 
-def _parse_ip_asset(ip_asset: dict[str, Any]) -> base_asset.Asset | None:
-    ip_string = ip_asset.get("host")
+def _parse_ip_asset(ip_asset: dict[str, Any]) -> typing.Optional[base_asset.Asset]:
+    ip_string = typing.cast(str, ip_asset.get("host"))
     try:
         ip = ipaddress.ip_address(ip_string)
     except ValueError:
@@ -987,11 +1017,11 @@ def _parse_ip_asset(ip_asset: dict[str, Any]) -> base_asset.Asset | None:
     return None
 
 
-def _load_asset_from_file(path: str) -> bytes | None:
-    path = pathlib.Path(path)
+def _load_asset_from_file(path: str) -> typing.Optional[bytes]:
+    asset_path = pathlib.Path(path)
     try:
-        content = path.read_bytes()
+        content = asset_path.read_bytes()
     except OSError as e:
-        logger.error(f"Could not open {path}: {e}.")
+        logger.error(f"Could not open {asset_path}: {e}.")
         return None
     return content

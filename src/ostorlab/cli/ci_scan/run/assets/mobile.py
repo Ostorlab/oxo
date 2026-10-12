@@ -2,9 +2,11 @@
 This module takes care of preparing the application file and calling the create mobile scan API.
 """
 
-import io
 import itertools
 import json
+from collections.abc import Sequence
+from typing import BinaryIO
+from typing import cast
 
 import click
 
@@ -32,7 +34,7 @@ def _prepare_test_credentials(
     sms_2fa_sender = ctx.obj["test_credentials"]["sms_2fa_sender"]
     totp_2fa_seed = ctx.obj["test_credentials"]["totp_2fa_seed"]
 
-    credentials = []
+    credentials: list[test_credentials_create_api.TestCredential] = []
     for login, password, role, url in itertools.zip_longest(
         test_credentials_login,
         test_credentials_password,
@@ -86,7 +88,7 @@ def _prepare_test_credentials(
 
 def run_mobile_scan(
     ctx: click.core.Context,
-    file: io.FileIO,
+    file: BinaryIO,
     asset_type: scan_create_api.MobileAssetType,
 ) -> None:
     """Create scan for mobile application package file."""
@@ -201,14 +203,14 @@ def _create_scan(
     title: str,
     scan_profile: str,
     asset_type: scan_create_api.MobileAssetType,
-    file: io.FileIO,
-    credential_ids: list[int],
+    file: BinaryIO,
+    credential_ids: list[int | str],
     runner: authenticated_runner.AuthenticatedAPIRunner,
-    sboms: list[io.FileIO],
+    sboms: Sequence[BinaryIO],
     scan_source: scan_create_api.ScanSource | None = None,
     scope_urls_regexes: list[str] | None = None,
-    ui_automation_rule_ids: list[int] = (),
-) -> int:
+    ui_automation_rule_ids: Sequence[int] = (),
+) -> int | str:
     scan_result = runner.execute(
         scan_create_api.CreateMobileScanAPIRequest(
             title=title,
@@ -222,11 +224,14 @@ def _create_scan(
             ui_automation_rule_ids=ui_automation_rule_ids,
         )
     )
-    scan_id = scan_result.get("data").get("createMobileScan").get("scan").get("id")
+    scan_id = cast(int | str, scan_result["data"]["createMobileScan"]["scan"]["id"])
     return scan_id
 
 
-def _create_test_credentials(test_credentials, runner):
+def _create_test_credentials(
+    test_credentials: list[test_credentials_create_api.TestCredential],
+    runner: authenticated_runner.AuthenticatedAPIRunner,
+) -> list[int | str]:
     credential_ids = []
     for test_credential in test_credentials:
         test_credential_result = runner.execute(
@@ -235,9 +240,11 @@ def _create_test_credentials(test_credentials, runner):
             )
         )
         credential_ids.append(
-            test_credential_result.get("data")
-            .get("createTestCredentials")
-            .get("testCredentials")
-            .get("id")
+            cast(
+                int | str,
+                test_credential_result["data"]["createTestCredentials"][
+                    "testCredentials"
+                ]["id"],
+            )
         )
     return credential_ids

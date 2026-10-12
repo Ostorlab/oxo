@@ -1,11 +1,15 @@
 """Jaeger service to collect Agent traces."""
 
+from __future__ import annotations
+
 import logging
+import typing
 
 import docker
 import tenacity
 from docker import errors
 from docker import types
+from docker.models import networks
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -32,9 +36,9 @@ class LocalJaeger:
 
     def __init__(
         self,
-        name: str,
+        name: int | str,
         network: str,
-        exposed_ports: dict[int, int] | None = None,
+        exposed_ports: typing.Optional[dict[int, int]] = None,
         image: str = JAEGER_IMAGE,
     ) -> None:
         """Initialize the Jaeger service parameters.
@@ -51,7 +55,7 @@ class LocalJaeger:
         self._network = network
         self._jaeger_host = f"jaeger_{self._name}"
         # service
-        self._jaeger_service = None
+        self._jaeger_service: typing.Optional[services.Service] = None
         # exposed_port
         self._exposed_ports = exposed_ports or DEFAULT_EXPOSED_PORTS
 
@@ -66,7 +70,7 @@ class LocalJaeger:
         return f"http://127.0.0.1:{DEFAULT_JAEGER_UI_PORT}"
 
     @property
-    def service(self):
+    def service(self) -> typing.Optional[services.Service]:
         return self._jaeger_service
 
     def start(self) -> None:
@@ -83,9 +87,9 @@ class LocalJaeger:
                 and service.name.startswith("jaeger_")
                 and self._name in universe
             ):
-                service.remove()
+                typing.cast(typing.Callable[[], None], service.remove)()
 
-    def _create_network(self):
+    def _create_network(self) -> typing.Optional[networks.Network]:
         if any(
             network.name == self._network
             for network in self._docker_client.networks.list()
@@ -100,15 +104,20 @@ class LocalJaeger:
                 labels={"ostorlab.universe": self._name},
                 check_duplicate=True,
             )
+        return None
 
-    def _start_jaeger(self) -> services.Service | None:
+    def _start_jaeger(self) -> typing.Optional[services.Service]:
         try:
             logger.info("starting Jaeger")
-            endpoint_spec = types.services.EndpointSpec(
-                mode="vip", ports=self._exposed_ports
-            )
+            endpoint_spec = typing.cast(
+                typing.Callable[..., types.services.EndpointSpec],
+                types.services.EndpointSpec,
+            )(mode="vip", ports=self._exposed_ports)
             service_mode = types.services.ServiceMode("replicated", replicas=1)
-            return self._docker_client.services.create(
+            return typing.cast(
+                typing.Callable[..., services.Service],
+                self._docker_client.services.create,
+            )(
                 image=self._jaeger_image,
                 networks=[self._network],
                 name=self._jaeger_host,
@@ -120,7 +129,7 @@ class LocalJaeger:
         except docker.errors.APIError as e:
             error_message = f"Jaeger service could not be started. Reason: {e}."
             logger.error(error_message)
-            return
+            return None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
@@ -129,8 +138,11 @@ class LocalJaeger:
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool:
-        logger.info("checking service %s", self._jaeger_service.name)
+    def is_service_healthy(self) -> bool | tenacity.Future:
+        logger.info(
+            "checking service %s",
+            typing.cast(services.Service, self._jaeger_service).name,
+        )
         return self.is_healthy
 
     @property
@@ -141,7 +153,10 @@ class LocalJaeger:
                 and len(
                     [
                         task
-                        for task in self._jaeger_service.tasks()
+                        for task in typing.cast(
+                            typing.Callable[[], list[dict[str, typing.Any]]],
+                            self._jaeger_service.tasks,
+                        )()
                         if task["Status"]["State"] == "running"
                     ]
                 )

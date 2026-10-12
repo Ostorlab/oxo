@@ -5,7 +5,7 @@ from click import testing
 from ostorlab.cli import rootcli
 
 
-def testAgentHealthcheckCLI_whenAgentIsNotHealthy_commandExitsWithError():
+def testAgentHealthcheckCLI_whenAgentIsNotHealthy_commandExitsWithError() -> None:
     """Test oxo agent healthcheck CLI command when healthcheck should fail."""
     runner = testing.CliRunner()
 
@@ -15,7 +15,7 @@ def testAgentHealthcheckCLI_whenAgentIsNotHealthy_commandExitsWithError():
     assert result.exit_code == 2
 
 
-def testAgentHealthcheckCLI_whenAgentIsHealthy_commandExitsWithoutError():
+def testAgentHealthcheckCLI_whenAgentIsHealthy_commandExitsWithoutError() -> None:
     """Test oxo agent healthcheck CLI command when healthcheck should pass."""
     runner = testing.CliRunner()
 

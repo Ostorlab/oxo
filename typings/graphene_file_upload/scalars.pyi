@@ -1,0 +1,3 @@
+from graphene.types import scalars
+
+class Upload(scalars.Scalar): ...

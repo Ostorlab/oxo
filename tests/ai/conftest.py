@@ -27,7 +27,7 @@ def stub_credentials_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
     def _fake_refresh(self: service_account.Credentials, request: object) -> None:
         self.token = "fake-access-token"
         # google.auth compares expiry against a naive UTC datetime.
-        self.expiry = datetime.datetime.now(datetime.timezone.utc).replace(
+        self.expiry = datetime.datetime.now(datetime.UTC).replace(
             tzinfo=None
         ) + datetime.timedelta(hours=1)
 

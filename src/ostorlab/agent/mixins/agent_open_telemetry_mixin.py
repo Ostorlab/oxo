@@ -4,6 +4,8 @@ The mixin overrides the behaviour of the main methods of the agent, mainly emit 
 metadata, metrics and exceptions.
 """
 
+from __future__ import annotations
+
 import base64
 import io
 import json
@@ -11,10 +13,15 @@ import logging
 import os
 import tempfile
 import uuid
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 from typing import Any
+from typing import Optional
+from typing import cast
 from urllib import parse
 
 import opentelemetry.exporter.otlp.proto.grpc.trace_exporter as otlp_exporter
+from opentelemetry import context as telemetry_context
 from opentelemetry import trace
 from opentelemetry.exporter import cloud_trace
 from opentelemetry.sdk import resources
@@ -32,7 +39,7 @@ logger = logging.getLogger(__name__)
 class TraceExporter:
     """Class responsible for preparing the respective OpenTelemetry Span Exporter for an input tracing url."""
 
-    def __init__(self, tracing_collector_url: str):
+    def __init__(self, tracing_collector_url: str) -> None:
         self._tracing_collector_url = tracing_collector_url
         # specialized fields for the different collectors.
         self._file: io.IOBase | None = None
@@ -109,10 +116,22 @@ class TraceExporter:
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
                 service_account_key_temp_file.name
             )
-        return cloud_trace.CloudTraceSpanExporter(project_id=project_id)
+        exporter_factory = cast(
+            Callable[..., cloud_trace.CloudTraceSpanExporter],
+            cloud_trace.CloudTraceSpanExporter,
+        )
+        return exporter_factory(project_id=project_id)
 
 
-class OpenTelemetryMixin:
+if TYPE_CHECKING:
+    from ostorlab.agent import agent
+
+    _AgentBase = agent.AgentMixin
+else:
+    _AgentBase = object
+
+
+class OpenTelemetryMixin(_AgentBase):
     """OpenTelemetryMixin to send telemetry data of the agent behaviour. The mixin enables tracking information
     like when was a message processed or emitted, using which selector,
     how much time it took to serialize or deserialize a message, and report exceptions when they occur..etc.
@@ -156,11 +175,13 @@ class OpenTelemetryMixin:
             self._span_processor = sdk_export.BatchSpanProcessor(
                 self._exporter.get_trace_exporter()
             )
-            trace.get_tracer_provider().add_span_processor(self._span_processor)
+            cast(
+                trace_provider.TracerProvider, trace.get_tracer_provider()
+            ).add_span_processor(self._span_processor)
             self._tracer = trace.get_tracer(__name__)
 
     @property
-    def tracer(self) -> trace.Tracer:
+    def tracer(self) -> Optional[trace.Tracer]:
         """Tracer object to report traces to the configured opentelemetry collector.
         To use:
 
@@ -216,13 +237,13 @@ class OpenTelemetryMixin:
                     trace.NonRecordingSpan(parent_span_context)
                 )
             else:
-                context = {}
+                context = telemetry_context.Context()
 
             raw_selector = ".".join(selector_split[:-1])
             control_message = agent_message.Message.from_raw("v3.control", message)
 
             data = agent_message.Message.from_raw(
-                raw_selector, control_message.data.get("message")
+                raw_selector, cast(bytes, control_message.data.get("message"))
             ).data
             minified_msg_data = dictionary_minifier.minify_dict(
                 data, dictionary_minifier.truncate_str
@@ -231,7 +252,7 @@ class OpenTelemetryMixin:
                 minified_msg_data, default=self._stringify_bytes_values
             )
 
-            with self.tracer.start_as_current_span(
+            with cast(trace.Tracer, self.tracer).start_as_current_span(
                 "process_message", context=context
             ) as process_msg_span:
                 process_msg_span.set_attribute("agent.name", self.name)
@@ -263,7 +284,9 @@ class OpenTelemetryMixin:
             None
         """
         if self._tracing_collector_url is not None:
-            with self.tracer.start_as_current_span("emit_message") as emit_span:
+            with cast(trace.Tracer, self.tracer).start_as_current_span(
+                "emit_message"
+            ) as emit_span:
                 logger.debug("recording emit message trace..")
 
                 trace_id = emit_span.get_span_context().trace_id

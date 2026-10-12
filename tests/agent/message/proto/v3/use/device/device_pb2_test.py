@@ -3,7 +3,9 @@
 from ostorlab.agent.message.proto.v3.use.device import device_pb2
 
 
-def testSerializeAndDeserialize_whenCreatedWithValidData_returnsEquivalentMessage():
+def testSerializeAndDeserialize_whenCreatedWithValidData_returnsEquivalentMessage() -> (
+    None
+):
     message = device_pb2.Message()
     message.device_id = "939AX05RHG"
     message.device_type = "android"
@@ -43,14 +45,16 @@ def testSerializeAndDeserialize_whenCreatedWithValidData_returnsEquivalentMessag
     assert deserialized.device_session_token == "5f8c7a2e-1b3d-4e6f-9a0b-1c2d3e4f5a6b"
 
 
-def testCreate_whenDeviceSessionTokenNotSet_doesNotHaveDeviceSessionTokenField():
+def testCreate_whenDeviceSessionTokenNotSet_doesNotHaveDeviceSessionTokenField() -> (
+    None
+):
     message = device_pb2.Message()
     message.device_id = "939AX05RHG"
 
     assert message.HasField("device_session_token") is False
 
 
-def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage():
+def testSerializeAndDeserialize_whenEmpty_returnsEmptyMessage() -> None:
     message = device_pb2.Message()
 
     serialized = message.SerializeToString()

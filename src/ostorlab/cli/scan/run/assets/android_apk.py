@@ -2,8 +2,8 @@
 This module takes care of preparing a file of type .APK before injecting it to the runtime instance.
 """
 
-import io
 import logging
+from typing import BinaryIO
 
 import click
 
@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def android_apk(
     ctx: click.core.Context,
-    file: tuple[io.FileIO] | None = (),
-    url: tuple[str] | None = (),
+    file: tuple[BinaryIO, ...] = (),
+    url: tuple[str, ...] = (),
 ) -> None:
     """Run scan for android .APK package file."""
     runtime = ctx.obj["runtime"]

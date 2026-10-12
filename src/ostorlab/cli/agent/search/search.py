@@ -1,6 +1,8 @@
 """Agent search command."""
 
 import logging
+from typing import Any
+from typing import cast
 
 import click
 from rich import markdown
@@ -65,7 +67,7 @@ def search_cli(keyword: str) -> None:
     console.table(columns=columns, data=agents, title=title)
 
 
-def search_agents(search: str) -> dict:
+def search_agents(search: str) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
     Args:
@@ -79,6 +81,7 @@ def search_agents(search: str) -> dict:
     """
     config_manager = configuration_manager.ConfigurationManager()
 
+    runner: base_runner.APIRunner
     if config_manager.is_authenticated is True:
         runner = authenticated_runner.AuthenticatedAPIRunner()
     else:
@@ -98,4 +101,4 @@ def search_agents(search: str) -> dict:
         raise click.exceptions.Exit(2)
     else:
         agent_details = response["data"]["agents"]
-        return agent_details
+        return cast(dict[str, Any], agent_details)

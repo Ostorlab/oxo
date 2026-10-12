@@ -4,6 +4,10 @@ This module takes care of preparing a risk message to be injected onto the messa
 import io
 import ipaddress
 import logging
+from typing import Any
+from typing import BinaryIO
+from typing import Optional
+from typing import TypedDict
 
 import click
 
@@ -26,6 +30,25 @@ _RISK_RATINGS = [
     "IMPORTANT",
     "INFO",
 ]
+
+
+class _RiskArguments(TypedDict, total=False):
+    """Keyword fields accepted by the risk message constructor."""
+
+    description: str
+    rating: str
+    ipv4: dict[str, Any]
+    ipv6: dict[str, Any]
+    domain_name: dict[str, Any]
+    link: dict[str, Any]
+    android_store: dict[str, Any]
+    ios_store: dict[str, Any]
+    android_aab: dict[str, Any]
+    android_apk: dict[str, Any]
+    ios_ipa: dict[str, Any]
+    api_schema: dict[str, Any]
+    repository: dict[str, Any]
+    repository_archive: dict[str, Any]
 
 
 @run.run.command(name="risk")
@@ -212,24 +235,24 @@ def risk_cli(
     domain: str | None,
     url: str | None,
     link_method: str,
-    link_headers: tuple,
+    link_headers: tuple[str, ...],
     android_store: str | None,
     ios_store: str | None,
-    android_aab_file: io.RawIOBase | None,
+    android_aab_file: Optional[BinaryIO],
     android_aab_url: str | None,
-    android_apk_file: io.RawIOBase | None,
+    android_apk_file: Optional[BinaryIO],
     android_apk_url: str | None,
-    ios_ipa_file: io.RawIOBase | None,
+    ios_ipa_file: Optional[BinaryIO],
     ios_ipa_url: str | None,
-    api_schema_file: io.RawIOBase | None,
+    api_schema_file: Optional[BinaryIO],
     api_schema_url: str | None,
     api_schema_endpoint: str | None,
     api_schema_type: str | None,
-    api_schema_headers: tuple,
+    api_schema_headers: tuple[str, ...],
     repository_url: str | None,
     commit_hash: str | None,
     provider: str | None,
-    repository_archive_file: io.RawIOBase | None,
+    repository_archive_file: Optional[BinaryIO],
     repository_archive_url: str | None,
 ) -> None:
     """Run scan with a risk report injected onto the message bus.\n
@@ -281,7 +304,8 @@ def risk_cli(
 
     runtime = ctx.obj["runtime"]
 
-    risk_kwargs = {
+    assert description is not None
+    risk_kwargs: _RiskArguments = {
         "description": description,
         "rating": severity,
     }
@@ -309,7 +333,7 @@ def risk_cli(
         risk_kwargs["domain_name"] = {"name": domain}
 
     if url is not None:
-        link_dict: dict = {"url": url, "method": link_method}
+        link_dict: dict[str, Any] = {"url": url, "method": link_method}
         if len(link_headers) > 0:
             parsed_headers = []
             for h in link_headers:
@@ -358,7 +382,7 @@ def risk_cli(
         or api_schema_url is not None
         or api_schema_endpoint is not None
     ):
-        schema_dict: dict = {}
+        schema_dict: dict[str, Any] = {}
         if api_schema_file is not None:
             schema_dict["content"] = api_schema_file.read()
             schema_dict["path"] = api_schema_file.name

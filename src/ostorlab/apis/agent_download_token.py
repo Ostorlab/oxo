@@ -22,7 +22,7 @@ class AgentDownloadTokenAPIRequest(request.APIRequest):
         self._version = version
 
     @property
-    def query(self) -> str | None:
+    def query(self) -> str:
         """The mutation to generate a download token for an agent image.
 
         Returns:

@@ -1,7 +1,7 @@
 """This module triggers a scan using the ApiSchema asset."""
 
-import io
 import logging
+from typing import BinaryIO
 
 import click
 
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 def api_schema(
     ctx: click.core.Context,
     url: str,
-    schema_file: io.FileIO | None = None,
+    schema_file: BinaryIO | None = None,
     schema_url: str | None = None,
     schema_type: str | None = None,
 ) -> None:

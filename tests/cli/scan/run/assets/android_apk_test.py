@@ -1,11 +1,14 @@
 """Tests for scan run android-apk command."""
 
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testScanRunAndroidApk_whenNoOptionsProvided_shouldExitAndShowError(mocker):
+def testScanRunAndroidApk_whenNoOptionsProvided_shouldExitAndShowError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run android-apk command with no options and no sub command.
     Should show error message and exit with exit_code = 2."""
 
@@ -24,8 +27,8 @@ def testScanRunAndroidApk_whenNoOptionsProvided_shouldExitAndShowError(mocker):
 
 
 def testScanRunAndroidApk_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowError(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run android-apk command when both file & url options are provided.
     Should show error message and exit with exit_code = 2."""
 

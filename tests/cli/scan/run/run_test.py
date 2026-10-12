@@ -18,8 +18,8 @@ from ostorlab.runtimes.local.models import models
 
 
 def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test ostorlab scan command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
@@ -33,7 +33,7 @@ def testOstorlabScanRunCLI_whenNoOptionsProvided_showsAvailableOptionsAndCommand
 
 
 def testOstorlabScanRunCLI_whenHelpRequested_doesNotWarnAboutDuplicateOptions(
-    mocker,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test scan run help does not trigger click duplicate option warnings."""
     runner = CliRunner()
@@ -50,7 +50,7 @@ def testOstorlabScanRunCLI_whenHelpRequested_doesNotWarnAboutDuplicateOptions(
     )
 
 
-def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
+def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker: plugin.MockerFixture) -> None:
     """Test ostorlab scan command with all options and no sub command.
     Should show list of available commands (assets) and exit with error exit_code = 2.
     """
@@ -76,7 +76,7 @@ def testRunScanCLI_WhenAgentsAreInvalid_ShowError(mocker):
 
 
 @pytest.mark.docker
-def testRunScanCLI_WhenNoConnection_ShowError(mocker):
+def testRunScanCLI_WhenNoConnection_ShowError(mocker: plugin.MockerFixture) -> None:
     """Test ostorlab scan command with all options and no sub command.
     Should show list of available commands (assets) and exit with error exit_code = 2.
     """
@@ -146,8 +146,8 @@ def testRunScanCLI_WhenNoConnection_ShowError(mocker):
 
 
 def testRunScanCLI_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run command with all valid options and no sub command.
     Should show list of available commands (assets) and exit with error exit_code = 2.
     """
@@ -172,7 +172,9 @@ def testRunScanCLI_whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandEr
     assert result.exit_code == 2
 
 
-def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(mocker):
+def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Unittest oxo scan run in cloud runtime with all valid options and arguments.
     Should send api requests for creating Agent group, asset & scan.
     And displays Scan created successfully.
@@ -238,7 +240,9 @@ def testScanRunCloudRuntime_whenValidArgsAreProvided_CreatesAgGrAssetAndScan(moc
     assert "Scan created successfully" in result.output
 
 
-def testScanRunCloudRuntime_whenValidMultipleLinksGiven_CreatesAgGrAssetAndScan(mocker):
+def testScanRunCloudRuntime_whenValidMultipleLinksGiven_CreatesAgGrAssetAndScan(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Unittest oxo scan run in cloud runtime with multiple links.
     Should send api requests for creating Agent group, asset & scan.
     And displays Scan created successfully.
@@ -310,7 +314,9 @@ def testScanRunCloudRuntime_whenValidMultipleLinksGiven_CreatesAgGrAssetAndScan(
     assert "Scan created successfully" in result.output
 
 
-def testScanRun_whenNoAssetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
+def testScanRun_whenNoAssetFlagWithInjectAssetSubCommand_raisesErrors(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Unittest to ensure scan run command fails when both --no-asset flag and
     inject asset sub-commands are provided."""
     mocker.patch(
@@ -335,7 +341,9 @@ def testScanRun_whenNoAssetFlagWithInjectAssetSubCommand_raisesErrors(mocker):
     assert "Sub-command ip specified with --no-asset flag." in result.output
 
 
-def testScanRunCloudRuntime_whenRuntimeRaisesException_showsErrorMessage(mocker):
+def testScanRunCloudRuntime_whenRuntimeRaisesException_showsErrorMessage(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test error message shown when runtime fails and exits gracefully."""
 
     mocker.patch(
@@ -375,7 +383,7 @@ def testScanRunLocalRuntime_whenIInvalidYamlAgentGroupDefinition_showsErrorMessa
             "--runtime=cloud",
             "run",
             "-g",
-            invalid_agent_group,
+            str(invalid_agent_group),
             "--title=invalid_scan",
             "ip",
             "127.0.0.1",
@@ -696,10 +704,12 @@ def testOstorlabScanRunCLI_whenIp_shouldLinkAgentGroupAndAssetToScan(
 
     with models.Database() as session:
         scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert scan is not None
         assert scan.title == "test_scan"
         agent_group = (
             session.query(models.AgentGroup).filter_by(id=scan.agent_group_id).first()
         )
+        assert agent_group is not None
         assert len(agent_group.agents) == 1
         assert any(agent.key == "agent/ostorlab/nmap" for agent in agent_group.agents)
         assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
@@ -767,10 +777,12 @@ def testOstorlabScanRunCLI_whenLink_shouldLinkAssetToScan(
 
     with models.Database() as session:
         scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert scan is not None
         assert scan.title == "test_scan"
         agent_group = (
             session.query(models.AgentGroup).filter_by(id=scan.agent_group_id).first()
         )
+        assert agent_group is not None
         assert len(agent_group.agents) == 1
         assert any(agent.key == "agent/ostorlab/nmap" for agent in agent_group.agents)
         assets = session.query(models.Asset).filter_by(scan_id=scan.id).all()
@@ -837,7 +849,9 @@ def testScanRunLink_whenNoAsset_DoesNotCrash(mocker: plugin.MockerFixture) -> No
 
 
 def testRunScan_whenAgentVersionProvidedWithCliArgs_usesSpecificVersion(
-    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition, tmp_path
+    mocker: plugin.MockerFixture,
+    nmap_agent_def: definitions.AgentDefinition,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Test that scan run with --arg uses the specific agent version from YAML."""
     # Create agent group YAML with specific version
@@ -889,7 +903,9 @@ agents:
 
 
 def testRunScan_whenNoVersionProvidedWithCliArgs_passesNoneToGetDefinition(
-    mocker: plugin.MockerFixture, nmap_agent_def: definitions.AgentDefinition, tmp_path
+    mocker: plugin.MockerFixture,
+    nmap_agent_def: definitions.AgentDefinition,
+    tmp_path: pathlib.Path,
 ) -> None:
     """Test that scan run with --arg passes None version when not specified in YAML."""
     agent_group_yaml = tmp_path / "agent_group.yaml"

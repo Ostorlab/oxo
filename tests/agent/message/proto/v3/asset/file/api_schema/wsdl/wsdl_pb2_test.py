@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.asset.file.api_schema.wsdl import wsdl_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = wsdl_pb2.Message()
     message.content = b'<?xml version="1.0" encoding="UTF-8"?><definitions xmlns="http://schemas.xmlsoap.org/wsdl/"></definitions>'
     message.path = "/wsdl/service.wsdl"
@@ -19,7 +21,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.schema_type == "wsdl"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = wsdl_pb2.Message()
 
     assert message.content == b""
@@ -27,7 +29,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.schema_type == "wsdl"
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = wsdl_pb2.Message()
 
     serialized = message.SerializeToString()

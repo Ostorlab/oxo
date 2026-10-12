@@ -16,9 +16,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="android-store")
 @click.option("--package-name", multiple=True, required=False)
 @click.pass_context
-def android_store(
-    ctx: click.core.Context, package_name: tuple[str] | None = ()
-) -> None:
+def android_store(ctx: click.core.Context, package_name: tuple[str, ...] = ()) -> None:
     """Run scan for a package_name."""
     runtime = ctx.obj["runtime"]
     assets = []

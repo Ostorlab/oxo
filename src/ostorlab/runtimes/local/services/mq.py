@@ -1,16 +1,20 @@
 """RabbitMQ service in charge of routing Agent messages."""
 
+from __future__ import annotations
+
 import binascii
 import hashlib
 import logging
 import os
 import pathlib
+import typing
 import uuid
 
 import docker
 import tenacity
 from docker import errors
 from docker import types
+from docker.models import networks
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -27,9 +31,9 @@ class LocalRabbitMQ:
 
     def __init__(
         self,
-        name: str,
+        name: int | str,
         network: str,
-        exposed_ports: dict[int, int] | None = None,
+        exposed_ports: typing.Optional[dict[int, int]] = None,
         image: str = MQ_IMAGE,
     ) -> None:
         """Initialize the MQ service parameters.
@@ -47,7 +51,7 @@ class LocalRabbitMQ:
         self._network = network
         self._mq_host = f"mq_{self._name}"
         # service
-        self._mq_service = None
+        self._mq_service: typing.Optional[services.Service] = None
         # exposed_port
         self._exposed_ports = exposed_ports
 
@@ -62,7 +66,7 @@ class LocalRabbitMQ:
         return "/"
 
     @property
-    def service(self) -> services.Service | None:
+    def service(self) -> typing.Optional[services.Service]:
         """The RabbitMQ corresponding docker service."""
         return self._mq_service
 
@@ -85,9 +89,9 @@ class LocalRabbitMQ:
                 and service.name.startswith("mq_")
                 and self._name in universe
             ):
-                service.remove()
+                typing.cast(typing.Callable[[], None], service.remove)()
 
-    def _create_network(self):
+    def _create_network(self) -> typing.Optional[networks.Network]:
         if any(
             network.name == self._network
             for network in self._docker_client.networks.list()
@@ -102,6 +106,7 @@ class LocalRabbitMQ:
                 labels={"ostorlab.universe": self._name},
                 check_duplicate=True,
             )
+        return None
 
     def _create_mq_advanced_config(self) -> types.services.ConfigReference:
         conf_path = (
@@ -129,24 +134,28 @@ class LocalRabbitMQ:
             data=mq_advanced_configuration,
         )
         return types.services.ConfigReference(
-            config_id=docker_config.id,
+            config_id=typing.cast(str, docker_config.id),
             config_name=config_name,
             filename=MQ_ADVANCED_CONF_PATH,
         )
 
-    def _start_mq(self) -> services.Service:
+    def _start_mq(self) -> typing.Optional[services.Service]:
         try:
             logger.info("starting MQ")
-            endpoint_spec = types.services.EndpointSpec(
-                mode="vip", ports=self._exposed_ports
-            )
+            endpoint_spec = typing.cast(
+                typing.Callable[..., types.services.EndpointSpec],
+                types.services.EndpointSpec,
+            )(mode="vip", ports=self._exposed_ports)
             service_mode = types.services.ServiceMode("replicated", replicas=1)
             mq_advanced_configuration = self._create_mq_advanced_config()
             configs = [mq_advanced_configuration]
             persistent_storage = docker.types.Mount(
                 target="/var/lib/rabbitmq", source=f"{self._name}_mq_data"
             )
-            return self._docker_client.services.create(
+            return typing.cast(
+                typing.Callable[..., services.Service],
+                self._docker_client.services.create,
+            )(
                 image=self._mq_image,
                 networks=[self._network],
                 hostname="mq",
@@ -166,7 +175,7 @@ class LocalRabbitMQ:
         except docker.errors.APIError as e:
             error_message = f"MQ service could not be started. Reason: {e}."
             logger.error(error_message)
-            return
+            return None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
@@ -175,13 +184,15 @@ class LocalRabbitMQ:
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool:
+    def is_service_healthy(self) -> bool | tenacity.Future:
         """Check the service is running and RabbitMQ accepts client connections.
 
         A running task only means the container started; RabbitMQ needs a few more seconds before its AMQP
         listener accepts connections, and agents started earlier fail to connect.
         """
-        logger.info("checking service %s", self._mq_service.name)
+        logger.info(
+            "checking service %s", typing.cast(services.Service, self._mq_service).name
+        )
         return self.is_healthy and self.is_accepting_connections
 
     @property
@@ -194,7 +205,10 @@ class LocalRabbitMQ:
         try:
             running_tasks = [
                 task
-                for task in self._mq_service.tasks()
+                for task in typing.cast(
+                    typing.Callable[[], list[dict[str, typing.Any]]],
+                    typing.cast(services.Service, self._mq_service).tasks,
+                )()
                 if task["Status"]["State"] == "running"
             ]
             if len(running_tasks) != 1:
@@ -219,7 +233,10 @@ class LocalRabbitMQ:
                 and len(
                     [
                         task
-                        for task in self._mq_service.tasks()
+                        for task in typing.cast(
+                            typing.Callable[[], list[dict[str, typing.Any]]],
+                            self._mq_service.tasks,
+                        )()
                         if task["Status"]["State"] == "running"
                     ]
                 )

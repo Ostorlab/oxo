@@ -1,8 +1,8 @@
 """Asset of type repository archive.
 This module prepares a source code repository archive asset before injecting it to the runtime."""
 
-import io
 import logging
+from typing import BinaryIO
 
 import click
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def repository_archive_cli(
     ctx: click.core.Context,
-    files: tuple[io.FileIO, ...] = (),
+    files: tuple[BinaryIO, ...] = (),
     urls: tuple[str, ...] = (),
 ) -> None:
     """Run scan for a source code repository archive asset."""

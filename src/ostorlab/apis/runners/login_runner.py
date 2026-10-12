@@ -26,7 +26,7 @@ class LoginAPIRunner(runner.APIRunner):
         otp_token: str | None = None,
         proxy: str | None = None,
         verify: bool = True,
-    ):
+    ) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:

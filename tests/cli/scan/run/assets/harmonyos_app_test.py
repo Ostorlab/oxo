@@ -1,11 +1,14 @@
 """Tests for scan run harmonyos-app command."""
 
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 
 
-def testScanRunHarmonyOSApp_whenNoOptionsProvided_shouldExitAndShowError(mocker):
+def testScanRunHarmonyOSApp_whenNoOptionsProvided_shouldExitAndShowError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run harmonyos-app command with no options and no sub command.
     Should show error message and exit with exit_code = 2."""
 
@@ -25,8 +28,8 @@ def testScanRunHarmonyOSApp_whenNoOptionsProvided_shouldExitAndShowError(mocker)
 
 
 def testScanRunHarmonyOSApp_whenBothFileAndUrlOptionsAreProvided_shouldExitAndShowError(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run harmonyos-app command when both file & url options are provided.
     Should show error message and exit with exit_code = 2."""
 

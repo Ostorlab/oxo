@@ -4,6 +4,7 @@ import abc
 import csv
 import json
 from collections.abc import Mapping
+from collections.abc import Sequence
 
 FIELDNAMES = [
     "id",
@@ -36,7 +37,7 @@ class VulnzDumper(abc.ABC):
         self.output_path: str = output_path
 
     @abc.abstractmethod
-    def dump(self, data: list[object]) -> None:
+    def dump(self, data: Sequence[object]) -> None:
         """Dump the vulnerabilities in the right format."""
         raise NotImplementedError("Missing implementation")
 
@@ -44,7 +45,7 @@ class VulnzDumper(abc.ABC):
 class VulnzJsonDumper(VulnzDumper):
     """Vulnerability dumper to json."""
 
-    def dump(self, data: list[object]) -> None:
+    def dump(self, data: Sequence[object]) -> None:
         """Dump vulnerabilities to json file.
 
         Raises:
@@ -59,7 +60,7 @@ class VulnzJsonDumper(VulnzDumper):
 class VulnzCsvDumper(VulnzDumper):
     """Vulnerability dumper to csv."""
 
-    def dump(self, data: list[object]) -> None:
+    def dump(self, data: Sequence[object]) -> None:
         """Dump vulnerabilities to csv file.
 
         Raises:

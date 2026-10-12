@@ -6,6 +6,7 @@ from unittest import mock
 import httpx
 
 from ostorlab.apis import request
+from ostorlab.apis.runners import runner as api_runner
 from ostorlab.apis.runners import scanner_runner
 
 
@@ -55,7 +56,7 @@ def testScannerAPIRunner_whenExecuteReturnsError_raisesResponseError() -> None:
         try:
             runner.execute(req)
             assert False, "Expected ResponseError"
-        except scanner_runner.runner.ResponseError:
+        except api_runner.ResponseError:
             pass
 
 
@@ -71,7 +72,7 @@ def testScannerAPIRunner_whenExecuteReturnsGraphQLError_raisesResponseError() ->
         try:
             runner.execute(req)
             assert False, "Expected ResponseError"
-        except scanner_runner.runner.ResponseError:
+        except api_runner.ResponseError:
             pass
 
 

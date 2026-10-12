@@ -1,21 +1,34 @@
 """common utilities for the flask app."""
 
+from __future__ import annotations
+
 import collections
-import inspect
 import io
 import json
 import struct
 import zipfile
 from functools import cached_property
 from math import ceil
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Generic
+from typing import TypeVar
+from typing import cast
+from typing import overload
 
 import cvss
 import graphene
 from graphene.types import scalars
 from graphql.language import ast
+from sqlalchemy import orm
+
+if TYPE_CHECKING:
+    ObjectType = graphene.ObjectType[object]
+else:
+    ObjectType = graphene.ObjectType
 
 
-class PageInfo(graphene.ObjectType):
+class PageInfo(ObjectType):
     """Page info object type."""
 
     count = graphene.Int()
@@ -52,7 +65,7 @@ class Bytes(scalars.Scalar):
 
     @staticmethod
     def coerce_bytes(
-        value: str | bytes | memoryview | list | float | dict | bool,
+        value: str | bytes | memoryview | list[Any] | float | dict[str, Any] | bool,
     ) -> bytes:
         """Coerce a value to bytes.
 
@@ -116,15 +129,23 @@ def compute_cvss_v3_base_score(vector: str | None) -> float | None:
     if vector is None:
         return None
     try:
-        return cvss.CVSS3(vector).scores()[0]
+        return cast(float, cvss.CVSS3(vector).scores()[0])
     except cvss.CVSS3Error:
         return None
 
 
-class Page(collections.abc.Sequence):
+T = TypeVar("T")
+
+
+class Page(collections.abc.Sequence[T]):
     """A single page in a paginated list of objects."""
 
-    def __init__(self, object_list, number, paginator):
+    def __init__(
+        self,
+        object_list: collections.abc.Sequence[T],
+        number: int,
+        paginator: Paginator[T],
+    ) -> None:
         """
         initialize the page object.
         Args:
@@ -136,15 +157,21 @@ class Page(collections.abc.Sequence):
         self.number = number
         self.paginator = paginator
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the string representation of the page object."""
         return f"<Page {self.number} of {self.paginator.num_pages}>"
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the number of objects in the page."""
         return len(self.object_list)
 
-    def __getitem__(self, index):
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> collections.abc.Sequence[T]: ...
+
+    def __getitem__(self, index: int | slice) -> T | collections.abc.Sequence[T]:
         """Return the object at the given index in the page."""
         if isinstance(index, (int, slice)) is False:
             raise TypeError(
@@ -163,10 +190,12 @@ class Page(collections.abc.Sequence):
         return self.number > 1
 
 
-class Paginator:
+class Paginator(Generic[T]):
     """A paginator object for paginating a list of objects."""
 
-    def __init__(self, object_list: list[any], per_page):
+    def __init__(
+        self, object_list: collections.abc.Sequence[T] | orm.Query[T], per_page: int
+    ) -> None:
         """Initialize the paginator object.
         Args:
             object_list: The list of objects to paginate.
@@ -178,9 +207,8 @@ class Paginator:
     @cached_property
     def count(self) -> int:
         """Return the total number of objects, across all pages."""
-        c = getattr(self.object_list, "count", None)
-        if callable(c) is True and inspect.isbuiltin(c) is False:
-            return c()
+        if isinstance(self.object_list, orm.Query):
+            return self.object_list.count()
         return len(self.object_list)
 
     @cached_property
@@ -191,7 +219,7 @@ class Paginator:
         hits = max(1, self.count)
         return ceil(hits / self.per_page)
 
-    def get_page(self, number: int) -> Page:
+    def get_page(self, number: int) -> Page[T]:
         """Return a valid page, even if the page argument isn't a number or isn't in range.
         Args:
             number: The page number.
@@ -199,7 +227,7 @@ class Paginator:
         """
         return self.page(number)
 
-    def page(self, number: int) -> Page:
+    def page(self, number: int) -> Page[T]:
         """Return a Page object for the given 1-based page number
         Args:
             number: The page number.
@@ -213,9 +241,14 @@ class Paginator:
             object_list=self.object_list[bottom:top], number=number, paginator=self
         )
 
-    def _get_page(self, *args, **kwargs) -> Page:
+    def _get_page(
+        self,
+        object_list: collections.abc.Sequence[T],
+        number: int,
+        paginator: Paginator[T],
+    ) -> Page[T]:
         """Return an instance of a single page."""
-        return Page(*args, **kwargs)
+        return Page(object_list, number, paginator)
 
 
 def is_apk(file_content: bytes) -> bool:

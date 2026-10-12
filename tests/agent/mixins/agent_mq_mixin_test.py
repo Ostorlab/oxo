@@ -1,7 +1,11 @@
 """Tests for MQMixin module."""
 
+from __future__ import annotations
+
 import asyncio
+import collections.abc
 import concurrent.futures
+import typing
 from unittest import mock
 
 import pytest
@@ -9,6 +13,7 @@ from aiormq import exceptions as aiormq_exceptions
 from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_mq_mixin
+from ostorlab.runtimes.local.services import mq
 from ostorlab.utils import strings
 
 
@@ -16,21 +21,33 @@ class Agent(agent_mq_mixin.AgentMQMixin):
     """Helper class to test MQ implementation of send and process messages."""
 
     def __init__(
-        self, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
-    ):
+        self,
+        name: str = "test1",
+        keys: collections.abc.Sequence[str] = ("a.#",),
+        url: str = "amqp://guest:guest@localhost:5672/",
+    ) -> None:
         topic = "test_topic"
         super().__init__(name=name, keys=keys, url=url, topic=topic)
-        self.stub = None
+        self.stub: typing.Optional[collections.abc.Callable[[bytes], None]] = None
 
-    def process_message(self, selector, message):
+    def process_message(self, selector: str, message: bytes) -> None:
         """Process the MQ messages using stub callback for the Unit tests."""
         if self.stub is not None:
             self.stub(message)
 
+    async def mq_close(self) -> None:
+        """Close the pools used by this test client."""
+        await self._channel_pool.close()
+        await self._connection_pool.close()
+
     @classmethod
     def create(
-        cls, stub, name="test1", keys=("a.#",), url="amqp://guest:guest@localhost:5672/"
-    ):
+        cls,
+        stub: collections.abc.Callable[[bytes], None],
+        name: str = "test1",
+        keys: collections.abc.Sequence[str] = ("a.#",),
+        url: str = "amqp://guest:guest@localhost:5672/",
+    ) -> Agent:
         instance = cls(name=name, keys=keys, url=url)
         instance.stub = stub
         return instance
@@ -38,7 +55,9 @@ class Agent(agent_mq_mixin.AgentMQMixin):
 
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service):
+async def testClient_whenMessageIsSent_processMessageIsCalled(
+    mocker: plugin.MockerFixture, mq_service: mq.LocalRabbitMQ
+) -> None:
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name="test1")
     client = Agent.create(stub, name="test1", keys=["d.#"])
@@ -51,13 +70,17 @@ async def testClient_whenMessageIsSent_processMessageIsCalled(mocker, mq_service
 
 
 @pytest.mark.asyncio
-async def testConnection_whenConnectionException_reconnectIsCalled(mocker):
+async def testConnection_whenConnectionException_reconnectIsCalled(
+    mocker: plugin.MockerFixture,
+) -> None:
     stub = mocker.stub(name="test1")
     client = Agent.create(
         stub, name="test1", keys=["d.#"], url="amqp://wrong:wrong@localhost:5672/"
     )
 
-    async def connect_robust_fail(*args, **kwargs):
+    async def connect_robust_fail(
+        *args: typing.Any, **kwargs: typing.Any
+    ) -> typing.Never:
         raise aiormq_exceptions.AMQPConnectionError("connection refused")
 
     mocker.patch("aio_pika.connect_robust", side_effect=connect_robust_fail)
@@ -75,7 +98,9 @@ async def testConnection_whenConnectionException_reconnectIsCalled(mocker):
 @pytest.mark.skip(reason="Needs debugging why MQ is not resending the message")
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_service):
+async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(
+    mocker: plugin.MockerFixture, mq_service: mq.LocalRabbitMQ
+) -> None:
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name="test2")
     stub.side_effect = [Exception, None]
@@ -94,8 +119,8 @@ async def testClient_whenMessageIsRejectedOnce_messageIsRedelivered(mocker, mq_s
 @pytest.mark.asyncio
 @pytest.mark.docker
 async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(
-    mocker, mq_service
-):
+    mocker: plugin.MockerFixture, mq_service: mq.LocalRabbitMQ
+) -> None:
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name="test3")
     stub.side_effect = [Exception, Exception, None]
@@ -112,7 +137,9 @@ async def testClient_whenMessageIsRejectedTwoTimes_messageIsDiscarded(
 
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
+async def testClient_whenClientDisconnects_messageIsNotLost(
+    mocker: plugin.MockerFixture, mq_service: mq.LocalRabbitMQ
+) -> None:
     word = strings.random_string(length=10).encode()
     stub = mocker.stub(name="test4")
     # client to send the message
@@ -138,8 +165,8 @@ async def testClient_whenClientDisconnects_messageIsNotLost(mocker, mq_service):
 
 
 def testMqSendMessage_onConnectionResetError_shouldRetriesAndReraise(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     mock_send_message = mocker.patch.object(agent_mq_mixin.AgentMQMixin, "_get_channel")
     mock_send_message.side_effect = ConnectionResetError
     agent = agent_mq_mixin.AgentMQMixin(

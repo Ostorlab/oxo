@@ -1,7 +1,9 @@
 from ostorlab.runtimes.proto import agent_instance_settings_pb2
 
 
-def testAgentInstanceSettings_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testAgentInstanceSettings_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     settings = agent_instance_settings_pb2.AgentInstanceSettings()
     settings.key = "test-key"
     settings.bus_url = "amqp://localhost:5672"
@@ -40,7 +42,7 @@ def testAgentInstanceSettings_whenCreateWithValidData_shouldSerializeAndDeserial
     assert deserialized_settings.open_ports[0].source_port == 8080
 
 
-def testAgentInstanceSettings_whenCreateEmpty_shouldHaveDefaultValues():
+def testAgentInstanceSettings_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     settings = agent_instance_settings_pb2.AgentInstanceSettings()
 
     assert settings.key == ""
@@ -53,7 +55,7 @@ def testAgentInstanceSettings_whenCreateEmpty_shouldHaveDefaultValues():
     assert len(settings.constraints) == 0
 
 
-def testAgentInstanceSettings_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testAgentInstanceSettings_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     settings = agent_instance_settings_pb2.AgentInstanceSettings()
 
     serialized = settings.SerializeToString()

@@ -1,12 +1,14 @@
 """Unit tests for install_progress.py module."""
 
+from collections.abc import Iterator
+
 from ostorlab.cli.agent.install import install_progress
 
 
 def testAgentInstallProgress_whenLogsGeneratorHasLogs_displaysProgress() -> None:
     """Test the agent install progress when the logs generator has logs."""
     progress = install_progress.AgentInstallProgress()
-    logs_generator = iter(
+    logs_generator: Iterator[install_progress.PullLog] = iter(
         [
             {
                 "id": "1",
@@ -30,7 +32,7 @@ def testAgentInstallProgress_whenLogsGeneratorHasLogs_displaysProgress() -> None
 def testAgentInstallProgress_whenTotalIsMissing_doesNotCrash() -> None:
     """Test the agent install progress when the total attr is missing."""
     progress = install_progress.AgentInstallProgress()
-    logs_generator = iter(
+    logs_generator: Iterator[install_progress.PullLog] = iter(
         [
             {
                 "id": "1",
@@ -54,7 +56,7 @@ def testAgentInstallProgress_whenTotalIsMissing_doesNotCrash() -> None:
 def testAgentInstallProgress_whenCurrentIsMissing_doesNotCrash() -> None:
     """Test the agent install progress when the current attr is missing."""
     progress = install_progress.AgentInstallProgress()
-    logs_generator = iter(
+    logs_generator: Iterator[install_progress.PullLog] = iter(
         [
             {
                 "id": "1",

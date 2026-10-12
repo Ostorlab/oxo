@@ -1,11 +1,15 @@
 """Redis service in charge of providing capabilities like QPS limiting, distributed locking and distributed storage."""
 
+from __future__ import annotations
+
 import logging
+import typing
 
 import docker
 import tenacity
 from docker import errors
 from docker import types
+from docker.models import networks
 from docker.models import services
 
 logger = logging.getLogger(__name__)
@@ -18,9 +22,9 @@ class LocalRedis:
 
     def __init__(
         self,
-        name: str,
+        name: int | str,
         network: str,
-        exposed_ports: dict[int, int] | None = None,
+        exposed_ports: typing.Optional[dict[int, int]] = None,
         image: str = REDIS_IMAGE,
     ) -> None:
         """Initialize the Redis service parameters.
@@ -37,7 +41,7 @@ class LocalRedis:
         self._network = network
         self._redis_host = f"redis_{self._name}"
         # service
-        self._redis_service = None
+        self._redis_service: typing.Optional[services.Service] = None
         # exposed_port
         self._exposed_ports = exposed_ports
 
@@ -47,7 +51,7 @@ class LocalRedis:
         return f"redis://{self._redis_host}:6379/"
 
     @property
-    def service(self) -> services.Service | None:
+    def service(self) -> typing.Optional[services.Service]:
         return self._redis_service
 
     def start(self) -> None:
@@ -64,9 +68,9 @@ class LocalRedis:
                 and service.name.startswith("redis_")
                 and self._name in universe
             ):
-                service.remove()
+                typing.cast(typing.Callable[[], None], service.remove)()
 
-    def _create_network(self) -> None:
+    def _create_network(self) -> typing.Optional[networks.Network]:
         if any(
             network.name == self._network
             for network in self._docker_client.networks.list()
@@ -81,15 +85,20 @@ class LocalRedis:
                 labels={"ostorlab.universe": self._name},
                 check_duplicate=True,
             )
+        return None
 
-    def _start_redis(self) -> services.Service | None:
+    def _start_redis(self) -> typing.Optional[services.Service]:
         try:
             logger.info("starting Redis")
-            endpoint_spec = types.services.EndpointSpec(
-                mode="vip", ports=self._exposed_ports
-            )
+            endpoint_spec = typing.cast(
+                typing.Callable[..., types.services.EndpointSpec],
+                types.services.EndpointSpec,
+            )(mode="vip", ports=self._exposed_ports)
             service_mode = types.services.ServiceMode("replicated", replicas=1)
-            return self._docker_client.services.create(
+            return typing.cast(
+                typing.Callable[..., services.Service],
+                self._docker_client.services.create,
+            )(
                 image=self._redis_image,
                 networks=[self._network],
                 name=self._redis_host,
@@ -110,8 +119,11 @@ class LocalRedis:
         retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool:
-        logger.info("checking service %s", self._redis_service.name)
+    def is_service_healthy(self) -> bool | tenacity.Future:
+        logger.info(
+            "checking service %s",
+            typing.cast(services.Service, self._redis_service).name,
+        )
         return self.is_healthy
 
     @property
@@ -122,7 +134,10 @@ class LocalRedis:
                 and len(
                     [
                         task
-                        for task in self._redis_service.tasks()
+                        for task in typing.cast(
+                            typing.Callable[[], list[dict[str, typing.Any]]],
+                            self._redis_service.tasks,
+                        )()
                         if task["Status"]["State"] == "running"
                     ]
                 )

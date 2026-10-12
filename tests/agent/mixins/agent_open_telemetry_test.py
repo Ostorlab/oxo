@@ -6,6 +6,7 @@ import tempfile
 import uuid
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
@@ -115,7 +116,7 @@ def testOpenTelemetryMixin_whenEmitMessage_shouldNotTruncateOriginalMessage(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenEmitMessageWithPriority_shouldForwardPriority(
-    mocker,
+    mocker: plugin.MockerFixture,
 ) -> None:
     """Test that emit forwards message priority through the OpenTelemetry wrapper."""
     with tempfile.NamedTemporaryFile(suffix=".json") as tmp_file_obj:
@@ -150,7 +151,7 @@ def testOpenTelemetryMixin_whenEmitMessageWithPriority_shouldForwardPriority(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
-    agent_mock: list[object],
+    agent_mock: list[agent_message.Message],
 ) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock
@@ -200,7 +201,7 @@ def testOpenTelemetryMixin_whenProcessMessage_shouldTraceMessage(
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testOpenTelemetryMixin_whenProcessMessageWithTraceIdSpanId_shouldInjectIdInContext(
-    agent_mock: list[object],
+    agent_mock: list[agent_message.Message],
 ) -> None:
     """Unit test for the OpenTelemtry Mixin, ensure the correct exporter has been used and trace span has been sent."""
     del agent_mock

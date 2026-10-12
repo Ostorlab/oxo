@@ -3,7 +3,9 @@ from ostorlab.agent.message.proto.v3.fingerprint.file.harmonyos.backend import (
 )
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     msg = backend_pb2.Message()
     msg.path = "/some/path"
     msg.bundle_name = "com.example.app"
@@ -32,7 +34,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized_msg.ips[0].location.city == "Tamazirt"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     msg = backend_pb2.Message()
 
     assert msg.path == ""
@@ -42,7 +44,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert len(msg.ips) == 0
 
 
-def testIp_whenCreateWithDefaults_shouldHaveCorrectDefaults():
+def testIp_whenCreateWithDefaults_shouldHaveCorrectDefaults() -> None:
     ip = backend_pb2.Ip()
     ip.ip_address = "8.8.8.8"
 

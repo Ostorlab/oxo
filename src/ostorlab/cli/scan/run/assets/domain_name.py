@@ -1,6 +1,7 @@
 """Asset of type Domain Name."""
 
 import logging
+from collections.abc import Sequence
 
 import click
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 @run.run.command(name="domain-name")
 @click.argument("names", required=True, nargs=-1)
 @click.pass_context
-def domain_name_cli(ctx: click.core.Context, names: list[str]) -> None:
+def domain_name_cli(ctx: click.core.Context, names: Sequence[str]) -> None:
     """Run scan for Domain Name asset."""
     runtime = ctx.obj["runtime"]
     assets = []

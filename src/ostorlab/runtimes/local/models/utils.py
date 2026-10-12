@@ -1,6 +1,9 @@
 """Utilities for the local runtime models."""
 
+from __future__ import annotations
+
 import plistlib
+import typing
 import zipfile
 
 import pyaxmlparser
@@ -17,7 +20,7 @@ def get_package_name(path: str) -> str:
     """
 
     apk_info = pyaxmlparser.APK(path)
-    return apk_info.get_package()
+    return typing.cast(str, apk_info.get_package())
 
 
 def get_bundle_id(path: str) -> str:
@@ -52,4 +55,4 @@ def get_bundle_id(path: str) -> str:
         if bundle_id is None:
             return ""
 
-        return bundle_id
+        return typing.cast(str, bundle_id)

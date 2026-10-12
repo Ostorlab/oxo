@@ -6,6 +6,7 @@ import pytest
 
 from ostorlab.agent.message.proto.v3.asset.multi_asset import multi_asset_pb2
 from ostorlab.agent.schema import validator
+from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.runtimes import definitions
 
 
@@ -35,10 +36,12 @@ assets:
 
     targets = definitions.AssetsDefinition.from_yaml(yaml_definition).targets
 
+    assert isinstance(targets[0], multi_asset_asset.MultiAsset)
     assert len(targets) == 1
     assert targets[0].selector == "v3.asset.multi_asset"
     assert len(targets[0].ipv4s) == 1
     assert targets[0].urls[0].method == "POST"
+    assert targets[0].android_store is not None
     assert targets[0].android_store.package_name == "com.example.app"
 
 

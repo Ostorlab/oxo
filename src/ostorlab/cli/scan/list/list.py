@@ -91,16 +91,19 @@ def _prepare_asset_str(scan_id: int) -> str:
                 android_file_asset = (
                     session.query(models.AndroidFile).filter_by(id=asset.id).first()
                 )
+                assert android_file_asset is not None
                 asset_list.append(f"Android File: {android_file_asset.path}")
             elif asset_type == "ios_file":
                 ios_file_asset = (
                     session.query(models.IosFile).filter_by(id=asset.id).first()
                 )
+                assert ios_file_asset is not None
                 asset_list.append(f"IOS File: {ios_file_asset.path}")
             elif asset_type == "android_store":
                 android_store_asset = (
                     session.query(models.AndroidStore).filter_by(id=asset.id).first()
                 )
+                assert android_store_asset is not None
                 asset_list.append(
                     f"Android Store: {android_store_asset.application_name or android_store_asset.package_name}"
                 )
@@ -108,6 +111,7 @@ def _prepare_asset_str(scan_id: int) -> str:
                 ios_store_asset = (
                     session.query(models.IosStore).filter_by(id=asset.id).first()
                 )
+                assert ios_store_asset is not None
                 asset_list.append(
                     f"IOS Store: {ios_store_asset.application_name or ios_store_asset.bundle_id}"
                 )
@@ -131,6 +135,7 @@ def _prepare_asset_str(scan_id: int) -> str:
                     .filter_by(domain_asset_id=asset.id)
                     .first()
                 )
+                assert domain is not None
                 asset_list.append(f"Domain: {domain.name}")
             else:
                 raise NotImplementedError(f"Asset type {asset.type} not implemented.")

@@ -142,7 +142,7 @@ def testGetContainerImage_whenNoVersionProvided_shouldReturnLatest() -> None:
 
 @mock.patch("ostorlab.cli.agent_fetcher.get_container_image")
 def testGetDefinition_whenVersionParameterProvided_shouldCallGetContainerImageWithVersion(
-    mock_get_container_image,
+    mock_get_container_image: mock.MagicMock,
 ) -> None:
     """Test that get_definition passes version parameter to get_container_image."""
     mock_get_container_image.return_value = "agent_ostorlab_nmap:v0.1.0"
@@ -171,7 +171,7 @@ def testGetDefinition_whenVersionParameterProvided_shouldCallGetContainerImageWi
 
 @mock.patch("ostorlab.cli.agent_fetcher.get_container_image")
 def testGetDefinition_whenNoVersionProvided_shouldCallGetContainerImageWithNone(
-    mock_get_container_image,
+    mock_get_container_image: mock.MagicMock,
 ) -> None:
     """Test that get_definition works without version parameter."""
     mock_get_container_image.return_value = "agent_ostorlab_nmap:latest"

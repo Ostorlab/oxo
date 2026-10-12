@@ -2,6 +2,7 @@
 
 from unittest import mock
 
+import pytest_httpx
 from click.testing import CliRunner
 
 from ostorlab import configuration_manager
@@ -9,7 +10,9 @@ from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import rootcli
 
 
-def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_mock):
+def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab auth revoke command with valid api key id.
     Should delete api data from storage.
     """
@@ -35,8 +38,8 @@ def testOstorlabAuthRevokeCLI_whenValidApiKeyIdIsProvided_apiDataDeleted(httpx_m
 )
 @mock.patch.object(authenticated_runner.AuthenticatedAPIRunner, "unauthenticate")
 def testOstorlabAuthRevokeCLI_whenInvalidAuthorizationTokenProvided_logsError(
-    mock_console, httpx_mock
-):
+    mock_console: mock.MagicMock, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test ostorlab auth logout command with wrong authorization token.
     Should unauthenticate user.
     """

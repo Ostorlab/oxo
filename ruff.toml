@@ -1,5 +1,8 @@
 # This file will be used if we want to customize the Ruff configuration.
-extend-exclude = ["*_pb2.py"]
+extend-exclude = ["*_pb2.py", "*_pb2.pyi"]
+
+[lint]
+ignore = ["UP045"]
 
 [lint.isort]
 force-single-line = true

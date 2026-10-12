@@ -1,8 +1,11 @@
 """Tests for scan list command."""
 
+from typing import TypedDict
 from unittest import mock
 
+import pytest_httpx
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import console
@@ -11,7 +14,9 @@ from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 
 
-def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(httpx_mock):
+def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab scan list command with correct commands and CLoud runtime.
     Should show scans information.
     """
@@ -59,10 +64,19 @@ def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(httpx_mock):
     assert "Scans listed successfully" in result.output
 
 
+class _ServiceSpec(TypedDict):
+    Labels: dict[str, str]
+
+
+class _Service(TypedDict):
+    CreatedAt: str
+    Spec: _ServiceSpec
+
+
 @mock.patch.object(console.Console, "error")
 def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
-    mock_console, httpx_mock
-):
+    mock_console: mock.MagicMock, httpx_mock: pytest_httpx.HTTPXMock
+) -> None:
     """Test ostorlab scan list command with correct commands and options
     but the user is not authenticated.
     Should log an error.
@@ -82,12 +96,14 @@ def testOstorlabScanListCLI_whenUserIsNotAuthenticated_logsError(
 
 
 @mock.patch.object(local_runtime.LocalRuntime, "list")
-def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list, mocker):
+def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(
+    mock_scan_list: mock.MagicMock, mocker: plugin.MockerFixture
+) -> None:
     """Test ostorlab scan list command with local as the runtime option.
     Should show list of scans.
     """
 
-    services = [
+    services: list[_Service] = [
         {
             "CreatedAt": "2021-12-27T13:37:02.795789947Z",
             "Spec": {"Labels": {"ostorlab.universe": "qmwjef"}},
@@ -112,13 +128,13 @@ def testOstorlabScanListCLI_whenRuntimeIsLocal_showsListOfScans(mock_scan_list, 
     runner = CliRunner()
     result = runner.invoke(rootcli.rootcli, ["scan", "--runtime=local", "list"])
 
-    assert all(scan.id in result.output for scan in scans)
+    assert all(str(scan.id) in result.output for scan in scans)
     mock_scan_list.assert_called()
 
 
 def testOstorlabScanListCLI_whenRuntimeIsCloudAndStateIsProvided_showsFilteredScanInfo(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Test ostorlab scan list command with state filter and cloud runtime.
     Should show only scans matching the state.
     """
@@ -160,8 +176,8 @@ def testOstorlabScanListCLI_whenRuntimeIsCloudAndStateIsProvided_showsFilteredSc
 
 @mock.patch.object(local_runtime.LocalRuntime, "list")
 def testOstorlabScanListCLI_whenRuntimeIsLocalAndStateIsProvided_showsFilteredListOfScans(
-    mock_scan_list, mocker
-):
+    mock_scan_list: mock.MagicMock, mocker: plugin.MockerFixture
+) -> None:
     """Test ostorlab scan list command with local runtime and state filter.
     Should show list of scans filtered by state.
     """
@@ -182,5 +198,5 @@ def testOstorlabScanListCLI_whenRuntimeIsLocalAndStateIsProvided_showsFilteredLi
         rootcli.rootcli, ["scan", "--runtime=local", "list", "--state=done"]
     )
 
-    assert all(scan.id in result.output for scan in scans)
+    assert all(str(scan.id) in result.output for scan in scans)
     mock_scan_list.assert_called_with(page=1, number_elements=10, state="done")

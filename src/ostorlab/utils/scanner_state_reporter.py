@@ -1,5 +1,7 @@
 """Reporter logic to read the scanner state periodically and send it to the backend."""
 
+from typing import Optional
+
 from ostorlab.apis import add_scanner_state
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.utils import definitions
@@ -12,11 +14,11 @@ class ScannerStateReporter:
         self,
         scanner_id: str,
         hostname: str,
-        ip: str,
+        ip: Optional[str],
         reporting_engine_api_key: str | None = None,
-    ):
+    ) -> None:
         self._scanner_id = scanner_id
-        self.scan_id = None
+        self.scan_id: Optional[int] = None
         self._hostname = hostname
         self._ip = ip
         self._reporting_engine_api_key = reporting_engine_api_key

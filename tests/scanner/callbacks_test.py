@@ -36,11 +36,11 @@ from ostorlab.runtimes import definitions
 from ostorlab.scanner import callbacks
 
 
-def _setup_start_scan_mocks(mocker):
+def _setup_start_scan_mocks(mocker: plugin.MockerFixture) -> mock.MagicMock:
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -93,7 +93,7 @@ def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
     }
     mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.scanner.callbacks.install_agent.install")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     select_runtime_mock = mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime",
@@ -799,7 +799,7 @@ def testStartScan_whenApiKeyProvided_forwardsApiKeyToInstallAgent(
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -836,7 +836,7 @@ def testStartScan_whenApiKeyNotProvided_forwardsNoneToInstallAgent(
     mocker.patch("ostorlab.scanner.callbacks._connect_containers_registry")
     mocker.patch("ostorlab.scanner.callbacks._update_state_reporter")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -874,7 +874,7 @@ def testStartScan_whenUseExperimentalAgentsIsTrue_forwardsUseExperimentalToInsta
     }
     mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -910,7 +910,7 @@ def testStartScan_whenUseExperimentalAgentsIsAbsent_forwardsFalseToInstallAgent(
     }
     mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -950,7 +950,7 @@ def testStartScan_whenAgentHasNoVersion_resolvesVersionBeforeInstalling(
     }
     mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -994,7 +994,7 @@ def testStartScan_whenAgentHasNoVersionAndAgentDetailsNotFound_logsWarningAndIns
     }
     mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
@@ -1036,7 +1036,7 @@ def testStartScan_whenAgentHasNoVersionAndNoPublishedVersionsExist_installsWithN
     }
     mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
     mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
-    runtime_mock = mocker.MagicMock()
+    runtime_mock = mock.MagicMock()
     runtime_mock.can_run.return_value = True
     mocker.patch(
         "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock

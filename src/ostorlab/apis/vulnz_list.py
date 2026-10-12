@@ -14,7 +14,7 @@ class VulnzListAPIRequest(request.APIRequest):
         scan_id: int,
         number_elements: int,
         page: int,
-    ):
+    ) -> None:
         self._scan_id = scan_id
         self._number_elements = number_elements
         self._page = page

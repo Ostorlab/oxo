@@ -10,7 +10,7 @@ from ostorlab.runtimes.local.services import redis
 
 
 @pytest.mark.docker
-def testLocalRedis_onOperationalConditions_redisIsStarted():
+def testLocalRedis_onOperationalConditions_redisIsStarted() -> None:
     """Test service is healthy after start and unhealthy after stop."""
     lr = redis.LocalRedis(name="test_redis", network="test_network")
     lr.start()

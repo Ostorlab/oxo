@@ -9,7 +9,7 @@ from ostorlab.apis import request
 class ScannerConfigAPIRequest(request.APIRequest):
     """Get scanner config."""
 
-    def __init__(self, scanner_id: str):
+    def __init__(self, scanner_id: str) -> None:
         self._scanner_id = scanner_id
 
     @property
