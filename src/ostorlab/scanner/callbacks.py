@@ -8,6 +8,8 @@ import contextlib
 import ipaddress
 import logging
 from typing import Any
+from typing import Optional
+from typing import cast
 
 import docker
 
@@ -41,7 +43,8 @@ from ostorlab.cli import agent_fetcher
 from ostorlab.cli import install_agent
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes import registry
-from ostorlab.runtimes import runtime
+from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.utils import release_channel
 from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
@@ -76,11 +79,12 @@ _MULTI_ASSET_MEMBER_KEYS = (
 
 
 def _install_agents(
-    runtime_instance: runtime.Runtime,
-    agents,
+    runtime_instance: local_runtime.LocalRuntime,
+    agents: list[definitions.AgentSettings],
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
     use_experimental_agents: bool = False,
+    channel: str | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -92,6 +96,7 @@ def _install_agents(
                         agent.key,
                         use_experimental=use_experimental_agents,
                         api_key=api_key,
+                        channel=channel,
                     )
                     versions = agent_details.get("versions", {}).get("versions", [])
                     if len(versions) > 0:
@@ -107,6 +112,7 @@ def _install_agents(
                 docker_client=docker_client,
                 api_key=api_key,
                 use_experimental=use_experimental_agents,
+                channel=channel,
             )
     except agent_fetcher.AgentDetailsNotFound:
         logger.warning("agent %s not found on the store", agent.key)
@@ -114,7 +120,7 @@ def _install_agents(
 
 def _prepare_ip_asset(ip_asset_value: dict[str, Any]) -> asset.Asset:
     """Return IP assets from ip_asset_value dict."""
-    host = ip_asset_value.get("host")
+    host = cast(str, ip_asset_value.get("host"))
     ip_network = ipaddress.ip_network(host, strict=False)
     if ip_network.version == 4:
         return ipv4.IPv4(
@@ -162,7 +168,7 @@ def _build_risk_kwargs(target_dict: dict[str, Any] | None) -> dict[str, Any]:
         return {}
 
     target_asset = target_assets[0]
-    kwargs = {}
+    kwargs: dict[str, asset.Asset] = {}
     if isinstance(target_asset, ipv4.IPv4):
         kwargs["ipv4"] = target_asset
     elif isinstance(target_asset, ipv6.IPv6):
@@ -279,7 +285,7 @@ def _prepare_multi_asset(
     return definitions.build_multi_asset(members)
 
 
-def _extract_assets(asset_data: dict[str, Any]) -> list[asset.Asset]:
+def _extract_assets(asset_data: Optional[dict[str, Any]]) -> list[asset.Asset]:
     """Directly parses a GraphQL asset dictionary into Ostorlab Asset objects."""
     if asset_data is None or asset_data == {}:
         return []
@@ -501,9 +507,19 @@ def _extract_agent_group_definition(
 
 
 def _extract_scan_id(request: dict[str, Any]) -> int:
-    scan_id = int(request.get("id"))
+    scan_id = int(cast(str | int, request.get("id")))
     logger.debug("Extracted scan id: %s.", scan_id)
     return scan_id
+
+
+def _extract_channel(request: dict[str, Any]) -> str | None:
+    channel = request.get("channel")
+    if channel is None:
+        return None
+    if isinstance(channel, str) and release_channel.is_valid(channel) is True:
+        return channel
+    logger.warning("Invalid channel %r, installing stable agent versions.", channel)
+    return None
 
 
 def _update_state_reporter(
@@ -528,7 +544,7 @@ def start_scan(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
     gcp_logging_credential: str | None = None,
-) -> str | None:
+) -> Optional[int | str]:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
 
     Args:
@@ -553,11 +569,14 @@ def start_scan(
             state_reporter=state_reporter, scan_id=scan_id
         )
 
-        runtime_instance = registry.select_runtime(
-            runtime_type="local",
-            scan_id=str(scan_id),
-            run_default_agents=False,
-            gcp_logging_credential=gcp_logging_credential,
+        runtime_instance = cast(
+            local_runtime.LocalRuntime,
+            registry.select_runtime(
+                runtime_type="local",
+                scan_id=str(scan_id),
+                run_default_agents=False,
+                gcp_logging_credential=gcp_logging_credential,
+            ),
         )
 
         if (
@@ -571,6 +590,7 @@ def start_scan(
                 api_key=api_key,
                 use_experimental_agents=request.get("useExperimentalAgents", False)
                 is True,
+                channel=_extract_channel(request=request),
             )
 
             try:
@@ -588,3 +608,4 @@ def start_scan(
             logger.error(
                 "The runtime does not support the provided agent list or group definition."
             )
+    return None

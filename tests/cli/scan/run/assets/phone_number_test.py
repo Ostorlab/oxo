@@ -1,6 +1,7 @@
 """Tests for scan run phone-number command and the phone number asset message bus flow."""
 
 from click import testing
+from pytest_mock import plugin
 
 from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
@@ -10,7 +11,9 @@ from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.testing import agent as agent_testing
 
 
-def testScanRunPhoneNumber_whenNoOptionsProvided_showsUsageAndExitsWithError(mocker):
+def testScanRunPhoneNumber_whenNoOptionsProvided_showsUsageAndExitsWithError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run phone-number command with no arguments.
     Should show usage and exit with exit_code = 2."""
     runner = testing.CliRunner()
@@ -25,7 +28,9 @@ def testScanRunPhoneNumber_whenNoOptionsProvided_showsUsageAndExitsWithError(moc
     assert "Missing argument" in result.output or "Usage:" in result.output
 
 
-def testScanRunPhoneNumber_whenValidNumberProvided_invokesRuntime(mocker):
+def testScanRunPhoneNumber_whenValidNumberProvided_invokesRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run phone-number with a valid number triggers a scan."""
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
@@ -50,8 +55,8 @@ def testScanRunPhoneNumber_whenValidNumberProvided_invokesRuntime(mocker):
 
 
 def testScanRunPhoneNumber_whenMultipleNumbersProvided_invokesRuntimeWithAllAssets(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run phone-number with multiple numbers passes all assets to runtime."""
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
@@ -80,11 +85,11 @@ def testScanRunPhoneNumber_whenMultipleNumbersProvided_invokesRuntimeWithAllAsse
 
 def testPhoneNumberAgent_whenReceivesPhoneNumberMessage_processesNumber(
     agent_run_mock: agent_testing.AgentRunInstance,
-):
+) -> None:
     """A fake agent subscribed to v3.asset.phone_number receives the message and can
     read the number field — no real MQ or Docker needed."""
 
-    received: list = []
+    received: list[str] = []
 
     class FakePhoneNumberAgent(agent.Agent):
         def process(self, message: agent_message.Message) -> None:
@@ -115,7 +120,7 @@ def testPhoneNumberAgent_whenReceivesPhoneNumberMessage_processesNumber(
 
 def testPhoneNumberAgent_whenReceivesPhoneNumberMessage_emitsVulnerability(
     agent_run_mock: agent_testing.AgentRunInstance,
-):
+) -> None:
     """Simulates a full agent cycle: receive phone number asset, emit a vulnerability.
     Uses agent_run_mock to intercept bus messages without a real MQ."""
 

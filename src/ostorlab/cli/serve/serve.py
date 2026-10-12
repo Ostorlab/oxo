@@ -1,6 +1,9 @@
 """Module for the ostorlab serve command."""
 
 import sys
+from collections.abc import Callable
+from typing import Protocol
+from typing import cast
 
 import click
 
@@ -10,6 +13,18 @@ from ostorlab.runtimes.local.models import models
 
 console = cli_console.Console()
 DEFAULT_SCANNER_NAME = "Local Scanner"
+
+
+class _FlaskCli(Protocol):
+    """Flask CLI banner hook replaced for the embedded server."""
+
+    show_server_banner: Callable[..., None]
+
+
+class _WerkzeugServer(Protocol):
+    """Werkzeug startup logging hook replaced for the embedded server."""
+
+    log_startup: Callable[..., None]
 
 
 @rootcli.command()
@@ -24,10 +39,12 @@ def serve(ctx: click.core.Context, host: str, port: int, refresh_api_key: bool) 
 
         from ostorlab.serve_app import app
 
-        cli = sys.modules["flask.cli"]
+        cli = cast(_FlaskCli, sys.modules["flask.cli"])
         cli.show_server_banner = lambda *x: None
         # Disable werkzeug log_startup, this can't be done by overriding BaseWSGIServer class because it's used by Flask.
-        werkzeug.serving.BaseWSGIServer.log_startup = lambda *x: None
+        cast(_WerkzeugServer, werkzeug.serving.BaseWSGIServer).log_startup = lambda *x: (
+            None
+        )
     except ImportError as e:
         missing_dependency = e.name
         raise click.ClickException(

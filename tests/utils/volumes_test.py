@@ -3,12 +3,13 @@
 import docker
 import pytest
 from docker import types as docker_types
+from pytest_mock import plugin
 
 from ostorlab.utils import volumes
 
 
 @pytest.mark.docker
-def testWriteContentVolume_always_contentIsPersistedToVolume():
+def testWriteContentVolume_always_contentIsPersistedToVolume() -> None:
     """Creates a volumes, a check its content by reading it using a mounted container."""
     volumes.create_volume(
         "unitest_ostorlab_volume",
@@ -33,7 +34,9 @@ def testWriteContentVolume_always_contentIsPersistedToVolume():
     assert out == b"Cat is alive! :)"
 
 
-def testCreateVolume_whenVolumeNotFound_createsNewVolume(mocker):
+def testCreateVolume_whenVolumeNotFound_createsNewVolume(
+    mocker: plugin.MockerFixture,
+) -> None:
     """When existing volume is not found, creates new volume without error."""
     mock_client = mocker.MagicMock()
     mock_client.volumes.get.side_effect = docker.errors.NotFound("Volume not found")
@@ -47,7 +50,9 @@ def testCreateVolume_whenVolumeNotFound_createsNewVolume(mocker):
     )
 
 
-def testCreateVolume_whenVolumeRemovalRaisesAPIError_raisesException(mocker):
+def testCreateVolume_whenVolumeRemovalRaisesAPIError_raisesException(
+    mocker: plugin.MockerFixture,
+) -> None:
     """When existing volume removal fails with APIError, exception is raised and volume is not created."""
     mock_client = mocker.MagicMock()
     mock_volume = mocker.MagicMock()
@@ -63,8 +68,8 @@ def testCreateVolume_whenVolumeRemovalRaisesAPIError_raisesException(mocker):
 
 
 def testWriteContent_whenContainerStopRaisesRequestException_forceRemovesContainer(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """When container.stop raises RequestException/ConnectionError, force remove is attempted and original exception from put_archive is preserved."""
     import requests.exceptions as req_exc
 

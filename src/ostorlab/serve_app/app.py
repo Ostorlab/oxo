@@ -1,6 +1,9 @@
+"""Flask application and authenticated GraphQL request handling."""
+
 import functools
 import os
 import pathlib
+from typing import Any
 
 import flask
 import flask_cors
@@ -16,7 +19,7 @@ AUTHORIZATION_HEADER = "X-API-KEY"
 UI_STATIC_FILES_DIRECTORY = pathlib.Path(__file__).parent.parent / "ui/static"
 
 
-def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
+def create_app(path: str = "/graphql", **kwargs: Any) -> flask.Flask:
     """Create a Flask app with the specified path."""
     app = flask.Flask(__name__)
     flask_cors.CORS(app, resources={r"/graphql": {"origins": "*"}})
@@ -33,7 +36,7 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
 
     @app.route("/")
     @app.route("/<path:file_path>")
-    def serve_static(file_path="index.html") -> flask.Response:
+    def serve_static(file_path: str = "index.html") -> flask.Response:
         """Serve the static files"""
         full_path = UI_STATIC_FILES_DIRECTORY / file_path
         if os.path.isfile(full_path) is False:
@@ -46,7 +49,7 @@ def create_app(path: str = "/graphql", **kwargs) -> flask.Flask:
 class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLView):
     """Handles application/ubjson content type in flask views"""
 
-    def parse_body(self):
+    def parse_body(self) -> Any:
         """Handle application/ubjson content type"""
 
         content_type = flask.request.mimetype
@@ -54,7 +57,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
             return self.ubjson_decode(flask.request)
         return super().parse_body()
 
-    def ubjson_decode(self, request: flask.Request):
+    def ubjson_decode(self, request: flask.Request) -> Any:
         """Decode UBJSON request data."""
 
         return ubjson.loadb(request.data)
@@ -73,7 +76,7 @@ class CustomUBJSONFileUploadGraphQLView(graphene_upload_flask.FileUploadGraphQLV
         # The request is authenticated. Continue.
         return None
 
-    def dispatch_request(self) -> tuple[flask.Response, int] | None:
+    def dispatch_request(self) -> flask.Response | str | tuple[flask.Response, int]:
         auth_response = self.authenticate()
         if auth_response is not None:
             return auth_response

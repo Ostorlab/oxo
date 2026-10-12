@@ -15,6 +15,7 @@ Typical usage:
 import ipaddress
 import logging
 from collections.abc import Callable
+from typing import cast
 
 import redis
 
@@ -166,7 +167,7 @@ class AgentPersistMixin:
         """
         return self._redis_client.hget(hash_name, key)
 
-    def hash_get_all(self, hash_name: bytes | str) -> dict:
+    def hash_get_all(self, hash_name: bytes | str) -> dict[bytes, bytes]:
         """Returns a dict of the hash’s name/value pairs.
 
         Args:
@@ -197,7 +198,9 @@ class AgentPersistMixin:
         Returns:
             String representation of the type of value stored at key. eg: set, string.
         """
-        return self._redis_client.type(key).decode()
+        return cast(Callable[[bytes | str], bytes], self._redis_client.type)(
+            key
+        ).decode()
 
     def add_ip_network(
         self,

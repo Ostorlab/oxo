@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.asset.file.api_schema.openapi import openapi_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     message = openapi_pb2.Message()
     message.content = b"openapi: 3.0.0\ninfo:\n  title: API\n  version: 1.0.0"
     message.path = "/openapi/spec.yaml"
@@ -18,7 +20,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized.schema_type == "openapi"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     message = openapi_pb2.Message()
 
     assert message.content == b""
@@ -26,7 +28,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert message.schema_type == "openapi"
 
 
-def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty():
+def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
     message = openapi_pb2.Message()
 
     serialized = message.SerializeToString()

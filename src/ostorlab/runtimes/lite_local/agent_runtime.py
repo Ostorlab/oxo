@@ -6,11 +6,14 @@ Usage
     agent_service = agent_runtime.create_agent_service(network_name, extra_configs)
 """
 
+from __future__ import annotations
+
 import base64
 import hashlib
 import io
 import logging
 import random
+import typing
 import uuid
 
 import docker
@@ -39,6 +42,10 @@ MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
 
 
+class _MountParser(typing.Protocol):
+    parse_mount_string: typing.Callable[[str], docker_types_services.Mount]
+
+
 class Error(exceptions.OstorlabError):
     """Base Error."""
 
@@ -52,7 +59,7 @@ class ServiceNameTooLong(Error):
     """Raised when the agent definition service_name exceeds the maximum allowed length."""
 
 
-def _parse_mount_string_windows(string):
+def _parse_mount_string_windows(string: str) -> docker_types_services.Mount:
     """Handles parsing mounts on Windows OS."""
     parts = string.split(":")
     if len(parts) == 1:
@@ -62,7 +69,7 @@ def _parse_mount_string_windows(string):
         # This supposes having a source linux style and target. Like /var/run/docker.sock:/var/run/docker.sock.
         target = parts[1]
         source = parts[0]
-        mount_type = "volume"
+        mount_type: typing.Literal["volume", "bind"] = "volume"
         if source.startswith("/"):
             # Paths likes /var/run/docker.sock map to //var/run/docker.sock on windows.
             source = f"/{source}"
@@ -107,7 +114,7 @@ def _parse_mount_string_windows(string):
         raise errors.InvalidArgument(f'Invalid mount format "{string}"')
 
 
-def _parse_mount_string_unix(string):
+def _parse_mount_string_unix(string: str) -> docker_types_services.Mount:
     """Handles parsing of mounts on Unix OS like Linux, Cygwin and MacOS."""
     parts = string.split(":")
     if len(parts) > 3:
@@ -117,7 +124,7 @@ def _parse_mount_string_unix(string):
     else:
         target = parts[1]
         source = parts[0]
-        mount_type = "volume"
+        mount_type: typing.Literal["volume", "bind"] = "volume"
         if source.startswith("/"):
             mount_type = "bind"
         read_only = not (len(parts) == 2 or parts[2] == "rw")
@@ -126,7 +133,7 @@ def _parse_mount_string_unix(string):
         )
 
 
-def _parse_mount_string(string):
+def _parse_mount_string(string: str) -> docker_types_services.Mount:
     """This is a fix to a bug in the Docker Python API by monkey patching the buggy method.
 
     The method is knowingly not supporting Windows. Until a fix PR is merged, we are hot patching the method to handle
@@ -138,7 +145,9 @@ def _parse_mount_string(string):
         return _parse_mount_string_unix(string)
 
 
-docker_types_services.Mount.parse_mount_string = _parse_mount_string
+typing.cast(
+    _MountParser, docker_types_services.Mount
+).parse_mount_string = _parse_mount_string
 
 
 class AgentRuntime:
@@ -155,8 +164,8 @@ class AgentRuntime:
         bus_exchange_topic: str,
         redis_url: str,
         tracing_collector_url: str,
-        gcp_logging_credential: str | None = None,
-        labels: dict[str, str] | None = None,
+        gcp_logging_credential: typing.Optional[str] = None,
+        labels: typing.Optional[dict[str, str]] = None,
     ) -> None:
         """Prepare all the necessary attributes for the agent runtime.
 
@@ -177,7 +186,9 @@ class AgentRuntime:
         self._uuid = uuid.uuid4()
         self._docker_client = docker_client
         self.agent = agent_settings
-        self.image_name = agent_settings.container_image.split(":", maxsplit=1)[0]
+        self.image_name = typing.cast(str, agent_settings.container_image).split(
+            ":", maxsplit=1
+        )[0]
         self.runtime_name = runtime_name
         self.labels = labels if labels is not None else {}
         self.bus_url = bus_url
@@ -215,7 +226,7 @@ class AgentRuntime:
             data=agent_instance_settings_proto,
         )
         return docker.types.ConfigReference(
-            config_id=docker_config.id,
+            config_id=typing.cast(str, docker_config.id),
             config_name=config_name,
             filename="/tmp/settings.binproto",
         )
@@ -227,7 +238,7 @@ class AgentRuntime:
             docker configuration reference of the agent definition configuration.
         """
         agent_definition = self._docker_client.images.get(
-            self.agent.container_image
+            typing.cast(str, self.agent.container_image)
         ).labels.get("agent_definition")
         # The name is hashed to work around size limitation of Docker Config.
         config_name = hashlib.md5(
@@ -244,10 +255,10 @@ class AgentRuntime:
         docker_config = self._docker_client.configs.create(
             name=config_name,
             labels={"ostorlab.universe": self.runtime_name},
-            data=str.encode(agent_definition),
+            data=str.encode(typing.cast(str, agent_definition)),
         )
         return docker.types.ConfigReference(
-            config_id=docker_config.id,
+            config_id=typing.cast(str, docker_config.id),
             config_name=config_name,
             filename="/tmp/ostorlab.yaml",
         )
@@ -258,7 +269,9 @@ class AgentRuntime:
         Returns:
             the agent definition.
         """
-        docker_image = self._docker_client.images.get(self.agent.container_image)
+        docker_image = self._docker_client.images.get(
+            typing.cast(str, self.agent.container_image)
+        )
         yaml_definition_string = docker_image.labels.get("agent_definition")
         if yaml_definition_string is None:
             raise MissingAgentDefinitionLabel(
@@ -295,7 +308,7 @@ class AgentRuntime:
         )
         return healthcheck
 
-    def replace_variable_mounts(self, mounts: list[str]):
+    def replace_variable_mounts(self, mounts: typing.Sequence[str]) -> list[str]:
         """Replace path variables for the container mounts
 
         Args:
@@ -347,8 +360,8 @@ class AgentRuntime:
     def create_agent_service(
         self,
         network_name: str,
-        extra_configs: list[docker.types.ConfigReference] | None = None,
-        extra_mounts: list[docker.types.Mount] | None = None,
+        extra_configs: typing.Optional[list[docker.types.ConfigReference]] = None,
+        extra_mounts: typing.Optional[list[docker.types.Mount]] = None,
         replicas: int = 1,
     ) -> docker.models.services.Service:
         """Create the docker agent service with proper configs and policies.
@@ -381,9 +394,15 @@ class AgentRuntime:
                         "TargetPort": port.source_port,
                     }
                 )
-            endpoint_spec = docker_types_services.EndpointSpec(ports=port_configs)
+            endpoint_spec = typing.cast(
+                typing.Callable[..., docker_types_services.EndpointSpec],
+                docker_types_services.EndpointSpec,
+            )(ports=port_configs)
         else:
-            endpoint_spec = docker_types_services.EndpointSpec(mode="dnsrr")
+            endpoint_spec = typing.cast(
+                typing.Callable[..., docker_types_services.EndpointSpec],
+                docker_types_services.EndpointSpec,
+            )(mode="dnsrr")
 
         configs = []
         configs.append(self.create_settings_config())
@@ -391,8 +410,10 @@ class AgentRuntime:
         if extra_configs is not None:
             configs.extend(extra_configs)
 
-        mounts = self.agent.mounts or agent_definition.mounts
-        mounts = self.replace_variable_mounts(mounts)
+        raw_mounts = self.agent.mounts or agent_definition.mounts
+        mounts: list[str | docker.types.Mount] = list(
+            self.replace_variable_mounts(raw_mounts)
+        )
         mounts.extend(self.create_scan_volume_mounts(agent_definition.volumes))
         if extra_mounts is not None:
             mounts.extend(extra_mounts)
@@ -421,7 +442,9 @@ class AgentRuntime:
             docker_service_name = service_name
         else:
             base_service_name = (
-                self.agent.container_image.split(":")[0].replace(".", "")
+                typing.cast(str, self.agent.container_image)
+                .split(":")[0]
+                .replace(".", "")
                 + "_"
                 + self.runtime_name
             )
@@ -445,13 +468,18 @@ class AgentRuntime:
                 f"GCP_LOGGING_CREDENTIAL={base64.b64encode(self._gcp_logging_credential.encode()).decode()}"
             )
 
-        agent_service = self._docker_client.services.create(
+        agent_service = typing.cast(
+            typing.Callable[..., docker.models.services.Service],
+            self._docker_client.services.create,
+        )(
             image=self.agent.container_image,
             networks=[network_name],
             env=env,
             name=docker_service_name,
             restart_policy=docker_types_services.RestartPolicy(
-                condition=restart_policy
+                condition=typing.cast(
+                    typing.Literal["none", "on-failure", "any"], restart_policy
+                )
             ),
             mounts=mounts,
             healthcheck=self.create_docker_healthchek(),

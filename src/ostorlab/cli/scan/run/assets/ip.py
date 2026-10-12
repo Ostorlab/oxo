@@ -3,6 +3,7 @@ This module takes care of preparing an IP asset, either single address, a range 
 
 import ipaddress
 import logging
+from collections.abc import Sequence
 
 import click
 
@@ -20,11 +21,11 @@ console = cli_console.Console()
 @run.run.command(name="ip")
 @click.argument("ips", required=True, nargs=-1)
 @click.pass_context
-def ip_cli(ctx: click.core.Context, ips: list[str]) -> None:
+def ip_cli(ctx: click.core.Context, ips: Sequence[str]) -> None:
     """Run scan for IP asset."""
     runtime = ctx.obj["runtime"]
     try:
-        assets = []
+        assets: list[ipv4.IPv4 | ipv6.IPv6] = []
         for ip in ips:
             ip_network = ipaddress.ip_network(ip, strict=False)
             if ip_network.version == 4:

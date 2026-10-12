@@ -1,7 +1,9 @@
 from ostorlab.agent.message.proto.v3.report.ticket import ticket_pb2
 
 
-def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
     msg = ticket_pb2.Message()
     msg.ticket_id = "TICKET-123"
     msg.title = "New Vulnerability Found"
@@ -29,7 +31,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized_msg.comments[1].message == "you need to do Z"
 
 
-def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
+def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     msg = ticket_pb2.Message()
 
     assert msg.ticket_id == ""
@@ -38,7 +40,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues():
     assert len(msg.comments) == 0
 
 
-def testComment_whenCreateWithDefaults_shouldHaveCorrectDefaults():
+def testComment_whenCreateWithDefaults_shouldHaveCorrectDefaults() -> None:
     comment = ticket_pb2.Comments()
     comment.author = "test_author"
 
@@ -46,7 +48,7 @@ def testComment_whenCreateWithDefaults_shouldHaveCorrectDefaults():
     assert comment.message == ""
 
 
-def testMessage_whenTicketKeySet_shouldSerializeAndDeserializeCorrectly():
+def testMessage_whenTicketKeySet_shouldSerializeAndDeserializeCorrectly() -> None:
     msg = ticket_pb2.Message()
     msg.title = "Test Ticket"
     msg.description = "Test description."
@@ -59,7 +61,7 @@ def testMessage_whenTicketKeySet_shouldSerializeAndDeserializeCorrectly():
     assert deserialized_msg.ticket_key == "PROJ-123"
 
 
-def testMessage_whenTicketKeyNotSet_shouldDefaultToEmpty():
+def testMessage_whenTicketKeyNotSet_shouldDefaultToEmpty() -> None:
     msg = ticket_pb2.Message()
 
     assert msg.ticket_key == ""

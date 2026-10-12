@@ -40,11 +40,11 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         self,
         username: str | None = None,
         password: str | None = None,
-        token_duration: datetime.datetime | None = None,
+        token_duration: datetime.datetime | str | None = None,
         proxy: str | None = None,
         verify: bool = True,
         api_key: str | None = None,
-    ):
+    ) -> None:
         """Constructs all the necessary attributes for the object.
 
         Args:

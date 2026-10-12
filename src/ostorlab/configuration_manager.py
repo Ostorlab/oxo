@@ -12,9 +12,7 @@ class SingletonMeta(type):
 
     _instances: ClassVar[dict[object, object]] = {}
 
-    def __call__(
-        cls: "SingletonMeta", *args: tuple[object], **kwargs: dict[object, object]
-    ) -> object:
+    def __call__(cls: "SingletonMeta", *args: object, **kwargs: object) -> object:
         """Possible changes to the value of the `__init__` argument do not affect the returned instance."""
         if cls not in cls._instances:
             instance = super().__call__(*args, **kwargs)
@@ -27,7 +25,7 @@ class ConfigurationManager(metaclass=SingletonMeta):
     API keys.
     """
 
-    def __init__(self, private_dir: pathlib.Path = OSTORLAB_PRIVATE_DIR):
+    def __init__(self, private_dir: pathlib.Path = OSTORLAB_PRIVATE_DIR) -> None:
         """Constructs all the necessary attributes for the object
         Args:
             private_dir: The private directory where Ostorlab configurations are stored.
@@ -57,6 +55,11 @@ class ConfigurationManager(metaclass=SingletonMeta):
             return self._api_key
         return None
 
+    @api_key.setter
+    def api_key(self, key: str | None) -> None:
+        """Set API key"""
+        self._api_key = key
+
     @property
     def authorization_token(self) -> str | None:
         """retrieve authorization token in the configuration folder."""
@@ -68,11 +71,6 @@ class ConfigurationManager(metaclass=SingletonMeta):
             return authorization_token
         else:
             return None
-
-    @api_key.setter
-    def api_key(self, key: str | None) -> None:
-        """Set API key"""
-        self._api_key = key
 
     def set_authorization_token(self, authorization_token: str) -> None:
         """Persists the Authorization token to a file in the given path.

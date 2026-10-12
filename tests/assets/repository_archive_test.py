@@ -1,6 +1,9 @@
 """Unit tests for the RepositoryArchive asset class, covering proto serialization and selector behavior."""
 
 from ostorlab.agent.message import serializer
+from ostorlab.agent.message.proto.v3.asset.file.repository_archive import (
+    repository_archive_pb2,
+)
 from ostorlab.assets import repository_archive as repository_archive_asset
 
 
@@ -11,6 +14,7 @@ def testToProto_whenContentUrlSet_returnsSerializedBytes() -> None:
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize("v3.asset.file.repository_archive", raw)
+    assert isinstance(unraw, repository_archive_pb2.Message)
     assert unraw.content_url == "https://example.com/source-archive.tar.gz"
 
 
@@ -22,6 +26,7 @@ def testToProto_whenContentAndPathSet_returnsSerializedBytes() -> None:
 
     assert isinstance(raw, bytes)
     unraw = serializer.deserialize("v3.asset.file.repository_archive", raw)
+    assert isinstance(unraw, repository_archive_pb2.Message)
     assert unraw.content == b"archive-bytes"
     assert unraw.path == "/tmp/source-archive.tar.gz"
 

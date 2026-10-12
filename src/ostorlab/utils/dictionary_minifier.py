@@ -9,8 +9,8 @@ TRUNCATE_SIZE = 256
 
 
 def truncate_str(
-    value: str | bytes,
-) -> str | bytes:
+    value: object,
+) -> object:
     """Truncate a string or bytes value.
 
     Args:
@@ -26,9 +26,7 @@ def truncate_str(
     return value
 
 
-def minify_dict(
-    value: Any, handler: Callable[[object], object]
-) -> dict[object, object] | list[object] | object:
+def minify_dict(value: object, handler: Callable[[object], object]) -> object:
     """Recursive approach to minify dictionary values.
 
     Args:

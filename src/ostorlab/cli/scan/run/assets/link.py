@@ -1,6 +1,7 @@
 """Asset of type Link."""
 
 import logging
+from collections.abc import Sequence
 
 import click
 
@@ -17,7 +18,7 @@ console = cli_console.Console()
 @click.option("--url", help="List of Urls to scan.", required=True, multiple=True)
 @click.option("--method", help="List of HTTP methods.", required=True, multiple=True)
 @click.pass_context
-def link(ctx: click.core.Context, url: list[str], method: list[str]) -> None:
+def link(ctx: click.core.Context, url: Sequence[str], method: Sequence[str]) -> None:
     """Run scan for links."""
     runtime = ctx.obj["runtime"]
     if len(url) != len(method):

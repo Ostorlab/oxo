@@ -2,6 +2,7 @@
 
 import json
 from typing import Any
+from typing import Optional
 
 from ostorlab.apis import request
 
@@ -9,7 +10,9 @@ from ostorlab.apis import request
 class CreateAgentScanAPIRequest(request.APIRequest):
     """Persist scan API request."""
 
-    def __init__(self, title: str, asset_id: int, agent_group_id: int) -> None:
+    def __init__(
+        self, title: Optional[str], asset_id: int | str, agent_group_id: int | str
+    ) -> None:
         """Initializer"""
         self._title = title
         self.asset_id = asset_id

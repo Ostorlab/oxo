@@ -8,7 +8,9 @@ from ostorlab.agent import definitions as agent_definitions
 from ostorlab.cli import rootcli
 
 
-def testScanRunIp_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker):
+def testScanRunIp_whenNoOptionsProvided_showsAvailableOptionsAndCommands(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run ip command with no options and no sub command.
     Should show list of available commands and exit with exit_code = 0."""
 
@@ -24,8 +26,8 @@ def testScanRunIp_whenNoOptionsProvided_showsAvailableOptionsAndCommands(mocker)
 
 
 def testRunScanIp__whenValidAgentsAreProvidedWithNoAsset_ShowSpecifySubCommandError(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test oxo scan run ip with non supported runtime, should exit with return code 1."""
 
     mocker.patch(

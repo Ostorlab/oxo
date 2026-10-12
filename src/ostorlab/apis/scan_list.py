@@ -9,7 +9,7 @@ from ostorlab.apis import request
 class ScansListAPIRequest(request.APIRequest):
     """Lists the remote scans."""
 
-    def __init__(self, page: int, elements: int, state: str | None = None):
+    def __init__(self, page: int, elements: int, state: str | None = None) -> None:
         self._page = page
         self._elements = elements
         self._state = state

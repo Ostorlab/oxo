@@ -5,8 +5,10 @@ from abc import ABC
 
 from ostorlab.agent import agent
 from ostorlab.agent import definitions as agent_definitions
+from ostorlab.agent.message import message
 from ostorlab.agent.mixins import agent_persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.testing import agent as testing_agent
 
 
 class StartTestAgent(agent.Agent, ABC):
@@ -23,7 +25,9 @@ class PersistTestAgent(agent.Agent, agent_persist_mixin.AgentPersistMixin):
         agent_persist_mixin.AgentPersistMixin.__init__(self, agent_settings)
 
 
-def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):
+def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(
+    agent_mock: list[message.Message],
+) -> None:
     """Test collection of message by agent mock."""
     definition = agent_definitions.AgentDefinition(
         name="start_test_agent", out_selectors=["v3.healthcheck.ping"]
@@ -38,15 +42,15 @@ def testMockAgent_whenMessageIsSent_messagesAreAppendedtoList(agent_mock):
     test_agent = StartTestAgent(definition, settings)
     test_agent.emit(
         "v3.healthcheck.ping",
-        {"body": f"from test agent at {datetime.datetime.now(datetime.timezone.utc)}"},
+        {"body": f"from test agent at {datetime.datetime.now(datetime.UTC)}"},
     )
     assert len(agent_mock) == 1
     assert agent_mock[0].selector == "v3.healthcheck.ping"
 
 
 def testMockPersistAgent_whensetMethodsAreCalled_stateIsPersistedByMock(
-    agent_mock, agent_persist_mock
-):
+    agent_mock: list[message.Message], agent_persist_mock: testing_agent.Storage
+) -> None:
     """Test collection of values by agent persist mock."""
     definition = agent_definitions.AgentDefinition(
         name="start_test_agent", out_selectors=["v3.healthcheck.ping"]

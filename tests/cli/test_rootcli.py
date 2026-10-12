@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from ostorlab.cli import rootcli
 
 
-def testRootCli_whenNoOptionProvided_showAvailableOptions():
+def testRootCli_whenNoOptionProvided_showAvailableOptions() -> None:
     """Test ostorlab main command 'Ostorlab' with no options and no sub command.
     Should show list of available commands and options"""
     runner = CliRunner()
@@ -16,7 +16,7 @@ def testRootCli_whenNoOptionProvided_showAvailableOptions():
     assert result.exit_code == 2
 
 
-def testRootCli_whenWrongCommandIsProvided_showsNoSuchCommandErrorAndExit():
+def testRootCli_whenWrongCommandIsProvided_showsNoSuchCommandErrorAndExit() -> None:
     """Run CLI with wrong command.
     should show an error message and exit"""
     runner = CliRunner()

@@ -10,13 +10,16 @@ from ostorlab.assets import asset as base_asset
 from ostorlab.assets import ipv4
 
 
-def testcreateAssetApiRequest_whenFilesAreUploaded_returnsRequestWithFilesAndMapVariables():
+def testcreateAssetApiRequest_whenFilesAreUploaded_returnsRequestWithFilesAndMapVariables() -> (
+    None
+):
     """Unittest for create asset API request : Case where the asset has a field of type bytes.
     Request should have a file option, operations & mapping.
     """
     asset = android_aab.AndroidAab(content=b"some_content", path="some/path")
     api_request = assets.CreateAssetAPIRequest(asset)
     request_files = api_request.files
+    assert request_files is not None
     operations = json.loads(api_request.data["operations"])
     variables = json.loads(operations["variables"])
     map_variables = json.loads(api_request.data["map"])
@@ -27,7 +30,9 @@ def testcreateAssetApiRequest_whenFilesAreUploaded_returnsRequestWithFilesAndMap
     assert request_files["0"] == b"some_content"
 
 
-def testcreateAssetApiRequest_whenAssetDoesNotRequireUploadedFiles_returnsRequestWithoutFilesAndMapVariables():
+def testcreateAssetApiRequest_whenAssetDoesNotRequireUploadedFiles_returnsRequestWithoutFilesAndMapVariables() -> (
+    None
+):
     """Unittest for create asset API request : Case where the asset does not require uploaded files"""
     asset = ipv4.IPv4(host="127.0.0.1", version=4, mask="32")
     api_request = assets.CreateAssetAPIRequest(asset)
@@ -37,7 +42,9 @@ def testcreateAssetApiRequest_whenAssetDoesNotRequireUploadedFiles_returnsReques
     assert "127.0.0.1/32" in api_request.data["variables"]
 
 
-def testcreateAssetApiRequest_whenAssetTypeIsUnknown_raisesNotImplementedError():
+def testcreateAssetApiRequest_whenAssetTypeIsUnknown_raisesNotImplementedError() -> (
+    None
+):
     """Unittest for create asset API request : Case where the asset type is not supported."""
     asset = base_asset.Asset()
     api_request = assets.CreateAssetAPIRequest(asset)

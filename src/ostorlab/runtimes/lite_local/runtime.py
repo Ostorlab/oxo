@@ -3,8 +3,11 @@
 The local runtime requires Docker Swarm to run robust long-running services with a set of configured services.
 """
 
+from __future__ import annotations
+
 import builtins
 import logging
+import typing
 from concurrent import futures
 
 import click
@@ -46,7 +49,7 @@ class AgentNotHealthy(exceptions.OstorlabError):
     """Agent not healthy."""
 
 
-def _has_container_image(agent: definitions.AgentSettings):
+def _has_container_image(agent: definitions.AgentSettings) -> bool:
     """Check if container image is available"""
     return agent.container_image is not None
 
@@ -60,19 +63,24 @@ def _is_service_type_run(service: docker_models_services.Service) -> bool:
     Returns:
         Bool indicating if the service is run-once or long-running.
     """
-    return service.attrs["Spec"]["TaskTemplate"]["RestartPolicy"]["Condition"] == "none"
+    return (
+        typing.cast(
+            str, service.attrs["Spec"]["TaskTemplate"]["RestartPolicy"]["Condition"]
+        )
+        == "none"
+    )
 
 
-class LiteLocalRuntime(runtime.Runtime):
+class LiteLocalRuntime(runtime.Runtime[str]):
     """Lite Local runtime runs agents locally using Docker Swarm.
     Lite Local runtime starts all the agents listed in the `AgentRunDefinition`, and then injects the target asset.
     """
 
     def __init__(
         self,
-        *args,
+        *args: object,
         scan_id: str,
-        labels: dict[str, str] | None = None,
+        labels: typing.Optional[dict[str, str]] = None,
         bus_url: str,
         bus_vhost: str,
         bus_management_url: str,
@@ -80,8 +88,8 @@ class LiteLocalRuntime(runtime.Runtime):
         network: str,
         redis_url: str,
         tracing_collector_url: str,
-        gcp_logging_credential: str | None = None,
-        **kwargs,
+        gcp_logging_credential: typing.Optional[str] = None,
+        **kwargs: object,
     ) -> None:
         """Set runtime attributes.
 
@@ -186,9 +194,9 @@ class LiteLocalRuntime(runtime.Runtime):
 
     def scan(
         self,
-        title: str,
+        title: typing.Optional[str],
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: list[base_asset.Asset] | None,
+        assets: typing.Optional[typing.Sequence[base_asset.Asset]],
     ) -> None:
         """Start scan on asset using the provided agent run definition.
 
@@ -237,7 +245,7 @@ class LiteLocalRuntime(runtime.Runtime):
             )
             self._handle_scan_error()
 
-    def stop(self, scan_id: str | None = None) -> bool:
+    def stop(self, scan_id: typing.Optional[str] = None) -> bool:
         """Remove a service (scan) belonging to universe with scan_id(Universe Id).
 
         Args:
@@ -266,7 +274,7 @@ class LiteLocalRuntime(runtime.Runtime):
 
     cleanup = stop
 
-    def _check_agents_healthy(self):
+    def _check_agents_healthy(self) -> bool:
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
@@ -286,8 +294,8 @@ class LiteLocalRuntime(runtime.Runtime):
     def _start_agent(
         self,
         agent: definitions.AgentSettings,
-        extra_configs: list[docker.types.ConfigReference] | None = None,
-        extra_mounts: list[docker.types.Mount] | None = None,
+        extra_configs: typing.Optional[list[docker.types.ConfigReference]] = None,
+        extra_mounts: typing.Optional[list[docker.types.Mount]] = None,
     ) -> None:
         """Start agent based on provided definition.
 
@@ -327,24 +335,30 @@ class LiteLocalRuntime(runtime.Runtime):
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
-        self, service: docker_models_services.Service, replicas=None
-    ) -> bool:
+        self,
+        service: docker_models_services.Service,
+        replicas: typing.Optional[int] = None,
+    ) -> bool | tenacity.Future:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
         try:
             if not replicas:
-                replicas = service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+                replicas = typing.cast(
+                    int, service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
+                )
             return replicas == len(
                 [
                     task
-                    for task in service.tasks()
+                    for task in typing.cast(
+                        typing.Callable[[], list[dict[str, typing.Any]]], service.tasks
+                    )()
                     if task["Status"]["State"] == "running"
                 ]
             )
         except docker.errors.NotFound:
             return False
 
-    def _list_agent_services(self):
+    def _list_agent_services(self) -> typing.Iterator[docker_models_services.Service]:
         """List the services of type agents. All agent service must start with agent_."""
         services = self._docker_client.services.list(
             filters={"label": f"ostorlab.universe={self.name}"}
@@ -355,8 +369,8 @@ class LiteLocalRuntime(runtime.Runtime):
 
     def _inject_assets(
         self,
-        assets: list[base_asset.Asset],
-        agent_settings: definitions.AgentSettings | None,
+        assets: typing.Sequence[base_asset.Asset],
+        agent_settings: typing.Optional[definitions.AgentSettings],
     ) -> None:
         """Injects the scan target assets."""
 
@@ -395,11 +409,11 @@ class LiteLocalRuntime(runtime.Runtime):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: str | None = None,
-    ) -> list[runtime.Scan]:
+        state: typing.Optional[str] = None,
+    ) -> builtins.list[runtime.Scan]:
         raise NotImplementedError()
 
-    def _are_agents_ready(self, fail_fast=True) -> bool:
+    def _are_agents_ready(self, fail_fast: bool = True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
         (once vs long-running)."""
         logger.info("listing services ...")
@@ -423,7 +437,7 @@ class LiteLocalRuntime(runtime.Runtime):
         """
         install_agent.install(agent_key=ASSET_INJECTION_AGENT_DEFAULT)
 
-    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
+    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper) -> None:
         """Dump vulnerabilities to a file in a specific format.
         Returns:
         None
@@ -442,7 +456,7 @@ class LiteLocalRuntime(runtime.Runtime):
         """
 
     def link_assets_scan(
-        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+        self, scan_id: int, assets: typing.Optional[builtins.list[base_asset.Asset]]
     ) -> None:
         """Link the assets to the scan in the database.
 

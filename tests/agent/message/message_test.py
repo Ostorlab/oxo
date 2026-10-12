@@ -3,7 +3,7 @@
 from ostorlab.agent.message import message
 
 
-def testMessageSerializeDeserialize_whenSelectorIsValid_generatesProperProto():
+def testMessageSerializeDeserialize_whenSelectorIsValid_generatesProperProto() -> None:
     """Test message proper serialization from a dict object to a protobuf based on the selector."""
     serialized = message.Message.from_data(
         "v3.fingerprint.file",
@@ -17,7 +17,9 @@ def testMessageSerializeDeserialize_whenSelectorIsValid_generatesProperProto():
     assert deserialized.data.get("path") == "/etc/hosts"
 
 
-def testMessageSerializeDeserializeWithEnum_whenSelectorIsValid_generatesProperProto():
+def testMessageSerializeDeserializeWithEnum_whenSelectorIsValid_generatesProperProto() -> (
+    None
+):
     """Test message proper serialization with enum from a dict object to a protobuf based on the selector."""
     serialized = message.Message.from_data(
         "v3.report.vulnerability",
@@ -33,7 +35,9 @@ def testMessageSerializeDeserializeWithEnum_whenSelectorIsValid_generatesProperP
     assert deserialized.data.get("risk_rating") == "MEDIUM"
 
 
-def testMessageSerializeDeserializeForBytes_whenSelectorIsValid_generatesProperProto():
+def testMessageSerializeDeserializeForBytes_whenSelectorIsValid_generatesProperProto() -> (
+    None
+):
     """Test message proper serialization from a dict object to a protobuf based on the selector."""
     serialized = message.Message.from_data(
         "v3.asset.file",
@@ -47,7 +51,9 @@ def testMessageSerializeDeserializeForBytes_whenSelectorIsValid_generatesProperP
     assert deserialized.data.get("content") == b"test"
 
 
-def testMessageSerializeDeserialize_Forv3CaptureFilesystem_generatesProperProto():
+def testMessageSerializeDeserialize_Forv3CaptureFilesystem_generatesProperProto() -> (
+    None
+):
     """Test message proper serialization from a dict object to a protobuf based on the selector."""
     serialized = message.Message.from_data(
         "v3.capture.filesystem",

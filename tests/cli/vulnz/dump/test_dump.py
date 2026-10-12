@@ -4,7 +4,10 @@ import csv
 import json
 import pathlib
 
+import _pytest._py.path
+import pytest_httpx
 from click.testing import CliRunner
+from pytest_mock import plugin
 
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import rootcli
@@ -12,8 +15,10 @@ from ostorlab.runtimes.local.models import models
 
 
 def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
-    mocker, tmpdir, db_engine_path
-):
+    mocker: plugin.MockerFixture,
+    tmpdir: _pytest._py.path.LocalPath,
+    db_engine_path: str,
+) -> None:
     """Test oxo vulnz dump command with correct commands and options.
     Should create a json file with the vulnerabilities.
 
@@ -23,6 +28,7 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create(title="test")
+    assert create_scan_db.id is not None
     vuln_db = models.Vulnerability.create(
         title="MyVuln",
         short_description="Xss",
@@ -84,8 +90,8 @@ def testVulnzDump_whenOptionsAreValid_jsonOutputFileIsCreated(
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
-    httpx_mock, tmpdir
-):
+    httpx_mock: pytest_httpx.HTTPXMock, tmpdir: _pytest._py.path.LocalPath
+) -> None:
     """Test oxo vulnz dump command with correct commands and options and the selected runtime is cloud.
     Should create a json file with the vulnerabilities.
 
@@ -226,8 +232,8 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_jsonOutputFileIsCreated(
 
 
 def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
-    httpx_mock, tmpdir
-):
+    httpx_mock: pytest_httpx.HTTPXMock, tmpdir: _pytest._py.path.LocalPath
+) -> None:
     """Test oxo vulnz dump command with correct commands and options and runtime is cloud.
     Should create a json file with the vulnerabilities.
 
@@ -326,7 +332,9 @@ def testVulnzDumpCloudRuntime_whenOptionsAreValid_csvOutputFileIsCreated(
     assert "title1: https://url1.co/page2" in data[0][-2]
 
 
-def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(httpx_mock, tmpdir):
+def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(
+    httpx_mock: pytest_httpx.HTTPXMock, tmpdir: _pytest._py.path.LocalPath
+) -> None:
     """Test oxo vulnz dump command with correct commands and wrong scan id.
     Should show not found error.
 
@@ -372,8 +380,10 @@ def testVulnzDumpCloudRuntime_whenScanNotfound_ShowError(httpx_mock, tmpdir):
 
 
 def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
-    mocker, tmpdir, db_engine_path
-):
+    mocker: plugin.MockerFixture,
+    tmpdir: _pytest._py.path.LocalPath,
+    db_engine_path: str,
+) -> None:
     """Test oxo vulnz dump command with correct commands and options.
     Should create a csv file with the vulnerabilities.
 
@@ -383,6 +393,7 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create(title="test")
+    assert create_scan_db.id is not None
     vuln_db = models.Vulnerability.create(
         title="MyVuln",
         short_description="Xss",
@@ -443,8 +454,10 @@ def testVulnzDump_whenOptionsAreValid_csvOutputFileIsCreated(
 
 
 def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(
-    mocker, tmpdir, db_engine_path
-):
+    mocker: plugin.MockerFixture,
+    tmpdir: _pytest._py.path.LocalPath,
+    db_engine_path: str,
+) -> None:
     """Test oxo vulnz dump command with correct commands and options.
     Should create a json file with the vulnerabilities, ordered by the risk severity.
 
@@ -453,6 +466,7 @@ def testVulnzDumpInOrderOfSeverity_whenOptionsAreValid_jsonOutputFileIsCreated(
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create(title="test")
+    assert create_scan_db.id is not None
 
     vuln_db = models.Vulnerability.create(
         title="MyVuln",

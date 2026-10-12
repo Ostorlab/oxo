@@ -195,7 +195,7 @@ def testImportScanMutation_always_shouldImportScan(
             }
         """
         file_name = "imported_zip_file.zip"
-        data = {
+        data: dict[str, str | tuple[io.BytesIO, str]] = {
             "operations": json.dumps(
                 {
                     "query": query,
@@ -227,7 +227,9 @@ def testImportScanMutation_always_shouldImportScan(
         assert nbr_scans_after_import == nbr_scans_before_import + 1
         assert session.query(models.Asset).count() == nbr_assets_before_import + 1
         asset = session.query(models.Asset).first()
+        assert asset is not None
         assert asset.type == "ios_file"
+        assert isinstance(asset, models.IosFile)
         assert asset.bundle_id == "ostorlab.swiftvulnerableapp"
 
 
@@ -251,7 +253,7 @@ def testImportScanMutation_whenScanExists_shouldImportScan(
             }
         """
         file_name = "imported_zip_file.zip"
-        data = {
+        data: dict[str, str | tuple[io.BytesIO, str]] = {
             "operations": json.dumps(
                 {
                     "query": query,
@@ -884,7 +886,7 @@ def testVulnerabilitiesQuery_withPagination_shouldReturnPageInfo(
 
 def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     authenticated_flask_client: testing.FlaskClient,
-    agent_groups: models.AgentGroup,
+    agent_groups: list[models.AgentGroup],
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
@@ -945,11 +947,13 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
     assert agent_group1["name"] == agent_groups[0].name
     assert agent_group1["description"] == agent_groups[0].description
     assert agent_group1["key"] == f"agentgroup//{agent_groups[0].name}"
+    assert agent_groups[0].created_time is not None
     assert agent_group1["createdTime"] == agent_groups[0].created_time.isoformat()
     assert agent_group1["assetTypes"] == ["IP"]
     assert agent_group2["name"] == agent_groups[1].name
     assert agent_group2["description"] == agent_groups[1].description
     assert agent_group2["key"] == f"agentgroup//{agent_groups[1].name}"
+    assert agent_groups[1].created_time is not None
     assert agent_group2["createdTime"] == agent_groups[1].created_time.isoformat()
     assert agent_group2["assetTypes"] == ["ANDROID_FILE"]
     agent_group1_agents = agent_group1["agents"]["agents"]
@@ -1001,7 +1005,7 @@ def testQueryAllAgentGroups_always_shouldReturnAllAgentGroups(
 
 def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
     authenticated_flask_client: testing.FlaskClient,
-    agent_groups: models.AgentGroup,
+    agent_groups: list[models.AgentGroup],
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
@@ -1096,7 +1100,7 @@ def testQuerySingleAgentGroup_always_shouldReturnSingleAgentGroup(
 
 def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
     authenticated_flask_client: testing.FlaskClient,
-    agent_groups: models.AgentGroup,
+    agent_groups: list[models.AgentGroup],
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
@@ -1169,7 +1173,7 @@ def testQueryAgentGroupWithAssetType_always_shouldReturnCorrectResults(
 
 def testQueryAgentGroupsWithPagination_always_returnPageInfo(
     authenticated_flask_client: testing.FlaskClient,
-    agent_groups: models.AgentGroup,
+    agent_groups: list[models.AgentGroup],
     mocker: plugin.MockerFixture,
     db_engine_path: str,
 ) -> None:
@@ -1234,6 +1238,7 @@ def testQueryAgentGroupsWithPagination_always_returnPageInfo(
     assert ag["name"] == agent_groups[1].name
     assert ag["description"] == agent_groups[1].description
     assert ag["key"] == f"agentgroup//{agent_groups[1].name}"
+    assert agent_groups[1].created_time is not None
     assert ag["createdTime"] == agent_groups[1].created_time.isoformat()
     assert page_info["count"] == 2
     assert page_info["numPages"] == 2
@@ -1436,7 +1441,9 @@ def testCreateAsset_url_createsNewAsset(
     ]
     with models.Database() as session:
         assert session.query(models.Urls).count() == 1
-        urls_asset_id = session.query(models.Urls).first().id
+        urls_asset = session.query(models.Urls).first()
+        assert urls_asset is not None
+        urls_asset_id = urls_asset.id
         links = session.query(models.Link).filter_by(urls_asset_id=urls_asset_id).all()
         assert len(links) == 2
         assert links[0].url == "https://www.google.com"
@@ -1487,7 +1494,9 @@ def testCreateAsset_network_createsNewAsset(
     ]
     with models.Database() as session:
         assert session.query(models.Network).count() == 1
-        network_asset_id = session.query(models.Network).first().id
+        network_asset = session.query(models.Network).first()
+        assert network_asset is not None
+        network_asset_id = network_asset.id
         networks = (
             session.query(models.IPRange)
             .filter_by(network_asset_id=network_asset_id)
@@ -1541,7 +1550,9 @@ def testCreateAsset_domain_createsNewAsset(
     ]
     with models.Database() as session:
         assert session.query(models.DomainAsset).count() == 1
-        domain_asset_id = session.query(models.DomainAsset).first().id
+        domain_asset = session.query(models.DomainAsset).first()
+        assert domain_asset is not None
+        domain_asset_id = domain_asset.id
         domains = (
             session.query(models.DomainName)
             .filter_by(domain_asset_id=domain_asset_id)
@@ -2046,6 +2057,7 @@ def testStopScansMutation_whenScanIsRunning_shouldStopScan(
     with models.Database() as session:
         nbr_scans_before = session.query(models.Scan).count()
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
+        assert scan is not None
         scan_progress = scan.progress
         query = """
             mutation stopScans($scanIds: [Int]!){
@@ -2062,6 +2074,7 @@ def testStopScansMutation_whenScanIsRunning_shouldStopScan(
         assert response.status_code == 200, response.get_json()
         session.refresh(scan)
         scan = session.query(models.Scan).get(in_progress_web_scan.id)
+        assert scan is not None
         response_json = response.get_json()
         nbr_scans_after = session.query(models.Scan).count()
         assert response_json["data"] == {
@@ -2373,6 +2386,7 @@ def testRunScanMutation_whenNetworkAsset_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == network_asset.id
@@ -2434,6 +2448,7 @@ def testRunScanMutation_whenDomainAsset_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == domain_asset.id
@@ -2511,6 +2526,7 @@ def testRunScanMutation_whenUrl_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == url_asset.id
@@ -2585,6 +2601,7 @@ def testRunScanMutation_whenAndroidFile_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == android_file_asset.id
@@ -2656,6 +2673,7 @@ def testRunScanMutation_whenIosFile_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == ios_file_asset.id
@@ -2727,6 +2745,7 @@ def testRunScanMutation_whenAndroidStore_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == android_store.id
@@ -2798,6 +2817,7 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     res_scan = response.get_json()["data"]["runScan"]["scan"]
     assert int(res_scan["id"]) == scan.id
     assert res_scan["title"] == scan.title
+    assert scan.progress is not None
     assert res_scan["progress"] == scan.progress.name
     assert len(res_scan["assets"]) == 1
     assert int(res_scan["assets"][0]["id"]) == ios_store.id
@@ -2883,7 +2903,8 @@ def _get_re_oxo_schema(query: str) -> dict[str, Any]:
             headers={"X-Api-Key": f"{os.environ.get('RE_OXO_API_KEY', '')}"},
         )
 
-        return response.json()["data"]
+        schema_data: dict[str, Any] = response.json()["data"]
+        return schema_data
 
 
 def testOxoSchemaReOxoSchemas_whenEnums_schemasShouldBeSimilar() -> None:
@@ -3442,6 +3463,7 @@ def testOxoExportScan_alaways_shouldExportScan(
         import_utils.import_scan(file_data=file_data)
         assert session.query(models.Scan).count() == 2
         last_scan = session.query(models.Scan).order_by(models.Scan.id.desc()).first()
+        assert last_scan is not None
         assert last_scan.title == "Android Store Scan"
         assert last_scan.progress == models.ScanProgress.IN_PROGRESS
 
@@ -3467,7 +3489,7 @@ def testImportScanMutation_whenScanHasMultipleAssets_shouldImportScanWithMultipl
             }
         """
         file_name = "imported_zip_file.zip"
-        data = {
+        data: dict[str, str | tuple[io.BytesIO, str]] = {
             "operations": json.dumps(
                 {
                     "query": query,

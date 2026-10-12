@@ -1,6 +1,7 @@
 """Unittest for runtime definitions."""
 
 import io
+import pathlib
 
 import pytest
 from pytest_mock import plugin
@@ -29,7 +30,9 @@ from ostorlab.runtimes import definitions
 from ostorlab.utils import definitions as utils_definitions
 
 
-def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition():
+def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefinition() -> (
+    None
+):
     """Tests the creation of an agent group definition from a valid yaml definition file."""
     valid_yaml = """
         kind: "AgentGroup"
@@ -78,7 +81,7 @@ def testAgentGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAgentGroupDefin
     assert agentgrp_def.agents == dummy_agents
 
 
-def testAgentGroupDefinitionFromYaml_whenServiceNameProvided_parsedCorrectly():
+def testAgentGroupDefinitionFromYaml_whenServiceNameProvided_parsedCorrectly() -> None:
     """Test that service_name in YAML is parsed into AgentSettings."""
     valid_yaml = """
         kind: "AgentGroup"
@@ -93,7 +96,7 @@ def testAgentGroupDefinitionFromYaml_whenServiceNameProvided_parsedCorrectly():
     assert agentgrp_def.agents[0].service_name == "crawler_bus"
 
 
-def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
+def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes() -> None:
     """Tests that the generated proto is of type bytes."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
@@ -109,7 +112,7 @@ def testAgentInstanceSettingsTo_whenProtoIsValid_returnsBytes():
     assert isinstance(proto, bytes)
 
 
-def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
+def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes() -> None:
     """Test supported serializing int number."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
@@ -125,7 +128,7 @@ def testAgentInstanceSettingsTo_whenProtoHasNumberField_returnsBytes():
     assert isinstance(proto, bytes)
 
 
-def testAgentInstanceSettingsTo_whenProtoHasIntField_returnsBytes():
+def testAgentInstanceSettingsTo_whenProtoHasIntField_returnsBytes() -> None:
     """Test supported serializing int number."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
@@ -141,7 +144,7 @@ def testAgentInstanceSettingsTo_whenProtoHasIntField_returnsBytes():
     assert isinstance(proto, bytes)
 
 
-def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes():
+def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes() -> None:
     """Test supported serializing bytes."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
@@ -157,7 +160,9 @@ def testAgentInstanceSettingsTo_whenProtoHasBytesField_returnsBytes():
     assert isinstance(proto, bytes)
 
 
-def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanceSettings():
+def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanceSettings() -> (
+    None
+):
     """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
@@ -177,8 +182,11 @@ def testAgentInstanceSettingsFromProto_whenProtoIsValid_returnsValidAgentInstanc
     assert new_instance.args[0].value == b'"fast"'
 
 
-def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError():
+def testAgentInstanceContainerImage_ifNoImageIsPresent_raiseValueError(
+    mocker: plugin.MockerFixture,
+) -> None:
     """Uses two-way generation and parsing to ensure the passed attributes are recreated."""
+    mocker.patch("docker.models.images.ImageCollection.list", return_value=[])
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
         bus_url="mq",
@@ -326,13 +334,15 @@ def testAgentGroupDefinitionFromApiResponse_whenAgentArgOfTypeArray_castsArgumen
     assert casted_argument == utils_definitions.Arg(
         name="arg1", type="array", value=["value1", "value2", 3], description=None
     )
-    assert isinstance(casted_argument.value, list) is True
+    assert isinstance(casted_argument.value, list)
     assert isinstance(casted_argument.value[0], str) is True
     assert isinstance(casted_argument.value[1], str) is True
     assert isinstance(casted_argument.value[2], int) is True
 
 
-def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSerialize():
+def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSerialize() -> (
+    None
+):
     """Unit test to ensure that depth and cyclic processing limits are correctly serialized."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/BigFuzzer",
@@ -482,7 +492,7 @@ def testAgentGroupDefinitionFromApiResponse_whenAgentHasOpenPortsAndServiceName_
 
 def testAssetGroupDefinitionFromYaml_whenYamlIsValid_returnsValidAssetGroupDefinition(
     mocker: plugin.MockerFixture,
-):
+) -> None:
     """Tests the creation of an asset group definition from a valid yaml definition file."""
     valid_yaml = """
 description: Target group definition for the NSA
@@ -571,7 +581,7 @@ assets:
     assert assets == asset_group_def.targets
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskAssetsProvided_returnsRiskAssets():
+def testAssetGroupDefinitionFromYaml_whenRiskAssetsProvided_returnsRiskAssets() -> None:
     """Tests parsing a target group with multiple risk assets embedding different targets."""
     valid_yaml = """
 description: Target group with risks
@@ -597,6 +607,9 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(valid_yaml_def)
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
+    assert isinstance(asset_group_def.targets[1], risk_asset.Risk)
+    assert isinstance(asset_group_def.targets[2], risk_asset.Risk)
     assert len(asset_group_def.targets) == 3
     assert all(
         isinstance(target, risk_asset.Risk) for target in asset_group_def.targets
@@ -613,7 +626,9 @@ assets:
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskAssetHasMaskedIp_serializesToProto():
+def testAssetGroupDefinitionFromYaml_whenRiskAssetHasMaskedIp_serializesToProto() -> (
+    None
+):
     """Tests that a risk embedding an ip with a numeric mask serializes to protobuf.
 
     The ipv4 proto mask field is a string while YAML parses the mask as an int, so
@@ -634,12 +649,16 @@ assets:
 
     proto_bytes = asset_group_def.targets[0].to_proto()
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert isinstance(proto_bytes, bytes)
     assert len(proto_bytes) > 0
+    assert isinstance(asset_group_def.targets[0].ipv4, ipv4_asset.IPv4)
     assert asset_group_def.targets[0].ipv4.mask == "32"
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsMultipleTargets_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsMultipleTargets_raisesValidationError() -> (
+    None
+):
     """Tests that a risk embedding more than one target is rejected instead of silently
     dropping all but one when serialized to the proto oneof."""
     invalid_yaml = """
@@ -660,7 +679,9 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskHasNoTarget_returnsTargetlessRisk():
+def testAssetGroupDefinitionFromYaml_whenRiskHasNoTarget_returnsTargetlessRisk() -> (
+    None
+):
     """Tests that a risk without an embedded target is accepted, consistent with the
     ``oxo scan run ... risk`` subcommand where target assets are optional."""
     valid_yaml = """
@@ -678,13 +699,14 @@ assets:
     assert len(asset_group_def.targets) == 1
     risk = asset_group_def.targets[0]
     assert isinstance(risk, risk_asset.Risk)
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.rating == "HIGH"
     assert risk.ipv4 is None
     assert risk.domain_name is None
     assert isinstance(risk.to_proto(), bytes)
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsLink_returnsRiskWithLink():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsLink_returnsRiskWithLink() -> None:
     """Tests parsing a risk asset embedding a link target."""
     valid_yaml = """
 description: Risk with link
@@ -701,6 +723,7 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert asset_group_def.targets[0].link == link_asset.Link(
         url="https://example.com/api", method="GET"
     )
@@ -726,6 +749,7 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert asset_group_def.targets[0].api_schema == api_schema_asset.ApiSchema(
         endpoint_url="https://example.com/api/v1",
         content_url="https://example.com/openapi.json",
@@ -758,7 +782,9 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsAndroidStore_returnsRiskWithAndroidStore():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsAndroidStore_returnsRiskWithAndroidStore() -> (
+    None
+):
     """Tests parsing a risk asset embedding an android store target."""
     valid_yaml = """
 description: Risk with android store
@@ -774,12 +800,15 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert asset_group_def.targets[0].android_store == android_store_asset.AndroidStore(
         package_name="com.example.app"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsIosStore_returnsRiskWithIosStore():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsIosStore_returnsRiskWithIosStore() -> (
+    None
+):
     """Tests parsing a risk asset embedding an iOS store target."""
     valid_yaml = """
 description: Risk with iOS store
@@ -795,6 +824,7 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert asset_group_def.targets[0].ios_store == ios_store_asset.IOSStore(
         bundle_id="com.example.app"
     )
@@ -802,7 +832,7 @@ assets:
 
 def testAssetGroupDefinitionFromYaml_whenRiskEmbedsAndroidAabFile_returnsRiskWithAab(
     mocker: plugin.MockerFixture,
-):
+) -> None:
     """Tests parsing a risk asset embedding an Android AAB file by local path."""
     mocker.patch("pathlib.Path.read_bytes", return_value=b"aab content")
     valid_yaml = """
@@ -819,6 +849,7 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert asset_group_def.targets[0].android_aab == android_aab_asset.AndroidAab(
         content=b"aab content", path="/app.aab"
     )
@@ -826,7 +857,7 @@ assets:
 
 def testAssetGroupDefinitionFromYaml_whenRiskIosFileHasLocalPath_readsContent(
     mocker: plugin.MockerFixture,
-):
+) -> None:
     """Tests that a risk embedding an iOS file by local path is read, guarding the
     schema key which must be `path` (singular) to match the parser."""
     mocker.patch("pathlib.Path.read_bytes", return_value=b"ipa content")
@@ -845,10 +876,13 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.ios_ipa == ios_ipa_asset.IOSIpa(content=b"ipa content", path="/app.ipa")
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsRepository_parsesRepositoryTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsRepository_parsesRepositoryTarget() -> (
+    None
+):
     """Tests that a risk embedding a source code repository is parsed into a
     repository target."""
     valid_yaml = """
@@ -867,12 +901,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.repository == repository_asset.Repository(
         repository_url="https://github.com/ostorlab/oxo", commit_hash="deadbeef"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsRepositoryArchive_parsesArchiveTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsRepositoryArchive_parsesArchiveTarget() -> (
+    None
+):
     """Tests that a risk embedding a repository archive by url is parsed into a
     repository archive target."""
     valid_yaml = """
@@ -890,12 +927,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.repository_archive == repository_archive_asset.RepositoryArchive(
         content=None, path=None, content_url="https://storage.example.com/repo.zip"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosStore_parsesStoreTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosStore_parsesStoreTarget() -> (
+    None
+):
     """Tests that a risk embedding a HarmonyOS store is parsed into a
     harmonyos_store target."""
     valid_yaml = """
@@ -913,12 +953,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.harmonyos_store == harmonyos_store_asset.HarmonyOSStore(
         bundle_name="com.example.harmonyapp"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosHap_parsesHapTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosHap_parsesHapTarget() -> (
+    None
+):
     """Tests that a risk embedding a HarmonyOS .hap file by url is parsed into a
     harmonyos_hap target."""
     valid_yaml = """
@@ -936,12 +979,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.harmonyos_hap == harmonyos_hap_asset.HarmonyOSHap(
         content=None, path=None, content_url="https://storage.example.com/app.hap"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosApk_parsesApkTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosApk_parsesApkTarget() -> (
+    None
+):
     """Tests that a risk embedding a HarmonyOS .apk file by url is parsed into a
     harmonyos_apk target."""
     valid_yaml = """
@@ -959,12 +1005,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.harmonyos_apk == harmonyos_apk_asset.HarmonyOSApk(
         content=None, path=None, content_url="https://storage.example.com/app.apk"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosAab_parsesAabTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosAab_parsesAabTarget() -> (
+    None
+):
     """Tests that a risk embedding a HarmonyOS .aab file by url is parsed into a
     harmonyos_aab target."""
     valid_yaml = """
@@ -982,12 +1031,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.harmonyos_aab == harmonyos_aab_asset.HarmonyOSAab(
         content=None, path=None, content_url="https://storage.example.com/app.aab"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosApp_parsesAppTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosApp_parsesAppTarget() -> (
+    None
+):
     """Tests that a risk embedding a HarmonyOS .app file by url is parsed into a
     harmonyos_app target."""
     valid_yaml = """
@@ -1005,12 +1057,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.harmonyos_app == harmonyos_app_asset.HarmonyOSApp(
         content=None, path=None, content_url="https://storage.example.com/app.app"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosRpk_parsesRpkTarget():
+def testAssetGroupDefinitionFromYaml_whenRiskEmbedsHarmonyosRpk_parsesRpkTarget() -> (
+    None
+):
     """Tests that a risk embedding a HarmonyOS .rpk file by url is parsed into a
     harmonyos_rpk target."""
     valid_yaml = """
@@ -1028,12 +1083,15 @@ assets:
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
     risk = asset_group_def.targets[0]
+    assert isinstance(risk, risk_asset.Risk)
     assert risk.harmonyos_rpk == harmonyos_rpk_asset.HarmonyOSRpk(
         content=None, path=None, content_url="https://storage.example.com/app.rpk"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskHarmonyosStoreMissingBundle_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenRiskHarmonyosStoreMissingBundle_raisesValidationError() -> (
+    None
+):
     """Tests that a HarmonyOS store risk with no bundle_name is rejected instead of
     building a target with a None identifier."""
     invalid_yaml = """
@@ -1051,7 +1109,9 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskRepositoryMissingUrl_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenRiskRepositoryMissingUrl_raisesValidationError() -> (
+    None
+):
     """Tests that a repository risk with no repository_url is rejected instead of
     building a target with a None identifier."""
     invalid_yaml = """
@@ -1069,7 +1129,7 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskIpInvalid_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenRiskIpInvalid_raisesValidationError() -> None:
     """Tests that a risk embedding an invalid ip is rejected instead of silently
     producing a risk with no target."""
     invalid_yaml = """
@@ -1088,7 +1148,9 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskFileAssetEmpty_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenRiskFileAssetEmpty_raisesValidationError() -> (
+    None
+):
     """Tests that a risk embedding a file asset with neither path nor url is rejected
     instead of producing an empty asset."""
     invalid_yaml = """
@@ -1175,7 +1237,7 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskLinkHasNoMethod_defaultsToGet():
+def testAssetGroupDefinitionFromYaml_whenRiskLinkHasNoMethod_defaultsToGet() -> None:
     """Tests that a risk link without a method defaults to GET, matching the CLI.
 
     The ``risk`` CLI defaults ``--link-method`` to GET, so a link ported to YAML
@@ -1196,12 +1258,15 @@ assets:
         io.StringIO(yaml_definition)
     )
 
+    assert isinstance(asset_group_def.targets[0], risk_asset.Risk)
     assert asset_group_def.targets[0].link == link_asset.Link(
         url="https://example.com/api", method="GET"
     )
 
 
-def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenRiskSeverityInvalid_raisesValidationError() -> (
+    None
+):
     """Tests that an invalid risk severity is rejected by schema validation."""
     invalid_yaml = """
 description: Target group with an invalid risk
@@ -1217,7 +1282,9 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenApiSchemaAssetsProvided_returnsApiSchemaAssets():
+def testAssetGroupDefinitionFromYaml_whenApiSchemaAssetsProvided_returnsApiSchemaAssets() -> (
+    None
+):
     """Tests parsing a target group holding api schema assets defined by url and by endpoint only."""
     valid_yaml = """
 description: Target group with api schemas
@@ -1246,8 +1313,8 @@ assets:
 
 
 def testAssetGroupDefinitionFromYaml_whenApiSchemaHasFilePath_readsSchemaContent(
-    tmp_path,
-):
+    tmp_path: pathlib.Path,
+) -> None:
     """Tests that an api schema defined by a local path has its content read from disk."""
     schema_file = tmp_path / "schema.json"
     schema_file.write_bytes(b'{"openapi": "3.0.0"}')
@@ -1264,11 +1331,14 @@ assets:
 
     asset_group_def = definitions.AssetsDefinition.from_yaml(io.StringIO(valid_yaml))
 
+    assert isinstance(asset_group_def.targets[0], api_schema_asset.ApiSchema)
     assert asset_group_def.targets[0].content == b'{"openapi": "3.0.0"}'
     assert asset_group_def.targets[0].schema_type == "openapi"
 
 
-def testAssetGroupDefinitionFromYaml_whenApiSchemaMissesEndpointUrl_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenApiSchemaMissesEndpointUrl_raisesValidationError() -> (
+    None
+):
     """Tests that an api schema entry without an endpoint_url is rejected."""
     invalid_yaml = """
 description: Target group with an incomplete api schema
@@ -1283,7 +1353,9 @@ assets:
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAssetGroupDefinitionFromYaml_whenApiSchemaTypeUnsupported_raisesValidationError():
+def testAssetGroupDefinitionFromYaml_whenApiSchemaTypeUnsupported_raisesValidationError() -> (
+    None
+):
     """Tests that an api schema with a type outside the supported set is rejected."""
     invalid_yaml = """
 description: Target group with an unsupported api schema type
@@ -1297,3 +1369,97 @@ assets:
 
     with pytest.raises(validator.ValidationError):
         definitions.AssetsDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAgentGroupDefinitionFromYaml_whenChannelProvided_parsedCorrectly() -> None:
+    """Test that the channel yaml key is parsed into the agent group definition."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        channel: "beta"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.channel == "beta"
+
+
+def testAgentGroupDefinitionFromYaml_whenChannelMissing_defaultsToNone() -> None:
+    """Test that a yaml without channel has no channel, so stable versions are used."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.channel is None
+
+
+def testAgentSettingsRoundtrip_whenOptionalFieldsAreNone_shouldUseProtobufDefaults() -> (
+    None
+):
+    """Missing optional fields serialize without blocking required settings."""
+    settings = definitions.AgentSettings(
+        key="agent/ostorlab/BigFuzzer",
+        bus_url=None,
+        bus_exchange_topic=None,
+        bus_management_url=None,
+        bus_vhost=None,
+        constraints=None,
+        mounts=None,
+        in_selectors=None,
+        args=[utils_definitions.Arg(name="speed", type="number", value=42)],
+        replicas=3,
+    )
+
+    restored = definitions.AgentSettings.from_proto(settings.to_raw_proto())
+
+    assert restored.key == settings.key
+    assert restored.bus_url == ""
+    assert restored.bus_exchange_topic == ""
+    assert restored.bus_management_url == ""
+    assert restored.bus_vhost == ""
+    assert restored.constraints is not None and list(restored.constraints) == []
+    assert restored.mounts is not None and list(restored.mounts) == []
+    assert restored.in_selectors is not None and list(restored.in_selectors) == []
+    assert restored.args == [
+        utils_definitions.Arg(name="speed", type="number", value=b"42")
+    ]
+    assert restored.replicas == 3
+
+
+def testAgentSettingsRoundtrip_whenOptionalFieldsArePopulated_shouldPreserveValues() -> (
+    None
+):
+    """Bus configuration and repeated fields survive serialization together."""
+    settings = definitions.AgentSettings(
+        key="agent/ostorlab/BigFuzzer",
+        bus_url="amqp://mq",
+        bus_exchange_topic="topic",
+        bus_management_url="http://mq:15672",
+        bus_vhost="vhost",
+        constraints=["node.role==worker"],
+        mounts=["/source:/target"],
+        in_selectors=["v3.asset.domain_name"],
+    )
+
+    restored = definitions.AgentSettings.from_proto(settings.to_raw_proto())
+
+    assert restored.bus_url == settings.bus_url
+    assert restored.bus_exchange_topic == settings.bus_exchange_topic
+    assert restored.bus_management_url == settings.bus_management_url
+    assert restored.bus_vhost == settings.bus_vhost
+    assert (
+        restored.constraints is not None
+        and list(restored.constraints) == settings.constraints
+    )
+    assert restored.mounts is not None and list(restored.mounts) == settings.mounts
+    assert (
+        restored.in_selectors is not None
+        and list(restored.in_selectors) == settings.in_selectors
+    )

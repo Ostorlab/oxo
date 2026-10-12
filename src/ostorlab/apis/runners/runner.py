@@ -25,7 +25,7 @@ class ResponseError(Error):
 class APIRunner(abc.ABC):
     """Handles API calls and behind the scenes operations."""
 
-    def __init__(self, proxy: str | None = None, verify: bool = True):
+    def __init__(self, proxy: str | None = None, verify: bool = True) -> None:
         """Constructs the necessary attributes for the object.
 
         Args:

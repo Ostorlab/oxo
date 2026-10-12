@@ -3,8 +3,11 @@ This module takes care of preparing the selected runtime and the lists of provid
 Example of usage:
     - oxo scan run --agent=agent1 --agent=agent2 --title=test_scan [asset] [options]."""
 
-import io
 import logging
+from collections.abc import Sequence
+from typing import Any
+from typing import Optional
+from typing import TextIO
 
 import click
 import httpx
@@ -110,13 +113,13 @@ WAIT_BETWEEN_RETRIES = 5
 @click.pass_context
 def run(
     ctx: click.core.Context,
-    agent: list[str],
-    arg: list[types.AgentArg],
-    agent_group_definition: io.FileIO,
-    assets: io.FileIO,
+    agent: Sequence[str],
+    arg: Sequence[types.AgentArg],
+    agent_group_definition: Optional[TextIO],
+    assets: Optional[TextIO],
     title: str,
     install: bool,
-    follow: list[str],
+    follow: Sequence[str],
     no_follow: bool,
     no_tracker: bool,
     no_asset: bool,
@@ -166,7 +169,7 @@ def run(
         except validator.ValidationError as e:
             console.error(f"{e}")
             raise click.ClickException("Invalid asset Group Definition.") from e
-    runtime_instance: runtime.Runtime = ctx.obj["runtime"]
+    runtime_instance: runtime.Runtime[Any] = ctx.obj["runtime"]
 
     if no_tracker is True:
         runtime_instance.has_tracker = False
@@ -196,10 +199,14 @@ def run(
                     ctx.obj.get("use_experimental_agents", False) is True
                     or agent_group.use_experimental_agents is True
                 )
+                channel = ctx.obj.get("channel")
+                if channel is None:
+                    channel = agent_group.channel
                 _install_agents_with_retry(
                     runtime_instance,
                     agent_group,
                     use_experimental=use_experimental,
+                    channel=channel,
                 )
             except httpx.HTTPError as e:
                 console.error(f"Could not install the agents: {e}")
@@ -218,6 +225,7 @@ def run(
                 )
                 if created_scan is not None:
                     runtime_instance.link_agent_group_scan(created_scan, agent_group)
+                    assert created_scan.id is not None
                     runtime_instance.link_assets_scan(
                         created_scan.id,
                         asset_group.targets if asset_group is not None else None,
@@ -235,12 +243,15 @@ def run(
     stop=tenacity.stop.stop_after_attempt(NUMBER_OF_RETRIES),
     wait=tenacity.wait.wait_fixed(WAIT_BETWEEN_RETRIES),
     retry=tenacity.retry_if_exception_type(httpx.HTTPError),
-    retry_error_callback=lambda retry_state: retry_state.outcome.result(),
+    retry_error_callback=lambda retry_state: (
+        retry_state.outcome.result() if retry_state.outcome is not None else None
+    ),
 )
 def _install_agents_with_retry(
-    runtime_instance: runtime.Runtime,
+    runtime_instance: runtime.Runtime[Any],
     agent_group: definitions.AgentGroupDefinition,
     use_experimental: bool = False,
+    channel: str | None = None,
 ) -> None:
     # Trigger both the runtime installation routine and install all the provided agents.
     runtime_instance.install()
@@ -249,7 +260,7 @@ def _install_agents_with_retry(
             if ag.version is None:
                 try:
                     agent_details = agent_fetcher.get_details(
-                        ag.key, use_experimental=use_experimental
+                        ag.key, use_experimental=use_experimental, channel=channel
                     )
                     ag.version = agent_details["versions"]["versions"][0]["version"]
                 except agent_fetcher.AgentDetailsNotFound:
@@ -257,13 +268,18 @@ def _install_agents_with_retry(
                         "agent %s not found on the store, skipping version fetch",
                         ag.key,
                     )
-            install_agent.install(ag.key, ag.version)
+            install_agent.install(
+                ag.key,
+                ag.version,
+                use_experimental=use_experimental,
+                channel=channel,
+            )
         except agent_fetcher.AgentDetailsNotFound:
             console.warning(f"agent {ag.key} not found on the store")
 
 
 def prepare_agents_to_follow(
-    agent_keys: list[str], follow: list[str], no_follow: bool
+    agent_keys: list[str], follow: Sequence[str], no_follow: bool
 ) -> set[str]:
     """
     Prepares the list of agents to follow based on the provided list of agents to follow and unfollow.
@@ -289,7 +305,7 @@ def prepare_agents_to_follow(
 
 
 def _add_cli_args_to_agent_settings(
-    agents_settings: list[definitions.AgentSettings], cli_args: list[types.AgentArg]
+    agents_settings: list[definitions.AgentSettings], cli_args: Sequence[types.AgentArg]
 ) -> list[definitions.AgentSettings]:
     """
     Adds CLI arguments to the agent settings if they are supported by the agent.

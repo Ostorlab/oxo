@@ -10,7 +10,7 @@ from ostorlab.runtimes.local.services import jaeger
 
 
 @pytest.mark.docker
-def testLocalJaeger_onOperationalConditions_jaegerIsStarted():
+def testLocalJaeger_onOperationalConditions_jaegerIsStarted() -> None:
     """Test service is healthy after start and unhealthy after stop."""
     lj = jaeger.LocalJaeger(name="test_redis", network="test_network")
     lj.start()

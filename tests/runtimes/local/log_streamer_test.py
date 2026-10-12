@@ -1,5 +1,6 @@
 """Unittest for the log streamer."""
 
+import typing
 from unittest import mock
 
 import docker
@@ -17,7 +18,7 @@ def service_mock(mocker: plugin.MockerFixture) -> mock.MagicMock:
     service_mock.id = "service_id"
     service_mock.name = "service_name"
     service_mock.logs.return_value = [b"log1\n", b"log2\n"]
-    return service_mock
+    return typing.cast(mock.MagicMock, service_mock)
 
 
 def testServiceLogStream_whenLogsAreAvailable_logsArePrintedToConsole(

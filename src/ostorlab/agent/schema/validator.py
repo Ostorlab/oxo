@@ -5,8 +5,8 @@ validator = Validator(json_schema_file_object)
 validator.validate(yaml_file_object)
 """
 
-import io
 import json
+from typing import IO
 
 import jsonschema
 import ruamel.yaml
@@ -29,7 +29,7 @@ class SchemaError(Error):
 class Validator:
     """Creates validator that checks yaml files with a json schema."""
 
-    def __init__(self, json_schema_file_object: io.TextIOWrapper):
+    def __init__(self, json_schema_file_object: IO[str] | IO[bytes]) -> None:
         """Inits Validator class.
 
         Args:
@@ -44,7 +44,7 @@ class Validator:
         except jsonschema.exceptions.SchemaError as e:
             raise SchemaError("Schema is invalid.") from e
 
-    def validate(self, yaml_file_object: io.TextIOWrapper) -> None:
+    def validate(self, yaml_file_object: IO[str] | IO[bytes]) -> None:
         """Validates a yaml file against a json schema .
 
         Args:
@@ -60,7 +60,7 @@ class Validator:
             jsonschema.validate(instance=yaml_data, schema=self._json_schema)
         except jsonschema.exceptions.ValidationError as e:
             raise ValidationError(
-                f"Validation did not pass: {e.message} for field {'.'.join(e.schema_path)}."
+                f"Validation did not pass: {e.message} for field {'.'.join(str(part) for part in e.schema_path)}."
             ) from e
         except jsonschema.exceptions.SchemaError as e:
             raise SchemaError("Schema is invalid.") from e

@@ -2,9 +2,11 @@
 This module takes care of preparing a link before calling the create web scan API.
 """
 
-import io
 import itertools
 import json
+from collections.abc import Sequence
+from typing import BinaryIO
+from typing import cast
 
 import click
 
@@ -32,7 +34,7 @@ def _prepare_test_credentials(
     sms_2fa_sender = ctx.obj["test_credentials"]["sms_2fa_sender"]
     totp_2fa_seed = ctx.obj["test_credentials"]["totp_2fa_seed"]
 
-    credentials = []
+    credentials: list[test_credentials_create_api.TestCredential] = []
     for login, password, role, url in itertools.zip_longest(
         test_credentials_login,
         test_credentials_password,
@@ -84,7 +86,7 @@ def _prepare_test_credentials(
     return credentials
 
 
-def run_link_scan(ctx: click.core.Context, url: list[str]) -> None:
+def run_link_scan(ctx: click.core.Context, url: Sequence[str]) -> None:
     """Create scan for links."""
     ci_logger = ctx.obj["ci_logger"]
     if ctx.obj.get("api_key") is not None:
@@ -182,19 +184,19 @@ def run_link_scan(ctx: click.core.Context, url: list[str]) -> None:
 
 
 def _create_scan(
-    credential_ids: list[int],
+    credential_ids: list[int | str],
     runner: authenticated_runner.AuthenticatedAPIRunner,
     title: str,
-    urls: list[str],
+    urls: Sequence[str],
     scan_profile: str,
-    sboms: list[io.FileIO] | None = None,
-    api_schema: io.FileIO | None = None,
+    sboms: Sequence[BinaryIO] | None = None,
+    api_schema: BinaryIO | None = None,
     proxy: str | None = None,
     qps: int | None = None,
     filtered_url_regexes: list[str] | None = None,
-    test_credential_ids: list[int] | None = None,
-    ui_automation_rule_ids: list[int] = (),
-):
+    test_credential_ids: list[int | str] | None = None,
+    ui_automation_rule_ids: Sequence[int] = (),
+) -> int | str:
     scan_result = runner.execute(
         scan_create_api.CreateWebScanAPIRequest(
             title=title,
@@ -209,11 +211,14 @@ def _create_scan(
             ui_automation_rule_ids=ui_automation_rule_ids,
         )
     )
-    scan_id = scan_result.get("data").get("createWebScan").get("scan").get("id")
+    scan_id = cast(int | str, scan_result["data"]["createWebScan"]["scan"]["id"])
     return scan_id
 
 
-def _create_test_credentials(test_credentials, runner):
+def _create_test_credentials(
+    test_credentials: list[test_credentials_create_api.TestCredential],
+    runner: authenticated_runner.AuthenticatedAPIRunner,
+) -> list[int | str]:
     credential_ids = []
     for test_credential in test_credentials:
         test_credential_result = runner.execute(
@@ -222,10 +227,12 @@ def _create_test_credentials(test_credentials, runner):
             )
         )
         credential_ids.append(
-            test_credential_result.get("data")
-            .get("createTestCredentials")
-            .get("testCredentials")
-            .get("id")
+            cast(
+                int | str,
+                test_credential_result["data"]["createTestCredentials"][
+                    "testCredentials"
+                ]["id"],
+            )
         )
     return credential_ids
 
@@ -233,6 +240,6 @@ def _create_test_credentials(test_credentials, runner):
 @run.run.command()
 @click.option("--url", help="List of Urls to scan.", required=True, multiple=True)
 @click.pass_context
-def link(ctx: click.core.Context, url: list[str]):
+def link(ctx: click.core.Context, url: Sequence[str]) -> None:
     """Run scan for links."""
     run_link_scan(ctx, url)

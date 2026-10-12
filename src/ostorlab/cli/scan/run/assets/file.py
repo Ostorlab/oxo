@@ -1,8 +1,8 @@
 """Asset of type file.
 This module takes care of preparing a generic file of type before injecting it to the runtime instance."""
 
-import io
 import logging
+from typing import BinaryIO
 
 import click
 
@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 def file_cli(
     ctx: click.core.Context,
-    file: tuple[io.FileIO] | None = None,
-    url: tuple[str] | None = None,
+    file: tuple[BinaryIO, ...] = (),
+    url: tuple[str, ...] = (),
 ) -> None:
     """Run scan for file asset."""
     runtime = ctx.obj["runtime"]

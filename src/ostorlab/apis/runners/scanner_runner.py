@@ -8,6 +8,8 @@ Typical usage example:
 
 import logging
 from typing import Any
+from typing import Optional
+from typing import cast
 
 import httpx
 
@@ -24,7 +26,7 @@ class ScannerAPIRunner(runner.APIRunner):
 
     def __init__(
         self,
-        api_key: str,
+        api_key: Optional[str],
         proxy: str | None = None,
         verify: bool = True,
     ) -> None:
@@ -78,7 +80,7 @@ class ScannerAPIRunner(runner.APIRunner):
     def _sent_request(
         self,
         request: api_request.APIRequest,
-        headers: dict[str, str] | None = None,
+        headers: Optional[dict[str, str] | dict[str, Optional[str]]] = None,
     ) -> httpx.Response:
         """Sends an API request to the scanner orchestrator."""
         headers = headers or {}
@@ -88,6 +90,6 @@ class ScannerAPIRunner(runner.APIRunner):
             return client.post(
                 self.endpoint,
                 json=request.data,
-                headers=headers,
+                headers=cast(dict[str, str], headers),
                 timeout=runner.REQUEST_TIMEOUT,
             )

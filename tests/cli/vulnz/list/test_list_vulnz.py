@@ -1,6 +1,7 @@
 """Tests for vulnz list command."""
 
 import pytest
+import pytest_httpx
 from click.testing import CliRunner
 from pytest_mock import plugin
 
@@ -10,14 +11,15 @@ from ostorlab.runtimes.local.models import models
 
 
 def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLocal_showsVulnzInfo(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test oxo vulnz list command with correct commands and options.
     Should show vulnz information.
     """
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
+    assert create_scan_db.id is not None
     vuln_db = models.Vulnerability.create(
         title="MyVuln",
         short_description="Xss",
@@ -46,8 +48,8 @@ def testOstorlabVulnzListCLI_whenCorrectCommandsAndOptionsProvidedAndRuntimeIsLo
 
 
 def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Ensure the vulnz list cli command correctly handles case where the scan is not found by the API."""
     mock_response = {
         "errors": [
@@ -72,8 +74,8 @@ def testOstorlabVulnzListCLI_ScanNotFoundAndRuntimeCloud_showsNotFoundError(
 
 
 def testOstorlabVulnzListCLI_WhenRuntimeCloudAndValiScanID_showsVulnzInfo(
-    httpx_mock,
-):
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
     """Ensure the vulnz list cli command displays the vulnerabilities information correctly."""
     mock_response = {
         "data": {
@@ -123,6 +125,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsLocal_showsCorrec
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
+    assert create_scan_db.id is not None
     models.Vulnerability.create(
         title="Remote command execution",
         short_description="Remote command execution",
@@ -218,6 +221,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
     runner = CliRunner()
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
+    assert create_scan_db.id is not None
     models.Vulnerability.create(
         title="Remote command execution",
         short_description="Remote command execution",
@@ -257,7 +261,7 @@ def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsLocal_showsCorrectRes
 
 
 def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrectResult(
-    httpx_mock,
+    httpx_mock: pytest_httpx.HTTPXMock,
 ) -> None:
     """Test oxo vulnz list command with filter by risk rating and runtime is cloud.
     Should show the correct result."""
@@ -382,7 +386,7 @@ def testOstorlabVulnzListCLI_whenFilterByRiskRatingAndRuntimeIsCloud_showsCorrec
 
 @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
 def testOstorlabVulnzListCLI_whenFilterBySearchAndRuntimeIsCloud_showsCorrectResult(
-    httpx_mock,
+    httpx_mock: pytest_httpx.HTTPXMock,
 ) -> None:
     """Test oxo vulnz list command with filter by search and runtime is cloud.
     Should show the correct result."""

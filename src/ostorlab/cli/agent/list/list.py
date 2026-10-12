@@ -12,7 +12,7 @@ console = cli_console.Console()
 logger = logging.getLogger(__name__)
 
 
-def _human_readable_size(size, decimal_places=3):
+def _human_readable_size(size: float, decimal_places: int = 3) -> str:
     for unit in ["B", "KiB", "MiB", "GiB", "TiB"]:
         if size < 1024.0:
             break

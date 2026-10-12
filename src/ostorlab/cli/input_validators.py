@@ -1,11 +1,18 @@
 """Module offering methods to validate CLI user input."""
 
 import re
+from typing import Optional
 
 import click
 
+from ostorlab.utils import release_channel
 
-def validate_port_binding_input(ctx: click.core.Context, param: str, value: str) -> str:
+
+def validate_port_binding_input(
+    ctx: Optional[click.core.Context],
+    param: click.Parameter | str,
+    value: Optional[str],
+) -> Optional[str]:
     """Validator for the bind ports flag.
     Input should be as follows: service_port1:host_port1,service_port2:host_port2
 
@@ -24,7 +31,9 @@ def validate_port_binding_input(ctx: click.core.Context, param: str, value: str)
 
 
 def validate_labels(
-    ctx: click.core.Context, param: str, value: tuple[str, ...] | None
+    ctx: Optional[click.core.Context],
+    param: click.Parameter | str,
+    value: tuple[str, ...] | None,
 ) -> dict[str, str]:
     """Validator for the container labels flag.
     Input should be key:value or key=value, with support for multiple flags.
@@ -50,3 +59,29 @@ def validate_labels(
             )
         labels[key] = val
     return labels
+
+
+def validate_release_channel(
+    ctx: click.core.Context | None,
+    param: click.Parameter | str,
+    value: str | None,
+) -> str | None:
+    """Validator for the release channel flag.
+
+    Args:
+        ctx: as per click callback convention, the calling click context.
+        param: as per click callback convention: the parameter name of argument.
+        value: value of the argument.
+
+    Returns:
+        The release channel name, None when no channel is set.
+
+    Raises:
+        click.BadParameter: when the name does not match the release channel pattern.
+    """
+    del ctx, param
+    if value is not None and release_channel.is_valid(value) is False:
+        raise click.BadParameter(
+            f"Invalid release channel '{value}': it must match {release_channel.CHANNEL_PATTERN.pattern}."
+        )
+    return value

@@ -1,6 +1,7 @@
 """Auth login command."""
 
 import logging
+from typing import Optional
 
 import click
 
@@ -28,7 +29,7 @@ console = cli_console.Console()
     "--token-duration",
     help="Expiration time for token (m for minutes, h for hours, and d for days).",
 )
-def login(username, password, token_duration):
+def login(username: str, password: str, token_duration: Optional[str]) -> None:
     """Use this to log into your account."""
     try:
         api_runner = authenticated_runner.AuthenticatedAPIRunner(

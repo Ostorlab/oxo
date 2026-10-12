@@ -13,10 +13,13 @@ from ostorlab.assets import ipv4
 from ostorlab.assets import link
 from ostorlab.assets import multi_asset as multi_asset_asset
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.models import utils
 from ostorlab.utils import risk_rating
 
 
-def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine_path):
+def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test when database does not exists, scan is populated in a newly created database."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.Scan.create(title="test")
@@ -26,7 +29,9 @@ def testModels_whenDatabaseDoesNotExist_DatabaseAndScanCreated(mocker, db_engine
         assert session.query(models.Scan).all()[0].title == "test"
 
 
-def testScanUpdate_always_updatesExistingScan(mocker, db_engine_path):
+def testScanUpdate_always_updatesExistingScan(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Agent save implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     models.Scan.create("test")
@@ -34,17 +39,19 @@ def testScanUpdate_always_updatesExistingScan(mocker, db_engine_path):
     with models.Database() as session:
         assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).first()
+        assert scan is not None
         scan.title = "test2"
         session.commit()
 
         assert session.query(models.Scan).count() == 1
         scan = session.query(models.Scan).first()
+        assert scan is not None
         assert scan.title == "test2"
 
 
 def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Vulnerability Model implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
@@ -87,6 +94,35 @@ def testModelsVulnerability_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
         )
 
 
+def testCreateVulnerability_whenReferencesOmitted_persistsWithoutReferences(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """Create a vulnerability with the documented optional reference default."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create("test")
+
+    vulnerability = models.Vulnerability.create(
+        scan_id=scan.id,
+        title="MyVuln",
+        short_description="Xss",
+        description="Javascript Vuln",
+        recommendation="Sanitize data",
+        technical_detail="a=$input",
+        risk_rating="HIGH",
+    )
+
+    with models.Database() as session:
+        assert session.query(models.Vulnerability).count() == 1
+        assert session.query(models.Reference).count() == 0
+        persisted = session.query(models.Vulnerability).first()
+        assert persisted is not None
+        assert persisted.id == vulnerability.id
+        assert persisted.references == ""
+        persisted_scan = session.query(models.Scan).get(scan.id)
+        assert persisted_scan is not None
+        assert persisted_scan.risk_rating == risk_rating.RiskRating.HIGH
+
+
 def testModelsVulnerability_whenLocationIsHarmonyOSStore_shouldFormatLocation(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
@@ -118,8 +154,8 @@ def testModelsVulnerability_whenLocationIsHarmonyOSStore_shouldFormatLocation(
 
 
 def testModelsVulnerability_whenAssetIsNotSupported_doNotRaiseError(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Vulnerability Model implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
@@ -158,8 +194,8 @@ def testModelsVulnerability_whenAssetIsNotSupported_doNotRaiseError(
 
 
 def testModelsScanStatus_whenDatabaseDoesNotExist_DatabaseAndScanCreated(
-    mocker, db_engine_path
-):
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
     """Test Scan Status Model implementation."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     create_scan_db = models.Scan.create("test")
@@ -207,6 +243,7 @@ def testModelsVulnerability_whenRiskRatingIsCritcal_doNotRaiseError(
 
     with models.Database() as session:
         vuln = session.query(models.Vulnerability).first()
+        assert vuln is not None
         assert vuln.title == "Critical Vuln"
         assert vuln.risk_rating == risk_rating.RiskRating.CRITICAL
         assert vuln.description == "Javascript Critical vuln"
@@ -549,6 +586,7 @@ def testAssetModels_whenCreateScan_scanCreatedAndQueryInformation(
         scan_asset = (
             session.query(models.AndroidStore).filter_by(scan_id=scan.id).first()
         )
+        assert scan_asset is not None
         assert scan_asset.package_name == "a.b.c"
         assert scan_asset.application_name == "Dummy application"
 
@@ -599,6 +637,7 @@ def testCreateAgentGroupWithAssetTypes_always_createsAgentGroupWithAssetTypes(
         db_agent_group = (
             session.query(models.AgentGroup).filter_by(name="Test Group").first()
         )
+        assert db_agent_group is not None
         assert db_agent_group is not None
         assert len(db_agent_group.asset_types) == 3
         assert models.AssetTypeEnum.IP in [
@@ -735,7 +774,7 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithIOSIpaPath_iOSFileCreated(
 ) -> None:
     """Ensure iOS IPA file asset is correctly created from path."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    mocker.patch.object(models.utils, "get_bundle_id", return_value="test.bundle.id")
+    mocker.patch.object(utils, "get_bundle_id", return_value="test.bundle.id")
     ios_ipa_asset = ios_ipa.IOSIpa(path="/path/to/app.ipa")
 
     models.Asset.create_from_assets_definition([ios_ipa_asset])
@@ -768,7 +807,7 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidApkPath_androidFile
 ) -> None:
     """Ensure Android APK file asset is correctly created from path."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    mocker.patch.object(models.utils, "get_package_name", return_value="com.test.app")
+    mocker.patch.object(utils, "get_package_name", return_value="com.test.app")
     apk_asset = android_apk.AndroidApk(path="/path/to/app.apk")
 
     models.Asset.create_from_assets_definition([apk_asset])
@@ -801,7 +840,7 @@ def testAssetModels_whenCreateFromAssetsDefinitionWithAndroidAabPath_androidFile
 ) -> None:
     """Ensure Android AAB file asset is correctly created from path."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    mocker.patch.object(models.utils, "get_package_name", return_value="com.test.aab")
+    mocker.patch.object(utils, "get_package_name", return_value="com.test.aab")
     aab_asset = android_aab.AndroidAab(path="/path/to/app.aab")
 
     models.Asset.create_from_assets_definition([aab_asset])
@@ -885,8 +924,8 @@ def restored_logging_state() -> Iterator[None]:
 
 
 def testDatabaseMigration_always_keepsCallerLoggingHandlers(
-    mocker, db_engine_path, restored_logging_state
-):
+    mocker: plugin.MockerFixture, db_engine_path: str, restored_logging_state: None
+) -> None:
     """Running migrations embedded must not let alembic's `fileConfig` reconfigure the caller's logging."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     caller_handler = logging.NullHandler()

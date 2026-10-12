@@ -5,6 +5,8 @@ from __future__ import annotations
 import datetime
 import logging
 from collections.abc import Generator
+from typing import Optional
+from typing import cast
 
 import click
 import docker
@@ -37,14 +39,16 @@ def _image_name_from_key(agent_key: str) -> str:
     return agent_key.replace("/", "_").lower()
 
 
-def _parse_repository_tag(repo_name: str, tag: str | None = None) -> tuple:
+def _parse_repository_tag(
+    repo_name: str, tag: str | None = None
+) -> tuple[str, Optional[str]]:
     """Get repo name and tag"""
     parts = repo_name.rsplit("@", 1)
     if len(parts) == 2:
-        return tuple(parts)
+        return parts[0], parts[1]
     parts = repo_name.rsplit(":", 1)
     if len(parts) == 2 and "/" not in parts[1]:
-        return tuple(parts)
+        return parts[0], parts[1]
     return repo_name, tag
 
 
@@ -53,7 +57,7 @@ def _pull_logs(
     repository: str,
     tag: str | None = None,
     auth_config: dict[str, str] | None = None,
-) -> Generator[dict, None, None]:
+) -> Generator[install_progress.PullLog, None, None]:
     """Generate logs of the docker pull method."""
     repository, tag = _parse_repository_tag(repository, tag)
     pull_log = docker_client.api.pull(
@@ -104,7 +108,7 @@ def _fetch_download_token(agent_key: str, version: str | None, api_key: str) -> 
     token = generate_token.get("token")
     if token is None:
         raise ValueError(f"Failed to retrieve installation token for agent {agent_key}")
-    return token
+    return cast(str, token)
 
 
 @tenacity.retry(
@@ -141,10 +145,11 @@ def _do_install(
 
 def install(
     agent_key: str,
-    version: str = "",
+    version: Optional[str] = "",
     docker_client: docker.DockerClient | None = None,
     api_key: str | None = None,
     use_experimental: bool = False,
+    channel: str | None = None,
 ) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
@@ -156,6 +161,8 @@ def install(
         api_key: optional api key to fetch a short-lived download token for the image.
         use_experimental: when True, the fetched agent details may include experimental
             (prerelease) versions.
+        channel: the release channel to resolve the latest version from, None meaning
+            stable versions.
 
     Returns:
         None
@@ -165,7 +172,10 @@ def install(
     """
 
     agent_details = agent_fetcher.get_details(
-        agent_key=agent_key, use_experimental=use_experimental, api_key=api_key
+        agent_key=agent_key,
+        use_experimental=use_experimental,
+        api_key=api_key,
+        channel=channel,
     )
     agent_docker_location = agent_details["dockerLocation"]
     if agent_docker_location is None or not agent_details.get("versions", {}).get(

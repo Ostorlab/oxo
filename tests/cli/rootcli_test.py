@@ -25,7 +25,7 @@ def restored_logger_levels() -> Iterator[None]:
 
 
 def testRootCli_whenVerboseIsEnabled_raisesOxoLoggersVerbosity(
-    restored_logger_levels,
+    restored_logger_levels: None,
 ) -> None:
     """`-v` must surface oxo's own logs."""
     logging.getLogger(OXO_LOGGER).setLevel(logging.NOTSET)
@@ -38,7 +38,7 @@ def testRootCli_whenVerboseIsEnabled_raisesOxoLoggersVerbosity(
 
 
 def testRootCli_whenVerboseIsEnabled_keepsThirdPartyLoggersQuiet(
-    restored_logger_levels,
+    restored_logger_levels: None,
 ) -> None:
     """SQLAlchemy echoes every statement and PRAGMA at INFO, which drowns the oxo logs `-v` is asked for."""
     for name in THIRD_PARTY_LOGGERS:
@@ -53,7 +53,7 @@ def testRootCli_whenVerboseIsEnabled_keepsThirdPartyLoggersQuiet(
 
 
 def testRootCli_whenDebugIsEnabled_raisesOxoLoggersVerbosityOnly(
-    restored_logger_levels,
+    restored_logger_levels: None,
 ) -> None:
     """`-d` goes through the same filtering as `-v`, and must not turn the library internals on either."""
     logging.getLogger(OXO_LOGGER).setLevel(logging.NOTSET)

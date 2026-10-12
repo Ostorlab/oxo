@@ -1,5 +1,6 @@
 """Definitions of the fixtures that will be shared among multiple tests."""
 
+import collections.abc
 import datetime
 import io
 import pathlib
@@ -37,16 +38,27 @@ from ostorlab.assets import ios_store as ios_store_asset
 from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
+from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
 from ostorlab.serve_app import app
-from ostorlab.serve_app import types
 from ostorlab.utils import risk_rating
 
 
+@pytest.fixture(autouse=True)
+def mock_docker_api_version(
+    request: pytest.FixtureRequest, mocker: plugin.MockerFixture
+) -> None:
+    """Keep unit-test client construction independent of a Docker daemon."""
+    if request.node.get_closest_marker("docker") is None:
+        mocker.patch(
+            "docker.api.client.APIClient._retrieve_server_version", return_value="1.42"
+        )
+
+
 @pytest.fixture(scope="session")
-def mq_service():
+def mq_service() -> collections.abc.Iterator[mq.LocalRabbitMQ]:
     """Start MQ Docker service"""
     lrm = mq.LocalRabbitMQ(
         name="core_mq", network="test_network", exposed_ports={5672: 5672, 15672: 15672}
@@ -58,7 +70,7 @@ def mq_service():
 
 
 @pytest.fixture(scope="session")
-def redis_service():
+def redis_service() -> collections.abc.Iterator[local_redis_service.LocalRedis]:
     """Start Redis Docker service"""
     lr = local_redis_service.LocalRedis(
         name="core_redis", network="test_network", exposed_ports={6379: 6379}
@@ -233,7 +245,9 @@ def agent_group_json_schema_file() -> io.StringIO:
 
 
 @pytest.fixture()
-def image_cleanup(request):
+def image_cleanup(
+    request: pytest.FixtureRequest,
+) -> collections.abc.Iterator[docker.DockerClient]:
     """Pytest fixture for removing docker image with a specified tag."""
     client = docker.from_env()
     yield client
@@ -245,16 +259,16 @@ def image_cleanup(request):
 
 
 @pytest.fixture(name="db_engine_path")
-def local_db_engine_path(tmpdir):
+def local_db_engine_path(tmp_path: pathlib.Path) -> str:
     if sys.platform == "win32":
-        path = f"sqlite:///{tmpdir}\\ostorlab_db1.sqlite".replace("\\", "\\\\")
+        path = f"sqlite:///{tmp_path}\\ostorlab_db1.sqlite".replace("\\", "\\\\")
     else:
-        path = f"sqlite:////{tmpdir}/ostorlab_db1.sqlite"
+        path = f"sqlite:////{tmp_path}/ostorlab_db1.sqlite"
     return path
 
 
 @pytest.fixture()
-def clean_redis_data(request) -> None:
+def clean_redis_data(request: pytest.FixtureRequest) -> collections.abc.Iterator[None]:
     """Clean all redis data."""
     yield
     redis_url = request.param
@@ -265,7 +279,9 @@ def clean_redis_data(request) -> None:
 
 
 @pytest.fixture(name="metadata_file_path")
-def fixture_metadata_file_path():
+def fixture_metadata_file_path() -> (
+    agent_report_vulnerability_mixin.VulnerabilityLocationMetadata
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.FILE_PATH,
         value="/home/etc",
@@ -273,7 +289,9 @@ def fixture_metadata_file_path():
 
 
 @pytest.fixture(name="metadata_code_location")
-def fixture_metadata_code_location():
+def fixture_metadata_code_location() -> (
+    agent_report_vulnerability_mixin.VulnerabilityLocationMetadata
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.CODE_LOCATION,
         value="config.xml:15",
@@ -281,7 +299,9 @@ def fixture_metadata_code_location():
 
 
 @pytest.fixture(name="metadata_url")
-def fixture_metadata_url():
+def fixture_metadata_url() -> (
+    agent_report_vulnerability_mixin.VulnerabilityLocationMetadata
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.URL,
         value="https://example.com/product=15",
@@ -289,7 +309,9 @@ def fixture_metadata_url():
 
 
 @pytest.fixture(name="metadata_port")
-def fixture_metadata_port():
+def fixture_metadata_port() -> (
+    agent_report_vulnerability_mixin.VulnerabilityLocationMetadata
+):
     return agent_report_vulnerability_mixin.VulnerabilityLocationMetadata(
         metadata_type=agent_report_vulnerability_mixin.MetadataType.PORT, value="23"
     )
@@ -297,8 +319,11 @@ def fixture_metadata_port():
 
 @pytest.fixture()
 def vulnerability_location_android_aab(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -312,8 +337,11 @@ def vulnerability_location_android_aab(
 
 @pytest.fixture()
 def vulnerability_location_android_apk(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -327,8 +355,11 @@ def vulnerability_location_android_apk(
 
 @pytest.fixture()
 def vulnerability_location_android_store(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -342,8 +373,11 @@ def vulnerability_location_android_store(
 
 @pytest.fixture()
 def vulnerability_location_ios_store(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -357,8 +391,11 @@ def vulnerability_location_ios_store(
 
 @pytest.fixture()
 def vulnerability_location_ios_ipa(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -372,8 +409,11 @@ def vulnerability_location_ios_ipa(
 
 @pytest.fixture()
 def vulnerability_location_harmonyos_store(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -387,8 +427,11 @@ def vulnerability_location_harmonyos_store(
 
 @pytest.fixture()
 def vulnerability_location_harmonyos_aab(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -402,8 +445,11 @@ def vulnerability_location_harmonyos_aab(
 
 @pytest.fixture()
 def vulnerability_location_harmonyos_apk(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -417,8 +463,11 @@ def vulnerability_location_harmonyos_apk(
 
 @pytest.fixture()
 def vulnerability_location_harmonyos_app(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -432,8 +481,11 @@ def vulnerability_location_harmonyos_app(
 
 @pytest.fixture()
 def vulnerability_location_harmonyos_hap(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -447,8 +499,11 @@ def vulnerability_location_harmonyos_hap(
 
 @pytest.fixture()
 def vulnerability_location_harmonyos_rpk(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -462,8 +517,11 @@ def vulnerability_location_harmonyos_rpk(
 
 @pytest.fixture()
 def vulnerability_location_link_asset(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -477,8 +535,11 @@ def vulnerability_location_link_asset(
 
 @pytest.fixture()
 def vulnerability_location_ipv4(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -492,8 +553,11 @@ def vulnerability_location_ipv4(
 
 @pytest.fixture()
 def vulnerability_location_ipv6(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -507,8 +571,11 @@ def vulnerability_location_ipv6(
 
 @pytest.fixture()
 def vulnerability_location_domain_name(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -522,8 +589,11 @@ def vulnerability_location_domain_name(
 
 @pytest.fixture()
 def vulnerability_location_file(
-    metadata_file_path, metadata_code_location, metadata_port, metadata_url
-):
+    metadata_file_path: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_code_location: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_port: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+    metadata_url: agent_report_vulnerability_mixin.VulnerabilityLocationMetadata,
+) -> agent_report_vulnerability_mixin.VulnerabilityLocation:
     return agent_report_vulnerability_mixin.VulnerabilityLocation(
         metadata=[
             metadata_file_path,
@@ -551,8 +621,8 @@ def data_create_asset() -> dict[str, Any]:
 
 
 @pytest.fixture
-def local_runtime_mocks(mocker, db_engine_path):
-    def docker_networks():
+def local_runtime_mocks(mocker: plugin.MockerFixture, db_engine_path: str) -> None:
+    def docker_networks() -> list[networks_model.Network]:
         """Method for mocking docker network list."""
         return [networks_model.Network(attrs={"name": "ostorlab_local_network_1"})]
 
@@ -629,7 +699,7 @@ def web_scan(
         scan = models.Scan(
             title="Web Scan",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(scan)
         session.commit()
@@ -682,13 +752,13 @@ def ios_scans(
         scan1 = models.Scan(
             title="iOS Scan 1 ",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             risk_rating=risk_rating.RiskRating.HIGH,
         )
         scan2 = models.Scan(
             title="iOS Scan 2",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             risk_rating=risk_rating.RiskRating.MEDIUM,
         )
         session.add(scan1)
@@ -807,14 +877,14 @@ def clean_db(mocker: plugin.MockerFixture, db_engine_path: str) -> None:
 @pytest.fixture
 def android_scan(
     clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
-) -> None:
+) -> collections.abc.Iterator[models.Scan]:
     """Create dummy android scan."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
         scan = models.Scan(
             title="Android Scan 1 ",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(scan)
         session.commit()
@@ -826,7 +896,7 @@ def android_scan(
         session.add(asset)
         session.commit()
         scan_status = models.ScanStatus(
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             key="dummy-key",
             value="dummy-value",
             scan_id=scan.id,
@@ -925,16 +995,12 @@ def agent_groups(
         agent_group1 = models.AgentGroup(
             name="Agent Group 1",
             description="Agent Group 1",
-            created_time=datetime.datetime(
-                2024, 5, 30, 12, 0, 0, tzinfo=datetime.timezone.utc
-            ),
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0, tzinfo=datetime.UTC),
         )
         agent_group2 = models.AgentGroup(
             name="Agent Group 2",
             description="Agent Group 2",
-            created_time=datetime.datetime(
-                2024, 5, 30, 12, 0, 0, tzinfo=datetime.timezone.utc
-            ),
+            created_time=datetime.datetime(2024, 5, 30, 12, 0, 0, tzinfo=datetime.UTC),
         )
         session.add(agent_group1)
         session.add(agent_group2)
@@ -969,9 +1035,7 @@ def agent_group(
     """Create dummy agent group."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     with models.Database() as session:
-        agent = types.OxoAgentGroupAgentCreateInputType()
-        agent.key = "key"
-        agent.args = []
+        agent = runtime_definitions.AgentSettings(key="key", args=[])
         agents = [agent]
         agent_group = models.AgentGroup.create(
             name="Agent Group 1", description="Agent Group 1 description", agents=agents
@@ -1000,7 +1064,7 @@ def agent_group_multiple_agents(
         agent_group = models.AgentGroup(
             name="Agent Group 1",
             description="Agent Group 1 description",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1026,7 +1090,7 @@ def multiple_assets_scan(
         scan = models.Scan(
             title="Multiple Assets Scan",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
             risk_rating=risk_rating.RiskRating.HIGH,
         )
         session.add(scan)
@@ -1064,7 +1128,7 @@ def agent_group_nmap(
         agent_group = models.AgentGroup(
             name="Agent Group Nmap",
             description="Agent Group Nmap",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1091,7 +1155,7 @@ def agent_group_trufflehog(
         agent_group = models.AgentGroup(
             name="Agent Group Trufflehog",
             description="Agent Group Trufflehog",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1118,7 +1182,7 @@ def agent_group_inject_asset(
         agent_group = models.AgentGroup(
             name="Agent Group Inject Asset",
             description="Agent Group Inject Asset",
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(agent_group)
         session.commit()
@@ -1147,7 +1211,7 @@ def scan(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Scan:
         scan = models.Scan(
             title="Scan 1",
             progress=models.ScanProgress.DONE,
-            created_time=datetime.datetime.now(datetime.timezone.utc),
+            created_time=datetime.datetime.now(datetime.UTC),
         )
         session.add(scan)
         session.commit()
@@ -1184,7 +1248,7 @@ def url_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.Urls:
 @pytest.fixture
 def domain_asset(
     mocker: plugin.MockerFixture, db_engine_path: str
-) -> models.DomainName:
+) -> models.DomainAsset:
     """Create a DomainName asset."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     asset = models.DomainAsset.create(
@@ -1659,7 +1723,7 @@ def call_trace() -> agent_report_vulnerability_mixin.CallTrace:
 
 
 @pytest.fixture
-def scan_run_cli_runner(mocker):
+def scan_run_cli_runner(mocker: plugin.MockerFixture) -> testing.CliRunner:
     """Fixture providing a CliRunner with mocked local runtime."""
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
     mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)

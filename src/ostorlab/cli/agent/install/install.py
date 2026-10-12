@@ -38,5 +38,5 @@ def install(agent: str, version: str = "") -> None:
         try:
             install_agent.install(agent, version)
         except agent_fetcher.AgentDetailsNotFound as e:
-            console.error(e)
+            console.error(str(e))
             raise click.exceptions.Exit(2)

@@ -1,31 +1,42 @@
 """Runtime are in charge of running scan as defines by a set of agents, agent group and a target asset."""
 
+from __future__ import annotations
+
 import abc
 import builtins
 import dataclasses
+import datetime
+import typing
 
 from ostorlab.assets import asset as base_asset
 from ostorlab.cli import dumpers
 from ostorlab.runtimes import definitions
+
+if typing.TYPE_CHECKING:
+    from ostorlab.runtimes.local.models import models
+    from ostorlab.utils import risk_rating
 
 
 @dataclasses.dataclass
 class Scan:
     """Scan object."""
 
-    id: str
-    created_time: str
-    progress: str | None
-    asset: str | None = None
-    risk_rating: str | None = None
+    id: str | int
+    created_time: typing.Optional[str | datetime.datetime]
+    progress: typing.Optional[str]
+    asset: typing.Optional[str] = None
+    risk_rating: typing.Optional[str | risk_rating.RiskRating] = None
 
 
-class Runtime(abc.ABC):
+ScanIdentifier_contra = typing.TypeVar("ScanIdentifier_contra", contravariant=True)
+
+
+class Runtime(abc.ABC, typing.Generic[ScanIdentifier_contra]):
     """Runtime is in charge of preparing the environment to trigger a scan."""
 
-    follow: list
-    timeout: int | None = None
-    init_sleep: int | None = None
+    follow: typing.Collection[str]
+    timeout: typing.Optional[int] = None
+    init_sleep: typing.Optional[int] = None
     has_tracker: bool = True
 
     @abc.abstractmethod
@@ -43,10 +54,10 @@ class Runtime(abc.ABC):
     @abc.abstractmethod
     def scan(
         self,
-        title: str,
+        title: typing.Optional[str],
         agent_group_definition: definitions.AgentGroupDefinition,
-        assets: list[base_asset.Asset] | None,
-    ) -> None:
+        assets: typing.Optional[typing.Sequence[base_asset.Asset]],
+    ) -> typing.Optional[models.Scan]:
         """Triggers a scan using the provided agent run definition and asset target.
 
         Args:
@@ -60,7 +71,7 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, scan_id: str) -> None:
+    def stop(self, scan_id: ScanIdentifier_contra) -> typing.Optional[bool]:
         """Stops a scan with the given id.
 
         Args:
@@ -76,8 +87,8 @@ class Runtime(abc.ABC):
         self,
         page: int = 1,
         number_elements: int = 10,
-        state: str | None = None,
-    ) -> list[Scan]:
+        state: typing.Optional[str] = None,
+    ) -> typing.Optional[builtins.list[Scan]]:
         """Lists scans managed by runtime.
 
         Args:
@@ -100,7 +111,7 @@ class Runtime(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper):
+    def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper) -> None:
         """Dump vulnerabilities to a file in a specific format.
         Returns:
         None
@@ -110,7 +121,7 @@ class Runtime(abc.ABC):
     @abc.abstractmethod
     def link_agent_group_scan(
         self,
-        scan,
+        scan: models.Scan,
         agent_group_definition: definitions.AgentGroupDefinition,
     ) -> None:
         """Link the agent group to the scan in the database.
@@ -123,7 +134,7 @@ class Runtime(abc.ABC):
 
     @abc.abstractmethod
     def link_assets_scan(
-        self, scan_id: int, assets: builtins.list[base_asset.Asset]
+        self, scan_id: int, assets: typing.Optional[builtins.list[base_asset.Asset]]
     ) -> None:
         """Link the assets to the scan in the database.
 

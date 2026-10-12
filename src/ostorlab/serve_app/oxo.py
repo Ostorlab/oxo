@@ -1,15 +1,21 @@
 """Oxo GraphQL queries and mutations."""
 
+from __future__ import annotations
+
 import ipaddress
 import pathlib
 import threading
 import uuid
+from typing import Optional
+from typing import cast
 
 import graphene
 import graphql
 import httpx
 from graphene_file_upload import scalars
 from graphql.execution import base as graphql_base
+from sqlalchemy import orm
+from werkzeug import datastructures
 
 from ostorlab import configuration_manager
 from ostorlab import exceptions
@@ -38,7 +44,7 @@ from ostorlab.utils import definitions as utils_definitions
 DEFAULT_NUMBER_ELEMENTS = 15
 
 
-class Query(graphene.ObjectType):
+class Query(common.ObjectType):
     """Query object type."""
 
     scans = graphene.Field(
@@ -114,20 +120,18 @@ class Query(graphene.ObjectType):
 
             if page is not None and number_elements > 0:
                 p = common.Paginator(scans, number_elements)
-                page = p.get_page(page)
+                result_page = p.get_page(page)
                 page_info = common.PageInfo(
                     count=p.count,
                     num_pages=p.num_pages,
-                    has_next=page.has_next(),
-                    has_previous=page.has_previous(),
+                    has_next=result_page.has_next(),
+                    has_previous=result_page.has_previous(),
                 )
-                return types.OxoScansType(scans=page, page_info=page_info)
+                return types.OxoScansType(scans=result_page, page_info=page_info)
             else:
                 return types.OxoScansType(scans=scans)
 
-    def resolve_scan(
-        self, info: graphql_base.ResolveInfo, scan_id: int
-    ) -> types.OxoScanType:
+    def resolve_scan(self, info: graphql_base.ResolveInfo, scan_id: int) -> models.Scan:
         """Retrieve scan by its id.
 
         Args:
@@ -145,18 +149,18 @@ class Query(graphene.ObjectType):
             if scan is None:
                 raise graphql.GraphQLError("Scan not found.")
 
-            return scan
+            return cast(models.Scan, scan)
 
     def resolve_agent_groups(
         self,
-        info,
+        info: graphql_base.ResolveInfo,
         search: str | None = None,
-        page=None,
+        page: Optional[int] = None,
         number_elements: int = DEFAULT_NUMBER_ELEMENTS,
         order_by: types.AgentGroupOrderByEnum | None = None,
         sort: common.SortEnum | None = None,
         agent_group_ids: list[int] | None = None,
-        asset_type: types.OxoAssetTypeEnum | None = None,
+        asset_type: Optional[str] = None,
     ) -> types.OxoAgentGroupsType:
         """Resolve agent groups query.
 
@@ -214,14 +218,16 @@ class Query(graphene.ObjectType):
 
             if page is not None and number_elements > 0:
                 p = common.Paginator(agent_groups_query, number_elements)
-                page = p.get_page(page)
+                result_page = p.get_page(page)
                 page_info = common.PageInfo(
                     count=p.count,
                     num_pages=p.num_pages,
-                    has_next=page.has_next(),
-                    has_previous=page.has_previous(),
+                    has_next=result_page.has_next(),
+                    has_previous=result_page.has_previous(),
                 )
-                return types.OxoAgentGroupsType(agent_groups=page, page_info=page_info)
+                return types.OxoAgentGroupsType(
+                    agent_groups=result_page, page_info=page_info
+                )
             else:
                 return types.OxoAgentGroupsType(agent_groups=agent_groups_query)
 
@@ -237,11 +243,11 @@ class ImportScanMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
+        root: object,
         info: graphql_base.ResolveInfo,
-        file: scalars.Upload,
+        file: datastructures.FileStorage,
         scan_id: int | None = None,
-    ) -> "ImportScanMutation":
+    ) -> ImportScanMutation:
         """Import scan mutation.
 
         Args:
@@ -269,11 +275,11 @@ class ExportScanMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
+        root: object,
         info: graphql_base.ResolveInfo,
         scan_id: int,
         export_ide: bool | None = False,
-    ) -> "ExportScanMutation":
+    ) -> ExportScanMutation:
         """Export scan mutation.
 
         Args:
@@ -303,10 +309,10 @@ class DeleteScansMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
+        root: object,
         info: graphql_base.ResolveInfo,
         scan_ids: list[int],
-    ) -> "DeleteScansMutation":
+    ) -> DeleteScansMutation:
         """Delete a scan & its information.
 
         Args:
@@ -337,7 +343,7 @@ class DeleteScansMutation(graphene.Mutation):
             return DeleteScansMutation(result=True)
 
     @staticmethod
-    def delete_assets(scan_id: int, session: models.Database) -> None:
+    def delete_assets(scan_id: int, session: orm.Session) -> None:
         """Delete assets.
 
         Args:
@@ -382,10 +388,11 @@ class CreateAssetsMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root, info: graphql_base.ResolveInfo, assets: list[types.OxoAssetInputType]
-    ):
+        root: object, info: graphql_base.ResolveInfo, assets: list[types.AssetInput]
+    ) -> CreateAssetsMutation:
         """Create asset mutation."""
-        created_assets = []
+        created_assets: list[models.Asset] = []
+        new_asset: models.Asset
         errors = []
         config_manager = configuration_manager.ConfigurationManager()
         for asset in assets:
@@ -457,9 +464,9 @@ class CreateAssetsMutation(graphene.Mutation):
         return CreateAssetsMutation(assets=created_assets)
 
     @staticmethod
-    def _validate(asset: types.OxoAssetInputType) -> str | None:
+    def _validate(asset: types.AssetInput) -> str | None:
         """Validate asset API input & return corresponding error message."""
-        assets = []
+        assets: list[object] = []
         if asset.android_store is not None:
             assets.append(asset.android_store)
         if asset.android_apk_file is not None:
@@ -494,7 +501,9 @@ class StopScansMutation(graphene.Mutation):
     scans = graphene.List(types.OxoScanType)
 
     @staticmethod
-    def mutate(root, info: graphql_base.ResolveInfo, scan_ids: list[int]):
+    def mutate(
+        root: object, info: graphql_base.ResolveInfo, scan_ids: list[int]
+    ) -> StopScansMutation:
         """Stop the desired scan.
 
         Args:
@@ -529,10 +538,10 @@ class PublishAgentGroupMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
+        root: object,
         info: graphql_base.ResolveInfo,
-        agent_group: types.OxoAgentGroupCreateInputType,
-    ) -> "PublishAgentGroupMutation":
+        agent_group: types.AgentGroupInput,
+    ) -> PublishAgentGroupMutation:
         """Create agent group.
 
         Args:
@@ -565,10 +574,10 @@ class DeleteAgentGroupMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
+        root: object,
         info: graphql_base.ResolveInfo,
         agent_group_id: int,
-    ) -> "DeleteAgentGroupMutation":
+    ) -> DeleteAgentGroupMutation:
         """Delete agent group mutation.
 
         Args:
@@ -663,7 +672,7 @@ class RunScanMutation(graphene.Mutation):
             if assets is None or len(assets) == 0:
                 raise graphql.GraphQLError("Assets not found.")
 
-            scan_assets = []
+            scan_assets: list[ostorlab_asset.Asset] = []
             for asset in assets:
                 if asset.type == "android_file":
                     file_path = pathlib.Path(asset.path)
@@ -786,10 +795,10 @@ class RunScanMutation(graphene.Mutation):
 
     @staticmethod
     def mutate(
-        root,
+        root: object,
         info: graphql_base.ResolveInfo,
-        scan: types.OxoAgentScanInputType,
-    ) -> "RunScanMutation":
+        scan: types.AgentScanInput,
+    ) -> RunScanMutation:
         """Run scan mutation.
 
         Args:
@@ -821,7 +830,7 @@ class RunScanMutation(graphene.Mutation):
     @staticmethod
     def _persist_scan_info(
         created_scan: models.Scan,
-        scan: types.OxoAgentScanInputType,
+        scan: types.AgentScanInput,
     ) -> None:
         """Persist scan infos related to agent group and assets.
 
@@ -846,7 +855,7 @@ class RunScanMutation(graphene.Mutation):
     def _run_scan_background(
         runtime_instance: runtime.LocalRuntime,
         agent_group: definitions.AgentGroupDefinition,
-        scan: types.OxoAgentScanInputType,
+        scan: types.AgentScanInput,
         scan_assets: list[ostorlab_asset.Asset],
     ) -> None:
         """Run scan in background.
@@ -878,7 +887,7 @@ class RunScanMutation(graphene.Mutation):
                 )
 
 
-class Mutations(graphene.ObjectType):
+class Mutations(common.ObjectType):
     delete_scans = DeleteScansMutation.Field(
         description="Delete a scan & all its information."
     )

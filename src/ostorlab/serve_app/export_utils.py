@@ -1,14 +1,17 @@
 """export utils module: contains utility functions to export the scan details."""
 
+import datetime
 import io
 import ipaddress
 import json
 import logging
 import pathlib
 import zipfile
+from typing import Any
+from typing import Optional
+from typing import cast
 
 from ostorlab.runtimes.local.models import models
-from ostorlab.serve_app import common
 
 logger = logging.getLogger(__name__)
 
@@ -17,19 +20,19 @@ ASSET_JSON = "asset.json"
 VULNERABILITY_JSON = "vulnerability.json"
 
 RISK_RATINGS_ORDER = {
-    common.RiskRatingEnum.CRITICAL.name: 8,
-    common.RiskRatingEnum.HIGH.name: 7,
-    common.RiskRatingEnum.MEDIUM.name: 6,
-    common.RiskRatingEnum.LOW.name: 5,
-    common.RiskRatingEnum.POTENTIALLY.name: 4,
-    common.RiskRatingEnum.HARDENING.name: 3,
-    common.RiskRatingEnum.SECURE.name: 2,
-    common.RiskRatingEnum.IMPORTANT.name: 1,
-    common.RiskRatingEnum.INFO.name: 0,
+    "CRITICAL": 8,
+    "HIGH": 7,
+    "MEDIUM": 6,
+    "LOW": 5,
+    "POTENTIALLY": 4,
+    "HARDENING": 3,
+    "SECURE": 2,
+    "IMPORTANT": 1,
+    "INFO": 0,
 }
 
 
-def export_scan(scan: models.Scan, export_ide: bool = False) -> bytes:
+def export_scan(scan: models.Scan, export_ide: Optional[bool] = False) -> bytes:
     """Export the scan details from the given file data.
 
     Args:
@@ -73,7 +76,11 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
                 "type": asset_type,
             }
             if asset.type == "android_file" or asset.type == "ios_file":
-                path = _write_mobile_app(asset, archive, asset_type)
+                path = _write_mobile_app(
+                    cast(models.AndroidFile | models.IosFile, asset),
+                    archive,
+                    asset_type,
+                )
                 if path is not None:
                     asset_dict["path"] = path
 
@@ -94,12 +101,14 @@ def _export_asset(scan_id: int, archive: zipfile.ZipFile) -> None:
 
             assets_data.append(asset_dict)
 
-        assets_data = "\n".join([json.dumps(asset) for asset in assets_data])
-        archive.writestr(ASSET_JSON, assets_data)
+        serialized_assets = "\n".join([json.dumps(asset) for asset in assets_data])
+        archive.writestr(ASSET_JSON, serialized_assets)
 
 
 def _write_mobile_app(
-    asset: models.Asset, archive: zipfile.ZipFile, asset_type: str
+    asset: models.AndroidFile | models.IosFile,
+    archive: zipfile.ZipFile,
+    asset_type: str,
 ) -> str | None:
     """Write the mobile app to the given archive.
 
@@ -182,9 +191,11 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         archive: The archive object.
     """
 
-    scan_dict = {
+    scan_dict: dict[str, Any] = {
         "title": scan.title,
-        "created_time": scan.created_time.strftime("%Y-%m-%d %H:%M:%S"),
+        "created_time": cast(datetime.datetime, scan.created_time).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
         "risk_rating": scan.risk_rating.name.lower()
         if scan.risk_rating is not None
         else None,
@@ -200,7 +211,9 @@ def _export_scan(scan: models.Scan, archive: zipfile.ZipFile) -> None:
         if len(scan_statuses) == 0:
             scan_statuses = [
                 models.ScanStatus.create(
-                    key="progress", value=scan.progress.name.lower(), scan_id=scan.id
+                    key="progress",
+                    value=cast(models.ScanProgress, scan.progress).name.lower(),
+                    scan_id=scan.id,
                 )
             ]
         for status in scan_statuses:

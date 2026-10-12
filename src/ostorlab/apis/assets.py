@@ -1,6 +1,8 @@
 """Create Asset via an API Request."""
 
 import json
+from typing import Any
+from typing import Optional
 
 from ostorlab.apis import request
 from ostorlab.assets import android_aab
@@ -20,12 +22,12 @@ from ostorlab.assets import link
 class CreateAssetAPIRequest(request.APIRequest):
     """Persist asset API request"""
 
-    def __init__(self, asset: base_asset.Asset) -> None:
+    def __init__(self, asset: base_asset.Asset | list[link.Link]) -> None:
         """Constructs all the necessary attributes for the object."""
         self._asset = asset
 
     @property
-    def query(self) -> str | None:
+    def query(self) -> str:
         """Sets the query of the API request.
 
         Returns:
@@ -65,24 +67,19 @@ class CreateAssetAPIRequest(request.APIRequest):
         """
 
     @property
-    def data(self) -> dict | None:
+    def data(self) -> dict[str, str]:
         """Sets the body of the API request.
 
         Returns:
             The body of the create asset request.
         """
-        variables = {"asset": {"tags": []}}
+        variables: dict[str, dict[str, Any]] = {"asset": {"tags": []}}
         asset_type_variables = self.__get_asset_variables()
         variables["asset"].update(asset_type_variables)
 
-        if any(
-            isinstance(self._asset, t)
-            for t in (
-                android_aab.AndroidAab,
-                android_apk.AndroidApk,
-                file.File,
-                ios_ipa.IOSIpa,
-            )
+        if isinstance(
+            self._asset,
+            (android_aab.AndroidAab, android_apk.AndroidApk, file.File, ios_ipa.IOSIpa),
         ):
             map_variables = self._get_map_variables()
             data = {
@@ -96,28 +93,23 @@ class CreateAssetAPIRequest(request.APIRequest):
         return data
 
     @property
-    def files(self) -> dict | None:
+    def files(self) -> Optional[dict[str, Optional[bytes]]]:
         """Sets the file for multipart upload of the API request.
 
         Returns:
             The file mapping of the create asset request.
         """
-        if any(
-            isinstance(self._asset, t)
-            for t in (
-                android_aab.AndroidAab,
-                android_apk.AndroidApk,
-                file.File,
-                ios_ipa.IOSIpa,
-            )
+        if isinstance(
+            self._asset,
+            (android_aab.AndroidAab, android_apk.AndroidApk, file.File, ios_ipa.IOSIpa),
         ):
             return {"0": self._asset.content}
         else:
             return None
 
-    def __get_asset_variables(self) -> dict[str, dict]:
+    def __get_asset_variables(self) -> dict[str, dict[str, Any]]:
         """Creates asset variables for the API request, depending on the type of the asset."""
-        asset_type_variables = {}
+        asset_type_variables: dict[str, dict[str, Any]] = {}
         if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):
             asset_type_variables = {"androidFile": {"file": None}}
         elif isinstance(self._asset, ios_ipa.IOSIpa):
@@ -142,14 +134,7 @@ class CreateAssetAPIRequest(request.APIRequest):
                     "packageName": self._asset.package_name,
                 }
             }
-        elif any(
-            isinstance(self._asset, t)
-            for t in (
-                ip.IP,
-                ipv4.IPv4,
-                ipv6.IPv6,
-            )
-        ):
+        elif isinstance(self._asset, (ip.IP, ipv4.IPv4, ipv6.IPv6)):
             asset_type_variables = {
                 "network": {"network": [f"{self._asset.host}/{self._asset.mask}"]}
             }
@@ -165,7 +150,7 @@ class CreateAssetAPIRequest(request.APIRequest):
 
         return asset_type_variables
 
-    def _get_map_variables(self):
+    def _get_map_variables(self) -> dict[str, list[str]]:
         """Creates map variables for the API request, depending on the type of the asset."""
         map_variables = {}
         if isinstance(self._asset, (android_aab.AndroidAab, android_apk.AndroidApk)):

@@ -11,7 +11,7 @@ from ostorlab.runtimes.local import agent_runtime
 from ostorlab.utils import definitions as utils_defintions
 
 
-def container_name_mock(name):
+def container_name_mock(name: str) -> str:
     del name
     return "complex_long_name_special_duplicate_agent:v1026"
 
@@ -670,8 +670,8 @@ def testCreateAgentService_whenServiceNameIsSet_serviceNameInjectedAsEnvVar(
 
 
 def testCreateAgentService_whenServiceNameIsSet_addsMachineNameAsEnvVar(
-    mocker,
-):
+    mocker: plugin.MockerFixture,
+) -> None:
     """Test creation of the agent service includes HOST_HOSTNAME in env."""
     mock_host_hostname = "test-mocked-hostname"
     mocker.patch("docker.DockerClient.info", return_value={"Name": mock_host_hostname})
@@ -797,7 +797,10 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
     )
     mount_mock = mocker.patch(
         "ostorlab.runtimes.local.agent_runtime.docker_types_services.Mount",
-        side_effect=["mount-1", "mount-2"],
+        side_effect=[
+            mocker.Mock(spec=docker.types.Mount),
+            mocker.Mock(spec=docker.types.Mount),
+        ],
     )
 
     runtime_agent = agent_runtime.AgentRuntime(
@@ -819,7 +822,8 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
         ]
     )
 
-    assert mounts == ["mount-1", "mount-2"]
+    assert len(mounts) == 2
+    assert all(isinstance(mount, docker.types.Mount) for mount in mounts)
     mock_docker_client.volumes.get.assert_any_call("repository_code_scan-42")
     mock_docker_client.volumes.get.assert_any_call("shared_cache_scan-42")
     create_volume_mock.assert_called_once_with(

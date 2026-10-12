@@ -1,6 +1,7 @@
 """This module contains custom types for the CLI commands."""
 
 import dataclasses
+import typing
 
 import click
 
@@ -91,3 +92,21 @@ class AgentKeyType(click.ParamType):
                 param=param,
                 ctx=ctx,
             )
+
+
+class CloudLoggingClient(typing.Protocol):
+    """Public setup method supplied by the optional Google logging SDK."""
+
+    def setup_logging(self, *, labels: typing.Optional[dict[str, str]] = None) -> None:
+        """Attach a handler to the process logging configuration."""
+        ...
+
+
+class CloudLoggingClientFactory(typing.Protocol):
+    """Constructor options used by the CLI for the optional logging SDK."""
+
+    def __call__(
+        self, *, credentials: object, _use_grpc: bool = True
+    ) -> CloudLoggingClient:
+        """Build a Google Cloud Logging client."""
+        ...

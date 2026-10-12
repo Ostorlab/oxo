@@ -3,6 +3,12 @@
 import dataclasses
 import json
 from typing import Any
+from typing import Optional
+from typing import cast
+
+type ArgumentValue = Optional[
+    bytes | int | float | str | bool | list[Any] | dict[str, Any]
+]
 
 
 @dataclasses.dataclass
@@ -13,7 +19,7 @@ class Arg:
 
     name: str
     type: str
-    value: bytes | int | float | str | bool | None = None
+    value: ArgumentValue = None
     description: str | None = None
 
     @classmethod
@@ -21,7 +27,7 @@ class Arg:
         cls,
         name: str,
         type: str,
-        value: bytes | float | str | bool | None = None,
+        value: ArgumentValue = None,
         description: str | None = None,
     ) -> "Arg":
         if isinstance(value, bytes):
@@ -41,7 +47,7 @@ class Arg:
         return cls(name, type, value, description)
 
     @staticmethod
-    def convert_str(value_str: str, target_type: str) -> Any:
+    def convert_str(value_str: str, target_type: str) -> ArgumentValue:
         """
         Convert a string value to the specified type.
 
@@ -64,11 +70,11 @@ class Arg:
             return value_str.lower() == "true"
         elif target_type == "array":
             try:
-                return json.loads(value_str)
+                return cast(ArgumentValue, json.loads(value_str))
             except ValueError:
                 return value_str.split(",")
         elif target_type == "object":
-            return json.loads(value_str)
+            return cast(ArgumentValue, json.loads(value_str))
         else:
             raise ValueError(f"Unsupported argument type: {target_type}")
 
@@ -104,6 +110,6 @@ class ScannerState:
     total_cpu: int | None
     total_memory: int
     hostname: str
-    ip: str
+    ip: Optional[str]
     disk_usage: float = 0.0
     total_disk: int = 0
