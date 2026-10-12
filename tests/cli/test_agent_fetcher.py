@@ -1,5 +1,6 @@
 """Tests for agent_fetcher module."""
 
+import json
 from unittest import mock
 
 from ostorlab.cli import agent_fetcher
@@ -25,7 +26,7 @@ def testGetDetails_whenUseExperimentalNotProvided_buildsRequestWithDefaultFalse(
                 agent_fetcher.get_details("agent/ostorlab/nmap")
 
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", use_experimental=False
+                    "agent/ostorlab/nmap", use_experimental=False, channel=None
                 )
 
 
@@ -47,7 +48,7 @@ def testGetDetails_whenUseExperimentalTrue_buildsRequestWithTrue() -> None:
                 agent_fetcher.get_details("agent/ostorlab/nmap", use_experimental=True)
 
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", use_experimental=True
+                    "agent/ostorlab/nmap", use_experimental=True, channel=None
                 )
 
 
@@ -92,7 +93,7 @@ def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> N
 
                 mock_runner_cls.assert_called_once_with(api_key="test-api-key")
                 mock_request_cls.assert_called_once_with(
-                    "agent/ostorlab/nmap", use_experimental=False
+                    "agent/ostorlab/nmap", use_experimental=False, channel=None
                 )
                 assert result == {"key": "value"}
 
@@ -193,3 +194,23 @@ def testGetDefinition_whenNoVersionProvided_shouldCallGetContainerImageWithNone(
                 agent_key="agent/ostorlab/nmap", version=None
             )
             assert result == mock_definition
+
+
+def testGetDetails_whenChannelProvided_buildsRequestWithChannel() -> None:
+    """Test that get_details forwards the release channel to the API request."""
+    with mock.patch(
+        "ostorlab.cli.agent_fetcher.configuration_manager.ConfigurationManager"
+    ) as mock_config_manager:
+        mock_config_manager.return_value.is_authenticated = False
+        with mock.patch(
+            "ostorlab.cli.agent_fetcher.public_runner.PublicAPIRunner"
+        ) as mock_runner_cls:
+            mock_runner = mock.Mock()
+            mock_runner_cls.return_value = mock_runner
+            mock_runner.execute.return_value = {"data": {"agent": {"key": "value"}}}
+
+            agent_fetcher.get_details("agent/ostorlab/nmap", channel="beta")
+
+            api_request = mock_runner.execute.call_args.args[0]
+            assert json.loads(api_request.data["variables"])["channel"] == "beta"
+            assert "channel: $channel" in api_request.query
