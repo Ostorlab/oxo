@@ -1,6 +1,15 @@
-It is important to build the file from the src folder to maintain the package structure. A onliner to build all protos
-in the `src` folder:
+Generate the `*_pb2.py` files from the `.proto` definitions.
+
+Install the generator (use `grpc_tools.protoc`, not a system `protoc`):
+
 ```shell
-find -path '*/proto/v3/*' -name '*.proto' | xargs -I {} protoc --python_out=. {}
-find -path '*/proto/common/*' -name '*.proto' | xargs -I {} protoc --python_out=. {}
+pip install "protobuf==6.33.6" grpcio-tools
+```
+
+Build all protos (run from `src`):
+
+```shell
+cd src
+find -path '*/proto/v3/*' -name '*.proto' | xargs -I {} python -m grpc_tools.protoc --proto_path=. --python_out=. {}
+find -path '*/proto/common/*' -name '*.proto' | xargs -I {} python -m grpc_tools.protoc --proto_path=. --python_out=. {}
 ```

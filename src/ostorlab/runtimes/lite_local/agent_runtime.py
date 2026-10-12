@@ -365,9 +365,23 @@ class AgentRuntime:
         agent_definition = self.create_agent_definition_from_label()
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
-            endpoint_spec = docker_types_services.EndpointSpec(
-                ports={p.destination_port: p.source_port for p in self.agent.open_ports}
-            )
+            port_configs = []
+            for port in self.agent.open_ports:
+                port_configs.append(
+                    {
+                        "Protocol": "tcp",
+                        "PublishedPort": port.destination_port,
+                        "TargetPort": port.source_port,
+                    }
+                )
+                port_configs.append(
+                    {
+                        "Protocol": "udp",
+                        "PublishedPort": port.destination_port,
+                        "TargetPort": port.source_port,
+                    }
+                )
+            endpoint_spec = docker_types_services.EndpointSpec(ports=port_configs)
         else:
             endpoint_spec = docker_types_services.EndpointSpec(mode="dnsrr")
 
