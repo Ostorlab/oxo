@@ -74,7 +74,7 @@ def testMessageSerializeDeserialize_Forv3CaptureFilesystem_generatesProperProto(
     assert deserialized.data.get("filename") == "/etc/hosts"
 
 
-def testMessageSerializeDeserialize_Forv3CaptureTcp_generatesProperProto():
+def testMessageSerializeDeserialize_Forv3CaptureTcp_generatesProperProto() -> None:
     """Test serialization/deserialization of a raw TCP message (v3.capture.tcp)."""
     serialized = message.Message.from_data(
         "v3.capture.tcp",
