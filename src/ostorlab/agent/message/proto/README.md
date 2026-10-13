@@ -18,6 +18,6 @@ The `*_pb2.pyi` type stubs are committed too. From `src`, regenerate them with t
 
 ```shell
 cd src
-pip install -r typing_requirements.txt
-python tools/generate_proto_stubs.py
+pip install -r ../typing_requirements.txt
+python ../tools/generate_proto_stubs.py
 ```
