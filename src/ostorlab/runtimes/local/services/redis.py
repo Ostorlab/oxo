@@ -12,9 +12,16 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
+from ostorlab.runtimes.local import snapshot
+from ostorlab.runtimes.local.services import container_exec
+
 logger = logging.getLogger(__name__)
 
 REDIS_IMAGE = "redis:latest"
+REDIS_READINESS_COMMAND = ["redis-cli", "ping"]
+REDIS_READINESS_ATTEMPTS = 60
+REDIS_READINESS_WAIT_SECONDS = 1
+REDIS_RESTORE_FILE = "ostorlab_redis_restore.resp"
 
 
 class LocalRedis:
@@ -145,3 +152,58 @@ class LocalRedis:
             )
         except errors.DockerException:
             return False
+
+    def restore(self, keys: typing.Sequence[snapshot.RedisKey]) -> None:
+        """Restore the keys of a paused universe, before its agents start.
+
+        The `RESTORE` commands are copied to the Redis container and sent with `redis-cli --pipe` from inside it.
+
+        Args:
+            keys: The keys to restore, existing keys are replaced.
+
+        Raises:
+            container_exec.ExecError: When Redis is not ready or a key cannot be restored.
+        """
+        if len(keys) == 0:
+            return
+        self._wait_accepting_connections()
+        commands = b"".join(
+            _redis_command(
+                b"RESTORE", key.key, str(key.ttl_ms).encode(), key.value, b"REPLACE"
+            )
+            for key in keys
+        )
+        path = f"{container_exec.FILES_DIRECTORY}/{REDIS_RESTORE_FILE}"
+        # `redis-cli --pipe` exits with an error when a command fails, the file is removed either way.
+        container_exec.run(
+            self._docker_client,
+            self._redis_service,
+            [
+                "sh",
+                "-c",
+                f"redis-cli --pipe < {path}; status=$?; rm -f {path}; exit $status",
+            ],
+            files={REDIS_RESTORE_FILE: commands},
+        )
+        logger.info("restored %s redis keys", len(keys))
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(REDIS_READINESS_ATTEMPTS),
+        wait=tenacity.wait_fixed(REDIS_READINESS_WAIT_SECONDS),
+        retry=tenacity.retry_if_exception_type(container_exec.ExecError),
+        reraise=True,
+    )
+    def _wait_accepting_connections(self) -> None:
+        """Wait for Redis to answer, a running task only means its container started."""
+        output = container_exec.run(
+            self._docker_client, self._redis_service, REDIS_READINESS_COMMAND
+        )
+        if output.strip() != b"PONG":
+            raise container_exec.ExecError(f"redis is not ready: {output!r}")
+
+
+def _redis_command(*parts: bytes) -> bytes:
+    """Encode a command in the Redis protocol, the format `redis-cli --pipe` reads."""
+    return f"*{len(parts)}\r\n".encode() + b"".join(
+        f"${len(part)}\r\n".encode() + part + b"\r\n" for part in parts
+    )
