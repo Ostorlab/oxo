@@ -13,6 +13,7 @@ from ostorlab import exceptions
 from ostorlab.assets import android_apk
 from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
 
@@ -724,4 +725,39 @@ def testLocalRuntimeScan_always_checksServicesHealthyBeforeStartingAgents(
     )
     assert call_names.index("_check_services_healthy") < call_names.index(
         "_start_agents"
+    )
+
+
+SNAPSHOT_SETTINGS = definitions.SnapshotSettings(
+    bucket="scan-snapshots", service_account=b"{}"
+)
+
+
+@pytest.mark.parametrize(
+    ("agent_key", "snapshot_settings", "expected_snapshot"),
+    [
+        (local_runtime.STOP_SCAN_AGENT, SNAPSHOT_SETTINGS, SNAPSHOT_SETTINGS),
+        ("agent/ostorlab/nmap", SNAPSHOT_SETTINGS, None),
+        (local_runtime.STOP_SCAN_AGENT, None, None),
+    ],
+)
+def testLocalRuntimeStartAgent_always_givesSnapshotStorageToStopScanAgentOnly(
+    mocker: plugin.MockerFixture,
+    agent_key: str,
+    snapshot_settings: definitions.SnapshotSettings | None,
+    expected_snapshot: definitions.SnapshotSettings | None,
+) -> None:
+    """Only the stop scan agent, which captures the universe on pause, receives the snapshot storage."""
+    mocker.patch.object(local_runtime, "_has_container_image", return_value=True)
+    agent_runtime_class = mocker.patch.object(agent_runtime, "AgentRuntime")
+    runtime = local_runtime.LocalRuntime(
+        scan_id=42, snapshot_settings=snapshot_settings
+    )
+    agent = definitions.AgentSettings(key=agent_key)
+
+    runtime._start_agent(agent)
+
+    assert (
+        agent_runtime_class.call_args.kwargs["agent_settings"].snapshot
+        == expected_snapshot
     )

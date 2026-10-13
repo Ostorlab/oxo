@@ -54,6 +54,7 @@ ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
+STOP_SCAN_AGENT = "agent/ostorlab/stop_scan"
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -115,6 +116,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
         mq_exposed_ports: typing.Optional[dict[int, int]] = None,
         gcp_logging_credential: typing.Optional[str] = None,
         run_default_agents: bool = True,
+        snapshot_settings: typing.Optional[definitions.SnapshotSettings] = None,
         **kwargs: object,
     ) -> None:
         super().__init__()
@@ -130,6 +132,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
         self._mq_exposed_ports: typing.Optional[dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
+        self._snapshot_settings = snapshot_settings
         self._log_streamer: typing.Optional[log_streamer.LogStream] = None
         self._docker_client: typing.Optional[docker.DockerClient] = None
 
@@ -546,6 +549,11 @@ class LocalRuntime(runtime.Runtime[int | str]):
 
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
+
+        # The stop scan agent captures the universe state when the scan is paused, it is the only agent given the
+        # snapshot storage.
+        if agent.key == STOP_SCAN_AGENT and self._snapshot_settings is not None:
+            agent.snapshot = self._snapshot_settings
 
         runtime_agent = agent_runtime.AgentRuntime(
             agent_settings=agent,
