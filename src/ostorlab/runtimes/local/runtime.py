@@ -36,7 +36,9 @@ from ostorlab.runtimes import docker_cleanup
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
+from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.services import container_exec
 from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
@@ -54,6 +56,9 @@ ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
+STOP_SCAN_AGENT = "agent/ostorlab/stop_scan"
+# Agent argument set on a paused scan when it resumes: the object name of its snapshot in the snapshot bucket.
+SNAPSHOT_KEY_ARG = "snapshot_key"
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -78,9 +83,24 @@ class MissingAgentDefinition(exceptions.OstorlabError):
     """Agent definition is missing."""
 
 
+class SnapshotRestoreError(exceptions.OstorlabError):
+    """The paused scan could not be restored from its snapshot."""
+
+
 def _has_container_image(agent: definitions.AgentSettings) -> bool:
     """Check if container image is available"""
     return agent.container_image is not None
+
+
+def _snapshot_key(
+    agent_group_definition: definitions.AgentGroupDefinition,
+) -> typing.Optional[str]:
+    """Object name of the snapshot a paused scan resumes from, None for a scan starting from scratch."""
+    for agent in agent_group_definition.agents:
+        for arg in agent.args:
+            if arg.name == SNAPSHOT_KEY_ARG:
+                return str(arg.value)
+    return None
 
 
 def _is_service_type_run(service: docker_models_services.Service) -> bool:
@@ -115,6 +135,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
         mq_exposed_ports: typing.Optional[dict[int, int]] = None,
         gcp_logging_credential: typing.Optional[str] = None,
         run_default_agents: bool = True,
+        snapshot_settings: typing.Optional[definitions.SnapshotSettings] = None,
         **kwargs: object,
     ) -> None:
         super().__init__()
@@ -130,6 +151,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
         self._mq_exposed_ports: typing.Optional[dict[int, int]] = mq_exposed_ports
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
+        self._snapshot_settings = snapshot_settings
         self._log_streamer: typing.Optional[log_streamer.LogStream] = None
         self._docker_client: typing.Optional[docker.DockerClient] = None
 
@@ -250,6 +272,13 @@ class LocalRuntime(runtime.Runtime[int | str]):
             console.info("Checking services are healthy")
             self._check_services_healthy()
 
+            snapshot_key = _snapshot_key(agent_group_definition)
+            if snapshot_key is not None:
+                console.info("Restoring the paused scan")
+                self._restore_snapshot(snapshot_key)
+                # The restored queues hold the messages of the scan, the assets were injected when it started.
+                assets = None
+
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
                 self._start_pre_agents()
@@ -310,6 +339,29 @@ class LocalRuntime(runtime.Runtime[int | str]):
             logger.error("Unhandled error during scan execution: %s", e)
             self._handle_scan_error()
             raise
+
+    def _restore_snapshot(self, snapshot_key: str) -> None:
+        """Restore the MQ and Redis state of a paused scan, once the services are ready and before the agents start.
+
+        Raises:
+            SnapshotRestoreError: When the snapshot cannot be loaded or restored.
+        """
+        if self._snapshot_settings is None:
+            raise SnapshotRestoreError(
+                f"scan resumes from snapshot {snapshot_key} without a snapshot storage."
+            )
+        try:
+            universe_snapshot = snapshot.load(self._snapshot_settings, snapshot_key)
+            typing.cast(redis.LocalRedis, self._redis_service).restore(
+                universe_snapshot.redis_keys
+            )
+            typing.cast(mq.LocalRabbitMQ, self._mq_service).restore(
+                exchanges=universe_snapshot.exchanges, queues=universe_snapshot.queues
+            )
+        except (snapshot.Error, container_exec.ExecError) as e:
+            raise SnapshotRestoreError(
+                f"could not restore snapshot {snapshot_key}: {e}"
+            ) from e
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
@@ -546,6 +598,11 @@ class LocalRuntime(runtime.Runtime[int | str]):
 
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
+
+        # The stop scan agent captures the universe state when the scan is paused, it is the only agent given the
+        # snapshot storage.
+        if agent.key == STOP_SCAN_AGENT and self._snapshot_settings is not None:
+            agent.snapshot = self._snapshot_settings
 
         runtime_agent = agent_runtime.AgentRuntime(
             agent_settings=agent,

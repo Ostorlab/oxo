@@ -13,8 +13,12 @@ from ostorlab import exceptions
 from ostorlab.assets import android_apk
 from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.services import container_exec
+from ostorlab.utils import definitions as utils_definitions
 
 
 @pytest.mark.skip(reason="Missing inject asset agent.")
@@ -724,4 +728,207 @@ def testLocalRuntimeScan_always_checksServicesHealthyBeforeStartingAgents(
     )
     assert call_names.index("_check_services_healthy") < call_names.index(
         "_start_agents"
+    )
+
+
+SNAPSHOT_SETTINGS = definitions.SnapshotSettings(
+    bucket="scan-snapshots", service_account=b"{}"
+)
+
+
+def _resumed_agent_group() -> definitions.AgentGroupDefinition:
+    return definitions.AgentGroupDefinition(
+        agents=[
+            definitions.AgentSettings(key="agent/ostorlab/nmap"),
+            definitions.AgentSettings(
+                key=local_runtime.STOP_SCAN_AGENT,
+                args=[
+                    utils_definitions.Arg(
+                        name=local_runtime.SNAPSHOT_KEY_ARG, type="string", value="42/7"
+                    )
+                ],
+            ),
+        ]
+    )
+
+
+def testLocalRuntimeScan_whenAgentHasSnapshotKey_restoresBeforeAgentsAndSkipsAssets(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A resumed scan restores its snapshot once the services are ready, before any agent starts, without injecting
+    its assets again."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime(snapshot_settings=SNAPSHOT_SETTINGS)
+    calls = mocker.Mock()
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_restore_snapshot",
+        "_start_agents",
+        "_inject_assets",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name, getattr(calls, name))
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+
+    runtime.scan(
+        title="test",
+        agent_group_definition=_resumed_agent_group(),
+        assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
+    )
+
+    call_names = [call[0] for call in calls.mock_calls]
+    assert call_names.index("_check_services_healthy") < call_names.index(
+        "_restore_snapshot"
+    )
+    assert call_names.index("_restore_snapshot") < call_names.index("_start_agents")
+    assert "_inject_assets" not in call_names
+    calls._restore_snapshot.assert_called_once_with("42/7")
+
+
+def testLocalRuntimeScan_whenNoSnapshotKey_doesNotRestore(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A scan starting from scratch injects its assets and restores nothing."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime(snapshot_settings=SNAPSHOT_SETTINGS)
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    restore = mocker.patch.object(runtime, "_restore_snapshot")
+    inject = mocker.patch.object(runtime, "_inject_assets")
+
+    runtime.scan(
+        title="test",
+        agent_group_definition=definitions.AgentGroupDefinition(
+            agents=[definitions.AgentSettings(key=local_runtime.STOP_SCAN_AGENT)]
+        ),
+        assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
+    )
+
+    restore.assert_not_called()
+    inject.assert_called_once()
+
+
+def testLocalRuntimeScan_whenRestoreFails_raisesSnapshotRestoreErrorAndCleansUp(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A failed restore stops the scan start and removes the universe, no agent starts."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime(snapshot_settings=SNAPSHOT_SETTINGS)
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(
+        runtime,
+        "_restore_snapshot",
+        side_effect=local_runtime.SnapshotRestoreError("broken"),
+    )
+    start_agents = mocker.patch.object(runtime, "_start_agents")
+    handle_error = mocker.patch.object(runtime, "_handle_scan_error")
+
+    with pytest.raises(local_runtime.SnapshotRestoreError):
+        runtime.scan(
+            title="test", agent_group_definition=_resumed_agent_group(), assets=None
+        )
+
+    start_agents.assert_not_called()
+    handle_error.assert_called_once()
+
+
+def testLocalRuntimeRestoreSnapshot_always_restoresRedisAndMqFromLoadedSnapshot(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The snapshot is loaded with the runtime storage and restored in the universe services."""
+    universe_snapshot = snapshot.UniverseSnapshot(
+        exchanges=[{"name": "topic"}],
+        queues=[{"name": "nmap"}],
+        redis_keys=[snapshot.RedisKey(key=b"k", ttl_ms=0, value=b"v")],
+    )
+    load = mocker.patch.object(snapshot, "load", return_value=universe_snapshot)
+    runtime = local_runtime.LocalRuntime(snapshot_settings=SNAPSHOT_SETTINGS)
+    mq_service = mocker.MagicMock()
+    redis_service = mocker.MagicMock()
+    runtime._mq_service = mq_service
+    runtime._redis_service = redis_service
+
+    runtime._restore_snapshot("42/7")
+
+    load.assert_called_once_with(SNAPSHOT_SETTINGS, "42/7")
+    redis_service.restore.assert_called_once_with(universe_snapshot.redis_keys)
+    mq_service.restore.assert_called_once_with(
+        exchanges=universe_snapshot.exchanges, queues=universe_snapshot.queues
+    )
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        snapshot.StorageError("missing"),
+        snapshot.InvalidSnapshotError("corrupted"),
+        container_exec.ExecError("restore failed"),
+    ],
+)
+def testLocalRuntimeRestoreSnapshot_whenRestoreFails_raisesSnapshotRestoreError(
+    mocker: plugin.MockerFixture, error: exceptions.OstorlabError
+) -> None:
+    """Load and restore failures are reported as a single restore error."""
+    mocker.patch.object(snapshot, "load", side_effect=error)
+    runtime = local_runtime.LocalRuntime(snapshot_settings=SNAPSHOT_SETTINGS)
+
+    with pytest.raises(local_runtime.SnapshotRestoreError):
+        runtime._restore_snapshot("42/7")
+
+
+def testLocalRuntimeRestoreSnapshot_whenNoSnapshotStorage_raisesSnapshotRestoreError() -> (
+    None
+):
+    """A scanner without snapshot storage cannot resume a paused scan."""
+    runtime = local_runtime.LocalRuntime()
+
+    with pytest.raises(local_runtime.SnapshotRestoreError):
+        runtime._restore_snapshot("42/7")
+
+
+@pytest.mark.parametrize(
+    ("agent_key", "snapshot_settings", "expected_snapshot"),
+    [
+        (local_runtime.STOP_SCAN_AGENT, SNAPSHOT_SETTINGS, SNAPSHOT_SETTINGS),
+        ("agent/ostorlab/nmap", SNAPSHOT_SETTINGS, None),
+        (local_runtime.STOP_SCAN_AGENT, None, None),
+    ],
+)
+def testLocalRuntimeStartAgent_always_givesSnapshotStorageToStopScanAgentOnly(
+    mocker: plugin.MockerFixture,
+    agent_key: str,
+    snapshot_settings: definitions.SnapshotSettings | None,
+    expected_snapshot: definitions.SnapshotSettings | None,
+) -> None:
+    """Only the stop scan agent, which captures the universe on pause, receives the snapshot storage."""
+    mocker.patch.object(local_runtime, "_has_container_image", return_value=True)
+    agent_runtime_class = mocker.patch.object(agent_runtime, "AgentRuntime")
+    runtime = local_runtime.LocalRuntime(snapshot_settings=snapshot_settings)
+    agent = definitions.AgentSettings(key=agent_key)
+
+    runtime._start_agent(agent)
+
+    assert (
+        agent_runtime_class.call_args.kwargs["agent_settings"].snapshot
+        == expected_snapshot
     )

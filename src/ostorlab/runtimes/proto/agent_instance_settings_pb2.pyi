@@ -70,6 +70,32 @@ class PortMapping(_message.Message):
 Global___PortMapping: _TypeAlias = PortMapping  # noqa: Y015
 
 @_typing.final
+class SnapshotSettings(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    BUCKET_FIELD_NUMBER: _builtins.int
+    SERVICE_ACCOUNT_FIELD_NUMBER: _builtins.int
+    bucket: _builtins.str
+    """Storage of the snapshots of paused scans, given to the agent capturing the universe state on pause.
+    Bucket name, the snapshot of a universe is stored at gs://<bucket>/<reference_scan_id>/<scan_id>.
+    """
+    service_account: _builtins.bytes
+    """JSON key of a service account allowed to read and write objects in the bucket."""
+    def __init__(
+        self,
+        *,
+        bucket: _builtins.str | None = ...,
+        service_account: _builtins.bytes | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bucket", b"bucket", "service_account", b"service_account"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bucket", b"bucket", "service_account", b"service_account"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___SnapshotSettings: _TypeAlias = SnapshotSettings  # noqa: Y015
+
+@_typing.final
 class AgentInstanceSettings(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -95,6 +121,7 @@ class AgentInstanceSettings(_message.Message):
     ACCEPTED_AGENTS_FIELD_NUMBER: _builtins.int
     IN_SELECTORS_FIELD_NUMBER: _builtins.int
     SERVICE_NAME_FIELD_NUMBER: _builtins.int
+    SNAPSHOT_FIELD_NUMBER: _builtins.int
     key: _builtins.str
     """Proto definition of agent instance settings. This is use to serialize all the settings passed from the runtime to
     the agent.
@@ -158,6 +185,10 @@ class AgentInstanceSettings(_message.Message):
     def in_selectors(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """In selectors used to override the default selectors used by the agent."""
 
+    @_builtins.property
+    def snapshot(self) -> Global___SnapshotSettings:
+        """Snapshot storage, only set on the agent capturing the universe state when its scan is paused."""
+
     def __init__(
         self,
         *,
@@ -183,10 +214,11 @@ class AgentInstanceSettings(_message.Message):
         accepted_agents: _abc.Iterable[_builtins.str] | None = ...,
         in_selectors: _abc.Iterable[_builtins.str] | None = ...,
         service_name: _builtins.str | None = ...,
+        snapshot: Global___SnapshotSettings | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "key", b"key", "mem_limit", b"mem_limit", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "key", b"key", "mem_limit", b"mem_limit", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "snapshot", b"snapshot", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["accepted_agents", b"accepted_agents", "args", b"args", "bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "caps", b"caps", "constraints", b"constraints", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "in_selectors", b"in_selectors", "key", b"key", "mem_limit", b"mem_limit", "mounts", b"mounts", "open_ports", b"open_ports", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["accepted_agents", b"accepted_agents", "args", b"args", "bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "caps", b"caps", "constraints", b"constraints", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "in_selectors", b"in_selectors", "key", b"key", "mem_limit", b"mem_limit", "mounts", b"mounts", "open_ports", b"open_ports", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "snapshot", b"snapshot", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
