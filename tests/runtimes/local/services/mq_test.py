@@ -4,12 +4,14 @@ Tests marked with `docker` require access to working docker instance (socket or 
 on instances missing docker.
 """
 
+import json
 from unittest import mock
 
 import docker
 import pytest
 from pytest_mock import plugin
 
+from ostorlab.runtimes.local.services import container_exec
 from ostorlab.runtimes.local.services import mq
 
 
@@ -87,3 +89,40 @@ def testLocalRabbitMQIsAcceptingConnections_whenNoRunningTask_returnsFalse(
 
     assert lrm.is_accepting_connections is False
     docker_client.containers.get.assert_not_called()
+
+
+def testLocalRabbitMQRestore_always_runsRestoreScriptInsideMqContainer(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The state and the restore script are copied to the MQ container and run there in one exec."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=0)
+    run = mocker.patch.object(
+        container_exec, "run", return_value=b"restored 1 queues and 2 messages"
+    )
+    queues = [{"name": "nmap", "bindings": [], "messages": []}]
+
+    lrm.restore(exchanges=[], queues=queues)
+
+    _, service, command = run.call_args.args
+    files = run.call_args.kwargs["files"]
+    assert service is lrm.service
+    assert command[:2] == ["sh", "-c"]
+    assert command[2].startswith(
+        f"python3 /tmp/{mq.MQ_RESTORE_SCRIPT_FILE} /tmp/{mq.MQ_RESTORE_STATE_FILE}"
+    )
+    assert files[mq.MQ_RESTORE_SCRIPT_FILE] == mq.MQ_RESTORE_SCRIPT.read_bytes()
+    assert json.loads(files[mq.MQ_RESTORE_STATE_FILE]) == {
+        "vhost": "/",
+        "exchanges": [],
+        "queues": queues,
+    }
+
+
+def testLocalRabbitMQRestore_whenScriptFails_raisesExecError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A failing restore is reported to the runtime."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=1)
+
+    with pytest.raises(container_exec.ExecError):
+        lrm.restore(exchanges=[], queues=[])
