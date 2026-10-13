@@ -17,6 +17,7 @@ from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
 from ostorlab.cli.scanner import scanner as scanner_cli
+from ostorlab.runtimes import definitions
 
 
 def _remove_scanner_file_handlers() -> None:
@@ -166,6 +167,80 @@ def testScannerCommandInvocation_whenParallelScanNumberIsGiven_shouldCreateCorre
     )
 
     assert create_process_mock.call_count == 42
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenSnapshotStorageProvided_forwardsItToProcess(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """The snapshot bucket and service account key reach every scanner process."""
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    create_process_mock = mocker.patch("multiprocessing.Process")
+    service_account_file = tmp_path / "service_account.json"
+    service_account_file.write_bytes(b'{"type": "service_account"}')
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--snapshot-bucket",
+            "scan-snapshots",
+            "--snapshot-service-account",
+            str(service_account_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    process_args = create_process_mock.call_args.kwargs["args"]
+    assert process_args[7] == definitions.SnapshotSettings(
+        bucket="scan-snapshots", service_account=b'{"type": "service_account"}'
+    )
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenNoSnapshotStorage_forwardsNone(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A scanner without snapshot storage runs scans that cannot be paused."""
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    create_process_mock = mocker.patch("multiprocessing.Process")
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli, ["scanner", "--no-daemon", "--scanner-id", "11226DS"]
+    )
+
+    assert result.exit_code == 0
+    assert create_process_mock.call_args.kwargs["args"][7] is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenOnlySnapshotBucketProvided_exitsWithError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The snapshot bucket is useless without its service account."""
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    create_process_mock = mocker.patch("multiprocessing.Process")
+
+    runner = click_testing.CliRunner()
+    result = runner.invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--snapshot-bucket",
+            "scan-snapshots",
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert create_process_mock.call_count == 0
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")

@@ -1,11 +1,14 @@
 """Unit tests for scan handler module."""
 
+import json
 from typing import Any
 
 import docker
 import pytest
 from pytest_mock import plugin
 
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter
 
@@ -228,6 +231,59 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
+def testTriggerScanWithRollback_whenSnapshotRestoreFails_reportsScanPaused(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A scan that cannot resume from its snapshot goes back to paused instead of not_started."""
+    runner = mocker.MagicMock()
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan",
+        side_effect=local_runtime.SnapshotRestoreError("missing snapshot"),
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    result = scan_handler_instance._trigger_scan_with_rollback(
+        runner, {"id": 42, "agentGroup": {"key": "test/group"}}, api_key="test_key"
+    )
+
+    assert result is None
+    assert runner.execute.call_count == 1
+    variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
+    assert variables["scanId"] == 42
+    assert variables["progress"] == "paused"
+
+
+def testTriggerScanWithRollback_always_forwardsSnapshotSettingsToStartScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The scanner snapshot storage reaches the runtime of each scan."""
+    settings = definitions.SnapshotSettings(
+        bucket="scan-snapshots", service_account=b"{}"
+    )
+    start_scan_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="42"
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(
+        state_reporter=state_reporter, snapshot_settings=settings
+    )
+
+    scan_handler_instance._trigger_scan_with_rollback(
+        mocker.MagicMock(), {"id": 42}, api_key="test_key"
+    )
+
+    assert start_scan_mock.call_args.kwargs["snapshot_settings"] == settings
+
+
 def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -276,6 +332,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         state_reporter=state_reporter,
         api_key="test-key",
         gcp_logging_credential="gcp-credential",
+        snapshot_settings=None,
     )
 
 
