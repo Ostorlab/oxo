@@ -1,6 +1,6 @@
 Generate the `*_pb2.py` modules and their `*_pb2.pyi` stubs from the `.proto` definitions.
 
-Install the generator, pinned:
+Install the pinned protobuf runtime and the gRPC codegen tool:
 
 ```shell
 pip install "protobuf==6.33.6" "grpcio-tools==1.78.0"
@@ -14,9 +14,10 @@ find -path '*/proto/v3/*' -name '*.proto' | xargs -I {} python -m grpc_tools.pro
 find -path '*/proto/common/*' -name '*.proto' | xargs -I {} python -m grpc_tools.protoc --proto_path=. --python_out=. {}
 ```
 
-The `*_pb2.pyi` type stubs are committed too, regenerate them with the pinned stub toolchain:
+The `*_pb2.pyi` type stubs are committed too. From `src`, regenerate them with the pinned stub toolchain:
 
 ```shell
-pip install -r ../typing_requirements.txt
-python ../tools/generate_proto_stubs.py
+cd src
+pip install -r typing_requirements.txt
+python tools/generate_proto_stubs.py
 ```
