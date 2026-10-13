@@ -277,6 +277,64 @@ def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serv
     assert kwargs["container_labels"] == {"ostorlab.scan_id": "42"}
 
 
+def testLiteLocalCreateAgentService_whenAgentHasOpenPort_serviceCreatedWithBothTcpAndUdp(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Each declared open port must be published on both tcp and udp (e.g. so the
+    proxy agent's WireGuard udp transport is reachable on the same port number as its
+    tcp http proxy)."""
+    mocker.patch("docker.DockerClient.info", return_value={"Name": "test-host"})
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        restart_policy="",
+        open_ports=[utils_definitions.PortMapping(20000, 56813)],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.definitions.AgentSettings.container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.lite_local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    create_service_mock = mocker.patch(
+        "docker.models.services.ServiceCollection.create", return_value=None
+    )
+    docker_client = docker.from_env()
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        bus_url="bus",
+        bus_vhost="/",
+        bus_management_url="mgmt",
+        bus_exchange_topic="topic",
+        redis_url="redis://redis",
+        tracing_collector_url="jaeger://localhost/",
+        labels={},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    ports = create_service_mock.call_args.kwargs["endpoint_spec"]["Ports"]
+    published_56813 = [port for port in ports if port["PublishedPort"] == 56813]
+    assert {port["Protocol"] for port in published_56813} == {"tcp", "udp"}
+    assert all(port["TargetPort"] == 20000 for port in published_56813)
+
+
 def testLiteLocalCreateAgentService_whenAgentDefAndAgentSettingsCapsAreNotEmpty_serviceCreatedwithAgentSettings(
     mocker: plugin.MockerFixture,
 ) -> None:
