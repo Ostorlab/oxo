@@ -766,7 +766,9 @@ def testLocalRuntimeScan_whenAgentHasSnapshotKey_restoresBeforeAgentsAndSkipsAss
         "_start_services",
         "_check_services_healthy",
         "_restore_snapshot",
+        "_start_pre_agents",
         "_start_agents",
+        "_start_post_agents",
         "_inject_assets",
         "_update_scan_progress",
         "_wait_log_streamer",
@@ -800,7 +802,9 @@ def testLocalRuntimeScan_whenNoSnapshotKey_doesNotRestore(
         "_create_network",
         "_start_services",
         "_check_services_healthy",
+        "_start_pre_agents",
         "_start_agents",
+        "_start_post_agents",
         "_update_scan_progress",
         "_wait_log_streamer",
     ]:
@@ -923,7 +927,9 @@ def testLocalRuntimeStartAgent_always_givesSnapshotStorageToStopScanAgentOnly(
     """Only the stop scan agent, which captures the universe on pause, receives the snapshot storage."""
     mocker.patch.object(local_runtime, "_has_container_image", return_value=True)
     agent_runtime_class = mocker.patch.object(agent_runtime, "AgentRuntime")
-    runtime = local_runtime.LocalRuntime(snapshot_settings=snapshot_settings)
+    runtime = local_runtime.LocalRuntime(
+        scan_id=42, snapshot_settings=snapshot_settings
+    )
     agent = definitions.AgentSettings(key=agent_key)
 
     runtime._start_agent(agent)
