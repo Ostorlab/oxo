@@ -383,7 +383,7 @@ class AgentRuntime:
             endpoint_spec = typing.cast(
                 typing.Callable[..., docker_types_services.EndpointSpec],
                 docker_types_services.EndpointSpec,
-            )(ports={p.destination_port: p.source_port for p in self.agent.open_ports})
+            )(ports=utils_definitions.to_endpoint_port_configs(self.agent.open_ports))
         else:
             endpoint_spec = typing.cast(
                 typing.Callable[..., docker_types_services.EndpointSpec],

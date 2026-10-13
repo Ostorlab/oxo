@@ -72,3 +72,31 @@ def testMessageSerializeDeserialize_Forv3CaptureFilesystem_generatesProperProto(
     assert isinstance(serialized.raw, bytes)
     assert deserialized.data.get("event") == "ACCESS"
     assert deserialized.data.get("filename") == "/etc/hosts"
+
+
+def testMessageSerializeDeserialize_Forv3CaptureTcp_generatesProperProto() -> None:
+    """Test serialization/deserialization of a raw TCP message (v3.capture.tcp)."""
+    serialized = message.Message.from_data(
+        "v3.capture.tcp",
+        {
+            "id": "flow-1",
+            "seq": 2,
+            "from_client": True,
+            "server_host": "1.2.3.4",
+            "server_port": 443,
+            "client_host": "10.0.0.1",
+            "client_port": 51515,
+            "sni": "example.com",
+            "tls": True,
+            "content": b"\x16\x03hello",
+            "timestamp": 1.0,
+        },
+    )
+    deserialized = message.Message.from_raw("v3.capture.tcp", serialized.raw)
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("id") == "flow-1"
+    assert deserialized.data.get("seq") == 2
+    assert deserialized.data.get("from_client") is True
+    assert deserialized.data.get("server_host") == "1.2.3.4"
+    assert deserialized.data.get("content") == b"\x16\x03hello"

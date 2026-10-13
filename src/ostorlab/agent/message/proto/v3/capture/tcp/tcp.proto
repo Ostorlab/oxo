@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.capture.tcp;
+
+message Message {
+  optional string id = 1;
+  optional uint32 seq = 2;
+  optional bool from_client = 3;
+  optional string server_host = 4;
+  optional uint32 server_port = 5;
+  optional string client_host = 6;
+  optional uint32 client_port = 7;
+  optional string sni = 8;
+  optional bool tls = 9;
+  optional bytes content = 10;
+  optional double timestamp = 11;
+}

@@ -87,6 +87,33 @@ class PortMapping:
     destination_port: int
 
 
+def to_endpoint_port_configs(
+    open_ports: list[PortMapping],
+) -> list[dict[str, str | int]]:
+    """Build Docker EndpointSpec port configs for the given open ports.
+
+    Each port is published on both tcp and udp: WireGuard-based interception needs
+    udp while most agents use tcp, so opening both avoids a per-port protocol flag.
+    """
+    port_configs: list[dict[str, str | int]] = []
+    for port in open_ports:
+        port_configs.append(
+            {
+                "Protocol": "tcp",
+                "PublishedPort": port.destination_port,
+                "TargetPort": port.source_port,
+            }
+        )
+        port_configs.append(
+            {
+                "Protocol": "udp",
+                "PublishedPort": port.destination_port,
+                "TargetPort": port.source_port,
+            }
+        )
+    return port_configs
+
+
 @dataclasses.dataclass
 class Volume:
     """Data class defining a shared scan volume declared by an agent.
