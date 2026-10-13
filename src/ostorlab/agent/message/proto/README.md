@@ -14,10 +14,9 @@ find -path '*/proto/v3/*' -name '*.proto' | xargs -I {} python -m grpc_tools.pro
 find -path '*/proto/common/*' -name '*.proto' | xargs -I {} python -m grpc_tools.protoc --proto_path=. --python_out=. {}
 ```
 
-The `*_pb2.pyi` type stubs are committed too. From `src`, regenerate them with the pinned stub toolchain:
+The `*_pb2.pyi` type stubs are committed too. Still inside `src` (from the build step above), regenerate them with the pinned stub toolchain:
 
 ```shell
-cd src
 pip install -r ../typing_requirements.txt
 python ../tools/generate_proto_stubs.py
 ```

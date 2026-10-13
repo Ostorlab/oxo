@@ -378,26 +378,10 @@ class AgentRuntime:
         agent_definition = self.create_agent_definition_from_label()
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
-            port_configs = []
-            for port in self.agent.open_ports:
-                port_configs.append(
-                    {
-                        "Protocol": "tcp",
-                        "PublishedPort": port.destination_port,
-                        "TargetPort": port.source_port,
-                    }
-                )
-                port_configs.append(
-                    {
-                        "Protocol": "udp",
-                        "PublishedPort": port.destination_port,
-                        "TargetPort": port.source_port,
-                    }
-                )
             endpoint_spec = typing.cast(
                 typing.Callable[..., docker_types_services.EndpointSpec],
                 docker_types_services.EndpointSpec,
-            )(ports=port_configs)
+            )(ports=utils_definitions.to_endpoint_port_configs(self.agent.open_ports))
         else:
             endpoint_spec = typing.cast(
                 typing.Callable[..., docker_types_services.EndpointSpec],
