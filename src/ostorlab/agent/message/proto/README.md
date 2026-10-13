@@ -3,7 +3,7 @@ Generate the `*_pb2.py` modules and their `*_pb2.pyi` stubs from the `.proto` de
 Install the generator, pinned:
 
 ```shell
-pip install "protobuf==6.33.6" "grpcio-tools==1.74.0"
+pip install "protobuf==6.33.6" "grpcio-tools==1.78.0"
 ```
 
 Build all protos. Run from `src` so the generated modules land inside the `ostorlab` package tree:
