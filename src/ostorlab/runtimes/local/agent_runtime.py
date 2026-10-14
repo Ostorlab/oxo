@@ -39,7 +39,8 @@ HEALTHCHECK_PORT = 5000
 SECOND = 1000000000
 HEALTHCHECK_RETRIES = 10
 HEALTHCHECK_TIMEOUT = 30 * SECOND
-HEALTHCHECK_START_PERIOD = 2 * SECOND
+HEALTHCHECK_START_PERIOD = 60 * SECOND
+HEALTHCHECK_START_INTERVAL = 2 * SECOND
 HEALTHCHECK_INTERVAL = 30 * SECOND
 MAX_SERVICE_NAME_LEN = 63
 MAX_RANDOM_NAME_LEN = 5
@@ -298,10 +299,13 @@ class AgentRuntime:
 
     def create_docker_healthchek(self) -> docker.types.Healthcheck:
         """Create a docker healthcheck configuration for the agent service.
+
+        Until the container is healthy, during the start period, the healthcheck is probed
+        every start interval, then every interval once the container is healthy.
+
         Returns:
             docker healthcheck configuration.
         """
-        # wait 2s and check max 5 times with 0.5s between each check.
         healthcheck = docker.types.Healthcheck(
             test=["CMD", "ostorlab", "agent", "healthcheck"],
             retries=HEALTHCHECK_RETRIES,
@@ -309,6 +313,7 @@ class AgentRuntime:
             start_period=HEALTHCHECK_START_PERIOD,
             interval=HEALTHCHECK_INTERVAL,
         )
+        healthcheck["StartInterval"] = HEALTHCHECK_START_INTERVAL
         return healthcheck
 
     def replace_variable_mounts(self, mounts: typing.Sequence[str]) -> list[str]:
