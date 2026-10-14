@@ -6,8 +6,8 @@ The state of a universe lives in two services:
 - Redis: the agents persisted state, like deduplication sets and the tracker bookkeeping.
 
 The stop scan agent takes the snapshot from inside the universe network once the other agents are stopped, and saves
-it to `gs://<bucket>/<reference_scan_id>/<scan_id>`. When the scan resumes, the local runtime loads it and restores it
-in the new MQ and Redis services before any agent starts.
+it to `gs://<bucket>/<scan_id>`. When a scan starts, the local runtime looks its snapshot up: a paused scan has one and
+is restored in the new MQ and Redis services before any agent starts, a new scan has none and starts from scratch.
 
 The stored object is a gzip compressed JSON document. It is internal to this module: only `take`, `save` and `load`
 read or write it.
@@ -85,14 +85,13 @@ class UniverseSnapshot:
     redis_keys: list[RedisKey]
 
 
-def object_name(reference_scan_id: int | str, scan_id: int | str) -> str:
+def object_name(scan_id: int | str) -> str:
     """Name of the snapshot object of a universe in the bucket.
 
     Args:
-        reference_scan_id: Scan id of the reporting engine, shared by all the universes of the scan.
-        scan_id: Scan id of the scanning engine, one per universe.
+        scan_id: Scan id of the scanning engine, one per universe, also the name of the universe.
     """
-    return f"{reference_scan_id}/{scan_id}"
+    return str(scan_id)
 
 
 def take(mq_management_url: str, mq_vhost: str, redis_url: str) -> UniverseSnapshot:
@@ -154,19 +153,26 @@ def save(
     logger.info("saved snapshot %s, %s bytes", key, len(data))
 
 
-def load(settings: definitions.SnapshotSettings, key: str) -> UniverseSnapshot:
+def load(
+    settings: definitions.SnapshotSettings, key: str
+) -> typing.Optional[UniverseSnapshot]:
     """Fetch a snapshot from the bucket.
 
     Args:
         settings: Bucket and service account of the snapshots.
         key: Object name, see `object_name`.
 
+    Returns:
+        The snapshot, None when the universe has no snapshot.
+
     Raises:
-        StorageError: When the download fails or the object does not exist.
+        StorageError: When the download fails.
         InvalidSnapshotError: When the object is not a snapshot.
     """
     try:
         data = typing.cast(bytes, _bucket(settings).blob(key).download_as_bytes())
+    except google_api_exceptions.NotFound:
+        return None
     except (
         google_api_exceptions.GoogleAPIError,
         google_auth_exceptions.GoogleAuthError,

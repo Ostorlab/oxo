@@ -212,9 +212,9 @@ def testTake_whenManagementApiFails_raisesCaptureError(
         snapshot.take(MANAGEMENT_URL, "/", "redis://redis_1:6379/")
 
 
-def testObjectName_always_returnsReferenceScanAndScanIds() -> None:
-    """The snapshot of a universe is stored under its reporting engine scan, one object per universe."""
-    assert snapshot.object_name(reference_scan_id=42, scan_id=7) == "42/7"
+def testObjectName_always_returnsScanId() -> None:
+    """The snapshot of a universe is stored under its scanning engine scan id, one object per universe."""
+    assert snapshot.object_name(scan_id=7) == "7"
 
 
 def testSaveThenLoad_always_returnsTheSavedSnapshot(
@@ -223,28 +223,40 @@ def testSaveThenLoad_always_returnsTheSavedSnapshot(
     """A saved snapshot is uploaded to its object and loads back identical, binary values included."""
     bucket = _mock_bucket(mocker)
 
-    snapshot.save(SETTINGS, "42/7", UNIVERSE_SNAPSHOT)
+    snapshot.save(SETTINGS, "7", UNIVERSE_SNAPSHOT)
     blob = bucket.return_value.blob.return_value
     uploaded = blob.upload_from_string.call_args.args[0]
     blob.download_as_bytes.return_value = uploaded
-    loaded = snapshot.load(SETTINGS, "42/7")
+    loaded = snapshot.load(SETTINGS, "7")
 
     bucket.assert_called_with("scan-snapshots")
-    bucket.return_value.blob.assert_called_with("42/7")
+    bucket.return_value.blob.assert_called_with("7")
     assert loaded == UNIVERSE_SNAPSHOT
 
 
-def testLoad_whenObjectIsMissing_raisesStorageError(
+def testLoad_whenObjectIsMissing_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """A missing snapshot cannot be restored."""
+    """A universe that was never paused has no snapshot."""
     bucket = _mock_bucket(mocker)
     bucket.return_value.blob.return_value.download_as_bytes.side_effect = (
         _google_api_error(google_api_exceptions.NotFound)
     )
 
+    assert snapshot.load(SETTINGS, "7") is None
+
+
+def testLoad_whenDownloadFails_raisesStorageError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A failed download is not mistaken for a missing snapshot."""
+    bucket = _mock_bucket(mocker)
+    bucket.return_value.blob.return_value.download_as_bytes.side_effect = (
+        _google_api_error(google_api_exceptions.Forbidden)
+    )
+
     with pytest.raises(snapshot.StorageError):
-        snapshot.load(SETTINGS, "42/7")
+        snapshot.load(SETTINGS, "7")
 
 
 def testLoad_whenServiceAccountIsInvalid_raisesStorageError() -> None:
@@ -254,7 +266,7 @@ def testLoad_whenServiceAccountIsInvalid_raisesStorageError() -> None:
     )
 
     with pytest.raises(snapshot.StorageError):
-        snapshot.load(settings, "42/7")
+        snapshot.load(settings, "7")
 
 
 @pytest.mark.parametrize(
@@ -274,7 +286,7 @@ def testLoad_whenObjectIsNotASnapshot_raisesInvalidSnapshotError(
     bucket.return_value.blob.return_value.download_as_bytes.return_value = data
 
     with pytest.raises(snapshot.InvalidSnapshotError):
-        snapshot.load(SETTINGS, "42/7")
+        snapshot.load(SETTINGS, "7")
 
 
 def testSave_whenUploadFails_raisesStorageError(
@@ -287,4 +299,4 @@ def testSave_whenUploadFails_raisesStorageError(
     )
 
     with pytest.raises(snapshot.StorageError):
-        snapshot.save(SETTINGS, "42/7", UNIVERSE_SNAPSHOT)
+        snapshot.save(SETTINGS, "7", UNIVERSE_SNAPSHOT)
