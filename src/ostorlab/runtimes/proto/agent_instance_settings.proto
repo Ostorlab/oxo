@@ -20,7 +20,7 @@ message PortMapping {
 
 message SnapshotSettings {
   // Storage of the snapshots of paused scans, given to the agent capturing the universe state on pause.
-  // Bucket name, the snapshot of a universe is stored at gs://<bucket>/<reference_scan_id>/<scan_id>.
+  // Bucket name, the snapshot of a universe is stored at gs://<bucket>/<scan_id>.
   optional string bucket = 1;
   // JSON key of a service account allowed to read and write objects in the bucket.
   optional bytes service_account = 2;

@@ -77,7 +77,7 @@ class SnapshotSettings(_message.Message):
     SERVICE_ACCOUNT_FIELD_NUMBER: _builtins.int
     bucket: _builtins.str
     """Storage of the snapshots of paused scans, given to the agent capturing the universe state on pause.
-    Bucket name, the snapshot of a universe is stored at gs://<bucket>/<reference_scan_id>/<scan_id>.
+    Bucket name, the snapshot of a universe is stored at gs://<bucket>/<scan_id>.
     """
     service_account: _builtins.bytes
     """JSON key of a service account allowed to read and write objects in the bucket."""
