@@ -4,9 +4,8 @@
 standard library of the python3 shipped with the RabbitMQ management image, and talks to the management API on
 localhost.
 
-Messages are published to a headers exchange matching on `RESTORE_QUEUE_HEADER`, bound to each queue with its name:
-each message lands in the queue it was taken from and keeps its original routing key, which agents read as the
-message selector.
+Messages are published to a temporary fanout exchange bound to their queue only: each message lands in the queue it
+was taken from with its original routing key, which agents read as the message selector, and its properties unchanged.
 """
 
 from __future__ import annotations
@@ -24,12 +23,15 @@ CREDENTIALS = base64.b64encode(b"guest:guest").decode()
 REQUEST_TIMEOUT_SECONDS = 60
 READINESS_ATTEMPTS = 60
 READINESS_WAIT_SECONDS = 1
-RESTORE_EXCHANGE = "ostorlab.snapshot.restore"
-# RabbitMQ ignores the binding arguments starting with `x-` when matching headers, the header must not use it.
-RESTORE_QUEUE_HEADER = "ostorlab-snapshot-restore-queue"
+# Prefix of the temporary exchanges, one per queue, followed by the index of the queue in the state.
+RESTORE_EXCHANGE_PREFIX = "ostorlab.snapshot.restore."
 
 
-class RestoreError(Exception):
+class Error(Exception):
+    """Base error of the MQ restore script."""
+
+
+class RestoreError(Error):
     """A message could not be put back in its queue."""
 
 
@@ -74,16 +76,13 @@ def restore(state: dict[str, typing.Any]) -> int:
             f"exchanges/{vhost}/{quote(exchange['name'])}",
             {key: value for key, value in exchange.items() if key != "name"},
         )
-    restore_exchange = f"exchanges/{vhost}/{quote(RESTORE_EXCHANGE)}"
-    call("PUT", restore_exchange, {"type": "headers", "durable": False})
-    try:
-        return sum(restore_queue(vhost, queue) for queue in state["queues"])
-    finally:
-        # Deleting the exchange removes its bindings to the queues.
-        call("DELETE", restore_exchange)
+    return sum(
+        restore_queue(vhost, index, queue)
+        for index, queue in enumerate(state["queues"])
+    )
 
 
-def restore_queue(vhost: str, queue: dict[str, typing.Any]) -> int:
+def restore_queue(vhost: str, index: int, queue: dict[str, typing.Any]) -> int:
     name = quote(queue["name"])
     call(
         "PUT",
@@ -100,31 +99,36 @@ def restore_queue(vhost: str, queue: dict[str, typing.Any]) -> int:
             f"bindings/{vhost}/e/{quote(binding['source'])}/q/{name}",
             {"routing_key": binding["routing_key"], "arguments": binding["arguments"]},
         )
+    if len(queue["messages"]) == 0:
+        return 0
+    restore_exchange = quote(f"{RESTORE_EXCHANGE_PREFIX}{index}")
     call(
-        "POST",
-        f"bindings/{vhost}/e/{quote(RESTORE_EXCHANGE)}/q/{name}",
-        {
-            "routing_key": "",
-            "arguments": {"x-match": "all", RESTORE_QUEUE_HEADER: queue["name"]},
-        },
+        "PUT",
+        f"exchanges/{vhost}/{restore_exchange}",
+        {"type": "fanout", "durable": False},
     )
-    for message in queue["messages"]:
-        properties = dict(message["properties"])
-        properties["headers"] = dict(properties.get("headers") or {}) | {
-            RESTORE_QUEUE_HEADER: queue["name"]
-        }
-        result = call(
+    try:
+        call(
             "POST",
-            f"exchanges/{vhost}/{quote(RESTORE_EXCHANGE)}/publish",
-            {
-                "properties": properties,
-                "routing_key": message["routing_key"],
-                "payload": message["payload"],
-                "payload_encoding": message["payload_encoding"],
-            },
+            f"bindings/{vhost}/e/{restore_exchange}/q/{name}",
+            {"routing_key": "", "arguments": {}},
         )
-        if result.get("routed") is not True:
-            raise RestoreError(f"message not routed to queue {queue['name']}.")
+        for message in queue["messages"]:
+            result = call(
+                "POST",
+                f"exchanges/{vhost}/{restore_exchange}/publish",
+                {
+                    "properties": message["properties"],
+                    "routing_key": message["routing_key"],
+                    "payload": message["payload"],
+                    "payload_encoding": message["payload_encoding"],
+                },
+            )
+            if result.get("routed") is not True:
+                raise RestoreError(f"message not routed to queue {queue['name']}.")
+    finally:
+        # Deleting the exchange removes its binding to the queue.
+        call("DELETE", f"exchanges/{vhost}/{restore_exchange}")
     return len(queue["messages"])
 
 

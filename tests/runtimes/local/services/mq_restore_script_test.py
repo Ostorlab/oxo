@@ -1,5 +1,6 @@
 """Unit tests for the script restoring the RabbitMQ state inside the MQ container."""
 
+import copy
 import json
 import pathlib
 import typing
@@ -50,7 +51,7 @@ STATE: dict[str, typing.Any] = {
 def testRestore_always_declaresTopologyAndRoutesMessagesToTheirQueue(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Each message is published through the restore exchange to its own queue with its routing key."""
+    """Each message is published through a fanout exchange bound to its queue only, with its routing key."""
     call = mocker.patch.object(mq_restore_script, "call", return_value={"routed": True})
 
     restored = mq_restore_script.restore(STATE)
@@ -59,25 +60,52 @@ def testRestore_always_declaresTopologyAndRoutesMessagesToTheirQueue(
     calls = [(c.args[0], c.args[1]) for c in call.call_args_list]
     assert calls == [
         ("PUT", "exchanges/%2F/ostorlab_topic_1"),
-        ("PUT", "exchanges/%2F/ostorlab.snapshot.restore"),
         ("PUT", "queues/%2F/nmap"),
         ("POST", "bindings/%2F/e/ostorlab_topic_1/q/nmap"),
-        ("POST", "bindings/%2F/e/ostorlab.snapshot.restore/q/nmap"),
-        ("POST", "exchanges/%2F/ostorlab.snapshot.restore/publish"),
-        ("DELETE", "exchanges/%2F/ostorlab.snapshot.restore"),
+        ("PUT", "exchanges/%2F/ostorlab.snapshot.restore.0"),
+        ("POST", "bindings/%2F/e/ostorlab.snapshot.restore.0/q/nmap"),
+        ("POST", "exchanges/%2F/ostorlab.snapshot.restore.0/publish"),
+        ("DELETE", "exchanges/%2F/ostorlab.snapshot.restore.0"),
     ]
-    publish_body = call.call_args_list[5].args[2]
-    assert publish_body["routing_key"] == "v3.asset.ip.v4"
-    assert publish_body["payload"] == "AG1lc3NhZ2U="
-    assert publish_body["properties"] == {
-        "priority": 1,
-        "headers": {"trace": "1", mq_restore_script.RESTORE_QUEUE_HEADER: "nmap"},
-    }
-    assert call.call_args_list[2].args[2] == {
+    assert call.call_args_list[3].args[2] == {"type": "fanout", "durable": False}
+    assert call.call_args_list[1].args[2] == {
         "durable": True,
         "auto_delete": False,
         "arguments": {"x-max-priority": 3},
     }
+
+
+def testRestore_always_keepsMessageRoutingKeyAndPropertiesUnchanged(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The restored message is the one taken from the queue, no restore header is added."""
+    call = mocker.patch.object(mq_restore_script, "call", return_value={"routed": True})
+
+    mq_restore_script.restore(STATE)
+
+    publish_body = call.call_args_list[5].args[2]
+    assert publish_body == {
+        "properties": {"priority": 1, "headers": {"trace": "1"}},
+        "routing_key": "v3.asset.ip.v4",
+        "payload": "AG1lc3NhZ2U=",
+        "payload_encoding": "base64",
+    }
+
+
+def testRestore_whenQueueHasNoMessages_doesNotDeclareRestoreExchange(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An empty queue only gets its declaration and bindings back."""
+    call = mocker.patch.object(mq_restore_script, "call", return_value={"routed": True})
+    state = copy.deepcopy(STATE)
+    state["queues"][0]["messages"] = []
+
+    restored = mq_restore_script.restore(state)
+
+    assert restored == 0
+    assert all(
+        "ostorlab.snapshot.restore" not in c.args[1] for c in call.call_args_list
+    )
 
 
 def testRestore_whenMessageIsNotRouted_raisesAndDeletesRestoreExchange(
@@ -93,22 +121,28 @@ def testRestore_whenMessageIsNotRouted_raisesAndDeletesRestoreExchange(
 
     assert call.call_args_list[-1].args[:2] == (
         "DELETE",
-        "exchanges/%2F/ostorlab.snapshot.restore",
+        "exchanges/%2F/ostorlab.snapshot.restore.0",
     )
 
 
-def testMain_always_waitsForManagementApiThenRestoresStateFile(
-    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+def testMain_always_restoresStateFileAndReportsRestoredMessages(
+    mocker: plugin.MockerFixture,
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The script restores the state file passed as argument."""
+    """The script restores the state file passed as argument, only the management API transport is mocked."""
     state_file = tmp_path / "state.json"
     state_file.write_text(json.dumps(STATE))
-    wait_ready = mocker.patch.object(mq_restore_script, "wait_ready")
-    restore = mocker.patch.object(mq_restore_script, "restore", return_value=1)
+    call = mocker.patch.object(mq_restore_script, "call", return_value={"routed": True})
 
-    assert mq_restore_script.main(["script", str(state_file)]) == 0
-    wait_ready.assert_called_once()
-    restore.assert_called_once_with(STATE)
+    status = mq_restore_script.main(["script", str(state_file)])
+
+    assert status == 0
+    assert capsys.readouterr().out == "restored 1 queues and 1 messages\n"
+    assert call.call_args_list[0].args[:2] == ("GET", "overview")
+    assert ("POST", "exchanges/%2F/ostorlab.snapshot.restore.0/publish") in [
+        (c.args[0], c.args[1]) for c in call.call_args_list
+    ]
 
 
 def testWaitReady_whenManagementApiStartsLate_retries(
