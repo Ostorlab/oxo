@@ -135,6 +135,7 @@ def testLocalRabbitMQRestore_whenScriptFails_raisesExecError(
 ) -> None:
     """A failing restore is reported to the runtime."""
     lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=1)
+    queues = [{"name": "nmap", "bindings": [], "messages": []}]
 
     with pytest.raises(container_exec.ExecError):
-        lrm.restore(exchanges=[], queues=[])
+        lrm.restore(exchanges=[], queues=queues)
