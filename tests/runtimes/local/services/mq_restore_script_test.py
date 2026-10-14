@@ -51,9 +51,7 @@ STATE: dict[str, typing.Any] = {
 @pytest.fixture(autouse=True)
 def restore_exchange_suffix(mocker: plugin.MockerFixture) -> None:
     """A fixed suffix for the temporary restore exchanges."""
-    mocker.patch.object(
-        mq_restore_script.uuid, "uuid4", return_value=mocker.Mock(hex="run")
-    )
+    mocker.patch("uuid.uuid4", return_value=mocker.Mock(hex="run"))
 
 
 def testRestore_always_declaresTopologyAndRoutesMessagesToTheirQueue(
@@ -153,9 +151,8 @@ def testRestoreQueue_always_usesANewRestoreExchangeName(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Each restore declares its own exchange, never one captured or left by a previous restore."""
-    mocker.patch.object(
-        mq_restore_script.uuid,
-        "uuid4",
+    mocker.patch(
+        "uuid.uuid4",
         side_effect=[mocker.Mock(hex="first"), mocker.Mock(hex="second")],
     )
     call = mocker.patch.object(mq_restore_script, "call", return_value={"routed": True})
