@@ -48,6 +48,14 @@ STATE: dict[str, typing.Any] = {
 }
 
 
+@pytest.fixture(autouse=True)
+def restore_exchange_suffix(mocker: plugin.MockerFixture) -> None:
+    """A fixed suffix for the temporary restore exchanges."""
+    mocker.patch.object(
+        mq_restore_script.uuid, "uuid4", return_value=mocker.Mock(hex="run")
+    )
+
+
 def testRestore_always_declaresTopologyAndRoutesMessagesToTheirQueue(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -62,10 +70,10 @@ def testRestore_always_declaresTopologyAndRoutesMessagesToTheirQueue(
         ("PUT", "exchanges/%2F/ostorlab_topic_1"),
         ("PUT", "queues/%2F/nmap"),
         ("POST", "bindings/%2F/e/ostorlab_topic_1/q/nmap"),
-        ("PUT", "exchanges/%2F/ostorlab.snapshot.restore.0"),
-        ("POST", "bindings/%2F/e/ostorlab.snapshot.restore.0/q/nmap"),
-        ("POST", "exchanges/%2F/ostorlab.snapshot.restore.0/publish"),
-        ("DELETE", "exchanges/%2F/ostorlab.snapshot.restore.0"),
+        ("PUT", "exchanges/%2F/ostorlab.snapshot.restore.run"),
+        ("POST", "bindings/%2F/e/ostorlab.snapshot.restore.run/q/nmap"),
+        ("POST", "exchanges/%2F/ostorlab.snapshot.restore.run/publish"),
+        ("DELETE", "exchanges/%2F/ostorlab.snapshot.restore.run"),
     ]
     assert call.call_args_list[3].args[2] == {"type": "fanout", "durable": False}
     assert call.call_args_list[1].args[2] == {
@@ -121,8 +129,49 @@ def testRestore_whenMessageIsNotRouted_raisesAndDeletesRestoreExchange(
 
     assert call.call_args_list[-1].args[:2] == (
         "DELETE",
-        "exchanges/%2F/ostorlab.snapshot.restore.0",
+        "exchanges/%2F/ostorlab.snapshot.restore.run",
     )
+
+
+def testRestore_whenCleanupFailsAfterRestoreError_raisesRestoreError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A failed delete of the restore exchange does not hide why the restore failed."""
+
+    def call(method: str, path: str, body: typing.Any = None) -> typing.Any:
+        if method == "DELETE":
+            raise ConnectionResetError("closed")
+        return {"routed": False}
+
+    mocker.patch.object(mq_restore_script, "call", side_effect=call)
+
+    with pytest.raises(mq_restore_script.RestoreError):
+        mq_restore_script.restore(STATE)
+
+
+def testRestoreQueue_always_usesANewRestoreExchangeName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Each restore declares its own exchange, never one captured or left by a previous restore."""
+    mocker.patch.object(
+        mq_restore_script.uuid,
+        "uuid4",
+        side_effect=[mocker.Mock(hex="first"), mocker.Mock(hex="second")],
+    )
+    call = mocker.patch.object(mq_restore_script, "call", return_value={"routed": True})
+
+    mq_restore_script.restore(STATE)
+    mq_restore_script.restore(STATE)
+
+    declared = [
+        c.args[1]
+        for c in call.call_args_list
+        if c.args[0] == "PUT" and "ostorlab.snapshot.restore" in c.args[1]
+    ]
+    assert declared == [
+        "exchanges/%2F/ostorlab.snapshot.restore.first",
+        "exchanges/%2F/ostorlab.snapshot.restore.second",
+    ]
 
 
 def testMain_always_restoresStateFileAndReportsRestoredMessages(
@@ -140,7 +189,7 @@ def testMain_always_restoresStateFileAndReportsRestoredMessages(
     assert status == 0
     assert capsys.readouterr().out == "restored 1 queues and 1 messages\n"
     assert call.call_args_list[0].args[:2] == ("GET", "overview")
-    assert ("POST", "exchanges/%2F/ostorlab.snapshot.restore.0/publish") in [
+    assert ("POST", "exchanges/%2F/ostorlab.snapshot.restore.run/publish") in [
         (c.args[0], c.args[1]) for c in call.call_args_list
     ]
 

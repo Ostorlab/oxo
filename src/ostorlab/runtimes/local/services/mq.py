@@ -258,6 +258,8 @@ class LocalRabbitMQ:
         Raises:
             container_exec.ExecError: When the state cannot be restored.
         """
+        if len(exchanges) == 0 and len(queues) == 0:
+            return
         state = {"vhost": self.vhost, "exchanges": exchanges, "queues": queues}
         script = f"{container_exec.FILES_DIRECTORY}/{MQ_RESTORE_SCRIPT_FILE}"
         state_file = f"{container_exec.FILES_DIRECTORY}/{MQ_RESTORE_STATE_FILE}"

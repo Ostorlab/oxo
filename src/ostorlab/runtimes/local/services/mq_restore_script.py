@@ -15,6 +15,7 @@ import json
 import sys
 import time
 import typing
+import uuid
 from urllib import parse
 from urllib import request
 
@@ -23,7 +24,8 @@ CREDENTIALS = base64.b64encode(b"guest:guest").decode()
 REQUEST_TIMEOUT_SECONDS = 60
 READINESS_ATTEMPTS = 60
 READINESS_WAIT_SECONDS = 1
-# Prefix of the temporary exchanges, one per queue, followed by the index of the queue in the state.
+# Prefix of the temporary exchanges, one per queue, followed by a random suffix: the name cannot match an exchange of
+# the snapshot or one left by an interrupted restore.
 RESTORE_EXCHANGE_PREFIX = "ostorlab.snapshot.restore."
 
 
@@ -76,13 +78,10 @@ def restore(state: dict[str, typing.Any]) -> int:
             f"exchanges/{vhost}/{quote(exchange['name'])}",
             {key: value for key, value in exchange.items() if key != "name"},
         )
-    return sum(
-        restore_queue(vhost, index, queue)
-        for index, queue in enumerate(state["queues"])
-    )
+    return sum(restore_queue(vhost, queue) for queue in state["queues"])
 
 
-def restore_queue(vhost: str, index: int, queue: dict[str, typing.Any]) -> int:
+def restore_queue(vhost: str, queue: dict[str, typing.Any]) -> int:
     name = quote(queue["name"])
     call(
         "PUT",
@@ -101,12 +100,9 @@ def restore_queue(vhost: str, index: int, queue: dict[str, typing.Any]) -> int:
         )
     if len(queue["messages"]) == 0:
         return 0
-    restore_exchange = quote(f"{RESTORE_EXCHANGE_PREFIX}{index}")
-    call(
-        "PUT",
-        f"exchanges/{vhost}/{restore_exchange}",
-        {"type": "fanout", "durable": False},
-    )
+    restore_exchange = quote(f"{RESTORE_EXCHANGE_PREFIX}{uuid.uuid4().hex}")
+    restore_exchange_path = f"exchanges/{vhost}/{restore_exchange}"
+    call("PUT", restore_exchange_path, {"type": "fanout", "durable": False})
     try:
         call(
             "POST",
@@ -116,7 +112,7 @@ def restore_queue(vhost: str, index: int, queue: dict[str, typing.Any]) -> int:
         for message in queue["messages"]:
             result = call(
                 "POST",
-                f"exchanges/{vhost}/{restore_exchange}/publish",
+                f"{restore_exchange_path}/publish",
                 {
                     "properties": message["properties"],
                     "routing_key": message["routing_key"],
@@ -126,9 +122,15 @@ def restore_queue(vhost: str, index: int, queue: dict[str, typing.Any]) -> int:
             )
             if result.get("routed") is not True:
                 raise RestoreError(f"message not routed to queue {queue['name']}.")
-    finally:
-        # Deleting the exchange removes its binding to the queue.
-        call("DELETE", f"exchanges/{vhost}/{restore_exchange}")
+    except Exception:
+        # The restore error is the one to report, a failed cleanup must not hide it.
+        try:
+            call("DELETE", restore_exchange_path)
+        except OSError as e:
+            print(f"could not delete {restore_exchange}: {e}", file=sys.stderr)
+        raise
+    # Deleting the exchange removes its binding to the queue.
+    call("DELETE", restore_exchange_path)
     return len(queue["messages"])
 
 

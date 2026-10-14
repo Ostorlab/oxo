@@ -118,6 +118,18 @@ def testLocalRabbitMQRestore_always_runsRestoreScriptInsideMqContainer(
     }
 
 
+def testLocalRabbitMQRestore_whenStateIsEmpty_doesNotRunRestoreScript(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Nothing to restore, the script is not copied nor run."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=0)
+    run = mocker.patch.object(container_exec, "run")
+
+    lrm.restore(exchanges=[], queues=[])
+
+    run.assert_not_called()
+
+
 def testLocalRabbitMQRestore_whenScriptFails_raisesExecError(
     mocker: plugin.MockerFixture,
 ) -> None:
