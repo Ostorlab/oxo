@@ -894,3 +894,57 @@ def testCreateAgentService_always_serviceCreatedWithSwarmDefaultsSetExplicitly(
     assert kwargs["update_config"]["Order"] == agent_runtime.UPDATE_ORDER
     assert kwargs["rollback_config"]["Parallelism"] == agent_runtime.UPDATE_PARALLELISM
     assert kwargs["rollback_config"]["Order"] == agent_runtime.UPDATE_ORDER
+
+
+def testCreateAgentService_always_healthcheckProbesEveryStartIntervalWhileStarting(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The agent service healthcheck is probed every 2 seconds during a 60 seconds start
+    period, then every 30 seconds once the container is healthy."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="agent_name_from_def",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+        open_ports=[],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    create_service_mock = docker_client.services.create
+    agent_settings = definitions.AgentSettings(key="agent/org/name")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+        labels={},
+    )
+
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    healthcheck = create_service_mock.call_args.kwargs["healthcheck"]
+    assert healthcheck["StartPeriod"] == 60 * 1000000000
+    assert healthcheck["StartInterval"] == 2 * 1000000000
+    assert healthcheck["Interval"] == 30 * 1000000000
