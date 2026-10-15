@@ -549,9 +549,8 @@ class LocalRuntime(runtime.Runtime[int | str]):
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
 
-        # The snapshot storage is shared by the scan like the bus and redis, every agent receives it.
-        if self._snapshot_settings is not None:
-            agent.snapshot = self._snapshot_settings
+        # The snapshot storage is shared by the scan like the bus and redis, every agent receives the runtime's one.
+        agent.snapshot = self._snapshot_settings
 
         runtime_agent = agent_runtime.AgentRuntime(
             agent_settings=agent,
