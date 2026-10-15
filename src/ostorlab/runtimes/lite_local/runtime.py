@@ -26,6 +26,7 @@ from ostorlab.runtimes import docker_cleanup
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.lite_local import agent_runtime
 from ostorlab.runtimes.local.models import models
+from ostorlab.utils import retry
 from ostorlab.utils import volumes
 
 NETWORK_PREFIX = "ostorlab_lite_local_network"
@@ -331,14 +332,14 @@ class LiteLocalRuntime(runtime.Runtime[str]):
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_exponential(multiplier=1, max=12),
         # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
         self,
         service: docker_models_services.Service,
         replicas: typing.Optional[int] = None,
-    ) -> bool | tenacity.Future:
+    ) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
         try:
@@ -402,7 +403,7 @@ class LiteLocalRuntime(runtime.Runtime[str]):
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_exponential(multiplier=1, max=20),
         # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def list(

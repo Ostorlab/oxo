@@ -17,6 +17,8 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
+from ostorlab.utils import retry
+
 logger = logging.getLogger(__name__)
 
 MQ_IMAGE = "rabbitmq:3.9-management"
@@ -181,10 +183,10 @@ class LocalRabbitMQ:
         stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
         wait=tenacity.wait_fixed(MQ_READINESS_WAIT_SECONDS),
         # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool | tenacity.Future:
+    def is_service_healthy(self) -> bool:
         """Check the service is running and RabbitMQ accepts client connections.
 
         A running task only means the container started; RabbitMQ needs a few more seconds before its AMQP

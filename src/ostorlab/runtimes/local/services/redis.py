@@ -12,6 +12,8 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
+from ostorlab.utils import retry
+
 logger = logging.getLogger(__name__)
 
 REDIS_IMAGE = "redis:latest"
@@ -116,10 +118,10 @@ class LocalRedis:
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
         # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool | tenacity.Future:
+    def is_service_healthy(self) -> bool:
         logger.info(
             "checking service %s",
             typing.cast(services.Service, self._redis_service).name,
