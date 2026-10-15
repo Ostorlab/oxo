@@ -14,6 +14,7 @@ from ostorlab import exceptions
 from ostorlab.assets import android_apk
 from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local.models import models
 
@@ -797,3 +798,40 @@ def testLocalRuntimeScan_whenAgentNeverHealthy_raisesAgentNotHealthyWithoutInjec
         )
 
     inject_assets_mock.assert_not_called()
+
+
+SNAPSHOT_SETTINGS = definitions.SnapshotSettings(
+    bucket="scan-snapshots", service_account=b"{}"
+)
+
+
+@pytest.mark.parametrize(
+    ("agent_snapshot", "snapshot_settings", "expected_snapshot"),
+    [
+        (None, SNAPSHOT_SETTINGS, SNAPSHOT_SETTINGS),
+        (None, None, None),
+        (SNAPSHOT_SETTINGS, None, None),
+    ],
+)
+def testLocalRuntimeStartAgent_always_givesTheRuntimeSnapshotStorageToTheAgent(
+    mocker: plugin.MockerFixture,
+    agent_snapshot: definitions.SnapshotSettings | None,
+    snapshot_settings: definitions.SnapshotSettings | None,
+    expected_snapshot: definitions.SnapshotSettings | None,
+) -> None:
+    """Every agent of the scan receives the snapshot storage of the runtime, an agent never keeps its own."""
+    mocker.patch.object(local_runtime, "_has_container_image", return_value=True)
+    agent_runtime_class = mocker.patch.object(agent_runtime, "AgentRuntime")
+    runtime = local_runtime.LocalRuntime(
+        scan_id=42, snapshot_settings=snapshot_settings
+    )
+    agent = definitions.AgentSettings(
+        key="agent/ostorlab/nmap", snapshot=agent_snapshot
+    )
+
+    runtime._start_agent(agent)
+
+    assert (
+        agent_runtime_class.call_args.kwargs["agent_settings"].snapshot
+        == expected_snapshot
+    )
