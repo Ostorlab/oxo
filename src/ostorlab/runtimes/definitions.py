@@ -138,6 +138,15 @@ def _process_agent_replicas(replicas: int) -> int:
         return replicas
 
 
+@dataclasses.dataclass(frozen=True)
+class SnapshotSettings:
+    """Storage of the snapshots of paused scans: a bucket and the service account allowed to use it."""
+
+    bucket: str
+    # JSON key of the service account, kept out of the representation as the settings may be logged.
+    service_account: bytes = dataclasses.field(repr=False)
+
+
 @dataclasses.dataclass
 class AgentSettings:
     """Agent instance lists the settings of running instance of an agent."""
@@ -171,6 +180,7 @@ class AgentSettings:
         default_factory=list
     )
     service_name: typing.Optional[str] = None
+    snapshot: typing.Optional[SnapshotSettings] = None
 
     @property
     def container_image(self) -> typing.Optional[str]:
@@ -219,6 +229,14 @@ class AgentSettings:
             accepted_agents=instance.accepted_agents,
             in_selectors=instance.in_selectors,
             service_name=instance.service_name or None,
+            snapshot=(
+                SnapshotSettings(
+                    bucket=instance.snapshot.bucket,
+                    service_account=instance.snapshot.service_account,
+                )
+                if instance.HasField("snapshot") is True
+                else None
+            ),
         )
 
     def to_raw_proto(self) -> bytes:
@@ -295,6 +313,10 @@ class AgentSettings:
 
         if self.service_name is not None:
             instance.service_name = self.service_name
+
+        if self.snapshot is not None:
+            instance.snapshot.bucket = self.snapshot.bucket
+            instance.snapshot.service_account = self.snapshot.service_account
 
         return instance.SerializeToString()
 

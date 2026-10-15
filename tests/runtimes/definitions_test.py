@@ -442,6 +442,46 @@ def testAgentInstanceSettingsToRawProto_whenServiceNameIsNotSet_shouldDeserializ
     assert parsed_proto.service_name is None
 
 
+def testAgentInstanceSettingsToRawProto_whenSnapshotIsSet_shouldSerialize() -> None:
+    """The snapshot storage goes through the settings proto."""
+    instance_settings = definitions.AgentSettings(
+        key="agent/ostorlab/stop_scan",
+        snapshot=definitions.SnapshotSettings(
+            bucket="scan-snapshots", service_account=b'{"type": "service_account"}'
+        ),
+    )
+
+    parsed_proto = definitions.AgentSettings.from_proto(
+        instance_settings.to_raw_proto()
+    )
+
+    assert parsed_proto.snapshot == definitions.SnapshotSettings(
+        bucket="scan-snapshots", service_account=b'{"type": "service_account"}'
+    )
+
+
+def testAgentInstanceSettingsToRawProto_whenSnapshotIsNotSet_shouldDeserializeAsNone() -> (
+    None
+):
+    """Without snapshot storage, the agent settings have no snapshot."""
+    instance_settings = definitions.AgentSettings(key="agent/org/main_agent")
+
+    parsed_proto = definitions.AgentSettings.from_proto(
+        instance_settings.to_raw_proto()
+    )
+
+    assert parsed_proto.snapshot is None
+
+
+def testSnapshotSettingsRepr_always_hidesServiceAccount() -> None:
+    """The service account key never appears in logs."""
+    settings = definitions.SnapshotSettings(
+        bucket="scan-snapshots", service_account=b"secret-key"
+    )
+
+    assert "secret-key" not in repr(settings)
+
+
 def testAgentGroupDefinitionFromApiResponse_whenAgentHasCapsAndSelectors_returnsNativePythonLists() -> (
     None
 ):
