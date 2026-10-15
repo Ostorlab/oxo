@@ -36,9 +36,6 @@ from ostorlab.runtimes import definitions
 logger = logging.getLogger(__name__)
 
 SNAPSHOT_VERSION = 1
-# Redis keys describing the current run of a universe, like when the tracker started counting. A resumed universe
-# starts a new run, so they are left out.
-RUN_KEY_PREFIX = b"ostorlab:run:"
 MANAGEMENT_API_TIMEOUT_SECONDS = 60
 # Upper bound of the messages read from a queue. The broker stops at the first empty read, the bound only guards
 # against reading a queue that is still being filled.
@@ -264,8 +261,6 @@ def _dump_redis(redis_url: str) -> list[RedisKey]:
     keys = []
     with redis.Redis.from_url(redis_url) as client:
         for key in client.scan_iter(count=1000):
-            if key.startswith(RUN_KEY_PREFIX) is True:
-                continue
             value = client.dump(key)
             ttl_ms = client.pttl(key)
             if value is None or ttl_ms == -2:

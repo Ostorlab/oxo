@@ -143,7 +143,7 @@ def testTake_whenUniverseHasMessagesAndKeys_capturesMqAndRedisState(
             }
         ],
     )
-    _mock_redis(mocker, keys=[b"ostorlab:run:start", b"\xffkey"])
+    _mock_redis(mocker, keys=[b"\xffkey"])
 
     universe_snapshot = snapshot.take(MANAGEMENT_URL, "/", "redis://redis_1:6379/")
 
