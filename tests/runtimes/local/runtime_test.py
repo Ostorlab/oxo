@@ -754,15 +754,16 @@ def testLocalRuntimeScan_whenAgentNeverHealthy_raisesAgentNotHealthyWithoutInjec
     """The asset must not be injected while an agent is still starting, or that agent never receives it."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     mocker.patch("docker.from_env", return_value=mocker.Mock())
-    for retried_check in (
-        local_runtime.LocalRuntime._is_service_healthy,
-        local_runtime.LocalRuntime._are_agents_ready,
-    ):
-        mocker.patch.object(
-            retried_check.retry,  # type: ignore[attr-defined]
-            "wait",
-            tenacity.wait_none(),
-        )
+    mocker.patch.object(
+        local_runtime.LocalRuntime._is_service_healthy.retry,  # type: ignore[attr-defined]
+        "wait",
+        tenacity.wait_none(),
+    )
+    mocker.patch.object(
+        local_runtime.LocalRuntime._are_agents_ready.retry,  # type: ignore[attr-defined]
+        "wait",
+        tenacity.wait_none(),
+    )
     runtime = local_runtime.LocalRuntime()
     for name in [
         "_create_network",
