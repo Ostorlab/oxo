@@ -36,7 +36,9 @@ from ostorlab.runtimes import docker_cleanup
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
+from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.models import models
+from ostorlab.runtimes.local.services import container_exec
 from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
@@ -76,6 +78,10 @@ class AgentNotHealthy(exceptions.OstorlabError):
 
 class MissingAgentDefinition(exceptions.OstorlabError):
     """Agent definition is missing."""
+
+
+class SnapshotRestoreError(exceptions.OstorlabError):
+    """The paused scan could not be restored from its snapshot."""
 
 
 def _has_container_image(agent: definitions.AgentSettings) -> bool:
@@ -252,6 +258,13 @@ class LocalRuntime(runtime.Runtime[int | str]):
             console.info("Checking services are healthy")
             self._check_services_healthy()
 
+            universe_snapshot = self._load_snapshot()
+            if universe_snapshot is not None:
+                console.info("Restoring the paused scan")
+                self._restore_snapshot(universe_snapshot)
+                # The restored queues hold the messages of the scan, the assets were injected when it started.
+                assets = None
+
             if self._run_default_agents is True:
                 console.info("Starting pre-agents")
                 self._start_pre_agents()
@@ -312,6 +325,42 @@ class LocalRuntime(runtime.Runtime[int | str]):
             logger.error("Unhandled error during scan execution: %s", e)
             self._handle_scan_error()
             raise
+
+    def _load_snapshot(self) -> typing.Optional[snapshot.UniverseSnapshot]:
+        """Snapshot of the scan when it was paused, None for a scan that was never paused.
+
+        Raises:
+            snapshot.StorageError: When the snapshot bucket cannot be read.
+            SnapshotRestoreError: When the snapshot of the scan is not a valid snapshot.
+        """
+        if self._snapshot_settings is None:
+            return None
+        try:
+            return snapshot.load(
+                self._snapshot_settings, snapshot.object_name(self.name)
+            )
+        except snapshot.InvalidSnapshotError as e:
+            raise SnapshotRestoreError(
+                f"could not read the snapshot of scan {self.name}: {e}"
+            ) from e
+
+    def _restore_snapshot(self, universe_snapshot: snapshot.UniverseSnapshot) -> None:
+        """Restore the MQ and Redis state of a paused scan, once the services are ready and before the agents start.
+
+        Raises:
+            SnapshotRestoreError: When the snapshot cannot be restored.
+        """
+        try:
+            typing.cast(redis.LocalRedis, self._redis_service).restore(
+                universe_snapshot.redis_keys
+            )
+            typing.cast(mq.LocalRabbitMQ, self._mq_service).restore(
+                exchanges=universe_snapshot.exchanges, queues=universe_snapshot.queues
+            )
+        except container_exec.ExecError as e:
+            raise SnapshotRestoreError(
+                f"could not restore the snapshot of scan {self.name}: {e}"
+            ) from e
 
     def _wait_log_streamer(self) -> None:
         """Spawns a (Non-daemon) thread that blocks until all the log steams finish."""
