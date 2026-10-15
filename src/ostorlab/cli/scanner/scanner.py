@@ -33,6 +33,7 @@ else:
 from ostorlab import configuration_manager as config_manager
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.rootcli import rootcli
+from ostorlab.runtimes import definitions
 from ostorlab.scanner import scan_handler
 from ostorlab.utils import ip
 from ostorlab.utils import scanner_state_reporter
@@ -168,6 +169,18 @@ def _start_periodic_persist_state(
     default=1,
     type=click.IntRange(1, None),
 )
+@click.option(
+    "--snapshot-bucket",
+    help="Bucket storing the snapshots of paused scans. Requires --snapshot-service-account; "
+    "without both, the scans of this scanner cannot be paused or resumed.",
+    required=False,
+)
+@click.option(
+    "--snapshot-service-account",
+    help="Path of the JSON key of a service account allowed to read and write objects in the snapshot bucket.",
+    type=click.Path(exists=True, dir_okay=False),
+    required=False,
+)
 @click.pass_context
 def scanner(
     ctx: click.core.Context,
@@ -177,6 +190,8 @@ def scanner(
     log_file: str,
     log_level: str,
     parallel: int,
+    snapshot_bucket: str | None,
+    snapshot_service_account: str | None,
 ) -> None:
     """Oxo scanner enables running custom instances of scanners.
     Scanner polls the API to receive start scan messages.\n
@@ -187,6 +202,9 @@ def scanner(
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
     gcp_logging_credential = ctx.obj.get("gcp_logging_credential")
+    snapshot_settings = _load_snapshot_settings(
+        snapshot_bucket, snapshot_service_account
+    )
     scanner_log_file = log_file if persist_logs is True else None
     scanner_log_level = logging.getLevelNamesMapping()[log_level.upper()]
     _configure_file_logging(scanner_log_file, scanner_log_level)
@@ -214,6 +232,7 @@ def scanner(
                 scanner_log_level,
                 gcp_logging_credential,
                 nb_parallel_scans,
+                snapshot_settings,
             ),
         )
         process.start()
@@ -228,6 +247,23 @@ def scanner(
             process.join()
 
 
+def _load_snapshot_settings(
+    snapshot_bucket: str | None, snapshot_service_account: str | None
+) -> definitions.SnapshotSettings | None:
+    """Snapshot storage of the scanner, None when its scans cannot be paused or resumed."""
+    if snapshot_bucket is None and snapshot_service_account is None:
+        return None
+    if snapshot_bucket is None or snapshot_service_account is None:
+        console.error(
+            "--snapshot-bucket and --snapshot-service-account must be set together."
+        )
+        raise click.exceptions.Exit(2)
+    with open(snapshot_service_account, "rb") as service_account_file:
+        return definitions.SnapshotSettings(
+            bucket=snapshot_bucket, service_account=service_account_file.read()
+        )
+
+
 def start_scanner(
     api_key: str | None,
     scanner_id: str,
@@ -236,6 +272,7 @@ def start_scanner(
     log_level: int = logging.INFO,
     gcp_logging_credential: str | None = None,
     max_concurrent_scans: int = 1,
+    snapshot_settings: definitions.SnapshotSettings | None = None,
 ) -> None:
     """Run the API polling loop reserving and starting scans.
 
@@ -247,6 +284,7 @@ def start_scanner(
         log_level: Logging level used for persisted scanner logs.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
         max_concurrent_scans: Number of universes the host may run at once.
+        snapshot_settings: Snapshot storage of the paused scans, None when scans cannot be paused or resumed.
     """
     _configure_file_logging(log_file, log_level)
     _configure_gcp_logging(gcp_logging_credential, scanner_id)
@@ -266,4 +304,5 @@ def start_scanner(
         state_reporter=state_reporter,
         gcp_logging_credential=gcp_logging_credential,
         max_concurrent_scans=max_concurrent_scans,
+        snapshot_settings=snapshot_settings,
     )
