@@ -443,7 +443,7 @@ def testAgentInstanceSettingsToRawProto_whenServiceNameIsNotSet_shouldDeserializ
 
 
 def testAgentInstanceSettingsToRawProto_whenSnapshotIsSet_shouldSerialize() -> None:
-    """The snapshot storage given to the stop scan agent goes through the settings proto."""
+    """The snapshot storage goes through the settings proto."""
     instance_settings = definitions.AgentSettings(
         key="agent/ostorlab/stop_scan",
         snapshot=definitions.SnapshotSettings(
@@ -463,7 +463,7 @@ def testAgentInstanceSettingsToRawProto_whenSnapshotIsSet_shouldSerialize() -> N
 def testAgentInstanceSettingsToRawProto_whenSnapshotIsNotSet_shouldDeserializeAsNone() -> (
     None
 ):
-    """Agents other than the stop scan agent have no snapshot storage."""
+    """Without snapshot storage, the agent settings have no snapshot."""
     instance_settings = definitions.AgentSettings(key="agent/org/main_agent")
 
     parsed_proto = definitions.AgentSettings.from_proto(

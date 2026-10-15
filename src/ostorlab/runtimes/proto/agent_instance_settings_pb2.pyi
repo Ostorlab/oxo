@@ -76,7 +76,7 @@ class SnapshotSettings(_message.Message):
     BUCKET_FIELD_NUMBER: _builtins.int
     SERVICE_ACCOUNT_FIELD_NUMBER: _builtins.int
     bucket: _builtins.str
-    """Storage of the snapshots of paused scans, given to the agent capturing the universe state on pause.
+    """Storage of the snapshots of paused scans, given to every agent of the scan.
     Bucket name, the snapshot of a universe is stored at gs://<bucket>/<scan_id>.
     """
     service_account: _builtins.bytes
@@ -187,7 +187,7 @@ class AgentInstanceSettings(_message.Message):
 
     @_builtins.property
     def snapshot(self) -> Global___SnapshotSettings:
-        """Snapshot storage, only set on the agent capturing the universe state when its scan is paused."""
+        """Snapshot storage of the scan, set on every agent when the runtime has one."""
 
     def __init__(
         self,

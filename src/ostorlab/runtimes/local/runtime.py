@@ -54,7 +54,6 @@ ASSET_CLOUD_INJECTION_AGENT = "agent/ostorlab/cloud_inject_asset"
 ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
-STOP_SCAN_AGENT = "agent/ostorlab/stop_scan"
 
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
@@ -550,9 +549,8 @@ class LocalRuntime(runtime.Runtime[int | str]):
         if _has_container_image(agent) is False:
             raise AgentNotInstalled(agent.key)
 
-        # The stop scan agent captures the universe state when the scan is paused, it is the only agent given the
-        # snapshot storage.
-        if agent.key == STOP_SCAN_AGENT and self._snapshot_settings is not None:
+        # The snapshot storage is shared by the scan like the bus and redis, every agent receives it.
+        if self._snapshot_settings is not None:
             agent.snapshot = self._snapshot_settings
 
         runtime_agent = agent_runtime.AgentRuntime(

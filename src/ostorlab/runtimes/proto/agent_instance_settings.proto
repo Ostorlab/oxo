@@ -19,7 +19,7 @@ message PortMapping {
 
 
 message SnapshotSettings {
-  // Storage of the snapshots of paused scans, given to the agent capturing the universe state on pause.
+  // Storage of the snapshots of paused scans, given to every agent of the scan.
   // Bucket name, the snapshot of a universe is stored at gs://<bucket>/<scan_id>.
   optional string bucket = 1;
   // JSON key of a service account allowed to read and write objects in the bucket.
@@ -74,6 +74,6 @@ message AgentInstanceSettings {
   // each named instance gets its own queue and receives a full copy of every published message
   // (fan-out) rather than competing with sibling instances on a shared queue.
   optional string service_name = 22;
-  // Snapshot storage, only set on the agent capturing the universe state when its scan is paused.
+  // Snapshot storage of the scan, set on every agent when the runtime has one.
   optional SnapshotSettings snapshot = 23;
 }
