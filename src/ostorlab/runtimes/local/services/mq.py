@@ -17,6 +17,8 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
+from ostorlab.runtimes.local.services import container_exec
+
 logger = logging.getLogger(__name__)
 
 MQ_IMAGE = "rabbitmq:3.9-management"
@@ -203,22 +205,12 @@ class LocalRabbitMQ:
             True if the readiness check succeeds, False otherwise.
         """
         try:
-            running_tasks = [
-                task
-                for task in typing.cast(
-                    typing.Callable[[], list[dict[str, typing.Any]]],
-                    typing.cast(services.Service, self._mq_service).tasks,
-                )()
-                if task["Status"]["State"] == "running"
-            ]
-            if len(running_tasks) != 1:
-                return False
-            container_id = running_tasks[0]["Status"]["ContainerStatus"]["ContainerID"]
-            container = self._docker_client.containers.get(container_id)
-            result = container.exec_run(MQ_READINESS_COMMAND)
-            return result.exit_code == 0
-        except (errors.DockerException, KeyError):
+            container_exec.run(
+                self._docker_client, self._mq_service, MQ_READINESS_COMMAND
+            )
+        except container_exec.ExecError:
             return False
+        return True
 
     @property
     def is_healthy(self) -> bool:
