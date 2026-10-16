@@ -31,6 +31,10 @@ class _MutationRequest(request.APIRequest):
     def data(self) -> dict[str, Any] | None:
         return {"query": self.query}
 
+    @property
+    def is_mutation(self) -> bool:
+        return True
+
 
 _NO_WAIT = tenacity.wait_fixed(0)
 
@@ -234,3 +238,51 @@ def testScannerAPIRunner_whenMutationTransportError_doesNotRetry() -> None:
             pass
 
     assert post_mock.call_count == 1
+
+
+def testScannerAPIRunner_whenScanUpdateStateMutation_doesNotRetry() -> None:
+    """Test execute does not retry the real scan state update mutation."""
+    from ostorlab.apis import scan_update_state
+
+    runner = _make_runner()
+    req = scan_update_state.ScanUpdateStateAPIRequest(scan_id=42, progress="locked")
+
+    post_mock = mock.MagicMock(return_value=httpx.Response(502, content=b"Bad gateway"))
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        try:
+            runner.execute(req)
+            assert False, "Expected ResponseError"
+        except api_runner.ResponseError:
+            pass
+
+    assert post_mock.call_count == 1
+
+
+def testScannerAPIRunner_whenQueryNotPrefixed_stillRetries() -> None:
+    """Test execute retries a query whose text does not start with 'query'."""
+
+    class _CommentQueryRequest(request.APIRequest):
+        @property
+        def query(self) -> str | None:
+            return "# leading comment\n{ test }"
+
+        @property
+        def data(self) -> dict[str, Any] | None:
+            return {"query": self.query}
+
+    runner = _make_runner()
+    req = _CommentQueryRequest()
+
+    post_mock = mock.MagicMock(
+        side_effect=[
+            httpx.Response(502, content=b"Bad gateway"),
+            httpx.Response(200, json={"data": {"test": "ok"}}),
+        ]
+    )
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        result = runner.execute(req)
+
+    assert result == {"data": {"test": "ok"}}
+    assert post_mock.call_count == 2

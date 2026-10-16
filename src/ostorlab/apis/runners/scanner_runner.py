@@ -24,7 +24,7 @@ SCANNER_REQUEST_ATTEMPTS = 3
 SCANNER_RETRY_WAIT = tenacity.wait_exponential(multiplier=1, min=1, max=30)
 
 _TRANSIENT_HTTP_ERRORS = (
-    httpx.ConnectError,
+    httpx.NetworkError,
     httpx.TimeoutException,
     httpx.RemoteProtocolError,
 )
@@ -39,16 +39,6 @@ def _is_transient_server_error(response: httpx.Response) -> bool:
     be briefly unavailable and the same request can succeed on retry.
     """
     return response.is_server_error
-
-
-def _is_mutation(request: api_request.APIRequest) -> bool:
-    """Returns whether the request is a GraphQL mutation.
-
-    Mutations are never retried: a 5xx response does not tell whether the server
-    applied the mutation, so replaying it could apply it twice.
-    """
-    query = request.query
-    return query is not None and query.lstrip().startswith("mutation")
 
 
 def _last_response(retry_state: tenacity.RetryCallState) -> httpx.Response:
@@ -105,7 +95,7 @@ class ScannerAPIRunner(runner.APIRunner):
         """
         headers = {"X-Api-Key": self._api_key}
 
-        if _is_mutation(request):
+        if request.is_mutation:
             response = self._sent_request(request, headers)
         else:
             response = self._sent_request_with_retry(request, headers)
