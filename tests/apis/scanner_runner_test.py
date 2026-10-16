@@ -5,7 +5,6 @@ from unittest import mock
 
 import httpx
 import tenacity
-from pytest_mock import plugin
 
 from ostorlab.apis import request
 from ostorlab.apis import scan_update_state
@@ -110,9 +109,7 @@ def testScannerAPIRunner_whenExecuteSucceeds_returnsData() -> None:
     assert result == {"data": {"test": "ok"}}
 
 
-def testScannerAPIRunner_whenServerErrorThenSuccess_retriesAndReturnsData(
-    mocker: plugin.MockerFixture,
-) -> None:
+def testScannerAPIRunner_whenServerErrorThenSuccess_retriesAndReturnsData() -> None:
     """Test execute retries a transient server error and returns data on the retry."""
     runner = _make_runner()
     req = _TestRequest()
@@ -148,9 +145,7 @@ def testScannerAPIRunner_whenPersistentServerError_raisesResponseError() -> None
     assert post_mock.call_count == scanner_runner.SCANNER_REQUEST_ATTEMPTS
 
 
-def testScannerAPIRunner_whenTransportErrorThenSuccess_retriesAndReturnsData(
-    mocker: plugin.MockerFixture,
-) -> None:
+def testScannerAPIRunner_whenTransportErrorThenSuccess_retriesAndReturnsData() -> None:
     """Test execute retries a transient transport error and returns data on the retry."""
     runner = _make_runner()
     req = _TestRequest()
@@ -169,9 +164,7 @@ def testScannerAPIRunner_whenTransportErrorThenSuccess_retriesAndReturnsData(
     assert post_mock.call_count == 2
 
 
-def testScannerAPIRunner_whenConnectTimeoutThenSuccess_retriesAndReturnsData(
-    mocker: plugin.MockerFixture,
-) -> None:
+def testScannerAPIRunner_whenConnectTimeoutThenSuccess_retriesAndReturnsData() -> None:
     """Test execute retries a connect timeout and returns data on the retry."""
     runner = _make_runner()
     req = _TestRequest()
@@ -190,9 +183,7 @@ def testScannerAPIRunner_whenConnectTimeoutThenSuccess_retriesAndReturnsData(
     assert post_mock.call_count == 2
 
 
-def testScannerAPIRunner_whenProxyErrorThenSuccess_retriesAndReturnsData(
-    mocker: plugin.MockerFixture,
-) -> None:
+def testScannerAPIRunner_whenProxyErrorThenSuccess_retriesAndReturnsData() -> None:
     """Test execute retries a proxy error and returns data on the retry."""
     runner = _make_runner()
     req = _TestRequest()
