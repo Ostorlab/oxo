@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import binascii
 import hashlib
+import json
 import logging
 import os
 import pathlib
@@ -26,6 +27,9 @@ MQ_READINESS_COMMAND = ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
 MQ_READINESS_ATTEMPTS = 60
 MQ_READINESS_WAIT_SECONDS = 1
 MQ_ADVANCED_CONF_PATH = "/etc/rabbitmq/advanced.config"
+MQ_RESTORE_SCRIPT = pathlib.Path(__file__).parent / "mq_restore_script.py"
+MQ_RESTORE_SCRIPT_FILE = "ostorlab_mq_restore.py"
+MQ_RESTORE_STATE_FILE = "ostorlab_mq_restore.json"
 
 
 class LocalRabbitMQ:
@@ -236,3 +240,40 @@ class LocalRabbitMQ:
             )
         except errors.DockerException:
             return False
+
+    def restore(
+        self,
+        exchanges: list[dict[str, typing.Any]],
+        queues: list[dict[str, typing.Any]],
+    ) -> None:
+        """Restore the exchanges, queues, bindings and pending messages of a paused universe, before its agents start.
+
+        The state and `mq_restore_script.py` are copied to the MQ container, the script restores the state with the
+        management API from inside it in a single run.
+
+        Args:
+            exchanges: Exchanges to declare, see `snapshot.UniverseSnapshot`.
+            queues: Queues to declare with their bindings and messages, see `snapshot.UniverseSnapshot`.
+
+        Raises:
+            container_exec.ExecError: When the state cannot be restored.
+        """
+        if len(exchanges) == 0 and len(queues) == 0:
+            return
+        state = {"vhost": self.vhost, "exchanges": exchanges, "queues": queues}
+        script = f"{container_exec.FILES_DIRECTORY}/{MQ_RESTORE_SCRIPT_FILE}"
+        state_file = f"{container_exec.FILES_DIRECTORY}/{MQ_RESTORE_STATE_FILE}"
+        output = container_exec.run(
+            self._docker_client,
+            self._mq_service,
+            [
+                "sh",
+                "-c",
+                f"python3 {script} {state_file}; status=$?; rm -f {script} {state_file}; exit $status",
+            ],
+            files={
+                MQ_RESTORE_SCRIPT_FILE: MQ_RESTORE_SCRIPT.read_bytes(),
+                MQ_RESTORE_STATE_FILE: json.dumps(state).encode(),
+            },
+        )
+        logger.info("%s", output.decode(errors="replace").strip())
