@@ -4,6 +4,7 @@ from typing import Any
 
 import docker
 import pytest
+import tenacity
 from docker.models import networks as networks_model
 from docker.models import services as services_model
 from pytest_mock import plugin
@@ -726,6 +727,77 @@ def testLocalRuntimeScan_always_checksServicesHealthyBeforeStartingAgents(
     assert call_names.index("_check_services_healthy") < call_names.index(
         "_start_agents"
     )
+
+
+def testLocalRuntimeIsServiceHealthy_whenTaskNeverRunning_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A service whose task stays in starting must be reported as not healthy once the retries are exhausted."""
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    mocker.patch.object(
+        local_runtime.LocalRuntime._is_service_healthy.retry,  # type: ignore[attr-defined]
+        "wait",
+        tenacity.wait_none(),
+    )
+    service = mocker.Mock()
+    service.name = "agent_ostorlab_compliance_check"
+    service.attrs = {"Spec": {"Mode": {"Replicated": {"Replicas": 1}}}}
+    service.tasks.return_value = [{"Status": {"State": "starting"}}]
+
+    is_healthy = local_runtime.LocalRuntime()._is_service_healthy(service)
+
+    assert is_healthy is False
+
+
+def testLocalRuntimeScan_whenAgentNeverHealthy_raisesAgentNotHealthyWithoutInjectingAssets(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """The asset must not be injected while an agent is still starting, or that agent never receives it."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    mocker.patch.object(
+        local_runtime.LocalRuntime._is_service_healthy.retry,  # type: ignore[attr-defined]
+        "wait",
+        tenacity.wait_none(),
+    )
+    mocker.patch.object(
+        local_runtime.LocalRuntime._are_agents_ready.retry,  # type: ignore[attr-defined]
+        "wait",
+        tenacity.wait_none(),
+    )
+    runtime = local_runtime.LocalRuntime()
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_pre_agents",
+        "_start_agents",
+        "_start_post_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+        "_handle_scan_error",
+    ]:
+        mocker.patch.object(runtime, name)
+    inject_assets_mock = mocker.patch.object(runtime, "_inject_assets")
+    service = mocker.Mock()
+    service.name = "agent_ostorlab_compliance_check"
+    service.attrs = {
+        "Spec": {
+            "Mode": {"Replicated": {"Replicas": 1}},
+            "TaskTemplate": {"RestartPolicy": {"Condition": "any"}},
+        }
+    }
+    service.tasks.return_value = [{"Status": {"State": "starting"}}]
+    mocker.patch.object(runtime, "_list_agent_services", return_value=[service])
+
+    with pytest.raises(local_runtime.AgentNotHealthy):
+        runtime.scan(
+            title="test",
+            agent_group_definition=definitions.AgentGroupDefinition(agents=[]),
+            assets=[ipv4.IPv4(host="8.8.8.8", mask="32")],
+        )
+
+    inject_assets_mock.assert_not_called()
 
 
 SNAPSHOT_SETTINGS = definitions.SnapshotSettings(

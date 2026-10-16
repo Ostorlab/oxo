@@ -41,6 +41,7 @@ from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
 from ostorlab.utils import definitions as utils_definitions
+from ostorlab.utils import retry
 from ostorlab.utils import risk_rating
 from ostorlab.utils import styles
 from ostorlab.utils import volumes
@@ -489,7 +490,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _are_services_ready(self) -> None:
@@ -506,7 +507,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
 
-    def _check_agents_healthy(self) -> bool | tenacity.Future:
+    def _check_agents_healthy(self) -> bool:
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
@@ -577,14 +578,14 @@ class LocalRuntime(runtime.Runtime[int | str]):
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
         # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
         self,
         service: docker_models_services.Service,
         replicas: typing.Optional[int] = None,
-    ) -> bool | tenacity.Future:
+    ) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
         try:
@@ -742,10 +743,10 @@ class LocalRuntime(runtime.Runtime[int | str]):
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
         # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=retry.return_last_value,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def _are_agents_ready(self, fail_fast: bool = True) -> bool | tenacity.Future:
+    def _are_agents_ready(self, fail_fast: bool = True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
         (once vs long-running)."""
         logger.info("listing services ...")
