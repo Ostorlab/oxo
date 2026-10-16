@@ -123,6 +123,11 @@ class CreateTestCredentialAPIRequest(request.APIRequest):
         self._test_credential = test_credential
 
     @property
+    def is_mutation(self) -> bool:
+        """The test credential creation is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str | None:
         """Defines the query to create test credentials.
 

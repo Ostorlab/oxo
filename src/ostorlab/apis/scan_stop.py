@@ -13,6 +13,11 @@ class ScanStopAPIRequest(request.APIRequest):
         self._scan_id = scan_id
 
     @property
+    def is_mutation(self) -> bool:
+        """The scan stop is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str | None:
         """Defines the mutation to stop a scan.
 

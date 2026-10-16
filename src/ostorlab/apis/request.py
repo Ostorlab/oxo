@@ -31,3 +31,12 @@ class APIRequest(abc.ABC):
     def is_json(self) -> bool:
         """Indicates if the request should be sent as JSON (default False)."""
         return False
+
+    @property
+    def is_mutation(self) -> bool:
+        """Indicates if the request is a GraphQL mutation (default False).
+
+        Mutations must not be retried after a transient failure because the
+        response does not tell whether the server applied them.
+        """
+        return False

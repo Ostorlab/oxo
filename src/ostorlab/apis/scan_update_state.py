@@ -22,6 +22,11 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
         self._scanner_id = scanner_id
 
     @property
+    def is_mutation(self) -> bool:
+        """The scan state update is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str:
         if self._full_details is True:
             return """

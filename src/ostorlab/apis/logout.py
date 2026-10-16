@@ -14,6 +14,11 @@ class LogoutAPIRequest(request.APIRequest):
     """Makes a request to log out the user."""
 
     @property
+    def is_mutation(self) -> bool:
+        """The logout is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str | None:
         return """
             mutation Logout {
