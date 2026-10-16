@@ -8,6 +8,7 @@ import tenacity
 from pytest_mock import plugin
 
 from ostorlab.apis import request
+from ostorlab.apis import scan_update_state
 from ostorlab.apis.runners import runner as api_runner
 from ostorlab.apis.runners import scanner_runner
 
@@ -189,6 +190,27 @@ def testScannerAPIRunner_whenConnectTimeoutThenSuccess_retriesAndReturnsData(
     assert post_mock.call_count == 2
 
 
+def testScannerAPIRunner_whenProxyErrorThenSuccess_retriesAndReturnsData(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test execute retries a proxy error and returns data on the retry."""
+    runner = _make_runner()
+    req = _TestRequest()
+
+    post_mock = mock.MagicMock(
+        side_effect=[
+            httpx.ProxyError("proxy failure"),
+            httpx.Response(200, json={"data": {"test": "ok"}}),
+        ]
+    )
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        result = runner.execute(req)
+
+    assert result == {"data": {"test": "ok"}}
+    assert post_mock.call_count == 2
+
+
 def testScannerAPIRunner_whenPersistentTransportError_raises() -> None:
     """Test execute raises the transport error once the retry budget is exhausted."""
     runner = _make_runner()
@@ -242,8 +264,6 @@ def testScannerAPIRunner_whenMutationTransportError_doesNotRetry() -> None:
 
 def testScannerAPIRunner_whenScanUpdateStateMutation_doesNotRetry() -> None:
     """Test execute does not retry the real scan state update mutation."""
-    from ostorlab.apis import scan_update_state
-
     runner = _make_runner()
     req = scan_update_state.ScanUpdateStateAPIRequest(scan_id=42, progress="locked")
 

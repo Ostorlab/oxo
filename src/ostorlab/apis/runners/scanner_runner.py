@@ -26,6 +26,7 @@ SCANNER_RETRY_WAIT = tenacity.wait_exponential(multiplier=1, min=1, max=30)
 _TRANSIENT_HTTP_ERRORS = (
     httpx.NetworkError,
     httpx.TimeoutException,
+    httpx.ProxyError,
     httpx.RemoteProtocolError,
 )
 
@@ -119,7 +120,7 @@ class ScannerAPIRunner(runner.APIRunner):
     def _sent_request_with_retry(
         self,
         request: api_request.APIRequest,
-        headers: Optional[dict[str, str] | dict[str, Optional[str]]] = None,
+        headers: dict[str, str] | dict[str, str | None] | None = None,
     ) -> httpx.Response:
         """Sends a read-only request, retrying transient server and transport failures."""
         retrying = tenacity.Retrying(
@@ -136,7 +137,7 @@ class ScannerAPIRunner(runner.APIRunner):
     def _sent_request(
         self,
         request: api_request.APIRequest,
-        headers: Optional[dict[str, str] | dict[str, Optional[str]]] = None,
+        headers: dict[str, str] | dict[str, str | None] | None = None,
     ) -> httpx.Response:
         """Sends an API request to the scanner orchestrator."""
         headers = headers or {}
