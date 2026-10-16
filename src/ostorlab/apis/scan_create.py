@@ -18,6 +18,11 @@ class CreateUIPromptsAPIRequest(request.APIRequest):
         self._ui_prompts = ui_prompts
 
     @property
+    def is_mutation(self) -> bool:
+        """The UI prompts creation is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str:
         """Defines the query to create UI prompts.
 
@@ -108,6 +113,11 @@ class CreateMobileScanAPIRequest(request.APIRequest):
         self._sboms: Sequence[BinaryIO] = () if sboms is None else sboms
         self._scan_source = scan_source
         self._ui_automation_rule_ids = ui_automation_rule_ids
+
+    @property
+    def is_mutation(self) -> bool:
+        """The mobile scan creation is a GraphQL mutation."""
+        return True
 
     @property
     def query(self) -> str:
@@ -212,6 +222,11 @@ class CreateWebScanAPIRequest(request.APIRequest):
         self._filtered_url_regexes = filtered_url_regexes
         self._test_credential_ids = test_credential_ids
         self._ui_automation_rule_ids = ui_automation_rule_ids
+
+    @property
+    def is_mutation(self) -> bool:
+        """The web scan creation is a GraphQL mutation."""
+        return True
 
     @property
     def query(self) -> str:

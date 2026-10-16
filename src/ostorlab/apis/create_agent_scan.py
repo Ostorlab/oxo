@@ -19,6 +19,11 @@ class CreateAgentScanAPIRequest(request.APIRequest):
         self._agent_group_id = agent_group_id
 
     @property
+    def is_mutation(self) -> bool:
+        """The agent scan creation is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str | None:
         """Sets the query of the API request.
 

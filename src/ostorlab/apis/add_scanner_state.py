@@ -19,6 +19,11 @@ class AddScannerStateAPIRequest(request.APIRequest):
         self._state = state
 
     @property
+    def is_mutation(self) -> bool:
+        """The scanner state report is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str | None:
         """Defines the query to report the scanner state.
 

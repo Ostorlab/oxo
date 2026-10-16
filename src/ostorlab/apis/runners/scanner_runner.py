@@ -96,7 +96,7 @@ class ScannerAPIRunner(runner.APIRunner):
         """
         headers = {"X-Api-Key": self._api_key}
 
-        if request.is_mutation:
+        if request.is_mutation is True:
             response = self._sent_request(request, headers)
         else:
             response = self._sent_request_with_retry(request, headers)

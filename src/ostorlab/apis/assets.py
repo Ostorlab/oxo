@@ -27,6 +27,11 @@ class CreateAssetAPIRequest(request.APIRequest):
         self._asset = asset
 
     @property
+    def is_mutation(self) -> bool:
+        """The asset creation is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str:
         """Sets the query of the API request.
 

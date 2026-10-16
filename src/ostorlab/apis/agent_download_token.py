@@ -22,6 +22,11 @@ class AgentDownloadTokenAPIRequest(request.APIRequest):
         self._version = version
 
     @property
+    def is_mutation(self) -> bool:
+        """The download-token request is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str:
         """The mutation to generate a download token for an agent image.
 

@@ -20,6 +20,11 @@ class CreateAgentGroupAPIRequest(request.APIRequest):
         self._agents = agents
 
     @property
+    def is_mutation(self) -> bool:
+        """The agent group publish is a GraphQL mutation."""
+        return True
+
+    @property
     def query(self) -> str | None:
         """Sets the query of the API request.
 
