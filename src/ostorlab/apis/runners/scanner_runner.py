@@ -12,13 +12,33 @@ from typing import Optional
 from typing import cast
 
 import httpx
+import tenacity
 
 from ostorlab.apis import request as api_request
 from ostorlab.apis.runners import runner
 
 SCANNER_GRAPHQL_ENDPOINT = "https://scanner.ostorlab.co/orchestrator/graphql"
 
+SCANNER_REQUEST_ATTEMPTS = 3
+
 logger = logging.getLogger(__name__)
+
+
+def _is_transient_server_error(response: httpx.Response) -> bool:
+    """Returns whether the orchestrator answered with a transient server error.
+
+    Server errors (5xx) are temporary: the load balancer or the orchestrator may
+    be briefly unavailable and the same request can succeed on retry.
+    """
+    return response.is_server_error
+
+
+def _last_response(retry_state: tenacity.RetryCallState) -> httpx.Response:
+    """Returns the last orchestrator response once the retry budget is exhausted."""
+    outcome = retry_state.outcome
+    if outcome is None:
+        raise RuntimeError("Retry state has no outcome.")
+    return cast(httpx.Response, outcome.result())
 
 
 class ScannerAPIRunner(runner.APIRunner):
@@ -77,12 +97,18 @@ class ScannerAPIRunner(runner.APIRunner):
         else:
             return data
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(SCANNER_REQUEST_ATTEMPTS),
+        wait=tenacity.wait_exponential(multiplier=1, min=1, max=30),
+        retry=tenacity.retry_if_result(_is_transient_server_error),
+        retry_error_callback=_last_response,
+    )
     def _sent_request(
         self,
         request: api_request.APIRequest,
         headers: Optional[dict[str, str] | dict[str, Optional[str]]] = None,
     ) -> httpx.Response:
-        """Sends an API request to the scanner orchestrator."""
+        """Sends an API request to the scanner orchestrator, retrying transient server errors."""
         headers = headers or {}
 
         with httpx.Client(proxy=self._proxy, verify=self._verify) as client:
