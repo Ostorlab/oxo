@@ -139,3 +139,72 @@ def testLocalRabbitMQRestore_whenScriptFails_raisesExecError(
 
     with pytest.raises(container_exec.ExecError):
         lrm.restore(exchanges=[], queues=queues)
+
+
+def testLocalRabbitMQAttach_whenServiceIsRunning_usesItAndReturnsTrue(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The MQ service started by the process running the scan is found by its name."""
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    lrm = mq.LocalRabbitMQ(name="7", network="test_network")
+
+    assert lrm.attach() is True
+    docker_client.services.get.assert_called_once_with("mq_7")
+    assert lrm.service is docker_client.services.get.return_value
+
+
+def testLocalRabbitMQAttach_whenServiceIsMissing_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A universe without MQ service has nothing to capture."""
+    docker_client = mocker.MagicMock()
+    docker_client.services.get.side_effect = docker.errors.NotFound("no service")
+    mocker.patch("docker.from_env", return_value=docker_client)
+    lrm = mq.LocalRabbitMQ(name="7", network="test_network")
+
+    assert lrm.attach() is False
+    assert lrm.service is None
+
+
+def testLocalRabbitMQCapture_always_runsCaptureScriptInsideMqContainerAndReadsItsState(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The capture script is copied to the MQ container and run there, the state it writes is read back."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=0)
+    run = mocker.patch.object(container_exec, "run", return_value=b"captured 1 queues")
+    state: dict[str, list[str]] = {"exchanges": [], "queues": [], "redis_keys": []}
+    read_file = mocker.patch.object(
+        container_exec, "read_file", return_value=json.dumps(state).encode()
+    )
+
+    captured = lrm.capture(redis_host="redis_test_mq")
+
+    assert captured == state
+    _, service, command = run.call_args.args
+    assert service is lrm.service
+    assert command[:2] == ["sh", "-c"]
+    assert command[2].startswith(
+        f"python3 /tmp/{mq.SNAPSHOT_CAPTURE_SCRIPT_FILE} / redis_test_mq "
+        f"/tmp/{mq.SNAPSHOT_CAPTURE_STATE_FILE}"
+    )
+    assert (
+        run.call_args.kwargs["files"][mq.SNAPSHOT_CAPTURE_SCRIPT_FILE]
+        == mq.SNAPSHOT_CAPTURE_SCRIPT.read_bytes()
+    )
+    assert read_file.call_args.args[1:] == (
+        lrm.service,
+        f"/tmp/{mq.SNAPSHOT_CAPTURE_STATE_FILE}",
+    )
+
+
+def testLocalRabbitMQCapture_whenStateIsNotJson_raisesExecError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A state that cannot be decoded is reported as a failed capture."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=0)
+    mocker.patch.object(container_exec, "run", return_value=b"")
+    mocker.patch.object(container_exec, "read_file", return_value=b"not json")
+
+    with pytest.raises(container_exec.ExecError):
+        lrm.capture(redis_host="redis_test_mq")

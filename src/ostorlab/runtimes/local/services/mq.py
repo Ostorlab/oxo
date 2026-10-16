@@ -30,6 +30,9 @@ MQ_ADVANCED_CONF_PATH = "/etc/rabbitmq/advanced.config"
 MQ_RESTORE_SCRIPT = pathlib.Path(__file__).parent / "mq_restore_script.py"
 MQ_RESTORE_SCRIPT_FILE = "ostorlab_mq_restore.py"
 MQ_RESTORE_STATE_FILE = "ostorlab_mq_restore.json"
+SNAPSHOT_CAPTURE_SCRIPT = pathlib.Path(__file__).parent / "snapshot_capture_script.py"
+SNAPSHOT_CAPTURE_SCRIPT_FILE = "ostorlab_snapshot_capture.py"
+SNAPSHOT_CAPTURE_STATE_FILE = "ostorlab_snapshot_capture.json"
 
 
 class LocalRabbitMQ:
@@ -240,6 +243,58 @@ class LocalRabbitMQ:
             )
         except errors.DockerException:
             return False
+
+    def attach(self) -> bool:
+        """Use the MQ service of the universe started by another oxo process, like the one running a scan to pause.
+
+        Returns:
+            True when the universe has a MQ service, False otherwise.
+        """
+        try:
+            self._mq_service = typing.cast(
+                typing.Callable[[str], services.Service],
+                self._docker_client.services.get,
+            )(self._mq_host)
+        except errors.NotFound:
+            return False
+        return True
+
+    def capture(self, redis_host: str) -> dict[str, typing.Any]:
+        """Capture the MQ and Redis state of the universe, once its agents are stopped.
+
+        `snapshot_capture_script.py` is copied to the MQ container, it reads the state with the management API and
+        the Redis protocol from inside the universe network and writes it to a file read back once it exits.
+
+        Args:
+            redis_host: Network address of the Redis of the universe.
+
+        Returns:
+            The JSON document of the state, see `snapshot.from_document`.
+
+        Raises:
+            container_exec.ExecError: When the state cannot be captured.
+        """
+        script = f"{container_exec.FILES_DIRECTORY}/{SNAPSHOT_CAPTURE_SCRIPT_FILE}"
+        state_file = f"{container_exec.FILES_DIRECTORY}/{SNAPSHOT_CAPTURE_STATE_FILE}"
+        output = container_exec.run(
+            self._docker_client,
+            self._mq_service,
+            [
+                "sh",
+                "-c",
+                f"python3 {script} {self.vhost} {redis_host} {state_file}; status=$?; rm -f {script}; exit $status",
+            ],
+            files={SNAPSHOT_CAPTURE_SCRIPT_FILE: SNAPSHOT_CAPTURE_SCRIPT.read_bytes()},
+        )
+        logger.info("%s", output.decode(errors="replace").strip())
+        # The state file is left in the container, the MQ service is removed with the universe once the scan is paused.
+        state = container_exec.read_file(
+            self._docker_client, self._mq_service, state_file
+        )
+        try:
+            return typing.cast(dict[str, typing.Any], json.loads(state))
+        except ValueError as e:
+            raise container_exec.ExecError(f"invalid captured state: {e}") from e
 
     def restore(
         self,
