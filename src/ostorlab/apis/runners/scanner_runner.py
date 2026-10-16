@@ -25,7 +25,7 @@ SCANNER_RETRY_WAIT = tenacity.wait_exponential(multiplier=1, min=1, max=30)
 
 _TRANSIENT_HTTP_ERRORS = (
     httpx.ConnectError,
-    httpx.ReadTimeout,
+    httpx.TimeoutException,
     httpx.RemoteProtocolError,
 )
 
@@ -80,7 +80,11 @@ class ScannerAPIRunner(runner.APIRunner):
         """
         super().__init__(proxy, verify)
         self._api_key = api_key
-        self._retry_wait = retry_wait or SCANNER_RETRY_WAIT
+        self._retry_wait: WaitBaseT
+        if retry_wait is None:
+            self._retry_wait = SCANNER_RETRY_WAIT
+        else:
+            self._retry_wait = retry_wait
 
     @property
     def endpoint(self) -> str:

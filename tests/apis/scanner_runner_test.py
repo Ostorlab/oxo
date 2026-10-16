@@ -164,6 +164,27 @@ def testScannerAPIRunner_whenTransportErrorThenSuccess_retriesAndReturnsData(
     assert post_mock.call_count == 2
 
 
+def testScannerAPIRunner_whenConnectTimeoutThenSuccess_retriesAndReturnsData(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test execute retries a connect timeout and returns data on the retry."""
+    runner = _make_runner()
+    req = _TestRequest()
+
+    post_mock = mock.MagicMock(
+        side_effect=[
+            httpx.ConnectTimeout("timed out"),
+            httpx.Response(200, json={"data": {"test": "ok"}}),
+        ]
+    )
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        result = runner.execute(req)
+
+    assert result == {"data": {"test": "ok"}}
+    assert post_mock.call_count == 2
+
+
 def testScannerAPIRunner_whenPersistentTransportError_raises() -> None:
     """Test execute raises the transport error once the retry budget is exhausted."""
     runner = _make_runner()
