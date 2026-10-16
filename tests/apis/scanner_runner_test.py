@@ -22,18 +22,23 @@ class _TestRequest(request.APIRequest):
         return {"query": self.query}
 
 
-def _make_runner() -> scanner_runner.ScannerAPIRunner:
-    return scanner_runner.ScannerAPIRunner(
-        api_key="test-key",
-    )
+class _MutationRequest(request.APIRequest):
+    @property
+    def query(self) -> str | None:
+        return "mutation { updateScan }"
+
+    @property
+    def data(self) -> dict[str, Any] | None:
+        return {"query": self.query}
 
 
-def _patch_retry_wait(mocker: plugin.MockerFixture) -> None:
-    """Disable the tenacity backoff so retry tests do not sleep."""
-    mocker.patch(
-        "ostorlab.apis.runners.scanner_runner.ScannerAPIRunner._sent_request.retry.wait",
-        tenacity.wait_fixed(0),
-    )
+_NO_WAIT = tenacity.wait_fixed(0)
+
+
+def _make_runner(
+    retry_wait: tenacity.wait.WaitBaseT = _NO_WAIT,
+) -> scanner_runner.ScannerAPIRunner:
+    return scanner_runner.ScannerAPIRunner(api_key="test-key", retry_wait=retry_wait)
 
 
 def testScannerAPIRunner_whenExecuteSendsRequest_usesApiKeyHeader() -> None:
@@ -54,11 +59,8 @@ def testScannerAPIRunner_whenExecuteSendsRequest_usesApiKeyHeader() -> None:
     assert call_headers["X-Api-Key"] == "test-key"
 
 
-def testScannerAPIRunner_whenExecuteReturnsError_raisesResponseError(
-    mocker: plugin.MockerFixture,
-) -> None:
+def testScannerAPIRunner_whenExecuteReturnsError_raisesResponseError() -> None:
     """Test execute raises ResponseError on non-200 status."""
-    _patch_retry_wait(mocker)
     runner = _make_runner()
     req = _TestRequest()
 
@@ -107,7 +109,6 @@ def testScannerAPIRunner_whenServerErrorThenSuccess_retriesAndReturnsData(
     mocker: plugin.MockerFixture,
 ) -> None:
     """Test execute retries a transient server error and returns data on the retry."""
-    _patch_retry_wait(mocker)
     runner = _make_runner()
     req = _TestRequest()
 
@@ -125,11 +126,8 @@ def testScannerAPIRunner_whenServerErrorThenSuccess_retriesAndReturnsData(
     assert post_mock.call_count == 2
 
 
-def testScannerAPIRunner_whenPersistentServerError_raisesResponseError(
-    mocker: plugin.MockerFixture,
-) -> None:
+def testScannerAPIRunner_whenPersistentServerError_raisesResponseError() -> None:
     """Test execute raises ResponseError once the retry budget is exhausted."""
-    _patch_retry_wait(mocker)
     runner = _make_runner()
     req = _TestRequest()
 
@@ -143,3 +141,75 @@ def testScannerAPIRunner_whenPersistentServerError_raisesResponseError(
             pass
 
     assert post_mock.call_count == scanner_runner.SCANNER_REQUEST_ATTEMPTS
+
+
+def testScannerAPIRunner_whenTransportErrorThenSuccess_retriesAndReturnsData(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test execute retries a transient transport error and returns data on the retry."""
+    runner = _make_runner()
+    req = _TestRequest()
+
+    post_mock = mock.MagicMock(
+        side_effect=[
+            httpx.ConnectError("connection refused"),
+            httpx.Response(200, json={"data": {"test": "ok"}}),
+        ]
+    )
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        result = runner.execute(req)
+
+    assert result == {"data": {"test": "ok"}}
+    assert post_mock.call_count == 2
+
+
+def testScannerAPIRunner_whenPersistentTransportError_raises() -> None:
+    """Test execute raises the transport error once the retry budget is exhausted."""
+    runner = _make_runner()
+    req = _TestRequest()
+
+    post_mock = mock.MagicMock(side_effect=httpx.ConnectError("connection refused"))
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        try:
+            runner.execute(req)
+            assert False, "Expected ConnectError"
+        except httpx.ConnectError:
+            pass
+
+    assert post_mock.call_count == scanner_runner.SCANNER_REQUEST_ATTEMPTS
+
+
+def testScannerAPIRunner_whenMutationReturnsServerError_doesNotRetry() -> None:
+    """Test execute does not retry mutations, whatever the response status."""
+    runner = _make_runner()
+    req = _MutationRequest()
+
+    post_mock = mock.MagicMock(return_value=httpx.Response(502, content=b"Bad gateway"))
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        try:
+            runner.execute(req)
+            assert False, "Expected ResponseError"
+        except api_runner.ResponseError:
+            pass
+
+    assert post_mock.call_count == 1
+
+
+def testScannerAPIRunner_whenMutationTransportError_doesNotRetry() -> None:
+    """Test execute does not retry mutations, whatever the raised exception."""
+    runner = _make_runner()
+    req = _MutationRequest()
+
+    post_mock = mock.MagicMock(side_effect=httpx.ConnectError("connection refused"))
+    with mock.patch.object(httpx, "Client", autospec=True) as mock_client:
+        mock_client.return_value.__enter__.return_value.post = post_mock
+        try:
+            runner.execute(req)
+            assert False, "Expected ConnectError"
+        except httpx.ConnectError:
+            pass
+
+    assert post_mock.call_count == 1
