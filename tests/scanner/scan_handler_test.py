@@ -232,11 +232,40 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
-def testTriggerScanWithRollback_whenSnapshotRestoreFails_reportsScanPaused(
+def _mock_reserved_scan(mocker: plugin.MockerFixture) -> Any:
+    """Make the API return one scan, reserve it, then stop the polling loop on its next sleep."""
+    docker_client = mocker.patch(
+        "ostorlab.scanner.scan_handler.docker.from_env"
+    ).return_value
+    docker_client.services.list.side_effect = [
+        [],
+        [mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}})],
+    ]
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.time.sleep",
+        side_effect=RuntimeError("stop"),
+    )
+    runner = mocker.MagicMock()
+    runner.execute.side_effect = [
+        {"data": {"scans": {"scans": [{"id": 42}]}}},
+        {
+            "data": {
+                "updateScan": {
+                    "success": True,
+                    "scan": {"id": 42, "agentGroup": {"key": "test/group"}},
+                }
+            }
+        },
+        {"data": {"updateScan": {"success": True}}},
+    ]
+    return runner
+
+
+def testHandleMessages_whenSnapshotRestoreFails_reportsScanPaused(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A scan that cannot resume from its snapshot goes back to paused instead of not_started."""
-    runner = mocker.MagicMock()
+    runner = _mock_reserved_scan(mocker)
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         side_effect=local_runtime.SnapshotRestoreError("broken snapshot"),
@@ -248,22 +277,20 @@ def testTriggerScanWithRollback_whenSnapshotRestoreFails_reportsScanPaused(
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
-    result = scan_handler_instance._trigger_scan_with_rollback(
-        runner, {"id": 42, "agentGroup": {"key": "test/group"}}, api_key="test_key"
-    )
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test_key")
 
-    assert result is None
-    assert runner.execute.call_count == 1
+    assert runner.execute.call_count == 3
     variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "paused"
 
 
-def testTriggerScanWithRollback_whenSnapshotBucketCannotBeRead_reportsScanNotStarted(
+def testHandleMessages_whenSnapshotBucketCannotBeRead_reportsScanNotStarted(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A bucket that cannot be read puts the scan back to not_started, another attempt looks its snapshot up again."""
-    runner = mocker.MagicMock()
+    runner = _mock_reserved_scan(mocker)
     mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan",
         side_effect=snapshot.StorageError("bucket unreachable"),
@@ -275,20 +302,20 @@ def testTriggerScanWithRollback_whenSnapshotBucketCannotBeRead_reportsScanNotSta
     )
     scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
 
-    result = scan_handler_instance._trigger_scan_with_rollback(
-        runner, {"id": 42, "agentGroup": {"key": "test/group"}}, api_key="test_key"
-    )
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test_key")
 
-    assert result is None
+    assert runner.execute.call_count == 3
     variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "not_started"
 
 
-def testTriggerScanWithRollback_always_forwardsSnapshotSettingsToStartScan(
+def testHandleMessages_whenSnapshotSettingsProvided_forwardsThemToStartScan(
     mocker: plugin.MockerFixture,
 ) -> None:
     """The scanner snapshot storage reaches the runtime of each scan."""
+    runner = _mock_reserved_scan(mocker)
     settings = definitions.SnapshotSettings(
         bucket="scan-snapshots", service_account=b"{}"
     )
@@ -304,10 +331,10 @@ def testTriggerScanWithRollback_always_forwardsSnapshotSettingsToStartScan(
         state_reporter=state_reporter, snapshot_settings=settings
     )
 
-    scan_handler_instance._trigger_scan_with_rollback(
-        mocker.MagicMock(), {"id": 42}, api_key="test_key"
-    )
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test_key")
 
+    start_scan_mock.assert_called_once()
     assert start_scan_mock.call_args.kwargs["snapshot_settings"] == settings
 
 
