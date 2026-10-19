@@ -3,6 +3,7 @@
 import pathlib
 
 import pytest
+
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import scan_state
 from ostorlab.utils import definitions as utils_definitions
