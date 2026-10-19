@@ -33,6 +33,7 @@ from ostorlab.assets import risk as risk_asset
 from ostorlab.assets import ticket as ticket_asset
 from ostorlab.cli import agent_fetcher
 from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.scanner import callbacks
 
 
@@ -110,7 +111,47 @@ def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
         scan_id="42",
         run_default_agents=False,
         gcp_logging_credential="gcp-credential",
+        snapshot_settings=None,
     )
+
+
+def testStartScan_whenSnapshotSettingsProvided_forwardsThemToLocalRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The runtime restores resumed scans from the scanner snapshot storage."""
+    settings = definitions.SnapshotSettings(
+        bucket="scan-snapshots", service_account=b"{}"
+    )
+    _setup_start_scan_mocks(mocker)
+    select_runtime_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime",
+        return_value=mocker.MagicMock(),
+    )
+
+    callbacks.start_scan(
+        {"id": 42, "agentGroup": {"agents": [{"key": "agent/ostorlab/stop_scan"}]}},
+        mocker.MagicMock(),
+        snapshot_settings=settings,
+    )
+
+    assert select_runtime_mock.call_args.kwargs["snapshot_settings"] == settings
+
+
+def testStartScan_whenSnapshotRestoreFails_raisesSnapshotRestoreError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The restore error reaches the scan handler, which puts the scan back to paused."""
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    runtime_mock.scan.side_effect = local_runtime.SnapshotRestoreError("broken")
+
+    with pytest.raises(local_runtime.SnapshotRestoreError):
+        callbacks.start_scan(
+            {
+                "id": 42,
+                "agentGroup": {"agents": [{"key": "agent/ostorlab/stop_scan"}]},
+            },
+            mocker.MagicMock(),
+        )
 
 
 def testExtractAssets_whenAabAsset_shouldReturnCorrectAsset(
