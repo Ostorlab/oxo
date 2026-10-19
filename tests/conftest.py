@@ -39,6 +39,7 @@ from ostorlab.assets import ipv4 as ipv4_asset
 from ostorlab.assets import ipv6 as ipv6_asset
 from ostorlab.assets import link as link_asset
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.runtimes.local import scan_state
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis as local_redis_service
@@ -55,6 +56,16 @@ def mock_docker_api_version(
         mocker.patch(
             "docker.api.client.APIClient._retrieve_server_version", return_value="1.42"
         )
+
+
+@pytest.fixture(autouse=True)
+def scans_directory(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> pathlib.Path:
+    """Keep the state of the local scans started by the tests out of the user directory."""
+    directory = tmp_path / "scans"
+    mocker.patch.object(scan_state, "SCANS_DIRECTORY", directory)
+    return directory
 
 
 @pytest.fixture(scope="session")

@@ -69,6 +69,7 @@ class ScanProgress(enum.Enum):
     NOT_STARTED = "not_started"
     IN_PROGRESS = "in_progress"
     STOPPED = "stopped"
+    PAUSED = "paused"
     DONE = "done"
     ERROR = "error"
 
