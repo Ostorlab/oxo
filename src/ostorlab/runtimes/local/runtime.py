@@ -36,6 +36,7 @@ from ostorlab.runtimes import docker_cleanup
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import log_streamer
+from ostorlab.runtimes.local import scan_state
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import container_exec
@@ -251,6 +252,8 @@ class LocalRuntime(runtime.Runtime[int | str]):
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title)
+            if self._scan_id is None:
+                self._save_scan_definition(agent_group_definition)
             console.info("Creating network")
             self._create_network()
             console.info("Starting services")
@@ -445,6 +448,8 @@ class LocalRuntime(runtime.Runtime[int | str]):
                     if scan is not None:
                         scan.progress = models.ScanProgress.STOPPED
                         session.commit()
+                        # A stopped scan cannot be resumed, its definition and snapshot are not needed anymore.
+                        scan_state.delete(target_db_id)
                         console.success("Scan stopped successfully.")
                     else:
                         console.info(f"Scan {target_db_id} was not found.")
@@ -453,6 +458,25 @@ class LocalRuntime(runtime.Runtime[int | str]):
                 "Cleanup had errors for scan %s; not updating scan progress to STOPPED.",
                 scan_id,
             )
+
+    def _save_scan_definition(
+        self, agent_group_definition: definitions.AgentGroupDefinition
+    ) -> None:
+        """Store what is needed to start the agents of the scan again, read by `resume` from another oxo process."""
+        try:
+            scan_state.save_definition(
+                self.name,
+                scan_state.ScanDefinition(
+                    agent_group_definition=agent_group_definition,
+                    has_tracker=self.has_tracker,
+                    timeout=self.timeout,
+                    init_sleep=self.init_sleep,
+                    follow=builtins.list(self.follow),
+                ),
+            )
+        except scan_state.Error as e:
+            # The scan runs without its definition, it only cannot be paused.
+            logger.warning("%s", e)
 
     def _create_scan_db(self, title: typing.Optional[str]) -> models.Scan:
         """Persist the scan in the database"""
