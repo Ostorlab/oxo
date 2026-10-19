@@ -174,7 +174,6 @@ def testScannerCommandInvocation_whenSnapshotStorageProvided_forwardsItToProcess
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
     """The snapshot bucket and service account key reach every scanner process."""
-    mocker.patch.object(scanner_cli, "_configure_file_logging")
     create_process_mock = mocker.patch("multiprocessing.Process")
     service_account_file = tmp_path / "service_account.json"
     service_account_file.write_bytes(b'{"type": "service_account"}')
@@ -206,7 +205,6 @@ def testScannerCommandInvocation_whenNoSnapshotStorage_forwardsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A scanner without snapshot storage runs scans that cannot be paused."""
-    mocker.patch.object(scanner_cli, "_configure_file_logging")
     create_process_mock = mocker.patch("multiprocessing.Process")
 
     runner = click_testing.CliRunner()
@@ -223,7 +221,6 @@ def testScannerCommandInvocation_whenOnlySnapshotBucketProvided_exitsWithError(
     mocker: plugin.MockerFixture,
 ) -> None:
     """The snapshot bucket is useless without its service account."""
-    mocker.patch.object(scanner_cli, "_configure_file_logging")
     create_process_mock = mocker.patch("multiprocessing.Process")
 
     runner = click_testing.CliRunner()
