@@ -1,7 +1,7 @@
 """Run a command inside the running container of a service, like the MQ readiness check does.
 
-Used to restore the state of a paused universe in its MQ and Redis services: the runtime may run outside the universe
-network, so it reaches the services through docker instead of their network address.
+Used to capture and restore the state of a paused universe in its MQ and Redis services: the runtime may run outside
+the universe network, so it reaches the services through docker instead of their network address.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import typing
 
 import docker
 from docker import errors
+from docker.models import containers
 from docker.models import services
 
 from ostorlab import exceptions
@@ -50,20 +51,7 @@ def run(
     if service is None:
         raise ExecError("service is not started.")
     try:
-        running_tasks = [
-            task
-            for task in typing.cast(
-                typing.Callable[[], list[dict[str, typing.Any]]], service.tasks
-            )()
-            if task["Status"]["State"] == "running"
-        ]
-        if len(running_tasks) != 1:
-            raise ExecError(
-                f"service {service.name} has {len(running_tasks)} running containers."
-            )
-        container = docker_client.containers.get(
-            running_tasks[0]["Status"]["ContainerStatus"]["ContainerID"]
-        )
+        container = _running_container(docker_client, service)
         if files is not None:
             container.put_archive(FILES_DIRECTORY, _archive(files))
         result = container.exec_run(command)
@@ -76,6 +64,59 @@ def run(
             f"{output.decode(errors='replace')}"
         )
     return output
+
+
+def read_file(
+    docker_client: docker.DockerClient,
+    service: services.Service | None,
+    path: str,
+) -> bytes:
+    """Read a file of the running container of a service, like one written by a command run with `run`.
+
+    Args:
+        docker_client: Docker client.
+        service: The service, with a single replica.
+        path: Absolute path of the file in the container.
+
+    Returns:
+        The content of the file.
+
+    Raises:
+        ExecError: When the service has no running container, or the file cannot be read.
+    """
+    if service is None:
+        raise ExecError("service is not started.")
+    try:
+        container = _running_container(docker_client, service)
+        chunks, _ = container.get_archive(path)
+        with tarfile.open(fileobj=io.BytesIO(b"".join(chunks))) as archive:
+            member = archive.next()
+            content = archive.extractfile(member) if member is not None else None
+            if content is None:
+                raise ExecError(f"{path} is not a file.")
+            return content.read()
+    except (errors.DockerException, KeyError, tarfile.TarError) as e:
+        raise ExecError(f"could not read {path}: {e}") from e
+
+
+def _running_container(
+    docker_client: docker.DockerClient, service: services.Service
+) -> containers.Container:
+    """The running container of a service with a single replica."""
+    running_tasks = [
+        task
+        for task in typing.cast(
+            typing.Callable[[], list[dict[str, typing.Any]]], service.tasks
+        )()
+        if task["Status"]["State"] == "running"
+    ]
+    if len(running_tasks) != 1:
+        raise ExecError(
+            f"service {service.name} has {len(running_tasks)} running containers."
+        )
+    return docker_client.containers.get(
+        running_tasks[0]["Status"]["ContainerStatus"]["ContainerID"]
+    )
 
 
 def _archive(files: dict[str, bytes]) -> bytes:
