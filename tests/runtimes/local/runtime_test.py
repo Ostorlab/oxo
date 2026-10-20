@@ -1,5 +1,6 @@
 """Unittest for local runtime."""
 
+import typing
 from typing import Any
 
 import docker
@@ -15,6 +16,7 @@ from ostorlab.assets import ipv4
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes.local import scan_state
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import container_exec
@@ -987,3 +989,125 @@ def testLocalRuntimeStartAgent_always_givesTheRuntimeSnapshotStorageToTheAgent(
         agent_runtime_class.call_args.kwargs["agent_settings"].snapshot
         == expected_snapshot
     )
+
+
+SCAN_DEFINITION = scan_state.ScanDefinition(
+    agent_group_definition=_agent_group(),
+    has_tracker=True,
+    timeout=600,
+    init_sleep=10,
+    follow=["agent/ostorlab/nmap"],
+)
+
+
+def _scan_progress(scan_id: int) -> models.ScanProgress | None:
+    with models.Database() as session:
+        scan = session.query(models.Scan).get(scan_id)
+        assert scan is not None
+        return typing.cast(models.ScanProgress | None, scan.progress)
+
+
+def testLocalRuntimeScan_whenScanIsLocal_savesItsDefinition(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A local scan keeps its agents and tracker settings, read back to resume it from another oxo process."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime()
+    runtime.timeout = 600
+    runtime.init_sleep = 10
+    runtime.follow = ["agent/ostorlab/nmap"]
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_pre_agents",
+        "_start_agents",
+        "_start_post_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(runtime, "_load_snapshot", return_value=None)
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+
+    created_scan = runtime.scan(
+        title="test", agent_group_definition=_agent_group(), assets=None
+    )
+
+    assert created_scan is not None
+    assert scan_state.load_definition(created_scan.id) == SCAN_DEFINITION
+
+
+def testLocalRuntimeScan_whenAgentsAreNotHealthy_savesNoDefinition(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A scan that fails to start cannot be paused, it leaves no definition on disk."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime()
+    runtime.timeout = 600
+    runtime.init_sleep = 10
+    runtime.follow = ["agent/ostorlab/nmap"]
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_pre_agents",
+        "_start_agents",
+        "_start_post_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(runtime, "_load_snapshot", return_value=None)
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=False)
+    mocker.patch.object(runtime, "_handle_scan_error")
+
+    with pytest.raises(local_runtime.AgentNotHealthy):
+        runtime.scan(title="test", agent_group_definition=_agent_group(), assets=None)
+
+    assert scan_state.load_definition(runtime.name) is None
+
+
+def testLocalRuntimeScan_whenScanIdIsGiven_doesNotSaveADefinition(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A scan run for the scanning engine is paused by the stop scan agent, it keeps no local definition."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime(scan_id="se-7")
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_pre_agents",
+        "_start_agents",
+        "_start_post_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(runtime, "_load_snapshot", return_value=None)
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=True)
+    save_definition = mocker.patch.object(scan_state, "save_definition")
+
+    runtime.scan(title="test", agent_group_definition=_agent_group(), assets=None)
+
+    save_definition.assert_not_called()
+
+
+def testRuntimeScanStop_always_removesTheStateOfTheScan(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A stopped scan cannot be resumed, its definition and snapshot are removed."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create("test", progress=models.ScanProgress.PAUSED)
+    scan_state.save_definition(scan.id, SCAN_DEFINITION)
+    runtime = local_runtime.LocalRuntime()
+    mocker.patch.object(runtime, "cleanup", return_value=True)
+
+    runtime.stop(scan_id=scan.id)
+
+    assert scan_state.load_definition(scan.id) is None
+    assert _scan_progress(scan.id) == models.ScanProgress.STOPPED
