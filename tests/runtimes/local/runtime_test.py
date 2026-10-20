@@ -1194,42 +1194,63 @@ def testLocalRuntimePause_whenScanHasNoDefinition_raisesScanPauseError(
 def testLocalRuntimePause_whenCaptureFails_stopsTheScanAndRaisesScanPauseError(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
-    """The agents are stopped, a scan whose snapshot cannot be taken cannot go on, it is stopped."""
+    """The agents are stopped, a scan whose snapshot cannot be taken cannot go on: it is stopped, even when some of
+    its resources cannot be removed."""
     mocker.patch.object(models, "ENGINE_URL", db_engine_path)
     scan = models.Scan.create("test", progress=models.ScanProgress.IN_PROGRESS)
+    scan_state.save_definition(scan.id, SCAN_DEFINITION)
     runtime, mq_service = _paused_runtime(mocker)
     mocker.patch.object(runtime, "_stop_agents")
     mq_service.capture.side_effect = container_exec.ExecError("capture failed")
-    stop = mocker.patch.object(runtime, "stop")
+    cleanup = mocker.patch.object(runtime, "cleanup", return_value=False)
 
-    with pytest.raises(local_runtime.ScanPauseError):
+    with pytest.raises(local_runtime.ScanPauseError, match="the scan was stopped"):
         runtime.pause(scan_id=scan.id)
 
-    stop.assert_called_once_with(scan_id=scan.id)
-    assert scan_state.snapshot_path(scan.id).exists() is False
+    cleanup.assert_called_once_with(scan_id=scan.id)
+    assert _scan_progress(scan.id) == models.ScanProgress.STOPPED
+    assert scan_state.directory(scan.id).exists() is False
+
+
+def testLocalRuntimePause_whenDockerFailsToFindTheMqService_raisesScanPauseError(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A docker error is reported like the other pause errors, nothing is stopped."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create("test", progress=models.ScanProgress.IN_PROGRESS)
+    runtime, mq_service = _paused_runtime(mocker)
+    mq_service.attach.side_effect = docker.errors.APIError("daemon unreachable")
+    stop_agents = mocker.patch.object(runtime, "_stop_agents")
+
+    with pytest.raises(local_runtime.ScanPauseError, match="MQ service"):
+        runtime.pause(scan_id=scan.id)
+
+    stop_agents.assert_not_called()
+    assert _scan_progress(scan.id) == models.ScanProgress.IN_PROGRESS
 
 
 def testLocalRuntimeStopAgents_always_removesAgentServicesAndWaitsForTheirContainers(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Only the agent services are removed, the MQ and Redis keep running for the capture."""
+    """The agent services are found by their label, an agent with its own service name included, the MQ and Redis
+    keep running for the capture."""
     docker_client = mocker.MagicMock()
     mocker.patch("docker.from_env", return_value=docker_client)
     runtime = local_runtime.LocalRuntime(scan_id="7")
     runtime._docker_client = docker_client
     agent_service = mocker.MagicMock()
-    agent_service.name = "agent_nmap_7"
-    mq_service = mocker.MagicMock()
-    mq_service.name = "mq_7"
-    docker_client.services.list.return_value = [agent_service, mq_service]
+    agent_service.name = "nmap_scanner_7"
+    docker_client.services.list.return_value = [agent_service]
     docker_client.containers.list.return_value = []
 
     runtime._stop_agents()
 
+    docker_client.services.list.assert_called_once_with(
+        filters={"label": ["ostorlab.universe=7", "ostorlab.queue_name"]}
+    )
     agent_service.remove.assert_called_once()
-    mq_service.remove.assert_not_called()
     docker_client.containers.list.assert_called_once_with(
-        all=True, filters={"label": "com.docker.swarm.service.name=agent_nmap_7"}
+        all=True, filters={"label": "com.docker.swarm.service.name=nmap_scanner_7"}
     )
 
 

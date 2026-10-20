@@ -514,7 +514,13 @@ class LocalRuntime(runtime.Runtime[int | str]):
                 f"could not read the definition of scan {scan_id}: {e}"
             ) from e
         mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network)
-        if mq_service.attach() is False:
+        try:
+            has_mq_service = mq_service.attach()
+        except docker_errors.DockerException as e:
+            raise ScanPauseError(
+                f"could not find the MQ service of scan {scan_id}: {e}"
+            ) from e
+        if has_mq_service is False:
             raise ScanPauseError(f"scan {scan_id} has no running MQ service.")
 
         console.info("Stopping the agents")
@@ -534,8 +540,12 @@ class LocalRuntime(runtime.Runtime[int | str]):
             snapshot.Error,
             docker_errors.DockerException,
         ) as e:
-            # The agents may be stopped, the scan cannot go on without its snapshot.
-            self.stop(scan_id=scan_id)
+            # The agents may be stopped, the scan cannot go on without its snapshot: it is stopped even when some of
+            # its resources cannot be removed.
+            if self.cleanup(scan_id=scan_id) is False:
+                logger.warning("could not remove every resource of scan %s", scan_id)
+            self._update_scan_progress(models.ScanProgress.STOPPED)
+            scan_state.delete(scan_id)
             raise ScanPauseError(
                 f"could not take the snapshot of scan {scan_id}, the scan was stopped: {e}"
             ) from e
@@ -632,8 +642,18 @@ class LocalRuntime(runtime.Runtime[int | str]):
 
     def _stop_agents(self) -> None:
         """Remove the agent services of the scan and wait for their containers to exit, the MQ and Redis keep
-        running."""
-        self._remove_services(builtins.list(self._list_agent_services()))
+        running.
+
+        Every agent service has the `ostorlab.queue_name` label, its name may not start with `agent_` when its
+        definition sets a service name.
+        """
+        self._remove_services(
+            typing.cast(docker.DockerClient, self._docker_client).services.list(
+                filters={
+                    "label": [f"ostorlab.universe={self.name}", "ostorlab.queue_name"]
+                }
+            )
+        )
 
     def _stop_services(self) -> None:
         """Remove the remaining services of the scan, like the MQ and Redis, and wait for their containers to exit."""
