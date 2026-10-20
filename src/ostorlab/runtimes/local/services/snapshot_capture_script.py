@@ -92,7 +92,10 @@ class RedisConnection:
             length = int(content)
             if length == -1:
                 return None
-            return self._reader.read(length + 2)[:-2]
+            value = self._reader.read(length + 2)
+            if len(value) != length + 2 or value.endswith(b"\r\n") is False:
+                raise RedisError("truncated reply.")
+            return value[:-2]
         if prefix == b"*":
             length = int(content)
             if length == -1:
@@ -156,10 +159,15 @@ def capture_mq(
 def capture_redis(connection: RedisConnection) -> list[dict[str, typing.Any]]:
     """Every key of the Redis of the universe, serialized by `DUMP`, see `snapshot._dump_redis`."""
     keys = []
+    # SCAN may return a key more than once.
+    seen_keys: set[bytes] = set()
     cursor = b"0"
     while True:
         cursor, batch = connection.command(b"SCAN", cursor, b"COUNT", REDIS_SCAN_COUNT)
         for key in batch:
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
             value = connection.command(b"DUMP", key)
             ttl_ms = connection.command(b"PTTL", key)
             if value is None or ttl_ms == -2:

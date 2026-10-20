@@ -74,6 +74,35 @@ def testSaveDefinition_always_leavesOutTheSettingsSetByTheRuntime() -> None:
     assert loaded_agent.redis_url is None
 
 
+def testSaveDefinition_whenAnArgumentIsNotSerializable_raisesError(
+    scans_directory: pathlib.Path,
+) -> None:
+    """Bytes nested in a list cannot be stored, the error is the one the runtime logs instead of failing the scan."""
+    scan_definition = scan_state.ScanDefinition(
+        agent_group_definition=definitions.AgentGroupDefinition(
+            agents=[
+                definitions.AgentSettings(
+                    key="agent/ostorlab/nmap",
+                    args=[
+                        utils_definitions.Arg(
+                            name="keys", type="array", value=[b"\x00"]
+                        )
+                    ],
+                )
+            ]
+        ),
+        has_tracker=True,
+        timeout=None,
+        init_sleep=None,
+        follow=[],
+    )
+
+    with pytest.raises(scan_state.Error, match="could not serialize"):
+        scan_state.save_definition(7, scan_definition)
+
+    assert (scans_directory / "7").exists() is False
+
+
 def testLoadDefinition_whenScanHasNoDefinition_returnsNone() -> None:
     """A scan started before the definitions were kept has none."""
     assert scan_state.load_definition(7) is None

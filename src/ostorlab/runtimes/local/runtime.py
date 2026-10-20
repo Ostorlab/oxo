@@ -271,8 +271,6 @@ class LocalRuntime(runtime.Runtime[int | str]):
         try:
             if self._scan_db is None:
                 self.prepare_scan(title=title)
-            if self._scan_id is None:
-                self._save_scan_definition(agent_group_definition)
             console.info("Creating network")
             self._create_network()
             console.info("Starting services")
@@ -317,6 +315,9 @@ class LocalRuntime(runtime.Runtime[int | str]):
                     assets=assets,
                     agent_settings=inject_asset_agent_settings,
                 )
+            if self._scan_id is None:
+                # Saved once the scan started: a scan failing to start cannot be paused, it needs no definition.
+                self._save_scan_definition(agent_group_definition)
             console.info("Updating scan status")
             self._update_scan_progress(models.ScanProgress.IN_PROGRESS)
             console.success("Scan created successfully")
