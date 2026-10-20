@@ -3,6 +3,7 @@
 import base64
 import gzip
 import json
+import pathlib
 import typing
 from unittest import mock
 
@@ -300,3 +301,71 @@ def testSave_whenUploadFails_raisesStorageError(
 
     with pytest.raises(snapshot.StorageError):
         snapshot.save(SETTINGS, "7", UNIVERSE_SNAPSHOT)
+
+
+def testSaveFileThenLoadFile_always_returnsTheSavedSnapshot(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A snapshot saved to a local file loads back identical, binary values included, its directory is created."""
+    path = tmp_path / "scans" / "7" / "snapshot.json.gz"
+
+    snapshot.save_file(path, UNIVERSE_SNAPSHOT)
+
+    assert snapshot.load_file(path) == UNIVERSE_SNAPSHOT
+
+
+def testLoadFile_whenFileIsMissing_returnsNone(tmp_path: pathlib.Path) -> None:
+    """A scan that was never paused has no snapshot file."""
+    assert snapshot.load_file(tmp_path / "snapshot.json.gz") is None
+
+
+def testLoadFile_whenFileIsNotASnapshot_raisesInvalidSnapshotError(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A corrupted snapshot file is not mistaken for a scan without snapshot."""
+    path = tmp_path / "snapshot.json.gz"
+    path.write_bytes(b"not a snapshot")
+
+    with pytest.raises(snapshot.InvalidSnapshotError):
+        snapshot.load_file(path)
+
+
+def testSaveFile_whenFileCannotBeWritten_raisesStorageError(
+    tmp_path: pathlib.Path,
+) -> None:
+    """A snapshot that cannot be written is reported, the scan is not paused without it."""
+    path = tmp_path / "file"
+    path.write_bytes(b"")
+
+    with pytest.raises(snapshot.StorageError):
+        snapshot.save_file(path / "snapshot.json.gz", UNIVERSE_SNAPSHOT)
+
+
+def testFromDocument_always_decodesRedisKeysAndValues() -> None:
+    """The captured document has base64 Redis keys and values, the snapshot has their bytes."""
+    document = {
+        "exchanges": UNIVERSE_SNAPSHOT.exchanges,
+        "queues": UNIVERSE_SNAPSHOT.queues,
+        "redis_keys": [
+            {
+                "key": base64.b64encode(redis_key.key).decode(),
+                "ttl_ms": redis_key.ttl_ms,
+                "value": base64.b64encode(redis_key.value).decode(),
+            }
+            for redis_key in UNIVERSE_SNAPSHOT.redis_keys
+        ],
+    }
+
+    assert snapshot.from_document(document) == UNIVERSE_SNAPSHOT
+
+
+def testFromDocument_whenRedisValueIsNotBase64_raisesInvalidSnapshotError() -> None:
+    """A document with an invalid Redis value is not a snapshot."""
+    document = {
+        "exchanges": [],
+        "queues": [],
+        "redis_keys": [{"key": "a2V5", "ttl_ms": 0, "value": "not base64!"}],
+    }
+
+    with pytest.raises(snapshot.InvalidSnapshotError):
+        snapshot.from_document(document)

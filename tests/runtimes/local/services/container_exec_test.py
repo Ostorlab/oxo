@@ -90,3 +90,57 @@ def testRun_whenDockerFails_raisesExecError(mocker: plugin.MockerFixture) -> Non
 
     with pytest.raises(container_exec.ExecError):
         container_exec.run(docker_client, _mock_service(mocker), ["redis-cli"])
+
+
+def _tar(name: str, content: bytes) -> bytes:
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w") as archive:
+        info = tarfile.TarInfo(name=name)
+        info.size = len(content)
+        archive.addfile(info, io.BytesIO(content))
+    return buffer.getvalue()
+
+
+def testReadFile_always_returnsTheContentOfTheFileInTheRunningContainer(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The file is read from the running container of the service."""
+    docker_client = mocker.MagicMock()
+    container = docker_client.containers.get.return_value
+    archive = _tar("state.json", b"\x00content")
+    container.get_archive.return_value = ([archive[:10], archive[10:]], {})
+
+    content = container_exec.read_file(
+        docker_client, _mock_service(mocker), "/tmp/state.json"
+    )
+
+    assert content == b"\x00content"
+    docker_client.containers.get.assert_called_once_with("abc123")
+    container.get_archive.assert_called_once_with("/tmp/state.json")
+
+
+def testReadFile_whenFileIsMissing_raisesExecError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A missing file is reported as an exec error."""
+    docker_client = mocker.MagicMock()
+    docker_client.containers.get.return_value.get_archive.side_effect = errors.NotFound(
+        "no such file"
+    )
+
+    with pytest.raises(container_exec.ExecError):
+        container_exec.read_file(
+            docker_client, _mock_service(mocker), "/tmp/state.json"
+        )
+
+
+def testReadFile_whenServiceHasNoRunningContainer_raisesExecError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A service without running container has no file to read."""
+    with pytest.raises(container_exec.ExecError):
+        container_exec.read_file(
+            mocker.MagicMock(),
+            _mock_service(mocker, task_state="shutdown"),
+            "/tmp/state.json",
+        )

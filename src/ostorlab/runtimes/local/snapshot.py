@@ -9,8 +9,10 @@ The stop scan agent takes the snapshot from inside the universe network once the
 it to `gs://<bucket>/<scan_id>`. When a scan starts, the local runtime looks its snapshot up: a paused scan has one and
 is restored in the new MQ and Redis services before any agent starts, a new scan has none and starts from scratch.
 
-The stored object is a gzip compressed JSON document. It is internal to this module: only `take`, `save` and `load`
-read or write it.
+A scan paused with `oxo scan pause` keeps its snapshot in a local file instead, see `save_file` and `load_file`.
+
+The stored object is a gzip compressed JSON document. It is internal to this module: only `take`, `save`, `load`,
+`save_file` and `load_file` read or write it.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ import dataclasses
 import gzip
 import json
 import logging
+import pathlib
 import typing
 from urllib import parse
 
@@ -179,6 +182,75 @@ def load(
     return _unpack(data)
 
 
+def save_file(path: pathlib.Path, universe_snapshot: UniverseSnapshot) -> None:
+    """Store a snapshot in a local file, replacing the previous one.
+
+    Args:
+        path: Path of the file, its parent directories are created.
+        universe_snapshot: The snapshot to store.
+
+    Raises:
+        StorageError: When the file cannot be written.
+    """
+    data = _pack(universe_snapshot)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    except OSError as e:
+        raise StorageError(f"could not write snapshot {path}: {e}") from e
+    logger.info("saved snapshot %s, %s bytes", path, len(data))
+
+
+def load_file(path: pathlib.Path) -> typing.Optional[UniverseSnapshot]:
+    """Read a snapshot from a local file.
+
+    Args:
+        path: Path of the file.
+
+    Returns:
+        The snapshot, None when the file does not exist.
+
+    Raises:
+        StorageError: When the file cannot be read.
+        InvalidSnapshotError: When the file is not a snapshot.
+    """
+    try:
+        data = path.read_bytes()
+    except FileNotFoundError:
+        return None
+    except OSError as e:
+        raise StorageError(f"could not read snapshot {path}: {e}") from e
+    logger.info("loaded snapshot %s, %s bytes", path, len(data))
+    return _unpack(data)
+
+
+def from_document(document: dict[str, typing.Any]) -> UniverseSnapshot:
+    """Build a snapshot from its JSON document, the one stored without its version, with base64 Redis keys and values.
+
+    Args:
+        document: The `exchanges`, `queues` and `redis_keys` of the snapshot.
+
+    Raises:
+        InvalidSnapshotError: When the document is not a snapshot.
+    """
+    try:
+        return UniverseSnapshot(
+            exchanges=document["exchanges"],
+            queues=document["queues"],
+            redis_keys=[
+                RedisKey(
+                    key=base64.b64decode(redis_key["key"], validate=True),
+                    ttl_ms=int(redis_key["ttl_ms"]),
+                    value=base64.b64decode(redis_key["value"], validate=True),
+                )
+                for redis_key in document["redis_keys"]
+            ],
+        )
+    # An invalid base64 value raises `ValueError`.
+    except (ValueError, KeyError, TypeError) as e:
+        raise InvalidSnapshotError(f"invalid snapshot: {e}") from e
+
+
 def _bucket(settings: definitions.SnapshotSettings) -> typing.Any:
     try:
         credentials = typing.cast(
@@ -290,22 +362,10 @@ def _pack(universe_snapshot: UniverseSnapshot) -> bytes:
 def _unpack(data: bytes) -> UniverseSnapshot:
     try:
         document = json.loads(gzip.decompress(data))
-        if document["version"] != SNAPSHOT_VERSION:
-            raise InvalidSnapshotError(
-                f"unsupported snapshot version {document['version']}."
-            )
-        return UniverseSnapshot(
-            exchanges=document["exchanges"],
-            queues=document["queues"],
-            redis_keys=[
-                RedisKey(
-                    key=base64.b64decode(redis_key["key"], validate=True),
-                    ttl_ms=int(redis_key["ttl_ms"]),
-                    value=base64.b64decode(redis_key["value"], validate=True),
-                )
-                for redis_key in document["redis_keys"]
-            ],
-        )
-    # A corrupted gzip stream raises `OSError` or `EOFError`, an invalid JSON document or base64 value `ValueError`.
+        version = document["version"]
+    # A corrupted gzip stream raises `OSError` or `EOFError`, an invalid JSON document `ValueError`.
     except (OSError, EOFError, ValueError, KeyError, TypeError) as e:
         raise InvalidSnapshotError(f"invalid snapshot: {e}") from e
+    if version != SNAPSHOT_VERSION:
+        raise InvalidSnapshotError(f"unsupported snapshot version {version}.")
+    return from_document(document)
