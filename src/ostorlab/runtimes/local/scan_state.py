@@ -40,8 +40,8 @@ class ScanDefinition:
 
     agent_group_definition: definitions.AgentGroupDefinition
     has_tracker: bool
-    timeout: typing.Optional[int]
-    init_sleep: typing.Optional[int]
+    timeout: int | None
+    init_sleep: int | None
     follow: list[str]
 
 
@@ -59,27 +59,33 @@ def save_definition(scan_id: int | str, scan_definition: ScanDefinition) -> None
     """Store the definition of a scan, replacing the previous one.
 
     Raises:
-        Error: When the definition cannot be written.
+        Error: When the definition cannot be serialized or written.
     """
-    document = {
-        "agents": [
-            _agent_to_dict(agent)
-            for agent in scan_definition.agent_group_definition.agents
-        ],
-        "has_tracker": scan_definition.has_tracker,
-        "timeout": scan_definition.timeout,
-        "init_sleep": scan_definition.init_sleep,
-        "follow": scan_definition.follow,
-    }
+    try:
+        content = json.dumps(
+            {
+                "agents": [
+                    _agent_to_dict(agent)
+                    for agent in scan_definition.agent_group_definition.agents
+                ],
+                "has_tracker": scan_definition.has_tracker,
+                "timeout": scan_definition.timeout,
+                "init_sleep": scan_definition.init_sleep,
+                "follow": scan_definition.follow,
+            }
+        )
+    # An argument value JSON cannot represent, like bytes nested in a list, raises `TypeError` or `ValueError`.
+    except (TypeError, ValueError) as e:
+        raise Error(f"could not serialize the definition of scan {scan_id}: {e}") from e
     path = directory(scan_id) / DEFINITION_FILE
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(document))
+        path.write_text(content)
     except OSError as e:
         raise Error(f"could not write the definition of scan {scan_id}: {e}") from e
 
 
-def load_definition(scan_id: int | str) -> typing.Optional[ScanDefinition]:
+def load_definition(scan_id: int | str) -> ScanDefinition | None:
     """Read the definition of a scan.
 
     Returns:
@@ -201,6 +207,6 @@ def _arg_from_dict(arg: dict[str, typing.Any]) -> utils_definitions.Arg:
 
 
 def _optional_list(
-    values: typing.Optional[typing.Sequence[str]],
-) -> typing.Optional[list[str]]:
+    values: typing.Sequence[str] | None,
+) -> list[str] | None:
     return list(values) if values is not None else None
