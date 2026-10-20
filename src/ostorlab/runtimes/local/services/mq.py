@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import pathlib
+import shlex
 import typing
 import uuid
 
@@ -282,7 +283,8 @@ class LocalRabbitMQ:
             [
                 "sh",
                 "-c",
-                f"python3 {script} {self.vhost} {redis_host} {state_file}; status=$?; rm -f {script}; exit $status",
+                f"python3 {script} {shlex.quote(self.vhost)} {shlex.quote(redis_host)} {state_file}; status=$?; "
+                f"rm -f {script}; exit $status",
             ],
             files={SNAPSHOT_CAPTURE_SCRIPT_FILE: SNAPSHOT_CAPTURE_SCRIPT.read_bytes()},
         )

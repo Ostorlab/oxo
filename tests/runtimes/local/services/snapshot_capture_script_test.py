@@ -138,6 +138,38 @@ def testCaptureRedis_whenKeyExpiresDuringCapture_skipsKey() -> None:
     assert [key["key"] for key in keys] == ["Yg=="]
 
 
+class RepeatingScanRedis(FakeRedis):
+    """Redis connection whose two scan pages both return every key, as SCAN may during a rehash."""
+
+    def command(self, *args: bytes) -> typing.Any:
+        if args[0] == b"SCAN":
+            return [b"1" if args[1] == b"0" else b"0", list(self._keys)]
+        return super().command(*args)
+
+
+def testCaptureRedis_whenScanReturnsAKeyTwice_capturesItOnce() -> None:
+    connection = RepeatingScanRedis({b"a": (b"\x00a", -1)})
+
+    keys = snapshot_capture_script.capture_redis(
+        typing.cast(snapshot_capture_script.RedisConnection, connection)
+    )
+
+    assert [key["key"] for key in keys] == ["YQ=="]
+
+
+def testRedisConnectionCommand_whenBulkReplyIsTruncated_raisesRedisError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A connection closed in the middle of a value fails the capture instead of storing part of the value."""
+    sock = mocker.MagicMock()
+    sock.makefile.return_value = io.BytesIO(b"$10\r\n\x00dum")
+    mocker.patch("socket.create_connection", return_value=sock)
+    connection = snapshot_capture_script.RedisConnection("redis_7")
+
+    with pytest.raises(snapshot_capture_script.RedisError, match="truncated"):
+        connection.command(b"DUMP", b"k")
+
+
 def testRedisConnectionCommand_always_sendsTheCommandAndDecodesTheReply(
     mocker: plugin.MockerFixture,
 ) -> None:
