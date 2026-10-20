@@ -22,6 +22,7 @@ import dataclasses
 import gzip
 import json
 import logging
+import os
 import pathlib
 import typing
 from urllib import parse
@@ -194,8 +195,13 @@ def save_file(path: pathlib.Path, universe_snapshot: UniverseSnapshot) -> None:
     """
     data = _pack(universe_snapshot)
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        # The queued messages may hold secrets, like credentials found by the agents: only the user running oxo can
+        # read them.
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        with os.fdopen(
+            os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "wb"
+        ) as file:
+            file.write(data)
     except OSError as e:
         raise StorageError(f"could not write snapshot {path}: {e}") from e
     logger.info("saved snapshot %s, %s bytes", path, len(data))

@@ -1021,6 +1021,8 @@ def _paused_runtime(
     mocker.patch("docker.from_env", return_value=mocker.MagicMock())
     runtime = local_runtime.LocalRuntime()
     mocker.patch.object(runtime, "_docker_checks")
+    runtime._docker_client = mocker.MagicMock()
+    runtime._docker_client.services.list.return_value = []
     mq_service = mocker.MagicMock()
     mq_service.attach.return_value = True
     mq_service.capture.return_value = CAPTURED_STATE
@@ -1229,6 +1231,70 @@ def testLocalRuntimePause_whenDockerFailsToFindTheMqService_raisesScanPauseError
     assert _scan_progress(scan.id) == models.ScanProgress.IN_PROGRESS
 
 
+def _run_once_agent(
+    mocker: plugin.MockerFixture, task_state: str
+) -> services_model.Service:
+    service = mocker.MagicMock()
+    service.attrs = {"Spec": {"TaskTemplate": {"RestartPolicy": {"Condition": "none"}}}}
+    service.tasks.return_value = [{"Status": {"State": task_state}}]
+    return typing.cast(services_model.Service, service)
+
+
+def testLocalRuntimePause_whenAssetsAreStillInjected_raisesScanPauseError(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """The asset injection stopped before it published every asset would leave them out of the resumed scan."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create("test", progress=models.ScanProgress.IN_PROGRESS)
+    runtime, _ = _paused_runtime(mocker)
+    typing.cast(Any, runtime._docker_client).services.list.return_value = [
+        _run_once_agent(mocker, "running")
+    ]
+    stop_agents = mocker.patch.object(runtime, "_stop_agents")
+
+    with pytest.raises(local_runtime.ScanPauseError, match="injecting its assets"):
+        runtime.pause(scan_id=scan.id)
+
+    stop_agents.assert_not_called()
+    assert _scan_progress(scan.id) == models.ScanProgress.IN_PROGRESS
+
+
+def testLocalRuntimePause_whenAssetsAreInjected_pausesTheScan(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create("test", progress=models.ScanProgress.IN_PROGRESS)
+    runtime, _ = _paused_runtime(mocker)
+    typing.cast(Any, runtime._docker_client).services.list.return_value = [
+        _run_once_agent(mocker, "complete")
+    ]
+    for name in ["_stop_agents", "_stop_services", "cleanup"]:
+        mocker.patch.object(runtime, name)
+
+    runtime.pause(scan_id=scan.id)
+
+    assert _scan_progress(scan.id) == models.ScanProgress.PAUSED
+
+
+def testLocalRuntimePause_whenResourcesCannotBeRemoved_pausesTheScanAndWarns(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """The resources left are removed when the scan resumes, the snapshot is kept."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create("test", progress=models.ScanProgress.IN_PROGRESS)
+    runtime, _ = _paused_runtime(mocker)
+    for name in ["_stop_agents", "_stop_services"]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(runtime, "cleanup", return_value=False)
+    warning = mocker.patch.object(local_runtime.console, "warning")
+
+    runtime.pause(scan_id=scan.id)
+
+    assert _scan_progress(scan.id) == models.ScanProgress.PAUSED
+    assert "removed when it resumes" in warning.call_args.args[0]
+    assert scan_state.snapshot_path(scan.id).exists() is True
+
+
 def testLocalRuntimeStopAgents_always_removesAgentServicesAndWaitsForTheirContainers(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -1307,6 +1373,7 @@ def testLocalRuntimeResume_whenScanIsPaused_startsItFromItsSnapshotWithItsDefini
     assert runtime.follow == ["agent/ostorlab/nmap"]
     assert _scan_progress(paused_scan.id) == models.ScanProgress.IN_PROGRESS
     assert scan_state.snapshot_path(paused_scan.id).exists() is False
+    assert runtime._paused_snapshot is None
     cleanup.assert_called_once_with(scan_id=paused_scan.id)
 
 

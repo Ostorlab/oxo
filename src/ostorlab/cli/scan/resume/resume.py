@@ -4,6 +4,7 @@ Example of usage:
     - oxo scan resume 4"""
 
 import click
+from docker import errors as docker_errors
 
 from ostorlab import exceptions
 from ostorlab.cli import console as cli_console
@@ -31,7 +32,8 @@ def resume(ctx: click.core.Context, scan_id: int) -> None:
     except local_runtime.ScanResumeError as e:
         console.error(f"Could not resume scan {scan_id}: {e}")
         raise click.exceptions.Exit(1) from e
-    except exceptions.OstorlabError as e:
+    # The failed start re-raises the error of the step that failed, like a docker error creating the network.
+    except (exceptions.OstorlabError, docker_errors.DockerException) as e:
         console.error(
             f"An error was encountered while resuming scan {scan_id}, it is still paused: {e}"
         )

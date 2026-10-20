@@ -1,6 +1,7 @@
 """Tests for scan resume command."""
 
 from click.testing import CliRunner
+from docker import errors as docker_errors
 from pytest_mock import plugin
 
 from ostorlab.cli import rootcli
@@ -47,6 +48,23 @@ def testOstorlabScanResumeCLI_whenStartFails_reportsTheScanIsStillPaused(
         local_runtime.LocalRuntime,
         "resume",
         side_effect=local_runtime.SnapshotRestoreError("broken"),
+    )
+
+    result = CliRunner().invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "resume", "4"]
+    )
+
+    assert result.exit_code == 1
+    assert "it is still paused" in result.output
+
+
+def testOstorlabScanResumeCLI_whenDockerFailsToStartTheScan_reportsTheScanIsStillPaused(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch.object(
+        local_runtime.LocalRuntime,
+        "resume",
+        side_effect=docker_errors.APIError("network create failed"),
     )
 
     result = CliRunner().invoke(

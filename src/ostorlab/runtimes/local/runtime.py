@@ -102,6 +102,10 @@ class ServicesNotStopped(exceptions.OstorlabError):
     """The containers of the removed services are still running."""
 
 
+# States of a swarm task that is not running and will not run, see the task states of the docker documentation.
+DONE_TASK_STATES = {"complete", "failed", "shutdown", "rejected", "orphaned", "remove"}
+
+
 def _has_container_image(agent: definitions.AgentSettings) -> bool:
     """Check if container image is available"""
     return agent.container_image is not None
@@ -522,6 +526,12 @@ class LocalRuntime(runtime.Runtime[int | str]):
             ) from e
         if has_mq_service is False:
             raise ScanPauseError(f"scan {scan_id} has no running MQ service.")
+        # A run-once agent, like the asset injection, would be stopped before it published all its messages, the
+        # resumed scan would never receive them.
+        if self._is_run_once_agent_running() is True:
+            raise ScanPauseError(
+                f"scan {scan_id} is still injecting its assets, pause it again once they are injected."
+            )
 
         console.info("Stopping the agents")
         try:
@@ -557,7 +567,10 @@ class LocalRuntime(runtime.Runtime[int | str]):
             self._stop_services()
         except (ServicesNotStopped, docker_errors.DockerException) as e:
             logger.warning("could not stop the services of scan %s: %s", scan_id, e)
-        self.cleanup(scan_id=scan_id)
+        if self.cleanup(scan_id=scan_id) is False:
+            console.warning(
+                f"Some resources of scan {scan_id} could not be removed, they are removed when it resumes."
+            )
         self._update_scan_progress(models.ScanProgress.PAUSED)
         console.success("Scan paused successfully.")
 
@@ -612,6 +625,9 @@ class LocalRuntime(runtime.Runtime[int | str]):
             # resumed again.
             self._update_scan_progress(models.ScanProgress.PAUSED)
             raise
+        finally:
+            # The snapshot is restored once, another scan of this runtime does not start from it.
+            self._paused_snapshot = None
         scan_state.delete_snapshot(scan_id)
         return resumed_scan
 
@@ -647,12 +663,24 @@ class LocalRuntime(runtime.Runtime[int | str]):
         Every agent service has the `ostorlab.queue_name` label, its name may not start with `agent_` when its
         definition sets a service name.
         """
-        self._remove_services(
-            typing.cast(docker.DockerClient, self._docker_client).services.list(
-                filters={
-                    "label": [f"ostorlab.universe={self.name}", "ostorlab.queue_name"]
-                }
-            )
+        self._remove_services(self._list_labelled_agent_services())
+
+    def _list_labelled_agent_services(
+        self,
+    ) -> builtins.list[docker_models_services.Service]:
+        return typing.cast(docker.DockerClient, self._docker_client).services.list(
+            filters={"label": [f"ostorlab.universe={self.name}", "ostorlab.queue_name"]}
+        )
+
+    def _is_run_once_agent_running(self) -> bool:
+        """Whether a run-once agent of the scan, like the asset injection, has a task that did not finish."""
+        return any(
+            task["Status"]["State"] not in DONE_TASK_STATES
+            for service in self._list_labelled_agent_services()
+            if _is_service_type_run(service) is True
+            for task in typing.cast(
+                typing.Callable[[], builtins.list[dict[str, typing.Any]]], service.tasks
+            )()
         )
 
     def _stop_services(self) -> None:

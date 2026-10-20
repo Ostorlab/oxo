@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 from pytest_mock import plugin
 
+from ostorlab import exceptions
 from ostorlab.cli import rootcli
 from ostorlab.runtimes.local import runtime as local_runtime
 
@@ -37,6 +38,24 @@ def testOstorlabScanPauseCLI_whenPauseFails_showsTheErrorAndExits(
 
     assert result.exit_code == 1
     assert "scan 4 is not running." in result.output
+
+
+def testOstorlabScanPauseCLI_whenDockerChecksFail_showsTheErrorAndExits(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An error of the docker checks, like a swarm that cannot be initialized, is reported without a traceback."""
+    mocker.patch.object(
+        local_runtime.LocalRuntime,
+        "pause",
+        side_effect=exceptions.OstorlabError("could not initialize swarm."),
+    )
+
+    result = CliRunner().invoke(
+        rootcli.rootcli, ["scan", "--runtime=local", "pause", "4"]
+    )
+
+    assert result.exit_code == 1
+    assert "could not initialize swarm." in result.output
 
 
 def testOstorlabScanPauseCLI_whenRuntimeIsNotLocal_raisesUsageError() -> None:

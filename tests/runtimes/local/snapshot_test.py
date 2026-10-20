@@ -4,6 +4,7 @@ import base64
 import gzip
 import json
 import pathlib
+import stat
 import typing
 from unittest import mock
 
@@ -312,6 +313,18 @@ def testSaveFileThenLoadFile_always_returnsTheSavedSnapshot(
     snapshot.save_file(path, UNIVERSE_SNAPSHOT)
 
     assert snapshot.load_file(path) == UNIVERSE_SNAPSHOT
+
+
+def testSaveFile_always_writesTheSnapshotReadableByItsOwnerOnly(
+    tmp_path: pathlib.Path,
+) -> None:
+    """The queued messages may hold secrets, the other users cannot read them."""
+    path = tmp_path / "scans" / "7" / "snapshot.json.gz"
+
+    snapshot.save_file(path, UNIVERSE_SNAPSHOT)
+
+    assert stat.S_IMODE(path.parent.stat().st_mode) == 0o700
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
 
 
 def testLoadFile_whenFileIsMissing_returnsNone(tmp_path: pathlib.Path) -> None:

@@ -5,6 +5,7 @@ Example of usage:
 
 import click
 
+from ostorlab import exceptions
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.scan import scan
 from ostorlab.runtimes.local import runtime as local_runtime
@@ -29,4 +30,7 @@ def pause(ctx: click.core.Context, scan_id: int) -> None:
         runtime_instance.pause(scan_id=scan_id)
     except local_runtime.ScanPauseError as e:
         console.error(f"Could not pause scan {scan_id}: {e}")
+        raise click.exceptions.Exit(1) from e
+    except exceptions.OstorlabError as e:
+        console.error(f"An error was encountered while pausing scan {scan_id}: {e}")
         raise click.exceptions.Exit(1) from e
