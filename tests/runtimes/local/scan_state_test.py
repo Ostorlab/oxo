@@ -2,6 +2,7 @@
 
 import pathlib
 import stat
+import sys
 
 import pytest
 
@@ -51,6 +52,7 @@ def testSaveDefinitionThenLoadDefinition_always_returnsTheSavedDefinition() -> N
     assert scan_state.load_definition(7) == SCAN_DEFINITION
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no POSIX file modes")
 def testSaveDefinition_always_writesTheDefinitionReadableByItsOwnerOnly() -> None:
     """The agent arguments may hold secrets, the other users cannot read them."""
     scan_state.save_definition(1, SCAN_DEFINITION)
