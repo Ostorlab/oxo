@@ -1,6 +1,7 @@
 """Unit tests for the state of the local scans kept on disk."""
 
 import pathlib
+import stat
 
 import pytest
 
@@ -48,6 +49,19 @@ def testSaveDefinitionThenLoadDefinition_always_returnsTheSavedDefinition() -> N
     scan_state.save_definition(7, SCAN_DEFINITION)
 
     assert scan_state.load_definition(7) == SCAN_DEFINITION
+
+
+def testSaveDefinition_always_writesTheDefinitionReadableByItsOwnerOnly() -> None:
+    """The agent arguments may hold secrets, the other users cannot read them."""
+    scan_state.save_definition(1, SCAN_DEFINITION)
+
+    assert stat.S_IMODE(scan_state.directory(1).stat().st_mode) == 0o700
+    assert (
+        stat.S_IMODE(
+            (scan_state.directory(1) / scan_state.DEFINITION_FILE).stat().st_mode
+        )
+        == 0o600
+    )
 
 
 def testSaveDefinition_always_leavesOutTheSettingsSetByTheRuntime() -> None:
