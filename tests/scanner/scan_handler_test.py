@@ -1,11 +1,15 @@
 """Unit tests for scan handler module."""
 
+import json
 from typing import Any
 
 import docker
 import pytest
 from pytest_mock import plugin
 
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes.local import snapshot
 from ostorlab.scanner import scan_handler
 from ostorlab.utils import scanner_state_reporter
 
@@ -228,6 +232,112 @@ def testTriggerScanWithRollback_whenStartScanFails_rollsBack(
     assert call_arg.__class__.__name__ == "ScanUpdateStateAPIRequest"
 
 
+def _mock_reserved_scan(mocker: plugin.MockerFixture) -> Any:
+    """Make the API return one scan, reserve it, then stop the polling loop on its next sleep."""
+    docker_client = mocker.patch(
+        "ostorlab.scanner.scan_handler.docker.from_env"
+    ).return_value
+    docker_client.services.list.side_effect = [
+        [],
+        [mocker.MagicMock(attrs={"Spec": {"Labels": {"ostorlab.universe": "42"}}})],
+    ]
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.time.sleep",
+        side_effect=RuntimeError("stop"),
+    )
+    runner = mocker.MagicMock()
+    runner.execute.side_effect = [
+        {"data": {"scans": {"scans": [{"id": 42}]}}},
+        {
+            "data": {
+                "updateScan": {
+                    "success": True,
+                    "scan": {"id": 42, "agentGroup": {"key": "test/group"}},
+                }
+            }
+        },
+        {"data": {"updateScan": {"success": True}}},
+    ]
+    return runner
+
+
+def testHandleMessages_whenSnapshotRestoreFails_reportsScanPaused(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A scan that cannot resume from its snapshot goes back to paused instead of not_started."""
+    runner = _mock_reserved_scan(mocker)
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan",
+        side_effect=local_runtime.SnapshotRestoreError("broken snapshot"),
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test_key")
+
+    assert runner.execute.call_count == 3
+    variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
+    assert variables["scanId"] == 42
+    assert variables["progress"] == "paused"
+
+
+def testHandleMessages_whenSnapshotBucketCannotBeRead_reportsScanNotStarted(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A bucket that cannot be read puts the scan back to not_started, another attempt looks its snapshot up again."""
+    runner = _mock_reserved_scan(mocker)
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan",
+        side_effect=snapshot.StorageError("bucket unreachable"),
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(state_reporter=state_reporter)
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test_key")
+
+    assert runner.execute.call_count == 3
+    variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
+    assert variables["scanId"] == 42
+    assert variables["progress"] == "not_started"
+
+
+def testHandleMessages_whenSnapshotSettingsProvided_forwardsThemToStartScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The scanner snapshot storage reaches the runtime of each scan."""
+    runner = _mock_reserved_scan(mocker)
+    settings = definitions.SnapshotSettings(
+        bucket="scan-snapshots", service_account=b"{}"
+    )
+    start_scan_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="42"
+    )
+    state_reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="GGBD-DJJD-DKJK-DJDD",
+        hostname="test-host",
+        ip="192.168.0.1",
+    )
+    scan_handler_instance = scan_handler.ScanHandler(
+        state_reporter=state_reporter, snapshot_settings=settings
+    )
+
+    with pytest.raises(RuntimeError, match="stop"):
+        scan_handler_instance.handle_messages(runner, api_key="test_key")
+
+    start_scan_mock.assert_called_once()
+    assert start_scan_mock.call_args.kwargs["snapshot_settings"] == settings
+
+
 def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
     mocker: plugin.MockerFixture,
 ) -> None:
@@ -276,6 +386,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         state_reporter=state_reporter,
         api_key="test-key",
         gcp_logging_credential="gcp-credential",
+        snapshot_settings=None,
     )
 
 

@@ -18,6 +18,8 @@ from ostorlab.apis import scans_discover
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.apis.runners import scanner_runner
+from ostorlab.runtimes import definitions
+from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.scanner import callbacks
 from ostorlab.scanner import resource_checker
 from ostorlab.scanner import scanner_conf
@@ -39,8 +41,10 @@ class ScanHandler:
         | None = None,
         gcp_logging_credential: str | None = None,
         max_concurrent_scans: int = 1,
+        snapshot_settings: definitions.SnapshotSettings | None = None,
     ) -> None:
         self._state_reporter = state_reporter
+        self._snapshot_settings = snapshot_settings
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
         self._max_concurrent_scans = max_concurrent_scans
@@ -217,6 +221,7 @@ class ScanHandler:
                 state_reporter=self._state_reporter,
                 api_key=api_key,
                 gcp_logging_credential=self._gcp_logging_credential,
+                snapshot_settings=self._snapshot_settings,
             )
             if started_scan_id is None:
                 logger.warning(
@@ -231,6 +236,16 @@ class ScanHandler:
                 started_scan_id,
             )
             return started_scan_id
+        except local_runtime.SnapshotRestoreError:
+            # The snapshot is kept in the bucket: the scan goes back to paused, the user can resume it again.
+            logger.exception(
+                "Could not resume scan %s from its snapshot, it stays paused.",
+                scan_id_val,
+            )
+            self._rollback_scan_state(
+                runner=runner, scan_id_val=scan_id_val, progress="paused"
+            )
+            return None
         except Exception:
             logger.exception(
                 "Failed to start scan %s locally. Initiating rollback...",
@@ -240,17 +255,21 @@ class ScanHandler:
             return None
 
     def _rollback_scan_state(
-        self, runner: scanner_runner.ScannerAPIRunner, scan_id_val: Any
+        self,
+        runner: scanner_runner.ScannerAPIRunner,
+        scan_id_val: Any,
+        progress: str = "not_started",
     ) -> None:
-        """Reverts a scan's progress to not_started if local execution fails."""
+        """Reverts a scan's progress if local execution fails: not_started, or paused for a scan resuming from a
+        snapshot."""
         try:
             runner.execute(
                 request=scan_update_state.ScanUpdateStateAPIRequest(
-                    scan_id=scan_id_val, progress="not_started"
+                    scan_id=scan_id_val, progress=progress
                 )
             )
             logger.info(
-                "Successfully rolled back scan %s state to 'not_started'.", scan_id_val
+                "Successfully rolled back scan %s state to '%s'.", scan_id_val, progress
             )
         except Exception:
             logger.exception("FATAL: Failed to rollback scan %s", scan_id_val)
@@ -290,6 +309,7 @@ def start_scan_loop(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     gcp_logging_credential: str | None = None,
     max_concurrent_scans: int = 1,
+    snapshot_settings: definitions.SnapshotSettings | None = None,
 ) -> None:
     """Fetching the scanner configuration and starting the API polling loop.
 
@@ -299,6 +319,7 @@ def start_scan_loop(
         state_reporter: instance responsible for reporting the scanner state.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
         max_concurrent_scans: Number of universes the host may run at once.
+        snapshot_settings: Snapshot storage of the paused scans, None when scans cannot be paused or resumed.
     """
     logger.info("Fetching scanner configuration.")
     runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
@@ -319,6 +340,7 @@ def start_scan_loop(
         scan_resource_requirements=config.scan_resource_requirements,
         gcp_logging_credential=gcp_logging_credential,
         max_concurrent_scans=max_concurrent_scans,
+        snapshot_settings=snapshot_settings,
     )
     try:
         scan_handler.handle_messages(runner=s_runner, api_key=api_key)

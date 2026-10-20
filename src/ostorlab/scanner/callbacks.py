@@ -544,14 +544,18 @@ def start_scan(
     state_reporter: scanner_state_reporter.ScannerStateReporter,
     api_key: str | None = None,
     gcp_logging_credential: str | None = None,
+    snapshot_settings: definitions.SnapshotSettings | None = None,
 ) -> Optional[int | str]:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
+
+    A paused scan resumes from its snapshot, the runtime raises `SnapshotRestoreError` when it cannot be restored.
 
     Args:
         request: API response data for the scan.
         state_reporter: State reporter instance responsible for sending current state of the scanner.
         api_key: Optional api key to fetch short-lived download tokens for agent images.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
+        snapshot_settings: Snapshot storage: paused scans resume from it and the stop scan agent saves to it.
     """
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
@@ -576,6 +580,7 @@ def start_scan(
                 scan_id=str(scan_id),
                 run_default_agents=False,
                 gcp_logging_credential=gcp_logging_credential,
+                snapshot_settings=snapshot_settings,
             ),
         )
 
