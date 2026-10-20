@@ -120,12 +120,15 @@ def scan(
     tracing_collector_url: str | None = None,
     mq_exposed_ports: str | None = None,
 ) -> None:
-    """Use scan [subcommand] to list, start or stop a scan.\n
+    """Use scan [subcommand] to list, start, pause, resume or stop a scan.\n
     Examples:\n
         - To show list of scans:\n
         oxo scan list\n
         - To stop a scan:\n
         oxo scan stop <scan-id>\n
+        - To pause a scan and resume it later:\n
+        oxo scan pause <scan-id>\n
+        oxo scan resume <scan-id>\n
     """
     try:
         exposed_ports: dict[int, int] | None = None

@@ -11,6 +11,7 @@ import logging
 import threading
 import typing
 from concurrent import futures
+from urllib import parse
 
 import click
 import docker
@@ -58,6 +59,10 @@ ASSET_INJECTION_AGENT_DEFAULT = "agent/ostorlab/inject_asset"
 TRACKER_AGENT_DEFAULT = "agent/ostorlab/tracker"
 LOCAL_PERSIST_VULNZ_AGENT_DEFAULT = "agent/ostorlab/local_persist_vulnz"
 
+# Time given to the containers of the removed services of a paused scan to exit.
+SERVICES_STOP_ATTEMPTS = 60
+SERVICES_STOP_WAIT_SECONDS = 1
+
 DEFAULT_AGENTS = [
     ASSET_INJECTION_AGENT_DEFAULT,
     TRACKER_AGENT_DEFAULT,
@@ -83,6 +88,22 @@ class MissingAgentDefinition(exceptions.OstorlabError):
 
 class SnapshotRestoreError(exceptions.OstorlabError):
     """The paused scan could not be restored from its snapshot."""
+
+
+class ScanPauseError(exceptions.OstorlabError):
+    """The scan could not be paused."""
+
+
+class ScanResumeError(exceptions.OstorlabError):
+    """The scan could not be resumed."""
+
+
+class ServicesNotStopped(exceptions.OstorlabError):
+    """The containers of the removed services are still running."""
+
+
+# States of a swarm task that is not running and will not run, see the task states of the docker documentation.
+DONE_TASK_STATES = {"complete", "failed", "shutdown", "rejected", "orphaned", "remove"}
 
 
 def _has_container_image(agent: definitions.AgentSettings) -> bool:
@@ -139,6 +160,8 @@ class LocalRuntime(runtime.Runtime[int | str]):
         self._gcp_logging_credential = gcp_logging_credential
         self._run_default_agents: bool = run_default_agents
         self._snapshot_settings = snapshot_settings
+        # Snapshot of the scan resumed with `resume`, restored instead of the one of the snapshot storage.
+        self._paused_snapshot: typing.Optional[snapshot.UniverseSnapshot] = None
         self._log_streamer: typing.Optional[log_streamer.LogStream] = None
         self._docker_client: typing.Optional[docker.DockerClient] = None
 
@@ -333,10 +356,15 @@ class LocalRuntime(runtime.Runtime[int | str]):
     def _load_snapshot(self) -> typing.Optional[snapshot.UniverseSnapshot]:
         """Snapshot of the scan when it was paused, None for a scan that was never paused.
 
+        A scan paused with `oxo scan pause` gets the snapshot read by `resume`, the others the one of the snapshot
+        storage.
+
         Raises:
             snapshot.StorageError: When the snapshot bucket cannot be read.
             SnapshotRestoreError: When the snapshot of the scan is not a valid snapshot.
         """
+        if self._paused_snapshot is not None:
+            return self._paused_snapshot
         if self._snapshot_settings is None:
             return None
         try:
@@ -460,6 +488,155 @@ class LocalRuntime(runtime.Runtime[int | str]):
                 scan_id,
             )
 
+    def pause(self, scan_id: int) -> None:
+        """Pause a running scan: stop its agents, keep its MQ and Redis state in a local snapshot and remove its universe.
+
+        The agents are stopped first: the messages they did not acknowledge go back to their queues and are in the
+        snapshot. `resume` starts the scan again from the snapshot.
+
+        Args:
+            scan_id: Id of the scan in the local database.
+
+        Raises:
+            ScanPauseError: When the scan cannot be paused. A scan whose agents were stopped but whose snapshot could
+                not be taken is stopped.
+        """
+        self._docker_checks()
+        scan_db = self._get_scan_db(scan_id)
+        if scan_db is None:
+            raise ScanPauseError(f"scan {scan_id} was not found.")
+        if scan_db.progress != models.ScanProgress.IN_PROGRESS:
+            raise ScanPauseError(f"scan {scan_id} is not running.")
+        self._scan_db = scan_db
+        try:
+            if scan_state.load_definition(scan_id) is None:
+                raise ScanPauseError(
+                    f"scan {scan_id} was started by an oxo version that cannot resume it."
+                )
+        except scan_state.Error as e:
+            raise ScanPauseError(
+                f"could not read the definition of scan {scan_id}: {e}"
+            ) from e
+        mq_service = mq.LocalRabbitMQ(name=self.name, network=self.network)
+        try:
+            has_mq_service = mq_service.attach()
+        except docker_errors.DockerException as e:
+            raise ScanPauseError(
+                f"could not find the MQ service of scan {scan_id}: {e}"
+            ) from e
+        if has_mq_service is False:
+            raise ScanPauseError(f"scan {scan_id} has no running MQ service.")
+        # A run-once agent, like the asset injection, would be stopped before it published all its messages, the
+        # resumed scan would never receive them.
+        if self._is_run_once_agent_running() is True:
+            raise ScanPauseError(
+                f"scan {scan_id} is still injecting its assets, pause it again once they are injected."
+            )
+
+        console.info("Stopping the agents")
+        try:
+            self._stop_agents()
+            console.info("Taking the snapshot of the scan")
+            redis_host = parse.urlparse(
+                redis.LocalRedis(name=self.name, network=self.network).url
+            ).hostname
+            universe_snapshot = snapshot.from_document(
+                mq_service.capture(redis_host=typing.cast(str, redis_host))
+            )
+            snapshot.save_file(scan_state.snapshot_path(scan_id), universe_snapshot)
+        except (
+            ServicesNotStopped,
+            container_exec.ExecError,
+            snapshot.Error,
+            docker_errors.DockerException,
+        ) as e:
+            # The agents may be stopped, the scan cannot go on without its snapshot: it is stopped even when some of
+            # its resources cannot be removed.
+            if self.cleanup(scan_id=scan_id) is False:
+                logger.warning("could not remove every resource of scan %s", scan_id)
+            self._update_scan_progress(models.ScanProgress.STOPPED)
+            scan_state.delete(scan_id)
+            raise ScanPauseError(
+                f"could not take the snapshot of scan {scan_id}, the scan was stopped: {e}"
+            ) from e
+
+        console.info("Removing the services of the scan")
+        # The MQ data volume is removed once its container exited, a resumed MQ must not reload the paused messages
+        # the snapshot restores. A resource left here is removed when the scan resumes.
+        try:
+            self._stop_services()
+        except (ServicesNotStopped, docker_errors.DockerException) as e:
+            logger.warning("could not stop the services of scan %s: %s", scan_id, e)
+        if self.cleanup(scan_id=scan_id) is False:
+            console.warning(
+                f"Some resources of scan {scan_id} could not be removed, they are removed when it resumes."
+            )
+        self._update_scan_progress(models.ScanProgress.PAUSED)
+        console.success("Scan paused successfully.")
+
+    def resume(self, scan_id: int) -> typing.Optional[models.Scan]:
+        """Resume a paused scan: start its services, restore its snapshot, then start its agents again.
+
+        Args:
+            scan_id: Id of the scan in the local database.
+
+        Returns:
+            The scan object.
+
+        Raises:
+            ScanResumeError: When the scan is not paused or its state cannot be read.
+        """
+        self._docker_checks()
+        scan_db = self._get_scan_db(scan_id)
+        if scan_db is None:
+            raise ScanResumeError(f"scan {scan_id} was not found.")
+        if scan_db.progress != models.ScanProgress.PAUSED:
+            raise ScanResumeError(f"scan {scan_id} is not paused.")
+        try:
+            scan_definition = scan_state.load_definition(scan_id)
+            universe_snapshot = snapshot.load_file(scan_state.snapshot_path(scan_id))
+        except (scan_state.Error, snapshot.Error) as e:
+            raise ScanResumeError(
+                f"could not read the state of scan {scan_id}: {e}"
+            ) from e
+        if scan_definition is None or universe_snapshot is None:
+            raise ScanResumeError(f"scan {scan_id} has no snapshot to resume from.")
+
+        # Resources left by the pause, like a MQ data volume that could not be removed, would duplicate the restored
+        # messages.
+        if self.cleanup(scan_id=scan_id) is False:
+            raise ScanResumeError(
+                f"could not remove the resources left by the pause of scan {scan_id}."
+            )
+        self._scan_db = scan_db
+        self._paused_snapshot = universe_snapshot
+        self.has_tracker = scan_definition.has_tracker
+        self.timeout = scan_definition.timeout
+        self.init_sleep = scan_definition.init_sleep
+        self.follow = scan_definition.follow
+        try:
+            resumed_scan = self.scan(
+                title=scan_db.title,
+                agent_group_definition=scan_definition.agent_group_definition,
+                assets=None,
+            )
+        except (Exception, KeyboardInterrupt):
+            # The failed start marked the scan as an error and removed its universe, the scan keeps its snapshot to be
+            # resumed again.
+            self._update_scan_progress(models.ScanProgress.PAUSED)
+            raise
+        finally:
+            # The snapshot is restored once, another scan of this runtime does not start from it.
+            self._paused_snapshot = None
+        scan_state.delete_snapshot(scan_id)
+        return resumed_scan
+
+    def _get_scan_db(self, scan_id: int) -> typing.Optional[models.Scan]:
+        with models.Database() as session:
+            return typing.cast(
+                "orm.Query[models.Scan]", session.query(models.Scan)
+            ).get(scan_id)
+
     def _save_scan_definition(
         self, agent_group_definition: definitions.AgentGroupDefinition
     ) -> None:
@@ -478,6 +655,66 @@ class LocalRuntime(runtime.Runtime[int | str]):
         except scan_state.Error as e:
             # The scan runs without its definition, it only cannot be paused.
             logger.warning("%s", e)
+
+    def _stop_agents(self) -> None:
+        """Remove the agent services of the scan and wait for their containers to exit, the MQ and Redis keep
+        running.
+
+        Every agent service has the `ostorlab.queue_name` label, its name may not start with `agent_` when its
+        definition sets a service name.
+        """
+        self._remove_services(self._list_labelled_agent_services())
+
+    def _list_labelled_agent_services(
+        self,
+    ) -> builtins.list[docker_models_services.Service]:
+        return typing.cast(docker.DockerClient, self._docker_client).services.list(
+            filters={"label": [f"ostorlab.universe={self.name}", "ostorlab.queue_name"]}
+        )
+
+    def _is_run_once_agent_running(self) -> bool:
+        """Whether a run-once agent of the scan, like the asset injection, has a task that did not finish."""
+        return any(
+            task["Status"]["State"] not in DONE_TASK_STATES
+            for service in self._list_labelled_agent_services()
+            if _is_service_type_run(service) is True
+            for task in typing.cast(
+                typing.Callable[[], builtins.list[dict[str, typing.Any]]], service.tasks
+            )()
+        )
+
+    def _stop_services(self) -> None:
+        """Remove the remaining services of the scan, like the MQ and Redis, and wait for their containers to exit."""
+        self._remove_services(
+            typing.cast(docker.DockerClient, self._docker_client).services.list(
+                filters={"label": f"ostorlab.universe={self.name}"}
+            )
+        )
+
+    def _remove_services(
+        self, services: builtins.list[docker_models_services.Service]
+    ) -> None:
+        for service in services:
+            logger.info("stopping service %s", service.name)
+            typing.cast(typing.Callable[[], None], service.remove)()
+        self._wait_services_stopped([service.name for service in services])
+
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(SERVICES_STOP_ATTEMPTS),
+        wait=tenacity.wait_fixed(SERVICES_STOP_WAIT_SECONDS),
+        retry=tenacity.retry_if_exception_type(ServicesNotStopped),
+        reraise=True,
+    )
+    def _wait_services_stopped(self, service_names: builtins.list[str]) -> None:
+        docker_client = typing.cast(docker.DockerClient, self._docker_client)
+        for service_name in service_names:
+            containers = docker_client.containers.list(
+                # An exited container keeps its volumes until swarm removes it.
+                all=True,
+                filters={"label": f"com.docker.swarm.service.name={service_name}"},
+            )
+            if len(containers) > 0:
+                raise ServicesNotStopped(f"service {service_name} is still running.")
 
     def _create_scan_db(self, title: typing.Optional[str]) -> models.Scan:
         """Persist the scan in the database"""
