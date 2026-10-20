@@ -277,15 +277,14 @@ class LocalRabbitMQ:
         """
         script = f"{container_exec.FILES_DIRECTORY}/{SNAPSHOT_CAPTURE_SCRIPT_FILE}"
         state_file = f"{container_exec.FILES_DIRECTORY}/{SNAPSHOT_CAPTURE_STATE_FILE}"
+        command = (
+            f"python3 {script} {shlex.quote(self.vhost)} {shlex.quote(redis_host)} {state_file}; status=$?; "
+            f"rm -f {script}; exit $status"
+        )
         output = container_exec.run(
             self._docker_client,
             self._mq_service,
-            [
-                "sh",
-                "-c",
-                f"python3 {script} {shlex.quote(self.vhost)} {shlex.quote(redis_host)} {state_file}; status=$?; "
-                f"rm -f {script}; exit $status",
-            ],
+            ["sh", "-c", command],
             files={SNAPSHOT_CAPTURE_SCRIPT_FILE: SNAPSHOT_CAPTURE_SCRIPT.read_bytes()},
         )
         logger.info("%s", output.decode(errors="replace").strip())
