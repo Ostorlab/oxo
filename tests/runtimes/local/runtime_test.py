@@ -1039,6 +1039,37 @@ def testLocalRuntimeScan_whenScanIsLocal_savesItsDefinition(
     assert scan_state.load_definition(created_scan.id) == SCAN_DEFINITION
 
 
+def testLocalRuntimeScan_whenAgentsAreNotHealthy_savesNoDefinition(
+    mocker: plugin.MockerFixture, db_engine_path: str
+) -> None:
+    """A scan that fails to start cannot be paused, it leaves no definition on disk."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    mocker.patch("docker.from_env", return_value=mocker.Mock())
+    runtime = local_runtime.LocalRuntime()
+    runtime.timeout = 600
+    runtime.init_sleep = 10
+    runtime.follow = ["agent/ostorlab/nmap"]
+    for name in [
+        "_create_network",
+        "_start_services",
+        "_check_services_healthy",
+        "_start_pre_agents",
+        "_start_agents",
+        "_start_post_agents",
+        "_update_scan_progress",
+        "_wait_log_streamer",
+    ]:
+        mocker.patch.object(runtime, name)
+    mocker.patch.object(runtime, "_load_snapshot", return_value=None)
+    mocker.patch.object(runtime, "_check_agents_healthy", return_value=False)
+    mocker.patch.object(runtime, "_handle_scan_error")
+
+    with pytest.raises(local_runtime.AgentNotHealthy):
+        runtime.scan(title="test", agent_group_definition=_agent_group(), assets=None)
+
+    assert scan_state.load_definition(runtime.name) is None
+
+
 def testLocalRuntimeScan_whenScanIdIsGiven_doesNotSaveADefinition(
     mocker: plugin.MockerFixture, db_engine_path: str
 ) -> None:
