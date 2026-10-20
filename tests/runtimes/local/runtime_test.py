@@ -1021,8 +1021,9 @@ def _paused_runtime(
     mocker.patch("docker.from_env", return_value=mocker.MagicMock())
     runtime = local_runtime.LocalRuntime()
     mocker.patch.object(runtime, "_docker_checks")
-    runtime._docker_client = mocker.MagicMock()
-    runtime._docker_client.services.list.return_value = []
+    docker_client = mocker.MagicMock()
+    docker_client.services.list.return_value = []
+    runtime._docker_client = docker_client
     mq_service = mocker.MagicMock()
     mq_service.attach.return_value = True
     mq_service.capture.return_value = CAPTURED_STATE
