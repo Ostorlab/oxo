@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import dataclasses
 import json
+import os
 import pathlib
 import shutil
 import typing
@@ -79,8 +80,12 @@ def save_definition(scan_id: int | str, scan_definition: ScanDefinition) -> None
         raise Error(f"could not serialize the definition of scan {scan_id}: {e}") from e
     path = directory(scan_id) / DEFINITION_FILE
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content)
+        # The agent arguments may hold secrets, like API keys: only the user running oxo can read them.
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        with os.fdopen(
+            os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w"
+        ) as file:
+            file.write(content)
     except OSError as e:
         raise Error(f"could not write the definition of scan {scan_id}: {e}") from e
 
