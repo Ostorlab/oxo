@@ -5,6 +5,7 @@ import gzip
 import json
 import pathlib
 import stat
+import sys
 import typing
 from unittest import mock
 
@@ -315,6 +316,7 @@ def testSaveFileThenLoadFile_always_returnsTheSavedSnapshot(
     assert snapshot.load_file(path) == UNIVERSE_SNAPSHOT
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows has no POSIX file modes")
 def testSaveFile_always_writesTheSnapshotReadableByItsOwnerOnly(
     tmp_path: pathlib.Path,
 ) -> None:

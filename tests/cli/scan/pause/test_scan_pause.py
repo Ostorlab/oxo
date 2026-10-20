@@ -47,7 +47,7 @@ def testOstorlabScanPauseCLI_whenDockerChecksFail_showsTheErrorAndExits(
     mocker.patch.object(
         local_runtime.LocalRuntime,
         "pause",
-        side_effect=exceptions.OstorlabError("could not initialize swarm."),
+        side_effect=exceptions.OstorlabError("swarm failed."),
     )
 
     result = CliRunner().invoke(
@@ -55,7 +55,7 @@ def testOstorlabScanPauseCLI_whenDockerChecksFail_showsTheErrorAndExits(
     )
 
     assert result.exit_code == 1
-    assert "could not initialize swarm." in result.output
+    assert "swarm failed." in result.output
 
 
 def testOstorlabScanPauseCLI_whenRuntimeIsNotLocal_raisesUsageError() -> None:
