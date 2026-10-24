@@ -52,4 +52,7 @@ message Message{
   }
   required string description = 11;
   required string rating = 12;
+  optional int64 risk_id = 25;
+  optional string kind = 26;
+  repeated int64 parent_risk_ids = 27;
 }

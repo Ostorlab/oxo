@@ -59,6 +59,9 @@ class Risk(asset.Asset):
     harmonyos_app: Optional[harmonyos_app_asset.HarmonyOSApp | dict[str, Any]] = None
     harmonyos_rpk: Optional[harmonyos_rpk_asset.HarmonyOSRpk | dict[str, Any]] = None
     multi_asset: Optional[multi_asset_asset.MultiAsset | dict[str, Any]] = None
+    risk_id: int | None = None
+    kind: str | None = None
+    parent_risk_ids: list[int] = dataclasses.field(default_factory=list)
 
     def to_proto(self) -> bytes:
         data = {

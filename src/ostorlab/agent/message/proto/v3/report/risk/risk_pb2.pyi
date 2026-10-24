@@ -3,8 +3,10 @@
 isort:skip_file
 """
 
+from collections import abc as _abc
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
 from ostorlab.agent.message.proto.v3.asset.domain_name import domain_name_pb2 as _domain_name_pb2
 from ostorlab.agent.message.proto.v3.asset.file import file_pb2 as _file_pb2
 from ostorlab.agent.message.proto.v3.asset.file.android.aab import aab_pb2 as _aab_pb2
@@ -66,8 +68,13 @@ class Message(_message.Message):
     MULTI_ASSET_FIELD_NUMBER: _builtins.int
     DESCRIPTION_FIELD_NUMBER: _builtins.int
     RATING_FIELD_NUMBER: _builtins.int
+    RISK_ID_FIELD_NUMBER: _builtins.int
+    KIND_FIELD_NUMBER: _builtins.int
+    PARENT_RISK_IDS_FIELD_NUMBER: _builtins.int
     description: _builtins.str
     rating: _builtins.str
+    risk_id: _builtins.int
+    kind: _builtins.str
     @_builtins.property
     def domain_name(self) -> _domain_name_pb2.Message: ...
     @_builtins.property
@@ -112,6 +119,8 @@ class Message(_message.Message):
     def harmonyos_rpk(self) -> _rpk_pb2.Message: ...
     @_builtins.property
     def multi_asset(self) -> _multi_asset_pb2.Message: ...
+    @_builtins.property
+    def parent_risk_ids(self) -> _containers.RepeatedScalarFieldContainer[_builtins.int]: ...
     def __init__(
         self,
         *,
@@ -139,10 +148,13 @@ class Message(_message.Message):
         multi_asset: _multi_asset_pb2.Message | None = ...,
         description: _builtins.str | None = ...,
         rating: _builtins.str | None = ...,
+        risk_id: _builtins.int | None = ...,
+        kind: _builtins.str | None = ...,
+        parent_risk_ids: _abc.Iterable[_builtins.int] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["android_aab", b"android_aab", "android_apk", b"android_apk", "android_store", b"android_store", "api_schema", b"api_schema", "asset", b"asset", "description", b"description", "domain_name", b"domain_name", "file", b"file", "harmonyos_aab", b"harmonyos_aab", "harmonyos_apk", b"harmonyos_apk", "harmonyos_app", b"harmonyos_app", "harmonyos_hap", b"harmonyos_hap", "harmonyos_rpk", b"harmonyos_rpk", "harmonyos_store", b"harmonyos_store", "ios_ipa", b"ios_ipa", "ios_store", b"ios_store", "ios_testflight", b"ios_testflight", "ipv4", b"ipv4", "ipv6", b"ipv6", "link", b"link", "multi_asset", b"multi_asset", "phone_number", b"phone_number", "rating", b"rating", "repository", b"repository", "repository_archive", b"repository_archive"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["android_aab", b"android_aab", "android_apk", b"android_apk", "android_store", b"android_store", "api_schema", b"api_schema", "asset", b"asset", "description", b"description", "domain_name", b"domain_name", "file", b"file", "harmonyos_aab", b"harmonyos_aab", "harmonyos_apk", b"harmonyos_apk", "harmonyos_app", b"harmonyos_app", "harmonyos_hap", b"harmonyos_hap", "harmonyos_rpk", b"harmonyos_rpk", "harmonyos_store", b"harmonyos_store", "ios_ipa", b"ios_ipa", "ios_store", b"ios_store", "ios_testflight", b"ios_testflight", "ipv4", b"ipv4", "ipv6", b"ipv6", "kind", b"kind", "link", b"link", "multi_asset", b"multi_asset", "phone_number", b"phone_number", "rating", b"rating", "repository", b"repository", "repository_archive", b"repository_archive", "risk_id", b"risk_id"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["android_aab", b"android_aab", "android_apk", b"android_apk", "android_store", b"android_store", "api_schema", b"api_schema", "asset", b"asset", "description", b"description", "domain_name", b"domain_name", "file", b"file", "harmonyos_aab", b"harmonyos_aab", "harmonyos_apk", b"harmonyos_apk", "harmonyos_app", b"harmonyos_app", "harmonyos_hap", b"harmonyos_hap", "harmonyos_rpk", b"harmonyos_rpk", "harmonyos_store", b"harmonyos_store", "ios_ipa", b"ios_ipa", "ios_store", b"ios_store", "ios_testflight", b"ios_testflight", "ipv4", b"ipv4", "ipv6", b"ipv6", "link", b"link", "multi_asset", b"multi_asset", "phone_number", b"phone_number", "rating", b"rating", "repository", b"repository", "repository_archive", b"repository_archive"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["android_aab", b"android_aab", "android_apk", b"android_apk", "android_store", b"android_store", "api_schema", b"api_schema", "asset", b"asset", "description", b"description", "domain_name", b"domain_name", "file", b"file", "harmonyos_aab", b"harmonyos_aab", "harmonyos_apk", b"harmonyos_apk", "harmonyos_app", b"harmonyos_app", "harmonyos_hap", b"harmonyos_hap", "harmonyos_rpk", b"harmonyos_rpk", "harmonyos_store", b"harmonyos_store", "ios_ipa", b"ios_ipa", "ios_store", b"ios_store", "ios_testflight", b"ios_testflight", "ipv4", b"ipv4", "ipv6", b"ipv6", "kind", b"kind", "link", b"link", "multi_asset", b"multi_asset", "parent_risk_ids", b"parent_risk_ids", "phone_number", b"phone_number", "rating", b"rating", "repository", b"repository", "repository_archive", b"repository_archive", "risk_id", b"risk_id"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     _WhichOneofReturnType_asset: _TypeAlias = _typing.Literal["domain_name", "ipv4", "ipv6", "link", "android_store", "ios_store", "file", "android_aab", "android_apk", "ios_ipa", "api_schema", "ios_testflight", "phone_number", "repository", "repository_archive", "harmonyos_store", "harmonyos_apk", "harmonyos_aab", "harmonyos_hap", "harmonyos_app", "harmonyos_rpk", "multi_asset"]  # noqa: Y015
     _WhichOneofArgType_asset: _TypeAlias = _typing.Literal["asset", b"asset"]  # noqa: Y015
