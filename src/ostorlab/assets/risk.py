@@ -1,6 +1,7 @@
 """Risk message asset for injecting risk reports onto the message bus."""
 
 import dataclasses
+from collections.abc import Sequence
 from typing import Any
 from typing import Optional
 
@@ -61,13 +62,14 @@ class Risk(asset.Asset):
     multi_asset: Optional[multi_asset_asset.MultiAsset | dict[str, Any]] = None
     risk_id: int | None = None
     kind: str | None = None
-    parent_risk_ids: list[int] = dataclasses.field(default_factory=list)
+    parent_risk_ids: Sequence[int] = dataclasses.field(default_factory=list)
 
     def to_proto(self) -> bytes:
         data = {
             k: (v.__dict__ if isinstance(v, asset.Asset) else v)
             for k, v in self.__dict__.items()
         }
+        data["parent_risk_ids"] = list(self.parent_risk_ids)
         return bytes(serializer.serialize(self.selector, data).SerializeToString())
 
     @property
