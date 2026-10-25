@@ -8,11 +8,11 @@
 Test risk 101
    │ validation.parent_risk_ids = [101]
    ▼
-Validation risk 102
-   │ finding.source_risk_ids = [102]
-   ▼
-Finding A                         Finding B (source_risk_ids = [103])
-   └──────── explicit selected findings ────────┘
+Validation risk 102                     Test risk 103
+   │ source_risk_ids = [102]                │ source_risk_ids = [103]
+   ▼                                       ▼
+Finding A                               Finding B
+   └──────── explicit selected findings ────┘
                           │ chain.parent_risk_ids = [102, 103]
                           ▼
                      Chained risk 104
@@ -22,7 +22,9 @@ Each input finding has a stable application-level `finding_reference`. The chain
 
 For example, selecting observations A and B with `finding_references=[A, B]` combines A's `source_risk_ids=[102]` and B's `source_risk_ids=[103]` into `parent_risk_ids=[102, 103]`. A finding's source IDs record its provenance; they do not record which observations the model selected. Models do not fabricate database IDs.
 
-## Complete additive field assignments
+## Wire contract
+
+### Added field numbers
 
 In `src/ostorlab/agent/message/proto/v3/report/risk/risk.proto`:
 
@@ -38,7 +40,7 @@ In `src/ostorlab/agent/message/proto/v3/report/vulnerability/vulnerability.proto
 repeated int64 source_risk_ids = 23;
 ```
 
-The compatibility rules are:
+### Compatibility rules
 
 - Existing field numbers are unchanged; legacy payloads remain readable.
 - IDs refer to actual persisted backend Risk rows. An absent ID stays absent rather than defaulting to `0`.
@@ -46,6 +48,8 @@ The compatibility rules are:
 - Protobuf int64 JSON may contain numeric strings; consumers normalize positive int64 IDs at ingestion.
 - Repeated fields carry multiple selected parents or producing-risk sources.
 - Old messages carry no inferred origin or lineage.
+
+### Backend invariants
 
 Backend `createRisk`/`updateRisk` accept optional GraphQL `kind` and `parentRiskIds`.
 Omitted metadata preserves existing state; supplied parents merge idempotently.
@@ -59,7 +63,7 @@ The backend enforces these invariants:
 
 Parent summaries expose a fixed field set: `id`, `description`, `kind`, `riskRating`, and `riskStatus`.
 
-The derivation rules are:
+### Derivation rules
 
 - Plain agent roots use `kind=test`.
 - Validation uses `kind=validation` and its triggering test as parent.
@@ -77,7 +81,7 @@ The derivation rules are:
 - [x] Verify serializer/report compatibility tests and inspect the generated diff. The coordinated affected suite passed 35 tests.
 - [x] Commit runtime schema/asset support as **0b2b325c7fd02af18500a7d39ad286765e77e34d** and publish SDK draft PR #1264.
 
-Portable focused reproduction, from a repository environment with test dependencies installed:
+Reproduce the focused suite in a repository environment with test dependencies installed:
 
 ```bash
 PYTHONPATH=src python -m pytest tests/agent/message/proto/v3/report/risk tests/agent/message/proto/v3/report/vulnerability tests/agent/message/message_test.py tests/agent/message/serializer_test.py -q
