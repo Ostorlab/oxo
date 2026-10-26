@@ -27,6 +27,14 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4"
 QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
 
+# OpenRouter in-region routing: same key and model IDs, only the base URL changes.
+OPENROUTER_GLOBAL_REGION = "global"
+OPENROUTER_BASE_URLS = {
+    OPENROUTER_GLOBAL_REGION: "https://openrouter.ai/api/v1",
+    "us": "https://us.openrouter.ai/api/v1",
+    "eu": "https://eu.openrouter.ai/api/v1",
+}
+
 # Model families that fail on OpenRouter when tool_choice=required is forced, verified
 # live: Moonshot (Kimi) upstream providers return a 400 (kimi-k2.5 every time,
 # kimi-k2.6 depending on the provider OpenRouter routes to), and DeepSeek in thinking
@@ -64,8 +72,12 @@ def build_openrouter(request: base.BuildRequest) -> models.Model:
     ``reasoning`` field OpenRouter actually returns) instead of forcing OpenAI's
     conventions on every model. Moonshot (Kimi) and DeepSeek models additionally
     have ``tool_choice=required`` turned off, which they fail on through OpenRouter.
+
+    The credential is a plain API key (global endpoint) or
+    ``{"api_key": "...", "region": "us"}`` to use a regional endpoint, where
+    ``region`` is ``global`` (the default), ``us`` or ``eu``.
     """
-    provider = openrouter_provider.OpenRouterProvider(api_key=request.credential)
+    provider = _build_openrouter_provider(request)
     # OpenRouter's latest-model aliases are ``~provider/model``; pydantic-ai strips the
     # ``~`` to pick the profile, so the family check must too.
     model_family = request.model_name.removeprefix("~")
@@ -243,6 +255,48 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
         ),
         settings=request.settings,
     )
+
+
+class _RegionalOpenRouterProvider(openrouter_provider.OpenRouterProvider):
+    """``OpenRouterProvider`` on a regional endpoint, as its base URL is fixed otherwise.
+
+    The parent builds its client from ``base_url``, so the provider still owns and
+    closes its HTTP client and reports the regional URL in usage metadata.
+    """
+
+    def __init__(self, *, base_url: str, api_key: str) -> None:
+        self._regional_base_url = base_url
+        super().__init__(api_key=api_key)
+
+    @property
+    def base_url(self) -> str:
+        return self._regional_base_url
+
+
+def _build_openrouter_provider(
+    request: base.BuildRequest,
+) -> openrouter_provider.OpenRouterProvider:
+    stripped_credential = request.credential.strip()
+    if stripped_credential.startswith(("{", "[")) is False:
+        return openrouter_provider.OpenRouterProvider(api_key=stripped_credential)
+    creds = credentials.parse_json_object(
+        stripped_credential, "OpenRouter provider", request.model_name
+    )
+    credentials.require_keys(creds, ["api_key"], "OpenRouter provider")
+    credentials.require_non_empty_strings(
+        creds, ["api_key", "region"], "OpenRouter provider"
+    )
+    api_key = creds["api_key"].strip()
+    region = creds.get("region", OPENROUTER_GLOBAL_REGION).strip()
+    base_url = OPENROUTER_BASE_URLS.get(region)
+    if base_url is None:
+        raise errors.ModelConfigurationError(
+            "Credential 'region' for OpenRouter provider must be one of: "
+            f"{', '.join(OPENROUTER_BASE_URLS)} (model={request.model_name})."
+        )
+    if region == OPENROUTER_GLOBAL_REGION:
+        return openrouter_provider.OpenRouterProvider(api_key=api_key)
+    return _RegionalOpenRouterProvider(base_url=base_url, api_key=api_key)
 
 
 def _build_gateway_model(request: base.BuildRequest, base_url: str) -> models.Model:

@@ -192,8 +192,11 @@ pip install -e ".[testing,scanner,agent,serve]"
   `openai_compatible_base_url`; this is what stops pydantic-ai falling back to `OLLAMA_*` or
   `OPENAI_API_KEY` / `OPENAI_BASE_URL` (which would send a real key to the configured server), so
   keep both.
-- Keep credential JSON formats (Bedrock, Azure, Vertex) backwards compatible: they are stored as
-  secrets on the platform.
+- Keep credential JSON formats (Bedrock, Azure, Vertex, OpenRouter) backwards compatible: they are
+  stored as secrets on the platform. OpenRouter takes a plain key (global endpoint) or
+  `{"api_key": "...", "region": "us"}` for in-region routing, where `region` is one of `global`,
+  `us` or `eu`; `region` defaults to `global`, and `us`/`eu` target
+  `us.openrouter.ai`/`eu.openrouter.ai`.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never
   include the credential in the message.
 - The dependencies live in the `agent` extra: `import ostorlab.ai` needs `ostorlab[agent]`,

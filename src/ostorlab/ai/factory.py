@@ -90,8 +90,10 @@ def build_model(
         model_identifier: ``provider/model``, e.g. ``anthropic/claude-sonnet-4-6``.
         credential: The provider secret. A plain API key, or a JSON object for
             ``aws_bedrock``, ``azure_ai_foundry``, ``google_vertex`` (service account
-            form) and ``google_vertex_endpoint`` (service-account JSON). Optional for
-            ``ollama`` and ``openai_compatible``.
+            form) and ``google_vertex_endpoint`` (service-account JSON). ``openrouter``
+            takes a plain key or ``{"api_key": "...", "region": "us"}`` for in-region
+            routing, where ``region`` is ``global`` (the default), ``us`` or ``eu``.
+            Optional for ``ollama`` and ``openai_compatible``.
         options: Deployment-wide provider options (gateway and endpoint URLs).
         settings: Model settings; defaults to ``default_settings()``.
 
