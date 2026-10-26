@@ -32,7 +32,10 @@ Example target assertion:
 
 ```python
 def testRiskWire_whenCanonicalRiskSerialized_preservesOnlyRiskReference() -> None:
-    sent = message.Message.from_data("v3.report.risk", {"description": "Persisted chain", "rating": "High", "risk_id": 8})
+    sent = message.Message.from_data(
+        "v3.report.risk",
+        {"description": "Persisted chain", "rating": "High", "risk_id": 8},
+    )
     received = message.Message.from_raw("v3.report.risk", sent.raw)
     assert int(received.data["risk_id"]) == 8
     assert "kind" not in received.data
