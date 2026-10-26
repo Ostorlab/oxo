@@ -22,6 +22,10 @@ class ResponseError(Error):
     """Response Error."""
 
 
+class UnauthorizedError(ResponseError):
+    """The API rejected the provided authentication credentials."""
+
+
 class APIRunner(abc.ABC):
     """Handles API calls and behind the scenes operations."""
 
