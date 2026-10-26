@@ -13,7 +13,7 @@
 - Keep risk wire field `risk_id = 25`; remove `kind = 26` and `parent_risk_ids = 27`. Reserve both removed numbers and names. Remove their SDK Risk asset constructor fields and the parent Sequence serializer workaround.
 - Keep protobuf risk_id optional for generic wire decoding compatibility; every supported producer and the auto-exploit execution boundary require a valid persisted positive int64 ID. A message missing it is rejected before risk writes, status/cache updates or execution. There is no description-based create fallback for received risks.
 - Keep internal agent Risk/RiskInfo kind/parents fields and GraphQL persistence inputs. Remove metadata only from outgoing risk payloads and SDK wire schema. Keep vulnerability source_risk_ids = 23 unchanged.
-- Add robot GraphQL `agenticRisk(riskId: ID!, agenticDeepScanId: ID!): RiskType`. Verify access to the requested session's scan and require the risk to belong to that exact session. Return an error for missing, malformed, inaccessible or foreign-session IDs. Reuse RiskType and its parent summaries.
+- Add robot GraphQL `agenticRisk(riskId: ID!, agenticDeepScanId: ID!): PersistedRiskType`. Verify access to the requested session's scan and require the risk to belong to that exact session. Return an error for missing, malformed, inaccessible or foreign-session IDs. Expose only the five scalar summary fields and parent summaries; analysis/tasks are outside this lookup. After materializing the selected metadata, revalidate the exact risk/session/authorized-scan binding before returning.
 - Consumer query selects `id description riskRating kind parents { id }`; backend values, not any obsolete message metadata, initialize RiskInfo. The current ADS comes from successful persist_ai_pentest. Do not create a risk, activate stale pointers, start execution or update the cache after a failed lookup.
 - Preserve update-by-ID semantics in the runner and validation child creation/provenance. A failed update of the canonical row must stop execution; no replacement row may be created.
 - A producer persistence failure, false/missing success, malformed/nonpositive/out-of-range ID or unconfigured backend must prevent emission and success/dedup/cache markers, with an explicit failure path that permits normal upstream retry. Successful repeated persistence remains idempotent. Do not introduce an outbox or broad retry redesign.
@@ -49,7 +49,7 @@ SDK evidence: four intended failures before the removal, then **40 affected test
 Files: reporting_engine/ai_pentest/schemas/robot.py, reporting_engine/apis/schemas/robot.py and robot schema tests.
 
 - [ ] Reproduce missing agenticRisk field through actual robot GraphQL tests.
-- [ ] Add the small session/scan-authorized read and schema composition; validate ID syntax/range without exposing unrelated rows.
+- [ ] Add the small session/scan-authorized read and schema composition; validate ID syntax/range without exposing unrelated rows. Bound the output to persisted metadata and recheck its full authorization binding after selected parents are loaded.
 - [ ] Assert exact stored kind/parents, ordered parent summaries, existing rating/status read compatibility, unauthorized scan/tenant, other session, unknown risk/session and malformed IDs.
 - [ ] Run the affected backend suites inside the existing risk-lineage-backend container and static/typing checks. No host Django, reseed, migration or unrelated rating-validation change.
 - [ ] Coordinate one owned API refresh after the tested commit and verify the read through real HTTP. Report READY with unchanged credential bytes/demo IDs.
@@ -69,7 +69,7 @@ query PersistedRisk($riskId: ID!, $agenticDeepScanId: ID!) {
 Files: agent/apis/api.py and tests/apis/api_test.py, agent/storage.py and tests/storage_test.py, agent/auto_exploit_agent.py and tests/auto_exploit_agent_test.py, agent/pentest/runner.py and tests/pentest/runner_test.py, workflow definitions if needed.
 
 - [ ] Add failing tests for missing/invalid risk ID, lookup failure/foreign context and conflicting old message metadata. Assert no createRisk, execution, pointer/status/cache mutation on failure.
-- [ ] Add API/storage canonical metadata loading using the shared query, current ADS and normal robot headers. Validate response identity and required metadata; do not trust message kind/parents.
+- [ ] Add API/storage canonical metadata loading using the shared query, current ADS and normal robot headers. Validate response identity and required metadata; do not trust message kind/parents. An explicit null rating remains unspecified internally and is omitted from canonical updates; a missing response key is malformed.
 - [ ] Replace incoming no-ID creation fallback with mandatory load-by-ID; preserve backend kind/parents when runner updates by canonical ID.
 - [ ] Require successful current-session and canonical update before execution; keep validation creation and source snapshots intact.
 - [ ] Adapt existing process fixtures to real persisted-risk contract rather than weakening assertions. Run API/storage/process/runner/validation/cache suites, typing/Ruff and real generated-wire controls.
