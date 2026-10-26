@@ -33,4 +33,3 @@ def revoke() -> None:
                 "Error response. The reason could be the authorization token is invalid."
             )
             api_runner.unauthenticate()
-            config_manager.delete_authorization_token_data()

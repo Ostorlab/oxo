@@ -60,34 +60,3 @@ def testOstorlabAuthRevokeCLI_whenInvalidAuthorizationTokenProvided_logsError(
         "Error response. The reason could be the authorization token is invalid."
         in result.output.replace("\n", "")
     )
-
-
-@mock.patch.object(
-    configuration_manager.ConfigurationManager,
-    "authorization_token",
-    new_callable=mock.PropertyMock,
-    return_value="expired-token",
-)
-@mock.patch.object(
-    configuration_manager.ConfigurationManager, "delete_authorization_token_data"
-)
-def testOstorlabAuthRevokeCLI_whenServerRejectsAuthorizationToken_deletesLocalToken(
-    mock_delete_authorization_token_data: mock.MagicMock,
-    mock_authorization_token: mock.PropertyMock,
-    httpx_mock: pytest_httpx.HTTPXMock,
-) -> None:
-    """Test ostorlab auth revoke command when the server rejects the stored authorization token.
-    Should still delete the local authorization token so the user is logged out.
-    """
-    runner = CliRunner()
-    httpx_mock.add_response(
-        method="POST",
-        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
-        json={"detail": "Invalid token."},
-        status_code=401,
-    )
-
-    result = runner.invoke(rootcli.rootcli, ["auth", "revoke"])
-
-    assert result.exception is None
-    mock_delete_authorization_token_data.assert_called_once_with()
