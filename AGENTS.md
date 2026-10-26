@@ -194,8 +194,9 @@ pip install -e ".[testing,scanner,agent,serve]"
   keep both.
 - Keep credential JSON formats (Bedrock, Azure, Vertex, OpenRouter) backwards compatible: they are
   stored as secrets on the platform. OpenRouter takes a plain key (global endpoint) or
-  `{"api_key": "...", "region": "global" | "us" | "eu"}` for in-region routing; `region` defaults
-  to `global`, and `us`/`eu` target `us.openrouter.ai`/`eu.openrouter.ai`.
+  `{"api_key": "...", "region": "us"}` for in-region routing, where `region` is one of `global`,
+  `us` or `eu`; `region` defaults to `global`, and `us`/`eu` target
+  `us.openrouter.ai`/`eu.openrouter.ai`.
 - Errors raise `errors.ModelConfigurationError` (an `OstorlabError` and a `ValueError`) and never
   include the credential in the message.
 - The dependencies live in the `agent` extra: `import ostorlab.ai` needs `ostorlab[agent]`,

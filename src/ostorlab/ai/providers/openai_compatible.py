@@ -74,7 +74,8 @@ def build_openrouter(request: base.BuildRequest) -> models.Model:
     have ``tool_choice=required`` turned off, which they fail on through OpenRouter.
 
     The credential is a plain API key (global endpoint) or
-    ``{"api_key", "region"?}`` to use a regional endpoint (``global``, ``us``, ``eu``).
+    ``{"api_key": "...", "region": "us"}`` to use a regional endpoint, where
+    ``region`` is ``global`` (the default), ``us`` or ``eu``.
     """
     provider = _build_openrouter_provider(request)
     # OpenRouter's latest-model aliases are ``~provider/model``; pydantic-ai strips the
@@ -277,7 +278,7 @@ def _build_openrouter_provider(
 ) -> openrouter_provider.OpenRouterProvider:
     stripped_credential = request.credential.strip()
     if stripped_credential.startswith(("{", "[")) is False:
-        return openrouter_provider.OpenRouterProvider(api_key=request.credential)
+        return openrouter_provider.OpenRouterProvider(api_key=stripped_credential)
     creds = credentials.parse_json_object(
         stripped_credential, "OpenRouter provider", request.model_name
     )

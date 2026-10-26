@@ -338,6 +338,7 @@ def testBuildModel_whenOpenRouterModelIsNotKimiOrDeepSeek_shouldKeepOpenRoutersT
     ("credential", "expected_base_url"),
     [
         ("or-key", "https://openrouter.ai/api/v1/"),
+        ("  or-key\n", "https://openrouter.ai/api/v1/"),
         ('{"api_key": "or-key"}', "https://openrouter.ai/api/v1/"),
         ('{"api_key": "or-key", "region": "global"}', "https://openrouter.ai/api/v1/"),
         ('{"api_key": "or-key", "region": "us"}', "https://us.openrouter.ai/api/v1/"),
