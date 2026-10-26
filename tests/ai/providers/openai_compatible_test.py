@@ -342,6 +342,11 @@ def testBuildModel_whenOpenRouterModelIsNotKimiOrDeepSeek_shouldKeepOpenRoutersT
         ('{"api_key": "or-key", "region": "global"}', "https://openrouter.ai/api/v1/"),
         ('{"api_key": "or-key", "region": "us"}', "https://us.openrouter.ai/api/v1/"),
         (' {"api_key": "or-key", "region": "eu"} ', "https://eu.openrouter.ai/api/v1/"),
+        ('{"api_key": " or-key  "}', "https://openrouter.ai/api/v1/"),
+        (
+            '{"api_key": " or-key  ", "region": "eu"}',
+            "https://eu.openrouter.ai/api/v1/",
+        ),
     ],
 )
 def testBuildModel_whenOpenRouterRegion_shouldTargetTheRegionalEndpoint(
@@ -395,12 +400,13 @@ def testRunModel_whenOpenRouterRegionIsEu_shouldCallTheEuEndpointWithTheKey(
         "openrouter/z-ai/glm-5", '{"api_key": "or-key", "region": "eu"}'
     )
 
-    pydantic_ai.Agent(model).run_sync("hello")
+    result = pydantic_ai.Agent(model).run_sync("hello")
 
     request = httpx_mock.get_request()
     assert request is not None
     assert str(request.url) == "https://eu.openrouter.ai/api/v1/chat/completions"
     assert request.headers["authorization"] == "Bearer or-key"
+    assert result.response.provider_url == "https://eu.openrouter.ai/api/v1"
 
 
 @pytest.mark.parametrize(
@@ -415,6 +421,8 @@ def testRunModel_whenOpenRouterRegionIsEu_shouldCallTheEuEndpointWithTheKey(
             "must be one of: global, us, eu",
         ),
         ('{"api_key": "or-secret", "region": "us"', "Invalid JSON in API key"),
+        ('["or-secret"]', "must be a JSON object"),
+        ('[{"api_key": "or-secret", "region": "us"}]', "must be a JSON object"),
     ],
 )
 def testBuildModel_whenOpenRouterJsonCredentialInvalid_shouldRaiseWithoutTheKey(

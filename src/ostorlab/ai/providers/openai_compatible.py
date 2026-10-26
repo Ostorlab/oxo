@@ -5,7 +5,6 @@ from __future__ import annotations
 import dataclasses
 import logging
 
-import openai as openai_sdk
 from pydantic_ai import models
 from pydantic_ai.models import openai
 from pydantic_ai.models import openrouter as openrouter_model
@@ -257,18 +256,36 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
     )
 
 
+class _RegionalOpenRouterProvider(openrouter_provider.OpenRouterProvider):
+    """``OpenRouterProvider`` on a regional endpoint, as its base URL is fixed otherwise.
+
+    The parent builds its client from ``base_url``, so the provider still owns and
+    closes its HTTP client and reports the regional URL in usage metadata.
+    """
+
+    def __init__(self, *, base_url: str, api_key: str) -> None:
+        self._regional_base_url = base_url
+        super().__init__(api_key=api_key)
+
+    @property
+    def base_url(self) -> str:
+        return self._regional_base_url
+
+
 def _build_openrouter_provider(
     request: base.BuildRequest,
 ) -> openrouter_provider.OpenRouterProvider:
-    if request.credential.strip().startswith("{") is False:
+    stripped_credential = request.credential.strip()
+    if stripped_credential.startswith(("{", "[")) is False:
         return openrouter_provider.OpenRouterProvider(api_key=request.credential)
     creds = credentials.parse_json_object(
-        request.credential, "OpenRouter provider", request.model_name
+        stripped_credential, "OpenRouter provider", request.model_name
     )
     credentials.require_keys(creds, ["api_key"], "OpenRouter provider")
     credentials.require_non_empty_strings(
         creds, ["api_key", "region"], "OpenRouter provider"
     )
+    api_key = creds["api_key"].strip()
     region = creds.get("region", OPENROUTER_GLOBAL_REGION).strip()
     base_url = OPENROUTER_BASE_URLS.get(region)
     if base_url is None:
@@ -277,16 +294,8 @@ def _build_openrouter_provider(
             f"{', '.join(OPENROUTER_BASE_URLS)} (model={request.model_name})."
         )
     if region == OPENROUTER_GLOBAL_REGION:
-        return openrouter_provider.OpenRouterProvider(api_key=creds["api_key"])
-    # OpenRouterProvider's base URL is fixed, so a regional one needs its own client.
-    return openrouter_provider.OpenRouterProvider(
-        openai_client=openai_sdk.AsyncOpenAI(
-            base_url=base_url,
-            api_key=creds["api_key"],
-            # openai>=3 types this as httpx2 but still accepts httpx, as pydantic-ai does.
-            http_client=models.create_async_http_client(),  # type: ignore[arg-type]
-        )
-    )
+        return openrouter_provider.OpenRouterProvider(api_key=api_key)
+    return _RegionalOpenRouterProvider(base_url=base_url, api_key=api_key)
 
 
 def _build_gateway_model(request: base.BuildRequest, base_url: str) -> models.Model:
