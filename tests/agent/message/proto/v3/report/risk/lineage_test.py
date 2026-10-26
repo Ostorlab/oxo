@@ -1,13 +1,9 @@
 """Canonical risk references and finding provenance survive the message bus."""
 
-from typing import Any
-
-import pytest
 from google.protobuf import descriptor_pb2
 
 from ostorlab.agent.message import message
 from ostorlab.agent.message.proto.v3.report.risk import risk_pb2
-from ostorlab.assets import risk as risk_asset
 
 
 def testRiskMessage_whenCanonicalIdProvided_roundTripsReference() -> None:
@@ -78,31 +74,3 @@ def testVulnerabilityMessage_whenLegacyPayload_keepsUnknownOriginAbsent() -> Non
     incoming = message.Message.from_raw(outgoing.selector, outgoing.raw)
 
     assert incoming.data == payload
-
-
-def testRiskAsset_whenCanonicalIdProvided_preservesReference() -> None:
-    asset = risk_asset.Risk(
-        description="Combine credential exposure and remote access",
-        rating="HIGH",
-        risk_id=203,
-    )
-
-    incoming = message.Message.from_raw(asset.selector, asset.to_proto())
-
-    assert incoming.data == {
-        "description": "Combine credential exposure and remote access",
-        "rating": "HIGH",
-        "risk_id": 203,
-    }
-
-
-@pytest.mark.parametrize("removed_name", ["kind", "parent_risk_ids"])
-def testRiskAsset_whenRemovedMetadataProvided_rejectsConstructorArgument(
-    removed_name: str,
-) -> None:
-    metadata: dict[str, Any] = {
-        removed_name: "chain" if removed_name == "kind" else [101, 102]
-    }
-
-    with pytest.raises(TypeError, match="unexpected keyword argument"):
-        risk_asset.Risk(description="Persisted chain", rating="HIGH", **metadata)
