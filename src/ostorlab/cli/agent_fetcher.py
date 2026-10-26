@@ -66,17 +66,23 @@ def get_details(
     request = agent_details_api.AgentDetailsAPIRequest(
         agent_key, use_experimental=use_experimental, channel=channel
     )
+    response: dict[str, Any] | None
     try:
-        try:
-            response = runner.execute(request)
-        except base_runner.UnauthorizedError:
-            console.warning(
-                "Your oxo session is invalid or expired, fetching the agent from the public store. "
-                "Please log in again using `oxo auth login`."
-            )
-            response = public_runner.PublicAPIRunner().execute(request)
+        response = runner.execute(request)
+    except base_runner.UnauthorizedError:
+        console.warning(
+            "Your oxo session is invalid or expired, fetching the agent from the public store. "
+            "Please log in again using `oxo auth login`."
+        )
+        response = None
     except base_runner.ResponseError as e:
         raise AgentDetailsNotFound("requested agent not found") from e
+
+    if response is None:
+        try:
+            response = public_runner.PublicAPIRunner().execute(request)
+        except base_runner.ResponseError as e:
+            raise AgentDetailsNotFound("requested agent not found") from e
 
     if "errors" in response:
         error_message = f"""The provided agent key : {agent_key} does not correspond to any agent.
