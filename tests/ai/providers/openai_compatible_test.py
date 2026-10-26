@@ -334,6 +334,99 @@ def testBuildModel_whenOpenRouterModelIsNotKimiOrDeepSeek_shouldKeepOpenRoutersT
     assert model.profile.openai_supports_tool_choice_required is True
 
 
+@pytest.mark.parametrize(
+    ("credential", "expected_base_url"),
+    [
+        ("or-key", "https://openrouter.ai/api/v1/"),
+        ('{"api_key": "or-key"}', "https://openrouter.ai/api/v1/"),
+        ('{"api_key": "or-key", "region": "global"}', "https://openrouter.ai/api/v1/"),
+        ('{"api_key": "or-key", "region": "us"}', "https://us.openrouter.ai/api/v1/"),
+        (' {"api_key": "or-key", "region": "eu"} ', "https://eu.openrouter.ai/api/v1/"),
+    ],
+)
+def testBuildModel_whenOpenRouterRegion_shouldTargetTheRegionalEndpoint(
+    credential: str, expected_base_url: str
+) -> None:
+    model = factory.build_model("openrouter/z-ai/glm-5", credential)
+
+    assert isinstance(model, pydantic_openrouter.OpenRouterModel)
+    assert str(model.client.base_url) == expected_base_url
+    assert model.client.api_key == "or-key"
+    assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
+    assert model.profile.openai_chat_thinking_field == "reasoning"
+
+
+@pytest.mark.parametrize("region", ["us", "eu"])
+def testBuildModel_whenRegionalOpenRouterKimiOrDeepSeek_shouldNotForceToolChoice(
+    region: str,
+) -> None:
+    model = factory.build_model(
+        "openrouter/moonshotai/kimi-k2.6",
+        json.dumps({"api_key": "k", "region": region}),
+    )
+
+    assert isinstance(model, pydantic_openrouter.OpenRouterModel)
+    assert str(model.client.base_url) == f"https://{region}.openrouter.ai/api/v1/"
+    assert isinstance(model.profile, openrouter_provider.OpenRouterModelProfile)
+    assert model.profile.openai_supports_tool_choice_required is False
+
+
+def testRunModel_whenOpenRouterRegionIsEu_shouldCallTheEuEndpointWithTheKey(
+    httpx_mock: HTTPXMock,
+) -> None:
+    httpx_mock.add_response(
+        url="https://eu.openrouter.ai/api/v1/chat/completions",
+        json={
+            "id": "gen-1",
+            "object": "chat.completion",
+            "created": 0,
+            "model": "z-ai/glm-5",
+            "provider": "Z.AI",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "ok"},
+                    "finish_reason": "stop",
+                }
+            ],
+        },
+    )
+    model = factory.build_model(
+        "openrouter/z-ai/glm-5", '{"api_key": "or-key", "region": "eu"}'
+    )
+
+    pydantic_ai.Agent(model).run_sync("hello")
+
+    request = httpx_mock.get_request()
+    assert request is not None
+    assert str(request.url) == "https://eu.openrouter.ai/api/v1/chat/completions"
+    assert request.headers["authorization"] == "Bearer or-key"
+
+
+@pytest.mark.parametrize(
+    ("credential", "expected_message"),
+    [
+        ('{"region": "us"}', "Missing required credential(s) for OpenRouter provider"),
+        ('{"api_key": "  ", "region": "us"}', "must be non-empty strings: api_key"),
+        ('{"api_key": 42}', "must be non-empty strings: api_key"),
+        ('{"api_key": "or-secret", "region": ""}', "must be non-empty strings: region"),
+        (
+            '{"api_key": "or-secret", "region": "asia"}',
+            "must be one of: global, us, eu",
+        ),
+        ('{"api_key": "or-secret", "region": "us"', "Invalid JSON in API key"),
+    ],
+)
+def testBuildModel_whenOpenRouterJsonCredentialInvalid_shouldRaiseWithoutTheKey(
+    credential: str, expected_message: str
+) -> None:
+    with pytest.raises(errors.ModelConfigurationError) as exc_info:
+        factory.build_model("openrouter/z-ai/glm-5", credential)
+
+    assert expected_message in str(exc_info.value)
+    assert "or-secret" not in str(exc_info.value)
+
+
 _LOCAL_SERVER = options.ProviderOptions(
     openai_compatible_base_url="http://gpu-box:8000/v1"
 )

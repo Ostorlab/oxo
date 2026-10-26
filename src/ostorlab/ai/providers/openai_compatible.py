@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 
+import openai as openai_sdk
 from pydantic_ai import models
 from pydantic_ai.models import openai
 from pydantic_ai.models import openrouter as openrouter_model
@@ -26,6 +27,14 @@ logger = logging.getLogger(__name__)
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4"
 QWEN_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
+# OpenRouter in-region routing: same key and model IDs, only the base URL changes.
+OPENROUTER_GLOBAL_REGION = "global"
+OPENROUTER_BASE_URLS = {
+    OPENROUTER_GLOBAL_REGION: "https://openrouter.ai/api/v1",
+    "us": "https://us.openrouter.ai/api/v1",
+    "eu": "https://eu.openrouter.ai/api/v1",
+}
 
 # Model families that fail on OpenRouter when tool_choice=required is forced, verified
 # live: Moonshot (Kimi) upstream providers return a 400 (kimi-k2.5 every time,
@@ -64,8 +73,11 @@ def build_openrouter(request: base.BuildRequest) -> models.Model:
     ``reasoning`` field OpenRouter actually returns) instead of forcing OpenAI's
     conventions on every model. Moonshot (Kimi) and DeepSeek models additionally
     have ``tool_choice=required`` turned off, which they fail on through OpenRouter.
+
+    The credential is a plain API key (global endpoint) or
+    ``{"api_key", "region"?}`` to use a regional endpoint (``global``, ``us``, ``eu``).
     """
-    provider = openrouter_provider.OpenRouterProvider(api_key=request.credential)
+    provider = _build_openrouter_provider(request)
     # OpenRouter's latest-model aliases are ``~provider/model``; pydantic-ai strips the
     # ``~`` to pick the profile, so the family check must too.
     model_family = request.model_name.removeprefix("~")
@@ -242,6 +254,38 @@ def build_azure_ai_foundry(request: base.BuildRequest) -> models.Model:
             api_key=creds["api_key"],
         ),
         settings=request.settings,
+    )
+
+
+def _build_openrouter_provider(
+    request: base.BuildRequest,
+) -> openrouter_provider.OpenRouterProvider:
+    if request.credential.strip().startswith("{") is False:
+        return openrouter_provider.OpenRouterProvider(api_key=request.credential)
+    creds = credentials.parse_json_object(
+        request.credential, "OpenRouter provider", request.model_name
+    )
+    credentials.require_keys(creds, ["api_key"], "OpenRouter provider")
+    credentials.require_non_empty_strings(
+        creds, ["api_key", "region"], "OpenRouter provider"
+    )
+    region = creds.get("region", OPENROUTER_GLOBAL_REGION).strip()
+    base_url = OPENROUTER_BASE_URLS.get(region)
+    if base_url is None:
+        raise errors.ModelConfigurationError(
+            "Credential 'region' for OpenRouter provider must be one of: "
+            f"{', '.join(OPENROUTER_BASE_URLS)} (model={request.model_name})."
+        )
+    if region == OPENROUTER_GLOBAL_REGION:
+        return openrouter_provider.OpenRouterProvider(api_key=creds["api_key"])
+    # OpenRouterProvider's base URL is fixed, so a regional one needs its own client.
+    return openrouter_provider.OpenRouterProvider(
+        openai_client=openai_sdk.AsyncOpenAI(
+            base_url=base_url,
+            api_key=creds["api_key"],
+            # openai>=3 types this as httpx2 but still accepts httpx, as pydantic-ai does.
+            http_client=models.create_async_http_client(),  # type: ignore[arg-type]
+        )
     )
 
 
