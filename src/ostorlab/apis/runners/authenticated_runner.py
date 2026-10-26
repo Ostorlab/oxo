@@ -119,6 +119,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             request: The request to be executed
 
         Raises:
+            UnauthorizedError: When the API rejects the authentication credentials
             ResponseError: When the API returns an error
 
         Returns:
@@ -133,6 +134,10 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             console.warning("No authentication credentials were provided.")
 
         response = self._sent_request(request, headers)
+        if response.status_code == httpx.codes.UNAUTHORIZED:
+            raise runner.UnauthorizedError(
+                f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
+            )
         if response.status_code != 200:
             logger.debug(
                 "Response status code is %s: %s", response.status_code, response.content

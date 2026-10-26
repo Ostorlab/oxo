@@ -3,6 +3,12 @@
 import json
 from unittest import mock
 
+import pytest
+import pytest_httpx
+
+from ostorlab import configuration_manager
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import public_runner
 from ostorlab.cli import agent_fetcher
 
 
@@ -214,3 +220,89 @@ def testGetDetails_whenChannelProvided_buildsRequestWithChannel() -> None:
             api_request = mock_runner.execute.call_args.args[0]
             assert json.loads(api_request.data["variables"])["channel"] == "beta"
             assert "channel: $channel" in api_request.query
+
+
+@mock.patch.object(
+    configuration_manager.ConfigurationManager,
+    "authorization_token",
+    new_callable=mock.PropertyMock,
+    return_value="expired-token",
+)
+def testGetDetails_whenStoredTokenIsRejected_fallsBackToPublicStoreAndWarns(
+    mock_authorization_token: mock.PropertyMock,
+    httpx_mock: pytest_httpx.HTTPXMock,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that get_details fetches the agent from the public store and warns the user
+    to log in again when the authenticated API rejects the stored token."""
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json={"detail": "Invalid token."},
+        status_code=401,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=public_runner.PUBLIC_GRAPHQL_ENDPOINT,
+        json={"data": {"agent": {"key": "agent/ostorlab/nmap"}}},
+        status_code=200,
+    )
+
+    result = agent_fetcher.get_details("agent/ostorlab/nmap")
+
+    assert result == {"key": "agent/ostorlab/nmap"}
+    output = capsys.readouterr().out.replace("\n", "")
+    assert "Your oxo session is invalid or expired" in output
+    assert "oxo auth login" in output
+
+
+@mock.patch.object(
+    configuration_manager.ConfigurationManager,
+    "authorization_token",
+    new_callable=mock.PropertyMock,
+    return_value="expired-token",
+)
+def testGetDetails_whenStoredTokenIsRejectedAndAgentNotOnPublicStore_raisesAgentDetailsNotFound(
+    mock_authorization_token: mock.PropertyMock,
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
+    """Test that get_details raises AgentDetailsNotFound when the token is rejected and the
+    public store does not know the agent."""
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json={"detail": "Invalid token."},
+        status_code=401,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url=public_runner.PUBLIC_GRAPHQL_ENDPOINT,
+        json={"errors": [{"message": "Agent matching query does not exist."}]},
+        status_code=200,
+    )
+
+    with pytest.raises(agent_fetcher.AgentDetailsNotFound):
+        agent_fetcher.get_details("agent/ostorlab/private_agent")
+
+
+@mock.patch.object(
+    configuration_manager.ConfigurationManager,
+    "authorization_token",
+    new_callable=mock.PropertyMock,
+    return_value="valid-token",
+)
+def testGetDetails_whenAuthenticatedApiFailsWithServerError_raisesAgentDetailsNotFoundWithoutFallback(
+    mock_authorization_token: mock.PropertyMock,
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
+    """Test that get_details only falls back to the public store on a rejected token, and
+    still raises AgentDetailsNotFound on other authenticated API errors."""
+    httpx_mock.add_response(
+        method="POST",
+        url=authenticated_runner.AUTHENTICATED_GRAPHQL_ENDPOINT,
+        json={"detail": "Internal error."},
+        status_code=500,
+    )
+
+    with pytest.raises(agent_fetcher.AgentDetailsNotFound):
+        agent_fetcher.get_details("agent/ostorlab/nmap")
