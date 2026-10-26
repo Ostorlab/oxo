@@ -16,9 +16,11 @@ from ostorlab.apis import agent_details as agent_details_api
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.apis.runners import public_runner
 from ostorlab.apis.runners import runner as base_runner
+from ostorlab.cli import console as cli_console
 from ostorlab.utils import version as version_definition
 
 logger = logging.getLogger(__name__)
+console = cli_console.Console(logger=logger)
 
 
 class Error(Exception):
@@ -61,14 +63,26 @@ def get_details(
     else:
         runner = public_runner.PublicAPIRunner()
 
+    request = agent_details_api.AgentDetailsAPIRequest(
+        agent_key, use_experimental=use_experimental, channel=channel
+    )
+    response: dict[str, Any] | None
     try:
-        response = runner.execute(
-            agent_details_api.AgentDetailsAPIRequest(
-                agent_key, use_experimental=use_experimental, channel=channel
-            )
+        response = runner.execute(request)
+    except base_runner.UnauthorizedError:
+        console.warning(
+            "Your oxo session is invalid or expired, fetching the agent from the public store. "
+            "Please log in again using `oxo auth login`."
         )
+        response = None
     except base_runner.ResponseError as e:
         raise AgentDetailsNotFound("requested agent not found") from e
+
+    if response is None:
+        try:
+            response = public_runner.PublicAPIRunner().execute(request)
+        except base_runner.ResponseError as e:
+            raise AgentDetailsNotFound("requested agent not found") from e
 
     if "errors" in response:
         error_message = f"""The provided agent key : {agent_key} does not correspond to any agent.
