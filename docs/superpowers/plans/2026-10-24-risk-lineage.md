@@ -1,5 +1,7 @@
 # Risk lineage wire contract implementation plan
 
+> Historical wire contract, superseded on 2026-10-26 by [persisted risk messages](2026-10-26-persisted-risk-messages.md). Risk messages retain canonical `risk_id = 25`; kind/parents now stay in the backend, and tags 26/27 plus their names are reserved. Vulnerability `source_risk_ids = 23` is unchanged. The implementation and revision notes below describe the earlier proposal.
+
 **Problem:** Risk and vulnerability messages previously could not carry persisted risk identity, parent links or finding provenance.
 
 **Goal:** Carry canonical risk IDs, selected risk parents and finding provenance across compatible message schemas.
