@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 NUMBER_RETRIES = 6
 WAIT_FIXED_TIME = 5
 DEFAULT_MAX_PRIORITY = 255
-DRAIN_PROTOCOL_VERSION = 1
 
 
 class AgentMQMixin:
@@ -112,10 +111,9 @@ class AgentMQMixin:
             self._consumer_connection = connection
             channel = await connection.channel()
             await self._declare_mq_queue(channel, delete_queue_first)
-            if self._queue is None:
-                raise ValueError("queue not created")
+            queue = typing.cast(aio_pika.abc.AbstractQueue, self._queue)
             if self._draining is False:
-                self._consumer_tag = await self._queue.consume(
+                self._consumer_tag = await queue.consume(
                     self._mq_process_message, no_ack=False
                 )
 
