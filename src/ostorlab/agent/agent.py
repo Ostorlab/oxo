@@ -16,7 +16,6 @@ import os
 import pathlib
 import signal
 import sys
-import threading
 import uuid
 from collections.abc import Callable
 from typing import Any
@@ -156,6 +155,9 @@ class AgentMixin(
             host=agent_settings.healthcheck_host,
             port=agent_settings.healthcheck_port,
         )
+        self._running: bool = False
+        self._exit_called: bool = False
+        self._shutdown_requested: asyncio.Event = asyncio.Event()
         signal.signal(signal.SIGTERM, self._handle_signal)
 
     @property
@@ -208,23 +210,57 @@ class AgentMixin(
 
         Connects to the agent bus, start health check and start listening to new messages.
         """
-        self.add_healthcheck(self.is_healthy)
-        self.start_healthcheck()
-        self._loop.run_until_complete(self.mq_init())
-        logger.debug("calling start method")
-        # This is call in a thread to avoid blocking calls from affecting the MQ heartbeat running on the main thread.
-        t = threading.Thread(target=self.start)
-        t.start()
-        t.join()
-        logger.debug("calling start method done")
+        self._running = True
         try:
-            if self.in_selectors is not None and len(self.in_selectors) > 0:
-                logger.debug("starting mq run")
-                self._loop.run_until_complete(self.mq_run())
-                self._loop.run_forever()
+            self.add_healthcheck(self.is_healthy)
+            self.start_healthcheck()
+            self._loop.run_until_complete(self._run())
         finally:
-            logger.debug("closing bus and loop")
+            self._executor.shutdown(wait=True)
+            self._running = False
             self._loop.close()
+
+    async def _run(self) -> None:
+        try:
+            if self._draining is True:
+                return
+            await self.mq_init()
+            if self._draining is True:
+                return
+            await self._run_start()
+            if self.in_selectors is not None and len(self.in_selectors) > 0:
+                if self._draining is False:
+                    await self.mq_run()
+                await self._shutdown_requested.wait()
+        finally:
+            await self.mq_drain()
+            try:
+                await self._exit()
+            finally:
+                await self.mq_close()
+                await self._loop.run_in_executor(self._executor, self.stop_healthcheck)
+
+    async def _run_start(self) -> None:
+        starting = self._loop.run_in_executor(self._executor, self.start)
+        if self.in_selectors is not None and len(self.in_selectors) > 0:
+            await starting
+            return
+        shutdown = self._loop.create_task(self._shutdown_requested.wait())
+        try:
+            await asyncio.wait(
+                (starting, shutdown), return_when=asyncio.FIRST_COMPLETED
+            )
+            if starting.done() is False:
+                await self._exit()
+            await starting
+        finally:
+            shutdown.cancel()
+            await asyncio.gather(shutdown, return_exceptions=True)
+
+    async def _exit(self) -> None:
+        if self._exit_called is False:
+            self._exit_called = True
+            await self._loop.run_in_executor(self._executor, self.at_exit)
 
     @abc.abstractmethod
     def is_healthy(self) -> bool:
@@ -333,12 +369,19 @@ class AgentMixin(
         raise NotImplementedError()
 
     def _handle_signal(self, *args: object) -> None:
-        """Call the Agent `at_exit` method responsible for executing cleanup
-        in the case of unexpected agent termination.
+        """Stop admission and finish active callbacks before exit cleanup.
+
+        Docker's stop grace remains the external deadline. A second SIGTERM does
+        not interrupt work or repeat cleanup.
         """
         del args
-        self.at_exit()
-        sys.exit()
+        if self._running is False:
+            if self._exit_called is False:
+                self._exit_called = True
+                self.at_exit()
+            sys.exit()
+        self.mq_request_drain()
+        self._loop.call_soon_threadsafe(self._shutdown_requested.set)
 
     @abc.abstractmethod
     def at_exit(self) -> None:

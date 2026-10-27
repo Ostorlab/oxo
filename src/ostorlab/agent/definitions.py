@@ -34,6 +34,17 @@ class AgentDefinition:
     service_name: str | None = None
     caps: list[str] | None = None
     supported_architectures: list[str] | None = None
+    stop_grace_period: float = 10
+
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.stop_grace_period, bool)
+            or isinstance(self.stop_grace_period, (int, float)) is False
+            or (1e-9 <= self.stop_grace_period <= 9_223_372_036) is False
+        ):
+            raise ValueError(
+                "stop_grace_period must be finite seconds between 1e-9 and 9223372036"
+            )
 
     @classmethod
     def from_yaml(cls, file: IO[str] | IO[bytes]) -> "AgentDefinition":
@@ -82,4 +93,5 @@ class AgentDefinition:
             service_name=definition.get("service_name"),
             caps=definition.get("caps"),
             supported_architectures=definition.get("supported_architectures"),
+            stop_grace_period=definition.get("stop_grace_period", 10),
         )
