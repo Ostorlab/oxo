@@ -61,8 +61,9 @@ Docker may select any replica, so every eligible replica must implement draining
    that pass; pin the deployed image digest.
 3. Configure an adequate `stop_grace_period`, deploy the verified image, and
    inspect the effective service specification and the running image identity.
-4. Enable the autoscaler capability/grace checks, first in shadow mode and then
-   in staging. Test arbitrary victim selection and confirm active work finishes
+4. Validate the autoscaler capability/grace checks in isolated staging with a
+   recording actuator before enabling real scaling. Test arbitrary victim
+   selection and confirm active work finishes
    before exit. Keep drain resource use in capacity calculations until exit.
 5. Enable physical scale-down only after the broker, worker and orchestrator
    checks pass. Revert to deferred physical retirement when verification fails.
