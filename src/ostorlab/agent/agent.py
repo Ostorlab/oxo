@@ -217,8 +217,8 @@ class AgentMixin(
             self._loop.run_until_complete(self._run())
         finally:
             self._executor.shutdown(wait=True)
-            self._loop.close()
             self._running = False
+            self._loop.close()
 
     async def _run(self) -> None:
         try:
@@ -375,7 +375,9 @@ class AgentMixin(
         """
         del args
         if self._running is False:
-            self.at_exit()
+            if self._exit_called is False:
+                self._exit_called = True
+                self.at_exit()
             sys.exit()
         self.mq_request_drain()
         self._loop.call_soon_threadsafe(self._shutdown_requested.set)

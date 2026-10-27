@@ -35,3 +35,15 @@ def testAgentHealthcheckCLI_whenEndpointReturnsNotFound_commandExitsWithError(
 
     assert "Response status code is 404" in result.output
     assert result.exit_code == 2
+
+
+def testAgentHealthcheckCLI_whenEndpointReturnsOK_commandExitsWithoutError(
+    httpx_mock: pytest_httpx.HTTPXMock,
+) -> None:
+    """Check the healthy HTTP response produces a successful CLI result."""
+    httpx_mock.add_response(
+        url="http://localhost:5000/status", status_code=200, text="OK"
+    )
+    result = testing.CliRunner().invoke(rootcli.rootcli, ["agent", "healthcheck"])
+    assert result.exit_code == 0
+    assert "Healthcheck OK on http://localhost:5000/status" in result.output

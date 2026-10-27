@@ -33,7 +33,7 @@ acknowledgment time. The example allows 24 hours; it cannot guarantee completion
 of longer tasks or recovery after host loss. Ensure the container entrypoint
 forwards SIGTERM to the worker, or uses exec form so the worker receives it.
 
-## Opt in a verified image
+## Mark a verified image as drain-capable
 
 Only after testing the new SDK lifecycle in the actual agent image, add this
 Dockerfile label to that image:
@@ -44,8 +44,9 @@ LABEL ostorlab.worker_drain="1"
 
 This label declares a tested worker capability. Do not add it automatically to
 all builds, copy it onto services as a substitute, or set it on older images.
-The autoscaler must inspect the actual deployed image and its effective service
-grace period before permitting physical scale-down. An agent definition value or
+The [autoscaler](https://github.com/Ostorlab/agent_autoscaler/pull/92) must inspect
+the actual deployed image and its effective service grace period before
+permitting physical scale-down. An agent definition value or
 an aggregate unacknowledged-message count is insufficient evidence. A missing or
 unverified capability must leave physical scale-down disabled for busy workers.
 Docker may select any replica, so every eligible replica must implement draining.
@@ -63,12 +64,12 @@ Docker may select any replica, so every eligible replica must implement draining
    inspect the effective service specification and the running image identity.
 4. Validate the autoscaler capability/grace checks in isolated staging with a
    recording actuator before enabling real scaling. Test arbitrary victim
-   selection and confirm active work finishes
-   before exit. Keep drain resource use in capacity calculations until exit.
+   selection and confirm active work finishes before exit. Keep drain resource use
+   in capacity calculations until exit.
 5. Enable physical scale-down only after the broker, worker and orchestrator
    checks pass. Revert to deferred physical retirement when verification fails.
 
 Long grace periods delay deployment convergence and shutdown. Drain support does
-not make arbitrary external side effects resumable or exactly once. A checkpoint
-protocol, durable state, and idempotency require separate implementation and
-verification.
+not make arbitrary external side effects resumable, nor does it guarantee
+exactly-once effects. A checkpoint protocol, durable state, and idempotency require
+separate implementation and verification.

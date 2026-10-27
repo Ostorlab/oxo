@@ -151,3 +151,68 @@ def testAgent_standaloneSigterm_cleanupStopsLongRunningStart() -> None:
         if process.is_alive() is True:
             process.kill()
         process.join(5)
+
+
+class _LateSignalAgent(agent.Agent):
+    def __init__(self) -> None:
+        self.cleanup_calls: int = 0
+        super().__init__(
+            agent_definitions.AgentDefinition(name="late-signal"),
+            runtime_definitions.AgentSettings(key="late-signal", healthcheck_port=0),
+        )
+
+    def start_healthcheck(self) -> None:
+        pass
+
+    def stop_healthcheck(self) -> None:
+        pass
+
+    async def mq_init(self, delete_queue_first: bool = False) -> None:
+        del delete_queue_first
+
+    def at_exit(self) -> None:
+        self.cleanup_calls += 1
+
+
+@pytest.mark.parametrize("run_first", [False, True])
+def testAgent_sigtermOutsideRun_callsCleanupOnlyOnce(run_first: bool) -> None:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    previous_handler = signal.getsignal(signal.SIGTERM)
+    instance = _LateSignalAgent()
+    try:
+        if run_first is True:
+            instance.run()
+        for _ in range(2):
+            with pytest.raises(SystemExit):
+                instance._handle_signal(signal.SIGTERM, None)
+        assert instance.cleanup_calls == 1
+    finally:
+        instance._executor.shutdown()
+        loop.close()
+        signal.signal(signal.SIGTERM, previous_handler)
+        asyncio.set_event_loop(None)
+
+
+def testAgent_sigtermAtLoopClose_exitsWithoutSchedulingOnClosedLoop() -> None:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    previous_handler = signal.getsignal(signal.SIGTERM)
+    instance = _LateSignalAgent()
+    close_loop = loop.close
+
+    def close_then_signal() -> None:
+        close_loop()
+        with pytest.raises(SystemExit):
+            instance._handle_signal(signal.SIGTERM, None)
+
+    try:
+        with mock.patch.object(loop, "close", side_effect=close_then_signal):
+            instance.run()
+        assert loop.is_closed() is True
+        assert instance.cleanup_calls == 1
+    finally:
+        instance._executor.shutdown()
+        close_loop()
+        signal.signal(signal.SIGTERM, previous_handler)
+        asyncio.set_event_loop(None)
