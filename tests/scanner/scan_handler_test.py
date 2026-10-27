@@ -247,6 +247,7 @@ def _mock_reserved_scan(mocker: plugin.MockerFixture) -> Any:
     )
     runner = mocker.MagicMock()
     runner.execute.side_effect = [
+        {"data": {"scans": {"scans": [], "pageInfo": {"numPages": 1}}}},
         {"data": {"scans": {"scans": [{"id": 42}]}}},
         {
             "data": {
@@ -280,7 +281,7 @@ def testHandleMessages_whenSnapshotRestoreFails_reportsScanPaused(
     with pytest.raises(RuntimeError, match="stop"):
         scan_handler_instance.handle_messages(runner, api_key="test_key")
 
-    assert runner.execute.call_count == 3
+    assert runner.execute.call_count == 4
     variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "paused"
@@ -305,7 +306,7 @@ def testHandleMessages_whenSnapshotBucketCannotBeRead_reportsScanNotStarted(
     with pytest.raises(RuntimeError, match="stop"):
         scan_handler_instance.handle_messages(runner, api_key="test_key")
 
-    assert runner.execute.call_count == 3
+    assert runner.execute.call_count == 4
     variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "not_started"
@@ -358,6 +359,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
     )
     runner = mocker.MagicMock()
     runner.execute.side_effect = [
+        {"data": {"scans": {"scans": [], "pageInfo": {"numPages": 1}}}},
         {"data": {"scans": {"scans": [{"id": 42}]}}},
         {
             "data": {
@@ -416,3 +418,56 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
 
     assert result == {"id": 99, "progress": "locked"}
     runner.execute.assert_called_once()
+
+
+def testHandleMessages_whenAtCapacity_reconcilesFailedQueuesBeforeSleeping(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An occupied scanner must still report a terminal worker processing failure."""
+    docker_client = mocker.MagicMock()
+    worker = mocker.MagicMock()
+    worker.attrs = {
+        "Spec": {
+            "Labels": {"ostorlab.universe": "42", "ostorlab.queue_name": "worker"},
+            "Mode": {"Replicated": {"Replicas": 1}},
+            "TaskTemplate": {
+                "RestartPolicy": {"Condition": "any"},
+                "ContainerSpec": {"Labels": {"ostorlab.scan_id": "42"}},
+            },
+        }
+    }
+    worker.tasks.return_value = [{"Status": {"State": "running"}}]
+    broker = mocker.MagicMock()
+    broker.attrs = {"Spec": {"Labels": {"ostorlab.universe": "42", "ostorlab.mq": ""}}}
+    broker.tasks.return_value = [
+        {"Status": {"State": "running", "ContainerStatus": {"ContainerID": "mq"}}}
+    ]
+    docker_client.services.list.return_value = [worker, broker]
+    docker_client.containers.get.return_value.exec_run.return_value = mocker.Mock(
+        exit_code=0,
+        output=b'[{"name":"worker_queue.failed","messages_ready":1,"messages_unacknowledged":0,"consumers":0}]',
+    )
+    mocker.patch("docker.from_env", return_value=docker_client)
+    mocker.patch("time.sleep", side_effect=RuntimeError("stop"))
+    reporter = scanner_state_reporter.ScannerStateReporter(
+        scanner_id="scanner", hostname="test", ip="127.0.0.1"
+    )
+    handler = scan_handler.ScanHandler(reporter, max_concurrent_scans=1)
+    runner = mocker.MagicMock()
+    runner.execute.side_effect = [
+        {"data": {"scans": {"scans": [{"id": "42"}], "pageInfo": {"numPages": 1}}}},
+        {"data": {"scans": {"scans": [{"id": "42"}], "pageInfo": {"numPages": 1}}}},
+        {"data": {"updateScan": {"success": True}}},
+    ]
+
+    with pytest.raises(RuntimeError, match="stop"):
+        handler.handle_messages(runner)
+
+    assert (
+        json.loads(runner.execute.call_args.kwargs["request"].data["variables"])[
+            "progress"
+        ]
+        == "error"
+    )
+    worker.update.assert_not_called()
+    broker.remove.assert_not_called()

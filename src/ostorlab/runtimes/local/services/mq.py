@@ -19,6 +19,7 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
+from ostorlab.runtimes.local import resources
 from ostorlab.runtimes.local.services import container_exec
 
 logger = logging.getLogger(__name__)
@@ -118,12 +119,16 @@ class LocalRabbitMQ:
             )
         return None
 
-    def _create_mq_advanced_config(self) -> types.services.ConfigReference:
+    def _create_mq_advanced_config(
+        self, memory_limit: int
+    ) -> types.services.ConfigReference:
         conf_path = (
             pathlib.Path(__file__).parent / "configurations/mq_advanced_conf.config"
         )
         with open(conf_path, "rb") as conf_file:
-            mq_advanced_configuration = conf_file.read()
+            mq_advanced_configuration = conf_file.read().replace(
+                b"MEMORY_HIGH_WATERMARK_BYTES", str(memory_limit // 2).encode()
+            )
         config_name = hashlib.md5(
             f"mq_advanced_config_{self._name}_{self._uuid}".encode()
         ).hexdigest()
@@ -157,7 +162,8 @@ class LocalRabbitMQ:
                 types.services.EndpointSpec,
             )(mode="vip", ports=self._exposed_ports)
             service_mode = types.services.ServiceMode("replicated", replicas=1)
-            mq_advanced_configuration = self._create_mq_advanced_config()
+            memory_limit = resources.memory_limit("mq")
+            mq_advanced_configuration = self._create_mq_advanced_config(memory_limit)
             configs = [mq_advanced_configuration]
             persistent_storage = docker.types.Mount(
                 target="/var/lib/rabbitmq", source=f"{self._name}_mq_data"
@@ -180,6 +186,7 @@ class LocalRabbitMQ:
                 labels={"ostorlab.universe": self._name, "ostorlab.mq": ""},
                 configs=configs,
                 endpoint_spec=endpoint_spec,
+                resources=resources.swarm_resources(memory_limit),
                 mounts=[persistent_storage],
             )
         except docker.errors.APIError as e:
@@ -190,11 +197,10 @@ class LocalRabbitMQ:
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(MQ_READINESS_ATTEMPTS),
         wait=tenacity.wait_fixed(MQ_READINESS_WAIT_SECONDS),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda _: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool | tenacity.Future:
+    def is_service_healthy(self) -> bool:
         """Check the service is running and RabbitMQ accepts client connections.
 
         A running task only means the container started; RabbitMQ needs a few more seconds before its AMQP

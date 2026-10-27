@@ -12,6 +12,7 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
+from ostorlab.runtimes.local import resources
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.services import container_exec
 
@@ -113,6 +114,7 @@ class LocalRedis:
                 mode=service_mode,
                 labels={"ostorlab.universe": self._name, "ostorlab.redis": ""},
                 endpoint_spec=endpoint_spec,
+                resources=resources.swarm_resources(resources.memory_limit("redis")),
             )
         except docker.errors.APIError as e:
             error_message = f"Redis service could not be started. Reason: {e}."
@@ -122,11 +124,10 @@ class LocalRedis:
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda _: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool | tenacity.Future:
+    def is_service_healthy(self) -> bool:
         logger.info(
             "checking service %s",
             typing.cast(services.Service, self._redis_service).name,
