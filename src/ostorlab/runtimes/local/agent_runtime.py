@@ -49,7 +49,6 @@ MAX_RANDOM_NAME_LEN = 5
 # `insertDefaults=true` then submits values the stored spec never had, which Swarm reads as a
 # changed task definition and answers by rolling the running tasks. Setting them at creation
 # keeps the stored spec complete so no such diff can appear. Values match Docker's own defaults.
-STOP_GRACE_PERIOD = 10 * SECOND
 UPDATE_MONITOR = 5 * SECOND
 UPDATE_PARALLELISM = 1
 UPDATE_FAILURE_ACTION: typing.Literal["pause"] = "pause"
@@ -498,7 +497,7 @@ class AgentRuntime:
             resources=resources,
             cap_add=caps,
             mode=docker_types_services.ServiceMode("replicated", replicas),
-            stop_grace_period=STOP_GRACE_PERIOD,
+            stop_grace_period=int(agent_definition.stop_grace_period * SECOND),
             dns_config=docker_types_services.DNSConfig(),
             update_config=docker_types_services.UpdateConfig(
                 parallelism=UPDATE_PARALLELISM,
