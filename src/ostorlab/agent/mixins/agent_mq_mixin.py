@@ -51,11 +51,16 @@ class AgentMQMixin:
                 self._loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self._loop)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-        self._queue: aio_pika.abc.AbstractRobustQueue | None = None
+        self._draining: bool = False
+        self._consumer_tag: str | None = None
+        self._consumer_connection: aio_pika.abc.AbstractRobustConnection | None = None
+        self._consumer_lock: asyncio.Lock = asyncio.Lock()
+        self._processing_tasks: set[asyncio.Task[None]] = set()
+        self._queue: aio_pika.abc.AbstractQueue | None = None
         self._connection_pool: aio_pika.pool.Pool[
             aio_pika.abc.AbstractRobustConnection
         ] = aio_pika.pool.Pool(self._get_connection, max_size=32, loop=self._loop)
-        self._channel_pool: aio_pika.pool.Pool[aio_pika.abc.AbstractRobustChannel] = (
+        self._channel_pool: aio_pika.pool.Pool[aio_pika.abc.AbstractChannel] = (
             aio_pika.pool.Pool(self._get_channel, max_size=64, loop=self._loop)
         )
 
@@ -69,7 +74,7 @@ class AgentMQMixin:
             url=self._url, loop=self._loop, fail_fast=False
         )
 
-    async def _get_channel(self) -> aio_pika.abc.AbstractRobustChannel:
+    async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         async with self._connection_pool.acquire() as connection:
             channel = await connection.channel()
             return channel
@@ -99,18 +104,54 @@ class AgentMQMixin:
         Args:
             delete_queue_first: Used for testing purposes. To delete pending queues first.
         """
-        connection = await self._get_connection()
-        channel = await connection.channel()
-        await self._declare_mq_queue(channel, delete_queue_first)
+        async with self._consumer_lock:
+            if self._draining is True:
+                return
+            connection = await self._get_connection()
+            self._consumer_connection = connection
+            channel = await connection.channel()
+            await self._declare_mq_queue(channel, delete_queue_first)
+            queue = typing.cast(aio_pika.abc.AbstractQueue, self._queue)
+            if self._draining is False:
+                self._consumer_tag = await queue.consume(
+                    self._mq_process_message, no_ack=False
+                )
 
-        if self._queue is None:
-            raise ValueError("queue not created")
+    def mq_request_drain(self) -> None:
+        """Close admission immediately; complete retirement with ``mq_drain``."""
+        self._draining = True
 
-        await self._queue.consume(self._mq_process_message, no_ack=False)
+    async def mq_drain(self) -> None:
+        """Cancel consumption and wait for active callbacks, including their ACKs.
+
+        There is no internal deadline. Container termination grace is the external
+        bound; forced termination or connection loss can still cause redelivery.
+        """
+        self.mq_request_drain()
+        async with self._consumer_lock:
+            if self._queue is not None and self._consumer_tag is not None:
+                try:
+                    await self._queue.cancel(self._consumer_tag)
+                    self._consumer_tag = None
+                except (aio_pika.exceptions.AMQPError, ConnectionError, TimeoutError):
+                    logger.exception("Consumer cancellation failed while draining")
+        while len(self._processing_tasks) > 0:
+            await asyncio.gather(
+                *(asyncio.shield(task) for task in self._processing_tasks),
+                return_exceptions=True,
+            )
+
+    async def mq_close(self) -> None:
+        """Close broker resources after work and exit cleanup have finished."""
+        if self._consumer_connection is not None:
+            await self._consumer_connection.close()
+            self._consumer_connection = None
+        await self._channel_pool.close()
+        await self._connection_pool.close()
 
     async def _declare_mq_queue(
         self,
-        channel: aio_pika.abc.AbstractRobustChannel,
+        channel: aio_pika.abc.AbstractChannel,
         delete_queue_first: bool = False,
     ) -> None:
         """Declare the MQ queue on a given channel.
@@ -141,8 +182,23 @@ class AgentMQMixin:
         self, message: aio_pika.abc.AbstractIncomingMessage
     ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
-        logger.debug("incoming pika message received")
+        processing = self._loop.create_task(self._mq_process_delivery(message))
+        self._processing_tasks.add(processing)
+        processing.add_done_callback(self._processing_tasks.discard)
+        while processing.done() is False:
+            try:
+                await asyncio.shield(processing)
+            except asyncio.CancelledError:
+                logger.warning("Waiting for active processing and acknowledgment")
+        processing.result()
+
+    async def _mq_process_delivery(
+        self, message: aio_pika.abc.AbstractIncomingMessage
+    ) -> None:
         try:
+            if self._draining is True:
+                await message.reject(requeue=True)
+                return
             async with message.process(requeue=True, reject_on_redelivered=True):
                 await self._loop.run_in_executor(
                     self._executor,
@@ -152,7 +208,8 @@ class AgentMQMixin:
                 )
         except aio_pika.exceptions.ChannelInvalidStateError:
             logger.warning("The channel is closed unexpectedly.")
-            await self.mq_run()
+            if self._draining is False:
+                await self.mq_run()
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Callback to implement to process the MQ messages received."""

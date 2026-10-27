@@ -38,6 +38,13 @@
     }
   },
   "properties": {
+    "stop_grace_period": {
+      "description": "[Optional] - Seconds allowed for cooperative shutdown before Docker sends SIGKILL. Does not enable worker draining.",
+      "type": "number",
+      "minimum": 1e-9,
+      "maximum": 9223372036,
+      "default": 10
+    },
     "kind": {
       "description": "[Required] - Only expected value : Agent.",
       "type": "string",
