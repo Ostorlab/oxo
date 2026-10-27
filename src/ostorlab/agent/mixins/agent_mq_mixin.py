@@ -132,10 +132,9 @@ class AgentMQMixin:
             if self._queue is not None and self._consumer_tag is not None:
                 try:
                     await self._queue.cancel(self._consumer_tag)
+                    self._consumer_tag = None
                 except (aio_pika.exceptions.AMQPError, ConnectionError, TimeoutError):
                     logger.exception("Consumer cancellation failed while draining")
-                else:
-                    self._consumer_tag = None
         while len(self._processing_tasks) > 0:
             await asyncio.gather(
                 *(asyncio.shield(task) for task in self._processing_tasks),
