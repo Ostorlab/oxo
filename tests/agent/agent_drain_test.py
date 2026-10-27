@@ -47,14 +47,13 @@ def _run_busy_agent(
             message = mock.Mock(spec=aio_pika.abc.AbstractIncomingMessage)
             message.body = b"risk"
             message.routing_key = "risk"
-            context = mock.AsyncMock()
 
             async def acknowledge(*args: object) -> None:
                 del args
                 acknowledged.set()
 
-            context.__aexit__.side_effect = acknowledge
-            message.process.return_value = context
+            message.headers = {}
+            message.ack = mock.AsyncMock(side_effect=acknowledge)
             self._callback = asyncio.create_task(self._mq_process_message(message))
 
         def process_message(self, selector: str, message: bytes) -> None:

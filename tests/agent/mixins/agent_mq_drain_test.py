@@ -34,9 +34,8 @@ async def testDrain_busyWorker_waitsForProcessingAndAcknowledgment(
     message = mocker.Mock(spec=aio_pika.abc.AbstractIncomingMessage)
     message.routing_key = "risk"
     message.body = b"risk"
-    context = mocker.AsyncMock()
-    context.__aexit__.side_effect = acknowledge
-    message.process.return_value = context
+    message.headers = {}
+    message.ack = mocker.AsyncMock(side_effect=acknowledge)
     mocker.patch.object(client, "process_message", side_effect=process)
     callback = asyncio.create_task(client._mq_process_message(message))
     try:
@@ -69,7 +68,7 @@ async def testDrain_lateRedeliveredMessage_requeuesWithoutProcessing(
     process = mocker.patch.object(client, "process_message")
     await client._mq_process_message(message)
     message.reject.assert_awaited_once_with(requeue=True)
-    message.process.assert_not_called()
+    message.ack.assert_not_called()
     process.assert_not_called()
     client._executor.shutdown()
 
@@ -120,9 +119,8 @@ async def testDrain_cancelledCallback_waitsThroughAcknowledgment(
     message = mocker.Mock(spec=aio_pika.abc.AbstractIncomingMessage)
     message.routing_key = "risk"
     message.body = b"risk"
-    context = mocker.AsyncMock()
-    context.__aexit__.side_effect = acknowledge
-    message.process.return_value = context
+    message.headers = {}
+    message.ack = mocker.AsyncMock(side_effect=acknowledge)
     mocker.patch.object(client, "process_message")
     callback = asyncio.create_task(client._mq_process_message(message))
     await asyncio.wait_for(ack_entered.wait(), 2)
@@ -191,7 +189,7 @@ async def testDrain_cancelFailure_keepsAdmissionClosed(
     message.redelivered = True
     await client._mq_process_message(message)
     message.reject.assert_awaited_once_with(requeue=True)
-    message.process.assert_not_called()
+    message.ack.assert_not_called()
     client._executor.shutdown()
 
 

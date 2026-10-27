@@ -218,7 +218,12 @@ class AgentMQMixin:
     ) -> None:
         logger.debug("incoming pika message received")
         if self._draining is True:
-            await message.reject(requeue=True)
+            try:
+                await message.reject(requeue=True)
+            except aio_pika.exceptions.ChannelInvalidStateError:
+                logger.warning(
+                    "Channel closed; original delivery remains unacknowledged"
+                )
             return
         original_selector = message.headers.get(
             ORIGINAL_ROUTING_KEY_HEADER, message.routing_key
@@ -255,9 +260,7 @@ class AgentMQMixin:
                     return
             await message.ack()
         except aio_pika.exceptions.ChannelInvalidStateError:
-            logger.warning("The channel is closed unexpectedly.")
-            if self._draining is False:
-                await self.mq_run()
+            logger.warning("Channel closed; original delivery remains unacknowledged")
 
     async def _transfer_failed_message(
         self,
