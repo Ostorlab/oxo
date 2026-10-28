@@ -37,3 +37,6 @@ def asn_cli(ctx: click.core.Context, asns: Sequence[str]) -> None:
             runtime.link_assets_scan(created_scan.id, assets)
     except exceptions.OstorlabError as e:
         console.error(f"An error was encountered while running the scan: {e}")
+    except NotImplementedError:
+        # The cloud runtime creates its assets through an API that has no ASN input yet.
+        console.error("ASN scans are not supported on this runtime yet.")
