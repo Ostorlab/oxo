@@ -21,7 +21,7 @@ def testScanRunASN_whenNoOptionsProvided_showsUsageAndExitsWithError(
     )
 
     assert result.exit_code == 2
-    assert "Missing argument" in result.output or "Usage:" in result.output
+    assert "Missing argument" in result.output
 
 
 def testScanRunASN_whenValidASNProvided_invokesRuntime(
@@ -85,22 +85,24 @@ def testScanRunASN_whenMultipleASNsProvided_invokesRuntimeWithAllAssets(
     assert result.exit_code == 0
 
 
-def testScanRunASN_whenRuntimeCannotCreateASNAsset_reportsUnsupportedRuntime(
+def testScanRunASN_whenCloudRuntime_refusesWithoutCreatingScan(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """The cloud runtime has no ASN input yet, the command reports it instead of crashing."""
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.__init__", return_value=None)
-    mocker.patch("ostorlab.runtimes.local.LocalRuntime.can_run", return_value=True)
+    """The cloud runtime has no ASN input yet, the command fails before creating a scan."""
     mocker.patch(
-        "ostorlab.runtimes.local.LocalRuntime.scan",
-        side_effect=NotImplementedError("Unknown asset type"),
+        "ostorlab.runtimes.cloud.runtime.CloudRuntime.__init__", return_value=None
     )
+    mocker.patch(
+        "ostorlab.runtimes.cloud.runtime.CloudRuntime.can_run", return_value=True
+    )
+    mock_scan = mocker.patch("ostorlab.runtimes.cloud.runtime.CloudRuntime.scan")
     runner = testing.CliRunner()
 
     result = runner.invoke(
         rootcli.rootcli,
-        ["scan", "--runtime=local", "run", "--agent=agent1", "asn", "15169"],
+        ["scan", "--runtime=cloud", "run", "--agent=agent1", "asn", "15169"],
     )
 
-    assert result.exception is None
-    assert "ASN scans are not supported on this runtime yet." in result.output
+    assert result.exit_code == 1
+    assert "ASN scans are not supported on the cloud runtime yet." in result.output
+    mock_scan.assert_not_called()

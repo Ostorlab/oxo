@@ -9,6 +9,7 @@ from ostorlab import exceptions
 from ostorlab.assets import asn as asn_asset
 from ostorlab.cli import console as cli_console
 from ostorlab.cli.scan.run import run
+from ostorlab.runtimes.cloud import runtime as cloud_runtime
 
 console = cli_console.Console()
 logger = logging.getLogger(__name__)
@@ -20,6 +21,10 @@ logger = logging.getLogger(__name__)
 def asn_cli(ctx: click.core.Context, asns: Sequence[str]) -> None:
     """Run scan for Autonomous System Number asset."""
     runtime = ctx.obj["runtime"]
+    if isinstance(runtime, cloud_runtime.CloudRuntime) is True:
+        # The cloud runtime creates its assets through an API that has no ASN input yet.
+        console.error("ASN scans are not supported on the cloud runtime yet.")
+        raise click.exceptions.Exit(1)
     assets = []
     for a in asns:
         assets.append(asn_asset.ASN(asn=a))
@@ -37,6 +42,3 @@ def asn_cli(ctx: click.core.Context, asns: Sequence[str]) -> None:
             runtime.link_assets_scan(created_scan.id, assets)
     except exceptions.OstorlabError as e:
         console.error(f"An error was encountered while running the scan: {e}")
-    except NotImplementedError:
-        # The cloud runtime creates its assets through an API that has no ASN input yet.
-        console.error("ASN scans are not supported on this runtime yet.")
