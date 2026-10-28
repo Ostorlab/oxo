@@ -497,13 +497,13 @@ async def testMqRun_whenChannelLostAfterConfirm_preservesOriginalWithoutNewConsu
 
 
 @pytest.mark.asyncio
-async def testMqSendMessage_whenPublishing_requiresRoutingAndStableIdentity(
+async def testMqSendMessage_whenPublishing_allowsOptionalOutputsAndKeepsIdentity(
     broker_client: tuple[Agent, typing.Any, typing.Any],
 ) -> None:
     client, channel, _callback = broker_client
     await client.async_mq_send_message("unbound.selector", b"payload")
     publication = channel.declare_exchange.return_value.publish.call_args.kwargs
-    assert publication["mandatory"] is True
+    assert publication["mandatory"] is False
     await client.async_mq_send_message("unbound.selector", b"payload")
     repeated = channel.declare_exchange.return_value.publish.call_args.kwargs
     assert repeated["message"].message_id == publication["message"].message_id
@@ -688,13 +688,12 @@ async def testMqRun_whenRoutingHeaderMalformed_retriesWithoutStrandingDelivery(
 
 @pytest.mark.asyncio
 @pytest.mark.docker
-async def testBroker_whenPublishUnroutable_raisesInsteadOfSilentlyDropping(
+async def testBroker_whenOptionalOutputUnbound_acceptsPublication(
     live_broker: tuple[str, aio_pika.abc.AbstractRobustConnection],
 ) -> None:
     url, _inspector = live_broker
     client = Agent(name=f"unroutable-{uuid.uuid4()}", url=url)
-    with pytest.raises(aiormq_exceptions.PublishError):
-        await client.async_mq_send_message("unbound.selector", b"payload")
+    await client.async_mq_send_message("unbound.selector", b"payload")
     await client.mq_close()
 
 

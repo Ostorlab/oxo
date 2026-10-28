@@ -247,7 +247,6 @@ def _mock_reserved_scan(mocker: plugin.MockerFixture) -> Any:
     )
     runner = mocker.MagicMock()
     runner.execute.side_effect = [
-        {"data": {"scans": {"scans": [], "pageInfo": {"numPages": 1}}}},
         {"data": {"scans": {"scans": [{"id": 42}]}}},
         {
             "data": {
@@ -281,7 +280,7 @@ def testHandleMessages_whenSnapshotRestoreFails_reportsScanPaused(
     with pytest.raises(RuntimeError, match="stop"):
         scan_handler_instance.handle_messages(runner, api_key="test_key")
 
-    assert runner.execute.call_count == 4
+    assert runner.execute.call_count == 3
     variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "paused"
@@ -306,7 +305,7 @@ def testHandleMessages_whenSnapshotBucketCannotBeRead_reportsScanNotStarted(
     with pytest.raises(RuntimeError, match="stop"):
         scan_handler_instance.handle_messages(runner, api_key="test_key")
 
-    assert runner.execute.call_count == 4
+    assert runner.execute.call_count == 3
     variables = json.loads(runner.execute.call_args.kwargs["request"].data["variables"])
     assert variables["scanId"] == 42
     assert variables["progress"] == "not_started"
@@ -359,7 +358,6 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
     )
     runner = mocker.MagicMock()
     runner.execute.side_effect = [
-        {"data": {"scans": {"scans": [], "pageInfo": {"numPages": 1}}}},
         {"data": {"scans": {"scans": [{"id": 42}]}}},
         {
             "data": {
@@ -420,10 +418,16 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
     runner.execute.assert_called_once()
 
 
-def testHandleMessages_whenAtCapacity_reconcilesFailedQueuesBeforeSleeping(
+@pytest.mark.parametrize("enabled", [None, "0", "true", "1"])
+def testHandleMessages_whenAtCapacity_recoversOnlyWithExplicitOptIn(
     mocker: plugin.MockerFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    enabled: str | None,
 ) -> None:
-    """An occupied scanner must still report a terminal worker processing failure."""
+    """Recovery requires retention support to have been explicitly enabled."""
+    monkeypatch.delenv("OSTORLAB_WORKER_RECOVERY_ENABLED", raising=False)
+    if enabled is not None:
+        monkeypatch.setenv("OSTORLAB_WORKER_RECOVERY_ENABLED", enabled)
     docker_client = mocker.MagicMock()
     worker = mocker.MagicMock()
     worker.attrs = {
@@ -463,11 +467,15 @@ def testHandleMessages_whenAtCapacity_reconcilesFailedQueuesBeforeSleeping(
     with pytest.raises(RuntimeError, match="stop"):
         handler.handle_messages(runner)
 
-    assert (
-        json.loads(runner.execute.call_args.kwargs["request"].data["variables"])[
-            "progress"
-        ]
-        == "error"
-    )
+    if enabled == "1":
+        assert (
+            json.loads(runner.execute.call_args.kwargs["request"].data["variables"])[
+                "progress"
+            ]
+            == "error"
+        )
+    else:
+        runner.execute.assert_not_called()
+        docker_client.containers.get.assert_not_called()
     worker.update.assert_not_called()
     broker.remove.assert_not_called()

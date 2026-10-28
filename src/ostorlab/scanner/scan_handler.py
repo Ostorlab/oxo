@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import os
 import random
 import time
 from typing import Any
@@ -50,7 +51,10 @@ class ScanHandler:
         self._gcp_logging_credential = gcp_logging_credential
         self._max_concurrent_scans = max_concurrent_scans
         self._docker_client = docker.from_env()
-        self._worker_recovery = recovery.WorkerRecovery(self._docker_client)
+        self._worker_recovery = recovery.WorkerRecovery(
+            self._docker_client,
+            enabled=os.environ.get("OSTORLAB_WORKER_RECOVERY_ENABLED") == "1",
+        )
 
     def close(self) -> None:
         self._docker_client.close()

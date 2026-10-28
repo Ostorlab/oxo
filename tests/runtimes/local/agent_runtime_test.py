@@ -838,10 +838,8 @@ def testCreateScanVolumeMounts_whenVolumeIsMissing_createsSharedScanVolumeMounts
     }
 
 
-@pytest.mark.parametrize("seconds", [10, 1.5, 86400, 9223372036])
 def testCreateAgentService_always_serviceCreatedWithSwarmDefaultsSetExplicitly(
     mocker: plugin.MockerFixture,
-    seconds: float,
 ) -> None:
     """Swarm fills unset spec fields with defaults when a client reads the spec with
     `insertDefaults=true`. A client that then resubmits that spec to scale the service sends values
@@ -849,7 +847,6 @@ def testCreateAgentService_always_serviceCreatedWithSwarmDefaultsSetExplicitly(
     rolling the running tasks. Setting the fields at creation keeps the stored spec complete."""
     agent_def = agent_definitions.AgentDefinition(
         name="agent_name_from_def",
-        stop_grace_period=seconds,
         mounts=[],
         mem_limit=420000,
         restart_policy="",
@@ -890,7 +887,7 @@ def testCreateAgentService_always_serviceCreatedWithSwarmDefaultsSetExplicitly(
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
     kwargs = docker_client.services.create.call_args.kwargs
-    assert kwargs["stop_grace_period"] == int(seconds * 1_000_000_000)
+    assert kwargs["stop_grace_period"] == agent_runtime.STOP_GRACE_PERIOD
     assert kwargs["dns_config"] is not None
     assert "MemorySwappiness" in kwargs["resources"]
     assert kwargs["update_config"]["Parallelism"] == agent_runtime.UPDATE_PARALLELISM

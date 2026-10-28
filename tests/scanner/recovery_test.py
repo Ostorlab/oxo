@@ -73,7 +73,13 @@ def _setup(
     }
     mocker.patch("ostorlab.scanner.recovery.time.monotonic", return_value=1000.0)
     mocker.patch("ostorlab.scanner.recovery.time.time", return_value=1000.0)
-    return recovery.WorkerRecovery(client), worker, broker, runner, execute
+    return (
+        recovery.WorkerRecovery(client, enabled=True),
+        worker,
+        broker,
+        runner,
+        execute,
+    )
 
 
 def _advance(mocker: plugin.MockerFixture, seconds: float) -> None:
@@ -324,3 +330,60 @@ def testRecovery_whenErrorUpdateHasNullData_logsUnconfirmedState(
     assert "did not confirm error state" in caplog.text
     worker.update.assert_not_called()
     broker.remove.assert_not_called()
+
+
+def testRecovery_withoutExplicitOptIn_doesNotQueryOrMutate(
+    mocker: plugin.MockerFixture,
+) -> None:
+    client = mocker.MagicMock(spec=docker.DockerClient)
+    runner = mocker.MagicMock()
+    recovery.WorkerRecovery(client).reconcile(runner)
+    runner.execute.assert_not_called()
+    client.services.list.assert_not_called()
+
+
+def testRecovery_whenWorkerDisappears_forgetsPreviousStall(
+    mocker: plugin.MockerFixture,
+) -> None:
+    reconciler, worker, broker, runner, _ = _setup(mocker)
+    reconciler.reconcile(runner)
+    client = typing.cast(mock.MagicMock, reconciler._docker_client)
+    client.services.list.return_value = [broker]
+    _advance(mocker, 1061)
+    reconciler.reconcile(runner)
+    client.services.list.return_value = [worker, broker]
+    _advance(mocker, 1500)
+    reconciler.reconcile(runner)
+    worker.update.assert_not_called()
+
+
+def testRecovery_whenTerminalErrorConfirmed_reportsScanOnlyOnce(
+    mocker: plugin.MockerFixture,
+) -> None:
+    reconciler, worker, broker, runner, execute = _setup(mocker)
+    other = _service()
+    other.id = "other-worker"
+    typing.cast(
+        mock.MagicMock, reconciler._docker_client
+    ).services.list.return_value = [worker, other, broker]
+    active = runner.execute.return_value
+
+    def respond(request: typing.Any) -> dict[str, typing.Any]:
+        if isinstance(request, scans_active.ScansActiveAPIRequest):
+            return typing.cast(dict[str, typing.Any], active)
+        return {"data": {"updateScan": {"success": True}}}
+
+    runner.execute.side_effect = respond
+    execute.return_value.output = b'[{"name":"worker_queue.failed","messages_ready":1,"messages_unacknowledged":0,"consumers":0}]'
+    reconciler.reconcile(runner)
+    _advance(mocker, 1121)
+    reconciler.reconcile(runner)
+    mutations = [
+        call
+        for call in runner.execute.call_args_list
+        if not isinstance(call.kwargs["request"], scans_active.ScansActiveAPIRequest)
+    ]
+    assert len(mutations) == 1
+    assert runner.execute.call_count == 4
+    worker.update.assert_not_called()
+    other.update.assert_not_called()

@@ -106,13 +106,19 @@ def _worker_scan_id(service: services.Service) -> str | None:
 class WorkerRecovery:
     """Reconcile workers without restarting brokers or changing replica counts."""
 
-    def __init__(self, docker_client: docker.DockerClient) -> None:
+    def __init__(
+        self, docker_client: docker.DockerClient, *, enabled: bool = False
+    ) -> None:
         self._docker_client = docker_client
+        self._enabled = enabled
+        self._reported_scan_ids: set[str] = set()
         self._last_reconcile: float | None = None
         self._stalled_since: dict[str, float] = {}
 
     def reconcile(self, runner: scanner_runner.ScannerAPIRunner) -> None:
         """Check active local universes periodically, including when the scanner is full."""
+        if self._enabled is False:
+            return
         now = time.monotonic()
         if (
             self._last_reconcile is not None
@@ -123,12 +129,28 @@ class WorkerRecovery:
         active = active_scan_ids(runner)
         if active is None or len(active) == 0:
             self._stalled_since.clear()
+            if active is not None:
+                self._reported_scan_ids.clear()
             return
         try:
             local_services = self._docker_client.services.list(
                 filters={"label": "ostorlab.universe"}
             )
+            eligible_workers = {
+                typing.cast(str, service.id): scan_id
+                for service in local_services
+                if (scan_id := _worker_scan_id(service)) is not None
+                and scan_id in active
+            }
+            self._stalled_since = {
+                worker_id: started
+                for worker_id, started in self._stalled_since.items()
+                if worker_id in eligible_workers
+            }
+            self._reported_scan_ids.intersection_update(eligible_workers.values())
             for scan_id in active:
+                if scan_id in self._reported_scan_ids:
+                    continue
                 workers = [
                     service
                     for service in local_services
@@ -149,6 +171,8 @@ class WorkerRecovery:
                     queues = self._queues(brokers[0])
                     for worker in workers:
                         self._reconcile_worker(worker, scan_id, queues, runner, now)
+                        if scan_id in self._reported_scan_ids:
+                            break
                 except (
                     docker.errors.DockerException,
                     container_exec.ExecError,
@@ -293,5 +317,7 @@ class WorkerRecovery:
                 logger.error(
                     "API did not confirm error state for scan %s: %s", scan_id, response
                 )
+            else:
+                self._reported_scan_ids.add(scan_id)
         except (base_runner.ResponseError, httpx.HTTPError):
             logger.exception("Failed to report worker failure for scan %s.", scan_id)

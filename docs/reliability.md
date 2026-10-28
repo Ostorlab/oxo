@@ -1,5 +1,12 @@
 # Worker reliability and memory admission
 
+Failed worker messages are retried and then retained in a durable `.failed` queue
+instead of being silently acknowledged. Memory limits and Swarm reservations
+bound workloads. Automatic worker recovery is disabled by default: enable it only
+after the tracker, backend and cleanup handlers support retained failures.
+
+## How is memory reserved for scan services?
+
 Every new local Swarm service has a hard memory limit. Agent group `mem_limit`
 overrides the image's `mem_limit`; otherwise the scanner process environment
 sets the default. Values are positive integer bytes. Zero, negative values and
@@ -12,82 +19,118 @@ booleans are rejected.
 | Redis | 512 MiB | `OSTORLAB_REDIS_MEMORY_LIMIT_BYTES` |
 | Jaeger | 512 MiB | `OSTORLAB_JAEGER_MEMORY_LIMIT_BYTES` |
 
-Each replica reserves `ceil(hard_limit / 0.8)` bytes in Swarm. Consequently,
-Swarm admits OXO hard limits totaling at most 80% of each node's schedulable RAM,
-including replicas added later by an autoscaler. Reservations are admission
-accounting, not additional usable container memory. Tasks remain pending when
-capacity is insufficient; inspect `docker service ps --no-trunc SERVICE` for the
-scheduler's reason. This does not account for unrelated processes or containers
-without reservations. Existing services must be recreated in a controlled rollout
-to acquire these resources; changing the scanner environment does not edit them.
+Each replica reserves `ceil(hard_limit / 0.8)` bytes in Swarm. OXO hard limits
+therefore total at most 80% of each node's schedulable RAM, including replicas
+added by an autoscaler. **Reservations are admission accounting, not additional
+usable container memory.** They do not account for unrelated processes or
+containers without reservations. No CPU reservation or CPU limit is configured.
+
+When capacity is insufficient, tasks remain pending. Inspect
+`docker service ps --no-trunc SERVICE` for the scheduler's reason.
+
+Existing services must be recreated to acquire these resources. Changing the
+scanner environment does not edit them. The 4 GiB agent default is a fallback,
+not a measured requirement: size memory-heavy agents explicitly before rollout.
+
 Startup health checks fail when required services cannot become healthy. The
-existing startup-error path cleans up the attempted universe, including its local
-broker resources; this differs from ongoing recovery of an active scan. For a
-failed snapshot restore, the remote snapshot remains the recovery source.
+startup-error path cleans up the attempted universe, including its broker
+resources. A failed snapshot restore retains the remote snapshot as the recovery
+source.
 
-The 4 GiB agent default is a fallback, not a measured requirement for every agent.
-Set explicit limits for memory-heavy agents before rollout and provision nodes
-large enough for their reservations and supporting services. RabbitMQ's absolute
-memory watermark is half its hard limit; its fixed hostname and persistent data
-volume are retained. Backpressure can therefore occur before the container limit.
-A deliberate agent replica count of zero stays zero.
+RabbitMQ's absolute memory watermark is half its hard limit. Its fixed hostname
+and persistent data volume are retained; backpressure can occur before the hard
+limit. A deliberate agent replica count of zero stays zero.
 
-## Message delivery
+## How does message delivery survive worker failures?
 
-Publications are persistent and require publisher confirmation and a matching
-queue (`mandatory=True`). A successful publish means the broker accepted routing;
-it does not mean a consumer completed processing. Publish-before-subscribe flows
-and optional outputs with no bound queue now fail explicitly: deploy consumers
-and their bindings before producers, or adapt optional output flows deliberately.
+Ordinary publications are persistent and require publisher confirmation. Outputs
+with no bound consumer remain optional: the broker may discard an unrouted
+publication without failing the producer. A confirmation alone does not establish
+that an ordinary output was routed or processed.
 
-Consumers acknowledge only after processing succeeds. Processing failures are
-republished with a bounded attempt count and backoff, then transferred to the
-persistent `<queue>.failed` queue on exhaustion. The original delivery is
-acknowledged only after confirmation of that transfer. A lost connection or a
-worker crash leaves unacknowledged deliveries available for redelivery. The retry
-count bounds caught processing failures; a process killed before the replacement
-is durably published can redeliver repeatedly without advancing that count. This is
-at-least-once delivery: side effects may repeat, so agents should use idempotency
-where required. A publication or transfer failure is surfaced instead of being
-silently acknowledged.
+Consumers acknowledge after processing succeeds, or after the broker confirms a
+persistent replacement in the same worker queue. Processing failures are retried
+with a bounded attempt count and backoff, then transferred to the durable
+`<queue>.failed` queue. These transfers require both confirmation and routing
+(`mandatory=True`); a failed transfer requeues the original delivery.
 
-## Scanner recovery
+A lost connection or worker crash leaves unacknowledged deliveries available for
+redelivery. The retry count bounds caught processing failures. A process killed
+before publishing its replacement can redeliver repeatedly without advancing
+that count.
 
-The production scanner checks active scans every 60 seconds, including while it
-is at its concurrent scan limit. It fetches all pages from the scanner API and
-fails closed on errors or incomplete pagination. Only services with matching
-universe and container scan ownership labels are eligible. Paused, stopped,
-inactive, shared, one-shot and zero-replica services are excluded.
+**At-least-once delivery:** side effects may repeat, so handlers must tolerate
+redelivery. Broker confirmation followed by a disconnect before ACK can leave
+both copies available. This change does not restore cooperative shutdown draining.
 
-A worker is stalled when its queue has ready messages without consumers, or it
-has no running replicas despite a positive desired count. Both conditions must
-persist through a 120-second observation grace period. Healthy consumers are not
-restarted merely because work remains queued or processing takes a long time.
-Recovery reloads the service and rechecks active scan state before action. It
-forces a worker service update without changing its replica count. Attempts and
-last-attempt time are stored on the service's root labels; two attempts with a
-120-second cooldown are allowed across scanner process restarts.
+Broker persistence does not protect messages from an external cleanup handler.
+The lifecycle requirements below apply even with automatic recovery disabled.
 
-Exhausted recovery or a nonempty terminal failure queue produces an actionable
-error log including task status, and requests scan progress `error` only after a
-fresh active-state check. OXO recovery never purges queues, recreates RabbitMQ,
-removes services or deletes broker volumes. Retain the broker for inspection and
-replay; automatic replay of terminal failures is not provided.
+## How does the scanner recover stalled workers?
 
-## Coordinated rollout
+**Automatic recovery is opt-in.** Only `OSTORLAB_WORKER_RECOVERY_ENABLED=1` in the
+scanner process enables it. An unset variable or any other value disables recovery
+queries, worker restarts and recovery-triggered scan-state changes. Memory limits
+and SDK message handling operate independently of this setting.
 
-Deploy the updated agent package in worker images as well as the updated scanner;
-updating scanner code alone does not change running worker message handling.
-Validate representative agent limits and queue bindings in staging before replacing
-services. Monitor pending tasks, OOM exits, RabbitMQ memory alarms and `.failed`
-queue depth.
+When enabled, the scanner checks active scans every 60 seconds, including while
+at capacity. It fetches all pages from the scanner API and fails closed on errors
+or incomplete pagination. Matching universe and container ownership labels are
+required. Paused, stopped, inactive, shared, one-shot and zero-replica services
+are excluded. State for workers that disappear or become ineligible is pruned.
 
-The external autoscaler, cloud tracker and stop/cleanup handlers live in separate
-repositories and are not changed here. They must preserve resource reservations
-and deliberate zero replica counts, avoid overwriting an explicit `error` with
-`done`, and retain failed queues and broker volumes long enough for diagnosis.
-In particular, an external cleanup handler triggered by `error` can still delete
-the broker: configure retention there before enabling this recovery rollout.
-The API's update mutation has no compare-and-set progress condition; a scan can
-change state between the final active-state read and the error mutation. Closing
-that remaining race requires a scanner endpoint change.
+**A worker is stalled when its queue has ready messages without consumers, or it
+has no running replicas despite a positive desired count.** Healthy consumers
+are not restarted merely because work remains queued or processing takes time.
+
+A stall must persist through a 120-second observation grace period. Recovery
+reloads the service and refreshes active scan state before each action; it does
+not reuse an earlier snapshot to decide whether a paused scan can be restarted.
+
+Recovery forces a worker service update without changing its replica count.
+Attempts and last-attempt time are stored on the service's root labels. At most
+two attempts are allowed, with a 120-second cooldown, across scanner restarts.
+
+Exhausted recovery or a nonempty failed queue logs task status and requests scan
+progress `error`. Once the API confirms success, that scan is not reported again
+while it remains in the active local snapshot. Failed or unconfirmed updates are
+retried on a later reconciliation cycle. This deduplication resets on scanner
+restart or after the scan leaves the active local snapshot.
+
+If RabbitMQ cannot be queried, reconciliation logs the failure and skips that
+scan. It does not restart brokers or recover sustained broker outages.
+
+## How to roll out worker reliability changes
+
+**An external cleanup handler can still delete the broker, and the existing
+tracker can overwrite `error` with `done`. Keep automatic recovery disabled until
+those companion services preserve terminal failures and retained brokers.**
+
+Before enabling recovery:
+
+- Update the tracker and backend so terminal errors cannot become successful scans.
+- Configure stop/cleanup handlers to retain failed queues and broker volumes for
+  inspection and replay. The scanner does not purge queues or provide automatic
+  replay. This is also required before relying on SDK failed-message retention.
+- Ensure the autoscaler preserves reservations and deliberate zero replicas.
+- Rebuild worker images with the updated SDK; updating the scanner alone does not
+  change message handling in running workers.
+- Validate representative memory limits in staging, recreate services, then set
+  `OSTORLAB_WORKER_RECOVERY_ENABLED=1` on the scanner process and restart it.
+
+Use these commands during rollout:
+
+```sh
+docker service ps --no-trunc SERVICE
+docker exec MQ_CONTAINER rabbitmqctl list_queues name messages_ready messages_unacknowledged consumers
+docker exec MQ_CONTAINER rabbitmq-diagnostics alarms
+journalctl -k --grep='Out of memory|Killed process|oom-kill'
+```
+
+Inspect `.failed` queue counts, pending tasks, RabbitMQ memory alarms and node OOM
+logs. Replace `SERVICE` and `MQ_CONTAINER` with the affected service and broker
+container names; run the journal command on the Docker host.
+
+The API update has no compare-and-set progress condition. A scan can change state
+between the final active-state read and the error mutation. Closing that race
+requires a scanner endpoint change; the fresh read only narrows the window.
