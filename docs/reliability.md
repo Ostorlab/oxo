@@ -39,7 +39,7 @@ source.
 
 RabbitMQ's absolute memory watermark is half its hard limit. Its fixed hostname
 and persistent data volume are retained; backpressure can occur before the hard
-limit. A deliberate agent replica count of zero stays zero.
+limit.
 
 ## How does message delivery survive worker failures?
 
@@ -61,7 +61,8 @@ that count.
 
 **At-least-once delivery:** side effects may repeat, so handlers must tolerate
 redelivery. Broker confirmation followed by a disconnect before ACK can leave
-both copies available. This change does not restore cooperative shutdown draining.
+both copies available. The at-least-once delivery behavior described here does
+not restore cooperative shutdown draining.
 
 Broker persistence does not protect messages from an external cleanup handler.
 The lifecycle requirements below apply even with automatic recovery disabled.
@@ -77,7 +78,9 @@ When enabled, the scanner checks active scans every 60 seconds, including while
 at capacity. It fetches all pages from the scanner API and fails closed on errors
 or incomplete pagination. Matching universe and container ownership labels are
 required. Paused, stopped, inactive, shared, one-shot and zero-replica services
-are excluded. State for workers that disappear or become ineligible is pruned.
+are excluded. A replica count deliberately set to zero, for example by an
+operator or autoscaler policy, is left at zero and is not treated as a stall.
+State for workers that disappear or become ineligible is pruned.
 
 **A worker is stalled when its queue has ready messages without consumers, or it
 has no running replicas despite a positive desired count.** Healthy consumers
