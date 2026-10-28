@@ -394,6 +394,7 @@ async def testMqRun_whenRetriesExhausted_retainsFailedMessage(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("previous_attempts", [0, 2, 1_000_000])
 @pytest.mark.parametrize(
     "confirmation",
     [None, commands.Basic.Nack(delivery_tag=1), commands.Basic.Reject(delivery_tag=1)],
@@ -402,15 +403,20 @@ async def testMqRun_whenTransferNotConfirmed_requeuesOriginal(
     broker_client: tuple[Agent, typing.Any, typing.Any],
     mocker: plugin.MockerFixture,
     confirmation: typing.Any,
+    previous_attempts: int,
 ) -> None:
     client, channel, callback = broker_client
     client.stub = mocker.Mock(side_effect=ValueError("failure"))
-    mocker.patch("asyncio.sleep", new_callable=mock.AsyncMock)
+    sleep = mocker.patch("asyncio.sleep", new_callable=mock.AsyncMock)
     channel.default_exchange.publish.return_value = confirmation
-    message = incoming_message(channel)
+    message = incoming_message(
+        channel, headers={"x-oxo-processing-attempts": previous_attempts}
+    )
     await callback(message)
     channel.basic_ack.assert_not_awaited()
     channel.basic_reject.assert_awaited_once_with(delivery_tag=1, requeue=True)
+
+    sleep.assert_awaited_once_with(1 if previous_attempts == 0 else 4)
 
 
 @pytest.mark.asyncio
@@ -660,13 +666,21 @@ async def testBroker_whenFailedQueueMissing_requeuesOriginalAfterMandatoryReturn
     callback = callback_queue.call_args.args[0]
     original = await queue.get()
     assert original is not None
+    sleep = mocker.spy(asyncio, "sleep")
     await callback(original)
+    sleep.assert_any_await(4)
     redelivery = await queue.get()
     assert redelivery is not None
     assert redelivery.redelivered is True
     assert redelivery.body == original.body
     assert redelivery.headers["x-oxo-processing-attempts"] == 2
-    await redelivery.ack()
+    sleep.reset_mock()
+    await callback(redelivery)
+    sleep.assert_any_await(4)
+    retained = await queue.get()
+    assert retained is not None
+    assert retained.body == original.body
+    await retained.ack()
     await client.mq_close()
 
 

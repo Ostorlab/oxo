@@ -211,13 +211,13 @@ class AgentMQMixin:
             previous_attempts = 0
         attempts = previous_attempts + 1
         exhausted = attempts >= PROCESSING_MAX_ATTEMPTS
-        if exhausted is False:
-            await asyncio.sleep(
-                min(
-                    PROCESSING_BACKOFF_SECONDS * 2 ** (attempts - 1),
-                    PROCESSING_MAX_BACKOFF_SECONDS,
-                )
+        await asyncio.sleep(
+            min(
+                PROCESSING_BACKOFF_SECONDS
+                * 2 ** min(attempts - 1, PROCESSING_MAX_ATTEMPTS - 1),
+                PROCESSING_MAX_BACKOFF_SECONDS,
             )
+        )
         headers = dict(message.headers)
         headers[PROCESSING_ATTEMPTS_HEADER] = attempts
         headers[ORIGINAL_ROUTING_KEY_HEADER] = selector

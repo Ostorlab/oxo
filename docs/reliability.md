@@ -32,11 +32,6 @@ Existing services must be recreated to acquire these resources. Changing the
 scanner environment does not edit them. The 4 GiB agent default is a fallback,
 not a measured requirement: size memory-heavy agents explicitly before rollout.
 
-Startup health checks fail when required services cannot become healthy. The
-startup-error path cleans up the attempted universe, including its broker
-resources. A failed snapshot restore retains the remote snapshot as the recovery
-source.
-
 RabbitMQ's absolute memory watermark is half its hard limit. Its fixed hostname
 and persistent data volume are retained; backpressure can occur before the hard
 limit.
@@ -52,7 +47,9 @@ Consumers acknowledge after processing succeeds, or after the broker confirms a
 persistent replacement in the same worker queue. Processing failures are retried
 with a bounded attempt count and backoff, then transferred to the durable
 `<queue>.failed` queue. These transfers require both confirmation and routing
-(`mandatory=True`); a failed transfer requeues the original delivery.
+(`mandatory=True`); a failed transfer requeues the original delivery. Backoff
+also applies after processing attempts are exhausted, so an unavailable failed
+queue cannot cause a tight redelivery loop.
 
 A lost connection or worker crash leaves unacknowledged deliveries available for
 redelivery. The retry count bounds caught processing failures. A process killed
@@ -108,6 +105,11 @@ scan. It does not restart brokers or recover sustained broker outages.
 **An external cleanup handler can still delete the broker, and the existing
 tracker can overwrite `error` with `done`. Keep automatic recovery disabled until
 those companion services preserve terminal failures and retained brokers.**
+
+Startup health checks fail when required services cannot become healthy. The
+startup-error path cleans up the attempted universe, including its broker
+resources. A failed snapshot restore retains the remote snapshot as the recovery
+source.
 
 Before enabling recovery:
 
