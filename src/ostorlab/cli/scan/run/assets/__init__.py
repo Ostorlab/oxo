@@ -5,6 +5,7 @@ from ostorlab.cli.scan.run.assets import android_aab
 from ostorlab.cli.scan.run.assets import android_apk
 from ostorlab.cli.scan.run.assets import android_store
 from ostorlab.cli.scan.run.assets import api_schema
+from ostorlab.cli.scan.run.assets import asn
 from ostorlab.cli.scan.run.assets import domain_name
 from ostorlab.cli.scan.run.assets import file
 from ostorlab.cli.scan.run.assets import harmonyos_aab
@@ -31,6 +32,7 @@ __all__ = (
     "android_apk",
     "android_store",
     "api_schema",
+    "asn",
     "domain_name",
     "file",
     "harmonyos_aab",
