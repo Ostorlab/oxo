@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/asset/store/ios_testflight/ios_testflight.proto\x12:ostorlab.agent.message.proto.v3.asset.store.ios_testflight\"\"\n\x07Message\x12\x17\n\x0f\x61pplication_url\x18\x01 \x02(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/asset/store/ios_testflight/ios_testflight.proto\x12:ostorlab.agent.message.proto.v3.asset.store.ios_testflight\"4\n\x07Message\x12\x17\n\x0f\x61pplication_url\x18\x01 \x01(\t\x12\x10\n\x08\x61pp_name\x18\x02 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,5 +32,5 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.prot
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_MESSAGE']._serialized_start=143
-  _globals['_MESSAGE']._serialized_end=177
+  _globals['_MESSAGE']._serialized_end=195
 # @@protoc_insertion_point(module_scope)
