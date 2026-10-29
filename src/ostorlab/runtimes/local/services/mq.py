@@ -24,7 +24,7 @@ from ostorlab.runtimes.local.services import container_exec
 logger = logging.getLogger(__name__)
 
 MQ_IMAGE = "rabbitmq:3.9-management"
-MQ_MEMORY_RESERVATION = 2560 * 1024**2
+MQ_MEMORY_RESERVATION = 10 * 1024**3
 MQ_READINESS_COMMAND = ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
 MQ_READINESS_ATTEMPTS = 60
 MQ_READINESS_WAIT_SECONDS = 1
