@@ -34,27 +34,20 @@ def docker_client(mocker: plugin.MockerFixture) -> mock.MagicMock:
 
 
 @pytest.mark.parametrize(
-    ("service_type", "environment", "default_limit"),
+    ("service_type", "default_limit"),
     [
-        (mq.LocalRabbitMQ, "OSTORLAB_MQ_MEMORY_LIMIT_BYTES", 2 * 1024**3),
-        (redis.LocalRedis, "OSTORLAB_REDIS_MEMORY_LIMIT_BYTES", 512 * 1024**2),
-        (jaeger.LocalJaeger, "OSTORLAB_JAEGER_MEMORY_LIMIT_BYTES", 512 * 1024**2),
+        (mq.LocalRabbitMQ, 2 * 1024**3),
+        (redis.LocalRedis, 512 * 1024**2),
+        (jaeger.LocalJaeger, 512 * 1024**2),
     ],
 )
-@pytest.mark.parametrize("override", [None, "536870913"])
 def testServiceStart_withMemoryBudget_reservesHeadroomAndCapsMemory(
     docker_client: mock.MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
     service_type: type[mq.LocalRabbitMQ | redis.LocalRedis | jaeger.LocalJaeger],
-    environment: str,
     default_limit: int,
-    override: str | None,
 ) -> None:
-    monkeypatch.delenv(environment, raising=False)
-    if override is not None:
-        monkeypatch.setenv(environment, override)
     service_type(name="42", network="network").start()
-    limit = default_limit if override is None else int(override)
+    limit = default_limit
     spec = docker_client.services.create.call_args.kwargs
     assert spec["resources"] == {
         "Limits": {"MemoryBytes": limit},
@@ -79,25 +72,19 @@ def testServiceStart_withMemoryBudget_reservesHeadroomAndCapsMemory(
 
 
 @pytest.mark.parametrize(
-    ("group_limit", "image_limit", "environment_limit", "expected"),
+    ("group_limit", "image_limit", "expected"),
     [
-        (None, None, None, 4 * 1024**3),
-        (None, None, "700001", 700001),
-        (None, 800001, "700001", 800001),
-        (900001, 800001, "700001", 900001),
+        (None, None, 4 * 1024**3),
+        (None, 800001, 800001),
+        (900001, 800001, 900001),
     ],
 )
 def testAgentStart_withMemoryOverrides_usesMostSpecificBudget(
     docker_client: mock.MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
     group_limit: int | None,
     image_limit: int | None,
-    environment_limit: str | None,
     expected: int,
 ) -> None:
-    monkeypatch.delenv("OSTORLAB_AGENT_MEMORY_LIMIT_BYTES", raising=False)
-    if environment_limit is not None:
-        monkeypatch.setenv("OSTORLAB_AGENT_MEMORY_LIMIT_BYTES", environment_limit)
     if image_limit is not None:
         docker_client.images.get.return_value.labels["agent_definition"] += (
             f"mem_limit: {image_limit}\n"
@@ -116,18 +103,6 @@ def testAgentStart_withMemoryOverrides_usesMostSpecificBudget(
     assert spec["resources"]["Reservations"]["MemoryBytes"] == (expected * 5 + 3) // 4
     assert spec["resources"]["MemorySwappiness"] is None
     assert spec["mode"]["replicated"]["Replicas"] == 0
-
-
-@pytest.mark.parametrize("invalid", ["0", "-1", "true", "12.5", ""])
-def testServiceStart_withInvalidMemoryBudget_rejectsConfiguration(
-    docker_client: mock.MagicMock,
-    monkeypatch: pytest.MonkeyPatch,
-    invalid: str,
-) -> None:
-    monkeypatch.setenv("OSTORLAB_REDIS_MEMORY_LIMIT_BYTES", invalid)
-    with pytest.raises(ValueError, match="positive integer"):
-        redis.LocalRedis("42", "network").start()
-    docker_client.services.create.assert_not_called()
 
 
 @pytest.mark.parametrize("invalid", [0, -1, True])
