@@ -19,6 +19,7 @@ from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import android_store
 from ostorlab.assets import api_schema as api_schema_asset
+from ostorlab.assets import asn as asn_asset
 from ostorlab.assets import asset
 from ostorlab.assets import domain_name
 from ostorlab.assets import file
@@ -426,6 +427,8 @@ def _extract_assets(asset_data: Optional[dict[str, Any]]) -> list[asset.Asset]:
         ]
     elif typename == "DomainNameAssetType":
         return [domain_name.DomainName(name=kwargs.get("name", ""))]
+    elif typename == "AsnAssetType":
+        return [asn_asset.ASN(asn=kwargs.get("asn", ""))]
     elif typename == "AgentAssetType":
         return [
             agent_asset.Agent(

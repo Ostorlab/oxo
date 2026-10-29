@@ -12,6 +12,7 @@ from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import android_store
 from ostorlab.assets import api_schema as api_schema_asset
+from ostorlab.assets import asn
 from ostorlab.assets import domain_name
 from ostorlab.assets import file
 from ostorlab.assets import harmonyos_aab
@@ -441,6 +442,30 @@ def testExtractAssets_whenDomainAsset_shouldReturnCorrectAsset(
     domain_asset = runtime_mock.scan.call_args[1].get("assets")[0]
     assert isinstance(domain_asset, domain_name.DomainName) is True
     assert domain_asset.name == "ostorlab.co"
+
+
+def testExtractAssets_whenAsnAsset_shouldReturnCorrectAsset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "AsnAssetType",
+            "asn": "15169",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    asn_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(asn_asset, asn.ASN) is True
+    assert asn_asset.asn == "15169"
 
 
 def testExtractAssets_whenAgentAsset_shouldReturnCorrectAsset(
