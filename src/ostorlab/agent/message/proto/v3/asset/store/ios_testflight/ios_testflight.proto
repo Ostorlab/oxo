@@ -4,5 +4,6 @@ package ostorlab.agent.message.proto.v3.asset.store.ios_testflight;
 
 
 message Message {
-  required string application_url = 1;
+  optional string application_url = 1;
+  optional string app_name = 2;
 }

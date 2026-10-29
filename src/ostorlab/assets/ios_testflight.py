@@ -10,10 +10,13 @@ from ostorlab.assets import asset
 class IOSTestflight(asset.Asset):
     """iOS testflight target asset."""
 
-    application_url: str
+    application_url: str | None = None
+    app_name: str | None = None
 
     def __str__(self) -> str:
-        return f"iOS Testflight ({self.application_url})"
+        if self.application_url is not None:
+            return f"iOS Testflight ({self.application_url})"
+        return f"iOS Testflight ({self.app_name})"
 
     @property
     def proto_field(self) -> str:

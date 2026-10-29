@@ -21,15 +21,18 @@ class Message(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     APPLICATION_URL_FIELD_NUMBER: _builtins.int
+    APP_NAME_FIELD_NUMBER: _builtins.int
     application_url: _builtins.str
+    app_name: _builtins.str
     def __init__(
         self,
         *,
         application_url: _builtins.str | None = ...,
+        app_name: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["application_url", b"application_url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["app_name", b"app_name", "application_url", b"application_url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["application_url", b"application_url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["app_name", b"app_name", "application_url", b"application_url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
