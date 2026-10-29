@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime
 import logging
-import os
 import random
 import time
 from typing import Any
@@ -22,7 +21,6 @@ from ostorlab.apis.runners import scanner_runner
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.scanner import callbacks
-from ostorlab.scanner import recovery
 from ostorlab.scanner import resource_checker
 from ostorlab.scanner import scanner_conf
 from ostorlab.utils import scanner_state_reporter
@@ -51,10 +49,6 @@ class ScanHandler:
         self._gcp_logging_credential = gcp_logging_credential
         self._max_concurrent_scans = max_concurrent_scans
         self._docker_client = docker.from_env()
-        self._worker_recovery = recovery.WorkerRecovery(
-            self._docker_client,
-            enabled=os.environ.get("OSTORLAB_WORKER_RECOVERY_ENABLED") == "1",
-        )
 
     def close(self) -> None:
         self._docker_client.close()
@@ -68,7 +62,6 @@ class ScanHandler:
         logger.info("Starting main API polling loop.")
 
         while True:
-            self._worker_recovery.reconcile(runner)
             running_universes = self._count_running_universes()
             if running_universes > self._max_concurrent_scans:
                 logger.error(

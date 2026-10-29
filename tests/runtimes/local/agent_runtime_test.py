@@ -453,15 +453,12 @@ def testCreateAgentService_whenServiceNameProvidedInAgentSettings_overridesAgent
     assert kwargs["name"] == "crawler_bus"
 
 
-@pytest.mark.parametrize("definition_service_name", [None, "nuclei_service"])
-def testCreateAgentService_whenNoGroupServiceName_queueLabelMatchesAgentQueue(
+def testCreateAgentService_whenNoExplicitServiceName_serviceKeyLabelIsAgentName(
     mocker: plugin.MockerFixture,
-    definition_service_name: str | None,
 ) -> None:
-    """Queue lookup must match the SDK even when the definition names its service."""
+    """Service key label should be the agent's logical name when no explicit service name is set."""
     agent_def = agent_definitions.AgentDefinition(
         name="nuclei",
-        service_name=definition_service_name,
         mounts=[],
         mem_limit=None,
         restart_policy="",

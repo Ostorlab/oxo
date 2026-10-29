@@ -496,12 +496,9 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
-    cleanup = mocker.spy(test_agent, "process_cleanup")
-    with pytest.raises(ValueError, match="some error"):
-        test_agent.process_message(
-            f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
-        )
-    cleanup.assert_called_once()
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
 
     assert logger_error.call_count == 3
     assert "System Info: %s" in logger_error.call_args_list[0][0][0]
@@ -560,12 +557,9 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
         },
     )
 
-    cleanup = mocker.spy(test_agent, "process_cleanup")
-    with pytest.raises(ValueError, match="some error"):
-        test_agent.process_message(
-            f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
-        )
-    cleanup.assert_called_once()
+    test_agent.process_message(
+        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+    )
 
     assert logger_error.call_count == 2
     assert (

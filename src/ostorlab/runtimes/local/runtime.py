@@ -330,10 +330,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
 
             return self._scan_db
         except AgentNotHealthy:
-            message = (
-                "Agent not starting; inspect Swarm task errors for insufficient resources "
-                "or container failures."
-            )
+            message = "Agent not starting"
             self._handle_scan_error()
             raise AgentNotHealthy(message)
         except AgentNotInstalled as e:
@@ -803,33 +800,24 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda _: False,
+        retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _are_services_ready(self) -> None:
         if self._mq_service is None or self._mq_service.is_service_healthy() is False:
-            raise UnhealthyService(
-                "MQ service is unhealthy; inspect Swarm task errors for "
-                "insufficient resources or container failures."
-            )
+            raise UnhealthyService("MQ service is unhealthy.")
         if (
             self._redis_service is None
             or self._redis_service.is_service_healthy() is False
         ):
-            raise UnhealthyService(
-                "Redis service is unhealthy; inspect Swarm task errors for "
-                "insufficient resources or container failures."
-            )
+            raise UnhealthyService("Redis service is unhealthy.")
         if self._tracing is True and (
             self._jaeger_service is None
             or self._jaeger_service.is_service_healthy() is False
         ):
-            raise UnhealthyService(
-                "Jaeger service is unhealthy; inspect Swarm task errors for "
-                "insufficient resources or container failures."
-            )
+            raise UnhealthyService("Jaeger service is unhealthy.")
 
-    def _check_agents_healthy(self) -> bool:
+    def _check_agents_healthy(self) -> bool | tenacity.Future:
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
@@ -889,7 +877,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
             network_name=self.network,
             extra_configs=extra_configs,
             extra_mounts=extra_mounts,
-            replicas=agent.replicas,
+            replicas=agent.replicas or 1,
         )
         if agent.key in self.follow:
             typing.cast(log_streamer.LogStream, self._log_streamer).stream(
@@ -899,18 +887,19 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda _: False,
+        # return last value and don't raise RetryError exception.
+        retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
         self,
         service: docker_models_services.Service,
         replicas: typing.Optional[int] = None,
-    ) -> bool:
+    ) -> bool | tenacity.Future:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
         try:
-            if replicas is None:
+            if not replicas:
                 replicas = typing.cast(
                     int, service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
                 )
@@ -1063,10 +1052,11 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda _: False,
+        # return last value and don't raise RetryError exception.
+        retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def _are_agents_ready(self, fail_fast: bool = True) -> bool:
+    def _are_agents_ready(self, fail_fast: bool = True) -> bool | tenacity.Future:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
         (once vs long-running)."""
         logger.info("listing services ...")

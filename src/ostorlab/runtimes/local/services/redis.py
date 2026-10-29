@@ -124,10 +124,11 @@ class LocalRedis:
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda _: False,
+        # return last value and don't raise RetryError exception.
+        retry_error_callback=lambda lv: lv.outcome,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def is_service_healthy(self) -> bool:
+    def is_service_healthy(self) -> bool | tenacity.Future:
         logger.info(
             "checking service %s",
             typing.cast(services.Service, self._redis_service).name,

@@ -5,31 +5,18 @@ Definition of the main methods to publish and consume MQ messages by the agents.
 
 import asyncio
 import concurrent.futures
-import hashlib
 import logging
+import typing
 from collections.abc import Sequence
 
 import aio_pika
 import tenacity
 from aiormq import exceptions as aiormq_exceptions
-from pamqp import commands
-
-from ostorlab import exceptions
 
 logger = logging.getLogger(__name__)
 NUMBER_RETRIES = 6
 WAIT_FIXED_TIME = 5
 DEFAULT_MAX_PRIORITY = 255
-PROCESSING_MAX_ATTEMPTS = 3
-PROCESSING_BACKOFF_SECONDS = 1
-PROCESSING_MAX_BACKOFF_SECONDS = 30
-PROCESSING_ATTEMPTS_HEADER = "x-oxo-processing-attempts"
-ORIGINAL_ROUTING_KEY_HEADER = "x-oxo-original-routing-key"
-ERROR_TYPE_HEADER = "x-oxo-error-type"
-
-
-class PublishNotConfirmedError(exceptions.OstorlabError):
-    """The broker did not confirm that it accepted a publication."""
 
 
 class AgentMQMixin:
@@ -53,7 +40,6 @@ class AgentMQMixin:
         self._name = name
         self._keys = keys
         self._queue_name = f"{self._name}_queue"
-        self._failed_queue_name = f"{self._queue_name}.failed"
         self._url = url
         self._topic = topic
         if loop is not None:
@@ -85,9 +71,7 @@ class AgentMQMixin:
 
     async def _get_channel(self) -> aio_pika.abc.AbstractRobustChannel:
         async with self._connection_pool.acquire() as connection:
-            channel = await connection.channel(
-                publisher_confirms=True, on_return_raises=True
-            )
+            channel = await connection.channel()
             return channel
 
     async def _get_exchange(
@@ -147,10 +131,6 @@ class AgentMQMixin:
             arguments={"x-max-priority": DEFAULT_MAX_PRIORITY},
         )
 
-        await channel.declare_queue(
-            self._failed_queue_name, durable=True, auto_delete=False
-        )
-
         if self._queue is None:
             raise ValueError("queue not declared.")
 
@@ -162,94 +142,17 @@ class AgentMQMixin:
     ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
         logger.debug("incoming pika message received")
-        original_selector = message.headers.get(
-            ORIGINAL_ROUTING_KEY_HEADER, message.routing_key
-        )
-        selector = (
-            original_selector
-            if isinstance(original_selector, str)
-            else message.routing_key
-        )
-        if selector is None:
-            selector = ""
         try:
-            try:
-                if not isinstance(original_selector, str):
-                    raise TypeError("Message routing key must be a string")
+            async with message.process(requeue=True, reject_on_redelivered=True):
                 await self._loop.run_in_executor(
-                    self._executor, self.process_message, selector, message.body
+                    self._executor,
+                    self.process_message,
+                    typing.cast(str, message.routing_key),
+                    message.body,
                 )
-            except Exception as error:  # noqa: BLE001 - arbitrary agent callback failures
-                logger.warning("Message processing failed (%s)", type(error).__name__)
-                try:
-                    await self._transfer_failed_message(message, selector, error)
-                except (
-                    aiormq_exceptions.AMQPError,
-                    OSError,
-                    RuntimeError,
-                    PublishNotConfirmedError,
-                ) as transfer_error:
-                    logger.warning(
-                        "Message transfer failed (%s); requeuing original",
-                        type(transfer_error).__name__,
-                    )
-                    await message.reject(requeue=True)
-                    return
-            await message.ack()
         except aio_pika.exceptions.ChannelInvalidStateError:
-            logger.warning("Channel closed; original delivery remains unacknowledged")
-
-    async def _transfer_failed_message(
-        self,
-        message: aio_pika.abc.AbstractIncomingMessage,
-        selector: str,
-        error: Exception,
-    ) -> None:
-        """Confirm a durable replacement before settling the original delivery."""
-        previous_attempts = message.headers.get(PROCESSING_ATTEMPTS_HEADER, 0)
-        if not isinstance(previous_attempts, int) or previous_attempts < 0:
-            previous_attempts = 0
-        attempts = previous_attempts + 1
-        exhausted = attempts >= PROCESSING_MAX_ATTEMPTS
-        await asyncio.sleep(
-            min(
-                PROCESSING_BACKOFF_SECONDS
-                * 2 ** min(attempts - 1, PROCESSING_MAX_ATTEMPTS - 1),
-                PROCESSING_MAX_BACKOFF_SECONDS,
-            )
-        )
-        headers = dict(message.headers)
-        headers[PROCESSING_ATTEMPTS_HEADER] = attempts
-        headers[ORIGINAL_ROUTING_KEY_HEADER] = selector
-        headers[ERROR_TYPE_HEADER] = type(error).__name__[:128]
-        message_id = message.message_id
-        if message_id is None:
-            message_id = hashlib.sha256(
-                selector.encode() + b"\0" + message.body
-            ).hexdigest()
-        replacement = aio_pika.Message(
-            body=message.body,
-            headers=headers,
-            content_type=message.content_type,
-            content_encoding=message.content_encoding,
-            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-            priority=message.priority,
-            correlation_id=message.correlation_id,
-            reply_to=message.reply_to,
-            expiration=None if exhausted is True else message.expiration,
-            message_id=message_id,
-            timestamp=message.timestamp,
-            type=message.type,
-            user_id=message.user_id,
-            app_id=message.app_id,
-        )
-        destination = self._failed_queue_name if exhausted is True else self._queue_name
-        async with self._channel_pool.acquire() as channel:
-            confirmation = await channel.default_exchange.publish(
-                message=replacement, routing_key=destination, mandatory=True
-            )
-            if not isinstance(confirmation, commands.Basic.Ack):
-                raise PublishNotConfirmedError("Broker did not acknowledge publication")
+            logger.warning("The channel is closed unexpectedly.")
+            await self.mq_run()
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Callback to implement to process the MQ messages received."""
@@ -269,15 +172,10 @@ class AgentMQMixin:
             exchange = await self._get_exchange(channel)
             pika_message = aio_pika.Message(
                 body=message,
-                priority=message_priority if message_priority is not None else 0,
-                message_id=hashlib.sha256(key.encode() + b"\0" + message).hexdigest(),
+                priority=message_priority or 0,
                 delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
             )
-            confirmation = await exchange.publish(
-                routing_key=key, message=pika_message, mandatory=False
-            )
-            if not isinstance(confirmation, commands.Basic.Ack):
-                raise PublishNotConfirmedError("Broker did not acknowledge publication")
+            await exchange.publish(routing_key=key, message=pika_message)
 
     @tenacity.retry(
         retry=tenacity.retry_if_exception_type(

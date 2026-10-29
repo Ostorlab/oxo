@@ -14,8 +14,6 @@ from pytest_mock import plugin
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import agent_runtime
 from ostorlab.runtimes.local import resources
-from ostorlab.runtimes.local import runtime as local_runtime
-from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
@@ -150,91 +148,6 @@ def testAgentStart_withInvalidGroupBudget_rejectsConfiguration(
     docker_client.services.create.assert_not_called()
 
 
-@pytest.mark.parametrize(("replicas", "expected"), [(0, 0), (None, 1), (-1, 1), (3, 3)])
-def testAgentGroupFromApi_withReplicaCount_preservesDeliberateZero(
-    replicas: int | None,
-    expected: int,
-) -> None:
-    group = definitions.AgentGroupDefinition.from_api_response(
-        {
-            "key": "agentgroup/org/group",
-            "agents": [{"key": "agent/org/worker", "replicas": replicas}],
-        }
-    )
-    assert group.agents[0].replicas == expected
-
-
-@pytest.mark.parametrize("worker_pending", [False, True])
-def testLocalScan_withWorkerReplicaStates_enforcesStartupHealth(
-    docker_client: mock.MagicMock,
-    mocker: plugin.MockerFixture,
-    db_engine_path: str,
-    worker_pending: bool,
-) -> None:
-    """Keep zero replicas stopped and reject positive replicas that remain pending."""
-    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
-    mocker.patch("time.sleep")
-    created: list[mock.MagicMock] = []
-
-    def create_service(**kwargs: typing.Any) -> mock.MagicMock:
-        service = mock.MagicMock()
-        service.name = kwargs["name"]
-        service.attrs = {
-            "Spec": {
-                "Labels": kwargs["labels"],
-                "Mode": {"Replicated": kwargs["mode"]["replicated"]},
-                "TaskTemplate": {"RestartPolicy": kwargs["restart_policy"]},
-            }
-        }
-        desired = kwargs["mode"]["replicated"]["Replicas"]
-        service.tasks.return_value = [
-            {
-                "Status": {
-                    "State": "running",
-                    "ContainerStatus": {"ContainerID": "container"},
-                }
-            }
-            for _ in range(desired)
-        ]
-        if worker_pending is True and service.name.startswith("agent_"):
-            service.tasks.return_value = [
-                {"Status": {"State": "pending", "Err": "insufficient resources"}}
-            ]
-        created.append(service)
-        return service
-
-    docker_client.services.create.side_effect = create_service
-    docker_client.services.list.side_effect = lambda **kwargs: created
-    docker_client.containers.get.return_value.exec_run.return_value = mocker.Mock(
-        exit_code=0, output=b"ready"
-    )
-    group = definitions.AgentGroupDefinition(
-        agents=[
-            definitions.AgentSettings(
-                key="agent/org/worker", replicas=1 if worker_pending is True else 0
-            )
-        ]
-    )
-    runtime = local_runtime.LocalRuntime(scan_id="42", run_default_agents=False)
-    assert runtime.can_run(group) is True
-    if worker_pending is True:
-        with pytest.raises(
-            local_runtime.AgentNotHealthy, match="insufficient resources"
-        ):
-            runtime.scan(
-                title="Pending worker", agent_group_definition=group, assets=None
-            )
-        return
-    scan = runtime.scan(
-        title="Zero replicas", agent_group_definition=group, assets=None
-    )
-
-    assert scan is not None
-    worker = next(service for service in created if service.name.startswith("agent_"))
-    assert worker.attrs["Spec"]["Mode"]["Replicated"]["Replicas"] == 0
-    worker.remove.assert_not_called()
-
-
 @pytest.mark.docker
 def testSwarmResources_withZeroReplicaService_acceptsHeadroomReservation() -> None:
     """Swarm accepts a reservation above the cap; this creates no containers."""
@@ -263,26 +176,3 @@ def testSwarmResources_withZeroReplicaService_acceptsHeadroomReservation() -> No
         if service is not None:
             typing.cast(typing.Callable[[], None], service.remove)()
         client.close()
-
-
-@pytest.mark.parametrize(
-    "service_type", [mq.LocalRabbitMQ, redis.LocalRedis, jaeger.LocalJaeger]
-)
-def testServiceHealth_withPendingTasks_returnsFalseAfterRetries(
-    docker_client: mock.MagicMock,
-    mocker: plugin.MockerFixture,
-    service_type: type[mq.LocalRabbitMQ | redis.LocalRedis | jaeger.LocalJaeger],
-) -> None:
-    """An exhausted health check must never return a truthy Future(False)."""
-    mocker.patch("time.sleep")
-    docker_client.services.create.return_value.tasks.return_value = [
-        {
-            "Status": {
-                "State": "pending",
-                "Err": "no suitable node (insufficient resources)",
-            }
-        }
-    ]
-    service = service_type(name="42", network="network")
-    service.start()
-    assert service.is_service_healthy() is False

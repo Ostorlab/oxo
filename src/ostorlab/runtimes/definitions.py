@@ -130,7 +130,7 @@ logger = logging.getLogger(__name__)
 
 def _process_agent_replicas(replicas: int) -> int:
     """Add an upper & lower bounds to the number of replicas allowed for an Agent instance."""
-    if replicas < 0:
+    if replicas <= 0:
         return 1
     elif replicas > MAX_AGENT_REPLICAS:
         return MAX_AGENT_REPLICAS
@@ -408,10 +408,7 @@ class AgentGroupDefinition:
 
         for agent in agents:
             agents_names.append(agent.get("key") or "")
-            replicas = agent.get("replicas")
-            if replicas is None:
-                replicas = 1
-            replicas = _process_agent_replicas(replicas)
+            replicas = _process_agent_replicas(agent.get("replicas") or 1)
 
             agent_args = []
             for arg in agent.get("args") or []:

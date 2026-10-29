@@ -479,7 +479,9 @@ class AgentRuntime:
             labels={
                 "ostorlab.universe": self.runtime_name,
                 ## queue_name is used by the autoscaler to identify agent queues and to decide on exclusion/inclusion.
-                "ostorlab.queue_name": self.agent.service_name or agent_definition.name,
+                "ostorlab.queue_name": service_name
+                if service_name is not None
+                else agent_definition.name,
             },
             container_labels=self.labels
             | {
