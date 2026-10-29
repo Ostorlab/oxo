@@ -12,13 +12,13 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
-from ostorlab.runtimes.local import resources
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.services import container_exec
 
 logger = logging.getLogger(__name__)
 
 REDIS_IMAGE = "redis:latest"
+REDIS_MEMORY_RESERVATION = 640 * 1024**2
 REDIS_READINESS_COMMAND = ["redis-cli", "ping"]
 REDIS_READINESS_ATTEMPTS = 60
 REDIS_READINESS_WAIT_SECONDS = 1
@@ -114,7 +114,7 @@ class LocalRedis:
                 mode=service_mode,
                 labels={"ostorlab.universe": self._name, "ostorlab.redis": ""},
                 endpoint_spec=endpoint_spec,
-                resources=resources.swarm_resources(resources.memory_limit("redis")),
+                resources=types.Resources(mem_reservation=REDIS_MEMORY_RESERVATION),
             )
         except docker.errors.APIError as e:
             error_message = f"Redis service could not be started. Reason: {e}."

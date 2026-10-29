@@ -14,6 +14,7 @@ import logging
 import random
 import typing
 import uuid
+from typing import Any
 
 import docker
 from docker import constants
@@ -24,7 +25,6 @@ from ostorlab import configuration_manager
 from ostorlab import exceptions
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.runtimes import definitions
-from ostorlab.runtimes.local import resources
 from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
 from ostorlab.runtimes.local.services import redis
@@ -383,9 +383,6 @@ class AgentRuntime:
             the agent docker service.
         """
         agent_definition = self.create_agent_definition_from_label()
-        mem_limit = resources.memory_limit(
-            "agent", self.agent.mem_limit, agent_definition.mem_limit
-        )
         self.agent.open_ports = self.agent.open_ports or agent_definition.open_ports
         if self.agent.open_ports:
             endpoint_spec = typing.cast(
@@ -413,6 +410,7 @@ class AgentRuntime:
             mounts.extend(extra_mounts)
 
         constraints = self.agent.constraints or agent_definition.constraints
+        mem_limit = self.agent.mem_limit or agent_definition.mem_limit
         restart_policy = (
             self.agent.restart_policy or agent_definition.restart_policy or "any"
         )
@@ -449,6 +447,13 @@ class AgentRuntime:
                     base_service_name[: MAX_SERVICE_NAME_LEN - len(random_suffix)]
                     + random_suffix
                 )
+
+        # `Resources` is built as a plain dict rather than with `docker_types_services.Resources`,
+        # which has no parameter for `MemorySwappiness`. Swarm defaults that field when it is
+        # unset, so leaving it out keeps the stored spec incomplete.
+        resources: dict[str, Any] = {"MemorySwappiness": None}
+        if mem_limit is not None:
+            resources["Limits"] = {"MemoryBytes": mem_limit}
 
         env = [
             f"UNIVERSE={self.runtime_name}",
@@ -490,7 +495,7 @@ class AgentRuntime:
             configs=configs,
             constraints=constraints,
             endpoint_spec=endpoint_spec,
-            resources=resources.swarm_resources(mem_limit),
+            resources=resources,
             cap_add=caps,
             mode=docker_types_services.ServiceMode("replicated", replicas),
             stop_grace_period=STOP_GRACE_PERIOD,

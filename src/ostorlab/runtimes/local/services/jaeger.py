@@ -12,8 +12,6 @@ from docker import types
 from docker.models import networks
 from docker.models import services
 
-from ostorlab.runtimes.local import resources
-
 logger = logging.getLogger(__name__)
 
 JAEGER_IMAGE = "jaegertracing/all-in-one:latest"
@@ -127,7 +125,6 @@ class LocalJaeger:
                 mode=service_mode,
                 labels={"ostorlab.universe": self._name, "ostorlab.jaeger": ""},
                 endpoint_spec=endpoint_spec,
-                resources=resources.swarm_resources(resources.memory_limit("jaeger")),
             )
         except docker.errors.APIError as e:
             error_message = f"Jaeger service could not be started. Reason: {e}."
