@@ -22,8 +22,8 @@ from ostorlab import exceptions
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
-from ostorlab.assets import asset as ostorlab_asset
 from ostorlab.assets import asn as asn_asset
+from ostorlab.assets import asset as ostorlab_asset
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
 from ostorlab.assets import ios_store as ios_store_asset
