@@ -45,6 +45,23 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGrou
     assert "... on IosIpaAssetType" in api_request.query
 
 
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsTestflightAppName() -> (
+    None
+):
+    """Test full details query selects the link and the name of a TestFlight app, in every asset position."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    assert (
+        api_request.query.count(
+            "... on IosTestflightAssetType { applicationUrl appName }"
+        )
+        == 3
+    )
+
+
 def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsUseExperimentalAgents() -> (
     None
 ):
