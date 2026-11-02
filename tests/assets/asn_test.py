@@ -23,4 +23,5 @@ def testASN_whenAsnHasPrefixAndSpaces_normalizesAsn() -> None:
 
     assert asset.asn == "15169"
     unraw = serializer.deserialize("v3.asset.asn", asset.to_proto())
+    assert isinstance(unraw, asn_pb2.Message)
     assert unraw.asn == "15169"
