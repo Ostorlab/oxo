@@ -31,6 +31,7 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import android_store
+from ostorlab.assets import asn
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import domain_name
 from ostorlab.assets import ios_ipa
@@ -933,6 +934,8 @@ class Asset(Base):
                 )
             elif isinstance(asset, android_store.AndroidStore):
                 AndroidStore.create(package_name=asset.package_name, scan_id=scan_id)
+            elif isinstance(asset, asn.ASN):
+                ASNAsset.create(asn=asset.asn, scan_id=scan_id)
 
         if len(networks) > 0:
             Network.create(networks=networks, scan_id=scan_id)
@@ -1120,6 +1123,35 @@ class IosStore(Asset):
                 application_name=application_name,
                 scan_id=scan_id,
             )
+            session.add(asset)
+            session.commit()
+            return asset
+
+
+class ASNAsset(Asset):
+    __tablename__ = "asn_asset"
+    id: orm.Mapped[int] = sqlalchemy.Column(
+        sqlalchemy.Integer, sqlalchemy.ForeignKey("asset.id"), primary_key=True
+    )
+    asn = sqlalchemy.Column(sqlalchemy.String(32))
+
+    __mapper_args__: ClassVar[dict[str, Any]] = {
+        "polymorphic_identity": "asn",
+    }
+
+    @staticmethod
+    def create(asn: str, scan_id: typing.Optional[int] = None) -> ASNAsset:
+        """Persist the ASN information in the database.
+
+        Args:
+            asn: The autonomous system number, e.g. 15169.
+            scan_id: The scan id.
+
+        Returns:
+            ASN asset object.
+        """
+        with Database() as session:
+            asset = ASNAsset(asn=asn, scan_id=scan_id)
             session.add(asset)
             session.commit()
             return asset

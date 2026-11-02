@@ -1394,6 +1394,41 @@ def testCreateAsset_iOSStore_createsNewAsset(
         assert session.query(models.IosStore).all()[1].application_name == "fake_app2"
 
 
+def testCreateAsset_asn_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the ASN asset is created successfully through the createAssets API."""
+    del clean_db
+    query = """
+        mutation createASN($assets: [OxoAssetInputType]!) {
+            createAssets(assets: $assets) {
+                assets {
+                    ... on OxoASNAssetType {
+                        id
+                        asn
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {"assets": [{"asn": [{"asn": "15169"}]}]},
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset = resp.get_json()["data"]["createAssets"]["assets"][0]
+    assert asset["id"] is not None
+    assert asset["asn"] == "15169"
+    with models.Database() as session:
+        assert session.query(models.ASNAsset).count() == 1
+        assert session.query(models.ASNAsset).all()[0].asn == "15169"
+
+
 def testCreateAsset_url_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
