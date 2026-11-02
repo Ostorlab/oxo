@@ -22,6 +22,7 @@ from ostorlab import exceptions
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
+from ostorlab.assets import asn as asn_asset
 from ostorlab.assets import asset as ostorlab_asset
 from ostorlab.assets import domain_name as domain_name_asset
 from ostorlab.assets import ios_ipa as ios_ipa_asset
@@ -376,6 +377,8 @@ class DeleteScansMutation(graphene.Mutation):
                 session.query(models.DomainName).filter_by(
                     domain_asset_id=asset.id
                 ).delete()
+            elif asset_type == "asn":
+                session.query(models.ASNAsset).filter_by(id=asset.id).delete()
 
 
 class CreateAssetsMutation(graphene.Mutation):
@@ -457,6 +460,10 @@ class CreateAssetsMutation(graphene.Mutation):
             if asset.domain is not None:
                 new_asset = models.DomainAsset.create(domains=asset.domain)
                 created_assets.append(new_asset)
+            if asset.asn is not None:
+                for asset_asn in asset.asn:
+                    new_asset = models.ASNAsset.create(asn=asset_asn.asn)
+                    created_assets.append(new_asset)
         if len(errors) > 0:
             error_messages = "\n".join(errors)
             raise graphql.GraphQLError(f"Invalid assets: {error_messages}")
@@ -483,6 +490,8 @@ class CreateAssetsMutation(graphene.Mutation):
             assets.append(asset.ip)
         if asset.domain is not None:
             assets.append(asset.domain)
+        if asset.asn is not None:
+            assets.append(asset.asn)
 
         if len(assets) == 0:
             return f"Asset {asset} input is missing target."
@@ -766,6 +775,8 @@ class RunScanMutation(graphene.Mutation):
                         scan_assets.append(
                             domain_name_asset.DomainName(name=domain.name)
                         )
+                elif asset.type == "asn":
+                    scan_assets.append(asn_asset.ASN(asn=asset.asn))
                 else:
                     raise graphql.GraphQLError("Unsupported asset type.")
 
