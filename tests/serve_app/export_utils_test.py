@@ -288,3 +288,25 @@ def testExportScan_whenScanHasNoVulz_exportRiskRatingAsNone(
     ):
         scan_data = json.load(scan_file)
         assert scan_data["risk_rating"] is None
+
+
+def testExportScan_whenASNScan_shouldExportAndImportASN(
+    asn_scan: models.Scan,
+    db_engine_path: str,
+    mocker: plugin.MockerFixture,
+    clean_db: None,
+) -> None:
+    """Test exporting then importing a scan on an ASN asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+
+    exported_bytes = export_utils.export_scan(scan=asn_scan)
+
+    with zipfile.ZipFile(io.BytesIO(exported_bytes)) as archive:
+        exported_asset = json.loads(archive.read(export_utils.ASSET_JSON))
+    assert exported_asset["type"] == "asn"
+    assert exported_asset["asn"] == "15169"
+    import_utils.import_scan(file_data=exported_bytes)
+    with models.Database() as session:
+        assets = session.query(models.ASNAsset).all()
+        assert len(assets) == 2
+        assert all(asset.asn == "15169" for asset in assets)

@@ -439,6 +439,15 @@ class OxoASNAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
         model = models.ASNAsset
         only_fields = ("id", "asn")
 
+    @staticmethod
+    def resolve_asn(
+        root: models.ASNAsset, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
+        with models.Database() as session:
+            return cast(
+                models.ASNAsset, session.query(models.ASNAsset).get(root.id)
+            ).asn
+
 
 class OxoAssetType(graphene.Union):
     class Meta:

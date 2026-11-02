@@ -1315,6 +1315,27 @@ def ios_store(mocker: plugin.MockerFixture, db_engine_path: str) -> models.IosSt
 
 
 @pytest.fixture
+def asn_asset(mocker: plugin.MockerFixture, db_engine_path: str) -> models.ASNAsset:
+    """Create an ASN asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    return models.ASNAsset.create(asn="15169")
+
+
+@pytest.fixture
+def asn_scan(
+    clean_db: None, mocker: plugin.MockerFixture, db_engine_path: str
+) -> models.Scan:
+    """Create a dummy scan on an ASN asset."""
+    mocker.patch.object(models, "ENGINE_URL", db_engine_path)
+    scan = models.Scan.create(
+        title="ASN Scan",
+        progress=models.ScanProgress.IN_PROGRESS,
+    )
+    models.ASNAsset.create(asn="15169", scan_id=scan.id)
+    return scan
+
+
+@pytest.fixture
 def nmap_agent_def() -> agent_definitions.AgentDefinition:
     """Create an Nmap agent definition."""
     return agent_definitions.AgentDefinition(

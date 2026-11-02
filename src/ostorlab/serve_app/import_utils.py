@@ -108,6 +108,8 @@ def _get_asset_str(asset_dicts: list[dict[str, Any]]) -> str:
             asset_str.append(
                 f"IOS Store: {asset_dict.get('application_name') or asset_dict.get('package_name')}"
             )
+        elif asset_dict["type"].lower() == "asn":
+            asset_str.append(f"ASN: {asset_dict.get('asn')}")
 
     return ", ".join(asset_str)
 
@@ -200,6 +202,9 @@ def _import_asset(
                 bundle_id=bundle_id,
                 scan_id=scan_id,
             )
+
+        elif asset_dict["type"].lower() == "asn":
+            models.ASNAsset.create(asn=asset_dict["asn"], scan_id=scan_id)
 
         else:
             raise NotImplementedError(
