@@ -1444,7 +1444,7 @@ def testCreateAsset_asn_createsNewAsset(
         "/graphql",
         json={
             "query": query,
-            "variables": {"assets": [{"asn": [{"asn": "15169"}]}]},
+            "variables": {"assets": [{"asn": [{"asn": " AS15169 "}]}]},
         },
     )
 

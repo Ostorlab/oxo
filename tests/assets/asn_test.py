@@ -16,3 +16,11 @@ def testASNToProto_whenValidData_generatesProto() -> None:
     assert unraw.asn == "15169"
     assert str(asset) == "15169"
     assert asset.proto_field == "asn"
+
+
+def testASN_whenAsnHasPrefixAndSpaces_normalizesAsn() -> None:
+    asset = asn.ASN(asn=" as15169 ")
+
+    assert asset.asn == "15169"
+    unraw = serializer.deserialize("v3.asset.asn", asset.to_proto())
+    assert unraw.asn == "15169"

@@ -31,7 +31,7 @@ from ostorlab import configuration_manager as config_manager
 from ostorlab.assets import android_aab
 from ostorlab.assets import android_apk
 from ostorlab.assets import android_store
-from ostorlab.assets import asn
+from ostorlab.assets import asn as asn_asset
 from ostorlab.assets import asset as base_asset
 from ostorlab.assets import domain_name
 from ostorlab.assets import ios_ipa
@@ -934,7 +934,7 @@ class Asset(Base):
                 )
             elif isinstance(asset, android_store.AndroidStore):
                 AndroidStore.create(package_name=asset.package_name, scan_id=scan_id)
-            elif isinstance(asset, asn.ASN):
+            elif isinstance(asset, asn_asset.ASN):
                 ASNAsset.create(asn=asset.asn, scan_id=scan_id)
 
         if len(networks) > 0:
@@ -1151,7 +1151,7 @@ class ASNAsset(Asset):
             ASN asset object.
         """
         with Database() as session:
-            asset = ASNAsset(asn=asn, scan_id=scan_id)
+            asset = ASNAsset(asn=asn_asset.normalize(asn), scan_id=scan_id)
             session.add(asset)
             session.commit()
             return asset
