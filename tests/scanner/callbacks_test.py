@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 from pytest_mock import plugin
 
+from ostorlab.agent.message import message as agent_message
 from ostorlab.agent.schema import validator
 from ostorlab.assets import agent as agent_asset
 from ostorlab.assets import android_aab
@@ -643,6 +644,90 @@ def testExtractAssets_whenRiskAssetWithIosTestflightTarget_shouldReturnCorrectAs
         extracted_risk_asset.ios_testflight.application_url
         == "https://testflight.apple.com/join/abcdef"
     )
+
+
+def testExtractAssets_whenPublicTestflightAsset_shouldReturnAssetWithLinkOnly(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure extract_assets maps a public TestFlight app onto its join link, with no app name."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IosTestflightAssetType",
+            "applicationUrl": "https://testflight.apple.com/join/abcdef",
+            "appName": None,
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_asset, ios_testflight.IOSTestflight) is True
+    assert extracted_asset.application_url == "https://testflight.apple.com/join/abcdef"
+    assert extracted_asset.app_name is None
+
+
+def testExtractAssets_whenPrivateTestflightAsset_shouldReturnAssetWithAppNameAndNoLink(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure a private TestFlight app keeps its name, and its missing link is not sent as an empty string."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IosTestflightAssetType",
+            "applicationUrl": None,
+            "appName": "Guest + Uat",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert isinstance(extracted_asset, ios_testflight.IOSTestflight) is True
+    assert extracted_asset.application_url is None
+    assert extracted_asset.app_name == "Guest + Uat"
+    sent_message = agent_message.Message.from_raw(
+        "v3.asset.store.ios_testflight", extracted_asset.to_proto()
+    )
+    assert sent_message.data == {"app_name": "Guest + Uat"}
+
+
+def testExtractAssets_whenTestflightAssetHasEmptyLink_shouldLeaveLinkUnset(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Ensure an empty link, as stored for some private apps, is left unset rather than sent as an empty link."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/dummy"}],
+        },
+        "asset": {
+            "__typename": "IosTestflightAssetType",
+            "applicationUrl": "",
+            "appName": "Guest + Uat",
+        },
+    }
+    runtime_mock = _setup_start_scan_mocks(mocker)
+    state_reporter = mocker.MagicMock()
+
+    callbacks.start_scan(reserved_scan, state_reporter)
+
+    extracted_asset = runtime_mock.scan.call_args[1].get("assets")[0]
+    assert extracted_asset.application_url is None
+    assert extracted_asset.app_name == "Guest + Uat"
 
 
 def testExtractAssets_whenRepositoryArchiveAsset_shouldReturnCorrectAsset(

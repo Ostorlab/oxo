@@ -45,7 +45,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                     ... on AsnAssetType { asn }
                     ... on AndroidPackageNameAssetType { packageName }
                     ... on IosBundleIdAssetType { bundleId }
-                    ... on IosTestflightAssetType { applicationUrl }
+                    ... on IosTestflightAssetType { applicationUrl appName }
                     ... on AndroidAabAssetType { path contentUrl }
                     ... on IosIpaAssetType { path contentUrl }
                     ... on SourceCodeAssetType { path contentUrl language }
@@ -105,7 +105,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                           ... on DomainNameAssetType { name }
                           ... on AndroidPackageNameAssetType { packageName }
                           ... on IosBundleIdAssetType { bundleId }
-                          ... on IosTestflightAssetType { applicationUrl }
+                          ... on IosTestflightAssetType { applicationUrl appName }
                           ... on AndroidAabAssetType { path contentUrl }
                           ... on IosIpaAssetType { path contentUrl }
                           ... on SourceCodeAssetType { path contentUrl language }
@@ -136,7 +136,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                         ... on DomainNameAssetType { name }
                         ... on AndroidPackageNameAssetType { packageName }
                         ... on IosBundleIdAssetType { bundleId }
-                        ... on IosTestflightAssetType { applicationUrl }
+                        ... on IosTestflightAssetType { applicationUrl appName }
                         ... on AndroidAabAssetType { path contentUrl }
                         ... on IosIpaAssetType { path contentUrl }
                         ... on SourceCodeAssetType { path contentUrl language }

@@ -368,9 +368,14 @@ def _extract_assets(asset_data: Optional[dict[str, Any]]) -> list[asset.Asset]:
             )
         ]
     elif typename == "IosTestflightAssetType":
+        application_url = kwargs.get("applicationUrl", "") or ""
+        app_name = kwargs.get("appName", "") or ""
         return [
             ios_testflight.IOSTestflight(
-                application_url=str(kwargs.get("applicationUrl") or ""),
+                application_url=application_url
+                if application_url.strip() != ""
+                else None,
+                app_name=app_name if app_name.strip() != "" else None,
             )
         ]
     elif typename == "FileAssetType":
