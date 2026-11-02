@@ -137,6 +137,12 @@ def _prepare_asset_str(scan_id: int) -> str:
                 )
                 assert domain is not None
                 asset_list.append(f"Domain: {domain.name}")
+            elif asset_type == "asn":
+                asn_asset = (
+                    session.query(models.ASNAsset).filter_by(id=asset.id).first()
+                )
+                assert asn_asset is not None
+                asset_list.append(f"ASN: {asn_asset.asn}")
             else:
                 raise NotImplementedError(f"Asset type {asset.type} not implemented.")
 

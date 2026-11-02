@@ -434,6 +434,21 @@ class OxoDomainNameAssetsType(graphene_sqlalchemy.SQLAlchemyObjectType):
             ]
 
 
+class OxoASNAssetType(graphene_sqlalchemy.SQLAlchemyObjectType):
+    class Meta:
+        model = models.ASNAsset
+        only_fields = ("id", "asn")
+
+    @staticmethod
+    def resolve_asn(
+        root: models.ASNAsset, info: graphql_base.ResolveInfo
+    ) -> Optional[str]:
+        with models.Database() as session:
+            return cast(
+                models.ASNAsset, session.query(models.ASNAsset).get(root.id)
+            ).asn
+
+
 class OxoAssetType(graphene.Union):
     class Meta:
         model = models.Asset
@@ -445,6 +460,7 @@ class OxoAssetType(graphene.Union):
             OxoUrlsAssetType,
             OxoNetworkAssetType,
             OxoDomainNameAssetsType,
+            OxoASNAssetType,
         )
 
 
@@ -698,6 +714,10 @@ class OxoDomainNameInputType(graphene.InputObjectType):
     name = graphene.String(required=True)
 
 
+class OxoASNInputType(graphene.InputObjectType):
+    asn = graphene.String(required=True)
+
+
 class OxoAssetInputType(graphene.InputObjectType):
     android_apk_file = graphene.List(OxoAndroidFileAssetInputType)
     android_aab_file = graphene.List(OxoAndroidFileAssetInputType)
@@ -707,6 +727,7 @@ class OxoAssetInputType(graphene.InputObjectType):
     link = graphene.List(OxoLinkInputType)
     ip = graphene.List(OxoIPRangeInputType)
     domain = graphene.List(OxoDomainNameInputType)
+    asn = graphene.List(OxoASNInputType)
 
 
 class OxoAgentArgumentInputType(graphene.InputObjectType):
@@ -1085,6 +1106,12 @@ class IOSStoreInput(Protocol):
     application_name: Optional[str]
 
 
+class ASNInput(Protocol):
+    """Decoded ASN input."""
+
+    asn: str
+
+
 class AndroidFileInput(Protocol):
     """Decoded uploaded Android input."""
 
@@ -1110,6 +1137,7 @@ class AssetInput(Protocol):
     link: Optional[list[dict[str, str]]]
     ip: Optional[list[dict[str, str | int | None]]]
     domain: Optional[list[dict[str, str]]]
+    asn: Optional[list[ASNInput]]
 
 
 class AgentGroupInput(Protocol):

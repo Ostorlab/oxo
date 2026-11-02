@@ -14,8 +14,10 @@ from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
 
+from ostorlab.assets import asn as asn_asset_module
 from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
+from ostorlab.serve_app import oxo
 from ostorlab.serve_app.schema import schema as oxo_schema
 
 RE_OXO_ENDPOINT = "https://api.ostorlab.co/apis/oxo"
@@ -762,6 +764,32 @@ def testDeleteScansMutation_whenScanExist_deleteScanAndVulnz(
         )
 
 
+def testDeleteScansMutation_whenASNScan_deleteScanAndASNAsset(
+    authenticated_flask_client: testing.FlaskClient, asn_scan: models.Scan
+) -> None:
+    """Ensure the delete scan mutation deletes the ASN asset of the scan."""
+    with models.Database() as session:
+        assert session.query(models.ASNAsset).count() == 1
+
+    query = """
+        mutation DeleteScans ($scanIds: [Int]!){
+            deleteScans (scanIds: $scanIds) {
+                result
+            }
+        }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": {"scanIds": [asn_scan.id]}}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    with models.Database() as session:
+        assert session.query(models.Scan).count() == 0
+        assert session.query(models.Asset).count() == 0
+        assert session.query(models.ASNAsset).count() == 0
+
+
 def testDeleteScansMutation_whenScanDoesNotExist_returnErrorMessage(
     authenticated_flask_client: testing.FlaskClient,
 ) -> None:
@@ -1394,6 +1422,41 @@ def testCreateAsset_iOSStore_createsNewAsset(
         assert session.query(models.IosStore).all()[1].application_name == "fake_app2"
 
 
+def testCreateAsset_asn_createsNewAsset(
+    authenticated_flask_client: testing.FlaskClient, clean_db: None
+) -> None:
+    """Ensure the ASN asset is created successfully through the createAssets API."""
+    del clean_db
+    query = """
+        mutation createASN($assets: [OxoAssetInputType]!) {
+            createAssets(assets: $assets) {
+                assets {
+                    ... on OxoASNAssetType {
+                        id
+                        asn
+                    }
+                }
+            }
+        }
+    """
+
+    resp = authenticated_flask_client.post(
+        "/graphql",
+        json={
+            "query": query,
+            "variables": {"assets": [{"asn": [{"asn": " AS15169 "}]}]},
+        },
+    )
+
+    assert resp.status_code == 200, resp.get_json()
+    asset = resp.get_json()["data"]["createAssets"]["assets"][0]
+    assert asset["id"] is not None
+    assert asset["asn"] == "15169"
+    with models.Database() as session:
+        assert session.query(models.ASNAsset).count() == 1
+        assert session.query(models.ASNAsset).all()[0].asn == "15169"
+
+
 def testCreateAsset_url_createsNewAsset(
     authenticated_flask_client: testing.FlaskClient, clean_db: None
 ) -> None:
@@ -1980,6 +2043,37 @@ def testQueryScan_whenAsset_shouldReturnScanAndAssetInformation(
     assert scan_data["title"] == "iOS Scan"
     assert scan_data["assets"][0]["packageName"] == asset.package_name
     assert scan_data["assets"][0]["applicationName"] == asset.application_name
+
+
+def testQueryScan_whenASNAsset_shouldReturnASN(
+    authenticated_flask_client: testing.FlaskClient, asn_scan: models.Scan
+) -> None:
+    """Ensure the ASN of a scan asset is returned when querying the scan."""
+    query = """
+        query Scans($scanIds: [Int!]) {
+            scans(scanIds: $scanIds) {
+                scans {
+                    assets {
+                        ... on OxoASNAssetType {
+                            id
+                            asn
+                        }
+                    }
+                }
+            }
+        }
+    """
+
+    response = authenticated_flask_client.post(
+        "/graphql",
+        json={"query": query, "variables": {"scanIds": [asn_scan.id]}},
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert "errors" not in response.get_json(), response.get_json()
+    assets = response.get_json()["data"]["scans"]["scans"][0]["assets"]
+    assert len(assets) == 1
+    assert assets[0]["asn"] == "15169"
 
 
 def testQueryAssets_whenScanHasMultipleAssets_shouldReturnAllAssets(
@@ -2824,6 +2918,74 @@ def testRunScanMutation_whenIosStore_shouldRunScan(
     assert res_scan["assets"][0]["bundleId"] == "com.example.ios"
     args = prepare_scan_mock.call_args[1]
     assert args["title"] == "Test Scan Ios Store"
+
+
+def testRunScanMutation_whenASNAsset_shouldRunScanWithASN(
+    authenticated_flask_client: testing.FlaskClient,
+    agent_group_inject_asset: models.AgentGroup,
+    asn_asset: models.ASNAsset,
+    scan: models.Scan,
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Test RunScanMutation for ASN asset."""
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_installed",
+        return_value=True,
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_docker_working", return_value=True
+    )
+    mocker.patch(
+        "ostorlab.cli.docker_requirements_checker.is_swarm_initialized",
+        return_value=True,
+    )
+    mocker.patch("docker.from_env")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.can_run", return_value=True
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch(
+        "ostorlab.runtimes.local.runtime.LocalRuntime.prepare_scan", return_value=scan
+    )
+    prepare_assets_spy = mocker.spy(oxo.RunScanMutation, "_prepare_assets")
+    query = """
+        mutation RunScan($scan: OxoAgentScanInputType!) {
+            runScan(
+                scan: $scan
+            ) {
+                scan {
+                    id
+                    assets {
+                        ... on OxoASNAssetType {
+                            id
+                            asn
+                        }
+                    }
+                }
+            }
+        }
+    """
+    variables = {
+        "scan": {
+            "title": "Test Scan ASN",
+            "assetIds": [asn_asset.id],
+            "agentGroupId": agent_group_inject_asset.id,
+        },
+    }
+
+    response = authenticated_flask_client.post(
+        "/graphql", json={"query": query, "variables": variables}
+    )
+
+    assert response.status_code == 200, response.get_json()
+    assert "errors" not in response.get_json(), response.get_json()
+    res_scan = response.get_json()["data"]["runScan"]["scan"]
+    assert len(res_scan["assets"]) == 1
+    assert res_scan["assets"][0]["asn"] == "15169"
+    scan_assets = prepare_assets_spy.spy_return
+    assert len(scan_assets) == 1
+    assert isinstance(scan_assets[0], asn_asset_module.ASN)
+    assert scan_assets[0].asn == "15169"
 
 
 def testRunScanMutation_whenAgentGroupDoesNotExist_returnErrorMessage(
