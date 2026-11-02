@@ -10,8 +10,10 @@ from pytest_mock import plugin
 from ostorlab.apis.runners import authenticated_runner
 from ostorlab.cli import console
 from ostorlab.cli import rootcli
+from ostorlab.cli.scan.list import list as list_scan
 from ostorlab.runtimes import runtime
 from ostorlab.runtimes.local import runtime as local_runtime
+from ostorlab.runtimes.local.models import models
 
 
 def testOstorlabScanListCLI_whenRuntimeIsCloud_showsScanInfo(
@@ -200,3 +202,8 @@ def testOstorlabScanListCLI_whenRuntimeIsLocalAndStateIsProvided_showsFilteredLi
 
     assert all(str(scan.id) in result.output for scan in scans)
     mock_scan_list.assert_called_with(page=1, number_elements=10, state="done")
+
+
+def testPrepareAssetStr_whenASNScan_returnsASN(asn_scan: models.Scan) -> None:
+    """Ensure the asset of an ASN scan is shown in the local scan list."""
+    assert list_scan._prepare_asset_str(asn_scan.id) == "ASN: 15169"
