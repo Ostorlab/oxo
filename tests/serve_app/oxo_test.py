@@ -14,8 +14,8 @@ from docker.models import services as services_model
 from flask import testing
 from pytest_mock import plugin
 
-from ostorlab.runtimes.local.models import models
 from ostorlab.assets import asn as asn_asset_module
+from ostorlab.runtimes.local.models import models
 from ostorlab.serve_app import import_utils
 from ostorlab.serve_app import oxo
 from ostorlab.serve_app.schema import schema as oxo_schema
