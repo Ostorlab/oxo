@@ -24,19 +24,13 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3ostorlab/agent/message/proto/v3/asset/asn/asn.proto\x12)ostorlab.agent.message.proto.v3.asset.asn\"T\n\x06Prefix\x12\x0e\n\x06prefix\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\x05\x12\x13\n\x0brpki_status\x18\x03 \x01(\t\x12\x14\n\x0c\x63ountry_code\x18\x04 \x01(\t\"&\n\tNeighbour\x12\x0b\n\x03\x61sn\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\"/\n\x02IX\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\r\n\x05speed\x18\x03 \x01(\x03\"\xe3\x02\n\x07Message\x12\x0b\n\x03\x61sn\x18\x01 \x01(\t\x12\x0f\n\x07website\x18\x02 \x01(\t\x12\x14\n\x0cnetwork_type\x18\x03 \x01(\t\x12\x43\n\x08prefixes\x18\x04 \x03(\x0b\x32\x31.ostorlab.agent.message.proto.v3.asset.asn.Prefix\x12\x10\n\x08ip_count\x18\x05 \x01(\x03\x12H\n\nneighbours\x18\x06 \x03(\x0b\x32\x34.ostorlab.agent.message.proto.v3.asset.asn.Neighbour\x12\x0c\n\x04rank\x18\x07 \x01(\x03\x12\x15\n\rcustomer_cone\x18\x08 \x01(\x03\x12:\n\x03ixs\x18\t \x03(\x0b\x32-.ostorlab.agent.message.proto.v3.asset.asn.IX\x12\x14\n\x0crelated_asns\x18\n \x03(\t\x12\x0c\n\x04tags\x18\x0b \x03(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3ostorlab/agent/message/proto/v3/asset/asn/asn.proto\x12)ostorlab.agent.message.proto.v3.asset.asn\"\x16\n\x07Message\x12\x0b\n\x03\x61sn\x18\x01 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.asset.asn.asn_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_PREFIX']._serialized_start=98
-  _globals['_PREFIX']._serialized_end=182
-  _globals['_NEIGHBOUR']._serialized_start=184
-  _globals['_NEIGHBOUR']._serialized_end=222
-  _globals['_IX']._serialized_start=224
-  _globals['_IX']._serialized_end=271
-  _globals['_MESSAGE']._serialized_start=274
-  _globals['_MESSAGE']._serialized_end=629
+  _globals['_MESSAGE']._serialized_start=98
+  _globals['_MESSAGE']._serialized_end=120
 # @@protoc_insertion_point(module_scope)

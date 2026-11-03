@@ -1,0 +1,35 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.asn;
+
+message Prefix {
+  optional string prefix = 1;
+  optional int32 version = 2;
+  optional string rpki_status = 3;
+  optional string country_code = 4;
+}
+
+message Neighbour {
+  optional string asn = 1;
+  optional string type = 2;
+}
+
+message IX {
+  optional string name = 1;
+  optional string city = 2;
+  optional int64 speed = 3;
+}
+
+message Message {
+  optional string asn = 1;
+  optional string website = 2;
+  optional string network_type = 3;
+  repeated Prefix prefixes = 4;
+  optional int64 ip_count = 5;
+  repeated Neighbour neighbours = 6;
+  optional int64 rank = 7;
+  optional int64 customer_cone = 8;
+  repeated IX ixs = 9;
+  repeated string related_asns = 10;
+  repeated string tags = 11;
+}
