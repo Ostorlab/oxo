@@ -104,3 +104,30 @@ def testValidatePortBindingInput_whenMoreThanTwoBindings_returnsValue() -> None:
 def testValidatePortBindingInput_whenInvalidSyntax_raisesUsageError(value: str) -> None:
     with pytest.raises(click.UsageError):
         input_validators.validate_port_binding_input(None, "", value)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://api.example.com/apis/graphql",
+        "http://localhost:8000/orchestrator/graphql",
+    ],
+)
+def testValidateEngineUrl_whenAbsoluteHttpUrl_returnsUrl(url: str) -> None:
+    assert (
+        input_validators.validate_engine_url(None, "reporting_engine_url", url) == url
+    )
+
+
+def testValidateEngineUrl_whenNoneValue_returnsNone() -> None:
+    assert (
+        input_validators.validate_engine_url(None, "reporting_engine_url", None) is None
+    )
+
+
+@pytest.mark.parametrize(
+    "url", ["api.example.com/apis/graphql", "ftp://example.com/graphql", "https://"]
+)
+def testValidateEngineUrl_whenNotAbsoluteHttpUrl_raisesBadParameter(url: str) -> None:
+    with pytest.raises(click.BadParameter):
+        input_validators.validate_engine_url(None, "reporting_engine_url", url)

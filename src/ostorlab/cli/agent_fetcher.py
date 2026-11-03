@@ -14,6 +14,7 @@ from ostorlab import configuration_manager
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.apis import agent_details as agent_details_api
 from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import endpoints
 from ostorlab.apis.runners import public_runner
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import console as cli_console
@@ -36,6 +37,7 @@ def get_details(
     use_experimental: bool = False,
     api_key: str | None = None,
     channel: str | None = None,
+    reporting_engine_url: str | None = None,
 ) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
@@ -46,6 +48,7 @@ def get_details(
         api_key: the API key for RE authentication
         channel: the release channel to resolve the latest version from, None meaning
             stable versions.
+        reporting_engine_url: the reporting engine GraphQL endpoint, None for the default one.
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
@@ -55,13 +58,18 @@ def get_details(
     """
     config_manager = configuration_manager.ConfigurationManager()
 
+    public_endpoint = endpoints.public_graphql_endpoint(reporting_engine_url)
     runner: base_runner.APIRunner
     if config_manager.is_authenticated is True:
-        runner = authenticated_runner.AuthenticatedAPIRunner()
+        runner = authenticated_runner.AuthenticatedAPIRunner(
+            endpoint=reporting_engine_url
+        )
     elif api_key is not None:
-        runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
+        runner = authenticated_runner.AuthenticatedAPIRunner(
+            api_key=api_key, endpoint=reporting_engine_url
+        )
     else:
-        runner = public_runner.PublicAPIRunner()
+        runner = public_runner.PublicAPIRunner(endpoint=public_endpoint)
 
     request = agent_details_api.AgentDetailsAPIRequest(
         agent_key, use_experimental=use_experimental, channel=channel
@@ -80,7 +88,9 @@ def get_details(
 
     if response is None:
         try:
-            response = public_runner.PublicAPIRunner().execute(request)
+            response = public_runner.PublicAPIRunner(endpoint=public_endpoint).execute(
+                request
+            )
         except base_runner.ResponseError as e:
             raise AgentDetailsNotFound("requested agent not found") from e
 

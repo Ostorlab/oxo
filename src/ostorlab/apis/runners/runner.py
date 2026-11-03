@@ -29,15 +29,22 @@ class UnauthorizedError(ResponseError):
 class APIRunner(abc.ABC):
     """Handles API calls and behind the scenes operations."""
 
-    def __init__(self, proxy: str | None = None, verify: bool = True) -> None:
+    def __init__(
+        self,
+        proxy: str | None = None,
+        verify: bool = True,
+        endpoint: str | None = None,
+    ) -> None:
         """Constructs the necessary attributes for the object.
 
         Args:
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether to verify the TLS certificate. Defaults to True.
+            endpoint: The API endpoint, None to use the runner default endpoint.
         """
         self._proxy = proxy
         self._verify = verify
+        self._endpoint = endpoint
         self._configuration_manager: config_manager.ConfigurationManager = (
             config_manager.ConfigurationManager()
         )

@@ -18,6 +18,7 @@ from ostorlab import exceptions
 from ostorlab.agent.schema import validator
 from ostorlab.cli import agent_fetcher
 from ostorlab.cli import console as cli_console
+from ostorlab.cli import input_validators
 from ostorlab.cli import install_agent
 from ostorlab.cli import types
 from ostorlab.cli.scan.scan import scan
@@ -110,6 +111,20 @@ WAIT_BETWEEN_RETRIES = 5
     help="Init sleep for tracker before checking the queues",
     required=False,
 )
+@click.option(
+    "--reporting-engine-url",
+    help="Reporting engine GraphQL endpoint, overrides the agent group definition value. "
+    "Defaults to https://api.ostorlab.co/apis/graphql.",
+    required=False,
+    callback=input_validators.validate_engine_url,
+)
+@click.option(
+    "--scanning-engine-url",
+    help="Scanning engine GraphQL endpoint, overrides the agent group definition value. "
+    "Defaults to https://scanner.ostorlab.co/orchestrator/graphql.",
+    required=False,
+    callback=input_validators.validate_engine_url,
+)
 @click.pass_context
 def run(
     ctx: click.core.Context,
@@ -125,6 +140,8 @@ def run(
     no_asset: bool,
     timeout: int | None = None,
     init_sleep: int | None = None,
+    reporting_engine_url: str | None = None,
+    scanning_engine_url: str | None = None,
 ) -> None:
     """Start a new scan on your assets.\n
     Example:\n
@@ -162,6 +179,11 @@ def run(
     else:
         raise click.ClickException("Missing agent list or agent group definition.")
 
+    if reporting_engine_url is not None:
+        agent_group.reporting_engine_url = reporting_engine_url
+    if scanning_engine_url is not None:
+        agent_group.scanning_engine_url = scanning_engine_url
+
     asset_group = None
     if assets is not None:
         try:
@@ -179,6 +201,8 @@ def run(
 
     if init_sleep is not None:
         runtime_instance.init_sleep = init_sleep
+
+    runtime_instance.reporting_engine_url = agent_group.reporting_engine_url
 
     # Prepare and set the list of agents to follow.
     agent_keys = [agent.key for agent in agent_group.agents]
@@ -260,7 +284,10 @@ def _install_agents_with_retry(
             if ag.version is None:
                 try:
                     agent_details = agent_fetcher.get_details(
-                        ag.key, use_experimental=use_experimental, channel=channel
+                        ag.key,
+                        use_experimental=use_experimental,
+                        channel=channel,
+                        reporting_engine_url=agent_group.reporting_engine_url,
                     )
                     ag.version = agent_details["versions"]["versions"][0]["version"]
                 except agent_fetcher.AgentDetailsNotFound:
@@ -273,6 +300,7 @@ def _install_agents_with_retry(
                 ag.version,
                 use_experimental=use_experimental,
                 channel=channel,
+                reporting_engine_url=agent_group.reporting_engine_url,
             )
         except agent_fetcher.AgentDetailsNotFound:
             console.warning(f"agent {ag.key} not found on the store")

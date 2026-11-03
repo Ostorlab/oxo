@@ -38,6 +38,7 @@ class Runtime(abc.ABC, typing.Generic[ScanIdentifier_contra]):
     timeout: typing.Optional[int] = None
     init_sleep: typing.Optional[int] = None
     has_tracker: bool = True
+    reporting_engine_url: typing.Optional[str] = None
 
     @abc.abstractmethod
     def can_run(self, agent_group_definition: definitions.AgentGroupDefinition) -> bool:

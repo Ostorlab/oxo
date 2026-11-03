@@ -26,6 +26,7 @@ class LoginAPIRunner(runner.APIRunner):
         otp_token: str | None = None,
         proxy: str | None = None,
         verify: bool = True,
+        endpoint: str | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -34,8 +35,9 @@ class LoginAPIRunner(runner.APIRunner):
             password: the password used to log in.
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether to verify the TLS certificate. Defaults to True.
+            endpoint: The token endpoint. Defaults to the Ostorlab one.
         """
-        super().__init__(proxy, verify)
+        super().__init__(proxy, verify, endpoint)
         self._username = username
         self._password = password
         self._otp_token = otp_token
@@ -43,7 +45,7 @@ class LoginAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """Token API endpoint."""
-        return TOKEN_ENDPOINT
+        return self._endpoint or TOKEN_ENDPOINT
 
     def login_user(self) -> httpx.Response:
         """Logs in the user.

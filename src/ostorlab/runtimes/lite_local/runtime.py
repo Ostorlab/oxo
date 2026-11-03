@@ -435,7 +435,10 @@ class LiteLocalRuntime(runtime.Runtime[str]):
         Returns:
             None
         """
-        install_agent.install(agent_key=ASSET_INJECTION_AGENT_DEFAULT)
+        install_agent.install(
+            agent_key=ASSET_INJECTION_AGENT_DEFAULT,
+            reporting_engine_url=self.reporting_engine_url,
+        )
 
     def dump_vulnz(self, scan_id: int, dumper: dumpers.VulnzDumper) -> None:
         """Dump vulnerabilities to a file in a specific format.

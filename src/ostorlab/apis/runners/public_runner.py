@@ -21,7 +21,7 @@ class PublicAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return PUBLIC_GRAPHQL_ENDPOINT
+        return self._endpoint or PUBLIC_GRAPHQL_ENDPOINT
 
     def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Public GraphQL API.

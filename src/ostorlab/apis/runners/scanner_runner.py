@@ -29,6 +29,7 @@ class ScannerAPIRunner(runner.APIRunner):
         api_key: Optional[str],
         proxy: str | None = None,
         verify: bool = True,
+        endpoint: str | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -36,14 +37,15 @@ class ScannerAPIRunner(runner.APIRunner):
             api_key: API key for authentication.
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether to verify the TLS certificate. Defaults to True.
+            endpoint: The scanning engine GraphQL endpoint. Defaults to the Ostorlab one.
         """
-        super().__init__(proxy, verify)
+        super().__init__(proxy, verify, endpoint)
         self._api_key = api_key
 
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return SCANNER_GRAPHQL_ENDPOINT
+        return self._endpoint or SCANNER_GRAPHQL_ENDPOINT
 
     def execute(self, request: api_request.APIRequest) -> dict[str, Any]:
         """Executes a request using the Scanner GraphQL API.

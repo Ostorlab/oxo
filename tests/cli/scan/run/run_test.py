@@ -13,6 +13,7 @@ from ostorlab import exceptions
 from ostorlab.agent import definitions
 from ostorlab.cli import rootcli
 from ostorlab.cli.scan.run import run
+from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.runtimes.local import runtime
 from ostorlab.runtimes.local.models import models
 
@@ -997,7 +998,10 @@ agents:
     )
 
     mock_get_details.assert_called_once_with(
-        "agent/ostorlab/nmap", use_experimental=True, channel=None
+        "agent/ostorlab/nmap",
+        use_experimental=True,
+        channel=None,
+        reporting_engine_url=None,
     )
     assert result.exit_code == 0
 
@@ -1059,13 +1063,17 @@ def testRunScan_whenChannelOptionSet_resolvesAndInstallsFromChannel(
 
     assert result.exit_code == 0
     mock_get_details.assert_called_once_with(
-        "agent/ostorlab/nmap", use_experimental=False, channel="beta"
+        "agent/ostorlab/nmap",
+        use_experimental=False,
+        channel="beta",
+        reporting_engine_url=None,
     )
     mock_install.assert_called_once_with(
         "agent/ostorlab/nmap",
         "0.4.1-beta",
         use_experimental=False,
         channel="beta",
+        reporting_engine_url=None,
     )
 
 
@@ -1092,7 +1100,10 @@ def testRunScan_whenChannelOptionNotSet_usesAgentGroupChannel(
 
     assert result.exit_code == 0
     mock_get_details.assert_called_once_with(
-        "agent/ostorlab/nmap", use_experimental=False, channel="qa1"
+        "agent/ostorlab/nmap",
+        use_experimental=False,
+        channel="qa1",
+        reporting_engine_url=None,
     )
     assert mock_install.call_args.kwargs["channel"] == "qa1"
 
@@ -1154,4 +1165,190 @@ def testRunScan_whenInstallAndUseExperimentalFlagSet_forwardsUseExperimentalAndC
         "0.4.1-beta",
         use_experimental=True,
         channel=None,
+        reporting_engine_url=None,
     )
+
+
+def testRunScan_whenEngineUrlOptionsSet_forwardsReportingUrlAndOverridesAgentGroup(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that the engine URL options override the agent group values and reach the installs."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    agent_group_yaml = _write_agent_group(
+        tmp_path,
+        "reporting_engine_url: https://yaml-re.example.com/apis/graphql\n"
+        "scanning_engine_url: https://yaml-se.example.com/orchestrator/graphql",
+    )
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "--reporting-engine-url",
+            "https://re.example.com/apis/graphql",
+            "--scanning-engine-url",
+            "https://se.example.com/orchestrator/graphql",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (
+        mock_get_details.call_args.kwargs["reporting_engine_url"]
+        == "https://re.example.com/apis/graphql"
+    )
+    assert (
+        mock_install.call_args.kwargs["reporting_engine_url"]
+        == "https://re.example.com/apis/graphql"
+    )
+    agent_group = mock_scan.call_args.kwargs["agent_group_definition"]
+    assert agent_group.reporting_engine_url == "https://re.example.com/apis/graphql"
+    assert (
+        agent_group.scanning_engine_url == "https://se.example.com/orchestrator/graphql"
+    )
+
+
+def testRunScan_whenEngineUrlOptionsNotSet_usesAgentGroupEngineUrls(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that the agent group engine URLs are used when the CLI options are not set."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    agent_group_yaml = _write_agent_group(
+        tmp_path,
+        "reporting_engine_url: https://yaml-re.example.com/apis/graphql\n"
+        "scanning_engine_url: https://yaml-se.example.com/orchestrator/graphql",
+    )
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (
+        mock_get_details.call_args.kwargs["reporting_engine_url"]
+        == "https://yaml-re.example.com/apis/graphql"
+    )
+    assert (
+        mock_install.call_args.kwargs["reporting_engine_url"]
+        == "https://yaml-re.example.com/apis/graphql"
+    )
+    agent_group = mock_scan.call_args.kwargs["agent_group_definition"]
+    assert (
+        agent_group.scanning_engine_url
+        == "https://yaml-se.example.com/orchestrator/graphql"
+    )
+
+
+def testRunScan_whenReportingEngineUrlSet_setsItOnRuntime(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that the runtime receives the reporting engine URL before running its own API calls."""
+    runtime_urls: list[str | None] = []
+
+    def _can_run(
+        self: runtime.LocalRuntime,
+        agent_group_definition: runtime_definitions.AgentGroupDefinition,
+    ) -> bool:
+        del agent_group_definition
+        runtime_urls.append(self.reporting_engine_url)
+        return True
+
+    mocker.patch.object(
+        runtime.LocalRuntime, "can_run", autospec=True, side_effect=_can_run
+    )
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.install")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_agent_group_scan")
+    mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.link_assets_scan")
+    agent_group_yaml = _write_agent_group(tmp_path)
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--reporting-engine-url",
+            "https://re.example.com/apis/graphql",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert runtime_urls == ["https://re.example.com/apis/graphql"]
+
+
+def testRunScan_whenEngineUrlOptionsNotSet_keepsDefaultEngineUrls(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path
+) -> None:
+    """Test that without options or agent group values the default endpoints are kept."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    agent_group_yaml = _write_agent_group(tmp_path)
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert mock_get_details.call_args.kwargs["reporting_engine_url"] is None
+    assert mock_install.call_args.kwargs["reporting_engine_url"] is None
+
+
+@pytest.mark.parametrize("option", ["--reporting-engine-url", "--scanning-engine-url"])
+def testRunScan_whenEngineUrlIsInvalid_exitsWithUsageError(
+    mocker: plugin.MockerFixture, tmp_path: pathlib.Path, option: str
+) -> None:
+    """Test that an engine URL that is not an http or https URL is rejected."""
+    mock_get_details, mock_install = _mock_install_scan_run(mocker)
+    agent_group_yaml = _write_agent_group(tmp_path)
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scan",
+            "--runtime=local",
+            "run",
+            "-g",
+            str(agent_group_yaml),
+            "--install",
+            option,
+            "not-a-url",
+            "ip",
+            "8.8.8.8",
+        ],
+    )
+
+    assert result.exit_code == 2
+    mock_get_details.assert_not_called()
+    mock_install.assert_not_called()

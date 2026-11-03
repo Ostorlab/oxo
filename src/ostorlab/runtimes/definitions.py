@@ -330,6 +330,8 @@ class AgentGroupDefinition:
     description: typing.Optional[str] = None
     use_experimental_agents: bool = False
     channel: str | None = None
+    reporting_engine_url: str | None = None
+    scanning_engine_url: str | None = None
 
     @classmethod
     def from_yaml(cls, group: typing.IO[str] | typing.IO[bytes]) -> typing.Self:
@@ -389,6 +391,8 @@ class AgentGroupDefinition:
             description,
             use_experimental_agents,
             channel,
+            reporting_engine_url=agent_group_def.get("reporting_engine_url"),
+            scanning_engine_url=agent_group_def.get("scanning_engine_url"),
         )
 
     @classmethod

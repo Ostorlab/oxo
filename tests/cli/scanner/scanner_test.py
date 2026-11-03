@@ -118,6 +118,7 @@ def testScannerCommandInvocation_whenApiKeyProvided_passesItToStateReporter(
         hostname=mocker.ANY,
         ip=mocker.ANY,
         reporting_engine_api_key="reporting-engine-api-key",
+        reporting_engine_url=None,
     )
 
 
@@ -330,7 +331,7 @@ def testScannerCommandInvocation_whenPersistLogsIsProvided_passesLogFileToWorker
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level, _, _, _ = (
+    _, _, _, scanner_log_file, scanner_log_level, _, _, _, _, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
@@ -368,7 +369,7 @@ def testScannerCommandInvocation_whenLogLevelIsProvided_passesLogLevelToWorker(
 
     assert result.exit_code == 0
     assert create_scan_process_mock.call_count == 1
-    _, _, _, scanner_log_file, scanner_log_level, _, _, _ = (
+    _, _, _, scanner_log_file, scanner_log_level, _, _, _, _, _ = (
         create_scan_process_mock.call_args.kwargs["args"]
     )
     assert scanner_log_file == str(log_file)
@@ -457,3 +458,89 @@ def testCloudLoggingClient_always_acceptsDisablingGrpcTransport() -> None:
     parameters = inspect.signature(gcp_logging.Client.__init__).parameters
 
     assert "_use_grpc" in parameters
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenEngineUrlsProvided_forwardsThemToReporterAndProcess(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Forward the engine endpoints to the state reporter and every scanner process."""
+    state_reporter_mock = mocker.patch(
+        "ostorlab.utils.scanner_state_reporter.ScannerStateReporter"
+    )
+    create_process_mock = mocker.patch("multiprocessing.Process")
+
+    result = click_testing.CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--reporting-engine-url",
+            "https://re.example.com/apis/graphql",
+            "--scanning-engine-url",
+            "https://se.example.com/orchestrator/graphql",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (
+        state_reporter_mock.call_args.kwargs["reporting_engine_url"]
+        == "https://re.example.com/apis/graphql"
+    )
+    process_args = create_process_mock.call_args.kwargs["args"]
+    assert process_args[-2:] == (
+        "https://re.example.com/apis/graphql",
+        "https://se.example.com/orchestrator/graphql",
+    )
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenEngineUrlIsInvalid_exitsWithUsageError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Reject an engine endpoint that is not an http or https URL."""
+    create_process_mock = mocker.patch("multiprocessing.Process")
+
+    result = click_testing.CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+            "--scanning-engine-url",
+            "scanner.example.com",
+        ],
+    )
+
+    assert result.exit_code == 2
+    create_process_mock.assert_not_called()
+
+
+def testStartScanner_whenEngineUrlsProvided_forwardsThemToScanLoop(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The worker forwards the engine endpoints to the scan loop."""
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    mocker.patch.object(scanner_cli, "_configure_gcp_logging")
+    mocker.patch("threading.Thread")
+    start_scan_loop_mock = mocker.patch("ostorlab.scanner.scan_handler.start_scan_loop")
+
+    scanner_cli.start_scanner(
+        api_key="api-key",
+        scanner_id="11226DS",
+        state_reporter=mocker.MagicMock(),
+        reporting_engine_url="https://re.example.com/apis/graphql",
+        scanning_engine_url="https://se.example.com/orchestrator/graphql",
+    )
+
+    assert (
+        start_scan_loop_mock.call_args.kwargs["reporting_engine_url"]
+        == "https://re.example.com/apis/graphql"
+    )
+    assert (
+        start_scan_loop_mock.call_args.kwargs["scanning_engine_url"]
+        == "https://se.example.com/orchestrator/graphql"
+    )

@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 import pytest_httpx
+from pytest_mock import plugin
 
 from ostorlab import configuration_manager
 from ostorlab.apis.runners import authenticated_runner
@@ -97,7 +98,9 @@ def testGetDetails_whenApiKeyProvided_buildsAuthenticatedRunnerWithApiKey() -> N
                     "agent/ostorlab/nmap", api_key="test-api-key"
                 )
 
-                mock_runner_cls.assert_called_once_with(api_key="test-api-key")
+                mock_runner_cls.assert_called_once_with(
+                    api_key="test-api-key", endpoint=None
+                )
                 mock_request_cls.assert_called_once_with(
                     "agent/ostorlab/nmap", use_experimental=False, channel=None
                 )
@@ -306,3 +309,50 @@ def testGetDetails_whenAuthenticatedApiFailsWithServerError_raisesAgentDetailsNo
 
     with pytest.raises(agent_fetcher.AgentDetailsNotFound):
         agent_fetcher.get_details("agent/ostorlab/nmap")
+
+
+def testGetDetails_whenReportingEngineUrlProvided_queriesConfiguredEndpoints(
+    httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
+) -> None:
+    """Without a session, agent details come from the public endpoint next to the reporting one."""
+    mocker.patch(
+        "ostorlab.configuration_manager.ConfigurationManager.is_authenticated",
+        new_callable=mocker.PropertyMock,
+        return_value=False,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url="https://re.example.com/apis/public_graphql",
+        json={"data": {"agent": {"key": "agent/ostorlab/nmap"}}},
+    )
+
+    details = agent_fetcher.get_details(
+        "agent/ostorlab/nmap",
+        reporting_engine_url="https://re.example.com/apis/graphql",
+    )
+
+    assert details == {"key": "agent/ostorlab/nmap"}
+
+
+def testGetDetails_whenApiKeyAndReportingEngineUrlProvided_queriesReportingEndpoint(
+    httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
+) -> None:
+    """With an api key, agent details come from the configured reporting endpoint."""
+    mocker.patch(
+        "ostorlab.configuration_manager.ConfigurationManager.is_authenticated",
+        new_callable=mocker.PropertyMock,
+        return_value=False,
+    )
+    httpx_mock.add_response(
+        method="POST",
+        url="https://re.example.com/apis/graphql",
+        json={"data": {"agent": {"key": "agent/ostorlab/nmap"}}},
+    )
+
+    details = agent_fetcher.get_details(
+        "agent/ostorlab/nmap",
+        api_key="api-key",
+        reporting_engine_url="https://re.example.com/apis/graphql",
+    )
+
+    assert details == {"key": "agent/ostorlab/nmap"}

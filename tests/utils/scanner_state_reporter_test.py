@@ -52,7 +52,9 @@ def testReportMethod_whenCalled_updateValuesCorrectly(
 
     report.report()
 
-    runner_mock.assert_called_once_with(api_key="reporting-engine-api-key")
+    runner_mock.assert_called_once_with(
+        api_key="reporting-engine-api-key", endpoint=None
+    )
     runner_mock.return_value.execute.assert_called_once()
     assert api_request_mock.call_args.kwargs["state"] == state
 

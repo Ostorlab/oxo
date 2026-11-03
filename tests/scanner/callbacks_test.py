@@ -1118,7 +1118,11 @@ def testStartScan_whenAgentHasNoVersion_resolvesVersionBeforeInstalling(
     callbacks.start_scan(reserved_scan, state_reporter)
 
     get_details_mock.assert_called_once_with(
-        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel=None
+        "agent/ostorlab/agent42",
+        use_experimental=True,
+        api_key=None,
+        channel=None,
+        reporting_engine_url=None,
     )
     install_agent_mock.assert_called_once()
     assert install_agent_mock.call_args.kwargs.get("version") == "2.5.0-alpha"
@@ -1860,6 +1864,7 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
         use_experimental=True,
         api_key="api-key",
         channel="beta",
+        reporting_engine_url=None,
     )
     install_agent_mock.assert_called_once_with(
         agent_key="agent/ostorlab/agent42",
@@ -1868,6 +1873,7 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
         api_key="api-key",
         use_experimental=True,
         channel="beta",
+        reporting_engine_url=None,
     )
 
 
@@ -1917,7 +1923,11 @@ def testStartScan_whenChannelIsSet_forwardsChannelToGetDetailsAndInstall(
     )
 
     get_details_mock.assert_called_once_with(
-        "agent/ostorlab/agent42", use_experimental=True, api_key=None, channel=channel
+        "agent/ostorlab/agent42",
+        use_experimental=True,
+        api_key=None,
+        channel=channel,
+        reporting_engine_url=None,
     )
     assert install_agent_mock.call_args.kwargs["channel"] == channel
     assert install_agent_mock.call_args.kwargs["use_experimental"] is True
@@ -1949,3 +1959,50 @@ def testStartScan_whenChannelIsInvalid_logsWarningAndForwardsNoChannel(
     assert get_details_mock.call_args.kwargs["channel"] is None
     assert install_agent_mock.call_args.kwargs["channel"] is None
     assert "Beta.2" in [call.args[1] for call in logger_mock.call_args_list]
+
+
+def testStartScan_whenReportingEngineUrlSet_forwardsItToRuntimeAndAgentInstalls(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The daemon resolves and installs agents from the configured reporting engine."""
+    reserved_scan = {
+        "id": 42,
+        "agentGroup": {
+            "key": "agentgroup/ostorlab/agent_group42",
+            "agents": [{"key": "agent/ostorlab/agent42"}],
+        },
+        "asset": {
+            "__typename": "AndroidApkAssetType",
+            "content": base64.b64encode(b"dummy_apk").decode(),
+        },
+    }
+    mocker.patch("ostorlab.scanner.callbacks.docker.from_env")
+    mocker.patch("ostorlab.cli.docker_requirements_checker.init_swarm")
+    runtime_mock = mocker.MagicMock()
+    runtime_mock.can_run.return_value = True
+    mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime", return_value=runtime_mock
+    )
+    get_details_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.agent_fetcher.get_details",
+        return_value={"versions": {"versions": [{"version": "1.4.1"}]}},
+    )
+    install_agent_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.install_agent.install"
+    )
+
+    callbacks.start_scan(
+        reserved_scan,
+        mocker.MagicMock(),
+        reporting_engine_url="https://re.example.com/apis/graphql",
+    )
+
+    assert runtime_mock.reporting_engine_url == "https://re.example.com/apis/graphql"
+    assert (
+        get_details_mock.call_args.kwargs["reporting_engine_url"]
+        == "https://re.example.com/apis/graphql"
+    )
+    assert (
+        install_agent_mock.call_args.kwargs["reporting_engine_url"]
+        == "https://re.example.com/apis/graphql"
+    )

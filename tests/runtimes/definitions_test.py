@@ -1503,3 +1503,54 @@ def testAgentSettingsRoundtrip_whenOptionalFieldsArePopulated_shouldPreserveValu
         restored.in_selectors is not None
         and list(restored.in_selectors) == settings.in_selectors
     )
+
+
+def testAgentGroupDefinitionFromYaml_whenEngineUrlsProvided_parsedCorrectly() -> None:
+    """Test that the engine endpoints yaml keys are parsed into the agent group definition."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        reporting_engine_url: "https://re.example.com/apis/graphql"
+        scanning_engine_url: "https://se.example.com/orchestrator/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.reporting_engine_url == "https://re.example.com/apis/graphql"
+    assert (
+        agentgrp_def.scanning_engine_url
+        == "https://se.example.com/orchestrator/graphql"
+    )
+
+
+def testAgentGroupDefinitionFromYaml_whenEngineUrlsMissing_defaultsToNone() -> None:
+    """Test that a yaml without engine endpoints keeps the default Ostorlab endpoints."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.reporting_engine_url is None
+    assert agentgrp_def.scanning_engine_url is None
+
+
+def testAgentGroupDefinitionFromYaml_whenEngineUrlIsNotHttpUrl_raisesValidationError() -> (
+    None
+):
+    """Test that an engine endpoint that is not an http or https URL is rejected."""
+    invalid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        reporting_engine_url: "re.example.com/apis/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
