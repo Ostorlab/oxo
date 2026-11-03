@@ -44,6 +44,7 @@ def reasoning_content_profile(
     pydantic-ai never sends thinking parts back.
     """
     return openai_profile.OpenAIModelProfile(
+        supports_thinking=True,
         openai_supports_tool_choice_required=supports_tool_choice_required,
         openai_chat_thinking_field="reasoning_content",
         openai_chat_send_back_thinking_parts="field",

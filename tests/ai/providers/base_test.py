@@ -25,6 +25,13 @@ def testReasoningContentProfile_whenToolChoiceRequiredSupported_shouldEnableIt()
     assert profile.openai_supports_tool_choice_required is True
 
 
+def testReasoningContentProfile_whenBuilt_shouldSupportThinking() -> None:
+    """Without it pydantic-ai drops ``thinking`` and no ``reasoning_effort`` is sent."""
+    profile = base.reasoning_content_profile()
+
+    assert profile.supports_thinking is True
+
+
 def testBuildRequest_whenRepresented_shouldNotExposeTheCredential() -> None:
     """Requests end up in logs, test failures and error-tracker locals."""
     request = base.BuildRequest(
