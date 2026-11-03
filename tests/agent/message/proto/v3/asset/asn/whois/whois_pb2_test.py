@@ -5,11 +5,11 @@ def testMessageFromData_whenAsnWhoisProvided_roundTrips() -> None:
     data = {
         "asn": "15169",
         "name": "GOOGLE",
-        "organisation": "Google LLC",
-        "country": "US",
+        "org": "Google LLC",
+        "country_code": "US",
         "registry": "arin",
-        "allocated": "2000-03-30",
-        "updated": "2012-02-24",
+        "allocated_date": "2000-03-30",
+        "updated_date": "2012-02-24",
         "rdap_url": "https://rdap.arin.net/registry/autnum/15169",
     }
 

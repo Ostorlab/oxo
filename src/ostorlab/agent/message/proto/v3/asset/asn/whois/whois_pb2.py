@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;ostorlab/agent/message/proto/v3/asset/asn/whois/whois.proto\x12/ostorlab.agent.message.proto.v3.asset.asn.whois\"\x93\x01\n\x07Message\x12\x0b\n\x03\x61sn\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x14\n\x0corganisation\x18\x03 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x04 \x01(\t\x12\x10\n\x08registry\x18\x05 \x01(\t\x12\x11\n\tallocated\x18\x06 \x01(\t\x12\x0f\n\x07updated\x18\x07 \x01(\t\x12\x10\n\x08rdap_url\x18\x08 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n;ostorlab/agent/message/proto/v3/asset/asn/whois/whois.proto\x12/ostorlab.agent.message.proto.v3.asset.asn.whois\"\x99\x01\n\x07Message\x12\x0b\n\x03\x61sn\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x0b\n\x03org\x18\x03 \x01(\t\x12\x14\n\x0c\x63ountry_code\x18\x04 \x01(\t\x12\x10\n\x08registry\x18\x05 \x01(\t\x12\x16\n\x0e\x61llocated_date\x18\x06 \x01(\t\x12\x14\n\x0cupdated_date\x18\x07 \x01(\t\x12\x10\n\x08rdap_url\x18\x08 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,5 +32,5 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.prot
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_MESSAGE']._serialized_start=113
-  _globals['_MESSAGE']._serialized_end=260
+  _globals['_MESSAGE']._serialized_end=266
 # @@protoc_insertion_point(module_scope)
