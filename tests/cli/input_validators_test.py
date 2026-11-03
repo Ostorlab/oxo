@@ -81,3 +81,26 @@ def testValidateLabels_whenEmptyKeyWithColon_raisesUsageError() -> None:
 def testValidateLabels_whenEmptyKeyWithEquals_raisesUsageError() -> None:
     with pytest.raises(click.UsageError):
         input_validators.validate_labels(None, "", ("=value",))
+
+
+def testValidatePortBindingInput_whenNoneValue_returnsNone() -> None:
+    assert input_validators.validate_port_binding_input(None, "", None) is None
+
+
+def testValidatePortBindingInput_whenSingleBinding_returnsValue() -> None:
+    result = input_validators.validate_port_binding_input(None, "", "5672:5672")
+    assert result == "5672:5672"
+
+
+def testValidatePortBindingInput_whenMoreThanTwoBindings_returnsValue() -> None:
+    value = "5672:5672,15672:15672,25672:25672"
+    result = input_validators.validate_port_binding_input(None, "", value)
+    assert result == value
+
+
+@pytest.mark.parametrize(
+    "value", ["5672", "5672:", "a:5672", "5672:5672,", "5672:5672;15672:15672"]
+)
+def testValidatePortBindingInput_whenInvalidSyntax_raisesUsageError(value: str) -> None:
+    with pytest.raises(click.UsageError):
+        input_validators.validate_port_binding_input(None, "", value)
