@@ -5,4 +5,25 @@ package ostorlab.agent.message.proto.v3.asset.store.android_store;
 
 message Message {
   optional string package_name = 1;
+  // Google Play store listing of the application.
+  optional string name = 2;
+  optional string icon_url = 3;
+  optional string category = 4;
+  optional double rating = 5;
+  optional int64 rating_count = 6;
+  // Install range as displayed by the store, e.g. "10,000,000+".
+  optional string installs = 7;
+  // ISO 8601 date, e.g. "2010-10-18".
+  optional string release_date = 8;
+  // ISO 8601 UTC timestamp, e.g. "2026-10-26T12:28:55Z".
+  optional string last_update_date = 9;
+  optional string version = 10;
+  optional double price = 11;
+  optional string currency = 12;
+  optional bool has_in_app_purchases = 13;
+  optional string content_rating = 14;
+  optional string description = 15;
+  repeated string screenshot_urls = 16;
+  optional string privacy_policy_url = 17;
+  optional string store_url = 18;
 }
