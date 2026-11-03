@@ -9,6 +9,7 @@ from typing import Any
 from unittest import mock
 
 import httpx
+import pytest
 import ubjson
 from docker.models import services as services_model
 from flask import testing
@@ -3057,12 +3058,16 @@ def testRunScanMutation_whenAssetDoesNotExist_returnErrorMessage(
 def _get_re_oxo_schema(query: str) -> dict[str, Any]:
     """Introspect the oxo endpoint on RE, and fetch desired definitions."""
 
+    api_key = os.environ.get("RE_OXO_API_KEY", "")
+    if api_key == "":
+        pytest.skip("RE_OXO_API_KEY is required for live schema comparisons")
+
     with httpx.Client(verify=True) as client:
         response = client.post(
             RE_OXO_ENDPOINT,
             data={"query": query},
             timeout=10,
-            headers={"X-Api-Key": f"{os.environ.get('RE_OXO_API_KEY', '')}"},
+            headers={"X-Api-Key": api_key},
         )
 
         schema_data: dict[str, Any] = response.json()["data"]

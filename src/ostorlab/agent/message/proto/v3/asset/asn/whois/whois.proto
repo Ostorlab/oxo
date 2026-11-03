@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.asset.asn.whois;
+
+message Message {
+  optional string asn = 1;
+  optional string name = 2;
+  optional string organisation = 3;
+  optional string country = 4;
+  optional string registry = 5;
+  optional string allocated = 6;
+  optional string updated = 7;
+  optional string rdap_url = 8;
+}
