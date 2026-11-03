@@ -6,6 +6,7 @@ from urllib import parse
 
 import click
 
+from ostorlab.apis.runners import endpoints
 from ostorlab.utils import release_channel
 
 
@@ -93,7 +94,7 @@ def validate_engine_url(
     param: click.Parameter | str,
     value: Optional[str],
 ) -> Optional[str]:
-    """Validator for the engine endpoint flags: an absolute http or https URL.
+    """Validator for the engine endpoint flags: an absolute https URL, or http to a loopback host.
 
     Args:
         ctx: as per click callback convention, the calling click context.
@@ -103,10 +104,15 @@ def validate_engine_url(
     del ctx
     if value is None:
         return None
+    param_name = param if isinstance(param, str) else param.name
     parsed_url = parse.urlparse(value)
     if parsed_url.scheme not in ("http", "https") or parsed_url.netloc == "":
-        param_name = param if isinstance(param, str) else param.name
         raise click.BadParameter(
             f"{param_name} must be an absolute http or https URL, got {value!r}."
+        )
+    if endpoints.is_transport_safe(value) is False:
+        raise click.BadParameter(
+            f"{param_name} must use https, plain http is only allowed for localhost, "
+            f"127.0.0.0/8 and ::1, got {value!r}."
         )
     return value

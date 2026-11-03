@@ -131,3 +131,10 @@ def testValidateEngineUrl_whenNoneValue_returnsNone() -> None:
 def testValidateEngineUrl_whenNotAbsoluteHttpUrl_raisesBadParameter(url: str) -> None:
     with pytest.raises(click.BadParameter):
         input_validators.validate_engine_url(None, "reporting_engine_url", url)
+
+
+def testValidateEngineUrl_whenHttpToRemoteHost_raisesBadParameter() -> None:
+    with pytest.raises(click.BadParameter, match="must use https"):
+        input_validators.validate_engine_url(
+            None, "reporting_engine_url", "http://re.example.com/apis/graphql"
+        )

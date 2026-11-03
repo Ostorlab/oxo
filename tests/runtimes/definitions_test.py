@@ -1554,3 +1554,37 @@ def testAgentGroupDefinitionFromYaml_whenEngineUrlIsNotHttpUrl_raisesValidationE
 
     with pytest.raises(validator.ValidationError):
         definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+@pytest.mark.parametrize("url_key", ["reporting_engine_url", "scanning_engine_url"])
+def testAgentGroupDefinitionFromYaml_whenEngineUrlIsHttpToRemoteHost_raisesValidationError(
+    url_key: str,
+) -> None:
+    """Test that a yaml cannot route the stored credentials over plain http to a remote host."""
+    invalid_yaml = f"""
+        kind: "AgentGroup"
+        description: "test"
+        {url_key}: "http://re.example.com/apis/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    with pytest.raises(validator.ValidationError, match="must use https"):
+        definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAgentGroupDefinitionFromYaml_whenEngineUrlIsHttpToLoopback_parsedCorrectly() -> (
+    None
+):
+    """Test that plain http stays allowed for a local engine."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        reporting_engine_url: "http://localhost:8000/apis/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.reporting_engine_url == "http://localhost:8000/apis/graphql"

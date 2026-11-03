@@ -15,6 +15,7 @@ from typing import NamedTuple
 
 from ostorlab.agent.schema import loader
 from ostorlab.agent.schema import validator
+from ostorlab.apis.runners import endpoints
 from ostorlab.assets import android_aab as android_aab_asset
 from ostorlab.assets import android_apk as android_apk_asset
 from ostorlab.assets import android_store as android_store_asset
@@ -385,6 +386,13 @@ class AgentGroupDefinition:
         )
         use_experimental_agents = agent_group_def.get("use_experimental_agents", False)
         channel = agent_group_def.get("channel")
+        for url_key in ("reporting_engine_url", "scanning_engine_url"):
+            url = agent_group_def.get(url_key)
+            if url is not None and endpoints.is_transport_safe(url) is False:
+                raise validator.ValidationError(
+                    f"{url_key} must use https, plain http is only allowed for "
+                    f"localhost, 127.0.0.0/8 and ::1, got {url!r}."
+                )
         return cls(
             agent_settings,
             name,
