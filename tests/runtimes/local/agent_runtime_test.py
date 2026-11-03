@@ -503,10 +503,10 @@ def testCreateAgentService_whenNoExplicitServiceName_serviceKeyLabelIsAgentName(
     assert kwargs["labels"]["ostorlab.queue_name"] == "nuclei"
 
 
-def testCreateAgentService_whenExplicitServiceName_serviceKeyLabelIsServiceName(
+def testCreateAgentService_whenGroupServiceName_queueNameLabelIsGroupServiceName(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """Service key label should be the explicit service name (e.g. crawler_bus) when set."""
+    """A service name set on the group renames the agent queue (crawler_bus_queue), so the label is that name."""
     agent_def = agent_definitions.AgentDefinition(
         name="crawler",
         service_name="crawler",
@@ -554,7 +554,61 @@ def testCreateAgentService_whenExplicitServiceName_serviceKeyLabelIsServiceName(
     runtime_agent.create_agent_service(network_name="test", extra_configs=[])
 
     kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["name"] == "crawler_bus"
     assert kwargs["labels"]["ostorlab.queue_name"] == "crawler_bus"
+
+
+def testCreateAgentService_whenDefinitionServiceNameDiffersFromName_queueNameLabelIsAgentDefinitionName(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An agent whose definition sets a service_name other than its name still declares the queue
+    <name>_queue, so the label must be the agent name while the docker service uses the service_name."""
+    agent_def = agent_definitions.AgentDefinition(
+        name="example_agent",
+        service_name="example_service",
+        mounts=[],
+        mem_limit=None,
+        restart_policy="",
+        open_ports=[],
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
+        return_value=agent_def,
+    )
+    mocker.patch.object(
+        ostorlab.runtimes.definitions.AgentSettings,
+        "container_image",
+        property(container_name_mock),
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
+        return_value=None,
+    )
+    mocker.patch(
+        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
+        return_value=None,
+    )
+    docker_client = mocker.MagicMock(spec=docker.DockerClient)
+    create_service_mock = docker_client.services.create
+    agent_settings = definitions.AgentSettings(key="agent/ostorlab/example_agent")
+    runtime_agent = agent_runtime.AgentRuntime(
+        agent_settings,
+        "42",
+        docker_client,
+        mq_service=None,
+        redis_service=None,
+        jaeger_service=None,
+        labels={},
+    )
+    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
+
+    kwargs = create_service_mock.call_args.kwargs
+    assert kwargs["name"] == "example_service"
+    assert kwargs["labels"]["ostorlab.queue_name"] == "example_agent"
 
 
 def testCreateAgentService_whenImageNameTooLongForRandomSuffix_serviceNameTruncatedToFitSuffix(
