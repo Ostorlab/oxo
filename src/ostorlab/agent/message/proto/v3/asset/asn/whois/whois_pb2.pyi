@@ -22,35 +22,35 @@ class Message(_message.Message):
 
     ASN_FIELD_NUMBER: _builtins.int
     NAME_FIELD_NUMBER: _builtins.int
-    ORGANISATION_FIELD_NUMBER: _builtins.int
-    COUNTRY_FIELD_NUMBER: _builtins.int
+    ORG_FIELD_NUMBER: _builtins.int
+    COUNTRY_CODE_FIELD_NUMBER: _builtins.int
     REGISTRY_FIELD_NUMBER: _builtins.int
-    ALLOCATED_FIELD_NUMBER: _builtins.int
-    UPDATED_FIELD_NUMBER: _builtins.int
+    ALLOCATED_DATE_FIELD_NUMBER: _builtins.int
+    UPDATED_DATE_FIELD_NUMBER: _builtins.int
     RDAP_URL_FIELD_NUMBER: _builtins.int
     asn: _builtins.str
     name: _builtins.str
-    organisation: _builtins.str
-    country: _builtins.str
+    org: _builtins.str
+    country_code: _builtins.str
     registry: _builtins.str
-    allocated: _builtins.str
-    updated: _builtins.str
+    allocated_date: _builtins.str
+    updated_date: _builtins.str
     rdap_url: _builtins.str
     def __init__(
         self,
         *,
         asn: _builtins.str | None = ...,
         name: _builtins.str | None = ...,
-        organisation: _builtins.str | None = ...,
-        country: _builtins.str | None = ...,
+        org: _builtins.str | None = ...,
+        country_code: _builtins.str | None = ...,
         registry: _builtins.str | None = ...,
-        allocated: _builtins.str | None = ...,
-        updated: _builtins.str | None = ...,
+        allocated_date: _builtins.str | None = ...,
+        updated_date: _builtins.str | None = ...,
         rdap_url: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["allocated", b"allocated", "asn", b"asn", "country", b"country", "name", b"name", "organisation", b"organisation", "rdap_url", b"rdap_url", "registry", b"registry", "updated", b"updated"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["allocated_date", b"allocated_date", "asn", b"asn", "country_code", b"country_code", "name", b"name", "org", b"org", "rdap_url", b"rdap_url", "registry", b"registry", "updated_date", b"updated_date"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["allocated", b"allocated", "asn", b"asn", "country", b"country", "name", b"name", "organisation", b"organisation", "rdap_url", b"rdap_url", "registry", b"registry", "updated", b"updated"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["allocated_date", b"allocated_date", "asn", b"asn", "country_code", b"country_code", "name", b"name", "org", b"org", "rdap_url", b"rdap_url", "registry", b"registry", "updated_date", b"updated_date"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
