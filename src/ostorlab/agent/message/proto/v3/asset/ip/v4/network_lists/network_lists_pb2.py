@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMostorlab/agent/message/proto/v3/asset/ip/v4/network_lists/network_lists.proto\x12\x39ostorlab.agent.message.proto.v3.asset.ip.v4.network_lists\"M\n\nCloudRange\x12\x10\n\x08provider\x18\x01 \x01(\t\x12\x0f\n\x07service\x18\x02 \x01(\t\x12\x0e\n\x06region\x18\x03 \x01(\t\x12\x0c\n\x04\x63idr\x18\x04 \x01(\t\"N\n\x07Listing\x12\x0e\n\x06source\x18\x01 \x01(\t\x12\x10\n\x08\x63\x61tegory\x18\x02 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x03 \x01(\t\x12\x11\n\tlast_seen\x18\x04 \x01(\t\"\xe5\x01\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x34\x12T\n\x05\x63loud\x18\x04 \x01(\x0b\x32\x45.ostorlab.agent.message.proto.v3.asset.ip.v4.network_lists.CloudRange\x12T\n\x08listings\x18\x05 \x03(\x0b\x32\x42.ostorlab.agent.message.proto.v3.asset.ip.v4.network_lists.Listing')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMostorlab/agent/message/proto/v3/asset/ip/v4/network_lists/network_lists.proto\x12\x39ostorlab.agent.message.proto.v3.asset.ip.v4.network_lists\"M\n\nCloudRange\x12\x10\n\x08provider\x18\x01 \x01(\t\x12\x0f\n\x07service\x18\x02 \x01(\t\x12\x0e\n\x06region\x18\x03 \x01(\t\x12\x0c\n\x04\x63idr\x18\x04 \x01(\t\"S\n\x07Listing\x12\x0e\n\x06source\x18\x01 \x01(\t\x12\x10\n\x08\x63\x61tegory\x18\x02 \x01(\t\x12\x0e\n\x06\x64\x65tail\x18\x03 \x01(\t\x12\x16\n\x0elast_seen_date\x18\x04 \x01(\t\"\xe5\x01\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x0c\n\x04mask\x18\x02 \x01(\t\x12\x12\n\x07version\x18\x03 \x01(\x05:\x01\x34\x12T\n\x05\x63loud\x18\x04 \x01(\x0b\x32\x45.ostorlab.agent.message.proto.v3.asset.ip.v4.network_lists.CloudRange\x12T\n\x08listings\x18\x05 \x03(\x0b\x32\x42.ostorlab.agent.message.proto.v3.asset.ip.v4.network_lists.Listing')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,7 +34,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CLOUDRANGE']._serialized_start=140
   _globals['_CLOUDRANGE']._serialized_end=217
   _globals['_LISTING']._serialized_start=219
-  _globals['_LISTING']._serialized_end=297
-  _globals['_MESSAGE']._serialized_start=300
-  _globals['_MESSAGE']._serialized_end=529
+  _globals['_LISTING']._serialized_end=302
+  _globals['_MESSAGE']._serialized_start=305
+  _globals['_MESSAGE']._serialized_end=534
 # @@protoc_insertion_point(module_scope)

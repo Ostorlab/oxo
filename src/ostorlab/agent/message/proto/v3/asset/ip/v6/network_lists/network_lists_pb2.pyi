@@ -57,22 +57,22 @@ class Listing(_message.Message):
     SOURCE_FIELD_NUMBER: _builtins.int
     CATEGORY_FIELD_NUMBER: _builtins.int
     DETAIL_FIELD_NUMBER: _builtins.int
-    LAST_SEEN_FIELD_NUMBER: _builtins.int
+    LAST_SEEN_DATE_FIELD_NUMBER: _builtins.int
     source: _builtins.str
     category: _builtins.str
     detail: _builtins.str
-    last_seen: _builtins.str
+    last_seen_date: _builtins.str
     def __init__(
         self,
         *,
         source: _builtins.str | None = ...,
         category: _builtins.str | None = ...,
         detail: _builtins.str | None = ...,
-        last_seen: _builtins.str | None = ...,
+        last_seen_date: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "detail", b"detail", "last_seen", b"last_seen", "source", b"source"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "detail", b"detail", "last_seen_date", b"last_seen_date", "source", b"source"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "detail", b"detail", "last_seen", b"last_seen", "source", b"source"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "detail", b"detail", "last_seen_date", b"last_seen_date", "source", b"source"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
@@ -91,7 +91,11 @@ class Message(_message.Message):
     mask: _builtins.str
     version: _builtins.int
     @_builtins.property
-    def cloud(self) -> Global___CloudRange: ...
+    def cloud(self) -> Global___CloudRange:
+        """The longest prefix that holds the IP. When one provider lists the same prefix several times, a named service
+        wins over AWS's generic AMAZON and a regional entry over a global one.
+        """
+
     @_builtins.property
     def listings(self) -> _containers.RepeatedCompositeFieldContainer[Global___Listing]: ...
     def __init__(

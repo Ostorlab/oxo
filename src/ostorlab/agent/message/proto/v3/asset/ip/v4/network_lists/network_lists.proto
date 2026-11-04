@@ -15,13 +15,15 @@ message Listing {
   optional string source = 1;
   optional string category = 2;
   optional string detail = 3;
-  optional string last_seen = 4;
+  optional string last_seen_date = 4;
 }
 
 message Message {
   optional string host = 1;
   optional string mask = 2;
   optional int32 version = 3 [default = 4];
+  // The longest prefix that holds the IP. When one provider lists the same prefix several times, a named service
+  // wins over AWS's generic AMAZON and a regional entry over a global one.
   optional CloudRange cloud = 4;
   repeated Listing listings = 5;
 }

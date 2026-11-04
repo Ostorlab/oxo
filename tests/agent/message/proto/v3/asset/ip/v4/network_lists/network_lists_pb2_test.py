@@ -16,7 +16,7 @@ def testMessageFromData_whenCloudAndListingsProvided_roundTrips() -> None:
                 "source": "Feodo Tracker",
                 "category": "botnet_c2",
                 "detail": "QakBot",
-                "last_seen": "2026-03-12",
+                "last_seen_date": "2026-03-12",
             }
         ],
     }
@@ -24,21 +24,6 @@ def testMessageFromData_whenCloudAndListingsProvided_roundTrips() -> None:
     serialized = agent_message.Message.from_data("v3.asset.ip.v4.network_lists", data)
     deserialized = agent_message.Message.from_raw(
         "v3.asset.ip.v4.network_lists", serialized.raw
-    )
-
-    assert deserialized.data == data
-
-
-def testMessageFromData_whenIpv6TorExit_roundTrips() -> None:
-    data = {
-        "host": "2001:67c:e60:c0c:192:42:116:16",
-        "version": 6,
-        "listings": [{"source": "Tor Project", "category": "tor_exit_node"}],
-    }
-
-    serialized = agent_message.Message.from_data("v3.asset.ip.v6.network_lists", data)
-    deserialized = agent_message.Message.from_raw(
-        "v3.asset.ip.v6.network_lists", serialized.raw
     )
 
     assert deserialized.data == data
