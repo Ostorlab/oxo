@@ -1,0 +1,32 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.android.network_security;
+
+message Domain {
+  optional string name = 1;
+  optional bool include_subdomains = 2;
+}
+
+// One domain-config of the file: its own rules for a set of domains.
+message DomainConfig {
+  repeated Domain domains = 1;
+  optional bool cleartext_traffic_permitted = 2;
+  // The certificate sources trusted for these domains: system, user, or a resource reference such as @7F130001.
+  repeated string trust_anchors = 3;
+  // Pinned public keys, as digest/value, for example SHA-256/7HIpactkIAq2Y49orFOOQKurWxmmSFZhBCoQYcRhJ3Y=.
+  repeated string pins = 4;
+  // The date the pins stop being enforced, for example 2027-01-01.
+  optional string pin_expiration = 5;
+}
+
+// The network security config of an Android app, the file its manifest points to with android:networkSecurityConfig.
+message Message {
+  // The file inside the app, for example res/xml/network_security_config.xml.
+  optional string path = 1;
+  optional string package_name = 2;
+  optional bool base_cleartext_traffic_permitted = 3;
+  repeated string base_trust_anchors = 4;
+  repeated DomainConfig domain_configs = 5;
+  // Trust anchors added only in debuggable builds.
+  repeated string debug_trust_anchors = 6;
+}
