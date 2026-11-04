@@ -58,9 +58,11 @@ class Message(_message.Message):
     isp: _builtins.str
     org: _builtins.str
     mobile: _builtins.bool
-    """The IP is on a mobile carrier network, a proxy, VPN or Tor exit, or a hosting provider."""
+    """The IP is on a mobile carrier network."""
     proxy: _builtins.bool
+    """The IP is a proxy, VPN or Tor exit."""
     hosting: _builtins.bool
+    """The IP is on a hosting provider."""
     def __init__(
         self,
         *,
