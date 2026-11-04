@@ -387,6 +387,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         api_key="test-key",
         gcp_logging_credential="gcp-credential",
         snapshot_settings=None,
+        api_url=None,
     )
 
 
@@ -416,3 +417,63 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
 
     assert result == {"id": 99, "progress": "locked"}
     runner.execute.assert_called_once()
+
+
+def testStartScanLoop_whenEndpointUrlsProvided_buildsRunnersWithThem(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The scan loop fetches the config from the API and polls the scanner."""
+    authenticated_runner_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.authenticated_runner.AuthenticatedAPIRunner"
+    )
+    scanner_runner_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.scanner_runner.ScannerAPIRunner"
+    )
+    config = mocker.MagicMock(api_key="scanner-key", scan_resource_requirements={})
+    mocker.patch(
+        "ostorlab.scanner.scan_handler.scanner_conf.ScannerConfig.from_json",
+        return_value=config,
+    )
+    mocker.patch("docker.from_env")
+    handle_messages_mock = mocker.patch.object(
+        scan_handler.ScanHandler, "handle_messages"
+    )
+
+    scan_handler.start_scan_loop(
+        api_key="api-key",
+        scanner_id="scanner-id",
+        state_reporter=mocker.MagicMock(),
+        api_url="https://re.example.com/apis/graphql",
+        scanner_url="https://se.example.com/orchestrator/graphql",
+    )
+
+    authenticated_runner_mock.assert_called_once_with(
+        api_key="api-key", endpoint="https://re.example.com/apis/graphql"
+    )
+    scanner_runner_mock.assert_called_once_with(
+        api_key="scanner-key", endpoint="https://se.example.com/orchestrator/graphql"
+    )
+    handle_messages_mock.assert_called_once()
+
+
+def testTriggerScanWithRollback_whenApiUrlSet_forwardsItToStartScan(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The API endpoint reaches the scan start to install the agents."""
+    mocker.patch("docker.from_env")
+    start_scan_mock = mocker.patch(
+        "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="local"
+    )
+    handler = scan_handler.ScanHandler(
+        state_reporter=mocker.MagicMock(),
+        api_url="https://re.example.com/apis/graphql",
+    )
+
+    handler._trigger_scan_with_rollback(
+        runner=mocker.MagicMock(), reserved_scan={"id": 42}, api_key="api-key"
+    )
+
+    assert (
+        start_scan_mock.call_args.kwargs["api_url"]
+        == "https://re.example.com/apis/graphql"
+    )

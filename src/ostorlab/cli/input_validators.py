@@ -2,9 +2,11 @@
 
 import re
 from typing import Optional
+from urllib import parse
 
 import click
 
+from ostorlab.apis.runners import endpoints
 from ostorlab.utils import release_channel
 
 
@@ -83,5 +85,34 @@ def validate_release_channel(
     if value is not None and release_channel.is_valid(value) is False:
         raise click.BadParameter(
             f"Invalid release channel '{value}': it must match {release_channel.CHANNEL_PATTERN.pattern}."
+        )
+    return value
+
+
+def validate_endpoint_url(
+    ctx: Optional[click.core.Context],
+    param: click.Parameter | str,
+    value: Optional[str],
+) -> Optional[str]:
+    """Validator for the API and scanner URL flags: an absolute https URL, or http to a loopback host.
+
+    Args:
+        ctx: as per click callback convention, the calling click context.
+        param: as per click callback convention: the parameter name of argument.
+        value: value of the argument.
+    """
+    del ctx
+    if value is None:
+        return None
+    param_name = param if isinstance(param, str) else param.name
+    parsed_url = parse.urlparse(value)
+    if parsed_url.scheme not in ("http", "https") or parsed_url.netloc == "":
+        raise click.BadParameter(
+            f"{param_name} must be an absolute http or https URL, got {value!r}."
+        )
+    if endpoints.is_transport_safe(value) is False:
+        raise click.BadParameter(
+            f"{param_name} must use https, plain http is only allowed for localhost, "
+            f"127.0.0.0/8 and ::1, got {value!r}."
         )
     return value

@@ -104,6 +104,16 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]{0,31}$"
     },
+    "api_url": {
+      "description": "[Optional] - Ostorlab API GraphQL endpoint. Defaults to https://api.ostorlab.co/apis/graphql.",
+      "type": "string",
+      "pattern": "^https?://[^/\\s]+(/\\S*)?$"
+    },
+    "scanner_url": {
+      "description": "[Optional] - Ostorlab scanner GraphQL endpoint. Defaults to https://scanner.ostorlab.co/orchestrator/graphql.",
+      "type": "string",
+      "pattern": "^https?://[^/\\s]+(/\\S*)?$"
+    },
     "agents": {
       "description": "[Required] - List of dictionary-like objects explaining the agents belonging to the current agent group.",
       "type": "array",

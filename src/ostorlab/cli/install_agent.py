@@ -85,18 +85,26 @@ def _is_image_present(docker_client: docker.DockerClient, image_name: str) -> bo
         return False
 
 
-def _fetch_download_token(agent_key: str, version: str | None, api_key: str) -> str:
+def _fetch_download_token(
+    agent_key: str,
+    version: str | None,
+    api_key: str,
+    api_url: str | None = None,
+) -> str:
     """Fetch a short-lived registry pull token for an agent image.
 
     Args:
         agent_key: agent key in agent/org/name format.
         version: optional version of the agent image.
         api_key: api key for authentication.
+        api_url: the Ostorlab API GraphQL endpoint, None for the default one.
 
     Returns:
         The bearer token from the registry.
     """
-    runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
+    runner = authenticated_runner.AuthenticatedAPIRunner(
+        api_key=api_key, endpoint=api_url
+    )
     response = runner.execute(
         agent_download_token.AgentDownloadTokenAPIRequest(agent_key, version)
     )
@@ -150,6 +158,7 @@ def install(
     api_key: str | None = None,
     use_experimental: bool = False,
     channel: str | None = None,
+    api_url: str | None = None,
 ) -> None:
     """Install an agent : Fetch the docker file location of the agent corresponding to the agent_key,
     and pull the image from the registry.
@@ -163,6 +172,7 @@ def install(
             (prerelease) versions.
         channel: the release channel to resolve the latest version from, None meaning
             stable versions.
+        api_url: the Ostorlab API GraphQL endpoint, None for the default one.
 
     Returns:
         None
@@ -176,6 +186,7 @@ def install(
         use_experimental=use_experimental,
         api_key=api_key,
         channel=channel,
+        api_url=api_url,
     )
     agent_docker_location = agent_details["dockerLocation"]
     if agent_docker_location is None or not agent_details.get("versions", {}).get(
@@ -203,6 +214,7 @@ def install(
                     agent_key,
                     expected_version,
                     api_key,
+                    api_url,
                 )
                 auth_config = {"registrytoken": token}
             _do_install(
