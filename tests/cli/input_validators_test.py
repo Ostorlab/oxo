@@ -113,28 +113,24 @@ def testValidatePortBindingInput_whenInvalidSyntax_raisesUsageError(value: str) 
         "http://localhost:8000/orchestrator/graphql",
     ],
 )
-def testValidateEngineUrl_whenAbsoluteHttpUrl_returnsUrl(url: str) -> None:
-    assert (
-        input_validators.validate_engine_url(None, "reporting_engine_url", url) == url
-    )
+def testValidateEndpointUrl_whenAbsoluteHttpUrl_returnsUrl(url: str) -> None:
+    assert input_validators.validate_endpoint_url(None, "api_url", url) == url
 
 
-def testValidateEngineUrl_whenNoneValue_returnsNone() -> None:
-    assert (
-        input_validators.validate_engine_url(None, "reporting_engine_url", None) is None
-    )
+def testValidateEndpointUrl_whenNoneValue_returnsNone() -> None:
+    assert input_validators.validate_endpoint_url(None, "api_url", None) is None
 
 
 @pytest.mark.parametrize(
     "url", ["api.example.com/apis/graphql", "ftp://example.com/graphql", "https://"]
 )
-def testValidateEngineUrl_whenNotAbsoluteHttpUrl_raisesBadParameter(url: str) -> None:
+def testValidateEndpointUrl_whenNotAbsoluteHttpUrl_raisesBadParameter(url: str) -> None:
     with pytest.raises(click.BadParameter):
-        input_validators.validate_engine_url(None, "reporting_engine_url", url)
+        input_validators.validate_endpoint_url(None, "api_url", url)
 
 
-def testValidateEngineUrl_whenHttpToRemoteHost_raisesBadParameter() -> None:
+def testValidateEndpointUrl_whenHttpToRemoteHost_raisesBadParameter() -> None:
     with pytest.raises(click.BadParameter, match="must use https"):
-        input_validators.validate_engine_url(
-            None, "reporting_engine_url", "http://re.example.com/apis/graphql"
+        input_validators.validate_endpoint_url(
+            None, "api_url", "http://re.example.com/apis/graphql"
         )

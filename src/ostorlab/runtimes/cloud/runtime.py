@@ -109,7 +109,7 @@ class CloudRuntime(runtime.Runtime[int]):
             else:
                 asset = scan_assets[0]
             api_runner = authenticated_runner.AuthenticatedAPIRunner(
-                endpoint=self.reporting_engine_url
+                endpoint=self.api_url
             )
 
             agents = self._agents_from_agent_group_def(
@@ -141,7 +141,7 @@ class CloudRuntime(runtime.Runtime[int]):
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner(
-                endpoint=self.reporting_engine_url
+                endpoint=self.api_url
             )
             response = api_runner.execute(scan_stop.ScanStopAPIRequest(scan_id))
             if response.get("errors") is not None:
@@ -169,7 +169,7 @@ class CloudRuntime(runtime.Runtime[int]):
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner(
-                endpoint=self.reporting_engine_url
+                endpoint=self.api_url
             )
             response = api_runner.execute(
                 scan_list.ScansListAPIRequest(page, number_elements, state)
@@ -300,7 +300,7 @@ class CloudRuntime(runtime.Runtime[int]):
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner(
-                endpoint=self.reporting_engine_url
+                endpoint=self.api_url
             )
             response = api_runner.execute(
                 vulnz_list.VulnzListAPIRequest(
@@ -488,7 +488,7 @@ class CloudRuntime(runtime.Runtime[int]):
         """
         try:
             api_runner = authenticated_runner.AuthenticatedAPIRunner(
-                endpoint=self.reporting_engine_url
+                endpoint=self.api_url
             )
             if scan_id is not None:
                 response = api_runner.execute(
@@ -530,9 +530,7 @@ class CloudRuntime(runtime.Runtime[int]):
     def _fetch_scan_vulnz(
         self, scan_id: int, page: int = 1, number_elements: int = 10
     ) -> dict[str, Any]:
-        api_runner = authenticated_runner.AuthenticatedAPIRunner(
-            endpoint=self.reporting_engine_url
-        )
+        api_runner = authenticated_runner.AuthenticatedAPIRunner(endpoint=self.api_url)
         return api_runner.execute(
             vulnz_list.VulnzListAPIRequest(
                 scan_id=scan_id, number_elements=number_elements, page=page
@@ -603,9 +601,7 @@ class CloudRuntime(runtime.Runtime[int]):
         self, agent_group_definition: definitions.AgentGroupDefinition
     ) -> bool:
         """Send API requests to check if agents exist."""
-        api_runner = authenticated_runner.AuthenticatedAPIRunner(
-            endpoint=self.reporting_engine_url
-        )
+        api_runner = authenticated_runner.AuthenticatedAPIRunner(endpoint=self.api_url)
 
         for agent in agent_group_definition.agents:
             response = api_runner.execute(

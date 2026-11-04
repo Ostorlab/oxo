@@ -1122,7 +1122,7 @@ def testStartScan_whenAgentHasNoVersion_resolvesVersionBeforeInstalling(
         use_experimental=True,
         api_key=None,
         channel=None,
-        reporting_engine_url=None,
+        api_url=None,
     )
     install_agent_mock.assert_called_once()
     assert install_agent_mock.call_args.kwargs.get("version") == "2.5.0-alpha"
@@ -1864,7 +1864,7 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
         use_experimental=True,
         api_key="api-key",
         channel="beta",
-        reporting_engine_url=None,
+        api_url=None,
     )
     install_agent_mock.assert_called_once_with(
         agent_key="agent/ostorlab/agent42",
@@ -1873,7 +1873,7 @@ def testInstallAgents_whenChannelProvided_forwardsChannelToGetDetailsAndInstall(
         api_key="api-key",
         use_experimental=True,
         channel="beta",
-        reporting_engine_url=None,
+        api_url=None,
     )
 
 
@@ -1927,7 +1927,7 @@ def testStartScan_whenChannelIsSet_forwardsChannelToGetDetailsAndInstall(
         use_experimental=True,
         api_key=None,
         channel=channel,
-        reporting_engine_url=None,
+        api_url=None,
     )
     assert install_agent_mock.call_args.kwargs["channel"] == channel
     assert install_agent_mock.call_args.kwargs["use_experimental"] is True
@@ -1961,10 +1961,10 @@ def testStartScan_whenChannelIsInvalid_logsWarningAndForwardsNoChannel(
     assert "Beta.2" in [call.args[1] for call in logger_mock.call_args_list]
 
 
-def testStartScan_whenReportingEngineUrlSet_forwardsItToRuntimeAndAgentInstalls(
+def testStartScan_whenApiUrlSet_forwardsItToRuntimeAndAgentInstalls(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """The daemon resolves and installs agents from the configured reporting engine."""
+    """The daemon resolves and installs agents from the configured API."""
     reserved_scan = {
         "id": 42,
         "agentGroup": {
@@ -1994,15 +1994,15 @@ def testStartScan_whenReportingEngineUrlSet_forwardsItToRuntimeAndAgentInstalls(
     callbacks.start_scan(
         reserved_scan,
         mocker.MagicMock(),
-        reporting_engine_url="https://re.example.com/apis/graphql",
+        api_url="https://re.example.com/apis/graphql",
     )
 
-    assert runtime_mock.reporting_engine_url == "https://re.example.com/apis/graphql"
+    assert runtime_mock.api_url == "https://re.example.com/apis/graphql"
     assert (
-        get_details_mock.call_args.kwargs["reporting_engine_url"]
+        get_details_mock.call_args.kwargs["api_url"]
         == "https://re.example.com/apis/graphql"
     )
     assert (
-        install_agent_mock.call_args.kwargs["reporting_engine_url"]
+        install_agent_mock.call_args.kwargs["api_url"]
         == "https://re.example.com/apis/graphql"
     )

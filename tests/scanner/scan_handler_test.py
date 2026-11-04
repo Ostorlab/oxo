@@ -387,7 +387,7 @@ def testHandleMessages_whenGcpCredentialProvided_forwardsItToStartScan(
         api_key="test-key",
         gcp_logging_credential="gcp-credential",
         snapshot_settings=None,
-        reporting_engine_url=None,
+        api_url=None,
     )
 
 
@@ -419,10 +419,10 @@ def testReserveSingleScan_whenEntryHasNoId_skipsEntry(
     runner.execute.assert_called_once()
 
 
-def testStartScanLoop_whenEngineUrlsProvided_buildsRunnersWithThem(
+def testStartScanLoop_whenEndpointUrlsProvided_buildsRunnersWithThem(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """The scan loop fetches the config from the reporting engine and polls the scanning engine."""
+    """The scan loop fetches the config from the API and polls the scanner."""
     authenticated_runner_mock = mocker.patch(
         "ostorlab.scanner.scan_handler.authenticated_runner.AuthenticatedAPIRunner"
     )
@@ -443,8 +443,8 @@ def testStartScanLoop_whenEngineUrlsProvided_buildsRunnersWithThem(
         api_key="api-key",
         scanner_id="scanner-id",
         state_reporter=mocker.MagicMock(),
-        reporting_engine_url="https://re.example.com/apis/graphql",
-        scanning_engine_url="https://se.example.com/orchestrator/graphql",
+        api_url="https://re.example.com/apis/graphql",
+        scanner_url="https://se.example.com/orchestrator/graphql",
     )
 
     authenticated_runner_mock.assert_called_once_with(
@@ -456,17 +456,17 @@ def testStartScanLoop_whenEngineUrlsProvided_buildsRunnersWithThem(
     handle_messages_mock.assert_called_once()
 
 
-def testTriggerScanWithRollback_whenReportingEngineUrlSet_forwardsItToStartScan(
+def testTriggerScanWithRollback_whenApiUrlSet_forwardsItToStartScan(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """The reporting engine endpoint reaches the scan start to install the agents."""
+    """The API endpoint reaches the scan start to install the agents."""
     mocker.patch("docker.from_env")
     start_scan_mock = mocker.patch(
         "ostorlab.scanner.scan_handler.callbacks.start_scan", return_value="local"
     )
     handler = scan_handler.ScanHandler(
         state_reporter=mocker.MagicMock(),
-        reporting_engine_url="https://re.example.com/apis/graphql",
+        api_url="https://re.example.com/apis/graphql",
     )
 
     handler._trigger_scan_with_rollback(
@@ -474,6 +474,6 @@ def testTriggerScanWithRollback_whenReportingEngineUrlSet_forwardsItToStartScan(
     )
 
     assert (
-        start_scan_mock.call_args.kwargs["reporting_engine_url"]
+        start_scan_mock.call_args.kwargs["api_url"]
         == "https://re.example.com/apis/graphql"
     )

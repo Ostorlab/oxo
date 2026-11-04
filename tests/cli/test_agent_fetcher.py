@@ -311,10 +311,10 @@ def testGetDetails_whenAuthenticatedApiFailsWithServerError_raisesAgentDetailsNo
         agent_fetcher.get_details("agent/ostorlab/nmap")
 
 
-def testGetDetails_whenReportingEngineUrlProvided_queriesConfiguredEndpoints(
+def testGetDetails_whenApiUrlProvided_queriesConfiguredEndpoints(
     httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
 ) -> None:
-    """Without a session, agent details come from the public endpoint next to the reporting one."""
+    """Without a session, agent details come from the public endpoint next to the API one."""
     mocker.patch(
         "ostorlab.configuration_manager.ConfigurationManager.is_authenticated",
         new_callable=mocker.PropertyMock,
@@ -328,16 +328,16 @@ def testGetDetails_whenReportingEngineUrlProvided_queriesConfiguredEndpoints(
 
     details = agent_fetcher.get_details(
         "agent/ostorlab/nmap",
-        reporting_engine_url="https://re.example.com/apis/graphql",
+        api_url="https://re.example.com/apis/graphql",
     )
 
     assert details == {"key": "agent/ostorlab/nmap"}
 
 
-def testGetDetails_whenApiKeyAndReportingEngineUrlProvided_queriesReportingEndpoint(
+def testGetDetails_whenApiKeyAndApiUrlProvided_queriesApiEndpoint(
     httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
 ) -> None:
-    """With an api key, agent details come from the configured reporting endpoint."""
+    """With an api key, agent details come from the configured API endpoint."""
     mocker.patch(
         "ostorlab.configuration_manager.ConfigurationManager.is_authenticated",
         new_callable=mocker.PropertyMock,
@@ -352,7 +352,7 @@ def testGetDetails_whenApiKeyAndReportingEngineUrlProvided_queriesReportingEndpo
     details = agent_fetcher.get_details(
         "agent/ostorlab/nmap",
         api_key="api-key",
-        reporting_engine_url="https://re.example.com/apis/graphql",
+        api_url="https://re.example.com/apis/graphql",
     )
 
     assert details == {"key": "agent/ostorlab/nmap"}

@@ -1,37 +1,37 @@
-"""Derives the reporting engine sibling endpoints from a configured GraphQL endpoint."""
+"""Derives the API sibling endpoints from a configured GraphQL endpoint."""
 
 import ipaddress
 from urllib import parse
 
 
-def _sibling_endpoint(reporting_engine_url: str | None, path: str) -> str | None:
-    if reporting_engine_url is None:
+def _sibling_endpoint(api_url: str | None, path: str) -> str | None:
+    if api_url is None:
         return None
-    return parse.urljoin(reporting_engine_url.rstrip("/"), path)
+    return parse.urljoin(api_url.rstrip("/"), path)
 
 
-def public_graphql_endpoint(reporting_engine_url: str | None) -> str | None:
-    """Public GraphQL endpoint served next to the reporting engine GraphQL endpoint.
+def public_graphql_endpoint(api_url: str | None) -> str | None:
+    """Public GraphQL endpoint served next to the Ostorlab API GraphQL endpoint.
 
     Args:
-        reporting_engine_url: The reporting engine GraphQL endpoint, None for the default one.
+        api_url: The Ostorlab API GraphQL endpoint, None for the default one.
 
     Returns:
         The public GraphQL endpoint, None to keep the default one.
     """
-    return _sibling_endpoint(reporting_engine_url, "public_graphql")
+    return _sibling_endpoint(api_url, "public_graphql")
 
 
-def token_endpoint(reporting_engine_url: str | None) -> str | None:
-    """Token endpoint served next to the reporting engine GraphQL endpoint.
+def token_endpoint(api_url: str | None) -> str | None:
+    """Token endpoint served next to the Ostorlab API GraphQL endpoint.
 
     Args:
-        reporting_engine_url: The reporting engine GraphQL endpoint, None for the default one.
+        api_url: The Ostorlab API GraphQL endpoint, None for the default one.
 
     Returns:
         The token endpoint, None to keep the default one.
     """
-    return _sibling_endpoint(reporting_engine_url, "token/")
+    return _sibling_endpoint(api_url, "token/")
 
 
 def is_transport_safe(url: str) -> bool:
@@ -41,7 +41,7 @@ def is_transport_safe(url: str) -> bool:
     leaves the machine.
 
     Args:
-        url: An engine endpoint.
+        url: An API or scanner endpoint.
 
     Returns:
         True for https, or http to localhost, 127.0.0.0/8 or ::1.

@@ -251,17 +251,17 @@ def testPrepareVulnLocationMarkdown_whenUnknownAsset_shouldRaiseValueError() -> 
         )
 
 
-def testRuntimeStop_whenReportingEngineUrlSet_sendsRequestToConfiguredEndpoint(
+def testRuntimeStop_whenApiUrlSet_sendsRequestToConfiguredEndpoint(
     httpx_mock: pytest_httpx.HTTPXMock,
 ) -> None:
-    """The cloud runtime calls the configured reporting engine instead of the default one."""
+    """The cloud runtime calls the configured API instead of the default one."""
     httpx_mock.add_response(
         method="POST",
         url="https://re.example.com/apis/graphql",
         json={"data": {"stopScan": {"scan": {"id": "1"}}}},
     )
     cloud_runtime_instance = cloud_runtime.CloudRuntime()
-    cloud_runtime_instance.reporting_engine_url = "https://re.example.com/apis/graphql"
+    cloud_runtime_instance.api_url = "https://re.example.com/apis/graphql"
 
     cloud_runtime_instance.stop(scan_id=1)
 

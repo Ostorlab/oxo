@@ -37,7 +37,7 @@ def get_details(
     use_experimental: bool = False,
     api_key: str | None = None,
     channel: str | None = None,
-    reporting_engine_url: str | None = None,
+    api_url: str | None = None,
 ) -> dict[str, Any]:
     """Sends an API request with the agent key, and retrieve the agent information.
 
@@ -48,7 +48,7 @@ def get_details(
         api_key: the API key for RE authentication
         channel: the release channel to resolve the latest version from, None meaning
             stable versions.
-        reporting_engine_url: the reporting engine GraphQL endpoint, None for the default one.
+        api_url: the Ostorlab API GraphQL endpoint, None for the default one.
 
     Returns:
         dictionary of the agent information like : name, dockerLocation..
@@ -58,15 +58,13 @@ def get_details(
     """
     config_manager = configuration_manager.ConfigurationManager()
 
-    public_endpoint = endpoints.public_graphql_endpoint(reporting_engine_url)
+    public_endpoint = endpoints.public_graphql_endpoint(api_url)
     runner: base_runner.APIRunner
     if config_manager.is_authenticated is True:
-        runner = authenticated_runner.AuthenticatedAPIRunner(
-            endpoint=reporting_engine_url
-        )
+        runner = authenticated_runner.AuthenticatedAPIRunner(endpoint=api_url)
     elif api_key is not None:
         runner = authenticated_runner.AuthenticatedAPIRunner(
-            api_key=api_key, endpoint=reporting_engine_url
+            api_key=api_key, endpoint=api_url
         )
     else:
         runner = public_runner.PublicAPIRunner(endpoint=public_endpoint)

@@ -57,7 +57,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether to verify the TLS certificate. Defaults to True.
             api_key: Use API KEY based authentication. Used if token is not defined.
-            endpoint: The reporting engine GraphQL endpoint. Defaults to the Ostorlab one.
+            endpoint: The Ostorlab API GraphQL endpoint. Defaults to the Ostorlab one.
         """
         super().__init__(proxy, verify, endpoint)
         self._username = username

@@ -49,7 +49,7 @@ def testRunnerEndpoint_whenNoEndpointProvided_usesDefaultEndpoint(
 def testAuthenticatedRunnerExecute_whenEndpointProvided_sendsRequestToEndpoint(
     httpx_mock: pytest_httpx.HTTPXMock,
 ) -> None:
-    """The authenticated runner posts to the configured reporting engine endpoint."""
+    """The authenticated runner posts to the configured API endpoint."""
     httpx_mock.add_response(
         method="POST",
         url="https://re.example.com/apis/graphql",
@@ -67,7 +67,7 @@ def testAuthenticatedRunnerExecute_whenEndpointProvided_sendsRequestToEndpoint(
 def testScannerRunnerExecute_whenEndpointProvided_sendsRequestToEndpoint(
     httpx_mock: pytest_httpx.HTTPXMock,
 ) -> None:
-    """The scanner runner posts to the configured scanning engine endpoint."""
+    """The scanner runner posts to the configured scanner endpoint."""
     httpx_mock.add_response(
         method="POST",
         url="https://se.example.com/orchestrator/graphql",
@@ -85,7 +85,7 @@ def testScannerRunnerExecute_whenEndpointProvided_sendsRequestToEndpoint(
 def testAuthenticatedRunnerAuthenticate_whenEndpointProvided_logsInOnSiblingTokenEndpoint(
     httpx_mock: pytest_httpx.HTTPXMock, mocker: plugin.MockerFixture
 ) -> None:
-    """Login targets the token endpoint next to the configured reporting endpoint."""
+    """Login targets the token endpoint next to the configured API endpoint."""
     set_token_mock = mocker.patch(
         "ostorlab.configuration_manager.ConfigurationManager.set_authorization_token"
     )

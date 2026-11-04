@@ -1088,7 +1088,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
                 install_agent.install(
                     agent_key=agent_key,
                     docker_client=docker_client,
-                    reporting_engine_url=self.reporting_engine_url,
+                    api_url=self.api_url,
                 )
             except agent_fetcher.AgentDetailsNotFound:
                 console.warning(f"agent {agent_key} not found on the store")

@@ -331,8 +331,8 @@ class AgentGroupDefinition:
     description: typing.Optional[str] = None
     use_experimental_agents: bool = False
     channel: str | None = None
-    reporting_engine_url: str | None = None
-    scanning_engine_url: str | None = None
+    api_url: str | None = None
+    scanner_url: str | None = None
 
     @classmethod
     def from_yaml(cls, group: typing.IO[str] | typing.IO[bytes]) -> typing.Self:
@@ -386,7 +386,7 @@ class AgentGroupDefinition:
         )
         use_experimental_agents = agent_group_def.get("use_experimental_agents", False)
         channel = agent_group_def.get("channel")
-        for url_key in ("reporting_engine_url", "scanning_engine_url"):
+        for url_key in ("api_url", "scanner_url"):
             url = agent_group_def.get(url_key)
             if url is not None and endpoints.is_transport_safe(url) is False:
                 raise validator.ValidationError(
@@ -399,8 +399,8 @@ class AgentGroupDefinition:
             description,
             use_experimental_agents,
             channel,
-            reporting_engine_url=agent_group_def.get("reporting_engine_url"),
-            scanning_engine_url=agent_group_def.get("scanning_engine_url"),
+            api_url=agent_group_def.get("api_url"),
+            scanner_url=agent_group_def.get("scanner_url"),
         )
 
     @classmethod

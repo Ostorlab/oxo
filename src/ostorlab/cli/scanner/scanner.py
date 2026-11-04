@@ -183,16 +183,16 @@ def _start_periodic_persist_state(
     required=False,
 )
 @click.option(
-    "--reporting-engine-url",
-    help="Reporting engine GraphQL endpoint. Defaults to https://api.ostorlab.co/apis/graphql.",
+    "--api-url",
+    help="Ostorlab API GraphQL endpoint. Defaults to https://api.ostorlab.co/apis/graphql.",
     required=False,
-    callback=input_validators.validate_engine_url,
+    callback=input_validators.validate_endpoint_url,
 )
 @click.option(
-    "--scanning-engine-url",
-    help="Scanning engine GraphQL endpoint. Defaults to https://scanner.ostorlab.co/orchestrator/graphql.",
+    "--scanner-url",
+    help="Ostorlab scanner GraphQL endpoint. Defaults to https://scanner.ostorlab.co/orchestrator/graphql.",
     required=False,
-    callback=input_validators.validate_engine_url,
+    callback=input_validators.validate_endpoint_url,
 )
 @click.pass_context
 def scanner(
@@ -205,8 +205,8 @@ def scanner(
     parallel: int,
     snapshot_bucket: str | None,
     snapshot_service_account: str | None,
-    reporting_engine_url: str | None = None,
-    scanning_engine_url: str | None = None,
+    api_url: str | None = None,
+    scanner_url: str | None = None,
 ) -> None:
     """Oxo scanner enables running custom instances of scanners.
     Scanner polls the API to receive start scan messages.\n
@@ -232,7 +232,7 @@ def scanner(
         hostname=socket.gethostname(),
         ip=ip.get_ip(),
         reporting_engine_api_key=api_key,
-        reporting_engine_url=reporting_engine_url,
+        api_url=api_url,
     )
     nb_parallel_scans = parallel
     processes = []
@@ -249,8 +249,8 @@ def scanner(
                 gcp_logging_credential,
                 nb_parallel_scans,
                 snapshot_settings,
-                reporting_engine_url,
-                scanning_engine_url,
+                api_url,
+                scanner_url,
             ),
         )
         process.start()
@@ -291,8 +291,8 @@ def start_scanner(
     gcp_logging_credential: str | None = None,
     max_concurrent_scans: int = 1,
     snapshot_settings: definitions.SnapshotSettings | None = None,
-    reporting_engine_url: str | None = None,
-    scanning_engine_url: str | None = None,
+    api_url: str | None = None,
+    scanner_url: str | None = None,
 ) -> None:
     """Run the API polling loop reserving and starting scans.
 
@@ -305,8 +305,8 @@ def start_scanner(
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
         max_concurrent_scans: Number of universes the host may run at once.
         snapshot_settings: Snapshot storage of the paused scans, None when scans cannot be paused or resumed.
-        reporting_engine_url: Reporting engine GraphQL endpoint, None for the default one.
-        scanning_engine_url: Scanning engine GraphQL endpoint, None for the default one.
+        api_url: Ostorlab API GraphQL endpoint, None for the default one.
+        scanner_url: Ostorlab scanner GraphQL endpoint, None for the default one.
     """
     _configure_file_logging(log_file, log_level)
     _configure_gcp_logging(gcp_logging_credential, scanner_id)
@@ -327,6 +327,6 @@ def start_scanner(
         gcp_logging_credential=gcp_logging_credential,
         max_concurrent_scans=max_concurrent_scans,
         snapshot_settings=snapshot_settings,
-        reporting_engine_url=reporting_engine_url,
-        scanning_engine_url=scanning_engine_url,
+        api_url=api_url,
+        scanner_url=scanner_url,
     )

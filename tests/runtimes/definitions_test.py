@@ -1505,28 +1505,25 @@ def testAgentSettingsRoundtrip_whenOptionalFieldsArePopulated_shouldPreserveValu
     )
 
 
-def testAgentGroupDefinitionFromYaml_whenEngineUrlsProvided_parsedCorrectly() -> None:
-    """Test that the engine endpoints yaml keys are parsed into the agent group definition."""
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlsProvided_parsedCorrectly() -> None:
+    """Test that the API and scanner URL yaml keys are parsed into the agent group definition."""
     valid_yaml = """
         kind: "AgentGroup"
         description: "test"
-        reporting_engine_url: "https://re.example.com/apis/graphql"
-        scanning_engine_url: "https://se.example.com/orchestrator/graphql"
+        api_url: "https://re.example.com/apis/graphql"
+        scanner_url: "https://se.example.com/orchestrator/graphql"
         agents:
           - key: "agent/ostorlab/nmap"
     """
 
     agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
 
-    assert agentgrp_def.reporting_engine_url == "https://re.example.com/apis/graphql"
-    assert (
-        agentgrp_def.scanning_engine_url
-        == "https://se.example.com/orchestrator/graphql"
-    )
+    assert agentgrp_def.api_url == "https://re.example.com/apis/graphql"
+    assert agentgrp_def.scanner_url == "https://se.example.com/orchestrator/graphql"
 
 
-def testAgentGroupDefinitionFromYaml_whenEngineUrlsMissing_defaultsToNone() -> None:
-    """Test that a yaml without engine endpoints keeps the default Ostorlab endpoints."""
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlsMissing_defaultsToNone() -> None:
+    """Test that a yaml without API and scanner URLs keeps the default Ostorlab endpoints."""
     valid_yaml = """
         kind: "AgentGroup"
         description: "test"
@@ -1536,18 +1533,18 @@ def testAgentGroupDefinitionFromYaml_whenEngineUrlsMissing_defaultsToNone() -> N
 
     agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
 
-    assert agentgrp_def.reporting_engine_url is None
-    assert agentgrp_def.scanning_engine_url is None
+    assert agentgrp_def.api_url is None
+    assert agentgrp_def.scanner_url is None
 
 
-def testAgentGroupDefinitionFromYaml_whenEngineUrlIsNotHttpUrl_raisesValidationError() -> (
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlIsNotHttpUrl_raisesValidationError() -> (
     None
 ):
-    """Test that an engine endpoint that is not an http or https URL is rejected."""
+    """Test that an API or scanner URL that is not an http or https URL is rejected."""
     invalid_yaml = """
         kind: "AgentGroup"
         description: "test"
-        reporting_engine_url: "re.example.com/apis/graphql"
+        api_url: "re.example.com/apis/graphql"
         agents:
           - key: "agent/ostorlab/nmap"
     """
@@ -1556,8 +1553,8 @@ def testAgentGroupDefinitionFromYaml_whenEngineUrlIsNotHttpUrl_raisesValidationE
         definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-@pytest.mark.parametrize("url_key", ["reporting_engine_url", "scanning_engine_url"])
-def testAgentGroupDefinitionFromYaml_whenEngineUrlIsHttpToRemoteHost_raisesValidationError(
+@pytest.mark.parametrize("url_key", ["api_url", "scanner_url"])
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlIsHttpToRemoteHost_raisesValidationError(
     url_key: str,
 ) -> None:
     """Test that a yaml cannot route the stored credentials over plain http to a remote host."""
@@ -1573,18 +1570,18 @@ def testAgentGroupDefinitionFromYaml_whenEngineUrlIsHttpToRemoteHost_raisesValid
         definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
 
 
-def testAgentGroupDefinitionFromYaml_whenEngineUrlIsHttpToLoopback_parsedCorrectly() -> (
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlIsHttpToLoopback_parsedCorrectly() -> (
     None
 ):
-    """Test that plain http stays allowed for a local engine."""
+    """Test that plain http stays allowed for a local API or scanner."""
     valid_yaml = """
         kind: "AgentGroup"
         description: "test"
-        reporting_engine_url: "http://localhost:8000/apis/graphql"
+        api_url: "http://localhost:8000/apis/graphql"
         agents:
           - key: "agent/ostorlab/nmap"
     """
 
     agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
 
-    assert agentgrp_def.reporting_engine_url == "http://localhost:8000/apis/graphql"
+    assert agentgrp_def.api_url == "http://localhost:8000/apis/graphql"

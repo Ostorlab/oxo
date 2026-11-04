@@ -37,7 +37,7 @@ class ScannerAPIRunner(runner.APIRunner):
             api_key: API key for authentication.
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether to verify the TLS certificate. Defaults to True.
-            endpoint: The scanning engine GraphQL endpoint. Defaults to the Ostorlab one.
+            endpoint: The Ostorlab scanner GraphQL endpoint. Defaults to the Ostorlab one.
         """
         super().__init__(proxy, verify, endpoint)
         self._api_key = api_key

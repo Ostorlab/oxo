@@ -89,12 +89,12 @@ def validate_release_channel(
     return value
 
 
-def validate_engine_url(
+def validate_endpoint_url(
     ctx: Optional[click.core.Context],
     param: click.Parameter | str,
     value: Optional[str],
 ) -> Optional[str]:
-    """Validator for the engine endpoint flags: an absolute https URL, or http to a loopback host.
+    """Validator for the API and scanner URL flags: an absolute https URL, or http to a loopback host.
 
     Args:
         ctx: as per click callback convention, the calling click context.

@@ -1001,7 +1001,7 @@ agents:
         "agent/ostorlab/nmap",
         use_experimental=True,
         channel=None,
-        reporting_engine_url=None,
+        api_url=None,
     )
     assert result.exit_code == 0
 
@@ -1066,14 +1066,14 @@ def testRunScan_whenChannelOptionSet_resolvesAndInstallsFromChannel(
         "agent/ostorlab/nmap",
         use_experimental=False,
         channel="beta",
-        reporting_engine_url=None,
+        api_url=None,
     )
     mock_install.assert_called_once_with(
         "agent/ostorlab/nmap",
         "0.4.1-beta",
         use_experimental=False,
         channel="beta",
-        reporting_engine_url=None,
+        api_url=None,
     )
 
 
@@ -1103,7 +1103,7 @@ def testRunScan_whenChannelOptionNotSet_usesAgentGroupChannel(
         "agent/ostorlab/nmap",
         use_experimental=False,
         channel="qa1",
-        reporting_engine_url=None,
+        api_url=None,
     )
     assert mock_install.call_args.kwargs["channel"] == "qa1"
 
@@ -1165,20 +1165,20 @@ def testRunScan_whenInstallAndUseExperimentalFlagSet_forwardsUseExperimentalAndC
         "0.4.1-beta",
         use_experimental=True,
         channel=None,
-        reporting_engine_url=None,
+        api_url=None,
     )
 
 
-def testRunScan_whenEngineUrlOptionsSet_forwardsReportingUrlAndOverridesAgentGroup(
+def testRunScan_whenEndpointUrlOptionsSet_forwardsApiUrlAndOverridesAgentGroup(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that the engine URL options override the agent group values and reach the installs."""
+    """Test that the API and scanner URL options override the agent group values and reach the installs."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
     mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     agent_group_yaml = _write_agent_group(
         tmp_path,
-        "reporting_engine_url: https://yaml-re.example.com/apis/graphql\n"
-        "scanning_engine_url: https://yaml-se.example.com/orchestrator/graphql",
+        "api_url: https://yaml-re.example.com/apis/graphql\n"
+        "scanner_url: https://yaml-se.example.com/orchestrator/graphql",
     )
 
     result = CliRunner().invoke(
@@ -1190,9 +1190,9 @@ def testRunScan_whenEngineUrlOptionsSet_forwardsReportingUrlAndOverridesAgentGro
             "-g",
             str(agent_group_yaml),
             "--install",
-            "--reporting-engine-url",
+            "--api-url",
             "https://re.example.com/apis/graphql",
-            "--scanning-engine-url",
+            "--scanner-url",
             "https://se.example.com/orchestrator/graphql",
             "ip",
             "8.8.8.8",
@@ -1201,30 +1201,28 @@ def testRunScan_whenEngineUrlOptionsSet_forwardsReportingUrlAndOverridesAgentGro
 
     assert result.exit_code == 0
     assert (
-        mock_get_details.call_args.kwargs["reporting_engine_url"]
+        mock_get_details.call_args.kwargs["api_url"]
         == "https://re.example.com/apis/graphql"
     )
     assert (
-        mock_install.call_args.kwargs["reporting_engine_url"]
+        mock_install.call_args.kwargs["api_url"]
         == "https://re.example.com/apis/graphql"
     )
     agent_group = mock_scan.call_args.kwargs["agent_group_definition"]
-    assert agent_group.reporting_engine_url == "https://re.example.com/apis/graphql"
-    assert (
-        agent_group.scanning_engine_url == "https://se.example.com/orchestrator/graphql"
-    )
+    assert agent_group.api_url == "https://re.example.com/apis/graphql"
+    assert agent_group.scanner_url == "https://se.example.com/orchestrator/graphql"
 
 
-def testRunScan_whenEngineUrlOptionsNotSet_usesAgentGroupEngineUrls(
+def testRunScan_whenEndpointUrlOptionsNotSet_usesAgentGroupEndpointUrls(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that the agent group engine URLs are used when the CLI options are not set."""
+    """Test that the agent group API and scanner URLs are used when the CLI options are not set."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
     mock_scan = mocker.patch("ostorlab.runtimes.local.runtime.LocalRuntime.scan")
     agent_group_yaml = _write_agent_group(
         tmp_path,
-        "reporting_engine_url: https://yaml-re.example.com/apis/graphql\n"
-        "scanning_engine_url: https://yaml-se.example.com/orchestrator/graphql",
+        "api_url: https://yaml-re.example.com/apis/graphql\n"
+        "scanner_url: https://yaml-se.example.com/orchestrator/graphql",
     )
 
     result = CliRunner().invoke(
@@ -1243,24 +1241,21 @@ def testRunScan_whenEngineUrlOptionsNotSet_usesAgentGroupEngineUrls(
 
     assert result.exit_code == 0
     assert (
-        mock_get_details.call_args.kwargs["reporting_engine_url"]
+        mock_get_details.call_args.kwargs["api_url"]
         == "https://yaml-re.example.com/apis/graphql"
     )
     assert (
-        mock_install.call_args.kwargs["reporting_engine_url"]
+        mock_install.call_args.kwargs["api_url"]
         == "https://yaml-re.example.com/apis/graphql"
     )
     agent_group = mock_scan.call_args.kwargs["agent_group_definition"]
-    assert (
-        agent_group.scanning_engine_url
-        == "https://yaml-se.example.com/orchestrator/graphql"
-    )
+    assert agent_group.scanner_url == "https://yaml-se.example.com/orchestrator/graphql"
 
 
-def testRunScan_whenReportingEngineUrlSet_setsItOnRuntime(
+def testRunScan_whenApiUrlSet_setsItOnRuntime(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
-    """Test that the runtime receives the reporting engine URL before running its own API calls."""
+    """Test that the runtime receives the API URL before running its own API calls."""
     runtime_urls: list[str | None] = []
 
     def _can_run(
@@ -1268,7 +1263,7 @@ def testRunScan_whenReportingEngineUrlSet_setsItOnRuntime(
         agent_group_definition: runtime_definitions.AgentGroupDefinition,
     ) -> bool:
         del agent_group_definition
-        runtime_urls.append(self.reporting_engine_url)
+        runtime_urls.append(self.api_url)
         return True
 
     mocker.patch.object(
@@ -1288,7 +1283,7 @@ def testRunScan_whenReportingEngineUrlSet_setsItOnRuntime(
             "run",
             "-g",
             str(agent_group_yaml),
-            "--reporting-engine-url",
+            "--api-url",
             "https://re.example.com/apis/graphql",
             "ip",
             "8.8.8.8",
@@ -1299,7 +1294,7 @@ def testRunScan_whenReportingEngineUrlSet_setsItOnRuntime(
     assert runtime_urls == ["https://re.example.com/apis/graphql"]
 
 
-def testRunScan_whenEngineUrlOptionsNotSet_keepsDefaultEngineUrls(
+def testRunScan_whenEndpointUrlOptionsNotSet_keepsDefaultEndpointUrls(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path
 ) -> None:
     """Test that without options or agent group values the default endpoints are kept."""
@@ -1321,15 +1316,15 @@ def testRunScan_whenEngineUrlOptionsNotSet_keepsDefaultEngineUrls(
     )
 
     assert result.exit_code == 0
-    assert mock_get_details.call_args.kwargs["reporting_engine_url"] is None
-    assert mock_install.call_args.kwargs["reporting_engine_url"] is None
+    assert mock_get_details.call_args.kwargs["api_url"] is None
+    assert mock_install.call_args.kwargs["api_url"] is None
 
 
-@pytest.mark.parametrize("option", ["--reporting-engine-url", "--scanning-engine-url"])
-def testRunScan_whenEngineUrlIsInvalid_exitsWithUsageError(
+@pytest.mark.parametrize("option", ["--api-url", "--scanner-url"])
+def testRunScan_whenEndpointUrlIsInvalid_exitsWithUsageError(
     mocker: plugin.MockerFixture, tmp_path: pathlib.Path, option: str
 ) -> None:
-    """Test that an engine URL that is not an http or https URL is rejected."""
+    """Test that an API or scanner URL that is not an http or https URL is rejected."""
     mock_get_details, mock_install = _mock_install_scan_run(mocker)
     agent_group_yaml = _write_agent_group(tmp_path)
 
