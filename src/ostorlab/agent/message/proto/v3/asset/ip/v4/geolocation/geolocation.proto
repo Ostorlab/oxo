@@ -18,4 +18,10 @@ message Message {
   optional float longitude = 14;
   optional string timezone = 15;
   optional string district = 16;
+  optional string isp = 17;
+  optional string org = 18;
+  // The IP is on a mobile carrier network, a proxy, VPN or Tor exit, or a hosting provider.
+  optional bool mobile = 19;
+  optional bool proxy = 20;
+  optional bool hosting = 21;
 }
