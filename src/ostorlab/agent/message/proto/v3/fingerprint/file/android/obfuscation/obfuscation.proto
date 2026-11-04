@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.android.obfuscation;
+
+// One obfuscator or packer found in an Android app, for example DexGuard or Jiagu.
+message Message {
+  optional string path = 1;
+  optional string package_name = 2;
+  optional string name = 3;
+  // obfuscator or packer.
+  optional string category = 4;
+  // The file inside the app where it was found, for example classes.dex.
+  optional string detail = 5;
+}
