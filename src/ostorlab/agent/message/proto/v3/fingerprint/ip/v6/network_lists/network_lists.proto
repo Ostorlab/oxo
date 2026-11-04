@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.ip.v6.network_lists;
+
+// The cloud provider range that contains the IP, from the provider's own published list.
+message CloudRange {
+  optional string provider = 1;
+  optional string service = 2;
+  optional string region = 3;
+  optional string cidr = 4;
+}
+
+// One public list the IP appears in, for example the Tor exit list.
+message Listing {
+  optional string source = 1;
+  optional string category = 2;
+  optional string detail = 3;
+  optional string last_seen_date = 4;
+}
+
+message Message {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 6];
+  // The longest prefix that holds the IP. When one provider lists the same prefix several times, a named service
+  // wins over AWS's generic AMAZON and a regional entry over a global one.
+  optional CloudRange cloud = 4;
+  repeated Listing listings = 5;
+}
