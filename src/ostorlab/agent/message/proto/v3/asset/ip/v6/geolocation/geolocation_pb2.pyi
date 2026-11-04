@@ -35,6 +35,11 @@ class Message(_message.Message):
     LONGITUDE_FIELD_NUMBER: _builtins.int
     TIMEZONE_FIELD_NUMBER: _builtins.int
     DISTRICT_FIELD_NUMBER: _builtins.int
+    ISP_FIELD_NUMBER: _builtins.int
+    ORG_FIELD_NUMBER: _builtins.int
+    MOBILE_FIELD_NUMBER: _builtins.int
+    PROXY_FIELD_NUMBER: _builtins.int
+    HOSTING_FIELD_NUMBER: _builtins.int
     host: _builtins.str
     mask: _builtins.str
     version: _builtins.int
@@ -50,6 +55,12 @@ class Message(_message.Message):
     longitude: _builtins.float
     timezone: _builtins.str
     district: _builtins.str
+    isp: _builtins.str
+    org: _builtins.str
+    mobile: _builtins.bool
+    """The IP is on a mobile carrier network, a proxy, VPN or Tor exit, or a hosting provider."""
+    proxy: _builtins.bool
+    hosting: _builtins.bool
     def __init__(
         self,
         *,
@@ -68,10 +79,15 @@ class Message(_message.Message):
         longitude: _builtins.float | None = ...,
         timezone: _builtins.str | None = ...,
         district: _builtins.str | None = ...,
+        isp: _builtins.str | None = ...,
+        org: _builtins.str | None = ...,
+        mobile: _builtins.bool | None = ...,
+        proxy: _builtins.bool | None = ...,
+        hosting: _builtins.bool | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["city", b"city", "continent", b"continent", "continent_code", b"continent_code", "country", b"country", "country_code", b"country_code", "district", b"district", "host", b"host", "latitude", b"latitude", "longitude", b"longitude", "mask", b"mask", "region", b"region", "region_name", b"region_name", "timezone", b"timezone", "version", b"version", "zip", b"zip"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["city", b"city", "continent", b"continent", "continent_code", b"continent_code", "country", b"country", "country_code", b"country_code", "district", b"district", "host", b"host", "hosting", b"hosting", "isp", b"isp", "latitude", b"latitude", "longitude", b"longitude", "mask", b"mask", "mobile", b"mobile", "org", b"org", "proxy", b"proxy", "region", b"region", "region_name", b"region_name", "timezone", b"timezone", "version", b"version", "zip", b"zip"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["city", b"city", "continent", b"continent", "continent_code", b"continent_code", "country", b"country", "country_code", b"country_code", "district", b"district", "host", b"host", "latitude", b"latitude", "longitude", b"longitude", "mask", b"mask", "region", b"region", "region_name", b"region_name", "timezone", b"timezone", "version", b"version", "zip", b"zip"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["city", b"city", "continent", b"continent", "continent_code", b"continent_code", "country", b"country", "country_code", b"country_code", "district", b"district", "host", b"host", "hosting", b"hosting", "isp", b"isp", "latitude", b"latitude", "longitude", b"longitude", "mask", b"mask", "mobile", b"mobile", "org", b"org", "proxy", b"proxy", "region", b"region", "region_name", b"region_name", "timezone", b"timezone", "version", b"version", "zip", b"zip"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
