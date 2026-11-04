@@ -34,6 +34,4 @@ message Message {
   optional string asn_description = 8;
   optional Network network = 9;
   repeated Entity entities = 10;
-  // The announced BGP prefix that holds the IP, as seen by the origin ASN lookup.
-  optional string asn_cidr = 11;
 }

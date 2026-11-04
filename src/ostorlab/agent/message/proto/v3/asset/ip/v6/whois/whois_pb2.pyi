@@ -111,7 +111,6 @@ class Message(_message.Message):
     ASN_DESCRIPTION_FIELD_NUMBER: _builtins.int
     NETWORK_FIELD_NUMBER: _builtins.int
     ENTITIES_FIELD_NUMBER: _builtins.int
-    ASN_CIDR_FIELD_NUMBER: _builtins.int
     host: _builtins.str
     mask: _builtins.str
     version: _builtins.int
@@ -120,8 +119,6 @@ class Message(_message.Message):
     asn_country_code: _builtins.str
     asn_date: _builtins.str
     asn_description: _builtins.str
-    asn_cidr: _builtins.str
-    """The announced BGP prefix that holds the IP, as seen by the origin ASN lookup."""
     @_builtins.property
     def network(self) -> Global___Network: ...
     @_builtins.property
@@ -139,11 +136,10 @@ class Message(_message.Message):
         asn_description: _builtins.str | None = ...,
         network: Global___Network | None = ...,
         entities: _abc.Iterable[Global___Entity] | None = ...,
-        asn_cidr: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["asn_cidr", b"asn_cidr", "asn_country_code", b"asn_country_code", "asn_date", b"asn_date", "asn_description", b"asn_description", "asn_number", b"asn_number", "asn_registry", b"asn_registry", "host", b"host", "mask", b"mask", "network", b"network", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["asn_country_code", b"asn_country_code", "asn_date", b"asn_date", "asn_description", b"asn_description", "asn_number", b"asn_number", "asn_registry", b"asn_registry", "host", b"host", "mask", b"mask", "network", b"network", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn_cidr", b"asn_cidr", "asn_country_code", b"asn_country_code", "asn_date", b"asn_date", "asn_description", b"asn_description", "asn_number", b"asn_number", "asn_registry", b"asn_registry", "entities", b"entities", "host", b"host", "mask", b"mask", "network", b"network", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn_country_code", b"asn_country_code", "asn_date", b"asn_date", "asn_description", b"asn_description", "asn_number", b"asn_number", "asn_registry", b"asn_registry", "entities", b"entities", "host", b"host", "mask", b"mask", "network", b"network", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
