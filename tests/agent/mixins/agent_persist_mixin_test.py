@@ -3,6 +3,7 @@
 import ipaddress
 
 import pytest
+import redis
 from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_persist_mixin
@@ -229,3 +230,75 @@ async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTr
         )
         is True
     )
+
+
+@pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
+async def testAgentPersistMixinMarkSeen_whenKeyIsNew_returnTrueAndSetTtl(
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """Test mark_seen marks a new key and sets its expiry."""
+    del redis_service, clean_redis_data
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+    redis_client = redis.Redis.from_url("redis://localhost:6379")
+
+    assert mixin.mark_seen("agent_x:asset", 3600) is True
+    assert 0 < redis_client.ttl("agent_x:asset") <= 3600
+
+
+@pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
+async def testAgentPersistMixinMarkSeen_whenKeyIsAlreadyMarked_returnFalse(
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """Test mark_seen reports an already marked key."""
+    del redis_service, clean_redis_data
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    assert mixin.mark_seen("agent_x:asset", 3600) is True
+    assert mixin.mark_seen("agent_x:asset", 3600) is False
+
+
+@pytest.mark.parametrize("clean_redis_data", ["redis://localhost:6379"], indirect=True)
+@pytest.mark.asyncio
+@pytest.mark.docker
+async def testAgentPersistMixinMarkSeen_whenKeyHasExpired_returnTrue(
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """Test mark_seen marks a key again once its TTL elapsed."""
+    del redis_service, clean_redis_data
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+    redis_client = redis.Redis.from_url("redis://localhost:6379")
+    mixin.mark_seen("agent_x:asset", 3600)
+
+    redis_client.expire("agent_x:asset", 0)
+
+    assert mixin.mark_seen("agent_x:asset", 3600) is True
+
+
+@pytest.mark.parametrize("ttl_seconds", [0, -1])
+def testAgentPersistMixinMarkSeen_whenTtlIsNotPositive_raiseValueError(
+    ttl_seconds: int,
+) -> None:
+    """Test mark_seen rejects a non-positive TTL."""
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    with pytest.raises(ValueError):
+        mixin.mark_seen("agent_x:asset", ttl_seconds)

@@ -66,6 +66,22 @@ class AgentPersistMixin:
         """
         return self._redis_client.sismember(key, value) == 1
 
+    def mark_seen(self, key: bytes | str, ttl_seconds: int) -> bool:
+        """Atomically mark key as seen for ttl_seconds, after which it expires and can be marked again.
+        Unlike set members, each key expires on its own, so a skipped input is retried once its TTL elapses.
+        Storage is shared between agents, ensure the keys used are unique.
+
+        Args:
+            key: Key to mark as seen.
+            ttl_seconds: Number of seconds the key stays marked, must be positive.
+
+        Returns:
+            True if the key is newly marked, False if it was already marked.
+        """
+        if ttl_seconds <= 0:
+            raise ValueError(f"ttl_seconds must be positive, got {ttl_seconds}")
+        return self._redis_client.set(key, 1, nx=True, ex=ttl_seconds) is True
+
     def set_len(self, key: bytes | str) -> int:
         """Helper function that returns the set cardinality (number of elements) of the set stored at key.
         The method can be used to sync multiple agents that may receive test inputs but need to test
