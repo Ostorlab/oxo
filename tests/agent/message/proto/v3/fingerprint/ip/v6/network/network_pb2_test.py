@@ -8,11 +8,9 @@ def testMessageFromData_whenIpv6TorExit_roundTrips() -> None:
         "listings": [{"source": "Tor Project", "category": "tor_exit_node"}],
     }
 
-    serialized = agent_message.Message.from_data(
-        "v3.fingerprint.ip.v6.network_lists", data
-    )
+    serialized = agent_message.Message.from_data("v3.fingerprint.ip.v6.network", data)
     deserialized = agent_message.Message.from_raw(
-        "v3.fingerprint.ip.v6.network_lists", serialized.raw
+        "v3.fingerprint.ip.v6.network", serialized.raw
     )
 
     assert deserialized.data == data

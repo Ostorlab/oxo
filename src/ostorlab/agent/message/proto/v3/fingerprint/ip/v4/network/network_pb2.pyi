@@ -19,38 +19,8 @@ else:
 DESCRIPTOR: _descriptor.FileDescriptor
 
 @_typing.final
-class CloudRange(_message.Message):
-    """The cloud provider range that contains the IP, from the provider's own published list."""
-
-    DESCRIPTOR: _descriptor.Descriptor
-
-    PROVIDER_FIELD_NUMBER: _builtins.int
-    SERVICE_FIELD_NUMBER: _builtins.int
-    REGION_FIELD_NUMBER: _builtins.int
-    CIDR_FIELD_NUMBER: _builtins.int
-    provider: _builtins.str
-    service: _builtins.str
-    region: _builtins.str
-    cidr: _builtins.str
-    def __init__(
-        self,
-        *,
-        provider: _builtins.str | None = ...,
-        service: _builtins.str | None = ...,
-        region: _builtins.str | None = ...,
-        cidr: _builtins.str | None = ...,
-    ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["cidr", b"cidr", "provider", b"provider", "region", b"region", "service", b"service"]  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cidr", b"cidr", "provider", b"provider", "region", b"region", "service", b"service"]  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
-
-Global___CloudRange: _TypeAlias = CloudRange  # noqa: Y015
-
-@_typing.final
 class Listing(_message.Message):
-    """One public list the IP appears in, for example the Tor exit list."""
+    """One public list the IP appears in: a cloud provider range, the Tor exit list, a botnet tracker or a VPN list."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -59,8 +29,11 @@ class Listing(_message.Message):
     DETAIL_FIELD_NUMBER: _builtins.int
     LAST_SEEN_DATE_FIELD_NUMBER: _builtins.int
     source: _builtins.str
+    """Who publishes the list, for example AWS or Tor Project."""
     category: _builtins.str
+    """cloud, tor_exit_node, botnet_c2, vpn or datacenter."""
     detail: _builtins.str
+    """For cloud the service and region, for botnet_c2 the malware family."""
     last_seen_date: _builtins.str
     def __init__(
         self,
@@ -85,31 +58,25 @@ class Message(_message.Message):
     HOST_FIELD_NUMBER: _builtins.int
     MASK_FIELD_NUMBER: _builtins.int
     VERSION_FIELD_NUMBER: _builtins.int
-    CLOUD_FIELD_NUMBER: _builtins.int
     LISTINGS_FIELD_NUMBER: _builtins.int
     host: _builtins.str
     mask: _builtins.str
     version: _builtins.int
     @_builtins.property
-    def cloud(self) -> Global___CloudRange:
-        """The longest prefix that holds the IP. When one provider lists the same prefix several times, a named service
-        wins over AWS's generic AMAZON and a regional entry over a global one.
-        """
+    def listings(self) -> _containers.RepeatedCompositeFieldContainer[Global___Listing]:
+        """Empty when the IP is in no list."""
 
-    @_builtins.property
-    def listings(self) -> _containers.RepeatedCompositeFieldContainer[Global___Listing]: ...
     def __init__(
         self,
         *,
         host: _builtins.str | None = ...,
         mask: _builtins.str | None = ...,
         version: _builtins.int | None = ...,
-        cloud: Global___CloudRange | None = ...,
         listings: _abc.Iterable[Global___Listing] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["cloud", b"cloud", "host", b"host", "mask", b"mask", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["host", b"host", "mask", b"mask", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cloud", b"cloud", "host", b"host", "listings", b"listings", "mask", b"mask", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["host", b"host", "listings", b"listings", "mask", b"mask", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
