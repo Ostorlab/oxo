@@ -290,6 +290,25 @@ async def testAgentPersistMixinMarkSeen_whenKeyHasExpired_returnTrue(
     assert mixin.mark_seen("agent_x:asset", 3600) is True
 
 
+@pytest.mark.parametrize("redis_answer,expected", [(True, True), (None, False)])
+def testAgentPersistMixinMarkSeen_whenCalled_setsKeyOnlyIfAbsentWithExpiry(
+    mocker: plugin.MockerFixture, redis_answer: bool | None, expected: bool
+) -> None:
+    """Test mark_seen sends SET NX EX and maps the Redis answer to a boolean."""
+    redis_client = mocker.MagicMock()
+    redis_client.set.return_value = redis_answer
+    mocker.patch("redis.Redis.from_url", return_value=redis_client)
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url="redis://localhost:6379"
+    )
+    mixin = agent_persist_mixin.AgentPersistMixin(settings)
+
+    marked = mixin.mark_seen("agent_x:asset", 3600)
+
+    assert marked is expected
+    redis_client.set.assert_called_once_with("agent_x:asset", 1, nx=True, ex=3600)
+
+
 @pytest.mark.parametrize("ttl_seconds", [0, -1])
 def testAgentPersistMixinMarkSeen_whenTtlIsNotPositive_raiseValueError(
     ttl_seconds: int,
