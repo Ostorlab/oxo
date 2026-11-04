@@ -22,7 +22,7 @@ def validate_port_binding_input(
         value: value of the argument.
     """
     del ctx, param
-    if value is not None and not re.match(r"^\d+:\d+(,\d+:\d+)?$", value):
+    if value is not None and not re.match(r"^\d+:\d+(,\d+:\d+)*$", value):
         raise click.UsageError(
             "Incorrect port binding syntax: service_port1:host_port1,service_port2:host_port2"
         )

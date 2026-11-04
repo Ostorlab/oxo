@@ -57,6 +57,46 @@ def testBuildModel_whenGatewayProvider_shouldConfigureReasoningContentProfile(
     assert model.profile.openai_chat_send_back_thinking_parts == "field"
 
 
+def testBuildModel_whenLitellm_shouldSupportThinking() -> None:
+    model = factory.build_model("litellm/openai/gpt-5.2", "k", options=_LITELLM_OPTIONS)
+
+    assert model.profile.supports_thinking is True
+
+
+def testBuildModel_whenZAi_shouldSupportThinking() -> None:
+    model = factory.build_model("z_ai/glm-5", "k")
+
+    assert model.profile.supports_thinking is True
+
+
+def testRunModel_whenLitellmWithDefaultThinking_shouldSendHighReasoningEffort(
+    httpx_mock: HTTPXMock,
+) -> None:
+    httpx_mock.add_response(
+        url="https://litellm.example.com/v1/chat/completions",
+        json={
+            "id": "chatcmpl-1",
+            "object": "chat.completion",
+            "created": 0,
+            "model": "openai/gpt-5.2",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "ok"},
+                    "finish_reason": "stop",
+                }
+            ],
+        },
+    )
+    model = factory.build_model("litellm/openai/gpt-5.2", "k", options=_LITELLM_OPTIONS)
+
+    pydantic_ai.Agent(model).run_sync("hello")
+
+    request = httpx_mock.get_request()
+    assert request is not None
+    assert json.loads(request.content)["reasoning_effort"] == "high"
+
+
 @pytest.mark.parametrize("gateway_url", [None, "", "   ", "not a url", "ftp://gateway"])
 def testBuildModel_whenLitellmGatewayUrlMissingOrInvalid_shouldRaise(
     gateway_url: str | None,

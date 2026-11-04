@@ -7,8 +7,7 @@ on:
       - synchronize
       - reopened
 permissions:
-  pull-requests: write
-  statuses: write
+  pull-requests: read
 jobs:
   main:
     name: Validate PR title
@@ -18,7 +17,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          wip: true
           types: |
             feature
             fix
