@@ -16,6 +16,7 @@ import httpx
 import ubjson
 
 from ostorlab.apis import request as api_request
+from ostorlab.apis.runners import endpoints
 from ostorlab.apis.runners import login_runner
 from ostorlab.apis.runners import runner
 from ostorlab.cli import console as cli_console
@@ -44,6 +45,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
         proxy: str | None = None,
         verify: bool = True,
         api_key: str | None = None,
+        endpoint: str | None = None,
     ) -> None:
         """Constructs all the necessary attributes for the object.
 
@@ -55,8 +57,9 @@ class AuthenticatedAPIRunner(runner.APIRunner):
             proxy: The proxy through which a request is made. Defaults to None.
             verify: Whether to verify the TLS certificate. Defaults to True.
             api_key: Use API KEY based authentication. Used if token is not defined.
+            endpoint: The Ostorlab API GraphQL endpoint. Defaults to the Ostorlab one.
         """
-        super().__init__(proxy, verify)
+        super().__init__(proxy, verify, endpoint)
         self._username = username
         self._password = password
         self._token_duration = token_duration
@@ -67,7 +70,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
     @property
     def endpoint(self) -> str:
         """API endpoint."""
-        return AUTHENTICATED_GRAPHQL_ENDPOINT
+        return self._endpoint or AUTHENTICATED_GRAPHQL_ENDPOINT
 
     def authenticate(self) -> None:
         """Authenticates the user.
@@ -82,6 +85,7 @@ class AuthenticatedAPIRunner(runner.APIRunner):
                 otp_token=self._otp_token,
                 proxy=self._proxy,
                 verify=self._verify,
+                endpoint=endpoints.token_endpoint(self._endpoint),
             )
             response = login_api_runner.login_user()
 

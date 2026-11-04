@@ -5,4 +5,21 @@ package ostorlab.agent.message.proto.v3.asset.store.ios_store;
 
 message Message {
   optional string bundle_id = 1;
+  // App Store listing of the application.
+  optional string name = 2;
+  optional string icon_url = 3;
+  optional string category = 4;
+  optional double rating = 5;
+  optional int64 rating_count = 6;
+  // ISO 8601 UTC timestamp, e.g. "2009-05-04T02:43:49Z".
+  optional string release_date = 7;
+  // ISO 8601 UTC timestamp, e.g. "2026-10-26T12:28:55Z".
+  optional string last_update_date = 8;
+  optional string version = 9;
+  optional double price = 10;
+  optional string currency = 11;
+  optional string content_rating = 12;
+  optional string description = 13;
+  repeated string screenshot_urls = 14;
+  optional string store_url = 15;
 }

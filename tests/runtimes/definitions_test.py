@@ -1503,3 +1503,85 @@ def testAgentSettingsRoundtrip_whenOptionalFieldsArePopulated_shouldPreserveValu
         restored.in_selectors is not None
         and list(restored.in_selectors) == settings.in_selectors
     )
+
+
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlsProvided_parsedCorrectly() -> None:
+    """Test that the API and scanner URL yaml keys are parsed into the agent group definition."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        api_url: "https://re.example.com/apis/graphql"
+        scanner_url: "https://se.example.com/orchestrator/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.api_url == "https://re.example.com/apis/graphql"
+    assert agentgrp_def.scanner_url == "https://se.example.com/orchestrator/graphql"
+
+
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlsMissing_defaultsToNone() -> None:
+    """Test that a yaml without API and scanner URLs keeps the default Ostorlab endpoints."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.api_url is None
+    assert agentgrp_def.scanner_url is None
+
+
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlIsNotHttpUrl_raisesValidationError() -> (
+    None
+):
+    """Test that an API or scanner URL that is not an http or https URL is rejected."""
+    invalid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        api_url: "re.example.com/apis/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    with pytest.raises(validator.ValidationError):
+        definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+@pytest.mark.parametrize("url_key", ["api_url", "scanner_url"])
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlIsHttpToRemoteHost_raisesValidationError(
+    url_key: str,
+) -> None:
+    """Test that a yaml cannot route the stored credentials over plain http to a remote host."""
+    invalid_yaml = f"""
+        kind: "AgentGroup"
+        description: "test"
+        {url_key}: "http://re.example.com/apis/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    with pytest.raises(validator.ValidationError, match="must use https"):
+        definitions.AgentGroupDefinition.from_yaml(io.StringIO(invalid_yaml))
+
+
+def testAgentGroupDefinitionFromYaml_whenEndpointUrlIsHttpToLoopback_parsedCorrectly() -> (
+    None
+):
+    """Test that plain http stays allowed for a local API or scanner."""
+    valid_yaml = """
+        kind: "AgentGroup"
+        description: "test"
+        api_url: "http://localhost:8000/apis/graphql"
+        agents:
+          - key: "agent/ostorlab/nmap"
+    """
+
+    agentgrp_def = definitions.AgentGroupDefinition.from_yaml(io.StringIO(valid_yaml))
+
+    assert agentgrp_def.api_url == "http://localhost:8000/apis/graphql"

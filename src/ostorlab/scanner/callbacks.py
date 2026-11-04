@@ -86,6 +86,7 @@ def _install_agents(
     api_key: str | None = None,
     use_experimental_agents: bool = False,
     channel: str | None = None,
+    api_url: str | None = None,
 ) -> None:
     """Trigger installation of the agents that will run the scan."""
     try:
@@ -98,6 +99,7 @@ def _install_agents(
                         use_experimental=use_experimental_agents,
                         api_key=api_key,
                         channel=channel,
+                        api_url=api_url,
                     )
                     versions = agent_details.get("versions", {}).get("versions", [])
                     if len(versions) > 0:
@@ -114,6 +116,7 @@ def _install_agents(
                 api_key=api_key,
                 use_experimental=use_experimental_agents,
                 channel=channel,
+                api_url=api_url,
             )
     except agent_fetcher.AgentDetailsNotFound:
         logger.warning("agent %s not found on the store", agent.key)
@@ -553,6 +556,7 @@ def start_scan(
     api_key: str | None = None,
     gcp_logging_credential: str | None = None,
     snapshot_settings: definitions.SnapshotSettings | None = None,
+    api_url: str | None = None,
 ) -> Optional[int | str]:
     """Responsible for triggering an Ostorlab scan, after receiving a scan from the API.
 
@@ -564,6 +568,7 @@ def start_scan(
         api_key: Optional api key to fetch short-lived download tokens for agent images.
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
         snapshot_settings: Snapshot storage: paused scans resume from it and the stop scan agent saves to it.
+        api_url: Ostorlab API GraphQL endpoint, None for the default one.
     """
     logger.debug("Triggering scan after receiving scan from API")
     with contextlib.closing(_connect_containers_registry()) as docker_client:
@@ -591,6 +596,7 @@ def start_scan(
                 snapshot_settings=snapshot_settings,
             ),
         )
+        runtime_instance.api_url = api_url
 
         if (
             runtime_instance.can_run(agent_group_definition=agent_group_definition)
@@ -604,6 +610,7 @@ def start_scan(
                 use_experimental_agents=request.get("useExperimentalAgents", False)
                 is True,
                 channel=_extract_channel(request=request),
+                api_url=api_url,
             )
 
             try:

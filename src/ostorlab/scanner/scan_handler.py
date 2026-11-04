@@ -42,8 +42,10 @@ class ScanHandler:
         gcp_logging_credential: str | None = None,
         max_concurrent_scans: int = 1,
         snapshot_settings: definitions.SnapshotSettings | None = None,
+        api_url: str | None = None,
     ) -> None:
         self._state_reporter = state_reporter
+        self._api_url = api_url
         self._snapshot_settings = snapshot_settings
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
@@ -222,6 +224,7 @@ class ScanHandler:
                 api_key=api_key,
                 gcp_logging_credential=self._gcp_logging_credential,
                 snapshot_settings=self._snapshot_settings,
+                api_url=self._api_url,
             )
             if started_scan_id is None:
                 logger.warning(
@@ -310,6 +313,8 @@ def start_scan_loop(
     gcp_logging_credential: str | None = None,
     max_concurrent_scans: int = 1,
     snapshot_settings: definitions.SnapshotSettings | None = None,
+    api_url: str | None = None,
+    scanner_url: str | None = None,
 ) -> None:
     """Fetching the scanner configuration and starting the API polling loop.
 
@@ -320,9 +325,13 @@ def start_scan_loop(
         gcp_logging_credential: GCP Logging JSON credentials for agent containers.
         max_concurrent_scans: Number of universes the host may run at once.
         snapshot_settings: Snapshot storage of the paused scans, None when scans cannot be paused or resumed.
+        api_url: Ostorlab API GraphQL endpoint, None for the default one.
+        scanner_url: Ostorlab scanner GraphQL endpoint, None for the default one.
     """
     logger.info("Fetching scanner configuration.")
-    runner = authenticated_runner.AuthenticatedAPIRunner(api_key=api_key)
+    runner = authenticated_runner.AuthenticatedAPIRunner(
+        api_key=api_key, endpoint=api_url
+    )
     data = runner.execute(
         request=scanner_config.ScannerConfigAPIRequest(scanner_id=scanner_id)
     )
@@ -332,7 +341,9 @@ def start_scan_loop(
         logger.error("No config found to start the connection.")
         return
 
-    s_runner = scanner_runner.ScannerAPIRunner(api_key=config.api_key)
+    s_runner = scanner_runner.ScannerAPIRunner(
+        api_key=config.api_key, endpoint=scanner_url
+    )
 
     logger.info("Starting scan loop via API.")
     scan_handler = ScanHandler(
@@ -341,6 +352,7 @@ def start_scan_loop(
         gcp_logging_credential=gcp_logging_credential,
         max_concurrent_scans=max_concurrent_scans,
         snapshot_settings=snapshot_settings,
+        api_url=api_url,
     )
     try:
         scan_handler.handle_messages(runner=s_runner, api_key=api_key)
