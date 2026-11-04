@@ -100,3 +100,85 @@ def testMessageSerializeDeserialize_Forv3CaptureTcp_generatesProperProto() -> No
     assert deserialized.data.get("from_client") is True
     assert deserialized.data.get("server_host") == "1.2.3.4"
     assert deserialized.data.get("content") == b"\x16\x03hello"
+
+
+def testMessageSerializeDeserialize_Forv3FingerprintStoreAndroid_generatesProperProto() -> (
+    None
+):
+    """Test serialization/deserialization of a Google Play store listing (v3.fingerprint.store.android)."""
+    serialized = message.Message.from_data(
+        "v3.fingerprint.store.android",
+        {
+            "package_name": "com.example.app",
+            "name": "Example App",
+            "rating": 4.5,
+            "rating_count": 120000,
+            "installs": "10,000,000+",
+            "version": "3.2.1",
+            "price": 0.99,
+            "currency": "USD",
+            "has_in_app_purchases": True,
+            "screenshot_urls": ["https://play-lh.googleusercontent.com/screenshot1"],
+            "privacy_policy_url": "https://example.com/privacy",
+            "store_url": "https://play.google.com/store/apps/details?id=com.example.app",
+        },
+    )
+    deserialized = message.Message.from_raw(
+        "v3.fingerprint.store.android", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("package_name") == "com.example.app"
+    assert deserialized.data.get("name") == "Example App"
+    assert deserialized.data.get("rating") == 4.5
+    assert deserialized.data.get("rating_count") == 120000
+    assert deserialized.data.get("installs") == "10,000,000+"
+    assert deserialized.data.get("version") == "3.2.1"
+    assert deserialized.data.get("price") == 0.99
+    assert deserialized.data.get("currency") == "USD"
+    assert deserialized.data.get("has_in_app_purchases") is True
+    assert deserialized.data.get("screenshot_urls") == [
+        "https://play-lh.googleusercontent.com/screenshot1"
+    ]
+    assert deserialized.data.get("privacy_policy_url") == "https://example.com/privacy"
+    assert (
+        deserialized.data.get("store_url")
+        == "https://play.google.com/store/apps/details?id=com.example.app"
+    )
+
+
+def testMessageSerializeDeserialize_Forv3FingerprintStoreIos_generatesProperProto() -> (
+    None
+):
+    """Test serialization/deserialization of an App Store listing (v3.fingerprint.store.ios)."""
+    serialized = message.Message.from_data(
+        "v3.fingerprint.store.ios",
+        {
+            "bundle_id": "com.example.app",
+            "name": "Example App",
+            "rating": 4.7,
+            "rating_count": 35000,
+            "version": "3.2.1",
+            "price": 2.99,
+            "currency": "USD",
+            "screenshot_urls": ["https://is1-ssl.mzstatic.com/image/screenshot1.png"],
+            "store_url": "https://apps.apple.com/us/app/example-app/id123456789",
+        },
+    )
+    deserialized = message.Message.from_raw("v3.fingerprint.store.ios", serialized.raw)
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("bundle_id") == "com.example.app"
+    assert deserialized.data.get("name") == "Example App"
+    assert deserialized.data.get("rating") == 4.7
+    assert deserialized.data.get("rating_count") == 35000
+    assert deserialized.data.get("version") == "3.2.1"
+    assert deserialized.data.get("price") == 2.99
+    assert deserialized.data.get("currency") == "USD"
+    assert deserialized.data.get("screenshot_urls") == [
+        "https://is1-ssl.mzstatic.com/image/screenshot1.png"
+    ]
+    assert (
+        deserialized.data.get("store_url")
+        == "https://apps.apple.com/us/app/example-app/id123456789"
+    )
