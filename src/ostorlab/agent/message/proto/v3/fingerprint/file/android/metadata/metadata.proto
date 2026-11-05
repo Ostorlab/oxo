@@ -58,6 +58,17 @@ message Receiver {
 }
 
 
+// An APK signing certificate. Dates are ISO 8601 and fingerprints are colon separated hex, e.g. "AB:CD:...".
+message SigningCertificate {
+    optional string subject = 1;
+    optional string issuer = 2;
+    optional string serial_number = 3;
+    optional string sha256_fingerprint = 4;
+    optional string sha1_fingerprint = 5;
+    optional string not_valid_before = 6;
+    optional string not_valid_after = 7;
+}
+
 message Message {
     optional string path = 1;
     optional string package_name = 2;
@@ -66,4 +77,10 @@ message Message {
     repeated Service services = 5;
     repeated Provider providers = 6;
     repeated Receiver receivers = 7;
+    // Declared android:minSdkVersion and android:targetSdkVersion of the manifest uses-sdk element.
+    optional int32 min_sdk_version = 8;
+    optional int32 target_sdk_version = 9;
+    // APK signature schemes the application is signed with: "v1", "v2" or "v3".
+    repeated string signature_schemes = 10;
+    repeated SigningCertificate signing_certificates = 11;
 }
