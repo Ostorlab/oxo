@@ -1,10 +1,10 @@
-from ostorlab.agent.message.proto.v3.asset.store.android_store import android_store_pb2
+from ostorlab.agent.message.proto.v3.fingerprint.store.android import android_pb2
 
 
 def testMessage_whenCreateWithListingData_shouldSerializeAndDeserializeCorrectly() -> (
     None
 ):
-    message = android_store_pb2.Message(
+    message = android_pb2.Message(
         package_name="com.example.app",
         name="Example App",
         icon_url="https://play-lh.googleusercontent.com/icon",
@@ -28,7 +28,7 @@ def testMessage_whenCreateWithListingData_shouldSerializeAndDeserializeCorrectly
         store_url="https://play.google.com/store/apps/details?id=com.example.app",
     )
 
-    deserialized = android_store_pb2.Message()
+    deserialized = android_pb2.Message()
     deserialized.ParseFromString(message.SerializeToString())
 
     assert deserialized == message
@@ -45,9 +45,9 @@ def testMessage_whenCreateWithListingData_shouldSerializeAndDeserializeCorrectly
 
 
 def testMessage_whenCreateWithPackageNameOnly_shouldLeaveListingFieldsUnset() -> None:
-    message = android_store_pb2.Message(package_name="com.example.app")
+    message = android_pb2.Message(package_name="com.example.app")
 
-    deserialized = android_store_pb2.Message()
+    deserialized = android_pb2.Message()
     deserialized.ParseFromString(message.SerializeToString())
 
     assert deserialized.package_name == "com.example.app"
@@ -58,7 +58,7 @@ def testMessage_whenCreateWithPackageNameOnly_shouldLeaveListingFieldsUnset() ->
 
 
 def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
-    message = android_store_pb2.Message()
+    message = android_pb2.Message()
 
     assert message.package_name == ""
     assert message.name == ""
@@ -70,11 +70,11 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
 
 
 def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
-    message = android_store_pb2.Message()
+    message = android_pb2.Message()
 
     serialized = message.SerializeToString()
-    deserialized = android_store_pb2.Message()
+    deserialized = android_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert serialized == b""
-    assert deserialized == android_store_pb2.Message()
+    assert deserialized == android_pb2.Message()

@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.ios.app_transport_security;
+
+// A domain with its own App Transport Security rules, from NSExceptionDomains.
+message ExceptionDomain {
+  optional string domain = 1;
+  optional bool includes_subdomains = 2;
+  optional bool allows_insecure_http_loads = 3;
+  // For example TLSv1.0.
+  optional string minimum_tls_version = 4;
+  optional bool requires_forward_secrecy = 5;
+  optional bool requires_certificate_transparency = 6;
+}
+
+// The App Transport Security settings of an iOS app, from the NSAppTransportSecurity key of its Info.plist.
+message Message {
+  optional string path = 1;
+  optional string bundle_id = 2;
+  optional bool allows_arbitrary_loads = 3;
+  optional bool allows_arbitrary_loads_for_media = 4;
+  optional bool allows_arbitrary_loads_in_web_content = 5;
+  optional bool allows_local_networking = 6;
+  repeated ExceptionDomain exception_domains = 7;
+}

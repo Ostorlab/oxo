@@ -474,8 +474,11 @@ class AgentRuntime:
             labels={
                 "ostorlab.universe": self.runtime_name,
                 ## queue_name is used by the autoscaler to identify agent queues and to decide on exclusion/inclusion.
-                "ostorlab.queue_name": service_name
-                if service_name is not None
+                ## An agent declares its queue as `<agent_settings.service_name or agent_definition.name>_queue` (see
+                ## agent.py), so the label follows the same rule: the service name set on the group, never the one of
+                ## the agent definition, which only names the docker service.
+                "ostorlab.queue_name": group_service_name
+                if group_service_name is not None and group_service_name != ""
                 else agent_definition.name,
             },
             container_labels=self.labels

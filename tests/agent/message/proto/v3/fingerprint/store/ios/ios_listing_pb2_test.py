@@ -1,10 +1,10 @@
-from ostorlab.agent.message.proto.v3.asset.store.ios_store import ios_store_pb2
+from ostorlab.agent.message.proto.v3.fingerprint.store.ios import ios_pb2
 
 
 def testMessage_whenCreateWithListingData_shouldSerializeAndDeserializeCorrectly() -> (
     None
 ):
-    message = ios_store_pb2.Message(
+    message = ios_pb2.Message(
         bundle_id="com.example.app",
         name="Example App",
         icon_url="https://is1-ssl.mzstatic.com/image/icon.png",
@@ -22,7 +22,7 @@ def testMessage_whenCreateWithListingData_shouldSerializeAndDeserializeCorrectly
         store_url="https://apps.apple.com/us/app/example/id123",
     )
 
-    deserialized = ios_store_pb2.Message()
+    deserialized = ios_pb2.Message()
     deserialized.ParseFromString(message.SerializeToString())
 
     assert deserialized == message
@@ -36,9 +36,9 @@ def testMessage_whenCreateWithListingData_shouldSerializeAndDeserializeCorrectly
 
 
 def testMessage_whenCreateWithBundleIdOnly_shouldLeaveListingFieldsUnset() -> None:
-    message = ios_store_pb2.Message(bundle_id="com.example.app")
+    message = ios_pb2.Message(bundle_id="com.example.app")
 
-    deserialized = ios_store_pb2.Message()
+    deserialized = ios_pb2.Message()
     deserialized.ParseFromString(message.SerializeToString())
 
     assert deserialized.bundle_id == "com.example.app"
@@ -48,7 +48,7 @@ def testMessage_whenCreateWithBundleIdOnly_shouldLeaveListingFieldsUnset() -> No
 
 
 def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
-    message = ios_store_pb2.Message()
+    message = ios_pb2.Message()
 
     assert message.bundle_id == ""
     assert message.name == ""
@@ -59,11 +59,11 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
 
 
 def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
-    message = ios_store_pb2.Message()
+    message = ios_pb2.Message()
 
     serialized = message.SerializeToString()
-    deserialized = ios_store_pb2.Message()
+    deserialized = ios_pb2.Message()
     deserialized.ParseFromString(serialized)
 
     assert serialized == b""
-    assert deserialized == ios_store_pb2.Message()
+    assert deserialized == ios_pb2.Message()
