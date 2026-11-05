@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.file.harmonyos.metadata;
+
+// A permission requested in the module.json requestPermissions of a HarmonyOS application.
+message Permission {
+    // e.g. "ohos.permission.INTERNET".
+    optional string name = 1;
+    // Reason shown to the user, as declared, e.g. "$string:reason_camera".
+    optional string reason = 2;
+    // usedScene abilities and when ("inuse" or "always").
+    repeated string used_scene_abilities = 3;
+    optional string used_scene_when = 4;
+}
+
+message Message {
+    optional string path = 1;
+    optional string bundle_name = 2;
+    repeated Permission permissions = 3;
+    // API levels of the module.json app minAPIVersion and targetAPIVersion, e.g. 12. Versions encoded with the
+    // HarmonyOS version, like 50000012 for 5.0.0(12), are reduced to their API level.
+    optional int32 min_api_version = 4;
+    optional int32 target_api_version = 5;
+}

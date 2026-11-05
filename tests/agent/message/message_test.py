@@ -182,3 +182,93 @@ def testMessageSerializeDeserialize_Forv3FingerprintStoreIos_generatesProperProt
         deserialized.data.get("store_url")
         == "https://apps.apple.com/us/app/example-app/id123456789"
     )
+
+
+def testMessageSerializeDeserialize_Forv3FingerprintFileAndroidMetadata_generatesProperProto() -> (
+    None
+):
+    """Test serialization/deserialization of the Android metadata build fields (v3.fingerprint.file.android.metadata)."""
+    serialized = message.Message.from_data(
+        "v3.fingerprint.file.android.metadata",
+        {
+            "package_name": "com.example.app",
+            "min_sdk_version": 24,
+            "target_sdk_version": 34,
+            "signature_schemes": ["v2"],
+            "signing_certificates": [
+                {"subject": "Common Name: Example", "sha256_fingerprint": "AB:CD"}
+            ],
+        },
+    )
+    deserialized = message.Message.from_raw(
+        "v3.fingerprint.file.android.metadata", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("min_sdk_version") == 24
+    assert deserialized.data.get("target_sdk_version") == 34
+    assert deserialized.data.get("signature_schemes") == ["v2"]
+    assert deserialized.data.get("signing_certificates") == [
+        {"subject": "Common Name: Example", "sha256_fingerprint": "AB:CD"}
+    ]
+
+
+def testMessageSerializeDeserialize_Forv3FingerprintFileIosMetadata_generatesProperProto() -> (
+    None
+):
+    """Test serialization/deserialization of the iOS metadata build fields (v3.fingerprint.file.ios.metadata)."""
+    serialized = message.Message.from_data(
+        "v3.fingerprint.file.ios.metadata",
+        {
+            "bundle_id": "com.example.app",
+            "minimum_os_version": "15.0",
+            "team_id": "ABCDE12345",
+            "entitlements": [{"name": "aps-environment", "values": ["production"]}],
+            "associated_domains": ["applinks:example.com"],
+            "url_schemes": ["example"],
+            "privacy_manifests": [
+                {"owner": "Example.app", "owner_type": "app", "tracking": True}
+            ],
+        },
+    )
+    deserialized = message.Message.from_raw(
+        "v3.fingerprint.file.ios.metadata", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("minimum_os_version") == "15.0"
+    assert deserialized.data.get("team_id") == "ABCDE12345"
+    assert deserialized.data.get("entitlements") == [
+        {"name": "aps-environment", "values": ["production"]}
+    ]
+    assert deserialized.data.get("associated_domains") == ["applinks:example.com"]
+    assert deserialized.data.get("url_schemes") == ["example"]
+    assert deserialized.data.get("privacy_manifests") == [
+        {"owner": "Example.app", "owner_type": "app", "tracking": True}
+    ]
+
+
+def testMessageSerializeDeserialize_Forv3FingerprintFileHarmonyosMetadata_generatesProperProto() -> (
+    None
+):
+    """Test serialization/deserialization of the HarmonyOS metadata (v3.fingerprint.file.harmonyos.metadata)."""
+    serialized = message.Message.from_data(
+        "v3.fingerprint.file.harmonyos.metadata",
+        {
+            "bundle_name": "com.example.app",
+            "permissions": [{"name": "ohos.permission.INTERNET"}],
+            "min_api_version": 12,
+            "target_api_version": 14,
+        },
+    )
+    deserialized = message.Message.from_raw(
+        "v3.fingerprint.file.harmonyos.metadata", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data.get("bundle_name") == "com.example.app"
+    assert deserialized.data.get("permissions") == [
+        {"name": "ohos.permission.INTERNET"}
+    ]
+    assert deserialized.data.get("min_api_version") == 12
+    assert deserialized.data.get("target_api_version") == 14
