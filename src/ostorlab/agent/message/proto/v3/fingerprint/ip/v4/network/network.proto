@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.ip.v4.network;
+
+// One public list the IP appears in: a cloud provider range, the Tor exit list, a botnet tracker or a VPN list.
+message Listing {
+  // Who publishes the list, for example AWS or Tor Project.
+  optional string source = 1;
+  // cloud, tor_exit_node, botnet_c2, vpn or datacenter.
+  optional string category = 2;
+  // For cloud the service and region, for botnet_c2 the malware family.
+  optional string detail = 3;
+  optional string last_seen_date = 4;
+}
+
+message Message {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 4];
+  // Empty when the IP is in no list.
+  repeated Listing listings = 4;
+}
