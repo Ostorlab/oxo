@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.ip.v4.reputation;
+
+// What one abuse database says about the IP, for example AbuseIPDB.
+message Report {
+  optional string source = 1;
+  // How sure the source is that the IP is abusive, from 0 to 100.
+  optional int32 score = 2;
+  optional int32 report_count = 3;
+  optional int32 reporter_count = 4;
+  optional string last_reported_date = 5;
+  // What the IP was reported for, for example ssh, brute_force or port_scan.
+  repeated string categories = 6;
+}
+
+message Message {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 4];
+  // One per source that answered, with a score of 0 when the IP was never reported.
+  repeated Report reports = 4;
+}
