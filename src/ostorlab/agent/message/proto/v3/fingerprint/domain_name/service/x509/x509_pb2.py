@@ -25,13 +25,13 @@ _sym_db = _symbol_database.Default()
 from ostorlab.agent.message.proto.common.x509 import x509_pb2 as ostorlab_dot_agent_dot_message_dot_proto_dot_common_dot_x509_dot_x509__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/fingerprint/domain_name/service/x509/x509.proto\x12\x44ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.x509\x1a\x33ostorlab/agent/message/proto/common/x509/x509.proto\"}\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x46\n\ncert_chain\x18\x04 \x03(\x0b\x32\x32.ostorlab.agent.message.proto.common.x509.X509Cert')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/fingerprint/domain_name/service/x509/x509.proto\x12\x44ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.x509\x1a\x33ostorlab/agent/message/proto/common/x509/x509.proto\"\xd6\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x46\n\ncert_chain\x18\x04 \x03(\x0b\x32\x32.ostorlab.agent.message.proto.common.x509.X509Cert\x12W\n\x10\x63hain_validation\x18\x05 \x01(\x0b\x32=.ostorlab.agent.message.proto.common.x509.X509ChainValidation')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.x509.x509_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_MESSAGE']._serialized_start=206
-  _globals['_MESSAGE']._serialized_end=331
+  _globals['_MESSAGE']._serialized_start=207
+  _globals['_MESSAGE']._serialized_end=421
 # @@protoc_insertion_point(module_scope)
