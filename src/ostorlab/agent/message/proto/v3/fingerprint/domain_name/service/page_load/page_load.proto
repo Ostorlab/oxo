@@ -1,0 +1,38 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.page_load;
+
+// A cookie the browser holds after the page loaded, without its value.
+message Cookie {
+  optional string name = 1;
+  // The domain the cookie belongs to, e.g. .ostorlab.co or .linkedin.com.
+  optional string domain = 2;
+  optional string path = 3;
+  // When the cookie expires, in seconds since the Unix epoch; absent for a session cookie.
+  optional int64 expires = 4;
+  optional bool secure = 5;
+  optional bool http_only = 6;
+  // Strict, Lax or None.
+  optional string same_site = 7;
+}
+
+// What a website's page did while the browser loaded it.
+message Message {
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
+  // The page loaded, after redirects.
+  optional string url = 4;
+  // The number of requests the page made while it loaded.
+  optional uint32 request_count = 5;
+  // The bytes downloaded to load the page, as sent over the network.
+  optional uint64 transferred_bytes = 6;
+  // When the page's content was ready, in milliseconds from the start of the navigation.
+  optional uint32 dom_content_loaded_ms = 7;
+  // When the page and all its resources finished loading, in milliseconds from the start of the navigation.
+  optional uint32 load_ms = 8;
+  // The hosts the page sent requests to, its own included.
+  repeated string contacted_hosts = 9;
+  // The cookies the browser holds after the page loaded, the ones other websites set included.
+  repeated Cookie cookies = 10;
+}
