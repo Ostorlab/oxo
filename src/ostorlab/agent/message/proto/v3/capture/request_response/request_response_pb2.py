@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/capture/request_response/request_response.proto\x12\x38ostorlab.agent.message.proto.v3.capture.request_response\"%\n\x06header\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\x87\x01\n\x07request\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\x0b\n\x03url\x18\x02 \x01(\t\x12Q\n\x07headers\x18\x03 \x03(\x0b\x32@.ostorlab.agent.message.proto.v3.capture.request_response.header\x12\x0c\n\x04\x62ody\x18\x04 \x01(\x0c\"\xd7\x01\n\x08response\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x13\n\x0bstatus_text\x18\x03 \x01(\t\x12Q\n\x07headers\x18\x04 \x03(\x0b\x32@.ostorlab.agent.message.proto.v3.capture.request_response.header\x12\x11\n\tremote_ip\x18\x05 \x01(\t\x12\x13\n\x0bremote_port\x18\x06 \x01(\x05\x12\x10\n\x08protocol\x18\x07 \x01(\t\x12\x0c\n\x04\x62ody\x18\x08 \x01(\x0c\"\xb3\x01\n\x07Message\x12R\n\x07request\x18\x01 \x01(\x0b\x32\x41.ostorlab.agent.message.proto.v3.capture.request_response.request\x12T\n\x08response\x18\x02 \x01(\x0b\x32\x42.ostorlab.agent.message.proto.v3.capture.request_response.response')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/capture/request_response/request_response.proto\x12\x38ostorlab.agent.message.proto.v3.capture.request_response\"%\n\x06header\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"\x87\x01\n\x07request\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\x0b\n\x03url\x18\x02 \x01(\t\x12Q\n\x07headers\x18\x03 \x03(\x0b\x32@.ostorlab.agent.message.proto.v3.capture.request_response.header\x12\x0c\n\x04\x62ody\x18\x04 \x01(\x0c\"\xd7\x01\n\x08response\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x12\x13\n\x0bstatus_text\x18\x03 \x01(\t\x12Q\n\x07headers\x18\x04 \x03(\x0b\x32@.ostorlab.agent.message.proto.v3.capture.request_response.header\x12\x11\n\tremote_ip\x18\x05 \x01(\t\x12\x13\n\x0bremote_port\x18\x06 \x01(\x05\x12\x10\n\x08protocol\x18\x07 \x01(\t\x12\x0c\n\x04\x62ody\x18\x08 \x01(\x0c\"\xc5\x01\n\x07Message\x12R\n\x07request\x18\x01 \x01(\x0b\x32\x41.ostorlab.agent.message.proto.v3.capture.request_response.request\x12T\n\x08response\x18\x02 \x01(\x0b\x32\x42.ostorlab.agent.message.proto.v3.capture.request_response.response\x12\x10\n\x08page_url\x18\x03 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,5 +38,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_RESPONSE']._serialized_start=319
   _globals['_RESPONSE']._serialized_end=534
   _globals['_MESSAGE']._serialized_start=537
-  _globals['_MESSAGE']._serialized_end=716
+  _globals['_MESSAGE']._serialized_end=734
 # @@protoc_insertion_point(module_scope)

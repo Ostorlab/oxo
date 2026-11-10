@@ -116,6 +116,9 @@ class Message(_message.Message):
 
     REQUEST_FIELD_NUMBER: _builtins.int
     RESPONSE_FIELD_NUMBER: _builtins.int
+    PAGE_URL_FIELD_NUMBER: _builtins.int
+    page_url: _builtins.str
+    """The page that made the request, when it was captured while loading one."""
     @_builtins.property
     def request(self) -> Global___request: ...
     @_builtins.property
@@ -125,10 +128,11 @@ class Message(_message.Message):
         *,
         request: Global___request | None = ...,
         response: Global___response | None = ...,
+        page_url: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["request", b"request", "response", b"response"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["page_url", b"page_url", "request", b"request", "response", b"response"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["request", b"request", "response", b"response"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["page_url", b"page_url", "request", b"request", "response", b"response"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

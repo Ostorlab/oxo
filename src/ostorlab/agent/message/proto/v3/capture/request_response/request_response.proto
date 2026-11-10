@@ -28,4 +28,6 @@ message response {
 message Message {
   optional request request = 1;
   optional response response = 2;
+  // The page that made the request, when it was captured while loading one.
+  optional string page_url = 3;
 }
