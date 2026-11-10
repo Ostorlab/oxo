@@ -41,23 +41,210 @@ class Permission(_message.Message):
 Global___Permission: _TypeAlias = Permission  # noqa: Y015
 
 @_typing.final
+class Entitlement(_message.Message):
+    """An entitlement of the main executable code signature, e.g. name "aps-environment" with values ["production"].
+    Booleans are "true" or "false", arrays have one value per item and dictionaries are JSON encoded.
+    """
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: _builtins.int
+    VALUES_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    @_builtins.property
+    def values(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    def __init__(
+        self,
+        *,
+        name: _builtins.str | None = ...,
+        values: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "values", b"values"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___Entitlement: _TypeAlias = Entitlement  # noqa: Y015
+
+@_typing.final
+class PrivacyCollectedDataType(_message.Message):
+    """An NSPrivacyCollectedDataTypes item of a privacy manifest."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TYPE_FIELD_NUMBER: _builtins.int
+    LINKED_FIELD_NUMBER: _builtins.int
+    TRACKING_FIELD_NUMBER: _builtins.int
+    PURPOSES_FIELD_NUMBER: _builtins.int
+    type: _builtins.str
+    """NSPrivacyCollectedDataType, e.g. "NSPrivacyCollectedDataTypeEmailAddress"."""
+    linked: _builtins.bool
+    tracking: _builtins.bool
+    @_builtins.property
+    def purposes(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """NSPrivacyCollectedDataTypePurposes, e.g. "NSPrivacyCollectedDataTypePurposeAnalytics"."""
+
+    def __init__(
+        self,
+        *,
+        type: _builtins.str | None = ...,
+        linked: _builtins.bool | None = ...,
+        tracking: _builtins.bool | None = ...,
+        purposes: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["linked", b"linked", "tracking", b"tracking", "type", b"type"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["linked", b"linked", "purposes", b"purposes", "tracking", b"tracking", "type", b"type"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___PrivacyCollectedDataType: _TypeAlias = PrivacyCollectedDataType  # noqa: Y015
+
+@_typing.final
+class PrivacyAccessedApiType(_message.Message):
+    """An NSPrivacyAccessedAPITypes item of a privacy manifest."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TYPE_FIELD_NUMBER: _builtins.int
+    REASONS_FIELD_NUMBER: _builtins.int
+    type: _builtins.str
+    """NSPrivacyAccessedAPIType, e.g. "NSPrivacyAccessedAPICategoryUserDefaults"."""
+    @_builtins.property
+    def reasons(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """NSPrivacyAccessedAPITypeReasons, e.g. "CA92.1"."""
+
+    def __init__(
+        self,
+        *,
+        type: _builtins.str | None = ...,
+        reasons: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["type", b"type"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["reasons", b"reasons", "type", b"type"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___PrivacyAccessedApiType: _TypeAlias = PrivacyAccessedApiType  # noqa: Y015
+
+@_typing.final
+class PrivacyManifest(_message.Message):
+    """A PrivacyInfo.xcprivacy file of the application or of one of its embedded frameworks and bundles."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    PATH_FIELD_NUMBER: _builtins.int
+    OWNER_FIELD_NUMBER: _builtins.int
+    OWNER_TYPE_FIELD_NUMBER: _builtins.int
+    TRACKING_FIELD_NUMBER: _builtins.int
+    TRACKING_DOMAINS_FIELD_NUMBER: _builtins.int
+    COLLECTED_DATA_TYPES_FIELD_NUMBER: _builtins.int
+    ACCESSED_API_TYPES_FIELD_NUMBER: _builtins.int
+    path: _builtins.str
+    """Path of the file inside the IPA."""
+    owner: _builtins.str
+    """Name of the bundle declaring the manifest, e.g. "AirshipKit.framework", or the application bundle name."""
+    owner_type: _builtins.str
+    """One of "app", "framework", "bundle" or "extension"."""
+    tracking: _builtins.bool
+    @_builtins.property
+    def tracking_domains(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    @_builtins.property
+    def collected_data_types(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyCollectedDataType]: ...
+    @_builtins.property
+    def accessed_api_types(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyAccessedApiType]: ...
+    def __init__(
+        self,
+        *,
+        path: _builtins.str | None = ...,
+        owner: _builtins.str | None = ...,
+        owner_type: _builtins.str | None = ...,
+        tracking: _builtins.bool | None = ...,
+        tracking_domains: _abc.Iterable[_builtins.str] | None = ...,
+        collected_data_types: _abc.Iterable[Global___PrivacyCollectedDataType] | None = ...,
+        accessed_api_types: _abc.Iterable[Global___PrivacyAccessedApiType] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["owner", b"owner", "owner_type", b"owner_type", "path", b"path", "tracking", b"tracking"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["accessed_api_types", b"accessed_api_types", "collected_data_types", b"collected_data_types", "owner", b"owner", "owner_type", b"owner_type", "path", b"path", "tracking", b"tracking", "tracking_domains", b"tracking_domains"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___PrivacyManifest: _TypeAlias = PrivacyManifest  # noqa: Y015
+
+@_typing.final
 class Message(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     BUNDLE_ID_FIELD_NUMBER: _builtins.int
     PERMISSIONS_FIELD_NUMBER: _builtins.int
+    MINIMUM_OS_VERSION_FIELD_NUMBER: _builtins.int
+    TEAM_ID_FIELD_NUMBER: _builtins.int
+    ENTITLEMENTS_FIELD_NUMBER: _builtins.int
+    ASSOCIATED_DOMAINS_FIELD_NUMBER: _builtins.int
+    URL_SCHEMES_FIELD_NUMBER: _builtins.int
+    PRIVACY_MANIFESTS_FIELD_NUMBER: _builtins.int
+    SIZE_FIELD_NUMBER: _builtins.int
+    MD5_FIELD_NUMBER: _builtins.int
+    SHA1_FIELD_NUMBER: _builtins.int
+    SHA256_FIELD_NUMBER: _builtins.int
+    VERSION_NAME_FIELD_NUMBER: _builtins.int
+    VERSION_CODE_FIELD_NUMBER: _builtins.int
+    LABEL_FIELD_NUMBER: _builtins.int
     bundle_id: _builtins.str
+    minimum_os_version: _builtins.str
+    """MinimumOSVersion of the Info.plist, e.g. "14.0"."""
+    team_id: _builtins.str
+    """Apple developer Team ID of the main executable code signature."""
+    size: _builtins.int
+    """Size in bytes of the IPA file as received."""
+    md5: _builtins.str
+    """Lowercase hex digests of the IPA file as received, e.g. "d41d8cd98f00b204e9800998ecf8427e"."""
+    sha1: _builtins.str
+    sha256: _builtins.str
+    version_name: _builtins.str
+    """CFBundleShortVersionString and CFBundleVersion of the Info.plist, e.g. "2.4.1" and "241"."""
+    version_code: _builtins.str
+    label: _builtins.str
+    """CFBundleDisplayName of the Info.plist, or CFBundleName when it is not set."""
     @_builtins.property
     def permissions(self) -> _containers.RepeatedCompositeFieldContainer[Global___Permission]: ...
+    @_builtins.property
+    def entitlements(self) -> _containers.RepeatedCompositeFieldContainer[Global___Entitlement]: ...
+    @_builtins.property
+    def associated_domains(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """com.apple.developer.associated-domains entitlement values, e.g. "applinks:example.com"."""
+
+    @_builtins.property
+    def url_schemes(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """Custom URL schemes of the Info.plist CFBundleURLTypes."""
+
+    @_builtins.property
+    def privacy_manifests(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyManifest]: ...
     def __init__(
         self,
         *,
         bundle_id: _builtins.str | None = ...,
         permissions: _abc.Iterable[Global___Permission] | None = ...,
+        minimum_os_version: _builtins.str | None = ...,
+        team_id: _builtins.str | None = ...,
+        entitlements: _abc.Iterable[Global___Entitlement] | None = ...,
+        associated_domains: _abc.Iterable[_builtins.str] | None = ...,
+        url_schemes: _abc.Iterable[_builtins.str] | None = ...,
+        privacy_manifests: _abc.Iterable[Global___PrivacyManifest] | None = ...,
+        size: _builtins.int | None = ...,
+        md5: _builtins.str | None = ...,
+        sha1: _builtins.str | None = ...,
+        sha256: _builtins.str | None = ...,
+        version_name: _builtins.str | None = ...,
+        version_code: _builtins.str | None = ...,
+        label: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "label", b"label", "md5", b"md5", "minimum_os_version", b"minimum_os_version", "sha1", b"sha1", "sha256", b"sha256", "size", b"size", "team_id", b"team_id", "version_code", b"version_code", "version_name", b"version_name"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "permissions", b"permissions"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["associated_domains", b"associated_domains", "bundle_id", b"bundle_id", "entitlements", b"entitlements", "label", b"label", "md5", b"md5", "minimum_os_version", b"minimum_os_version", "permissions", b"permissions", "privacy_manifests", b"privacy_manifests", "sha1", b"sha1", "sha256", b"sha256", "size", b"size", "team_id", b"team_id", "url_schemes", b"url_schemes", "version_code", b"version_code", "version_name", b"version_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

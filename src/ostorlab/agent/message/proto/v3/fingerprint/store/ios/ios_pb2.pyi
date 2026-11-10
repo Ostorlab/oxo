@@ -19,6 +19,99 @@ else:
 DESCRIPTOR: _descriptor.FileDescriptor
 
 @_typing.final
+class PrivacyLabelCategory(_message.Message):
+    """A data category of an App Store privacy label, e.g. identifier "LOCATION" with data types ["Precise Location"]."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    IDENTIFIER_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    DATA_TYPES_FIELD_NUMBER: _builtins.int
+    identifier: _builtins.str
+    name: _builtins.str
+    @_builtins.property
+    def data_types(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    def __init__(
+        self,
+        *,
+        identifier: _builtins.str | None = ...,
+        name: _builtins.str | None = ...,
+        data_types: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["identifier", b"identifier", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data_types", b"data_types", "identifier", b"identifier", "name", b"name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___PrivacyLabelCategory: _TypeAlias = PrivacyLabelCategory  # noqa: Y015
+
+@_typing.final
+class PrivacyLabelPurpose(_message.Message):
+    """A purpose of an App Store privacy label with the data used for it, e.g. identifier "ANALYTICS"."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    IDENTIFIER_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    CATEGORIES_FIELD_NUMBER: _builtins.int
+    identifier: _builtins.str
+    name: _builtins.str
+    @_builtins.property
+    def categories(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyLabelCategory]: ...
+    def __init__(
+        self,
+        *,
+        identifier: _builtins.str | None = ...,
+        name: _builtins.str | None = ...,
+        categories: _abc.Iterable[Global___PrivacyLabelCategory] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["identifier", b"identifier", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["categories", b"categories", "identifier", b"identifier", "name", b"name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___PrivacyLabelPurpose: _TypeAlias = PrivacyLabelPurpose  # noqa: Y015
+
+@_typing.final
+class PrivacyLabel(_message.Message):
+    """An App Store privacy label ("App Privacy" section of the store page)."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    IDENTIFIER_FIELD_NUMBER: _builtins.int
+    NAME_FIELD_NUMBER: _builtins.int
+    PURPOSES_FIELD_NUMBER: _builtins.int
+    CATEGORIES_FIELD_NUMBER: _builtins.int
+    identifier: _builtins.str
+    """One of DATA_USED_TO_TRACK_YOU, DATA_LINKED_TO_YOU, DATA_NOT_LINKED_TO_YOU, DATA_NOT_COLLECTED."""
+    name: _builtins.str
+    @_builtins.property
+    def purposes(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyLabelPurpose]:
+        """Set for DATA_LINKED_TO_YOU and DATA_NOT_LINKED_TO_YOU, where data types are declared per purpose."""
+
+    @_builtins.property
+    def categories(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyLabelCategory]:
+        """Set for DATA_USED_TO_TRACK_YOU, where data types are declared without a purpose."""
+
+    def __init__(
+        self,
+        *,
+        identifier: _builtins.str | None = ...,
+        name: _builtins.str | None = ...,
+        purposes: _abc.Iterable[Global___PrivacyLabelPurpose] | None = ...,
+        categories: _abc.Iterable[Global___PrivacyLabelCategory] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["identifier", b"identifier", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["categories", b"categories", "identifier", b"identifier", "name", b"name", "purposes", b"purposes"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___PrivacyLabel: _TypeAlias = PrivacyLabel  # noqa: Y015
+
+@_typing.final
 class Message(_message.Message):
     """App Store listing of an iOS application."""
 
@@ -39,6 +132,8 @@ class Message(_message.Message):
     DESCRIPTION_FIELD_NUMBER: _builtins.int
     SCREENSHOT_URLS_FIELD_NUMBER: _builtins.int
     STORE_URL_FIELD_NUMBER: _builtins.int
+    PRIVACY_POLICY_URL_FIELD_NUMBER: _builtins.int
+    PRIVACY_LABELS_FIELD_NUMBER: _builtins.int
     bundle_id: _builtins.str
     name: _builtins.str
     icon_url: _builtins.str
@@ -55,8 +150,12 @@ class Message(_message.Message):
     content_rating: _builtins.str
     description: _builtins.str
     store_url: _builtins.str
+    privacy_policy_url: _builtins.str
+    """Privacy policy URL listed on the App Store page."""
     @_builtins.property
     def screenshot_urls(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    @_builtins.property
+    def privacy_labels(self) -> _containers.RepeatedCompositeFieldContainer[Global___PrivacyLabel]: ...
     def __init__(
         self,
         *,
@@ -75,10 +174,12 @@ class Message(_message.Message):
         description: _builtins.str | None = ...,
         screenshot_urls: _abc.Iterable[_builtins.str] | None = ...,
         store_url: _builtins.str | None = ...,
+        privacy_policy_url: _builtins.str | None = ...,
+        privacy_labels: _abc.Iterable[Global___PrivacyLabel] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "screenshot_urls", b"screenshot_urls", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "privacy_labels", b"privacy_labels", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "screenshot_urls", b"screenshot_urls", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
