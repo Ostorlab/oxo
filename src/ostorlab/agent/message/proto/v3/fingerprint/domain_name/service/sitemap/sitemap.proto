@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.sitemap;
+
+// The sitemaps a website publishes, summarised.
+message Message {
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
+  // The sitemap files read, sitemap indexes included.
+  repeated string sitemaps = 4;
+  // The number of pages the sitemaps list.
+  optional int32 page_count = 5;
+  // Whether reading stopped at a limit, so the website lists more pages than page_count.
+  optional bool truncated = 6;
+  // The most recent lastmod of the listed pages, as the sitemap writes it.
+  optional string last_modified = 7;
+  // The languages of the listed pages, from their hreflang alternates.
+  repeated string languages = 8;
+}
