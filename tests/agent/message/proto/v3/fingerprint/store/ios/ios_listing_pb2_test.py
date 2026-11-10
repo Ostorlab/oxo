@@ -67,3 +67,52 @@ def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
 
     assert serialized == b""
     assert deserialized == ios_pb2.Message()
+
+
+def testMessage_whenCreateWithPrivacyData_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
+    location = ios_pb2.PrivacyLabelCategory(
+        identifier="LOCATION", name="Location", data_types=["Precise Location"]
+    )
+    message = ios_pb2.Message(
+        bundle_id="com.example.app",
+        privacy_policy_url="https://example.com/privacy",
+        privacy_labels=[
+            ios_pb2.PrivacyLabel(
+                identifier="DATA_USED_TO_TRACK_YOU",
+                name="Data Used to Track You",
+                categories=[location],
+            ),
+            ios_pb2.PrivacyLabel(
+                identifier="DATA_LINKED_TO_YOU",
+                name="Data Linked to You",
+                purposes=[
+                    ios_pb2.PrivacyLabelPurpose(
+                        identifier="ANALYTICS", name="Analytics", categories=[location]
+                    )
+                ],
+            ),
+        ],
+    )
+
+    deserialized = ios_pb2.Message()
+    deserialized.ParseFromString(message.SerializeToString())
+
+    assert deserialized == message
+    assert deserialized.privacy_policy_url == "https://example.com/privacy"
+    assert deserialized.privacy_labels[0].categories[0].identifier == "LOCATION"
+    assert list(
+        deserialized.privacy_labels[1].purposes[0].categories[0].data_types
+    ) == ["Precise Location"]
+    assert list(deserialized.privacy_labels[1].categories) == []
+
+
+def testMessage_whenCreateWithoutPrivacyData_shouldLeavePrivacyFieldsUnset() -> None:
+    message = ios_pb2.Message(bundle_id="com.example.app", name="App")
+
+    deserialized = ios_pb2.Message()
+    deserialized.ParseFromString(message.SerializeToString())
+
+    assert deserialized.HasField("privacy_policy_url") is False
+    assert list(deserialized.privacy_labels) == []

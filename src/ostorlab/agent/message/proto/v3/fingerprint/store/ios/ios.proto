@@ -2,6 +2,31 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.fingerprint.store.ios;
 
+// A data category of an App Store privacy label, e.g. identifier "LOCATION" with data types ["Precise Location"].
+message PrivacyLabelCategory {
+  optional string identifier = 1;
+  optional string name = 2;
+  repeated string data_types = 3;
+}
+
+// A purpose of an App Store privacy label with the data used for it, e.g. identifier "ANALYTICS".
+message PrivacyLabelPurpose {
+  optional string identifier = 1;
+  optional string name = 2;
+  repeated PrivacyLabelCategory categories = 3;
+}
+
+// An App Store privacy label ("App Privacy" section of the store page).
+message PrivacyLabel {
+  // One of DATA_USED_TO_TRACK_YOU, DATA_LINKED_TO_YOU, DATA_NOT_LINKED_TO_YOU, DATA_NOT_COLLECTED.
+  optional string identifier = 1;
+  optional string name = 2;
+  // Set for DATA_LINKED_TO_YOU and DATA_NOT_LINKED_TO_YOU, where data types are declared per purpose.
+  repeated PrivacyLabelPurpose purposes = 3;
+  // Set for DATA_USED_TO_TRACK_YOU, where data types are declared without a purpose.
+  repeated PrivacyLabelCategory categories = 4;
+}
+
 // App Store listing of an iOS application.
 message Message {
   optional string bundle_id = 1;
@@ -21,4 +46,7 @@ message Message {
   optional string description = 13;
   repeated string screenshot_urls = 14;
   optional string store_url = 15;
+  // Privacy policy URL listed on the App Store page.
+  optional string privacy_policy_url = 16;
+  repeated PrivacyLabel privacy_labels = 17;
 }
