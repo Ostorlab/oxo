@@ -9,7 +9,67 @@ message Permission {
     optional string usage_description = 2;
 }
 
+// An entitlement of the main executable code signature, e.g. name "aps-environment" with values ["production"].
+// Booleans are "true" or "false", arrays have one value per item and dictionaries are JSON encoded.
+message Entitlement {
+    optional string name = 1;
+    repeated string values = 2;
+}
+
+// An NSPrivacyCollectedDataTypes item of a privacy manifest.
+message PrivacyCollectedDataType {
+    // NSPrivacyCollectedDataType, e.g. "NSPrivacyCollectedDataTypeEmailAddress".
+    optional string type = 1;
+    optional bool linked = 2;
+    optional bool tracking = 3;
+    // NSPrivacyCollectedDataTypePurposes, e.g. "NSPrivacyCollectedDataTypePurposeAnalytics".
+    repeated string purposes = 4;
+}
+
+// An NSPrivacyAccessedAPITypes item of a privacy manifest.
+message PrivacyAccessedApiType {
+    // NSPrivacyAccessedAPIType, e.g. "NSPrivacyAccessedAPICategoryUserDefaults".
+    optional string type = 1;
+    // NSPrivacyAccessedAPITypeReasons, e.g. "CA92.1".
+    repeated string reasons = 2;
+}
+
+// A PrivacyInfo.xcprivacy file of the application or of one of its embedded frameworks and bundles.
+message PrivacyManifest {
+    // Path of the file inside the IPA.
+    optional string path = 1;
+    // Name of the bundle declaring the manifest, e.g. "AirshipKit.framework", or the application bundle name.
+    optional string owner = 2;
+    // One of "app", "framework", "bundle" or "extension".
+    optional string owner_type = 3;
+    optional bool tracking = 4;
+    repeated string tracking_domains = 5;
+    repeated PrivacyCollectedDataType collected_data_types = 6;
+    repeated PrivacyAccessedApiType accessed_api_types = 7;
+}
+
 message Message {
     optional string bundle_id = 1;
     repeated Permission permissions = 2;
+    // MinimumOSVersion of the Info.plist, e.g. "14.0".
+    optional string minimum_os_version = 3;
+    // Apple developer Team ID of the main executable code signature.
+    optional string team_id = 4;
+    repeated Entitlement entitlements = 5;
+    // com.apple.developer.associated-domains entitlement values, e.g. "applinks:example.com".
+    repeated string associated_domains = 6;
+    // Custom URL schemes of the Info.plist CFBundleURLTypes.
+    repeated string url_schemes = 7;
+    repeated PrivacyManifest privacy_manifests = 8;
+    // Size in bytes of the IPA file as received.
+    optional int64 size = 9;
+    // Lowercase hex digests of the IPA file as received, e.g. "d41d8cd98f00b204e9800998ecf8427e".
+    optional string md5 = 10;
+    optional string sha1 = 11;
+    optional string sha256 = 12;
+    // CFBundleShortVersionString and CFBundleVersion of the Info.plist, e.g. "2.4.1" and "241".
+    optional string version_name = 13;
+    optional string version_code = 14;
+    // CFBundleDisplayName of the Info.plist, or CFBundleName when it is not set.
+    optional string label = 15;
 }
