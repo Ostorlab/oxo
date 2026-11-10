@@ -83,4 +83,16 @@ message Message {
     // APK signature schemes the application is signed with: "v1", "v2" or "v3".
     repeated string signature_schemes = 10;
     repeated SigningCertificate signing_certificates = 11;
+    // Size in bytes of the file as received (APK, AAB or XAPK).
+    optional int64 size = 12;
+    // Lowercase hex digests of the file as received (APK, AAB or XAPK), e.g. "d41d8cd98f00b204e9800998ecf8427e".
+    // Not to be confused with the colon separated signing certificate fingerprints.
+    optional string md5 = 13;
+    optional string sha1 = 14;
+    optional string sha256 = 15;
+    // android:versionName and android:versionCode of the manifest, e.g. "10.2.0" and 100200008.
+    optional string version_name = 16;
+    optional int64 version_code = 17;
+    // Application label of the manifest, with string resources resolved, e.g. "Sworkit".
+    optional string label = 18;
 }

@@ -186,11 +186,29 @@ class Message(_message.Message):
     ASSOCIATED_DOMAINS_FIELD_NUMBER: _builtins.int
     URL_SCHEMES_FIELD_NUMBER: _builtins.int
     PRIVACY_MANIFESTS_FIELD_NUMBER: _builtins.int
+    SIZE_FIELD_NUMBER: _builtins.int
+    MD5_FIELD_NUMBER: _builtins.int
+    SHA1_FIELD_NUMBER: _builtins.int
+    SHA256_FIELD_NUMBER: _builtins.int
+    VERSION_NAME_FIELD_NUMBER: _builtins.int
+    VERSION_CODE_FIELD_NUMBER: _builtins.int
+    LABEL_FIELD_NUMBER: _builtins.int
     bundle_id: _builtins.str
     minimum_os_version: _builtins.str
     """MinimumOSVersion of the Info.plist, e.g. "14.0"."""
     team_id: _builtins.str
     """Apple developer Team ID of the main executable code signature."""
+    size: _builtins.int
+    """Size in bytes of the IPA file as received."""
+    md5: _builtins.str
+    """Lowercase hex digests of the IPA file as received, e.g. "d41d8cd98f00b204e9800998ecf8427e"."""
+    sha1: _builtins.str
+    sha256: _builtins.str
+    version_name: _builtins.str
+    """CFBundleShortVersionString and CFBundleVersion of the Info.plist, e.g. "2.4.1" and "241"."""
+    version_code: _builtins.str
+    label: _builtins.str
+    """CFBundleDisplayName of the Info.plist, or CFBundleName when it is not set."""
     @_builtins.property
     def permissions(self) -> _containers.RepeatedCompositeFieldContainer[Global___Permission]: ...
     @_builtins.property
@@ -216,10 +234,17 @@ class Message(_message.Message):
         associated_domains: _abc.Iterable[_builtins.str] | None = ...,
         url_schemes: _abc.Iterable[_builtins.str] | None = ...,
         privacy_manifests: _abc.Iterable[Global___PrivacyManifest] | None = ...,
+        size: _builtins.int | None = ...,
+        md5: _builtins.str | None = ...,
+        sha1: _builtins.str | None = ...,
+        sha256: _builtins.str | None = ...,
+        version_name: _builtins.str | None = ...,
+        version_code: _builtins.str | None = ...,
+        label: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "minimum_os_version", b"minimum_os_version", "team_id", b"team_id"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "label", b"label", "md5", b"md5", "minimum_os_version", b"minimum_os_version", "sha1", b"sha1", "sha256", b"sha256", "size", b"size", "team_id", b"team_id", "version_code", b"version_code", "version_name", b"version_name"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["associated_domains", b"associated_domains", "bundle_id", b"bundle_id", "entitlements", b"entitlements", "minimum_os_version", b"minimum_os_version", "permissions", b"permissions", "privacy_manifests", b"privacy_manifests", "team_id", b"team_id", "url_schemes", b"url_schemes"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["associated_domains", b"associated_domains", "bundle_id", b"bundle_id", "entitlements", b"entitlements", "label", b"label", "md5", b"md5", "minimum_os_version", b"minimum_os_version", "permissions", b"permissions", "privacy_manifests", b"privacy_manifests", "sha1", b"sha1", "sha256", b"sha256", "size", b"size", "team_id", b"team_id", "url_schemes", b"url_schemes", "version_code", b"version_code", "version_name", b"version_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

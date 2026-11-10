@@ -198,6 +198,11 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileAndroidMetadata_generate
             "signing_certificates": [
                 {"subject": "Common Name: Example", "sha256_fingerprint": "AB:CD"}
             ],
+            "size": 1024,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "version_name": "1.0.0",
+            "version_code": 100,
+            "label": "Example",
         },
     )
     deserialized = message.Message.from_raw(
@@ -211,6 +216,14 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileAndroidMetadata_generate
     assert deserialized.data.get("signing_certificates") == [
         {"subject": "Common Name: Example", "sha256_fingerprint": "AB:CD"}
     ]
+    assert deserialized.data.get("size") == 1024
+    assert (
+        deserialized.data.get("sha256")
+        == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    )
+    assert deserialized.data.get("version_name") == "1.0.0"
+    assert deserialized.data.get("version_code") == 100
+    assert deserialized.data.get("label") == "Example"
 
 
 def testMessageSerializeDeserialize_Forv3FingerprintFileIosMetadata_generatesProperProto() -> (
@@ -229,6 +242,11 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileIosMetadata_generatesPro
             "privacy_manifests": [
                 {"owner": "Example.app", "owner_type": "app", "tracking": True}
             ],
+            "size": 2048,
+            "md5": "d41d8cd98f00b204e9800998ecf8427e",
+            "version_name": "2.4.1",
+            "version_code": "241",
+            "label": "Example",
         },
     )
     deserialized = message.Message.from_raw(
@@ -246,6 +264,11 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileIosMetadata_generatesPro
     assert deserialized.data.get("privacy_manifests") == [
         {"owner": "Example.app", "owner_type": "app", "tracking": True}
     ]
+    assert deserialized.data.get("size") == 2048
+    assert deserialized.data.get("md5") == "d41d8cd98f00b204e9800998ecf8427e"
+    assert deserialized.data.get("version_name") == "2.4.1"
+    assert deserialized.data.get("version_code") == "241"
+    assert deserialized.data.get("label") == "Example"
 
 
 def testMessageSerializeDeserialize_Forv3FingerprintFileHarmonyosMetadata_generatesProperProto() -> (

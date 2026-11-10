@@ -26,6 +26,13 @@ def testMessageFromData_whenBuildFieldsProvided_roundTrips() -> None:
                 "not_valid_after": "2050-01-01T00:00:00+00:00",
             }
         ],
+        "size": 9437184,
+        "md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "version_name": "10.2.0",
+        "version_code": 100200008,
+        "label": "Sworkit",
     }
 
     serialized = agent_message.Message.from_data(
@@ -49,3 +56,13 @@ def testMessage_whenBuildFieldsNotSet_hasNoBuildFields() -> None:
     assert deserialized.HasField("target_sdk_version") is False
     assert len(deserialized.signature_schemes) == 0
     assert len(deserialized.signing_certificates) == 0
+    for field in (
+        "size",
+        "md5",
+        "sha1",
+        "sha256",
+        "version_name",
+        "version_code",
+        "label",
+    ):
+        assert deserialized.HasField(field) is False

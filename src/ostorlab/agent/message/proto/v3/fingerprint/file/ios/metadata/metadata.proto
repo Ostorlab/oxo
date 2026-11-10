@@ -61,4 +61,15 @@ message Message {
     // Custom URL schemes of the Info.plist CFBundleURLTypes.
     repeated string url_schemes = 7;
     repeated PrivacyManifest privacy_manifests = 8;
+    // Size in bytes of the IPA file as received.
+    optional int64 size = 9;
+    // Lowercase hex digests of the IPA file as received, e.g. "d41d8cd98f00b204e9800998ecf8427e".
+    optional string md5 = 10;
+    optional string sha1 = 11;
+    optional string sha256 = 12;
+    // CFBundleShortVersionString and CFBundleVersion of the Info.plist, e.g. "2.4.1" and "241".
+    optional string version_name = 13;
+    optional string version_code = 14;
+    // CFBundleDisplayName of the Info.plist, or CFBundleName when it is not set.
+    optional string label = 15;
 }
