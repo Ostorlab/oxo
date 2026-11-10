@@ -2,6 +2,22 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.fingerprint.store.android;
 
+// A data type of the Google Play data safety section, e.g. category "Location", data type "Approximate location".
+message DataSafetyItem {
+  optional string category = 1;
+  optional string data_type = 2;
+  optional bool is_optional = 3;
+  repeated string purposes = 4;
+}
+
+// The Google Play data safety section of the application.
+message DataSafety {
+  optional string url = 1;
+  repeated DataSafetyItem data_shared = 2;
+  repeated DataSafetyItem data_collected = 3;
+  repeated string security_practices = 4;
+}
+
 // Google Play store listing of an Android application.
 message Message {
   optional string package_name = 1;
@@ -25,4 +41,5 @@ message Message {
   repeated string screenshot_urls = 16;
   optional string privacy_policy_url = 17;
   optional string store_url = 18;
+  optional DataSafety data_safety = 19;
 }

@@ -19,6 +19,70 @@ else:
 DESCRIPTOR: _descriptor.FileDescriptor
 
 @_typing.final
+class DataSafetyItem(_message.Message):
+    """A data type of the Google Play data safety section, e.g. category "Location", data type "Approximate location"."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    CATEGORY_FIELD_NUMBER: _builtins.int
+    DATA_TYPE_FIELD_NUMBER: _builtins.int
+    IS_OPTIONAL_FIELD_NUMBER: _builtins.int
+    PURPOSES_FIELD_NUMBER: _builtins.int
+    category: _builtins.str
+    data_type: _builtins.str
+    is_optional: _builtins.bool
+    @_builtins.property
+    def purposes(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    def __init__(
+        self,
+        *,
+        category: _builtins.str | None = ...,
+        data_type: _builtins.str | None = ...,
+        is_optional: _builtins.bool | None = ...,
+        purposes: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "data_type", b"data_type", "is_optional", b"is_optional"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "data_type", b"data_type", "is_optional", b"is_optional", "purposes", b"purposes"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___DataSafetyItem: _TypeAlias = DataSafetyItem  # noqa: Y015
+
+@_typing.final
+class DataSafety(_message.Message):
+    """The Google Play data safety section of the application."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    URL_FIELD_NUMBER: _builtins.int
+    DATA_SHARED_FIELD_NUMBER: _builtins.int
+    DATA_COLLECTED_FIELD_NUMBER: _builtins.int
+    SECURITY_PRACTICES_FIELD_NUMBER: _builtins.int
+    url: _builtins.str
+    @_builtins.property
+    def data_shared(self) -> _containers.RepeatedCompositeFieldContainer[Global___DataSafetyItem]: ...
+    @_builtins.property
+    def data_collected(self) -> _containers.RepeatedCompositeFieldContainer[Global___DataSafetyItem]: ...
+    @_builtins.property
+    def security_practices(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    def __init__(
+        self,
+        *,
+        url: _builtins.str | None = ...,
+        data_shared: _abc.Iterable[Global___DataSafetyItem] | None = ...,
+        data_collected: _abc.Iterable[Global___DataSafetyItem] | None = ...,
+        security_practices: _abc.Iterable[_builtins.str] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["url", b"url"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["data_collected", b"data_collected", "data_shared", b"data_shared", "security_practices", b"security_practices", "url", b"url"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___DataSafety: _TypeAlias = DataSafety  # noqa: Y015
+
+@_typing.final
 class Message(_message.Message):
     """Google Play store listing of an Android application."""
 
@@ -42,6 +106,7 @@ class Message(_message.Message):
     SCREENSHOT_URLS_FIELD_NUMBER: _builtins.int
     PRIVACY_POLICY_URL_FIELD_NUMBER: _builtins.int
     STORE_URL_FIELD_NUMBER: _builtins.int
+    DATA_SAFETY_FIELD_NUMBER: _builtins.int
     package_name: _builtins.str
     name: _builtins.str
     icon_url: _builtins.str
@@ -64,6 +129,8 @@ class Message(_message.Message):
     store_url: _builtins.str
     @_builtins.property
     def screenshot_urls(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    @_builtins.property
+    def data_safety(self) -> Global___DataSafety: ...
     def __init__(
         self,
         *,
@@ -85,10 +152,11 @@ class Message(_message.Message):
         screenshot_urls: _abc.Iterable[_builtins.str] | None = ...,
         privacy_policy_url: _builtins.str | None = ...,
         store_url: _builtins.str | None = ...,
+        data_safety: Global___DataSafety | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "has_in_app_purchases", b"has_in_app_purchases", "icon_url", b"icon_url", "installs", b"installs", "last_update_date", b"last_update_date", "name", b"name", "package_name", b"package_name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "content_rating", b"content_rating", "currency", b"currency", "data_safety", b"data_safety", "description", b"description", "has_in_app_purchases", b"has_in_app_purchases", "icon_url", b"icon_url", "installs", b"installs", "last_update_date", b"last_update_date", "name", b"name", "package_name", b"package_name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "has_in_app_purchases", b"has_in_app_purchases", "icon_url", b"icon_url", "installs", b"installs", "last_update_date", b"last_update_date", "name", b"name", "package_name", b"package_name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "screenshot_urls", b"screenshot_urls", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["category", b"category", "content_rating", b"content_rating", "currency", b"currency", "data_safety", b"data_safety", "description", b"description", "has_in_app_purchases", b"has_in_app_purchases", "icon_url", b"icon_url", "installs", b"installs", "last_update_date", b"last_update_date", "name", b"name", "package_name", b"package_name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "screenshot_urls", b"screenshot_urls", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

@@ -78,3 +78,59 @@ def testMessage_whenSerializeEmpty_shouldDeserializeToEmpty() -> None:
 
     assert serialized == b""
     assert deserialized == android_pb2.Message()
+
+
+def testMessage_whenCreateWithDataSafety_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
+    message = android_pb2.Message(
+        package_name="com.example.app",
+        data_safety=android_pb2.DataSafety(
+            url="https://play.google.com/store/apps/datasafety?id=com.example.app&hl=en",
+            data_shared=[
+                android_pb2.DataSafetyItem(
+                    category="Device or other IDs",
+                    data_type="Device or other IDs",
+                    is_optional=False,
+                    purposes=["Advertising or marketing"],
+                )
+            ],
+            data_collected=[
+                android_pb2.DataSafetyItem(
+                    category="Location",
+                    data_type="Approximate location",
+                    is_optional=True,
+                    purposes=[
+                        "App functionality",
+                        "Fraud prevention, security, and compliance",
+                    ],
+                )
+            ],
+            security_practices=["Data is encrypted in transit"],
+        ),
+    )
+
+    deserialized = android_pb2.Message()
+    deserialized.ParseFromString(message.SerializeToString())
+
+    assert deserialized == message
+    assert deserialized.HasField("data_safety") is True
+    assert deserialized.data_safety.data_shared[0].data_type == "Device or other IDs"
+    assert deserialized.data_safety.data_collected[0].is_optional is True
+    assert list(deserialized.data_safety.data_collected[0].purposes) == [
+        "App functionality",
+        "Fraud prevention, security, and compliance",
+    ]
+    assert list(deserialized.data_safety.security_practices) == [
+        "Data is encrypted in transit"
+    ]
+
+
+def testMessage_whenCreateWithoutDataSafety_shouldLeaveDataSafetyUnset() -> None:
+    message = android_pb2.Message(package_name="com.example.app", name="App")
+
+    deserialized = android_pb2.Message()
+    deserialized.ParseFromString(message.SerializeToString())
+
+    assert deserialized.HasField("data_safety") is False
+    assert list(deserialized.data_safety.data_shared) == []
