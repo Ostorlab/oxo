@@ -21,4 +21,15 @@ message Message {
     // HarmonyOS version, like 50000012 for 5.0.0(12), are reduced to their API level.
     optional int32 min_api_version = 4;
     optional int32 target_api_version = 5;
+    // Size in bytes of the file as received (.hap or .app).
+    optional int64 size = 6;
+    // Lowercase hex digests of the file as received (.hap or .app), e.g. "d41d8cd98f00b204e9800998ecf8427e".
+    optional string md5 = 7;
+    optional string sha1 = 8;
+    optional string sha256 = 9;
+    // versionName and versionCode of the app.json app element, e.g. "1.0.0" and 1000000.
+    optional string version_name = 10;
+    optional int64 version_code = 11;
+    // Application label of the app.json app element, with string resources resolved, e.g. "MyApplication".
+    optional string label = 12;
 }

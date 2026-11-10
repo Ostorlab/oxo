@@ -282,6 +282,13 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileHarmonyosMetadata_genera
             "permissions": [{"name": "ohos.permission.INTERNET"}],
             "min_api_version": 12,
             "target_api_version": 14,
+            "size": 4096,
+            "md5": "d41d8cd98f00b204e9800998ecf8427e",
+            "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "version_name": "1.0.0",
+            "version_code": 1000000,
+            "label": "MyApplication",
         },
     )
     deserialized = message.Message.from_raw(
@@ -295,6 +302,16 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileHarmonyosMetadata_genera
     ]
     assert deserialized.data.get("min_api_version") == 12
     assert deserialized.data.get("target_api_version") == 14
+    assert deserialized.data.get("size") == 4096
+    assert deserialized.data.get("md5") == "d41d8cd98f00b204e9800998ecf8427e"
+    assert deserialized.data.get("sha1") == "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    assert (
+        deserialized.data.get("sha256")
+        == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    )
+    assert deserialized.data.get("version_name") == "1.0.0"
+    assert deserialized.data.get("version_code") == 1000000
+    assert deserialized.data.get("label") == "MyApplication"
 
 
 def testMessageSerializeDeserialize_Forv3FingerprintStoreAndroidWithPrivacyData_generatesProperProto() -> (
