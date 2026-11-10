@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nUostorlab/agent/message/proto/v3/fingerprint/domain_name/service/sitemap/sitemap.proto\x12Gostorlab.agent.message.proto.v3.fingerprint.domain_name.service.sitemap\"\x98\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x10\n\x08sitemaps\x18\x04 \x03(\t\x12\x12\n\npage_count\x18\x05 \x01(\x05\x12\x11\n\ttruncated\x18\x06 \x01(\x08\x12\x15\n\rlast_modified\x18\x07 \x01(\t\x12\x11\n\tlanguages\x18\x08 \x03(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nUostorlab/agent/message/proto/v3/fingerprint/domain_name/service/sitemap/sitemap.proto\x12Gostorlab.agent.message.proto.v3.fingerprint.domain_name.service.sitemap\"\x98\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x10\n\x08sitemaps\x18\x04 \x03(\t\x12\x12\n\npage_count\x18\x05 \x01(\r\x12\x11\n\ttruncated\x18\x06 \x01(\x08\x12\x15\n\rlast_modified\x18\x07 \x01(\t\x12\x11\n\tlanguages\x18\x08 \x03(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
