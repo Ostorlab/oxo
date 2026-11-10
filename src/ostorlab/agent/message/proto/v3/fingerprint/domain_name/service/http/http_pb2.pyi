@@ -62,7 +62,7 @@ Global___Cookie: _TypeAlias = Cookie  # noqa: Y015
 
 @_typing.final
 class Message(_message.Message):
-    """What a website's page did while the browser loaded it."""
+    """The HTTP traffic of a website's page while the browser loaded it."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -72,8 +72,6 @@ class Message(_message.Message):
     URL_FIELD_NUMBER: _builtins.int
     REQUEST_COUNT_FIELD_NUMBER: _builtins.int
     TRANSFERRED_BYTES_FIELD_NUMBER: _builtins.int
-    DOM_CONTENT_LOADED_MS_FIELD_NUMBER: _builtins.int
-    LOAD_MS_FIELD_NUMBER: _builtins.int
     CONTACTED_HOSTS_FIELD_NUMBER: _builtins.int
     COOKIES_FIELD_NUMBER: _builtins.int
     name: _builtins.str
@@ -85,10 +83,6 @@ class Message(_message.Message):
     """The number of requests the page made while it loaded."""
     transferred_bytes: _builtins.int
     """The bytes downloaded to load the page, as sent over the network."""
-    dom_content_loaded_ms: _builtins.int
-    """When the page's content was ready, in milliseconds from the start of the navigation."""
-    load_ms: _builtins.int
-    """When the page and all its resources finished loading, in milliseconds from the start of the navigation."""
     @_builtins.property
     def contacted_hosts(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """The hosts the page sent requests to, its own included."""
@@ -106,14 +100,12 @@ class Message(_message.Message):
         url: _builtins.str | None = ...,
         request_count: _builtins.int | None = ...,
         transferred_bytes: _builtins.int | None = ...,
-        dom_content_loaded_ms: _builtins.int | None = ...,
-        load_ms: _builtins.int | None = ...,
         contacted_hosts: _abc.Iterable[_builtins.str] | None = ...,
         cookies: _abc.Iterable[Global___Cookie] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["dom_content_loaded_ms", b"dom_content_loaded_ms", "load_ms", b"load_ms", "name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["contacted_hosts", b"contacted_hosts", "cookies", b"cookies", "dom_content_loaded_ms", b"dom_content_loaded_ms", "load_ms", b"load_ms", "name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["contacted_hosts", b"contacted_hosts", "cookies", b"cookies", "name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

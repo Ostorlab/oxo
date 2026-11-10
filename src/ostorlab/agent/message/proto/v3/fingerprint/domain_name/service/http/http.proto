@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.page_load;
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http;
 
 // A cookie the browser holds after the page loaded, without its value.
 message Cookie {
@@ -16,7 +16,7 @@ message Cookie {
   optional string same_site = 7;
 }
 
-// What a website's page did while the browser loaded it.
+// The HTTP traffic of a website's page while the browser loaded it.
 message Message {
   optional string name = 1;
   optional uint32 port = 2;
@@ -27,12 +27,8 @@ message Message {
   optional uint32 request_count = 5;
   // The bytes downloaded to load the page, as sent over the network.
   optional uint64 transferred_bytes = 6;
-  // When the page's content was ready, in milliseconds from the start of the navigation.
-  optional uint32 dom_content_loaded_ms = 7;
-  // When the page and all its resources finished loading, in milliseconds from the start of the navigation.
-  optional uint32 load_ms = 8;
   // The hosts the page sent requests to, its own included.
-  repeated string contacted_hosts = 9;
+  repeated string contacted_hosts = 7;
   // The cookies the browser holds after the page loaded, the ones other websites set included.
-  repeated Cookie cookies = 10;
+  repeated Cookie cookies = 8;
 }
