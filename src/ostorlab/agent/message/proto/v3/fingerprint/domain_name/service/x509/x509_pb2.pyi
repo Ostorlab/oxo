@@ -27,11 +27,14 @@ class Message(_message.Message):
     PORT_FIELD_NUMBER: _builtins.int
     SCHEMA_FIELD_NUMBER: _builtins.int
     CERT_CHAIN_FIELD_NUMBER: _builtins.int
+    CHAIN_VALIDATION_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     port: _builtins.int
     schema: _builtins.str
     @_builtins.property
     def cert_chain(self) -> _containers.RepeatedCompositeFieldContainer[_x509_pb2.X509Cert]: ...
+    @_builtins.property
+    def chain_validation(self) -> _x509_pb2.X509ChainValidation: ...
     def __init__(
         self,
         *,
@@ -39,10 +42,11 @@ class Message(_message.Message):
         port: _builtins.int | None = ...,
         schema: _builtins.str | None = ...,
         cert_chain: _abc.Iterable[_x509_pb2.X509Cert] | None = ...,
+        chain_validation: _x509_pb2.X509ChainValidation | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "port", b"port", "schema", b"schema"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["chain_validation", b"chain_validation", "name", b"name", "port", b"port", "schema", b"schema"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cert_chain", b"cert_chain", "name", b"name", "port", b"port", "schema", b"schema"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["cert_chain", b"cert_chain", "chain_validation", b"chain_validation", "name", b"name", "port", b"port", "schema", b"schema"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

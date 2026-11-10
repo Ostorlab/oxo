@@ -7,6 +7,9 @@ import pytest
 
 from ostorlab.agent.message import serializer
 from ostorlab.agent.message.proto.v3.asset.multi_asset import multi_asset_pb2
+from ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.x509 import (
+    x509_pb2,
+)
 from ostorlab.agent.message.proto.v3.fingerprint.file import file_pb2
 from ostorlab.agent.message.proto.v3.use.device import device_pb2
 from ostorlab.assets import android_store as android_store_asset
@@ -82,6 +85,26 @@ def testDeserializeRequest_withFileFingerprint_returnsCorrectObjects() -> None:
 
     assert isinstance(deserialized_object, file_pb2.Message)
     assert deserialized_object.path == "/etc/hosts"
+
+
+def testDeserializeRequest_withX509ChainValidation_returnsCorrectObjects() -> None:
+    """Test the chain validation of a certificate fingerprint survives serialization."""
+    serialized = serializer.serialize(
+        "v3.fingerprint.domain_name.service.x509",
+        {
+            "name": "expired.badssl.com",
+            "port": 443,
+            "chain_validation": {"is_valid": False, "error": "expired"},
+        },
+    )
+
+    deserialized_object = serializer.deserialize(
+        "v3.fingerprint.domain_name.service.x509", serialized.SerializeToString()
+    )
+
+    assert isinstance(deserialized_object, x509_pb2.Message)
+    assert deserialized_object.chain_validation.is_valid is False
+    assert deserialized_object.chain_validation.error == "expired"
 
 
 def testDeserializeRequest_withIncorrectSelector_throwsError() -> None:

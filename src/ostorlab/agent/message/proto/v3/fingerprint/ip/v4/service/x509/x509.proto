@@ -13,4 +13,5 @@ message Message {
   optional uint32 port = 5;
   optional string protocol = 6;
   repeated ostorlab.agent.message.proto.common.x509.X509Cert cert_chain = 7;
+  optional ostorlab.agent.message.proto.common.x509.X509ChainValidation chain_validation = 8;
 }

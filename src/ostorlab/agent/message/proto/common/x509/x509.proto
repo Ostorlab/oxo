@@ -41,6 +41,12 @@ message X509Signature {
   optional string signature_value = 2;
 }
 
+message X509ChainValidation {
+  optional bool is_valid = 1;
+  // Why the chain is not valid: expired, not_yet_valid, self_signed, untrusted, hostname_mismatch or invalid.
+  optional string error = 2;
+}
+
 message X509Cert {
   optional uint32 version_number = 1;
   optional string serial_number = 2;

@@ -30,6 +30,7 @@ class Message(_message.Message):
     PORT_FIELD_NUMBER: _builtins.int
     PROTOCOL_FIELD_NUMBER: _builtins.int
     CERT_CHAIN_FIELD_NUMBER: _builtins.int
+    CHAIN_VALIDATION_FIELD_NUMBER: _builtins.int
     host: _builtins.str
     mask: _builtins.str
     version: _builtins.int
@@ -38,6 +39,8 @@ class Message(_message.Message):
     protocol: _builtins.str
     @_builtins.property
     def cert_chain(self) -> _containers.RepeatedCompositeFieldContainer[_x509_pb2.X509Cert]: ...
+    @_builtins.property
+    def chain_validation(self) -> _x509_pb2.X509ChainValidation: ...
     def __init__(
         self,
         *,
@@ -48,10 +51,11 @@ class Message(_message.Message):
         port: _builtins.int | None = ...,
         protocol: _builtins.str | None = ...,
         cert_chain: _abc.Iterable[_x509_pb2.X509Cert] | None = ...,
+        chain_validation: _x509_pb2.X509ChainValidation | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["host", b"host", "mask", b"mask", "port", b"port", "protocol", b"protocol", "service", b"service", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["chain_validation", b"chain_validation", "host", b"host", "mask", b"mask", "port", b"port", "protocol", b"protocol", "service", b"service", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cert_chain", b"cert_chain", "host", b"host", "mask", b"mask", "port", b"port", "protocol", b"protocol", "service", b"service", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["cert_chain", b"cert_chain", "chain_validation", b"chain_validation", "host", b"host", "mask", b"mask", "port", b"port", "protocol", b"protocol", "service", b"service", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

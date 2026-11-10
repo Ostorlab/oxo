@@ -170,6 +170,29 @@ class X509Signature(_message.Message):
 Global___X509Signature: _TypeAlias = X509Signature  # noqa: Y015
 
 @_typing.final
+class X509ChainValidation(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    IS_VALID_FIELD_NUMBER: _builtins.int
+    ERROR_FIELD_NUMBER: _builtins.int
+    is_valid: _builtins.bool
+    error: _builtins.str
+    """Why the chain is not valid: expired, not_yet_valid, self_signed, untrusted, hostname_mismatch or invalid."""
+    def __init__(
+        self,
+        *,
+        is_valid: _builtins.bool | None = ...,
+        error: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["error", b"error", "is_valid", b"is_valid"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["error", b"error", "is_valid", b"is_valid"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___X509ChainValidation: _TypeAlias = X509ChainValidation  # noqa: Y015
+
+@_typing.final
 class X509Cert(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
