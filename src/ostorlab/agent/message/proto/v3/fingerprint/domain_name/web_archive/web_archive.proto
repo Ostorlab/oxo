@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.web_archive;
+
+// How the Wayback Machine archived the website of a domain.
+message Message {
+  optional string name = 1;
+  // When the website was first archived, as an ISO 8601 date and time in UTC; absent when it never was.
+  optional string first_archived = 2;
+  // When the website was last archived, as an ISO 8601 date and time in UTC; absent when it never was.
+  optional string last_archived = 3;
+  // How many times the website was archived, 0 when it never was.
+  optional uint32 snapshot_count = 4;
+  // The Wayback Machine page of the first snapshot; absent when the website was never archived.
+  optional string first_snapshot_url = 5;
+  // The Wayback Machine page of the last snapshot; absent when the website was never archived.
+  optional string last_snapshot_url = 6;
+  // The Wayback Machine calendar of all the snapshots of the website.
+  optional string calendar_url = 7;
+}
