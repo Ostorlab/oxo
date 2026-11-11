@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.dom;
+
+// The events of a website's page, as the browser built and ran it.
+message Message {
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
+  // The page loaded, after redirects.
+  optional string url = 4;
+  // When the DOMContentLoaded event ended, in milliseconds from the start of the navigation.
+  optional uint32 dom_content_loaded_ms = 5;
+  // When the load event ended, in milliseconds from the start of the navigation.
+  optional uint32 load_ms = 6;
+}
