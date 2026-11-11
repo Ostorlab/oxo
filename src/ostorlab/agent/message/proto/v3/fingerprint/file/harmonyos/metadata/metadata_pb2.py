@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nRostorlab/agent/message/proto/v3/fingerprint/file/harmonyos/metadata/metadata.proto\x12\x43ostorlab.agent.message.proto.v3.fingerprint.file.harmonyos.metadata\"a\n\nPermission\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x12\x1c\n\x14used_scene_abilities\x18\x03 \x03(\t\x12\x17\n\x0fused_scene_when\x18\x04 \x01(\t\"\xc7\x01\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0b\x62undle_name\x18\x02 \x01(\t\x12\x64\n\x0bpermissions\x18\x03 \x03(\x0b\x32O.ostorlab.agent.message.proto.v3.fingerprint.file.harmonyos.metadata.Permission\x12\x17\n\x0fmin_api_version\x18\x04 \x01(\x05\x12\x1a\n\x12target_api_version\x18\x05 \x01(\x05')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nRostorlab/agent/message/proto/v3/fingerprint/file/harmonyos/metadata/metadata.proto\x12\x43ostorlab.agent.message.proto.v3.fingerprint.file.harmonyos.metadata\"a\n\nPermission\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06reason\x18\x02 \x01(\t\x12\x1c\n\x14used_scene_abilities\x18\x03 \x03(\t\x12\x17\n\x0fused_scene_when\x18\x04 \x01(\t\"\xbb\x02\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x13\n\x0b\x62undle_name\x18\x02 \x01(\t\x12\x64\n\x0bpermissions\x18\x03 \x03(\x0b\x32O.ostorlab.agent.message.proto.v3.fingerprint.file.harmonyos.metadata.Permission\x12\x17\n\x0fmin_api_version\x18\x04 \x01(\x05\x12\x1a\n\x12target_api_version\x18\x05 \x01(\x05\x12\x0c\n\x04size\x18\x06 \x01(\x03\x12\x0b\n\x03md5\x18\x07 \x01(\t\x12\x0c\n\x04sha1\x18\x08 \x01(\t\x12\x0e\n\x06sha256\x18\t \x01(\t\x12\x14\n\x0cversion_name\x18\n \x01(\t\x12\x14\n\x0cversion_code\x18\x0b \x01(\x03\x12\r\n\x05label\x18\x0c \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,5 +34,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PERMISSION']._serialized_start=155
   _globals['_PERMISSION']._serialized_end=252
   _globals['_MESSAGE']._serialized_start=255
-  _globals['_MESSAGE']._serialized_end=454
+  _globals['_MESSAGE']._serialized_end=570
 # @@protoc_insertion_point(module_scope)

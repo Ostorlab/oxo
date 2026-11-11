@@ -62,6 +62,13 @@ class Message(_message.Message):
     PERMISSIONS_FIELD_NUMBER: _builtins.int
     MIN_API_VERSION_FIELD_NUMBER: _builtins.int
     TARGET_API_VERSION_FIELD_NUMBER: _builtins.int
+    SIZE_FIELD_NUMBER: _builtins.int
+    MD5_FIELD_NUMBER: _builtins.int
+    SHA1_FIELD_NUMBER: _builtins.int
+    SHA256_FIELD_NUMBER: _builtins.int
+    VERSION_NAME_FIELD_NUMBER: _builtins.int
+    VERSION_CODE_FIELD_NUMBER: _builtins.int
+    LABEL_FIELD_NUMBER: _builtins.int
     path: _builtins.str
     bundle_name: _builtins.str
     min_api_version: _builtins.int
@@ -69,6 +76,17 @@ class Message(_message.Message):
     HarmonyOS version, like 50000012 for 5.0.0(12), are reduced to their API level.
     """
     target_api_version: _builtins.int
+    size: _builtins.int
+    """Size in bytes of the file as received (.hap or .app)."""
+    md5: _builtins.str
+    """Lowercase hex digests of the file as received (.hap or .app), e.g. "d41d8cd98f00b204e9800998ecf8427e"."""
+    sha1: _builtins.str
+    sha256: _builtins.str
+    version_name: _builtins.str
+    """versionName and versionCode of the app.json app element, e.g. "1.0.0" and 1000000."""
+    version_code: _builtins.int
+    label: _builtins.str
+    """Application label of the app.json app element, with string resources resolved, e.g. "MyApplication"."""
     @_builtins.property
     def permissions(self) -> _containers.RepeatedCompositeFieldContainer[Global___Permission]: ...
     def __init__(
@@ -79,10 +97,17 @@ class Message(_message.Message):
         permissions: _abc.Iterable[Global___Permission] | None = ...,
         min_api_version: _builtins.int | None = ...,
         target_api_version: _builtins.int | None = ...,
+        size: _builtins.int | None = ...,
+        md5: _builtins.str | None = ...,
+        sha1: _builtins.str | None = ...,
+        sha256: _builtins.str | None = ...,
+        version_name: _builtins.str | None = ...,
+        version_code: _builtins.int | None = ...,
+        label: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "min_api_version", b"min_api_version", "path", b"path", "target_api_version", b"target_api_version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "label", b"label", "md5", b"md5", "min_api_version", b"min_api_version", "path", b"path", "sha1", b"sha1", "sha256", b"sha256", "size", b"size", "target_api_version", b"target_api_version", "version_code", b"version_code", "version_name", b"version_name"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "min_api_version", b"min_api_version", "path", b"path", "permissions", b"permissions", "target_api_version", b"target_api_version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "label", b"label", "md5", b"md5", "min_api_version", b"min_api_version", "path", b"path", "permissions", b"permissions", "sha1", b"sha1", "sha256", b"sha256", "size", b"size", "target_api_version", b"target_api_version", "version_code", b"version_code", "version_name", b"version_name"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
