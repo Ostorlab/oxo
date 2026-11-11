@@ -62,3 +62,59 @@ def testSerialize_whenSelectorIsTheParentHttp_shouldUseTheHttpMessage() -> None:
 
     assert isinstance(http_message, http_pb2.Message)
     assert isinstance(dom_message, dom_pb2.Message)
+
+
+def testSerialize_whenPageHasMetadata_shouldSerializeAndDeserializeCorrectly() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.domain_name.service.http.dom",
+        {
+            "name": "ostorlab.co",
+            "port": 443,
+            "schema": "https",
+            "url": "https://ostorlab.co/",
+            "title": "Ostorlab",
+            "description": "Mobile and web security scanner.",
+            "language": "en",
+            "open_graph": [
+                {"name": "og:title", "content": "Ostorlab"},
+                {"name": "og:type", "content": "website"},
+            ],
+            "twitter": [{"name": "twitter:card", "content": "summary_large_image"}],
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.domain_name.service.http.dom", raw)
+
+    assert isinstance(message, dom_pb2.Message)
+    assert message.title == "Ostorlab"
+    assert message.description == "Mobile and web security scanner."
+    assert message.language == "en"
+    assert [(tag.name, tag.content) for tag in message.open_graph] == [
+        ("og:title", "Ostorlab"),
+        ("og:type", "website"),
+    ]
+    assert [(tag.name, tag.content) for tag in message.twitter] == [
+        ("twitter:card", "summary_large_image")
+    ]
+
+
+def testSerialize_whenPageHasNoMetadata_shouldLeaveItOut() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.domain_name.service.http.dom",
+        {
+            "name": "example.com",
+            "port": 443,
+            "schema": "https",
+            "url": "https://example.com/",
+            "load_ms": 740,
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.domain_name.service.http.dom", raw)
+
+    assert isinstance(message, dom_pb2.Message)
+    assert message.HasField("title") is False
+    assert message.HasField("description") is False
+    assert message.HasField("language") is False
+    assert list(message.open_graph) == []
+    assert list(message.twitter) == []
