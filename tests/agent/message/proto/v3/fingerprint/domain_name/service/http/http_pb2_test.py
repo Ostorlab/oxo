@@ -95,3 +95,65 @@ def testSerialize_whenCookieLastsTheSession_shouldLeaveItsExpiryOut() -> None:
     assert message.cookies[0].HasField("expires") is False
     assert message.cookies[0].http_only is True
     assert list(message.contacted_hosts) == []
+
+
+def testSerialize_whenPageWasRedirected_shouldKeepTheStatusAndTheRedirectsInOrder() -> (
+    None
+):
+    raw = serializer.serialize(
+        "v3.fingerprint.domain_name.service.http",
+        {
+            "name": "ostorlab.co",
+            "port": 443,
+            "schema": "https",
+            "url": "https://ostorlab.co/",
+            "status_code": 200,
+            "redirects": [
+                {
+                    "url": "http://ostorlab.co/",
+                    "status_code": 301,
+                    "location": "https://ostorlab.co/",
+                },
+                {
+                    "url": "https://ostorlab.co/",
+                    "status_code": 308,
+                    "location": "/en",
+                },
+            ],
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.domain_name.service.http", raw)
+
+    assert isinstance(message, http_pb2.Message)
+    assert message.status_code == 200
+    assert [redirect.url for redirect in message.redirects] == [
+        "http://ostorlab.co/",
+        "https://ostorlab.co/",
+    ]
+    assert [redirect.status_code for redirect in message.redirects] == [301, 308]
+    assert [redirect.location for redirect in message.redirects] == [
+        "https://ostorlab.co/",
+        "/en",
+    ]
+
+
+def testSerialize_whenPageAnsweredTheRequestItself_shouldLeaveTheRedirectsEmpty() -> (
+    None
+):
+    raw = serializer.serialize(
+        "v3.fingerprint.domain_name.service.http",
+        {
+            "name": "example.com",
+            "port": 443,
+            "schema": "https",
+            "url": "https://example.com/",
+            "status_code": 404,
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.domain_name.service.http", raw)
+
+    assert isinstance(message, http_pb2.Message)
+    assert message.status_code == 404
+    assert list(message.redirects) == []

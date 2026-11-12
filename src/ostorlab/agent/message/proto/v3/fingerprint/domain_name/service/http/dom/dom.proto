@@ -2,6 +2,13 @@ syntax = "proto2";
 
 package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.dom;
 
+// A <meta> tag of the page: a property of its Open Graph or Twitter card metadata.
+message MetaTag {
+  // The property or name of the tag, e.g. og:title or twitter:card.
+  optional string name = 1;
+  optional string content = 2;
+}
+
 // The events of a website's page, as the browser built and ran it.
 message Message {
   optional string name = 1;
@@ -13,4 +20,14 @@ message Message {
   optional uint32 dom_content_loaded_ms = 5;
   // When the load event ended, in milliseconds from the start of the navigation.
   optional uint32 load_ms = 6;
+  // The text of the <title> element.
+  optional string title = 7;
+  // The content of the <meta name="description"> tag.
+  optional string description = 8;
+  // The lang attribute of the <html> element, as written.
+  optional string language = 9;
+  // The og:* meta tags.
+  repeated MetaTag open_graph = 10;
+  // The twitter:* meta tags.
+  repeated MetaTag twitter = 11;
 }

@@ -16,6 +16,15 @@ message Cookie {
   optional string same_site = 7;
 }
 
+// A redirect the browser followed on the way to the page: the URL that answered, with what it answered.
+message Redirect {
+  // The URL that answered with the redirect.
+  optional string url = 1;
+  optional int32 status_code = 2;
+  // Where it sent the browser: the Location header, as sent and so possibly relative.
+  optional string location = 3;
+}
+
 // The HTTP traffic of a website's page while the browser loaded it.
 message Message {
   optional string name = 1;
@@ -31,4 +40,8 @@ message Message {
   repeated string contacted_hosts = 7;
   // The cookies the browser holds after the page loaded, the ones other websites set included.
   repeated Cookie cookies = 8;
+  // The HTTP status of the page's own answer, the final one after the redirects.
+  optional int32 status_code = 9;
+  // The redirects followed before the page, in order; empty when the page answered the request itself.
+  repeated Redirect redirects = 10;
 }

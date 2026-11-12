@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/fingerprint/domain_name/service/http/http.proto\x12\x44ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http\"{\n\x06\x43ookie\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x64omain\x18\x02 \x01(\t\x12\x0c\n\x04path\x18\x03 \x01(\t\x12\x0f\n\x07\x65xpires\x18\x04 \x01(\x03\x12\x0e\n\x06secure\x18\x05 \x01(\x08\x12\x11\n\thttp_only\x18\x06 \x01(\x08\x12\x11\n\tsame_site\x18\x07 \x01(\t\"\xec\x01\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x0b\n\x03url\x18\x04 \x01(\t\x12\x15\n\rrequest_count\x18\x05 \x01(\r\x12\x19\n\x11transferred_bytes\x18\x06 \x01(\x04\x12\x17\n\x0f\x63ontacted_hosts\x18\x07 \x03(\t\x12]\n\x07\x63ookies\x18\x08 \x03(\x0b\x32L.ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.Cookie')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nOostorlab/agent/message/proto/v3/fingerprint/domain_name/service/http/http.proto\x12\x44ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http\"{\n\x06\x43ookie\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06\x64omain\x18\x02 \x01(\t\x12\x0c\n\x04path\x18\x03 \x01(\t\x12\x0f\n\x07\x65xpires\x18\x04 \x01(\x03\x12\x0e\n\x06secure\x18\x05 \x01(\x08\x12\x11\n\thttp_only\x18\x06 \x01(\x08\x12\x11\n\tsame_site\x18\x07 \x01(\t\">\n\x08Redirect\x12\x0b\n\x03url\x18\x01 \x01(\t\x12\x13\n\x0bstatus_code\x18\x02 \x01(\x05\x12\x10\n\x08location\x18\x03 \x01(\t\"\xe4\x02\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x0b\n\x03url\x18\x04 \x01(\t\x12\x15\n\rrequest_count\x18\x05 \x01(\r\x12\x19\n\x11transferred_bytes\x18\x06 \x01(\x04\x12\x17\n\x0f\x63ontacted_hosts\x18\x07 \x03(\t\x12]\n\x07\x63ookies\x18\x08 \x03(\x0b\x32L.ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.Cookie\x12\x13\n\x0bstatus_code\x18\t \x01(\x05\x12\x61\n\tredirects\x18\n \x03(\x0b\x32N.ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.Redirect')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,6 +33,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_COOKIE']._serialized_start=153
   _globals['_COOKIE']._serialized_end=276
-  _globals['_MESSAGE']._serialized_start=279
-  _globals['_MESSAGE']._serialized_end=515
+  _globals['_REDIRECT']._serialized_start=278
+  _globals['_REDIRECT']._serialized_end=340
+  _globals['_MESSAGE']._serialized_start=343
+  _globals['_MESSAGE']._serialized_end=699
 # @@protoc_insertion_point(module_scope)

@@ -3,8 +3,10 @@
 isort:skip_file
 """
 
+from collections import abc as _abc
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
+from google.protobuf.internal import containers as _containers
 import builtins as _builtins
 import sys
 import typing as _typing
@@ -15,6 +17,31 @@ else:
     from typing_extensions import TypeAlias as _TypeAlias, Never as _Never
 
 DESCRIPTOR: _descriptor.FileDescriptor
+
+@_typing.final
+class MetaTag(_message.Message):
+    """A <meta> tag of the page: a property of its Open Graph or Twitter card metadata."""
+
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: _builtins.int
+    CONTENT_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    """The property or name of the tag, e.g. og:title or twitter:card."""
+    content: _builtins.str
+    def __init__(
+        self,
+        *,
+        name: _builtins.str | None = ...,
+        content: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["content", b"content", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["content", b"content", "name", b"name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___MetaTag: _TypeAlias = MetaTag  # noqa: Y015
 
 @_typing.final
 class Message(_message.Message):
@@ -28,6 +55,11 @@ class Message(_message.Message):
     URL_FIELD_NUMBER: _builtins.int
     DOM_CONTENT_LOADED_MS_FIELD_NUMBER: _builtins.int
     LOAD_MS_FIELD_NUMBER: _builtins.int
+    TITLE_FIELD_NUMBER: _builtins.int
+    DESCRIPTION_FIELD_NUMBER: _builtins.int
+    LANGUAGE_FIELD_NUMBER: _builtins.int
+    OPEN_GRAPH_FIELD_NUMBER: _builtins.int
+    TWITTER_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     port: _builtins.int
     schema: _builtins.str
@@ -37,6 +69,20 @@ class Message(_message.Message):
     """When the DOMContentLoaded event ended, in milliseconds from the start of the navigation."""
     load_ms: _builtins.int
     """When the load event ended, in milliseconds from the start of the navigation."""
+    title: _builtins.str
+    """The text of the <title> element."""
+    description: _builtins.str
+    """The content of the <meta name="description"> tag."""
+    language: _builtins.str
+    """The lang attribute of the <html> element, as written."""
+    @_builtins.property
+    def open_graph(self) -> _containers.RepeatedCompositeFieldContainer[Global___MetaTag]:
+        """The og:* meta tags."""
+
+    @_builtins.property
+    def twitter(self) -> _containers.RepeatedCompositeFieldContainer[Global___MetaTag]:
+        """The twitter:* meta tags."""
+
     def __init__(
         self,
         *,
@@ -46,10 +92,15 @@ class Message(_message.Message):
         url: _builtins.str | None = ...,
         dom_content_loaded_ms: _builtins.int | None = ...,
         load_ms: _builtins.int | None = ...,
+        title: _builtins.str | None = ...,
+        description: _builtins.str | None = ...,
+        language: _builtins.str | None = ...,
+        open_graph: _abc.Iterable[Global___MetaTag] | None = ...,
+        twitter: _abc.Iterable[Global___MetaTag] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["dom_content_loaded_ms", b"dom_content_loaded_ms", "load_ms", b"load_ms", "name", b"name", "port", b"port", "schema", b"schema", "url", b"url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["description", b"description", "dom_content_loaded_ms", b"dom_content_loaded_ms", "language", b"language", "load_ms", b"load_ms", "name", b"name", "port", b"port", "schema", b"schema", "title", b"title", "url", b"url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["dom_content_loaded_ms", b"dom_content_loaded_ms", "load_ms", b"load_ms", "name", b"name", "port", b"port", "schema", b"schema", "url", b"url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["description", b"description", "dom_content_loaded_ms", b"dom_content_loaded_ms", "language", b"language", "load_ms", b"load_ms", "name", b"name", "open_graph", b"open_graph", "port", b"port", "schema", b"schema", "title", b"title", "twitter", b"twitter", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
