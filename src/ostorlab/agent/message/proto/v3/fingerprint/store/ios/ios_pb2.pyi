@@ -134,6 +134,9 @@ class Message(_message.Message):
     STORE_URL_FIELD_NUMBER: _builtins.int
     PRIVACY_POLICY_URL_FIELD_NUMBER: _builtins.int
     PRIVACY_LABELS_FIELD_NUMBER: _builtins.int
+    DEVELOPER_FIELD_NUMBER: _builtins.int
+    DEVELOPER_EMAIL_FIELD_NUMBER: _builtins.int
+    DEVELOPER_URL_FIELD_NUMBER: _builtins.int
     bundle_id: _builtins.str
     name: _builtins.str
     icon_url: _builtins.str
@@ -152,6 +155,12 @@ class Message(_message.Message):
     store_url: _builtins.str
     privacy_policy_url: _builtins.str
     """Privacy policy URL listed on the App Store page."""
+    developer: _builtins.str
+    """Developer name, contact email and website as listed on the store page, e.g. "Example Inc.",
+    "support@example.com" and "https://example.com".
+    """
+    developer_email: _builtins.str
+    developer_url: _builtins.str
     @_builtins.property
     def screenshot_urls(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
     @_builtins.property
@@ -176,10 +185,13 @@ class Message(_message.Message):
         store_url: _builtins.str | None = ...,
         privacy_policy_url: _builtins.str | None = ...,
         privacy_labels: _abc.Iterable[Global___PrivacyLabel] | None = ...,
+        developer: _builtins.str | None = ...,
+        developer_email: _builtins.str | None = ...,
+        developer_url: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "developer", b"developer", "developer_email", b"developer_email", "developer_url", b"developer_url", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "privacy_labels", b"privacy_labels", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "screenshot_urls", b"screenshot_urls", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_id", b"bundle_id", "category", b"category", "content_rating", b"content_rating", "currency", b"currency", "description", b"description", "developer", b"developer", "developer_email", b"developer_email", "developer_url", b"developer_url", "icon_url", b"icon_url", "last_update_date", b"last_update_date", "name", b"name", "price", b"price", "privacy_labels", b"privacy_labels", "privacy_policy_url", b"privacy_policy_url", "rating", b"rating", "rating_count", b"rating_count", "release_date", b"release_date", "screenshot_urls", b"screenshot_urls", "store_url", b"store_url", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

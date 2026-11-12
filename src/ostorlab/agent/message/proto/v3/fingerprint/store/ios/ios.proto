@@ -49,4 +49,9 @@ message Message {
   // Privacy policy URL listed on the App Store page.
   optional string privacy_policy_url = 16;
   repeated PrivacyLabel privacy_labels = 17;
+  // Developer name, contact email and website as listed on the store page, e.g. "Example Inc.",
+  // "support@example.com" and "https://example.com".
+  optional string developer = 18;
+  optional string developer_email = 19;
+  optional string developer_url = 20;
 }
