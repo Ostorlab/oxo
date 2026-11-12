@@ -1,0 +1,32 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.lookalikes;
+
+// A registered domain whose name looks like the name of the scanned domain.
+message Lookalike {
+  // The lookalike domain in its ASCII form, punycode for internationalized names.
+  optional string name = 1;
+  // The lookalike domain as it is read, set only when it has non-ASCII letters.
+  optional string unicode_name = 2;
+  // How the name was made from the scanned domain: other_tld, added_word, swapped_letters, homoglyph or typo.
+  optional string kind = 3;
+  repeated string nameservers = 4;
+  // The IPv4 and IPv6 addresses the lookalike resolves to.
+  repeated string addresses = 5;
+  // The mail servers of the lookalike, which mean it can receive email.
+  repeated string mail_servers = 6;
+  // When the lookalike was registered, as an ISO 8601 date and time, from RDAP.
+  optional string registered_at = 7;
+  optional string registrar = 8;
+  // Whether the lookalike uses a nameserver of the scanned domain, as the domains its owner registered usually do.
+  optional bool shares_nameservers = 9;
+}
+
+// The registered lookalike domains of a domain.
+message Message {
+  // The registrable domain the lookalikes imitate.
+  optional string name = 1;
+  repeated Lookalike lookalikes = 2;
+  // How many lookalike names were checked for a registration.
+  optional uint32 checked_count = 3;
+}
