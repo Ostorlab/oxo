@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nNostorlab/agent/message/proto/v3/fingerprint/file/android/backend/backend.proto\x12@ostorlab.agent.message.proto.v3.fingerprint.file.android.backend\"\xe5\x01\n\x08Location\x12\x11\n\tcontinent\x18\x01 \x01(\t\x12\x16\n\x0e\x63ontinent_code\x18\x02 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x03 \x01(\t\x12\x14\n\x0c\x63ountry_code\x18\x04 \x01(\t\x12\x0e\n\x06region\x18\x05 \x01(\t\x12\x13\n\x0bregion_name\x18\x06 \x01(\t\x12\x0c\n\x04\x63ity\x18\x07 \x01(\t\x12\x0b\n\x03zip\x18\x08 \x01(\t\x12\x10\n\x08latitude\x18\t \x01(\x02\x12\x11\n\tlongitude\x18\n \x01(\x02\x12\x10\n\x08timezone\x18\x0b \x01(\t\x12\x10\n\x08\x64istrict\x18\x0c \x01(\t\"\x8a\x01\n\x02Ip\x12\x12\n\nip_address\x18\x01 \x02(\t\x12\x12\n\x07version\x18\x02 \x01(\x05:\x01\x34\x12\\\n\x08location\x18\x03 \x01(\x0b\x32J.ostorlab.agent.message.proto.v3.fingerprint.file.android.backend.Location\"\x9c\x01\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x14\n\x0cpackage_name\x18\x02 \x02(\t\x12\x0c\n\x04host\x18\x03 \x02(\t\x12\x0c\n\x04port\x18\x04 \x01(\x05\x12Q\n\x03ips\x18\x05 \x03(\x0b\x32\x44.ostorlab.agent.message.proto.v3.fingerprint.file.android.backend.Ip')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nNostorlab/agent/message/proto/v3/fingerprint/file/android/backend/backend.proto\x12@ostorlab.agent.message.proto.v3.fingerprint.file.android.backend\"\xe5\x01\n\x08Location\x12\x11\n\tcontinent\x18\x01 \x01(\t\x12\x16\n\x0e\x63ontinent_code\x18\x02 \x01(\t\x12\x0f\n\x07\x63ountry\x18\x03 \x01(\t\x12\x14\n\x0c\x63ountry_code\x18\x04 \x01(\t\x12\x0e\n\x06region\x18\x05 \x01(\t\x12\x13\n\x0bregion_name\x18\x06 \x01(\t\x12\x0c\n\x04\x63ity\x18\x07 \x01(\t\x12\x0b\n\x03zip\x18\x08 \x01(\t\x12\x10\n\x08latitude\x18\t \x01(\x02\x12\x11\n\tlongitude\x18\n \x01(\x02\x12\x10\n\x08timezone\x18\x0b \x01(\t\x12\x10\n\x08\x64istrict\x18\x0c \x01(\t\"\x8a\x01\n\x02Ip\x12\x12\n\nip_address\x18\x01 \x02(\t\x12\x12\n\x07version\x18\x02 \x01(\x05:\x01\x34\x12\\\n\x08location\x18\x03 \x01(\x0b\x32J.ostorlab.agent.message.proto.v3.fingerprint.file.android.backend.Location\"\xa9\x01\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x14\n\x0cpackage_name\x18\x02 \x02(\t\x12\x0c\n\x04host\x18\x03 \x02(\t\x12\x0c\n\x04port\x18\x04 \x01(\x05\x12Q\n\x03ips\x18\x05 \x03(\x0b\x32\x44.ostorlab.agent.message.proto.v3.fingerprint.file.android.backend.Ip\x12\x0b\n\x03url\x18\x06 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,5 +36,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_IP']._serialized_start=381
   _globals['_IP']._serialized_end=519
   _globals['_MESSAGE']._serialized_start=522
-  _globals['_MESSAGE']._serialized_end=678
+  _globals['_MESSAGE']._serialized_end=691
 # @@protoc_insertion_point(module_scope)

@@ -11,6 +11,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     msg.bundle_name = "com.example.app"
     msg.host = "example.com"
     msg.port = 443
+    msg.url = "https://example.com/v1"
 
     ip = msg.ips.add()
     ip.ip_address = "192.168.1.1"
@@ -27,6 +28,7 @@ def testMessage_whenCreateWithValidData_shouldSerializeAndDeserializeCorrectly()
     assert deserialized_msg.bundle_name == "com.example.app"
     assert deserialized_msg.host == "example.com"
     assert deserialized_msg.port == 443
+    assert deserialized_msg.url == "https://example.com/v1"
     assert len(deserialized_msg.ips) == 1
     assert deserialized_msg.ips[0].ip_address == "192.168.1.1"
     assert deserialized_msg.ips[0].location.continent == "TadonitTalafrikt"
@@ -41,6 +43,7 @@ def testMessage_whenCreateEmpty_shouldHaveDefaultValues() -> None:
     assert msg.bundle_name == ""
     assert msg.host == ""
     assert msg.port == 0
+    assert msg.url == ""
     assert len(msg.ips) == 0
 
 

@@ -30,4 +30,6 @@ message Message {
     required string host = 3;
     optional int32 port = 4;
     repeated Ip ips = 5;
+    // The full link the backend was found as, like https://api.example.com/v1; host is its host name.
+    optional string url = 6;
 }

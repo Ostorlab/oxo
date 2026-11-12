@@ -105,10 +105,13 @@ class Message(_message.Message):
     HOST_FIELD_NUMBER: _builtins.int
     PORT_FIELD_NUMBER: _builtins.int
     IPS_FIELD_NUMBER: _builtins.int
+    URL_FIELD_NUMBER: _builtins.int
     path: _builtins.str
     bundle_name: _builtins.str
     host: _builtins.str
     port: _builtins.int
+    url: _builtins.str
+    """The full link the backend was found as, like https://api.example.com/v1; host is its host name."""
     @_builtins.property
     def ips(self) -> _containers.RepeatedCompositeFieldContainer[Global___Ip]: ...
     def __init__(
@@ -119,10 +122,11 @@ class Message(_message.Message):
         host: _builtins.str | None = ...,
         port: _builtins.int | None = ...,
         ips: _abc.Iterable[Global___Ip] | None = ...,
+        url: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "host", b"host", "path", b"path", "port", b"port"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "host", b"host", "path", b"path", "port", b"port", "url", b"url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "host", b"host", "ips", b"ips", "path", b"path", "port", b"port"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["bundle_name", b"bundle_name", "host", b"host", "ips", b"ips", "path", b"path", "port", b"port", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
