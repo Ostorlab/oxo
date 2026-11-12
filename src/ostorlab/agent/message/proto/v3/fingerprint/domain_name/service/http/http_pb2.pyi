@@ -61,35 +61,6 @@ class Cookie(_message.Message):
 Global___Cookie: _TypeAlias = Cookie  # noqa: Y015
 
 @_typing.final
-class Redirect(_message.Message):
-    """A redirect the browser followed on the way to the page: the URL that answered, with what it answered."""
-
-    DESCRIPTOR: _descriptor.Descriptor
-
-    URL_FIELD_NUMBER: _builtins.int
-    STATUS_CODE_FIELD_NUMBER: _builtins.int
-    LOCATION_FIELD_NUMBER: _builtins.int
-    url: _builtins.str
-    """The URL that answered with the redirect."""
-    status_code: _builtins.int
-    location: _builtins.str
-    """Where it sent the browser: the Location header, as sent and so possibly relative."""
-    def __init__(
-        self,
-        *,
-        url: _builtins.str | None = ...,
-        status_code: _builtins.int | None = ...,
-        location: _builtins.str | None = ...,
-    ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["location", b"location", "status_code", b"status_code", "url", b"url"]  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["location", b"location", "status_code", b"status_code", "url", b"url"]  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
-
-Global___Redirect: _TypeAlias = Redirect  # noqa: Y015
-
-@_typing.final
 class Message(_message.Message):
     """The HTTP traffic of a website's page while the browser loaded it."""
 
@@ -103,8 +74,6 @@ class Message(_message.Message):
     TRANSFERRED_BYTES_FIELD_NUMBER: _builtins.int
     CONTACTED_HOSTS_FIELD_NUMBER: _builtins.int
     COOKIES_FIELD_NUMBER: _builtins.int
-    STATUS_CODE_FIELD_NUMBER: _builtins.int
-    REDIRECTS_FIELD_NUMBER: _builtins.int
     name: _builtins.str
     port: _builtins.int
     schema: _builtins.str
@@ -114,8 +83,6 @@ class Message(_message.Message):
     """The number of requests the page made while it loaded."""
     transferred_bytes: _builtins.int
     """The bytes downloaded to load the page, as sent over the network."""
-    status_code: _builtins.int
-    """The HTTP status of the page's own answer, the final one after the redirects."""
     @_builtins.property
     def contacted_hosts(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """The hosts the page sent requests to, its own included."""
@@ -123,10 +90,6 @@ class Message(_message.Message):
     @_builtins.property
     def cookies(self) -> _containers.RepeatedCompositeFieldContainer[Global___Cookie]:
         """The cookies the browser holds after the page loaded, the ones other websites set included."""
-
-    @_builtins.property
-    def redirects(self) -> _containers.RepeatedCompositeFieldContainer[Global___Redirect]:
-        """The redirects followed before the page, in order; empty when the page answered the request itself."""
 
     def __init__(
         self,
@@ -139,12 +102,10 @@ class Message(_message.Message):
         transferred_bytes: _builtins.int | None = ...,
         contacted_hosts: _abc.Iterable[_builtins.str] | None = ...,
         cookies: _abc.Iterable[Global___Cookie] | None = ...,
-        status_code: _builtins.int | None = ...,
-        redirects: _abc.Iterable[Global___Redirect] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "status_code", b"status_code", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["contacted_hosts", b"contacted_hosts", "cookies", b"cookies", "name", b"name", "port", b"port", "redirects", b"redirects", "request_count", b"request_count", "schema", b"schema", "status_code", b"status_code", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["contacted_hosts", b"contacted_hosts", "cookies", b"cookies", "name", b"name", "port", b"port", "request_count", b"request_count", "schema", b"schema", "transferred_bytes", b"transferred_bytes", "url", b"url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
