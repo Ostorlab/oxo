@@ -1,8 +1,12 @@
 """Agent class unit tests."""
 
+from __future__ import annotations
+
+import asyncio
 import base64
 import collections.abc
 import datetime
+import io
 import json
 import logging
 import multiprocessing as mp
@@ -14,8 +18,16 @@ import time
 import typing
 import uuid
 from multiprocessing import synchronize
+from unittest import mock
 
+import aio_pika
+import docker
 import pytest
+import pytest_asyncio
+from aiormq import abc as aiormq_abc
+from docker.models import services as docker_services
+from pamqp import commands
+from pamqp import header
 from pytest_mock import plugin
 
 from ostorlab.agent import agent
@@ -496,9 +508,10 @@ def testProcessMessage_whenExceptionRaised_shouldLogErrorWithMessageAndSystemLoa
         },
     )
 
-    test_agent.process_message(
-        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
-    )
+    with pytest.raises(ValueError, match="some error"):
+        test_agent.process_message(
+            f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+        )
 
     assert logger_error.call_count == 3
     assert "System Info: %s" in logger_error.call_args_list[0][0][0]
@@ -557,9 +570,10 @@ def testProcessMessage_whenExceptionRaisedAndPsutilNotAvailable_shouldLogErrorWi
         },
     )
 
-    test_agent.process_message(
-        f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
-    )
+    with pytest.raises(ValueError, match="some error"):
+        test_agent.process_message(
+            f"v3.healthcheck.ping.{uuid.uuid4()}", control_message.raw
+        )
 
     assert logger_error.call_count == 2
     assert (
@@ -1313,3 +1327,264 @@ def testSetupLogging_whenMachineNameIsNotProvided_labelDoesNotIncludeMachineName
 
     labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
     assert "host_hostname" not in labels
+
+
+class DeliveryAgent(agent.Agent):
+    """Real message handler recording attempts and cleanup for delivery tests."""
+
+    def __init__(
+        self, settings: runtime_definitions.AgentSettings, failures: int = 0
+    ) -> None:
+        super().__init__(
+            agent_definitions.AgentDefinition(
+                name="delivery_agent", in_selectors=["v3.healthcheck.ping"]
+            ),
+            settings,
+        )
+        self.failures = failures
+        self.attempts: list[str] = []
+        self.cleanups = 0
+
+    def process(self, message: agent_message.Message) -> None:
+        body = typing.cast(str, message.data["body"])
+        self.attempts.append(body)
+        if body == "fail" and self.failures > 0:
+            self.failures -= 1
+            raise ValueError("handler failed")
+
+    def process_cleanup(self) -> None:
+        self.cleanups += 1
+
+
+def _delivery_body(body: str, agents: tuple[str, ...] = ()) -> bytes:
+    message = agent_message.Message.from_data("v3.healthcheck.ping", {"body": body})
+    return agent_message.Message.from_data(
+        "v3.control", {"control": {"agents": list(agents)}, "message": message.raw}
+    ).raw
+
+
+def _incoming_delivery(
+    transport: mock.AsyncMock,
+    body: bytes,
+    redelivered: bool = False,
+    delivery_tag: int = 1,
+) -> aio_pika.IncomingMessage:
+    return aio_pika.IncomingMessage(
+        aiormq_abc.DeliveredMessage(
+            delivery=commands.Basic.Deliver(
+                delivery_tag=delivery_tag,
+                routing_key="v3.healthcheck.ping.delivery",
+                redelivered=redelivered,
+            ),
+            header=header.ContentHeader(),
+            body=body,
+            channel=transport,
+        )
+    )
+
+
+type DeliveryConsumer = tuple[
+    DeliveryAgent,
+    collections.abc.Callable[
+        [aio_pika.IncomingMessage], collections.abc.Awaitable[None]
+    ],
+    mock.AsyncMock,
+]
+
+
+@pytest_asyncio.fixture
+async def delivery_consumer(
+    mocker: plugin.MockerFixture,
+) -> collections.abc.AsyncIterator[DeliveryConsumer]:
+    """Register the real consumer with a mocked AMQP transport."""
+    mocker.patch("ostorlab.agent.mixins.agent_healthcheck_mixin.serving.make_server")
+    mocker.patch("ostorlab.agent.agent.signal.signal")
+    connection = mocker.AsyncMock()
+    channel = connection.channel.return_value
+    transport = mocker.AsyncMock()
+    transport.is_closed = False
+    mocker.patch("aio_pika.connect_robust", return_value=connection)
+    client = DeliveryAgent(
+        runtime_definitions.AgentSettings(key="delivery"), failures=2
+    )
+    try:
+        await client.mq_run()
+        channel.declare_queue.return_value.consume.assert_awaited_once()
+        callback = channel.declare_queue.return_value.consume.call_args.args[0]
+        assert channel.declare_queue.return_value.consume.call_args.kwargs == {
+            "no_ack": False
+        }
+        yield client, callback, transport
+    finally:
+        client._executor.shutdown(wait=True)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("redelivered", [False, True])
+async def testAgentConsumer_whenHandlerFails_rejectsWithBoundedRedeliveryAndKeepsConsuming(
+    delivery_consumer: DeliveryConsumer,
+    mocker: plugin.MockerFixture,
+    redelivered: bool,
+) -> None:
+    client, callback, transport = delivery_consumer
+    handler = logging.StreamHandler(io.StringIO())
+    handler.setLevel(logging.CRITICAL)
+    flush = mocker.spy(handler, "flush")
+    mocker.patch.object(agent.logger, "handlers", [handler])
+    failed = _incoming_delivery(transport, _delivery_body("fail"), redelivered)
+
+    with pytest.raises(ValueError, match="handler failed"):
+        await callback(failed)
+
+    transport.basic_ack.assert_not_awaited()
+    transport.basic_reject.assert_awaited_once_with(
+        delivery_tag=1, requeue=redelivered is False
+    )
+    assert failed.processed is True
+    assert client.cleanups == 1
+    flush.assert_called_once_with()
+
+    await callback(
+        _incoming_delivery(transport, _delivery_body("healthy"), delivery_tag=2)
+    )
+
+    transport.basic_ack.assert_awaited_once_with(delivery_tag=2, multiple=False)
+    assert client.attempts == ["fail", "healthy"]
+    assert client.cleanups == 2
+    assert flush.call_count == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("skip", ["success", "sender", "cyclic", "depth"])
+async def testAgentConsumer_whenProcessingSucceedsOrIsIntentionallySkipped_acknowledges(
+    delivery_consumer: DeliveryConsumer,
+    skip: str,
+) -> None:
+    client, callback, transport = delivery_consumer
+    if skip == "sender":
+        client.accepted_agents = ["trusted"]
+    elif skip == "cyclic":
+        client.cyclic_processing_limit = 1
+    elif skip == "depth":
+        client.depth_processing_limit = 1
+
+    await callback(
+        _incoming_delivery(transport, _delivery_body("healthy", (client.name,)))
+    )
+
+    transport.basic_ack.assert_awaited_once_with(delivery_tag=1, multiple=False)
+    transport.basic_reject.assert_not_awaited()
+    assert client.attempts == (["healthy"] if skip == "success" else [])
+
+
+@pytest.fixture
+def delivery_broker() -> collections.abc.Iterator[str]:
+    """Provide a uniquely named RabbitMQ service and remove only its resources."""
+    resource_name = f"oxo_delivery_{uuid.uuid4().hex}"
+    docker_client = docker.from_env()
+    network = docker_client.networks.create(resource_name, driver="overlay")
+    service = None
+    try:
+        service = typing.cast(
+            collections.abc.Callable[..., docker_services.Service],
+            docker_client.services.create,
+        )(
+            mq.MQ_IMAGE,
+            name=resource_name,
+            networks=[network.id],
+            endpoint_spec=typing.cast(
+                collections.abc.Callable[..., docker.types.EndpointSpec],
+                docker.types.EndpointSpec,
+            )(ports={0: 5672}),
+            env=["RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=+S 2:2"],
+            mounts=[
+                docker.types.Mount(
+                    target="/var/lib/rabbitmq", source=None, type="tmpfs"
+                )
+            ],
+        )
+        deadline = time.monotonic() + 30
+        while len(service.attrs.get("Endpoint", {}).get("Ports", [])) == 0:
+            if time.monotonic() >= deadline:
+                raise TimeoutError("RabbitMQ service did not publish its AMQP port")
+            time.sleep(0.1)
+            service.reload()
+        port = service.attrs["Endpoint"]["Ports"][0]["PublishedPort"]
+        yield f"amqp://guest:guest@127.0.0.1:{port}/"
+    finally:
+        if service is not None:
+            typing.cast(collections.abc.Callable[[], None], service.remove)()
+        deadline = time.monotonic() + 30
+        while True:
+            try:
+                network.remove()
+                break
+            except docker.errors.APIError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.1)
+        docker_client.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.docker
+@pytest.mark.timeout(90)
+async def testAgentConsumer_whenRabbitMqHandlerFailsOnce_redeliversThenAcknowledges(
+    delivery_broker: str, mocker: plugin.MockerFixture
+) -> None:
+    mocker.patch("ostorlab.agent.mixins.agent_healthcheck_mixin.serving.make_server")
+    mocker.patch("ostorlab.agent.agent.signal.signal")
+    deadline = time.monotonic() + 60
+    while True:
+        try:
+            connection = await aio_pika.connect_robust(delivery_broker, timeout=1)
+            break
+        except (OSError, aio_pika.exceptions.AMQPConnectionError):
+            if time.monotonic() >= deadline:
+                raise
+            await asyncio.sleep(0.2)
+
+    async with connection:
+        acknowledge = mocker.spy(aio_pika.IncomingMessage, "ack")
+        reject = mocker.spy(aio_pika.IncomingMessage, "reject")
+        mocker.patch("aio_pika.connect_robust", return_value=connection)
+        client = DeliveryAgent(
+            runtime_definitions.AgentSettings(
+                key="delivery",
+                bus_url=delivery_broker,
+                bus_exchange_topic="delivery_test",
+            ),
+            failures=1,
+        )
+        try:
+            await client.mq_run()
+            channel = await connection.channel()
+            exchange = await channel.get_exchange("delivery_test")
+            for body in ("fail", "healthy"):
+                await exchange.publish(
+                    aio_pika.Message(body=_delivery_body(body)),
+                    routing_key="v3.healthcheck.ping.delivery",
+                )
+            async with asyncio.timeout(10):
+                while len(acknowledge.spy_return_list) < 2:
+                    await asyncio.sleep(0.01)
+            await channel.close()
+            channel = await connection.channel()
+            queue = await channel.declare_queue("delivery_agent_queue", passive=True)
+            assert client.attempts == ["fail", "fail", "healthy"]
+            assert client.cleanups == 3
+            assert [
+                call.args[0].redelivered for call in acknowledge.call_args_list
+            ] == [
+                True,
+                False,
+            ]
+            assert reject.call_count == 1
+            assert reject.call_args.args[0].redelivered is False
+            assert reject.call_args.kwargs == {"requeue": True}
+            assert queue.declaration_result.message_count == 0
+            assert queue.declaration_result.consumer_count == 1
+        finally:
+            await client._channel_pool.close()
+            await client._connection_pool.close()
+            client._executor.shutdown(wait=True)
