@@ -31,6 +31,7 @@ class ScanUpdateStateAPIRequest(request.APIRequest):
                 message
                 scan {
                   id
+                  referenceScanId
                   progress
                   useExperimentalAgents
                   channel

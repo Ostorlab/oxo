@@ -111,6 +111,7 @@ def testStartScan_whenGcpCredentialProvided_forwardsItToLocalRuntime(
     select_runtime_mock.assert_called_once_with(
         runtime_type="local",
         scan_id="42",
+        labels={},
         run_default_agents=False,
         gcp_logging_credential="gcp-credential",
         snapshot_settings=None,
@@ -137,6 +138,58 @@ def testStartScan_whenSnapshotSettingsProvided_forwardsThemToLocalRuntime(
     )
 
     assert select_runtime_mock.call_args.kwargs["snapshot_settings"] == settings
+
+
+def testStartScan_whenReferenceScanIdProvided_addsReferenceScanIdLabelToRuntime(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The Reporting Engine id of the scan reaches the runtime as a container label."""
+    _setup_start_scan_mocks(mocker)
+    select_runtime_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime",
+        return_value=mocker.MagicMock(),
+    )
+
+    callbacks.start_scan(
+        {
+            "id": 42,
+            "referenceScanId": 476862,
+            "agentGroup": {"agents": [{"key": "agent/ostorlab/stop_scan"}]},
+        },
+        mocker.MagicMock(),
+    )
+
+    assert select_runtime_mock.call_args.kwargs["labels"] == {
+        "ostorlab.reference_scan_id": "476862"
+    }
+    assert select_runtime_mock.call_args.kwargs["scan_id"] == "42"
+
+
+@pytest.mark.parametrize(
+    "reference_scan_id",
+    [None, 0, "not-a-number"],
+)
+def testStartScan_whenReferenceScanIdMissingOrInvalid_addsNoLabel(
+    mocker: plugin.MockerFixture,
+    reference_scan_id: object,
+) -> None:
+    """A scan with no usable Reporting Engine id starts with no reference label."""
+    _setup_start_scan_mocks(mocker)
+    select_runtime_mock = mocker.patch(
+        "ostorlab.scanner.callbacks.registry.select_runtime",
+        return_value=mocker.MagicMock(),
+    )
+
+    callbacks.start_scan(
+        {
+            "id": 42,
+            "referenceScanId": reference_scan_id,
+            "agentGroup": {"agents": [{"key": "agent/ostorlab/stop_scan"}]},
+        },
+        mocker.MagicMock(),
+    )
+
+    assert select_runtime_mock.call_args.kwargs["labels"] == {}
 
 
 def testStartScan_whenSnapshotRestoreFails_raisesSnapshotRestoreError(

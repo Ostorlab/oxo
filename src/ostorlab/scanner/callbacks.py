@@ -50,6 +50,10 @@ from ostorlab.utils import scanner_state_reporter
 
 logger = logging.getLogger(__name__)
 
+# Container label holding the Reporting Engine id of the scan, next to `ostorlab.scan_id`
+# which holds the Scanning Engine id set by the runtime.
+REFERENCE_SCAN_ID_LABEL = "ostorlab.reference_scan_id"
+
 # Fields of the multi asset payload holding nested assets, each resolved through
 # `_extract_assets` by its own `__typename`. `apiSchemas` is deliberately absent: it
 # carries no asset `__typename`, naming its endpoint url and its document instead, and
@@ -523,6 +527,28 @@ def _extract_scan_id(request: dict[str, Any]) -> int:
     return scan_id
 
 
+def _extract_runtime_labels(request: dict[str, Any]) -> dict[str, str]:
+    """Container labels of the scan, added to every agent container of its universe.
+
+    The reference scan id lets the metrics and logs of a container be found from the
+    Reporting Engine scan, as `ostorlab.scan_id` only holds the Scanning Engine id.
+    """
+    reference_scan_id = request.get("referenceScanId")
+    if reference_scan_id is None:
+        return {}
+    try:
+        reference_scan_id_value = int(cast(str | int, reference_scan_id))
+    except (TypeError, ValueError):
+        logger.warning(
+            "Invalid reference scan id %r, not adding it as a label.", reference_scan_id
+        )
+        return {}
+    # The Scanning Engine stores 0 for a scan with no Reporting Engine scan.
+    if reference_scan_id_value <= 0:
+        return {}
+    return {REFERENCE_SCAN_ID_LABEL: str(reference_scan_id_value)}
+
+
 def _extract_channel(request: dict[str, Any]) -> str | None:
     channel = request.get("channel")
     if channel is None:
@@ -591,6 +617,7 @@ def start_scan(
             registry.select_runtime(
                 runtime_type="local",
                 scan_id=str(scan_id),
+                labels=_extract_runtime_labels(request=request),
                 run_default_agents=False,
                 gcp_logging_credential=gcp_logging_credential,
                 snapshot_settings=snapshot_settings,
