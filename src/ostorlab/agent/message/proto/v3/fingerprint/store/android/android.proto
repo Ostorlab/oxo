@@ -42,4 +42,9 @@ message Message {
   optional string privacy_policy_url = 17;
   optional string store_url = 18;
   optional DataSafety data_safety = 19;
+  // Developer name, contact email and website as listed on the store page, e.g. "Example Inc.",
+  // "support@example.com" and "https://example.com".
+  optional string developer = 20;
+  optional string developer_email = 21;
+  optional string developer_url = 22;
 }

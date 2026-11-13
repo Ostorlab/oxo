@@ -314,10 +314,10 @@ def testMessageSerializeDeserialize_Forv3FingerprintFileHarmonyosMetadata_genera
     assert deserialized.data.get("label") == "MyApplication"
 
 
-def testMessageSerializeDeserialize_Forv3FingerprintStoreAndroidWithPrivacyData_generatesProperProto() -> (
+def testMessageSerializeDeserialize_Forv3FingerprintStoreAndroidWithPrivacyAndDeveloperData_generatesProperProto() -> (
     None
 ):
-    """Test serialization/deserialization of a Google Play store listing with its data safety section (v3.fingerprint.store.android)."""
+    """Test serialization/deserialization of a Google Play store listing with its data safety section and developer (v3.fingerprint.store.android)."""
     data = {
         "package_name": "com.example.app",
         "name": "Example App",
@@ -337,6 +337,9 @@ def testMessageSerializeDeserialize_Forv3FingerprintStoreAndroidWithPrivacyData_
         "screenshot_urls": ["https://play-lh.googleusercontent.com/screenshot1"],
         "privacy_policy_url": "https://example.com/privacy",
         "store_url": "https://play.google.com/store/apps/details?id=com.example.app",
+        "developer": "Example Inc.",
+        "developer_email": "support@example.com",
+        "developer_url": "https://example.com",
         "data_safety": {
             "url": "https://play.google.com/store/apps/datasafety?id=com.example.app&hl=en",
             "data_shared": [
@@ -368,10 +371,10 @@ def testMessageSerializeDeserialize_Forv3FingerprintStoreAndroidWithPrivacyData_
     assert deserialized.data == data
 
 
-def testMessageSerializeDeserialize_Forv3FingerprintStoreIosWithPrivacyData_generatesProperProto() -> (
+def testMessageSerializeDeserialize_Forv3FingerprintStoreIosWithPrivacyAndDeveloperData_generatesProperProto() -> (
     None
 ):
-    """Test serialization/deserialization of an App Store listing with its privacy policy URL and privacy labels (v3.fingerprint.store.ios)."""
+    """Test serialization/deserialization of an App Store listing with its privacy policy URL, privacy labels and developer (v3.fingerprint.store.ios)."""
     location = {
         "identifier": "LOCATION",
         "name": "Location",
@@ -394,6 +397,9 @@ def testMessageSerializeDeserialize_Forv3FingerprintStoreIosWithPrivacyData_gene
         "screenshot_urls": ["https://is1-ssl.mzstatic.com/screenshot1.png"],
         "store_url": "https://apps.apple.com/us/app/example/id310633997",
         "privacy_policy_url": "https://example.com/privacy",
+        "developer": "Example Inc.",
+        "developer_email": "support@example.com",
+        "developer_url": "https://example.com",
         "privacy_labels": [
             {
                 "identifier": "DATA_USED_TO_TRACK_YOU",
