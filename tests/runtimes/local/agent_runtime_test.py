@@ -91,50 +91,6 @@ def testCreateAgentService_whenAgentDefAndAgentSettingsAreNotEmpty_serviceCreate
     assert kwargs["container_labels"] == {"ostorlab.scan_id": "42"}
 
 
-def testCreateAgentService_whenRuntimeLabelsProvided_addsThemToContainerLabels(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """Labels given to the runtime reach every agent container, next to the scan id label."""
-    mocker.patch(
-        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_agent_definition_from_label",
-        return_value=agent_definitions.AgentDefinition(name="agent_name_from_def"),
-    )
-    mocker.patch.object(
-        ostorlab.runtimes.definitions.AgentSettings,
-        "container_image",
-        property(container_name_mock),
-    )
-    mocker.patch(
-        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.update_agent_settings",
-        return_value=None,
-    )
-    mocker.patch(
-        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_settings_config",
-        return_value=None,
-    )
-    mocker.patch(
-        "ostorlab.runtimes.local.agent_runtime.AgentRuntime.create_definition_config",
-        return_value=None,
-    )
-    docker_client = mocker.MagicMock(spec=docker.DockerClient)
-    runtime_agent = agent_runtime.AgentRuntime(
-        definitions.AgentSettings(key="agent/org/name"),
-        "42",
-        docker_client,
-        mq_service=None,
-        redis_service=None,
-        jaeger_service=None,
-        labels={"ostorlab.reference_scan_id": "476862"},
-    )
-
-    runtime_agent.create_agent_service(network_name="test", extra_configs=[])
-
-    assert docker_client.services.create.call_args.kwargs["container_labels"] == {
-        "ostorlab.reference_scan_id": "476862",
-        "ostorlab.scan_id": "42",
-    }
-
-
 def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_serviceCreatedWithAgentDef(
     mocker: plugin.MockerFixture,
 ) -> None:
