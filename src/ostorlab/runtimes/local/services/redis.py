@@ -108,7 +108,7 @@ class LocalRedis:
                 self._docker_client.services.create,
             )(
                 image=self._redis_image,
-                command=[
+                args=[
                     "redis-server",
                     "--appendonly",
                     "yes",

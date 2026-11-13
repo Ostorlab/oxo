@@ -125,6 +125,13 @@ def durable_redis() -> collections.abc.Iterator[
     try:
         local_redis.start()
         assert _run_redis(client, local_redis, ["redis-cli", "ping"]) == b"PONG\n"
+        status = _run_redis(client, local_redis, ["cat", "/proc/1/status"])
+        effective_uid = next(
+            line for line in status.splitlines() if line.startswith(b"Uid:")
+        ).split()[2]
+        redis_uid = _run_redis(client, local_redis, ["id", "-u", "redis"]).strip()
+        assert effective_uid == redis_uid
+        assert effective_uid != b"0"
         yield client, local_redis, scan_name
     finally:
         _cleanup_redis(client, scan_name)
