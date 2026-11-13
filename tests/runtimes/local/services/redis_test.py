@@ -108,10 +108,13 @@ def _run_redis(
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(150),
     wait=tenacity.wait_fixed(0.2),
-    retry=tenacity.retry_if_result(lambda cleaned: cleaned is False),
+    retry=tenacity.retry_if_exception_type(AssertionError),
+    reraise=True,
 )
-def _cleanup_redis(client: docker.DockerClient, scan_name: str) -> bool:
-    return docker_cleanup.cleanup_scan_docker_resources(client, scan_name)
+def _cleanup_redis(client: docker.DockerClient, scan_name: str) -> None:
+    assert docker_cleanup.cleanup_scan_docker_resources(client, scan_name) is True, (
+        f"Failed to clean Redis test universe {scan_name}"
+    )
 
 
 @pytest.fixture
@@ -134,8 +137,10 @@ def durable_redis() -> collections.abc.Iterator[
         assert effective_uid != b"0"
         yield client, local_redis, scan_name
     finally:
-        _cleanup_redis(client, scan_name)
-        client.close()
+        try:
+            _cleanup_redis(client, scan_name)
+        finally:
+            client.close()
 
 
 @pytest.mark.docker
