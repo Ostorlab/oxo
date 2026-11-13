@@ -45,6 +45,18 @@ def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsAssetAndAgentGrou
     assert "... on IosIpaAssetType" in api_request.query
 
 
+def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsReferenceScanId() -> (
+    None
+):
+    """The scanner reads the Reporting Engine id of the scan to label its containers."""
+    api_request = scan_update_state.ScanUpdateStateAPIRequest(
+        scan_id=1, progress="locked", full_details=True
+    )
+
+    assert api_request.query is not None
+    assert re.search(r"scan \{\s+id\s+referenceScanId\s", api_request.query) is not None
+
+
 def testScanUpdateStateAPIRequest_whenFullDetails_queryContainsTestflightAppName() -> (
     None
 ):
