@@ -1,7 +1,10 @@
 """Unit tests for shared docker_cleanup module."""
 
+import uuid
 from unittest import mock
 
+import docker
+import pytest
 from docker import errors as docker_errors
 from requests import exceptions as requests_exceptions
 
@@ -242,3 +245,29 @@ def testCleanupScanDockerResources_whenRequestExceptionRaised_handlesErrorAndRet
     success = docker_cleanup.cleanup_scan_docker_resources(mock_client, "100")
 
     assert success is False
+
+
+@pytest.mark.docker
+def testCleanupScanDockerResources_whenRedisVolumesExist_removesOnlyTargetScan() -> (
+    None
+):
+    """Full cleanup removes an unlabelled Redis volume without touching another scan."""
+    client = docker.from_env()
+    scan_name = f"redis_cleanup_{uuid.uuid4().hex}"
+    target_name = f"{scan_name}_redis_data"
+    other_name = f"{scan_name}_other_redis_data"
+    target = client.volumes.create(name=target_name)
+    other = client.volumes.create(name=other_name)
+    try:
+        assert docker_cleanup.cleanup_scan_docker_resources(client, scan_name) is True
+
+        with pytest.raises(docker_errors.NotFound):
+            client.volumes.get(target_name)
+        assert client.volumes.get(other_name).name == other_name
+    finally:
+        for volume in (target, other):
+            try:
+                volume.remove()
+            except docker_errors.NotFound:
+                pass
+        client.close()

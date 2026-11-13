@@ -195,7 +195,11 @@ def cleanup_scan_docker_resources(
     had_errors = had_errors or err
 
     named_volumes = []
-    named_volume_targets = (f"asset_{scan_id_str}", f"{scan_id_str}_mq_data")
+    named_volume_targets = (
+        f"asset_{scan_id_str}",
+        f"{scan_id_str}_mq_data",
+        f"{scan_id_str}_redis_data",
+    )
     vol_collection = getattr(docker_client, "volumes", None)
     if vol_collection is not None:
         vol_getter = getattr(vol_collection, "get", None)
