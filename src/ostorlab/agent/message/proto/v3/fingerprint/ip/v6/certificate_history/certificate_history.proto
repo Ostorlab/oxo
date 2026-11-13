@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.ip.v6.certificate_history;
+
+// A certificate issued for a name, as logged in Certificate Transparency.
+message Certificate {
+  optional string serial_number = 1;
+  optional string issuer = 2;
+  optional string common_name = 3;
+  // The names the certificate is valid for.
+  repeated string sans = 4;
+  // As an ISO 8601 date and time.
+  optional string not_before = 5;
+  optional string not_after = 6;
+  // The id of the Certificate Transparency log entry, which can exceed 32 bits.
+  optional int64 ct_id = 7;
+}
+
+// The certificates logged for an IPv6 address.
+message Message {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 6];
+  repeated Certificate certificates = 4;
+}
