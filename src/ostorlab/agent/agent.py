@@ -278,6 +278,7 @@ class AgentMixin(
                 object_message.selector,
                 string_utils.format_dict(object_message.data),
             )
+            raise
         finally:
             self.process_cleanup()
             logger.debug("done call to process message")
