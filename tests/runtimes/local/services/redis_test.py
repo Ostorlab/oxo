@@ -4,24 +4,34 @@ Tests marked with `docker` require access to working docker instance (socket or 
 on instances missing docker.
 """
 
+from __future__ import annotations
+
+import collections.abc
+import time
+import uuid
+
+import docker
 import pytest
+import tenacity
 from pytest_mock import plugin
 
+from ostorlab.runtimes import docker_cleanup
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.services import container_exec
 from ostorlab.runtimes.local.services import redis
 
 
 @pytest.mark.docker
-def testLocalRedis_onOperationalConditions_redisIsStarted() -> None:
+def testLocalRedis_onOperationalConditions_redisIsStarted(
+    durable_redis: tuple[docker.DockerClient, redis.LocalRedis, str],
+) -> None:
     """Test service is healthy after start and unhealthy after stop."""
-    lr = redis.LocalRedis(name="test_redis", network="test_network")
-    lr.start()
+    _, local_redis, _ = durable_redis
 
-    assert lr.is_healthy is True
-    lr.stop()
+    assert local_redis.is_healthy is True
+    local_redis.stop()
 
-    assert lr.is_healthy is False
+    assert local_redis.is_healthy is False
 
 
 def testLocalRedisRestore_always_pipesRestoreCommandsInsideRedisContainer(
@@ -81,3 +91,123 @@ def testLocalRedisRestore_whenNoKeys_doesNothing(
     lr.restore([])
 
     run.assert_not_called()
+
+
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(150),
+    wait=tenacity.wait_fixed(0.2),
+    retry=tenacity.retry_if_exception_type(container_exec.ExecError),
+    reraise=True,
+)
+def _run_redis(
+    client: docker.DockerClient, local_redis: redis.LocalRedis, command: list[str]
+) -> bytes:
+    return container_exec.run(client, local_redis.service, command)
+
+
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(150),
+    wait=tenacity.wait_fixed(0.2),
+    retry=tenacity.retry_if_exception_type(AssertionError),
+    reraise=True,
+)
+def _cleanup_redis(client: docker.DockerClient, scan_name: str) -> None:
+    assert docker_cleanup.cleanup_scan_docker_resources(client, scan_name) is True, (
+        f"Failed to clean Redis test universe {scan_name}"
+    )
+
+
+@pytest.fixture
+def durable_redis() -> collections.abc.Iterator[
+    tuple[docker.DockerClient, redis.LocalRedis, str]
+]:
+    """Create a Redis universe with names owned only by this test."""
+    scan_name = f"redis_durability_{uuid.uuid4().hex}"
+    client = docker.from_env()
+    local_redis = redis.LocalRedis(name=scan_name, network=f"network_{scan_name}")
+    try:
+        local_redis.start()
+        assert _run_redis(client, local_redis, ["redis-cli", "ping"]) == b"PONG\n"
+        status = _run_redis(client, local_redis, ["cat", "/proc/1/status"])
+        effective_uid = next(
+            line for line in status.splitlines() if line.startswith(b"Uid:")
+        ).split()[2]
+        redis_uid = _run_redis(client, local_redis, ["id", "-u", "redis"]).strip()
+        assert effective_uid == redis_uid
+        assert effective_uid != b"0"
+        yield client, local_redis, scan_name
+    finally:
+        try:
+            _cleanup_redis(client, scan_name)
+        finally:
+            client.close()
+
+
+@pytest.mark.docker
+@pytest.mark.parametrize("replacement_kind", ["service", "container"])
+def testLocalRedis_whenServiceOrContainerReplaced_preservesBinaryAssetAndSet(
+    durable_redis: tuple[docker.DockerClient, redis.LocalRedis, str],
+    replacement_kind: str,
+) -> None:
+    """A replacement service recovers binary assets and agent set state."""
+    client, local_redis, scan_name = durable_redis
+    ipa = b"PK\x03\x04" + bytes(range(256)) * 4096
+    assert (
+        container_exec.run(
+            client,
+            local_redis.service,
+            ["sh", "-c", "redis-cli -x SET ios:ipa < /tmp/asset.ipa"],
+            files={"asset.ipa": ipa},
+        )
+        == b"OK\n"
+    )
+    _run_redis(
+        client, local_redis, ["redis-cli", "SADD", "agent:processed", "first", "second"]
+    )
+    time.sleep(2)
+    assert local_redis.service is not None
+    previous_containers = client.containers.list(
+        filters={"label": f"com.docker.swarm.service.name=redis_{scan_name}"}
+    )
+    assert len(previous_containers) == 1
+    if replacement_kind == "service":
+        previous_service_id = local_redis.service.id
+        local_redis.stop()
+        try:
+            previous_containers[0].wait(timeout=30)
+        except docker.errors.NotFound:
+            pass
+        replacement = redis.LocalRedis(name=scan_name, network=f"network_{scan_name}")
+        replacement.start()
+        assert replacement.service is not None
+        assert replacement.service.id != previous_service_id
+    else:
+        previous_containers[0].kill(signal="SIGKILL")
+        replacement = local_redis
+
+    assert (
+        _run_redis(client, replacement, ["redis-cli", "--raw", "GET", "ios:ipa"])
+        == ipa + b"\n"
+    )
+    assert set(
+        _run_redis(
+            client, replacement, ["redis-cli", "--raw", "SMEMBERS", "agent:processed"]
+        ).splitlines()
+    ) == {b"first", b"second"}
+    assert (
+        _run_redis(
+            client, replacement, ["redis-cli", "--raw", "CONFIG", "GET", "appendonly"]
+        )
+        == b"appendonly\nyes\n"
+    )
+    assert (
+        _run_redis(
+            client, replacement, ["redis-cli", "--raw", "CONFIG", "GET", "appendfsync"]
+        )
+        == b"appendfsync\neverysec\n"
+    )
+    current_containers = client.containers.list(
+        filters={"label": f"com.docker.swarm.service.name=redis_{scan_name}"}
+    )
+    assert len(current_containers) == 1
+    assert current_containers[0].id != previous_containers[0].id

@@ -108,6 +108,14 @@ class LocalRedis:
                 self._docker_client.services.create,
             )(
                 image=self._redis_image,
+                args=[
+                    "redis-server",
+                    "--appendonly",
+                    "yes",
+                    "--appendfsync",
+                    "everysec",
+                ],
+                mounts=[types.Mount(target="/data", source=f"{self._name}_redis_data")],
                 networks=[self._network],
                 name=self._redis_host,
                 restart_policy=types.RestartPolicy(condition="any"),
