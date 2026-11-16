@@ -1,0 +1,17 @@
+syntax = "proto2";
+
+import "ostorlab/agent/message/proto/common/tls/tls.proto";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.tls;
+
+// The TLS versions and cipher suites one port of a domain name accepts.
+message Message {
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
+  // The protocol versions the port accepts, for example TLSv1.2. This list is authoritative for the
+  // versions: it comes from the protocol test, which can find a version whose cipher suites were not listed.
+  repeated string versions = 4;
+  // The cipher suites listed per version, read by a separate test.
+  repeated ostorlab.agent.message.proto.common.tls.Cipher ciphers = 5;
+}

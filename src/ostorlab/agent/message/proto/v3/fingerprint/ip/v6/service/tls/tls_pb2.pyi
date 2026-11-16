@@ -7,6 +7,7 @@ from collections import abc as _abc
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf.internal import containers as _containers
+from ostorlab.agent.message.proto.common.tls import tls_pb2 as _tls_pb2
 import builtins as _builtins
 import sys
 import typing as _typing
@@ -19,44 +20,25 @@ else:
 DESCRIPTOR: _descriptor.FileDescriptor
 
 @_typing.final
-class Cipher(_message.Message):
-    """One cipher suite a port accepts on a TLS version."""
-
-    DESCRIPTOR: _descriptor.Descriptor
-
-    VERSION_FIELD_NUMBER: _builtins.int
-    NAME_FIELD_NUMBER: _builtins.int
-    version: _builtins.str
-    """The TLS version the cipher was accepted on, for example TLSv1.2."""
-    name: _builtins.str
-    """The name of the cipher suite."""
-    def __init__(
-        self,
-        *,
-        version: _builtins.str | None = ...,
-        name: _builtins.str | None = ...,
-    ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "version", b"version"]  # noqa: Y015
-    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["name", b"name", "version", b"version"]  # noqa: Y015
-    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
-
-Global___Cipher: _TypeAlias = Cipher  # noqa: Y015
-
-@_typing.final
 class Message(_message.Message):
-    """The TLS versions and cipher suites one port of a host accepts."""
+    """The TLS versions and cipher suites one port of an IPv6 address accepts."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
     HOST_FIELD_NUMBER: _builtins.int
+    MASK_FIELD_NUMBER: _builtins.int
+    VERSION_FIELD_NUMBER: _builtins.int
+    SERVICE_FIELD_NUMBER: _builtins.int
     PORT_FIELD_NUMBER: _builtins.int
+    PROTOCOL_FIELD_NUMBER: _builtins.int
     VERSIONS_FIELD_NUMBER: _builtins.int
     CIPHERS_FIELD_NUMBER: _builtins.int
     host: _builtins.str
-    """The host that was tested: a domain name, an IPv4 or an IPv6 address."""
+    mask: _builtins.str
+    version: _builtins.int
+    service: _builtins.str
     port: _builtins.int
+    protocol: _builtins.str
     @_builtins.property
     def versions(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """The protocol versions the port accepts, for example TLSv1.2. This list is authoritative for the
@@ -64,20 +46,24 @@ class Message(_message.Message):
         """
 
     @_builtins.property
-    def ciphers(self) -> _containers.RepeatedCompositeFieldContainer[Global___Cipher]:
+    def ciphers(self) -> _containers.RepeatedCompositeFieldContainer[_tls_pb2.Cipher]:
         """The cipher suites listed per version, read by a separate test."""
 
     def __init__(
         self,
         *,
         host: _builtins.str | None = ...,
+        mask: _builtins.str | None = ...,
+        version: _builtins.int | None = ...,
+        service: _builtins.str | None = ...,
         port: _builtins.int | None = ...,
+        protocol: _builtins.str | None = ...,
         versions: _abc.Iterable[_builtins.str] | None = ...,
-        ciphers: _abc.Iterable[Global___Cipher] | None = ...,
+        ciphers: _abc.Iterable[_tls_pb2.Cipher] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["host", b"host", "port", b"port"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["host", b"host", "mask", b"mask", "port", b"port", "protocol", b"protocol", "service", b"service", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["ciphers", b"ciphers", "host", b"host", "port", b"port", "versions", b"versions"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["ciphers", b"ciphers", "host", b"host", "mask", b"mask", "port", b"port", "protocol", b"protocol", "service", b"service", "version", b"version", "versions", b"versions"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
