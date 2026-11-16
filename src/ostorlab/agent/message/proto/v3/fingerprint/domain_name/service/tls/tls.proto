@@ -1,0 +1,34 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.tls;
+
+// A TLS or SSL protocol version and whether the service accepts it.
+message Protocol {
+  // The protocol version, for example TLSv1.2.
+  optional string name = 1;
+  optional bool offered = 2;
+}
+
+// A cipher suite the service accepts on one protocol version.
+message Cipher {
+  // The protocol version the cipher suite was accepted on, for example TLSv1.2.
+  optional string protocol = 1;
+  // The OpenSSL name of the cipher suite.
+  optional string name = 2;
+  // The key exchange and its size, for example ECDH 253.
+  optional string key_exchange = 3;
+  // The encryption algorithm, for example AESGCM.
+  optional string encryption = 4;
+  // The size of the encryption key in bits.
+  optional uint32 bits = 5;
+}
+
+// The TLS protocol versions, cipher suites and forward secrecy of a service of a domain name.
+message Message {
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
+  repeated Protocol protocols = 4;
+  repeated Cipher ciphers = 5;
+  optional bool forward_secrecy = 6;
+}
