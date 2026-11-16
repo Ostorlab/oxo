@@ -13,7 +13,6 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
             "name": "ostorlab.co",
             "port": 443,
             "schema": "https",
-            "url": "https://ostorlab.co/",
             "grade": "C",
             "score": 50,
             "tests_passed": 5,
@@ -47,7 +46,6 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
     assert message.name == "ostorlab.co"
     assert message.port == 443
     assert message.schema == "https"
-    assert message.url == "https://ostorlab.co/"
     assert message.grade == "C"
     assert message.score == 50
     assert message.tests_passed == 5
@@ -95,4 +93,3 @@ def testSerialize_whenPageSetsNoSecurityHeader_shouldKeepTheGradeAndNoHeader() -
     assert message.HasField("score") is True
     assert message.score == 0
     assert list(message.headers) == []
-    assert message.HasField("url") is False

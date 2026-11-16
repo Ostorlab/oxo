@@ -25,14 +25,12 @@ message Message {
   optional string name = 1;
   optional uint32 port = 2;
   optional string schema = 3;
-  // The page checked, after redirects.
-  optional string url = 4;
   // The grade, from A+ to F.
-  optional string grade = 5;
+  optional string grade = 4;
   // The score the grade comes from, which bonus points can take above 100.
-  optional uint32 score = 6;
-  optional uint32 tests_passed = 7;
-  optional uint32 tests_failed = 8;
-  repeated Check checks = 9;
-  repeated Header headers = 10;
+  optional uint32 score = 5;
+  optional uint32 tests_passed = 6;
+  optional uint32 tests_failed = 7;
+  repeated Check checks = 8;
+  repeated Header headers = 9;
 }

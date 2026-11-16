@@ -85,7 +85,6 @@ class Message(_message.Message):
     NAME_FIELD_NUMBER: _builtins.int
     PORT_FIELD_NUMBER: _builtins.int
     SCHEMA_FIELD_NUMBER: _builtins.int
-    URL_FIELD_NUMBER: _builtins.int
     GRADE_FIELD_NUMBER: _builtins.int
     SCORE_FIELD_NUMBER: _builtins.int
     TESTS_PASSED_FIELD_NUMBER: _builtins.int
@@ -95,8 +94,6 @@ class Message(_message.Message):
     name: _builtins.str
     port: _builtins.int
     schema: _builtins.str
-    url: _builtins.str
-    """The page checked, after redirects."""
     grade: _builtins.str
     """The grade, from A+ to F."""
     score: _builtins.int
@@ -113,7 +110,6 @@ class Message(_message.Message):
         name: _builtins.str | None = ...,
         port: _builtins.int | None = ...,
         schema: _builtins.str | None = ...,
-        url: _builtins.str | None = ...,
         grade: _builtins.str | None = ...,
         score: _builtins.int | None = ...,
         tests_passed: _builtins.int | None = ...,
@@ -121,9 +117,9 @@ class Message(_message.Message):
         checks: _abc.Iterable[Global___Check] | None = ...,
         headers: _abc.Iterable[Global___Header] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["grade", b"grade", "name", b"name", "port", b"port", "schema", b"schema", "score", b"score", "tests_failed", b"tests_failed", "tests_passed", b"tests_passed", "url", b"url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["grade", b"grade", "name", b"name", "port", b"port", "schema", b"schema", "score", b"score", "tests_failed", b"tests_failed", "tests_passed", b"tests_passed"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["checks", b"checks", "grade", b"grade", "headers", b"headers", "name", b"name", "port", b"port", "schema", b"schema", "score", b"score", "tests_failed", b"tests_failed", "tests_passed", b"tests_passed", "url", b"url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["checks", b"checks", "grade", b"grade", "headers", b"headers", "name", b"name", "port", b"port", "schema", b"schema", "score", b"score", "tests_failed", b"tests_failed", "tests_passed", b"tests_passed"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

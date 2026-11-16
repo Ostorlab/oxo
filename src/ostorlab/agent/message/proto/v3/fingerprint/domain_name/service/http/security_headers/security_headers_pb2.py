@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nlostorlab/agent/message/proto/v3/fingerprint/domain_name/service/http/security_headers/security_headers.proto\x12Uostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers\"%\n\x06Header\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"M\n\x05\x43heck\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06passed\x18\x02 \x01(\x08\x12\x0e\n\x06result\x18\x03 \x01(\t\x12\x16\n\x0escore_modifier\x18\x04 \x01(\x05\"\xea\x02\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\x0b\n\x03url\x18\x04 \x01(\t\x12\r\n\x05grade\x18\x05 \x01(\t\x12\r\n\x05score\x18\x06 \x01(\r\x12\x14\n\x0ctests_passed\x18\x07 \x01(\r\x12\x14\n\x0ctests_failed\x18\x08 \x01(\r\x12l\n\x06\x63hecks\x18\t \x03(\x0b\x32\\.ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers.Check\x12n\n\x07headers\x18\n \x03(\x0b\x32].ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers.Header')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nlostorlab/agent/message/proto/v3/fingerprint/domain_name/service/http/security_headers/security_headers.proto\x12Uostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers\"%\n\x06Header\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t\"M\n\x05\x43heck\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06passed\x18\x02 \x01(\x08\x12\x0e\n\x06result\x18\x03 \x01(\t\x12\x16\n\x0escore_modifier\x18\x04 \x01(\x05\"\xdd\x02\n\x07Message\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\r\x12\x0e\n\x06schema\x18\x03 \x01(\t\x12\r\n\x05grade\x18\x04 \x01(\t\x12\r\n\x05score\x18\x05 \x01(\r\x12\x14\n\x0ctests_passed\x18\x06 \x01(\r\x12\x14\n\x0ctests_failed\x18\x07 \x01(\r\x12l\n\x06\x63hecks\x18\x08 \x03(\x0b\x32\\.ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers.Check\x12n\n\x07headers\x18\t \x03(\x0b\x32].ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers.Header')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,5 +36,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CHECK']._serialized_start=238
   _globals['_CHECK']._serialized_end=315
   _globals['_MESSAGE']._serialized_start=318
-  _globals['_MESSAGE']._serialized_end=680
+  _globals['_MESSAGE']._serialized_end=667
 # @@protoc_insertion_point(module_scope)
