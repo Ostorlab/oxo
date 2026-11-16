@@ -1,0 +1,32 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.subdomain_history;
+
+// A name under the domain, as seen on its certificates.
+message Subdomain {
+  // The name, like api.ostorlab.co or *.internal.ostorlab.co.
+  optional string name = 1;
+  // When its first certificate became valid, as an ISO 8601 date and time in UTC.
+  optional string first_seen = 2;
+  // When its last certificate became valid, as an ISO 8601 date and time in UTC.
+  optional string last_seen = 3;
+  // The latest expiry of its certificates, as an ISO 8601 date and time in UTC; in the future while a certificate still covers it.
+  optional string last_expires = 4;
+  optional uint32 certificate_count = 5;
+}
+
+// The names under a domain seen in Certificate Transparency, from crt.sh, split in parts for big domains.
+message Message {
+  // The registrable domain.
+  optional string name = 1;
+  // How many names the domain has across all the parts, the domain itself included.
+  optional uint32 subdomain_count = 2;
+  repeated Subdomain subdomains = 3;
+  // The number of this part, from 1.
+  optional uint32 part = 4;
+  optional uint32 part_count = 5;
+  // When crt.sh last read the Certificate Transparency logs, as an ISO 8601 date and time in UTC; later certificates are missing.
+  optional string data_up_to = 6;
+  // Whether every certificate was fetched; false when some expiry ranges timed out.
+  optional bool complete = 7;
+}
