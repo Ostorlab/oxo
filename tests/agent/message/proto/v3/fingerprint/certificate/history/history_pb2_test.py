@@ -1,14 +1,12 @@
 """Unit tests for the certificate history fingerprint protobuf message."""
 
 from ostorlab.agent.message import serializer
-from ostorlab.agent.message.proto.v3.fingerprint.certificate_history import (
-    certificate_history_pb2,
-)
+from ostorlab.agent.message.proto.v3.fingerprint.certificate.history import history_pb2
 
 
 def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.certificate_history",
+        "v3.fingerprint.certificate.history",
         {
             "host": "ostorlab.co",
             "certificate_count": 392,
@@ -53,9 +51,9 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
         },
     ).SerializeToString()
 
-    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
 
-    assert isinstance(message, certificate_history_pb2.Message)
+    assert isinstance(message, history_pb2.Message)
     assert message.host == "ostorlab.co"
     assert message.certificate_count == 392
     assert message.host_certificate_count == 60
@@ -82,7 +80,7 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
 
 def testSerialize_whenHostIsAnIp_shouldKeepEveryNameOnTheCertificate() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.certificate_history",
+        "v3.fingerprint.certificate.history",
         {
             "host": "203.0.113.7",
             "certificate_count": 1,
@@ -102,9 +100,9 @@ def testSerialize_whenHostIsAnIp_shouldKeepEveryNameOnTheCertificate() -> None:
         },
     ).SerializeToString()
 
-    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
 
-    assert isinstance(message, certificate_history_pb2.Message)
+    assert isinstance(message, history_pb2.Message)
     assert message.host == "203.0.113.7"
     assert message.host_certificate_count == message.certificate_count
     assert list(message.certificates[0].names) == ["203.0.113.7", "www.example.com"]
@@ -112,7 +110,7 @@ def testSerialize_whenHostIsAnIp_shouldKeepEveryNameOnTheCertificate() -> None:
 
 def testSerialize_whenSomeRangesTimedOut_shouldKeepTheMissingRanges() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.certificate_history",
+        "v3.fingerprint.certificate.history",
         {
             "host": "example.com",
             "certificate_count": 155907,
@@ -122,9 +120,9 @@ def testSerialize_whenSomeRangesTimedOut_shouldKeepTheMissingRanges() -> None:
         },
     ).SerializeToString()
 
-    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
 
-    assert isinstance(message, certificate_history_pb2.Message)
+    assert isinstance(message, history_pb2.Message)
     assert message.HasField("complete") is True
     assert message.complete is False
     assert list(message.missing_ranges) == [
@@ -135,7 +133,7 @@ def testSerialize_whenSomeRangesTimedOut_shouldKeepTheMissingRanges() -> None:
 
 def testSerialize_whenNoCertificate_shouldKeepTheZeroCountWithoutDates() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.certificate_history",
+        "v3.fingerprint.certificate.history",
         {
             "host": "example.com",
             "certificate_count": 0,
@@ -145,9 +143,9 @@ def testSerialize_whenNoCertificate_shouldKeepTheZeroCountWithoutDates() -> None
         },
     ).SerializeToString()
 
-    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
 
-    assert isinstance(message, certificate_history_pb2.Message)
+    assert isinstance(message, history_pb2.Message)
     assert message.HasField("certificate_count") is True
     assert message.certificate_count == 0
     assert message.HasField("first_issued") is False

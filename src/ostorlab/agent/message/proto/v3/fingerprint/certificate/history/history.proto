@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.fingerprint.certificate_history;
+package ostorlab.agent.message.proto.v3.fingerprint.certificate.history;
 
 // A certificate logged in Certificate Transparency.
 message Certificate {
