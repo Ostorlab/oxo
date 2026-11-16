@@ -65,7 +65,7 @@ class Message(_message.Message):
 
     @_builtins.property
     def ciphers(self) -> _containers.RepeatedCompositeFieldContainer[Global___Cipher]:
-        """The cipher suites listed per version. A version here is also in `versions`."""
+        """The cipher suites listed per version, read by a separate test."""
 
     def __init__(
         self,

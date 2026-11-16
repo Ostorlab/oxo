@@ -18,6 +18,6 @@ message Message {
   // The protocol versions the port accepts, for example TLSv1.2. This list is authoritative for the
   // versions: it comes from the protocol test, which can find a version whose cipher suites were not listed.
   repeated string versions = 3;
-  // The cipher suites listed per version. A version here is also in `versions`.
+  // The cipher suites listed per version, read by a separate test.
   repeated Cipher ciphers = 4;
 }
