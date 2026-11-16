@@ -57,6 +57,7 @@ def testSerialize_whenForwardSecrecyIsNotOffered_shouldKeepTheFalseValue() -> No
 
     message = serializer.deserialize("v3.fingerprint.domain_name.service.tls", raw)
 
+    assert isinstance(message, tls_pb2.Message)
     assert message.HasField("forward_secrecy") is True
     assert message.forward_secrecy is False
     assert list(message.ciphers) == []
