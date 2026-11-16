@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package ostorlab.agent.message.proto.v3.fingerprint.domain_name.certificate_history;
+package ostorlab.agent.message.proto.v3.fingerprint.certificate_history;
 
 // A certificate logged in Certificate Transparency.
 message Certificate {
@@ -14,11 +14,11 @@ message Certificate {
   optional string not_before = 4;
   // When the certificate expires, as an ISO 8601 date and time in UTC.
   optional string not_after = 5;
-  // The names of the domain and of its subdomains that the certificate covers.
+  // The names the certificate covers: for a domain, the domain and its subdomains; for an IP, every name and address on it.
   repeated string names = 6;
 }
 
-// The certificates an issuer gave to the domain and its subdomains.
+// The certificates an issuer gave to the host, and for a domain to its subdomains.
 message Issuer {
   // The issuer distinguished name.
   optional string name = 1;
@@ -29,20 +29,20 @@ message Issuer {
   optional uint32 certificate_count = 4;
 }
 
-// The certificates of a domain and its subdomains logged in Certificate Transparency, from crt.sh.
+// The certificates of a domain or an IP logged in Certificate Transparency, from crt.sh.
 message Message {
-  // The registrable domain.
-  optional string name = 1;
-  // How many certificates the domain and its subdomains have, each counted once, 0 when none.
+  // The host: a registrable domain name, an IPv4 or an IPv6 address.
+  optional string host = 1;
+  // How many certificates the host has, each counted once, 0 when none; for a domain, its subdomains' included.
   optional uint32 certificate_count = 2;
-  // How many of them cover the domain itself.
-  optional uint32 domain_certificate_count = 3;
+  // How many of them cover the host itself; for an IP, all of them.
+  optional uint32 host_certificate_count = 3;
   // When the first certificate became valid, as an ISO 8601 date and time in UTC; absent when there is none.
   optional string first_issued = 4;
   // When the last certificate became valid, as an ISO 8601 date and time in UTC; absent when there is none.
   optional string last_issued = 5;
   repeated Issuer issuers = 6;
-  // The latest certificates covering the domain itself, newest first; domain_certificate_count is how many there are in all.
+  // The latest certificates covering the host itself, newest first; host_certificate_count is how many there are in all.
   repeated Certificate certificates = 7;
   // When crt.sh last read the Certificate Transparency logs, as an ISO 8601 date and time in UTC; later certificates are missing.
   optional string data_up_to = 8;
@@ -50,6 +50,6 @@ message Message {
   optional bool complete = 9;
   // The expiry ranges that were not fetched, as ISO 8601 intervals like 2021-01-01/2022-01-01.
   repeated string missing_ranges = 10;
-  // The crt.sh search page of the domain.
+  // The crt.sh search page of the host.
   optional string search_url = 11;
 }

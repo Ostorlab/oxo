@@ -42,7 +42,7 @@ class Certificate(_message.Message):
     """When the certificate expires, as an ISO 8601 date and time in UTC."""
     @_builtins.property
     def names(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
-        """The names of the domain and of its subdomains that the certificate covers."""
+        """The names the certificate covers: for a domain, the domain and its subdomains; for an IP, every name and address on it."""
 
     def __init__(
         self,
@@ -64,7 +64,7 @@ Global___Certificate: _TypeAlias = Certificate  # noqa: Y015
 
 @_typing.final
 class Issuer(_message.Message):
-    """The certificates an issuer gave to the domain and its subdomains."""
+    """The certificates an issuer gave to the host, and for a domain to its subdomains."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -97,13 +97,13 @@ Global___Issuer: _TypeAlias = Issuer  # noqa: Y015
 
 @_typing.final
 class Message(_message.Message):
-    """The certificates of a domain and its subdomains logged in Certificate Transparency, from crt.sh."""
+    """The certificates of a domain or an IP logged in Certificate Transparency, from crt.sh."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
-    NAME_FIELD_NUMBER: _builtins.int
+    HOST_FIELD_NUMBER: _builtins.int
     CERTIFICATE_COUNT_FIELD_NUMBER: _builtins.int
-    DOMAIN_CERTIFICATE_COUNT_FIELD_NUMBER: _builtins.int
+    HOST_CERTIFICATE_COUNT_FIELD_NUMBER: _builtins.int
     FIRST_ISSUED_FIELD_NUMBER: _builtins.int
     LAST_ISSUED_FIELD_NUMBER: _builtins.int
     ISSUERS_FIELD_NUMBER: _builtins.int
@@ -112,12 +112,12 @@ class Message(_message.Message):
     COMPLETE_FIELD_NUMBER: _builtins.int
     MISSING_RANGES_FIELD_NUMBER: _builtins.int
     SEARCH_URL_FIELD_NUMBER: _builtins.int
-    name: _builtins.str
-    """The registrable domain."""
+    host: _builtins.str
+    """The host: a registrable domain name, an IPv4 or an IPv6 address."""
     certificate_count: _builtins.int
-    """How many certificates the domain and its subdomains have, each counted once, 0 when none."""
-    domain_certificate_count: _builtins.int
-    """How many of them cover the domain itself."""
+    """How many certificates the host has, each counted once, 0 when none; for a domain, its subdomains' included."""
+    host_certificate_count: _builtins.int
+    """How many of them cover the host itself; for an IP, all of them."""
     first_issued: _builtins.str
     """When the first certificate became valid, as an ISO 8601 date and time in UTC; absent when there is none."""
     last_issued: _builtins.str
@@ -127,12 +127,12 @@ class Message(_message.Message):
     complete: _builtins.bool
     """Whether every certificate was fetched; false when some expiry ranges timed out."""
     search_url: _builtins.str
-    """The crt.sh search page of the domain."""
+    """The crt.sh search page of the host."""
     @_builtins.property
     def issuers(self) -> _containers.RepeatedCompositeFieldContainer[Global___Issuer]: ...
     @_builtins.property
     def certificates(self) -> _containers.RepeatedCompositeFieldContainer[Global___Certificate]:
-        """The latest certificates covering the domain itself, newest first; domain_certificate_count is how many there are in all."""
+        """The latest certificates covering the host itself, newest first; host_certificate_count is how many there are in all."""
 
     @_builtins.property
     def missing_ranges(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
@@ -141,9 +141,9 @@ class Message(_message.Message):
     def __init__(
         self,
         *,
-        name: _builtins.str | None = ...,
+        host: _builtins.str | None = ...,
         certificate_count: _builtins.int | None = ...,
-        domain_certificate_count: _builtins.int | None = ...,
+        host_certificate_count: _builtins.int | None = ...,
         first_issued: _builtins.str | None = ...,
         last_issued: _builtins.str | None = ...,
         issuers: _abc.Iterable[Global___Issuer] | None = ...,
@@ -153,9 +153,9 @@ class Message(_message.Message):
         missing_ranges: _abc.Iterable[_builtins.str] | None = ...,
         search_url: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "complete", b"complete", "data_up_to", b"data_up_to", "domain_certificate_count", b"domain_certificate_count", "first_issued", b"first_issued", "last_issued", b"last_issued", "name", b"name", "search_url", b"search_url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "complete", b"complete", "data_up_to", b"data_up_to", "first_issued", b"first_issued", "host", b"host", "host_certificate_count", b"host_certificate_count", "last_issued", b"last_issued", "search_url", b"search_url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "certificates", b"certificates", "complete", b"complete", "data_up_to", b"data_up_to", "domain_certificate_count", b"domain_certificate_count", "first_issued", b"first_issued", "issuers", b"issuers", "last_issued", b"last_issued", "missing_ranges", b"missing_ranges", "name", b"name", "search_url", b"search_url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "certificates", b"certificates", "complete", b"complete", "data_up_to", b"data_up_to", "first_issued", b"first_issued", "host", b"host", "host_certificate_count", b"host_certificate_count", "issuers", b"issuers", "last_issued", b"last_issued", "missing_ranges", b"missing_ranges", "search_url", b"search_url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

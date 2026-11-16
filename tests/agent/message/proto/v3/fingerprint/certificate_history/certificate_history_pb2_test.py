@@ -1,18 +1,18 @@
 """Unit tests for the certificate history fingerprint protobuf message."""
 
 from ostorlab.agent.message import serializer
-from ostorlab.agent.message.proto.v3.fingerprint.domain_name.certificate_history import (
+from ostorlab.agent.message.proto.v3.fingerprint.certificate_history import (
     certificate_history_pb2,
 )
 
 
 def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.domain_name.certificate_history",
+        "v3.fingerprint.certificate_history",
         {
-            "name": "ostorlab.co",
+            "host": "ostorlab.co",
             "certificate_count": 392,
-            "domain_certificate_count": 60,
+            "host_certificate_count": 60,
             "first_issued": "2015-04-14T00:00:00Z",
             "last_issued": "2026-10-06T00:55:23Z",
             "issuers": [
@@ -53,14 +53,12 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
         },
     ).SerializeToString()
 
-    message = serializer.deserialize(
-        "v3.fingerprint.domain_name.certificate_history", raw
-    )
+    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
 
     assert isinstance(message, certificate_history_pb2.Message)
-    assert message.name == "ostorlab.co"
+    assert message.host == "ostorlab.co"
     assert message.certificate_count == 392
-    assert message.domain_certificate_count == 60
+    assert message.host_certificate_count == 60
     assert message.first_issued == "2015-04-14T00:00:00Z"
     assert message.last_issued == "2026-10-06T00:55:23Z"
     assert len(message.issuers) == 2
@@ -82,21 +80,49 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
     assert message.search_url == "https://crt.sh/?q=ostorlab.co"
 
 
+def testSerialize_whenHostIsAnIp_shouldKeepEveryNameOnTheCertificate() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.certificate_history",
+        {
+            "host": "203.0.113.7",
+            "certificate_count": 1,
+            "host_certificate_count": 1,
+            "certificates": [
+                {
+                    "crtsh_id": 1,
+                    "issuer": "C=US, O=Let's Encrypt, CN=YE1",
+                    "serial_number": "0a1b2c",
+                    "not_before": "2026-09-01T08:00:00Z",
+                    "not_after": "2026-09-07T08:00:00Z",
+                    "names": ["203.0.113.7", "www.example.com"],
+                }
+            ],
+            "complete": True,
+            "search_url": "https://crt.sh/?q=203.0.113.7",
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
+
+    assert isinstance(message, certificate_history_pb2.Message)
+    assert message.host == "203.0.113.7"
+    assert message.host_certificate_count == message.certificate_count
+    assert list(message.certificates[0].names) == ["203.0.113.7", "www.example.com"]
+
+
 def testSerialize_whenSomeRangesTimedOut_shouldKeepTheMissingRanges() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.domain_name.certificate_history",
+        "v3.fingerprint.certificate_history",
         {
-            "name": "example.com",
+            "host": "example.com",
             "certificate_count": 155907,
-            "domain_certificate_count": 46,
+            "host_certificate_count": 46,
             "complete": False,
             "missing_ranges": ["2023-01-01/2024-01-01", "2024-01-01/2025-01-01"],
         },
     ).SerializeToString()
 
-    message = serializer.deserialize(
-        "v3.fingerprint.domain_name.certificate_history", raw
-    )
+    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
 
     assert isinstance(message, certificate_history_pb2.Message)
     assert message.HasField("complete") is True
@@ -109,19 +135,17 @@ def testSerialize_whenSomeRangesTimedOut_shouldKeepTheMissingRanges() -> None:
 
 def testSerialize_whenNoCertificate_shouldKeepTheZeroCountWithoutDates() -> None:
     raw = serializer.serialize(
-        "v3.fingerprint.domain_name.certificate_history",
+        "v3.fingerprint.certificate_history",
         {
-            "name": "example.com",
+            "host": "example.com",
             "certificate_count": 0,
-            "domain_certificate_count": 0,
+            "host_certificate_count": 0,
             "complete": True,
             "search_url": "https://crt.sh/?q=example.com",
         },
     ).SerializeToString()
 
-    message = serializer.deserialize(
-        "v3.fingerprint.domain_name.certificate_history", raw
-    )
+    message = serializer.deserialize("v3.fingerprint.certificate_history", raw)
 
     assert isinstance(message, certificate_history_pb2.Message)
     assert message.HasField("certificate_count") is True
