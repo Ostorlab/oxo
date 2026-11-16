@@ -94,6 +94,57 @@ class IX(_message.Message):
 Global___IX: _TypeAlias = IX  # noqa: Y015
 
 @_typing.final
+class TracerouteHop(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    IP_FIELD_NUMBER: _builtins.int
+    ASN_FIELD_NUMBER: _builtins.int
+    RTT_FIELD_NUMBER: _builtins.int
+    ip: _builtins.str
+    """Empty when the router did not answer."""
+    asn: _builtins.str
+    rtt: _builtins.float
+    """Round trip time in milliseconds."""
+    def __init__(
+        self,
+        *,
+        ip: _builtins.str | None = ...,
+        asn: _builtins.str | None = ...,
+        rtt: _builtins.float | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "ip", b"ip", "rtt", b"rtt"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "ip", b"ip", "rtt", b"rtt"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___TracerouteHop: _TypeAlias = TracerouteHop  # noqa: Y015
+
+@_typing.final
+class Traceroute(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    TARGET_FIELD_NUMBER: _builtins.int
+    HOPS_FIELD_NUMBER: _builtins.int
+    target: _builtins.str
+    """IP address inside the ASN the path goes to."""
+    @_builtins.property
+    def hops(self) -> _containers.RepeatedCompositeFieldContainer[Global___TracerouteHop]: ...
+    def __init__(
+        self,
+        *,
+        target: _builtins.str | None = ...,
+        hops: _abc.Iterable[Global___TracerouteHop] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["target", b"target"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["hops", b"hops", "target", b"target"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___Traceroute: _TypeAlias = Traceroute  # noqa: Y015
+
+@_typing.final
 class Message(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -108,6 +159,7 @@ class Message(_message.Message):
     IXS_FIELD_NUMBER: _builtins.int
     RELATED_ASNS_FIELD_NUMBER: _builtins.int
     TAGS_FIELD_NUMBER: _builtins.int
+    TRACEROUTE_FIELD_NUMBER: _builtins.int
     asn: _builtins.str
     website: _builtins.str
     network_type: _builtins.str
@@ -124,6 +176,8 @@ class Message(_message.Message):
     def related_asns(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
     @_builtins.property
     def tags(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
+    @_builtins.property
+    def traceroute(self) -> Global___Traceroute: ...
     def __init__(
         self,
         *,
@@ -138,10 +192,11 @@ class Message(_message.Message):
         ixs: _abc.Iterable[Global___IX] | None = ...,
         related_asns: _abc.Iterable[_builtins.str] | None = ...,
         tags: _abc.Iterable[_builtins.str] | None = ...,
+        traceroute: Global___Traceroute | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "ip_count", b"ip_count", "network_type", b"network_type", "rank", b"rank", "website", b"website"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "ip_count", b"ip_count", "network_type", b"network_type", "rank", b"rank", "traceroute", b"traceroute", "website", b"website"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "ip_count", b"ip_count", "ixs", b"ixs", "neighbours", b"neighbours", "network_type", b"network_type", "prefixes", b"prefixes", "rank", b"rank", "related_asns", b"related_asns", "tags", b"tags", "website", b"website"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "ip_count", b"ip_count", "ixs", b"ixs", "neighbours", b"neighbours", "network_type", b"network_type", "prefixes", b"prefixes", "rank", b"rank", "related_asns", b"related_asns", "tags", b"tags", "traceroute", b"traceroute", "website", b"website"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

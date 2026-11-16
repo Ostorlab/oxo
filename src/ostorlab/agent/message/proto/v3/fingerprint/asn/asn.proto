@@ -20,6 +20,20 @@ message IX {
   optional int64 speed = 3;
 }
 
+message TracerouteHop {
+  // Empty when the router did not answer.
+  optional string ip = 1;
+  optional string asn = 2;
+  // Round trip time in milliseconds.
+  optional double rtt = 3;
+}
+
+message Traceroute {
+  // IP address inside the ASN the path goes to.
+  optional string target = 1;
+  repeated TracerouteHop hops = 2;
+}
+
 message Message {
   optional string asn = 1;
   optional string website = 2;
@@ -32,4 +46,5 @@ message Message {
   repeated IX ixs = 9;
   repeated string related_asns = 10;
   repeated string tags = 11;
+  optional Traceroute traceroute = 12;
 }

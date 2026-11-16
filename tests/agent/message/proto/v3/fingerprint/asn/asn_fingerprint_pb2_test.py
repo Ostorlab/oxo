@@ -21,6 +21,14 @@ def testMessageFromData_whenAsnFingerprintProvided_roundTrips() -> None:
         "ixs": [{"name": "DE-CIX Frankfurt", "city": "Frankfurt", "speed": 100000}],
         "related_asns": ["36040"],
         "tags": ["cdn", "anycast"],
+        "traceroute": {
+            "target": "8.8.8.1",
+            "hops": [
+                {"ip": "81.192.32.62", "asn": "6713", "rtt": 3.77},
+                {},
+                {"ip": "192.178.105.209", "asn": "15169", "rtt": 26.44},
+            ],
+        },
     }
 
     serialized = agent_message.Message.from_data("v3.fingerprint.asn", data)
