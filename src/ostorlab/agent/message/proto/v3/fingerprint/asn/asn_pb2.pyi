@@ -145,6 +145,29 @@ class Traceroute(_message.Message):
 Global___Traceroute: _TypeAlias = Traceroute  # noqa: Y015
 
 @_typing.final
+class HostedDomain(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    NAME_FIELD_NUMBER: _builtins.int
+    IP_FIELD_NUMBER: _builtins.int
+    name: _builtins.str
+    ip: _builtins.str
+    """IP address inside the ASN the domain resolves to."""
+    def __init__(
+        self,
+        *,
+        name: _builtins.str | None = ...,
+        ip: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["ip", b"ip", "name", b"name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["ip", b"ip", "name", b"name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___HostedDomain: _TypeAlias = HostedDomain  # noqa: Y015
+
+@_typing.final
 class Message(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
@@ -160,12 +183,16 @@ class Message(_message.Message):
     RELATED_ASNS_FIELD_NUMBER: _builtins.int
     TAGS_FIELD_NUMBER: _builtins.int
     TRACEROUTE_FIELD_NUMBER: _builtins.int
+    HOSTED_DOMAINS_FIELD_NUMBER: _builtins.int
+    HOSTED_DOMAINS_COUNT_FIELD_NUMBER: _builtins.int
     asn: _builtins.str
     website: _builtins.str
     network_type: _builtins.str
     ip_count: _builtins.int
     rank: _builtins.int
     customer_cone: _builtins.int
+    hosted_domains_count: _builtins.int
+    """Number of distinct domains found, can exceed the size of hosted_domains."""
     @_builtins.property
     def prefixes(self) -> _containers.RepeatedCompositeFieldContainer[Global___Prefix]: ...
     @_builtins.property
@@ -178,6 +205,10 @@ class Message(_message.Message):
     def tags(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]: ...
     @_builtins.property
     def traceroute(self) -> Global___Traceroute: ...
+    @_builtins.property
+    def hosted_domains(self) -> _containers.RepeatedCompositeFieldContainer[Global___HostedDomain]:
+        """Domains resolving to addresses of the ASN, at most 100."""
+
     def __init__(
         self,
         *,
@@ -193,10 +224,12 @@ class Message(_message.Message):
         related_asns: _abc.Iterable[_builtins.str] | None = ...,
         tags: _abc.Iterable[_builtins.str] | None = ...,
         traceroute: Global___Traceroute | None = ...,
+        hosted_domains: _abc.Iterable[Global___HostedDomain] | None = ...,
+        hosted_domains_count: _builtins.int | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "ip_count", b"ip_count", "network_type", b"network_type", "rank", b"rank", "traceroute", b"traceroute", "website", b"website"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "hosted_domains_count", b"hosted_domains_count", "ip_count", b"ip_count", "network_type", b"network_type", "rank", b"rank", "traceroute", b"traceroute", "website", b"website"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "ip_count", b"ip_count", "ixs", b"ixs", "neighbours", b"neighbours", "network_type", b"network_type", "prefixes", b"prefixes", "rank", b"rank", "related_asns", b"related_asns", "tags", b"tags", "traceroute", b"traceroute", "website", b"website"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["asn", b"asn", "customer_cone", b"customer_cone", "hosted_domains", b"hosted_domains", "hosted_domains_count", b"hosted_domains_count", "ip_count", b"ip_count", "ixs", b"ixs", "neighbours", b"neighbours", "network_type", b"network_type", "prefixes", b"prefixes", "rank", b"rank", "related_asns", b"related_asns", "tags", b"tags", "traceroute", b"traceroute", "website", b"website"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

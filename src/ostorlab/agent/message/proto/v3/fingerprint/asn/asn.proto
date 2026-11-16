@@ -34,6 +34,12 @@ message Traceroute {
   repeated TracerouteHop hops = 2;
 }
 
+message HostedDomain {
+  optional string name = 1;
+  // IP address inside the ASN the domain resolves to.
+  optional string ip = 2;
+}
+
 message Message {
   optional string asn = 1;
   optional string website = 2;
@@ -47,4 +53,8 @@ message Message {
   repeated string related_asns = 10;
   repeated string tags = 11;
   optional Traceroute traceroute = 12;
+  // Domains resolving to addresses of the ASN, at most 100.
+  repeated HostedDomain hosted_domains = 13;
+  // Number of distinct domains found, can exceed the size of hosted_domains.
+  optional int64 hosted_domains_count = 14;
 }

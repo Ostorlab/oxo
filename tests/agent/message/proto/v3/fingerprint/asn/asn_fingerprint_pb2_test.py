@@ -29,6 +29,11 @@ def testMessageFromData_whenAsnFingerprintProvided_roundTrips() -> None:
                 {"ip": "192.178.105.209", "asn": "15169", "rtt": 26.44},
             ],
         },
+        "hosted_domains": [
+            {"name": "dns.google", "ip": "8.8.8.8"},
+            {"name": "www.google.com", "ip": "142.250.74.4"},
+        ],
+        "hosted_domains_count": 482,
     }
 
     serialized = agent_message.Message.from_data("v3.fingerprint.asn", data)
