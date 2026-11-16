@@ -5,6 +5,17 @@ from typing import Any
 import pytest
 
 from ostorlab.agent.message import serializer
+from ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.tls import (
+    tls_pb2 as domain_tls_pb2,
+)
+from ostorlab.agent.message.proto.v3.fingerprint.ip.v4.service.tls import (
+    tls_pb2 as ipv4_tls_pb2,
+)
+from ostorlab.agent.message.proto.v3.fingerprint.ip.v6.service.tls import (
+    tls_pb2 as ipv6_tls_pb2,
+)
+
+TlsMessage = domain_tls_pb2.Message | ipv4_tls_pb2.Message | ipv6_tls_pb2.Message
 
 _TLS = {
     "port": 443,
@@ -38,6 +49,7 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly(
 
     message = serializer.deserialize(selector, raw)
 
+    assert isinstance(message, TlsMessage)
     for key, value in host.items():
         assert getattr(message, key) == value
     assert message.port == 443
@@ -57,6 +69,7 @@ def testSerialize_whenNoVersionIsAccepted_shouldKeepThePortAndEmptyLists() -> No
 
     message = serializer.deserialize("v3.fingerprint.ip.v4.service.tls", raw)
 
+    assert isinstance(message, ipv4_tls_pb2.Message)
     assert message.port == 8443
     assert message.version == 4
     assert len(message.versions) == 0
