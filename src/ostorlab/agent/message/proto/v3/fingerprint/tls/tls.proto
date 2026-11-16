@@ -15,7 +15,9 @@ message Message {
   // The host that was tested: a domain name, an IPv4 or an IPv6 address.
   optional string host = 1;
   optional uint32 port = 2;
-  // The protocol versions the port accepts, for example TLSv1.2.
+  // The protocol versions the port accepts, for example TLSv1.2. This list is authoritative for the
+  // versions: it comes from the protocol test, which can find a version whose cipher suites were not listed.
   repeated string versions = 3;
+  // The cipher suites listed per version. A version here is also in `versions`.
   repeated Cipher ciphers = 4;
 }

@@ -59,10 +59,14 @@ class Message(_message.Message):
     port: _builtins.int
     @_builtins.property
     def versions(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
-        """The protocol versions the port accepts, for example TLSv1.2."""
+        """The protocol versions the port accepts, for example TLSv1.2. This list is authoritative for the
+        versions: it comes from the protocol test, which can find a version whose cipher suites were not listed.
+        """
 
     @_builtins.property
-    def ciphers(self) -> _containers.RepeatedCompositeFieldContainer[Global___Cipher]: ...
+    def ciphers(self) -> _containers.RepeatedCompositeFieldContainer[Global___Cipher]:
+        """The cipher suites listed per version. A version here is also in `versions`."""
+
     def __init__(
         self,
         *,
