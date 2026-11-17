@@ -19,6 +19,6 @@ message Message {
   optional string host = 1;
   // The periods, the last seen first.
   repeated Period periods = 2;
-  // Whether the DNS history was complete and the owner of every address could be read.
+  // Whether the owner of every address of the DNS history could be read.
   optional bool complete = 3;
 }

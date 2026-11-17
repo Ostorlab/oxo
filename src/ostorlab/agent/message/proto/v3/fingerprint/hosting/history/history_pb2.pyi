@@ -64,7 +64,7 @@ class Message(_message.Message):
     host: _builtins.str
     """The registrable domain."""
     complete: _builtins.bool
-    """Whether the DNS history was complete and the owner of every address could be read."""
+    """Whether the owner of every address of the DNS history could be read."""
     @_builtins.property
     def periods(self) -> _containers.RepeatedCompositeFieldContainer[Global___Period]:
         """The periods, the last seen first."""
