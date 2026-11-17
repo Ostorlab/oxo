@@ -184,6 +184,70 @@ def testMessageSerializeDeserialize_Forv3FingerprintStoreIos_generatesProperProt
     )
 
 
+def testMessageSerializeDeserialize_Forv3FingerprintStoreHarmonyos_generatesProperProto() -> (
+    None
+):
+    """Test serialization/deserialization of an AppGallery store listing with its permissions (v3.fingerprint.store.harmonyos)."""
+    data = {
+        "bundle_name": "com.example.app",
+        "app_id": "C100315379",
+        "name": "Example App",
+        "icon_url": "https://appimg.dbankcdn.com/icon.png",
+        "rating": 4.6,
+        "rating_count": 152000,
+        "installs": "2838M",
+        "last_update_date": "2026-10-26",
+        "version": "8.0.1",
+        "price": 0.0,
+        "has_in_app_purchases": True,
+        "content_rating": "Rated 12+",
+        "description": "An example app.",
+        "screenshot_urls": ["https://appimg.dbankcdn.com/screenshot1.png"],
+        "privacy_policy_url": "https://example.com/privacy",
+        "store_url": "https://appgallery.huawei.com/app/C100315379",
+        "developer": "Example Inc.",
+        "developer_url": "https://example.com",
+        "permissions": [
+            {
+                "group": "Location",
+                "name": "Access approximate location",
+                "description": "Allows the app to obtain the approximate location.",
+            },
+            {
+                "group": "Camera",
+                "name": "Use camera",
+                "description": "Allows the app to take photos and videos.",
+            },
+        ],
+        "size_bytes": 104857600,
+        "release_notes": "Bug fixes and improvements.",
+        "contains_ads": False,
+    }
+
+    serialized = message.Message.from_data("v3.fingerprint.store.harmonyos", data)
+    deserialized = message.Message.from_raw(
+        "v3.fingerprint.store.harmonyos", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data == data
+
+
+def testMessageSerializeDeserialize_Forv3FingerprintStoreHarmonyosWithBundleNameOnly_leavesListingFieldsUnset() -> (
+    None
+):
+    """Test serialization/deserialization of an AppGallery store listing with only its bundle name (v3.fingerprint.store.harmonyos)."""
+    serialized = message.Message.from_data(
+        "v3.fingerprint.store.harmonyos", {"bundle_name": "com.example.app"}
+    )
+    deserialized = message.Message.from_raw(
+        "v3.fingerprint.store.harmonyos", serialized.raw
+    )
+
+    assert isinstance(serialized.raw, bytes)
+    assert deserialized.data == {"bundle_name": "com.example.app"}
+
+
 def testMessageSerializeDeserialize_Forv3FingerprintFileAndroidMetadata_generatesProperProto() -> (
     None
 ):
