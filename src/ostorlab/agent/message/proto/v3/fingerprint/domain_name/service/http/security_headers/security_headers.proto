@@ -1,0 +1,36 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.service.http.security_headers;
+
+// A security header of the response and its value.
+message Header {
+  // The header name in lowercase, for example strict-transport-security.
+  optional string name = 1;
+  optional string value = 2;
+}
+
+// One check of the security headers and practices of the response.
+message Check {
+  // The check, for example content-security-policy or redirection.
+  optional string name = 1;
+  optional bool passed = 2;
+  // What the check found, for example hsts-implemented-max-age-at-least-six-months.
+  optional string result = 3;
+  // The points the result adds to or removes from the score.
+  optional int32 score_modifier = 4;
+}
+
+// The security headers of a website's page and the grade they earn.
+message Message {
+  optional string name = 1;
+  optional uint32 port = 2;
+  optional string schema = 3;
+  // The grade, from A+ to F.
+  optional string grade = 4;
+  // The score the grade comes from, which bonus points can take above 100.
+  optional uint32 score = 5;
+  optional uint32 tests_passed = 6;
+  optional uint32 tests_failed = 7;
+  repeated Check checks = 8;
+  repeated Header headers = 9;
+}
