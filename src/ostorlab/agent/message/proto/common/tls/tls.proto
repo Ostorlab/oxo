@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.common.tls;
+
+// One cipher suite a port accepts on a TLS version.
+message Cipher {
+  // The TLS version the cipher was accepted on, for example TLSv1.2.
+  optional string version = 1;
+  // The name of the cipher suite.
+  optional string name = 2;
+}

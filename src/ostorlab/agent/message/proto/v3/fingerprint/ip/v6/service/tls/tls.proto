@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+import "ostorlab/agent/message/proto/common/tls/tls.proto";
+
+package ostorlab.agent.message.proto.v3.fingerprint.ip.v6.service.tls;
+
+// The TLS versions and cipher suites one port of an IPv6 address accepts.
+message Message {
+  optional string host = 1;
+  optional string mask = 2;
+  optional int32 version = 3 [default = 6];
+  optional string service = 4;
+  optional uint32 port = 5;
+  optional string protocol = 6;
+  // The protocol versions the port accepts, for example TLSv1.2. This list is authoritative for the
+  // versions: it comes from the protocol test, which can find a version whose cipher suites were not listed.
+  repeated string versions = 7;
+  // The cipher suites listed per version, read by a separate test.
+  repeated ostorlab.agent.message.proto.common.tls.Cipher ciphers = 8;
+}
