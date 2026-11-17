@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.hosting.history;
+
+// A time when the addresses of the domain belonged to one owner.
+message Period {
+  // The owner of the addresses today, from RDAP, like Vercel, Inc or OVH SAS.
+  optional string owner = 1;
+  // When passive DNS first saw the domain on one of these addresses, as an ISO 8601 date and time in UTC.
+  optional string first_seen = 2;
+  // When passive DNS last saw the domain on one of these addresses, as an ISO 8601 date and time in UTC.
+  optional string last_seen = 3;
+  repeated string addresses = 4;
+}
+
+// Who hosted a domain over time: the owners of the addresses the domain and its www name pointed to.
+message Message {
+  // The registrable domain.
+  optional string host = 1;
+  // The periods, the last seen first.
+  repeated Period periods = 2;
+  // Whether the owner of every address of the DNS history could be read.
+  optional bool complete = 3;
+}
