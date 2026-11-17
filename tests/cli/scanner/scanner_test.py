@@ -561,13 +561,17 @@ def testStartScanner_whenEndpointUrlsProvided_forwardsThemToScanLoop(
 def testFetchScanLoggingCredential_whenCredentialReturned_returnsCredential(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """A successful response returns the service account credential string."""
+    """The logging credential carried by the scanner config is returned."""
     runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.return_value = {
-        "data": {"scanLoggingCredential": '{"project_id": "p"}'}
+        "data": {
+            "scanners": {
+                "scanners": [{"config": {"loggingCredential": '{"project_id": "p"}'}}]
+            }
+        }
     }
 
-    result = scanner_cli._fetch_scan_logging_credential("api-key", None)
+    result = scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid")
 
     assert result == '{"project_id": "p"}'
 
@@ -577,11 +581,9 @@ def testFetchScanLoggingCredential_whenApiReturnsErrors_returnsNone(
 ) -> None:
     """GraphQL errors are swallowed and the fetch returns None."""
     runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
-    runner_mock.return_value.execute.return_value = {
-        "errors": [{"message": "The API key has expired."}]
-    }
+    runner_mock.return_value.execute.return_value = {"errors": [{"message": "boom"}]}
 
-    assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
+    assert scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid") is None
 
 
 def testFetchScanLoggingCredential_whenRunnerRaisesResponseError_returnsNone(
@@ -591,7 +593,7 @@ def testFetchScanLoggingCredential_whenRunnerRaisesResponseError_returnsNone(
     runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.side_effect = api_runner.ResponseError("nope")
 
-    assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
+    assert scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid") is None
 
 
 def testFetchScanLoggingCredential_whenTransportFails_returnsNone(
@@ -601,7 +603,7 @@ def testFetchScanLoggingCredential_whenTransportFails_returnsNone(
     runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.side_effect = httpx.ConnectError("boom")
 
-    assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
+    assert scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid") is None
 
 
 def testFetchScanLoggingCredential_whenResponseNotJson_returnsNone(
@@ -613,16 +615,28 @@ def testFetchScanLoggingCredential_whenResponseNotJson_returnsNone(
         "No JSON object could be decoded"
     )
 
-    assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
+    assert scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid") is None
+
+
+def testFetchScanLoggingCredential_whenScannerMissing_returnsNone(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An empty scanners list returns None."""
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    runner_mock.return_value.execute.return_value = {
+        "data": {"scanners": {"scanners": []}}
+    }
+
+    assert scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid") is None
 
 
 def testFetchScanLoggingCredential_whenCredentialMissing_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
-    """A response without a credential field returns None."""
+    """A config without a logging credential returns None."""
     runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.return_value = {
-        "data": {"scanLoggingCredential": None}
+        "data": {"scanners": {"scanners": [{"config": {"loggingCredential": None}}]}}
     }
 
-    assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
+    assert scanner_cli._fetch_scan_logging_credential("api-key", "scanner-uuid") is None

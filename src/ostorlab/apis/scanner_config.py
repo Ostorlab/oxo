@@ -29,6 +29,7 @@ class ScannerConfigAPIRequest(request.APIRequest):
               config{
                 scanResourceRequirements
                 apiKey
+                loggingCredential
               }
             }
           }
