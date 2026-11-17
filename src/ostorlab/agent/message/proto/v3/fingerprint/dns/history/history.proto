@@ -1,0 +1,36 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.dns.history;
+
+// A value a DNS record held, as passive DNS saw it.
+message Value {
+  // The address or the name the record held, like 76.76.21.21 or cname.vercel-dns.com.
+  optional string value = 1;
+  // When passive DNS first saw it, as an ISO 8601 date and time in UTC; absent when unknown.
+  optional string first_seen = 2;
+  // When passive DNS last saw it, as an ISO 8601 date and time in UTC; absent when unknown.
+  optional string last_seen = 3;
+  // How many times passive DNS saw it.
+  optional uint64 seen_count = 4;
+}
+
+// The past values of one record of a name, like the A record of www.ostorlab.co.
+message Record {
+  // The name: the domain or its www subdomain.
+  optional string name = 1;
+  // The record type, like A, AAAA or CNAME.
+  optional string type = 2;
+  // The values, the last seen first.
+  repeated Value values = 3;
+  // Whether a limit on results cut the history, leaving out the values last seen longest ago.
+  optional bool truncated = 4;
+}
+
+// The past DNS records of a domain, from passive DNS.
+message Message {
+  // The registrable domain.
+  optional string host = 1;
+  repeated Record records = 2;
+  // Whether no record was cut by a limit on results.
+  optional bool complete = 3;
+}
