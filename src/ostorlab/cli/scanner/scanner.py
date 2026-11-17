@@ -107,7 +107,7 @@ def _fetch_scan_logging_credential(
         response = runner.execute(
             scan_logging_credential.ScanLoggingCredentialAPIRequest()
         )
-    except (api_runner.Error, httpx.HTTPError) as e:
+    except (api_runner.Error, httpx.HTTPError, ValueError) as e:
         logger.warning("Could not fetch the scan logging credential: %s", e)
         return None
     errors = response.get("errors")

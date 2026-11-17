@@ -9,15 +9,21 @@ from typing import Optional
 from typing import TypedDict
 from typing import Unpack
 
+import httpx
 import pytest
 from click import testing as click_testing
 from google.cloud import logging as gcp_logging
 from google.cloud.logging import handlers as gcp_logging_handlers
 from pytest_mock import plugin
 
+from ostorlab.apis.runners import runner as api_runner
 from ostorlab.cli import rootcli
 from ostorlab.cli.scanner import scanner as scanner_cli
 from ostorlab.runtimes import definitions
+
+_FETCH_RUNNER_TARGET = (
+    "ostorlab.cli.scanner.scanner.authenticated_runner.AuthenticatedAPIRunner"
+)
 
 
 def _remove_scanner_file_handlers() -> None:
@@ -55,6 +61,9 @@ def testScannerCommandInvocation_whenDaemonCommandIsProvided_runsBackground(
     """Run CLI with daemon command."""
     daemon_context_open = mocker.patch("daemon.DaemonContext.open", return_value=None)
     mocker.patch("ostorlab.cli.scanner.scanner", return_value=None)
+    mocker.patch.object(
+        scanner_cli, "_fetch_scan_logging_credential", return_value=None
+    )
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
@@ -90,6 +99,9 @@ def testScannerCommandInvocation_whenApiKeyProvided_passesItToStateReporter(
 ) -> None:
     """The state reporter must authenticate RE requests with the CLI API key."""
     mocker.patch.object(scanner_cli, "_configure_file_logging")
+    mocker.patch.object(
+        scanner_cli, "_fetch_scan_logging_credential", return_value=None
+    )
     mocker.patch(
         "ostorlab.cli.scanner.scanner.start_scanner",
         return_value=None,
@@ -550,9 +562,7 @@ def testFetchScanLoggingCredential_whenCredentialReturned_returnsCredential(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A successful response returns the service account credential string."""
-    runner_mock = mocker.patch.object(
-        scanner_cli.authenticated_runner, "AuthenticatedAPIRunner"
-    )
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.return_value = {
         "data": {"scanLoggingCredential": '{"project_id": "p"}'}
     }
@@ -566,9 +576,7 @@ def testFetchScanLoggingCredential_whenApiReturnsErrors_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
     """GraphQL errors are swallowed and the fetch returns None."""
-    runner_mock = mocker.patch.object(
-        scanner_cli.authenticated_runner, "AuthenticatedAPIRunner"
-    )
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.return_value = {
         "errors": [{"message": "The API key has expired."}]
     }
@@ -580,12 +588,8 @@ def testFetchScanLoggingCredential_whenRunnerRaisesResponseError_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A runner error is swallowed and the fetch returns None."""
-    runner_mock = mocker.patch.object(
-        scanner_cli.authenticated_runner, "AuthenticatedAPIRunner"
-    )
-    runner_mock.return_value.execute.side_effect = scanner_cli.api_runner.ResponseError(
-        "nope"
-    )
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    runner_mock.return_value.execute.side_effect = api_runner.ResponseError("nope")
 
     assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
 
@@ -594,11 +598,19 @@ def testFetchScanLoggingCredential_whenTransportFails_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A transport error is swallowed and the fetch returns None."""
-    runner_mock = mocker.patch.object(
-        scanner_cli.authenticated_runner, "AuthenticatedAPIRunner"
-    )
-    runner_mock.return_value.execute.side_effect = scanner_cli.httpx.ConnectError(
-        "boom"
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    runner_mock.return_value.execute.side_effect = httpx.ConnectError("boom")
+
+    assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
+
+
+def testFetchScanLoggingCredential_whenResponseNotJson_returnsNone(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A non-JSON response body (ValueError from .json()) is swallowed."""
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    runner_mock.return_value.execute.side_effect = ValueError(
+        "No JSON object could be decoded"
     )
 
     assert scanner_cli._fetch_scan_logging_credential("api-key", None) is None
@@ -608,9 +620,7 @@ def testFetchScanLoggingCredential_whenCredentialMissing_returnsNone(
     mocker: plugin.MockerFixture,
 ) -> None:
     """A response without a credential field returns None."""
-    runner_mock = mocker.patch.object(
-        scanner_cli.authenticated_runner, "AuthenticatedAPIRunner"
-    )
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
     runner_mock.return_value.execute.return_value = {
         "data": {"scanLoggingCredential": None}
     }
