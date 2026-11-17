@@ -1,0 +1,44 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.store.harmonyos;
+
+// A sensitive permission declared on the AppGallery store page, e.g. group "Location", name "Access approximate location".
+message Permission {
+  optional string group = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+// Huawei AppGallery store listing of a HarmonyOS application.
+message Message {
+  // Same bundle name as the v3.asset.store.harmonyos_store seed, e.g. "com.example.app".
+  optional string bundle_name = 1;
+  // AppGallery application id, e.g. "C100315379".
+  optional string app_id = 2;
+  optional string name = 3;
+  optional string icon_url = 4;
+  optional double rating = 5;
+  optional int64 rating_count = 6;
+  // Install count as displayed by the store, e.g. "2838M".
+  optional string installs = 7;
+  // ISO 8601 date of the current version, e.g. "2026-10-26".
+  optional string last_update_date = 8;
+  optional string version = 9;
+  optional double price = 10;
+  optional bool has_in_app_purchases = 11;
+  // Content rating as displayed by the store, e.g. "Rated 12+".
+  optional string content_rating = 12;
+  optional string description = 13;
+  repeated string screenshot_urls = 14;
+  optional string privacy_policy_url = 15;
+  optional string store_url = 16;
+  // Developer name and website as listed on the store page, e.g. "Example Inc." and "https://example.com".
+  optional string developer = 17;
+  optional string developer_url = 18;
+  repeated Permission permissions = 19;
+  // Size in bytes of the application package as listed on the store page.
+  optional int64 size_bytes = 20;
+  // Release notes of the current version.
+  optional string release_notes = 21;
+  optional bool contains_ads = 22;
+}
