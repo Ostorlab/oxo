@@ -30,7 +30,12 @@ except ImportError:
 else:
     _GCP_LOGGING_AVAILABLE = True
 
+import httpx
+
 from ostorlab import configuration_manager as config_manager
+from ostorlab.apis import scan_logging_credential
+from ostorlab.apis.runners import authenticated_runner
+from ostorlab.apis.runners import runner as api_runner
 from ostorlab.cli import console as cli_console
 from ostorlab.cli import input_validators
 from ostorlab.cli.rootcli import rootcli
@@ -77,6 +82,43 @@ def _configure_file_logging(
     if root_logger.level > log_level:
         root_logger.setLevel(log_level)
     logger.info("Persisting on-prem scanner logs to %s.", log_file_path)
+
+
+def _fetch_scan_logging_credential(
+    api_key: str, api_url: str | None = None
+) -> str | None:
+    """Fetch the GCP Cloud Logging service account credential.
+
+    Used when the scanner runs with an API key but no explicit GCP logging credential: the
+    credential lets the scanner and its agents ship their logs to GCP. Failures are logged and
+    swallowed so that logging stays best-effort and never blocks the scan.
+
+    Args:
+        api_key: The API key.
+        api_url: The Ostorlab API GraphQL endpoint, None for the default one.
+
+    Returns:
+        The service account JSON as a string, or None when it could not be fetched.
+    """
+    try:
+        runner = authenticated_runner.AuthenticatedAPIRunner(
+            api_key=api_key, endpoint=api_url
+        )
+        response = runner.execute(
+            scan_logging_credential.ScanLoggingCredentialAPIRequest()
+        )
+    except (api_runner.Error, httpx.HTTPError) as e:
+        logger.warning("Could not fetch the scan logging credential: %s", e)
+        return None
+    errors = response.get("errors")
+    if errors is not None:
+        logger.warning("Could not fetch the scan logging credential: %s", errors)
+        return None
+    data = response.get("data") or {}
+    credential = data.get("scanLoggingCredential")
+    if credential is None:
+        return None
+    return cast(str, credential)
 
 
 def _configure_gcp_logging(gcp_logging_credential: str | None, scanner_id: str) -> None:
@@ -217,6 +259,10 @@ def scanner(
 
     api_key = config_manager.ConfigurationManager().api_key or ctx.obj.get("api_key")
     gcp_logging_credential = ctx.obj.get("gcp_logging_credential")
+    if gcp_logging_credential is None and api_key is not None:
+        gcp_logging_credential = _fetch_scan_logging_credential(
+            api_key=api_key, api_url=api_url
+        )
     snapshot_settings = _load_snapshot_settings(
         snapshot_bucket, snapshot_service_account
     )
