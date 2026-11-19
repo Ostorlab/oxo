@@ -5,19 +5,27 @@ import logging
 import os
 import pathlib
 import sys
+from typing import Any
 from typing import Optional
 from typing import TypedDict
 from typing import Unpack
+from typing import cast
 
+import httpx
 import pytest
 from click import testing as click_testing
 from google.cloud import logging as gcp_logging
 from google.cloud.logging import handlers as gcp_logging_handlers
 from pytest_mock import plugin
 
+from ostorlab.apis.runners import runner as api_runner
 from ostorlab.cli import rootcli
 from ostorlab.cli.scanner import scanner as scanner_cli
 from ostorlab.runtimes import definitions
+
+_FETCH_RUNNER_TARGET = (
+    "ostorlab.cli.scanner.scanner.authenticated_runner.AuthenticatedAPIRunner"
+)
 
 
 def _remove_scanner_file_handlers() -> None:
@@ -55,6 +63,10 @@ def testScannerCommandInvocation_whenDaemonCommandIsProvided_runsBackground(
     """Run CLI with daemon command."""
     daemon_context_open = mocker.patch("daemon.DaemonContext.open", return_value=None)
     mocker.patch("ostorlab.cli.scanner.scanner", return_value=None)
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    runner_mock.return_value.execute.return_value = {
+        "data": {"scanners": {"scanners": []}}
+    }
     runner = click_testing.CliRunner()
     runner.invoke(
         rootcli.rootcli,
@@ -90,6 +102,10 @@ def testScannerCommandInvocation_whenApiKeyProvided_passesItToStateReporter(
 ) -> None:
     """The state reporter must authenticate RE requests with the CLI API key."""
     mocker.patch.object(scanner_cli, "_configure_file_logging")
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    runner_mock.return_value.execute.return_value = {
+        "data": {"scanners": {"scanners": []}}
+    }
     mocker.patch(
         "ostorlab.cli.scanner.scanner.start_scanner",
         return_value=None,
@@ -544,3 +560,135 @@ def testStartScanner_whenEndpointUrlsProvided_forwardsThemToScanLoop(
         start_scan_loop_mock.call_args.kwargs["scanner_url"]
         == "https://se.example.com/orchestrator/graphql"
     )
+
+
+def _run_scanner_command_with_runner(
+    mocker: plugin.MockerFixture,
+    execute_return_value: Optional[dict[str, Any]] = None,
+    execute_side_effect: Optional[BaseException] = None,
+) -> tuple[click_testing.Result, plugin.MockType]:
+    """Invoke the scanner command with the RE API runner mocked.
+
+    Returns the CLI result and the ``multiprocessing.Process`` mock so callers can assert the
+    logging credential forwarded to the scan workers (``args`` index 5).
+    """
+    mocker.patch.object(scanner_cli, "_configure_file_logging")
+    mocker.patch(
+        "ostorlab.cli.scanner.scanner.scanner_state_reporter.ScannerStateReporter"
+    )
+    runner_mock = mocker.patch(_FETCH_RUNNER_TARGET)
+    if execute_side_effect is not None:
+        runner_mock.return_value.execute.side_effect = execute_side_effect
+    else:
+        runner_mock.return_value.execute.return_value = execute_return_value
+    process_mock = mocker.patch("multiprocessing.Process")
+
+    result = click_testing.CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "--api-key",
+            "reporting-engine-api-key",
+            "scanner",
+            "--no-daemon",
+            "--scanner-id",
+            "11226DS",
+        ],
+    )
+    return result, process_mock
+
+
+def _forwarded_logging_credential(process_mock: plugin.MockType) -> Optional[str]:
+    """The gcp_logging_credential forwarded to the scan worker process."""
+    return cast(Optional[str], process_mock.call_args.kwargs["args"][5])
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenCredentialReturnedByApi_forwardsItToProcess(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The logging credential carried by the scanner config reaches the scan workers."""
+    result, process_mock = _run_scanner_command_with_runner(
+        mocker,
+        execute_return_value={
+            "data": {
+                "scanners": {
+                    "scanners": [
+                        {"config": {"loggingCredential": '{"project_id": "p"}'}}
+                    ]
+                }
+            }
+        },
+    )
+
+    assert result.exit_code == 0
+    assert _forwarded_logging_credential(process_mock) == '{"project_id": "p"}'
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenRunnerRaisesResponseError_forwardsNoCredential(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A runner error is swallowed and no logging credential is forwarded."""
+    result, process_mock = _run_scanner_command_with_runner(
+        mocker, execute_side_effect=api_runner.ResponseError("nope")
+    )
+
+    assert result.exit_code == 0
+    assert _forwarded_logging_credential(process_mock) is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenTransportFails_forwardsNoCredential(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A transport error is swallowed and no logging credential is forwarded."""
+    result, process_mock = _run_scanner_command_with_runner(
+        mocker, execute_side_effect=httpx.ConnectError("boom")
+    )
+
+    assert result.exit_code == 0
+    assert _forwarded_logging_credential(process_mock) is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenResponseNotJson_forwardsNoCredential(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A non-JSON response body (ValueError from .json()) is swallowed."""
+    result, process_mock = _run_scanner_command_with_runner(
+        mocker, execute_side_effect=ValueError("No JSON object could be decoded")
+    )
+
+    assert result.exit_code == 0
+    assert _forwarded_logging_credential(process_mock) is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenScannerMissing_forwardsNoCredential(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An empty scanners list forwards no logging credential."""
+    result, process_mock = _run_scanner_command_with_runner(
+        mocker, execute_return_value={"data": {"scanners": {"scanners": []}}}
+    )
+
+    assert result.exit_code == 0
+    assert _forwarded_logging_credential(process_mock) is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
+def testScannerCommandInvocation_whenCredentialMissing_forwardsNoCredential(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A config without a logging credential forwards no logging credential."""
+    result, process_mock = _run_scanner_command_with_runner(
+        mocker,
+        execute_return_value={
+            "data": {
+                "scanners": {"scanners": [{"config": {"loggingCredential": None}}]}
+            }
+        },
+    )
+
+    assert result.exit_code == 0
+    assert _forwarded_logging_credential(process_mock) is None
