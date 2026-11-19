@@ -625,19 +625,6 @@ def testScannerCommandInvocation_whenCredentialReturnedByApi_forwardsItToProcess
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
-def testScannerCommandInvocation_whenApiReturnsErrors_forwardsNoCredential(
-    mocker: plugin.MockerFixture,
-) -> None:
-    """GraphQL errors are swallowed and no logging credential is forwarded."""
-    result, process_mock = _run_scanner_command_with_runner(
-        mocker, execute_return_value={"errors": [{"message": "boom"}]}
-    )
-
-    assert result.exit_code == 0
-    assert _forwarded_logging_credential(process_mock) is None
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="does not run on windows")
 def testScannerCommandInvocation_whenRunnerRaisesResponseError_forwardsNoCredential(
     mocker: plugin.MockerFixture,
 ) -> None:

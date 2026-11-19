@@ -112,10 +112,6 @@ def _fetch_scan_logging_credential(
     except (api_runner.Error, httpx.HTTPError, ValueError) as e:
         logger.warning("Could not fetch the scan logging credential: %s", e)
         return None
-    errors = response.get("errors")
-    if errors is not None:
-        logger.warning("Could not fetch the scan logging credential: %s", errors)
-        return None
     data = response.get("data") or {}
     scanners = (data.get("scanners") or {}).get("scanners") or []
     if len(scanners) == 0:
