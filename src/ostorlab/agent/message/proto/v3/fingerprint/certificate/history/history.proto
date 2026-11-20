@@ -8,14 +8,6 @@ package ostorlab.agent.message.proto.v3.fingerprint.certificate.history;
 message Certificate {
   // The crt.sh id of the certificate, whose page is https://crt.sh/?id={crtsh_id}.
   optional uint64 crtsh_id = 1;
-  // The issuer distinguished name, like C=US, O=Let's Encrypt, CN=YR1.
-  optional string issuer = 2;
-  // The serial number in hexadecimal.
-  optional string serial_number = 3;
-  // When the certificate became valid, as an ISO 8601 date and time in UTC.
-  optional string not_before = 4;
-  // When the certificate expires, as an ISO 8601 date and time in UTC.
-  optional string not_after = 5;
   // The names the certificate covers: for a domain, the domain and its subdomains; for an IP, every name and address on it.
   repeated string names = 6;
   // The certificate read from crt.sh, described as the certificate fetcher describes a certificate a server serves.

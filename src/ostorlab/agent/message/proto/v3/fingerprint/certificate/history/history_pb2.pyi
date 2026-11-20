@@ -26,22 +26,10 @@ class Certificate(_message.Message):
     DESCRIPTOR: _descriptor.Descriptor
 
     CRTSH_ID_FIELD_NUMBER: _builtins.int
-    ISSUER_FIELD_NUMBER: _builtins.int
-    SERIAL_NUMBER_FIELD_NUMBER: _builtins.int
-    NOT_BEFORE_FIELD_NUMBER: _builtins.int
-    NOT_AFTER_FIELD_NUMBER: _builtins.int
     NAMES_FIELD_NUMBER: _builtins.int
     X509_FIELD_NUMBER: _builtins.int
     crtsh_id: _builtins.int
     """The crt.sh id of the certificate, whose page is https://crt.sh/?id={crtsh_id}."""
-    issuer: _builtins.str
-    """The issuer distinguished name, like C=US, O=Let's Encrypt, CN=YR1."""
-    serial_number: _builtins.str
-    """The serial number in hexadecimal."""
-    not_before: _builtins.str
-    """When the certificate became valid, as an ISO 8601 date and time in UTC."""
-    not_after: _builtins.str
-    """When the certificate expires, as an ISO 8601 date and time in UTC."""
     @_builtins.property
     def names(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """The names the certificate covers: for a domain, the domain and its subdomains; for an IP, every name and address on it."""
@@ -54,16 +42,12 @@ class Certificate(_message.Message):
         self,
         *,
         crtsh_id: _builtins.int | None = ...,
-        issuer: _builtins.str | None = ...,
-        serial_number: _builtins.str | None = ...,
-        not_before: _builtins.str | None = ...,
-        not_after: _builtins.str | None = ...,
         names: _abc.Iterable[_builtins.str] | None = ...,
         x509: _x509_pb2.X509Cert | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "issuer", b"issuer", "not_after", b"not_after", "not_before", b"not_before", "serial_number", b"serial_number", "x509", b"x509"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "x509", b"x509"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "issuer", b"issuer", "names", b"names", "not_after", b"not_after", "not_before", b"not_before", "serial_number", b"serial_number", "x509", b"x509"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "names", b"names", "x509", b"x509"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

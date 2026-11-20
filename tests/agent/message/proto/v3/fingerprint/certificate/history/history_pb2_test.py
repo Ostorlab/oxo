@@ -1,5 +1,7 @@
 """Unit tests for the certificate history fingerprint protobuf message."""
 
+import pytest
+
 from ostorlab.agent.message import serializer
 from ostorlab.agent.message.proto.v3.fingerprint.certificate.history import history_pb2
 
@@ -30,19 +32,21 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
             "certificates": [
                 {
                     "crtsh_id": 28125128965,
-                    "issuer": "C=US, O=Let's Encrypt, CN=YR1",
-                    "serial_number": "05d06bbea210d5d62651db3859549b415bde",
-                    "not_before": "2026-07-21T12:55:02Z",
-                    "not_after": "2026-10-19T12:55:01Z",
                     "names": ["ostorlab.co"],
+                    "x509": {
+                        "serial_number": "000005D06BBEA210D5D62651DB3859549B415BDE",
+                        "issuer": {"C": "US", "O": "Let's Encrypt", "CN": "YR1"},
+                        "validity": {"not_before": 1784638502, "not_after": 1792414501},
+                    },
                 },
                 {
                     "crtsh_id": 26492929997,
-                    "issuer": "C=US, O=Let's Encrypt, CN=R12",
-                    "serial_number": "0685ea979533c3dce9820d03945dd632a9d0",
-                    "not_before": "2026-05-20T13:39:50Z",
-                    "not_after": "2026-08-18T13:39:49Z",
                     "names": ["ostorlab.co"],
+                    "x509": {
+                        "serial_number": "00000685EA979533C3DCE9820D03945DD632A9D0",
+                        "issuer": {"C": "US", "O": "Let's Encrypt", "CN": "R12"},
+                        "validity": {"not_before": 1779284390, "not_after": 1787060389},
+                    },
                 },
             ],
             "data_up_to": "2026-10-20T21:51:36Z",
@@ -67,10 +71,10 @@ def testSerialize_whenAllFieldsSet_shouldSerializeAndDeserializeCorrectly() -> N
     assert len(message.certificates) == 2
     newest = message.certificates[0]
     assert newest.crtsh_id == 28125128965
-    assert newest.issuer == "C=US, O=Let's Encrypt, CN=YR1"
-    assert newest.serial_number == "05d06bbea210d5d62651db3859549b415bde"
-    assert newest.not_before == "2026-07-21T12:55:02Z"
-    assert newest.not_after == "2026-10-19T12:55:01Z"
+    assert newest.x509.issuer.CN == "YR1"
+    assert newest.x509.serial_number == "000005D06BBEA210D5D62651DB3859549B415BDE"
+    assert newest.x509.validity.not_before == 1784638502
+    assert newest.x509.validity.not_after == 1792414501
     assert list(newest.names) == ["ostorlab.co"]
     assert message.data_up_to == "2026-10-20T21:51:36Z"
     assert message.complete is True
@@ -88,10 +92,6 @@ def testSerialize_whenHostIsAnIp_shouldKeepEveryNameOnTheCertificate() -> None:
             "certificates": [
                 {
                     "crtsh_id": 1,
-                    "issuer": "C=US, O=Let's Encrypt, CN=YE1",
-                    "serial_number": "0a1b2c",
-                    "not_before": "2026-09-01T08:00:00Z",
-                    "not_after": "2026-09-07T08:00:00Z",
                     "names": ["203.0.113.7", "www.example.com"],
                 }
             ],
@@ -164,10 +164,6 @@ def testSerialize_whenACertificateHasItsX509_shouldSerializeAndDeserializeCorrec
             "certificates": [
                 {
                     "crtsh_id": 30037303884,
-                    "issuer": "C=US, O=Let's Encrypt, CN=YR1",
-                    "serial_number": "055ce6ad4438e52f1eae15da7829a2a89f04",
-                    "not_before": "2026-09-22T18:12:11Z",
-                    "not_after": "2026-12-21T18:12:10Z",
                     "names": ["ostorlab.co"],
                     "x509": {
                         "version_number": 3,
@@ -212,12 +208,7 @@ def testSerialize_whenACertificateHasNoX509_shouldKeepItUnset() -> None:
         "v3.fingerprint.certificate.history",
         {
             "host": "ostorlab.co",
-            "certificates": [
-                {
-                    "crtsh_id": 28125128965,
-                    "serial_number": "05d06bbea210d5d62651db3859549b415bde",
-                }
-            ],
+            "certificates": [{"crtsh_id": 28125128965, "names": ["ostorlab.co"]}],
         },
     ).SerializeToString()
 
@@ -225,3 +216,22 @@ def testSerialize_whenACertificateHasNoX509_shouldKeepItUnset() -> None:
 
     assert isinstance(message, history_pb2.Message)
     assert message.certificates[0].HasField("x509") is False
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("issuer", "C=US, O=Let's Encrypt, CN=YR1"),
+        ("serial_number", "055ce6ad4438e52f1eae15da7829a2a89f04"),
+        ("not_before", "2026-09-22T18:12:11Z"),
+        ("not_after", "2026-12-21T18:12:10Z"),
+    ],
+)
+def testSerialize_whenACertificateHasAFieldOfItsX509_shouldRaiseSerializationError(
+    field: str, value: str
+) -> None:
+    with pytest.raises(serializer.SerializationError):
+        serializer.serialize(
+            "v3.fingerprint.certificate.history",
+            {"host": "ostorlab.co", "certificates": [{"crtsh_id": 1, field: value}]},
+        )
