@@ -24,10 +24,15 @@ class Message(_message.Message):
     DNA_FIELD_NUMBER: _builtins.int
     SCREENSHOT_FIELD_NUMBER: _builtins.int
     PARENT_DNA_FIELD_NUMBER: _builtins.int
+    CAPTURED_AT_FIELD_NUMBER: _builtins.int
     path: _builtins.str
     dna: _builtins.str
     screenshot: _builtins.bytes
     parent_dna: _builtins.str
+    captured_at: _builtins.str
+    """When the page was captured, as an ISO 8601 date and time in UTC, like 2019-01-29T22:43:31Z, for a screenshot
+    of an archived page; absent for a screenshot taken during the scan.
+    """
     def __init__(
         self,
         *,
@@ -35,10 +40,11 @@ class Message(_message.Message):
         dna: _builtins.str | None = ...,
         screenshot: _builtins.bytes | None = ...,
         parent_dna: _builtins.str | None = ...,
+        captured_at: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "screenshot", b"screenshot"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["captured_at", b"captured_at", "dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "screenshot", b"screenshot"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "screenshot", b"screenshot"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["captured_at", b"captured_at", "dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "screenshot", b"screenshot"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
