@@ -22,19 +22,20 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from ostorlab.agent.message.proto.common.x509 import x509_pb2 as ostorlab_dot_agent_dot_message_dot_proto_dot_common_dot_x509_dot_x509__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMostorlab/agent/message/proto/v3/fingerprint/certificate/history/history.proto\x12?ostorlab.agent.message.proto.v3.fingerprint.certificate.history\"|\n\x0b\x43\x65rtificate\x12\x10\n\x08\x63rtsh_id\x18\x01 \x01(\x04\x12\x0e\n\x06issuer\x18\x02 \x01(\t\x12\x15\n\rserial_number\x18\x03 \x01(\t\x12\x12\n\nnot_before\x18\x04 \x01(\t\x12\x11\n\tnot_after\x18\x05 \x01(\t\x12\r\n\x05names\x18\x06 \x03(\t\"\\\n\x06Issuer\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0c\x66irst_issued\x18\x02 \x01(\t\x12\x13\n\x0blast_issued\x18\x03 \x01(\t\x12\x19\n\x11\x63\x65rtificate_count\x18\x04 \x01(\r\"\x8d\x03\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x19\n\x11\x63\x65rtificate_count\x18\x02 \x01(\r\x12\x1e\n\x16host_certificate_count\x18\x03 \x01(\r\x12\x14\n\x0c\x66irst_issued\x18\x04 \x01(\t\x12\x13\n\x0blast_issued\x18\x05 \x01(\t\x12X\n\x07issuers\x18\x06 \x03(\x0b\x32G.ostorlab.agent.message.proto.v3.fingerprint.certificate.history.Issuer\x12\x62\n\x0c\x63\x65rtificates\x18\x07 \x03(\x0b\x32L.ostorlab.agent.message.proto.v3.fingerprint.certificate.history.Certificate\x12\x12\n\ndata_up_to\x18\x08 \x01(\t\x12\x10\n\x08\x63omplete\x18\t \x01(\x08\x12\x16\n\x0emissing_ranges\x18\n \x03(\t\x12\x12\n\nsearch_url\x18\x0b \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMostorlab/agent/message/proto/v3/fingerprint/certificate/history/history.proto\x12?ostorlab.agent.message.proto.v3.fingerprint.certificate.history\x1a\x33ostorlab/agent/message/proto/common/x509/x509.proto\"p\n\x0b\x43\x65rtificate\x12\x10\n\x08\x63rtsh_id\x18\x01 \x01(\x04\x12\r\n\x05names\x18\x06 \x03(\t\x12@\n\x04x509\x18\x07 \x01(\x0b\x32\x32.ostorlab.agent.message.proto.common.x509.X509Cert\"\\\n\x06Issuer\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x14\n\x0c\x66irst_issued\x18\x02 \x01(\t\x12\x13\n\x0blast_issued\x18\x03 \x01(\t\x12\x19\n\x11\x63\x65rtificate_count\x18\x04 \x01(\r\"\x8d\x03\n\x07Message\x12\x0c\n\x04host\x18\x01 \x01(\t\x12\x19\n\x11\x63\x65rtificate_count\x18\x02 \x01(\r\x12\x1e\n\x16host_certificate_count\x18\x03 \x01(\r\x12\x14\n\x0c\x66irst_issued\x18\x04 \x01(\t\x12\x13\n\x0blast_issued\x18\x05 \x01(\t\x12X\n\x07issuers\x18\x06 \x03(\x0b\x32G.ostorlab.agent.message.proto.v3.fingerprint.certificate.history.Issuer\x12\x62\n\x0c\x63\x65rtificates\x18\x07 \x03(\x0b\x32L.ostorlab.agent.message.proto.v3.fingerprint.certificate.history.Certificate\x12\x12\n\ndata_up_to\x18\x08 \x01(\t\x12\x10\n\x08\x63omplete\x18\t \x01(\x08\x12\x16\n\x0emissing_ranges\x18\n \x03(\t\x12\x12\n\nsearch_url\x18\x0b \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.fingerprint.certificate.history.history_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_CERTIFICATE']._serialized_start=146
-  _globals['_CERTIFICATE']._serialized_end=270
-  _globals['_ISSUER']._serialized_start=272
-  _globals['_ISSUER']._serialized_end=364
-  _globals['_MESSAGE']._serialized_start=367
-  _globals['_MESSAGE']._serialized_end=764
+  _globals['_CERTIFICATE']._serialized_start=199
+  _globals['_CERTIFICATE']._serialized_end=311
+  _globals['_ISSUER']._serialized_start=313
+  _globals['_ISSUER']._serialized_end=405
+  _globals['_MESSAGE']._serialized_start=408
+  _globals['_MESSAGE']._serialized_end=805
 # @@protoc_insertion_point(module_scope)
