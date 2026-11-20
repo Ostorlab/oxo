@@ -152,3 +152,76 @@ def testSerialize_whenNoCertificate_shouldKeepTheZeroCountWithoutDates() -> None
     assert message.HasField("last_issued") is False
     assert len(message.issuers) == 0
     assert len(message.certificates) == 0
+
+
+def testSerialize_whenACertificateHasItsX509_shouldSerializeAndDeserializeCorrectly() -> (
+    None
+):
+    raw = serializer.serialize(
+        "v3.fingerprint.certificate.history",
+        {
+            "host": "ostorlab.co",
+            "certificates": [
+                {
+                    "crtsh_id": 30037303884,
+                    "issuer": "C=US, O=Let's Encrypt, CN=YR1",
+                    "serial_number": "055ce6ad4438e52f1eae15da7829a2a89f04",
+                    "not_before": "2026-09-22T18:12:11Z",
+                    "not_after": "2026-12-21T18:12:10Z",
+                    "names": ["ostorlab.co"],
+                    "x509": {
+                        "version_number": 3,
+                        "serial_number": "0000055CE6AD4438E52F1EAE15DA7829A2A89F04",
+                        "issuer": {"C": "US", "O": "Let's Encrypt", "CN": "YR1"},
+                        "subject": {"CN": "ostorlab.co"},
+                        "validity": {"not_before": 1790100731, "not_after": 1797876730},
+                        "public_key": {"public_key_algorithm": "RSA Public Key"},
+                        "signature": {"signature_algorithm": "sha256"},
+                        "computed_fingerprint": [
+                            {
+                                "fingerprint_algorithm": "sha256",
+                                "fingerprint_value": "D0D008F4695F2B3C0DDB06326845812D4AD8E465E81009E7E717433CCE3C280F",
+                            }
+                        ],
+                        "extensions": [{"oid": "2.5.29.17", "value": "ostorlab.co"}],
+                    },
+                }
+            ],
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    x509 = message.certificates[0].x509
+    assert x509.serial_number == "0000055CE6AD4438E52F1EAE15DA7829A2A89F04"
+    assert x509.issuer.O == "Let's Encrypt"
+    assert x509.issuer.CN == "YR1"
+    assert x509.subject.CN == "ostorlab.co"
+    assert x509.validity.not_before == 1790100731
+    assert x509.public_key.public_key_algorithm == "RSA Public Key"
+    assert x509.signature.signature_algorithm == "sha256"
+    assert x509.computed_fingerprint[0].fingerprint_value == (
+        "D0D008F4695F2B3C0DDB06326845812D4AD8E465E81009E7E717433CCE3C280F"
+    )
+    assert x509.extensions[0].value == "ostorlab.co"
+
+
+def testSerialize_whenACertificateHasNoX509_shouldKeepItUnset() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.certificate.history",
+        {
+            "host": "ostorlab.co",
+            "certificates": [
+                {
+                    "crtsh_id": 28125128965,
+                    "serial_number": "05d06bbea210d5d62651db3859549b415bde",
+                }
+            ],
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.certificates[0].HasField("x509") is False

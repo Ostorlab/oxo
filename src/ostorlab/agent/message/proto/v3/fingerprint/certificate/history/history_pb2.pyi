@@ -7,6 +7,7 @@ from collections import abc as _abc
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf.internal import containers as _containers
+from ostorlab.agent.message.proto.common.x509 import x509_pb2 as _x509_pb2
 import builtins as _builtins
 import sys
 import typing as _typing
@@ -30,6 +31,7 @@ class Certificate(_message.Message):
     NOT_BEFORE_FIELD_NUMBER: _builtins.int
     NOT_AFTER_FIELD_NUMBER: _builtins.int
     NAMES_FIELD_NUMBER: _builtins.int
+    X509_FIELD_NUMBER: _builtins.int
     crtsh_id: _builtins.int
     """The crt.sh id of the certificate, whose page is https://crt.sh/?id={crtsh_id}."""
     issuer: _builtins.str
@@ -44,6 +46,10 @@ class Certificate(_message.Message):
     def names(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """The names the certificate covers: for a domain, the domain and its subdomains; for an IP, every name and address on it."""
 
+    @_builtins.property
+    def x509(self) -> _x509_pb2.X509Cert:
+        """The certificate read from crt.sh, described as the certificate fetcher describes a certificate a server serves."""
+
     def __init__(
         self,
         *,
@@ -53,10 +59,11 @@ class Certificate(_message.Message):
         not_before: _builtins.str | None = ...,
         not_after: _builtins.str | None = ...,
         names: _abc.Iterable[_builtins.str] | None = ...,
+        x509: _x509_pb2.X509Cert | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "issuer", b"issuer", "not_after", b"not_after", "not_before", b"not_before", "serial_number", b"serial_number"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "issuer", b"issuer", "not_after", b"not_after", "not_before", b"not_before", "serial_number", b"serial_number", "x509", b"x509"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "issuer", b"issuer", "names", b"names", "not_after", b"not_after", "not_before", b"not_before", "serial_number", b"serial_number"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["crtsh_id", b"crtsh_id", "issuer", b"issuer", "names", b"names", "not_after", b"not_after", "not_before", b"not_before", "serial_number", b"serial_number", "x509", b"x509"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
