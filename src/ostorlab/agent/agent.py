@@ -209,6 +209,7 @@ class AgentMixin(
         Connects to the agent bus, start health check and start listening to new messages.
         """
         self.add_healthcheck(self.is_healthy)
+        self.set_idle_check(self.is_idle)
         self.start_healthcheck()
         self._loop.run_until_complete(self.mq_init())
         logger.debug("calling start method")

@@ -15,6 +15,7 @@ import typing
 import uuid
 from multiprocessing import synchronize
 
+import httpx
 import pytest
 from pytest_mock import plugin
 
@@ -1313,3 +1314,42 @@ def testSetupLogging_whenMachineNameIsNotProvided_labelDoesNotIncludeMachineName
 
     labels = mock_client_instance.setup_logging.call_args.kwargs["labels"]
     assert "host_hostname" not in labels
+
+
+def testAgentRun_whenHealthcheckStarts_idleEndpointAnswersFromTheMqActivity(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """run() wires the MQ activity to /idle, so an agent of this SDK never answers 404 there."""
+    mocker.patch(
+        "ostorlab.agent.mixins.agent_mq_mixin.AgentMQMixin.mq_init",
+        new_callable=mocker.AsyncMock,
+    )
+    answers: list[tuple[int, bytes]] = []
+
+    class TestAgent(agent.Agent):
+        """Agent that reads its own /idle endpoint once started."""
+
+        def is_healthy(self) -> bool:
+            return True
+
+        def start(self) -> None:
+            response = httpx.get("http://127.0.1.20:5307/idle", timeout=10)
+            answers.append((response.status_code, response.content))
+
+    test_agent = TestAgent(
+        agent_definitions.AgentDefinition(name="idle_test_agent", in_selectors=[]),
+        runtime_definitions.AgentSettings(
+            key="agent/ostorlab/idle_test_agent",
+            bus_url="amqp://guest:guest@localhost:5672/",
+            bus_exchange_topic="ostorlab_test",
+            healthcheck_host="127.0.1.20",
+            healthcheck_port=5307,
+        ),
+    )
+
+    try:
+        test_agent.run()
+    finally:
+        test_agent.stop_healthcheck()
+
+    assert answers == [(200, b"1")]
