@@ -5,9 +5,12 @@ from __future__ import annotations
 import asyncio
 import collections.abc
 import concurrent.futures
+import contextlib
+import threading
 import typing
 from unittest import mock
 
+import aio_pika
 import pytest
 from aiormq import exceptions as aiormq_exceptions
 from pytest_mock import plugin
@@ -307,3 +310,153 @@ async def testAgentMqMixin_declaresQueueWithDefaultPriority(
         durable=True,
         arguments={"x-max-priority": agent_mq_mixin.DEFAULT_MAX_PRIORITY},
     )
+
+
+class _DeliveredMessage:
+    """A message as aio_pika delivers it, its processing context acknowledges or rejects it."""
+
+    def __init__(self, body: bytes) -> None:
+        self.body = body
+        self.routing_key = "a.1"
+        self.settled = False
+
+    @contextlib.asynccontextmanager
+    async def process(
+        self, requeue: bool = False, reject_on_redelivered: bool = False
+    ) -> collections.abc.AsyncIterator[None]:
+        try:
+            yield
+        finally:
+            self.settled = True
+
+
+class _BlockingAgent(agent_mq_mixin.AgentMQMixin):
+    """Holds each message in process_message until the test releases it."""
+
+    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
+        super().__init__(
+            name="test",
+            keys=["a.#"],
+            url="amqp://guest:guest@localhost:5672/",
+            topic="test_topic",
+            loop=loop,
+        )
+        self.started: dict[bytes, threading.Event] = collections.defaultdict(
+            threading.Event
+        )
+        self.release: dict[bytes, threading.Event] = collections.defaultdict(
+            threading.Event
+        )
+        self.idle_while_processing: list[bool] = []
+        self.failure: Exception | None = None
+
+    def process_message(self, selector: str, message: bytes) -> None:
+        self.idle_while_processing.append(self.is_idle())
+        self.started[message].set()
+        self.release[message].wait(timeout=5)
+        if self.failure is not None:
+            raise self.failure
+
+
+async def _wait_started(agent: _BlockingAgent, body: bytes) -> None:
+    await asyncio.get_running_loop().run_in_executor(None, agent.started[body].wait, 5)
+
+
+def testAgentMqMixin_whenNoMessageWasDelivered_isIdle() -> None:
+    """A new agent holds no message."""
+    agent = agent_mq_mixin.AgentMQMixin(
+        name="test",
+        keys=["a.#"],
+        url="amqp://guest:guest@localhost:5672/",
+        topic="test_topic",
+    )
+
+    assert agent.is_idle() is True
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_whenMessageIsBeingProcessed_isBusyUntilItIsSettled() -> None:
+    """The agent is busy from the delivery of a message until its acknowledgement."""
+    agent = _BlockingAgent(asyncio.get_running_loop())
+    message = _DeliveredMessage(b"m1")
+
+    processing = asyncio.ensure_future(
+        agent._mq_process_message(
+            typing.cast(aio_pika.abc.AbstractIncomingMessage, message)
+        )
+    )
+    await _wait_started(agent, b"m1")
+    busy = agent.is_idle()
+    agent.release[b"m1"].set()
+    await processing
+
+    assert agent.idle_while_processing == [False]
+    assert busy is False
+    assert message.settled is True
+    assert agent.is_idle() is True
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_whenTwoMessagesAreProcessedAndOneEnds_staysBusyUntilTheOtherEnds() -> (
+    None
+):
+    """The agent counts every message it holds, ending one of two keeps it busy."""
+    agent = _BlockingAgent(asyncio.get_running_loop())
+    first = asyncio.ensure_future(
+        agent._mq_process_message(
+            typing.cast(aio_pika.abc.AbstractIncomingMessage, _DeliveredMessage(b"m1"))
+        )
+    )
+    second = asyncio.ensure_future(
+        agent._mq_process_message(
+            typing.cast(aio_pika.abc.AbstractIncomingMessage, _DeliveredMessage(b"m2"))
+        )
+    )
+    await _wait_started(agent, b"m1")
+    await _wait_started(agent, b"m2")
+
+    agent.release[b"m1"].set()
+    await first
+    after_first = agent.is_idle()
+    agent.release[b"m2"].set()
+    await second
+
+    assert after_first is False
+    assert agent.is_idle() is True
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_whenProcessingRaises_isIdleAgainAfterTheMessageIsRejected() -> (
+    None
+):
+    """A message whose processing fails no longer counts once it is rejected."""
+    agent = _BlockingAgent(asyncio.get_running_loop())
+    agent.failure = ValueError("processing failed")
+    agent.release[b"m1"].set()
+    message = _DeliveredMessage(b"m1")
+
+    with pytest.raises(ValueError):
+        await agent._mq_process_message(
+            typing.cast(aio_pika.abc.AbstractIncomingMessage, message)
+        )
+
+    assert message.settled is True
+    assert agent.is_idle() is True
+
+
+@pytest.mark.asyncio
+async def testAgentMqMixin_whenChannelIsClosedDuringProcessing_isIdleAfterReconnecting(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A message lost with its channel no longer counts, the reconnection does not leave the agent busy."""
+    agent = _BlockingAgent(asyncio.get_running_loop())
+    agent.failure = aio_pika.exceptions.ChannelInvalidStateError("closed")
+    agent.release[b"m1"].set()
+    mq_run = mocker.patch.object(agent, "mq_run", new_callable=mocker.AsyncMock)
+
+    await agent._mq_process_message(
+        typing.cast(aio_pika.abc.AbstractIncomingMessage, _DeliveredMessage(b"m1"))
+    )
+
+    mq_run.assert_awaited_once()
+    assert agent.is_idle() is True

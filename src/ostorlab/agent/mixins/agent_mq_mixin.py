@@ -51,6 +51,8 @@ class AgentMQMixin:
                 self._loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(self._loop)
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+        # Messages received and not yet acknowledged or rejected, only changed on the event loop.
+        self._messages_in_process = 0
         self._queue: aio_pika.abc.AbstractRobustQueue | None = None
         self._connection_pool: aio_pika.pool.Pool[
             aio_pika.abc.AbstractRobustConnection
@@ -137,11 +139,16 @@ class AgentMQMixin:
         for k in self._keys:
             await self._queue.bind(exchange, k)
 
+    def is_idle(self) -> bool:
+        """Whether the agent holds no message, it is busy from the delivery of a message until its acknowledgement."""
+        return self._messages_in_process == 0
+
     async def _mq_process_message(
         self, message: aio_pika.abc.AbstractIncomingMessage
     ) -> None:
         """Consumes the MQ messages and calls the process message callback."""
         logger.debug("incoming pika message received")
+        self._messages_in_process += 1
         try:
             async with message.process(requeue=True, reject_on_redelivered=True):
                 await self._loop.run_in_executor(
@@ -153,6 +160,8 @@ class AgentMQMixin:
         except aio_pika.exceptions.ChannelInvalidStateError:
             logger.warning("The channel is closed unexpectedly.")
             await self.mq_run()
+        finally:
+            self._messages_in_process -= 1
 
     def process_message(self, selector: str, message: bytes) -> None:
         """Callback to implement to process the MQ messages received."""

@@ -2,6 +2,7 @@
 
 The mixin runs a webservice by default on 0.0.0.0:5000 that must return 200 status and OK as a response.
 The mixin enables adding multiple health check callbacks that must all return True.
+It also exposes /idle, which returns 1 when the agent processes no message and 0 when it processes one.
 
 Typical usage:
 
@@ -43,6 +44,7 @@ class HealthcheckWebThread(Thread):
             host=host, port=port, app=self._app, threaded=True
         )
         self._healthcheck_callbacks: list[Callable[[], bool]] = []
+        self._idle_callback: Callable[[], bool] | None = None
         self._disable_verbose_logging()
 
     def _disable_verbose_logging(self) -> None:
@@ -78,8 +80,29 @@ class HealthcheckWebThread(Thread):
         self._server.shutdown()
 
     def _add_urls(self) -> None:
-        """Add status URL at /stats."""
+        """Add status URL at /status and idle URL at /idle."""
         self._app.add_url_rule("/status", "status", self._status)
+        self._app.add_url_rule("/idle", "idle", self._idle)
+
+    def set_idle_check(self, idle_callback: Callable[[], bool]) -> None:
+        """Set the callback that /idle evaluates when called.
+
+        Args:
+            idle_callback: Callback function, must take no argument and return True when the agent is idle.
+        """
+        self._idle_callback = idle_callback
+
+    def _idle(self) -> tuple[str, int]:
+        """Idle endpoint.
+
+        Returns:
+            1 if the agent processes no message, 0 if it processes one, 404 if no idle check is set.
+        """
+        if self._idle_callback is None:
+            return "", 404
+        if self._idle_callback() is True:
+            return "1", 200
+        return "0", 200
 
     def add_healthcheck(self, healthcheck_callback: Callable[[], bool]) -> None:
         """Add health check call back function that status will evaluate when called.
@@ -147,6 +170,14 @@ class AgentHealthcheckMixin:
         """
         logger.debug("enabling healthcheck")
         self._healthcheck_web_thread.add_healthcheck(healthcheck_callback)
+
+    def set_idle_check(self, idle_callback: Callable[[], bool]) -> None:
+        """Set the callback that the /idle endpoint evaluates when called.
+
+        Args:
+            idle_callback: Callback function, must take no argument and return True when the agent is idle.
+        """
+        self._healthcheck_web_thread.set_idle_check(idle_callback)
 
     def start_healthcheck(self) -> None:
         """Start exposing the health service.
