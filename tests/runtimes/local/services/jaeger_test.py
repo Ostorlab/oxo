@@ -5,6 +5,7 @@ on instances missing docker.
 """
 
 import pytest
+from pytest_mock import plugin
 
 from ostorlab.runtimes.local.services import jaeger
 
@@ -19,3 +20,15 @@ def testLocalJaeger_onOperationalConditions_jaegerIsStarted() -> None:
     lj.stop()
 
     assert lj.is_healthy is False
+
+
+def testLocalJaegerIsServiceHealthy_whenServiceIsMissing_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A missing Docker service is unhealthy without accessing its name."""
+    mocker.patch("docker.from_env")
+    mocker.patch("time.sleep")
+    service = jaeger.LocalJaeger(name="missing", network="test_network")
+
+    assert service.service is None
+    assert service.is_service_healthy() is False

@@ -999,3 +999,46 @@ def testLiteLocalCreateAgentService_always_healthcheckProbesEveryStartIntervalWh
     assert healthcheck["StartPeriod"] == 60 * 1000000000
     assert healthcheck["StartInterval"] == 2 * 1000000000
     assert healthcheck["Interval"] == 60 * 1000000000
+
+
+def testLiteLocalRuntimeCheckAgentsHealthy_whenAgentServiceRetriesExhausted_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """Exhausted service retries fail the Lite Local agent health check."""
+    for check in (
+        "is_docker_installed",
+        "is_sys_arch_supported",
+        "is_user_permitted",
+        "is_docker_working",
+        "is_swarm_initialized",
+    ):
+        mocker.patch(
+            f"ostorlab.cli.docker_requirements_checker.{check}", return_value=True
+        )
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    sleep = mocker.patch("time.sleep")
+    runtime = lite_local_runtime.LiteLocalRuntime(
+        scan_id="480851",
+        bus_url="amqp://localhost/",
+        bus_vhost="/",
+        bus_management_url="http://localhost:15672/",
+        bus_exchange_topic="test",
+        network="test_net",
+        redis_url="redis://localhost/",
+        tracing_collector_url="http://localhost:14268/api/traces",
+    )
+    unhealthy_service = mocker.MagicMock()
+    unhealthy_service.name = "agent_ostorlab_test"
+    unhealthy_service.attrs = {
+        "Spec": {
+            "TaskTemplate": {"RestartPolicy": {"Condition": "any"}},
+            "Mode": {"Replicated": {"Replicas": 1}},
+        }
+    }
+    unhealthy_service.tasks.return_value = [{"Status": {"State": "starting"}}]
+    docker_client.services.list.return_value = [unhealthy_service]
+
+    assert runtime._check_agents_healthy() is False
+    assert unhealthy_service.tasks.call_count == 20
+    assert sleep.call_count == 19

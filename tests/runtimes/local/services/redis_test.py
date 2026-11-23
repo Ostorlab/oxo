@@ -81,3 +81,15 @@ def testLocalRedisRestore_whenNoKeys_doesNothing(
     lr.restore([])
 
     run.assert_not_called()
+
+
+def testLocalRedisIsServiceHealthy_whenServiceIsMissing_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A missing Docker service is unhealthy without accessing its name."""
+    mocker.patch("docker.from_env")
+    mocker.patch("time.sleep")
+    service = redis.LocalRedis(name="missing", network="test_network")
+
+    assert service.service is None
+    assert service.is_service_healthy() is False
