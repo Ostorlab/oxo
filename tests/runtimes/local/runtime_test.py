@@ -1518,10 +1518,18 @@ def testLocalRuntimeAreServicesReady_whenMqHealthRetriesExhausted_raisesUnhealth
     mocker.patch("time.sleep")
     runtime = local_runtime.LocalRuntime(scan_id="480851")
     runtime._mq_service = mq.LocalRabbitMQ(name="480851", network="test_net")
-    runtime._mq_service._mq_service = None
+    service = mocker.MagicMock()
+    service.tasks.return_value = [
+        {"Status": {"State": "running", "ContainerStatus": {"ContainerID": "mq-test"}}}
+    ]
+    runtime._mq_service._mq_service = service
+    readiness_probe = docker_client.containers.get.return_value.exec_run
+    readiness_probe.return_value = mocker.Mock(exit_code=69, output=b"not ready")
 
     with pytest.raises(local_runtime.UnhealthyService, match="MQ service is unhealthy"):
         runtime._check_services_healthy()
+
+    assert readiness_probe.call_count == mq.MQ_READINESS_ATTEMPTS
 
 
 def testLocalRuntimeAreAgentsReady_whenAgentServiceRetriesExhausted_returnsFalse(
