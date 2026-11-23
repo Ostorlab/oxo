@@ -1505,3 +1505,42 @@ def testRuntimeScanStop_always_removesTheStateOfTheScan(
 
     assert scan_state.load_definition(scan.id) is None
     assert _scan_progress(scan.id) == models.ScanProgress.STOPPED
+
+
+def testLocalRuntimeAreServicesReady_whenMqHealthRetriesExhausted_raisesUnhealthyService(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When LocalRabbitMQ fails readiness after all retries, _are_services_ready raises UnhealthyService."""
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    mocker.patch.object(mq.LocalRabbitMQ.is_service_healthy.retry, "sleep")
+    runtime = local_runtime.LocalRuntime(scan_id="480851")
+    runtime._mq_service = mq.LocalRabbitMQ(name="480851", network="test_net")
+    runtime._mq_service._mq_service = None
+
+    with pytest.raises(local_runtime.UnhealthyService, match="MQ service is unhealthy"):
+        runtime._check_services_healthy()
+
+
+def testLocalRuntimeAreAgentsReady_whenAgentServiceRetriesExhausted_returnsFalse(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """An agent service that never reaches running state causes _are_agents_ready to return False."""
+    mocker.patch("docker.from_env", return_value=mocker.MagicMock())
+    mocker.patch.object(local_runtime.LocalRuntime._is_service_healthy.retry, "sleep")
+    mocker.patch.object(local_runtime.LocalRuntime._are_agents_ready.retry, "sleep")
+    runtime = local_runtime.LocalRuntime(scan_id="480851")
+    unhealthy_service = mocker.MagicMock()
+    unhealthy_service.name = "agent_ostorlab_test"
+    unhealthy_service.attrs = {
+        "Spec": {
+            "TaskTemplate": {"RestartPolicy": {"Condition": "any"}},
+            "Mode": {"Replicated": {"Replicas": 1}},
+        }
+    }
+    unhealthy_service.tasks.return_value = [{"Status": {"State": "starting"}}]
+    mocker.patch.object(
+        runtime, "_list_agent_services", return_value=[unhealthy_service]
+    )
+
+    assert runtime._check_agents_healthy() is False

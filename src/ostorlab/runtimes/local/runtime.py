@@ -767,18 +767,18 @@ class LocalRuntime(runtime.Runtime[int | str]):
             name=self.name, network=self.network, exposed_ports=self._mq_exposed_ports
         )
         self._mq_service.start()
-        if "mq" in self.follow:
+        if "mq" in self.follow and self._mq_service.service is not None:
             typing.cast(log_streamer.LogStream, self._log_streamer).stream(
-                typing.cast(docker_models_services.Service, self._mq_service.service)
+                self._mq_service.service
             )
 
     def _start_redis_service(self) -> None:
         """Start a local Redis service."""
         self._redis_service = redis.LocalRedis(name=self.name, network=self.network)
         self._redis_service.start()
-        if "redis" in self.follow:
+        if "redis" in self.follow and self._redis_service.service is not None:
             typing.cast(log_streamer.LogStream, self._log_streamer).stream(
-                typing.cast(docker_models_services.Service, self._redis_service.service)
+                self._redis_service.service
             )
 
     def _start_jaeger_service(self) -> None:
@@ -786,11 +786,9 @@ class LocalRuntime(runtime.Runtime[int | str]):
         self._jaeger_service = jaeger.LocalJaeger(name=self.name, network=self.network)
         self._jaeger_service.start()
         click.launch(self._jaeger_service.management_interface_ui)
-        if "jaeger" in self.follow:
+        if "jaeger" in self.follow and self._jaeger_service.service is not None:
             typing.cast(log_streamer.LogStream, self._log_streamer).stream(
-                typing.cast(
-                    docker_models_services.Service, self._jaeger_service.service
-                )
+                self._jaeger_service.service
             )
 
     def _check_services_healthy(self) -> None:
@@ -800,7 +798,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda lv: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _are_services_ready(self) -> None:
@@ -817,7 +815,7 @@ class LocalRuntime(runtime.Runtime[int | str]):
         ):
             raise UnhealthyService("Jaeger service is unhealthy.")
 
-    def _check_agents_healthy(self) -> bool | tenacity.Future:
+    def _check_agents_healthy(self) -> bool:
         """Checks if an agent is healthy."""
         return self._are_agents_ready()
 
@@ -887,15 +885,14 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda lv: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
     def _is_service_healthy(
         self,
         service: docker_models_services.Service,
         replicas: typing.Optional[int] = None,
-    ) -> bool | tenacity.Future:
+    ) -> bool:
         """Checks if a docker service is healthy by checking all tasks status."""
         logger.debug("checking Spec service %s", service.name)
         try:
@@ -1052,11 +1049,10 @@ class LocalRuntime(runtime.Runtime[int | str]):
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(20),
         wait=tenacity.wait_fixed(0.5),
-        # return last value and don't raise RetryError exception.
-        retry_error_callback=lambda lv: lv.outcome,
+        retry_error_callback=lambda lv: False,
         retry=tenacity.retry_if_result(lambda v: v is False),
     )
-    def _are_agents_ready(self, fail_fast: bool = True) -> bool | tenacity.Future:
+    def _are_agents_ready(self, fail_fast: bool = True) -> bool:
         """Checks that all agents are ready and healthy while taking into account the run type of agent
         (once vs long-running)."""
         logger.info("listing services ...")
