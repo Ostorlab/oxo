@@ -21,7 +21,9 @@ from ostorlab.runtimes.local import scan_state
 from ostorlab.runtimes.local import snapshot
 from ostorlab.runtimes.local.models import models
 from ostorlab.runtimes.local.services import container_exec
+from ostorlab.runtimes.local.services import jaeger
 from ostorlab.runtimes.local.services import mq
+from ostorlab.runtimes.local.services import redis
 
 
 @pytest.mark.skip(reason="Missing inject asset agent.")
@@ -1543,3 +1545,37 @@ def testLocalRuntimeAreAgentsReady_whenAgentServiceRetriesExhausted_returnsFalse
     )
 
     assert runtime._check_agents_healthy() is False
+
+
+@pytest.mark.parametrize("failed_service", ["mq", "redis", "jaeger"])
+def testLocalRuntimeAreServicesReady_whenServiceCreationFails_raisesWithoutWaiting(
+    mocker: plugin.MockerFixture, failed_service: str
+) -> None:
+    """Permanent Docker creation failures do not consume the readiness retry budget."""
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    sleep = mocker.patch("time.sleep")
+    mocker.patch.object(container_exec, "run", return_value=b"")
+    runtime = local_runtime.LocalRuntime(scan_id="480851", tracing=True)
+    runtime._mq_service = mq.LocalRabbitMQ(name="480851", network="test_net")
+    runtime._redis_service = redis.LocalRedis(name="480851", network="test_net")
+    runtime._jaeger_service = jaeger.LocalJaeger(name="480851", network="test_net")
+    service = mocker.MagicMock()
+    service.tasks.return_value = [{"Status": {"State": "running"}}]
+    for name, wrapper in (
+        ("mq", runtime._mq_service),
+        ("redis", runtime._redis_service),
+        ("jaeger", runtime._jaeger_service),
+    ):
+        docker_client.services.create.side_effect = (
+            docker.errors.APIError("Service creation failed")
+            if name == failed_service
+            else None
+        )
+        docker_client.services.create.return_value = service
+        wrapper.start()
+
+    with pytest.raises(local_runtime.UnhealthyService):
+        runtime._check_services_healthy()
+
+    sleep.assert_not_called()
