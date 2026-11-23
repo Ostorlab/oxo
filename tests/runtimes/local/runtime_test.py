@@ -1513,7 +1513,7 @@ def testLocalRuntimeAreServicesReady_whenMqHealthRetriesExhausted_raisesUnhealth
     """When LocalRabbitMQ fails readiness after all retries, _are_services_ready raises UnhealthyService."""
     docker_client = mocker.MagicMock()
     mocker.patch("docker.from_env", return_value=docker_client)
-    mocker.patch.object(mq.LocalRabbitMQ.is_service_healthy.retry, "sleep")
+    mocker.patch("time.sleep")
     runtime = local_runtime.LocalRuntime(scan_id="480851")
     runtime._mq_service = mq.LocalRabbitMQ(name="480851", network="test_net")
     runtime._mq_service._mq_service = None
@@ -1527,8 +1527,7 @@ def testLocalRuntimeAreAgentsReady_whenAgentServiceRetriesExhausted_returnsFalse
 ) -> None:
     """An agent service that never reaches running state causes _are_agents_ready to return False."""
     mocker.patch("docker.from_env", return_value=mocker.MagicMock())
-    mocker.patch.object(local_runtime.LocalRuntime._is_service_healthy.retry, "sleep")
-    mocker.patch.object(local_runtime.LocalRuntime._are_agents_ready.retry, "sleep")
+    mocker.patch("time.sleep")
     runtime = local_runtime.LocalRuntime(scan_id="480851")
     unhealthy_service = mocker.MagicMock()
     unhealthy_service.name = "agent_ostorlab_test"

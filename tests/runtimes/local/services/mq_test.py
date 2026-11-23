@@ -216,7 +216,7 @@ def testLocalRabbitMQIsServiceHealthy_whenStartMqReturnsNone_returnsFalseWithout
     """When _start_mq fails with an APIError and leaves _mq_service as None, is_service_healthy returns False."""
     docker_client = mocker.MagicMock()
     mocker.patch("docker.from_env", return_value=docker_client)
-    mocker.patch.object(mq.LocalRabbitMQ.is_service_healthy.retry, "sleep")
+    mocker.patch("time.sleep")
     lrm = mq.LocalRabbitMQ(name="test_mq", network="test_network")
     lrm._mq_service = None
 
@@ -228,7 +228,7 @@ def testLocalRabbitMQIsServiceHealthy_whenReadinessChecksExhausted_returnsFalseB
 ) -> None:
     """When all readiness attempts fail, is_service_healthy returns False rather than a truthy tenacity.Future."""
     lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=69)
-    mocker.patch.object(mq.LocalRabbitMQ.is_service_healthy.retry, "sleep")
+    mocker.patch("time.sleep")
 
     assert lrm.is_service_healthy() is False
 
