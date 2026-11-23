@@ -142,10 +142,10 @@ def _arg_from_api_response(arg: dict[str, Any]) -> definitions.Arg:
         return definitions.Arg.build(name=name, type=arg_type, value=value)
     except UnicodeDecodeError as exc:
         raise ValueError(f"Argument {name!r} contains invalid UTF-8.") from exc
-    except ValueError as exc:
+    except ValueError:
         raise ValueError(
             f"Argument {name!r} is invalid for type {arg_type!r}."
-        ) from exc
+        ) from None
 
 
 def _process_agent_replicas(replicas: int) -> int:

@@ -3,6 +3,7 @@
 import base64
 import io
 import pathlib
+import traceback
 
 import pytest
 from pytest_mock import plugin
@@ -310,6 +311,7 @@ def testAgentGroupDefinitionFromApiResponse_whenEncoded_decodesOnce(
         ("string", "test", "UTF-8"),
         ("number", "YWJj", "type 'number'"),
         ("object", "YWJj", "type 'object'"),
+        ("unsupported", "YWJj", "type 'unsupported'"),
     ],
 )
 def testAgentGroupDefinitionFromApiResponse_whenMalformed_raisesArgumentError(
@@ -321,6 +323,23 @@ def testAgentGroupDefinitionFromApiResponse_whenMalformed_raisesArgumentError(
 
     with pytest.raises(ValueError, match=f"Argument 'mode'.*{reason}"):
         definitions.AgentGroupDefinition.from_api_response(group)
+
+
+def testAgentGroupDefinitionFromApiResponse_whenNumberConversionFails_omitsValueFromTraceback() -> (
+    None
+):
+    """A conversion error leaves the argument value out of logged tracebacks."""
+    raw_value = "test-sensitive-number"
+    wire_value = base64.b64encode(raw_value.encode()).decode("ascii")
+    arg = {"name": "mode", "type": "number", "value": wire_value}
+    group = {"agents": [{"key": "agent/ostorlab/agent1", "args": [arg]}]}
+
+    with pytest.raises(ValueError, match="Argument 'mode'.*type 'number'") as error:
+        definitions.AgentGroupDefinition.from_api_response(group)
+
+    formatted_traceback = "".join(traceback.format_exception(error.value))
+    assert raw_value not in formatted_traceback
+    assert wire_value not in formatted_traceback
 
 
 def testAgentGroupDefinitionFromApiResponse_whenAgentArgOfTypeBool_castsArgumentToBoolean() -> (
