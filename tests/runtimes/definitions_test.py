@@ -303,14 +303,20 @@ def testAgentGroupDefinitionFromApiResponse_whenEncoded_decodesOnce(
 
 
 @pytest.mark.parametrize(
-    ("wire_value", "reason"),
-    [("hello world", "base64"), ("café", "base64"), ("test", "UTF-8")],
+    ("arg_type", "wire_value", "reason"),
+    [
+        ("string", "hello world", "base64"),
+        ("string", "café", "base64"),
+        ("string", "test", "UTF-8"),
+        ("number", "YWJj", "type 'number'"),
+        ("object", "YWJj", "type 'object'"),
+    ],
 )
 def testAgentGroupDefinitionFromApiResponse_whenMalformed_raisesArgumentError(
-    wire_value: str, reason: str
+    arg_type: str, wire_value: str, reason: str
 ) -> None:
-    """Identify the argument when its transport or text encoding is invalid."""
-    arg = {"name": "mode", "type": "string", "value": wire_value}
+    """Identify the argument when decoding or type conversion fails."""
+    arg = {"name": "mode", "type": arg_type, "value": wire_value}
     group = {"agents": [{"key": "agent/ostorlab/agent1", "args": [arg]}]}
 
     with pytest.raises(ValueError, match=f"Argument 'mode'.*{reason}"):

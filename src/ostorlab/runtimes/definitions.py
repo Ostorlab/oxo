@@ -131,6 +131,7 @@ logger = logging.getLogger(__name__)
 def _arg_from_api_response(arg: dict[str, Any]) -> definitions.Arg:
     """Decode the GraphQL base64 envelope before interpreting the declared type."""
     name = arg["name"]
+    arg_type = arg["type"]
     value = arg.get("value")
     if isinstance(value, str):
         try:
@@ -138,9 +139,13 @@ def _arg_from_api_response(arg: dict[str, Any]) -> definitions.Arg:
         except ValueError as exc:
             raise ValueError(f"Argument {name!r} has invalid base64 encoding.") from exc
     try:
-        return definitions.Arg.build(name=name, type=arg["type"], value=value)
+        return definitions.Arg.build(name=name, type=arg_type, value=value)
     except UnicodeDecodeError as exc:
         raise ValueError(f"Argument {name!r} contains invalid UTF-8.") from exc
+    except ValueError as exc:
+        raise ValueError(
+            f"Argument {name!r} is invalid for type {arg_type!r}."
+        ) from exc
 
 
 def _process_agent_replicas(replicas: int) -> int:
