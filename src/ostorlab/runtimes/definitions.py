@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import base64
-import binascii
 import dataclasses
 import ipaddress
 import json
@@ -127,6 +126,21 @@ _MULTI_ASSET_MOBILE_FIELDS: dict[type[base_asset.Asset], str] = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+def _arg_from_api_response(arg: dict[str, Any]) -> definitions.Arg:
+    """Decode the GraphQL base64 envelope before interpreting the declared type."""
+    name = arg["name"]
+    value = arg.get("value")
+    if isinstance(value, str):
+        try:
+            value = base64.b64decode(value, validate=True)
+        except ValueError as exc:
+            raise ValueError(f"Argument {name!r} has invalid base64 encoding.") from exc
+    try:
+        return definitions.Arg.build(name=name, type=arg["type"], value=value)
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"Argument {name!r} contains invalid UTF-8.") from exc
 
 
 def _process_agent_replicas(replicas: int) -> int:
@@ -422,22 +436,9 @@ class AgentGroupDefinition:
             agents_names.append(agent.get("key") or "")
             replicas = _process_agent_replicas(agent.get("replicas") or 1)
 
-            agent_args = []
-            for arg in agent.get("args") or []:
-                val = arg.get("value")
-                if isinstance(val, str):
-                    try:
-                        val = base64.b64decode(val, validate=True)
-                    except binascii.Error:
-                        val = val.encode()
-
-                agent_args.append(
-                    definitions.Arg.build(
-                        name=arg.get("name"),
-                        type=arg.get("type"),
-                        value=val,
-                    )
-                )
+            agent_args = [
+                _arg_from_api_response(arg) for arg in agent.get("args") or []
+            ]
 
             port_mappings = [
                 definitions.PortMapping(
