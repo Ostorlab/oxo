@@ -1,7 +1,9 @@
 """Unittest for runtime definitions."""
 
+import base64
 import io
 import pathlib
+import traceback
 
 import pytest
 from pytest_mock import plugin
@@ -261,16 +263,34 @@ def testAgentGroupDefinitionFromApiResponse_whenAgentArgOfTypeNumber_castsArgume
     assert isinstance(agent_group_def.agents[0].args[0].value, int) is True
 
 
-def testAgentGroupDefinitionFromApiResponse_whenAgentArgOfTypeString_castsArgumentToString() -> (
-    None
-):
-    """Ensure the agent argument from the API response is correctly typed: Case of strings."""
+@pytest.mark.parametrize(
+    ("arg_type", "raw_value", "expected"),
+    [
+        ("string", b"hello world", "hello world"),
+        ("string", b"test", "test"),
+        ("string", b"YWJj", "YWJj"),
+        ("string", b"", ""),
+        ("binary", b"\xff\x00", b"\xff\x00"),
+        ("number", b"1234", 1234),
+        ("boolean", b"true", True),
+    ],
+)
+def testAgentGroupDefinitionFromApiResponse_whenEncoded_decodesOnce(
+    arg_type: str, raw_value: bytes, expected: utils_definitions.ArgumentValue
+) -> None:
+    """Read the base64 value emitted by the scanner's GraphQL resolver."""
     agent_group = {
         "key": "agentgroup/ostorlab/agent_group42",
         "agents": [
             {
                 "key": "agent/ostorlab/agent1",
-                "args": [{"name": "arg1", "type": "string", "value": "hello world"}],
+                "args": [
+                    {
+                        "name": "arg1",
+                        "type": arg_type,
+                        "value": base64.b64encode(raw_value).decode("ascii"),
+                    }
+                ],
             },
         ],
     }
@@ -279,9 +299,47 @@ def testAgentGroupDefinitionFromApiResponse_whenAgentArgOfTypeString_castsArgume
 
     assert agent_group_def.name == "agent_group42"
     assert agent_group_def.agents[0].args[0] == utils_definitions.Arg(
-        name="arg1", type="string", value="hello world", description=None
+        name="arg1", type=arg_type, value=expected, description=None
     )
-    assert isinstance(agent_group_def.agents[0].args[0].value, str) is True
+
+
+@pytest.mark.parametrize(
+    ("arg_type", "wire_value", "reason"),
+    [
+        ("string", "hello world", "base64"),
+        ("string", "café", "base64"),
+        ("string", "test", "UTF-8"),
+        ("number", "YWJj", "type 'number'"),
+        ("object", "YWJj", "type 'object'"),
+        ("unsupported", "YWJj", "type 'unsupported'"),
+    ],
+)
+def testAgentGroupDefinitionFromApiResponse_whenMalformed_raisesArgumentError(
+    arg_type: str, wire_value: str, reason: str
+) -> None:
+    """Identify the argument when decoding or type conversion fails."""
+    arg = {"name": "mode", "type": arg_type, "value": wire_value}
+    group = {"agents": [{"key": "agent/ostorlab/agent1", "args": [arg]}]}
+
+    with pytest.raises(ValueError, match=f"Argument 'mode'.*{reason}"):
+        definitions.AgentGroupDefinition.from_api_response(group)
+
+
+def testAgentGroupDefinitionFromApiResponse_whenNumberConversionFails_omitsValueFromTraceback() -> (
+    None
+):
+    """A conversion error leaves the argument value out of logged tracebacks."""
+    raw_value = "test-sensitive-number"
+    wire_value = base64.b64encode(raw_value.encode()).decode("ascii")
+    arg = {"name": "mode", "type": "number", "value": wire_value}
+    group = {"agents": [{"key": "agent/ostorlab/agent1", "args": [arg]}]}
+
+    with pytest.raises(ValueError, match="Argument 'mode'.*type 'number'") as error:
+        definitions.AgentGroupDefinition.from_api_response(group)
+
+    formatted_traceback = "".join(traceback.format_exception(error.value))
+    assert raw_value not in formatted_traceback
+    assert wire_value not in formatted_traceback
 
 
 def testAgentGroupDefinitionFromApiResponse_whenAgentArgOfTypeBool_castsArgumentToBoolean() -> (
