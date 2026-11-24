@@ -208,3 +208,45 @@ def testLocalRabbitMQCapture_whenStateIsNotJson_raisesExecError(
 
     with pytest.raises(container_exec.ExecError):
         lrm.capture(redis_host="redis_test_mq")
+
+
+def testLocalRabbitMQIsServiceHealthy_whenStartMqReturnsNone_returnsFalseWithoutAttributeError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When _start_mq fails with an APIError and leaves _mq_service as None, is_service_healthy returns False."""
+    docker_client = mocker.MagicMock()
+    mocker.patch("docker.from_env", return_value=docker_client)
+    mocker.patch("time.sleep")
+    lrm = mq.LocalRabbitMQ(name="test_mq", network="test_network")
+    lrm._mq_service = None
+
+    assert lrm.is_service_healthy() is False
+
+
+def testLocalRabbitMQIsServiceHealthy_whenReadinessChecksExhausted_returnsFalseBool(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """When all readiness attempts fail, is_service_healthy returns False rather than a truthy tenacity.Future."""
+    lrm, _ = _mock_mq_with_task(mocker, task_state="running", exit_code=69)
+    mocker.patch("time.sleep")
+
+    assert lrm.is_service_healthy() is False
+
+
+def testLocalRabbitMQCreateMqAdvancedConfig_always_includesTotalMemoryOverride(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """The RabbitMQ advanced config caps available memory to MQ_MEMORY_RESERVATION so watermarks use universe quota."""
+    docker_client = mocker.MagicMock()
+    docker_client.configs.get.side_effect = docker.errors.NotFound("new")
+    docker_client.configs.create.return_value.id = "cfg-1"
+    mocker.patch("docker.from_env", return_value=docker_client)
+    lrm = mq.LocalRabbitMQ(name="test_mq", network="test_network")
+
+    lrm._create_mq_advanced_config()
+
+    created_data = docker_client.configs.create.call_args.kwargs["data"]
+    assert (
+        f"{{total_memory_available_override_value, {mq.MQ_MEMORY_RESERVATION}}}".encode()
+        in created_data
+    )
