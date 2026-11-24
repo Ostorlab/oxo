@@ -363,6 +363,49 @@ def testAgentPersistMixinDelete_whenKeyIsSet_forgetsTheExpiryTimesOfItsMembers(
 
 @pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
 @pytest.mark.docker
+def testAgentPersistMixinSetAdd_whenMemberWasRemovedWithoutTheMixin_staysSevenDaysAgain(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A member that left the set gets a new expiry time when it is added again."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com", "b.com")
+    clock.return_value = _NOW + 6 * _DAY
+    redis.Redis.from_url(_REDIS_URL).srem("seen", "a.com")
+
+    assert mixin.set_add("seen", "a.com", "b.com") is True
+
+    clock.return_value = _NOW + 7 * _DAY
+    assert mixin.set_members("seen") == {b"a.com"}
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSet_whenMoreMembersExpiredThanOneBatch_forgetsThemAll(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """The expired members are removed batch after batch until none is left."""
+    del redis_service, clean_redis_data
+    mocker.patch.object(agent_persist_mixin, "_FORGET_BATCH_SIZE", 2)
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com", "b.com", "c.com", "d.com", "e.com")
+    clock.return_value = _NOW + 1
+    mixin.set_add("seen", "f.com")
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.set_len("seen") == 1
+    assert redis.Redis.from_url(_REDIS_URL).zcard("seen:expires_at") == 1
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
 def testAgentPersistMixinAdd_always_storesTheValueForSevenDays(
     redis_service: local_redis_service.LocalRedis,
     clean_redis_data: None,

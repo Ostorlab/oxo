@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 # Seconds a member stays in a set, and a value stays stored.
 TTL_SECONDS = 7 * 24 * 60 * 60  # 7 days
+# Members removed from a set in one Redis command.
+_FORGET_BATCH_SIZE = 1000
 
 
 def _expiry_key(key: bytes | str) -> bytes | str:
@@ -62,12 +64,26 @@ class AgentPersistMixin:
         Args:
             key: Set key.
         """
-        expired = self._redis_client.zrangebyscore(
-            _expiry_key(key), "-inf", time.time()
-        )
-        if len(expired) > 0:
-            self._redis_client.srem(key, *expired)
-            self._redis_client.zrem(_expiry_key(key), *expired)
+        expiry_key = _expiry_key(key)
+
+        def _forget_batch(pipeline: "redis.client.Pipeline[bytes]") -> None:
+            expired = cast(
+                list[bytes],
+                pipeline.zrangebyscore(
+                    expiry_key, "-inf", time.time(), start=0, num=_FORGET_BATCH_SIZE
+                ),
+            )
+            pipeline.multi()
+            if len(expired) > 0:
+                pipeline.srem(key, *expired)
+                pipeline.zrem(expiry_key, *expired)
+
+        while self._redis_client.zcount(expiry_key, "-inf", time.time()) > 0:
+            # The batch is given up and read again when another agent changes the expiry times meanwhile, so a
+            # member that was just added again is not removed.
+            cast(Callable[..., object], self._redis_client.transaction)(
+                _forget_batch, expiry_key
+            )
 
     def set_add(self, key: bytes | str, *value: bytes | str) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
@@ -84,11 +100,19 @@ class AgentPersistMixin:
             True if it is a new member, False otherwise.
         """
         self._forget_expired(key)
-        is_new = bool(self._redis_client.sadd(key, *value))
-        # A member that is still known keeps the time it expires at.
-        expires_at = {member: time.time() + TTL_SECONDS for member in value}
-        self._redis_client.zadd(_expiry_key(key), expires_at, nx=True)
-        return is_new
+        pipeline = self._redis_client.pipeline()
+        for member in value:
+            pipeline.sadd(key, member)
+        added = pipeline.execute()
+        expires_at = time.time() + TTL_SECONDS
+        new = {member: expires_at for member, is_new in zip(value, added) if is_new}
+        known = {member: expires_at for member in value if member not in new}
+        if len(new) > 0:
+            self._redis_client.zadd(_expiry_key(key), new)
+        if len(known) > 0:
+            # A member that is still known keeps the time it expires at.
+            self._redis_client.zadd(_expiry_key(key), known, nx=True)
+        return len(new) > 0
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
         """Indicates whether value is member of the set identified by key.
