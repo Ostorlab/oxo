@@ -12,7 +12,8 @@ Typical usage:
 ```
 
 A member of a set is forgotten 48 hours after it is added, each member on its own, so that a long running scan
-processes the same input again later.
+processes the same input again later. Reading a set ignores the forgotten members, only `set_add` removes them from
+Redis: a key that is no longer added to keeps its last members stored.
 
 A set is stored as a Redis sorted set. A key written as a plain set by a version that kept members forever is not
 readable: Redis answers `WRONGTYPE`. Start the scan on an empty Redis and upgrade all the replicas of an agent together.
