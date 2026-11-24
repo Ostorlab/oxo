@@ -10,10 +10,18 @@ Typical usage:
     status_agent.set_add('crawler_agent_asset_dna', dna)
     is_new = not status_agent.set_is_member()
 ```
+
+A member of a set is forgotten 7 days after it is added, each member on its own, so that a long running scan
+processes the same input again later. The set stays a plain Redis set: the time each member expires at is kept in a
+sorted set next to it, under the key of the set followed by `:expires_at`. A member added without the mixin has no
+expiry time: it stays until it is removed, or until `set_add` is called on it, which gives it 7 days from that moment.
+
+A value stored with `add` expires after 7 days too, hashes are kept forever.
 """
 
 import ipaddress
 import logging
+import time
 from collections.abc import Callable
 from typing import cast
 
@@ -22,6 +30,18 @@ import redis
 from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
+
+# Seconds a member stays in a set, and a value stays stored.
+TTL_SECONDS = 7 * 24 * 60 * 60  # 7 days
+# Members removed from a set in one Redis command.
+_FORGET_BATCH_SIZE = 1000
+
+
+def _expiry_key(key: bytes | str) -> bytes | str:
+    """Returns the key of the sorted set that holds when each member of a set expires."""
+    if isinstance(key, bytes):
+        return key + b":expires_at"
+    return f"{key}:expires_at"
 
 
 class AgentPersistMixin:
@@ -38,6 +58,33 @@ class AgentPersistMixin:
             raise ValueError("agent settings is missing redis url")
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
 
+    def _forget_expired(self, key: bytes | str) -> None:
+        """Removes from a set the members whose time has passed.
+
+        Args:
+            key: Set key.
+        """
+        expiry_key = _expiry_key(key)
+
+        def _forget_batch(pipeline: "redis.client.Pipeline[bytes]") -> None:
+            expired = cast(
+                list[bytes],
+                pipeline.zrangebyscore(
+                    expiry_key, "-inf", time.time(), start=0, num=_FORGET_BATCH_SIZE
+                ),
+            )
+            pipeline.multi()
+            if len(expired) > 0:
+                pipeline.srem(key, *expired)
+                pipeline.zrem(expiry_key, *expired)
+
+        while self._redis_client.zcount(expiry_key, "-inf", time.time()) > 0:
+            # The batch is given up and read again when another agent changes the expiry times meanwhile, so a
+            # member that was just added again is not removed.
+            cast(Callable[..., object], self._redis_client.transaction)(
+                _forget_batch, expiry_key
+            )
+
     def set_add(self, key: bytes | str, *value: bytes | str) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
         as tested.
@@ -52,7 +99,26 @@ class AgentPersistMixin:
         Returns:
             True if it is a new member, False otherwise.
         """
-        return bool(self._redis_client.sadd(key, *value))
+        self._forget_expired(key)
+        expiry_key = _expiry_key(key)
+        expires_at = time.time() + TTL_SECONDS
+        # A member and the time it expires at are written in one transaction, so that a member is never left
+        # without one. A member that is still known keeps its time.
+        pipeline = self._redis_client.pipeline()
+        for member in value:
+            pipeline.sadd(key, member)
+            pipeline.zadd(expiry_key, {member: expires_at}, nx=True)
+        results = pipeline.execute()
+        added, timed = results[::2], results[1::2]
+        # A member that left the set without the mixin still holds its earlier time.
+        stale = {
+            member: expires_at
+            for member, is_new, got_time in zip(value, added, timed)
+            if is_new == 1 and got_time == 0
+        }
+        if len(stale) > 0:
+            self._redis_client.zadd(expiry_key, stale)
+        return any(is_new == 1 for is_new in added)
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
         """Indicates whether value is member of the set identified by key.
@@ -64,6 +130,7 @@ class AgentPersistMixin:
         Returns:
             True if it is a member, False otherwise.
         """
+        self._forget_expired(key)
         return self._redis_client.sismember(key, value) == 1
 
     def set_len(self, key: bytes | str) -> int:
@@ -78,6 +145,7 @@ class AgentPersistMixin:
         Returns:
             The cardinality (number of elements) of the set, or 0 if key does not exist.
         """
+        self._forget_expired(key)
         return self._redis_client.scard(key)
 
     def set_members(self, key: bytes | str) -> set[bytes]:
@@ -89,10 +157,11 @@ class AgentPersistMixin:
         Returns:
              The value of key, or empty set when key does not exist.
         """
+        self._forget_expired(key)
         return self._redis_client.smembers(key)
 
     def add(self, key: bytes | str, value: bytes) -> bool | None:
-        """Helper function that Set key to hold the string value.
+        """Helper function that Set key to hold the string value, for 7 days.
 
         Args:
             key: Key for string value.
@@ -101,7 +170,7 @@ class AgentPersistMixin:
         Returns:
             Status of the set command.
         """
-        return self._redis_client.set(key, value)
+        return self._redis_client.set(key, value, ex=TTL_SECONDS)
 
     def get(self, key: bytes | str) -> bytes | None:
         """Get the value of key. If the key does not exist None is returned.
@@ -179,7 +248,7 @@ class AgentPersistMixin:
         return self._redis_client.hgetall(hash_name)
 
     def delete(self, key: bytes | str) -> bool:
-        """Delete a specific key.
+        """Delete a specific key, with the expiry times of its members when it is a set.
 
         Args:
             key: Key of any type.
@@ -187,6 +256,7 @@ class AgentPersistMixin:
         Returns:
             True if the key is delete, False otherwise.
         """
+        self._redis_client.delete(_expiry_key(key))
         return bool(self._redis_client.delete(key))
 
     def value_type(self, key: bytes | str) -> str:

@@ -3,6 +3,7 @@
 import ipaddress
 
 import pytest
+import redis
 from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_persist_mixin
@@ -229,3 +230,191 @@ async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTr
         )
         is True
     )
+
+
+_REDIS_URL = "redis://localhost:6379"
+_DAY = 24 * 60 * 60
+_NOW = 1_800_000_000.0
+
+
+def _mixin() -> agent_persist_mixin.AgentPersistMixin:
+    settings = runtime_definitions.AgentSettings(
+        key="agent/ostorlab/debug", redis_url=_REDIS_URL
+    )
+    return agent_persist_mixin.AgentPersistMixin(settings)
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSet_whenMembersAreAddedAtDifferentTimes_eachIsForgottenOnItsOwn(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A member leaves the set 7 days after it was added, the members added later stay."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com")
+    clock.return_value = _NOW + 6 * _DAY
+    mixin.set_add("seen", "b.com")
+    assert mixin.set_is_member("seen", "a.com") is True
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.set_is_member("seen", "a.com") is False
+    assert mixin.set_is_member("seen", "b.com") is True
+    assert mixin.set_len("seen") == 1
+    assert mixin.set_members("seen") == {b"b.com"}
+    assert mixin.set_add("seen", "a.com") is True
+    assert mixin.set_add("seen", "b.com") is False
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSetAdd_whenMemberIsStillKnown_keepsItsExpiryTime(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """Adding a known member again does not make it stay longer."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com")
+    clock.return_value = _NOW + 6 * _DAY
+    mixin.set_add("seen", "a.com")
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.set_is_member("seen", "a.com") is False
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinAddIpNetwork_whenNetworkTtlPasses_addsItAgain(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A network is new again once its time passes."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    network = ipaddress.ip_network("8.8.8.0/24")
+    assert mixin.add_ip_network("seen_ip", network) is True
+    assert mixin.add_ip_network("seen_ip", network) is False
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.ip_network_exists("seen_ip", network) is False
+    assert mixin.add_ip_network("seen_ip", network) is True
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSet_always_keepsThePlainRedisSet(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A client that reads or writes the set without the mixin keeps working, its members do not expire."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    client = redis.Redis.from_url(_REDIS_URL)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com")
+    client.sadd("seen", "raw.com")
+
+    assert mixin.value_type("seen") == "set"
+    assert client.sismember("seen", "a.com") == 1
+    assert mixin.set_is_member("seen", "raw.com") is True
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.set_members("seen") == {b"raw.com"}
+    assert client.smembers("seen") == {b"raw.com"}
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinDelete_whenKeyIsSet_forgetsTheExpiryTimesOfItsMembers(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A member added again after the set was deleted stays 7 days from that moment."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com")
+    clock.return_value = _NOW + 6 * _DAY
+    mixin.delete("seen")
+    mixin.set_add("seen", "a.com")
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert set(redis.Redis.from_url(_REDIS_URL).keys()) == {
+        b"seen",
+        b"seen:expires_at",
+    }
+    assert mixin.set_is_member("seen", "a.com") is True
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSetAdd_whenMemberWasRemovedWithoutTheMixin_staysSevenDaysAgain(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A member that left the set gets a new expiry time when it is added again."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com", "b.com")
+    clock.return_value = _NOW + 6 * _DAY
+    redis.Redis.from_url(_REDIS_URL).srem("seen", "a.com")
+
+    assert mixin.set_add("seen", "a.com", "b.com") is True
+
+    clock.return_value = _NOW + 7 * _DAY
+    assert mixin.set_members("seen") == {b"a.com"}
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSet_whenMoreMembersExpiredThanOneBatch_forgetsThemAll(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """The expired members are removed batch after batch until none is left."""
+    del redis_service, clean_redis_data
+    mocker.patch.object(agent_persist_mixin, "_FORGET_BATCH_SIZE", 2)
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com", "b.com", "c.com", "d.com", "e.com")
+    clock.return_value = _NOW + 1
+    mixin.set_add("seen", "f.com")
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.set_len("seen") == 1
+    assert redis.Redis.from_url(_REDIS_URL).zcard("seen:expires_at") == 1
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinAdd_always_storesTheValueForSevenDays(
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A value is given an expiry by Redis, so that it does not stay forever."""
+    del redis_service, clean_redis_data
+    mixin = _mixin()
+
+    mixin.add("key", b"value")
+
+    assert mixin.get("key") == b"value"
+    assert 7 * _DAY - 60 < redis.Redis.from_url(_REDIS_URL).ttl("key") <= 7 * _DAY
