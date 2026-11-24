@@ -122,6 +122,7 @@ class AgentInstanceSettings(_message.Message):
     IN_SELECTORS_FIELD_NUMBER: _builtins.int
     SERVICE_NAME_FIELD_NUMBER: _builtins.int
     SNAPSHOT_FIELD_NUMBER: _builtins.int
+    PERSIST_TTL_SECONDS_FIELD_NUMBER: _builtins.int
     key: _builtins.str
     """Proto definition of agent instance settings. This is use to serialize all the settings passed from the runtime to
     the agent.
@@ -156,6 +157,10 @@ class AgentInstanceSettings(_message.Message):
     """Explicit service name for the agent instance. When set, used as the MQ queue name so that
     each named instance gets its own queue and receives a full copy of every published message
     (fan-out) rather than competing with sibling instances on a shared queue.
+    """
+    persist_ttl_seconds: _builtins.int
+    """Seconds a member stays in a set of the persist mixin. Unset uses the default of the mixin, 0 keeps members
+    forever.
     """
     @_builtins.property
     def args(self) -> _containers.RepeatedCompositeFieldContainer[Global___Arg]:
@@ -215,10 +220,11 @@ class AgentInstanceSettings(_message.Message):
         in_selectors: _abc.Iterable[_builtins.str] | None = ...,
         service_name: _builtins.str | None = ...,
         snapshot: Global___SnapshotSettings | None = ...,
+        persist_ttl_seconds: _builtins.int | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "key", b"key", "mem_limit", b"mem_limit", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "snapshot", b"snapshot", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "key", b"key", "mem_limit", b"mem_limit", "persist_ttl_seconds", b"persist_ttl_seconds", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "snapshot", b"snapshot", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["accepted_agents", b"accepted_agents", "args", b"args", "bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "caps", b"caps", "constraints", b"constraints", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "in_selectors", b"in_selectors", "key", b"key", "mem_limit", b"mem_limit", "mounts", b"mounts", "open_ports", b"open_ports", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "snapshot", b"snapshot", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["accepted_agents", b"accepted_agents", "args", b"args", "bus_exchange_topic", b"bus_exchange_topic", "bus_management_url", b"bus_management_url", "bus_url", b"bus_url", "bus_vhost", b"bus_vhost", "caps", b"caps", "constraints", b"constraints", "cyclic_processing_limit", b"cyclic_processing_limit", "depth_processing_limit", b"depth_processing_limit", "healthcheck_host", b"healthcheck_host", "healthcheck_port", b"healthcheck_port", "in_selectors", b"in_selectors", "key", b"key", "mem_limit", b"mem_limit", "mounts", b"mounts", "open_ports", b"open_ports", "persist_ttl_seconds", b"persist_ttl_seconds", "redis_url", b"redis_url", "replicas", b"replicas", "restart_policy", b"restart_policy", "service_name", b"service_name", "snapshot", b"snapshot", "tracing_collector_url", b"tracing_collector_url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

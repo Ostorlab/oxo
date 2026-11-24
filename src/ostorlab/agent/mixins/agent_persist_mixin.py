@@ -10,11 +10,16 @@ Typical usage:
     status_agent.set_add('crawler_agent_asset_dna', dna)
     is_new = not status_agent.set_is_member()
 ```
+
+A member of a set is forgotten `persist_ttl_seconds` after it is added, each member on its own, so that a long
+running scan processes the same input again later. The agent settings set the duration, 0 keeps the members forever.
 """
 
 import ipaddress
 import logging
+import time
 from collections.abc import Callable
+from typing import TypeVar
 from typing import cast
 
 import redis
@@ -22,6 +27,11 @@ import redis
 from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
+
+# Seconds a member stays in a set when the agent settings do not say.
+DEFAULT_TTL_SECONDS = 48 * 60 * 60
+
+_T = TypeVar("_T")
 
 
 class AgentPersistMixin:
@@ -37,6 +47,29 @@ class AgentPersistMixin:
         if agent_settings.redis_url is None:
             raise ValueError("agent settings is missing redis url")
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
+        self._ttl_seconds = DEFAULT_TTL_SECONDS
+        if agent_settings.persist_ttl_seconds is not None:
+            self._ttl_seconds = agent_settings.persist_ttl_seconds
+
+    def _on_expiring_set(self, key: bytes | str, command: Callable[[], _T]) -> _T:
+        """Runs a command on a set whose members expire.
+
+        Args:
+            key: Set key.
+            command: The Redis command to run.
+
+        Returns:
+            The result of the command.
+        """
+        try:
+            return command()
+        except redis.ResponseError as e:
+            if "WRONGTYPE" not in str(e):
+                raise
+            # The set was written before its members could expire: their age is unknown, so they are forgotten.
+            logger.warning("Dropping the set %r that holds no expiry time.", key)
+            self._redis_client.delete(key)
+            return command()
 
     def set_add(self, key: bytes | str, *value: bytes | str) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
@@ -52,7 +85,21 @@ class AgentPersistMixin:
         Returns:
             True if it is a new member, False otherwise.
         """
-        return bool(self._redis_client.sadd(key, *value))
+        if self._ttl_seconds == 0:
+            return bool(self._redis_client.sadd(key, *value))
+
+        now = time.time()
+
+        def _add() -> bool:
+            pipeline = self._redis_client.pipeline()
+            pipeline.zremrangebyscore(key, "-inf", now)
+            # A member that is still known keeps the time it expires at.
+            pipeline.zadd(
+                key, {member: now + self._ttl_seconds for member in value}, nx=True
+            )
+            return bool(pipeline.execute()[1])
+
+        return self._on_expiring_set(key, _add)
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
         """Indicates whether value is member of the set identified by key.
@@ -64,7 +111,13 @@ class AgentPersistMixin:
         Returns:
             True if it is a member, False otherwise.
         """
-        return self._redis_client.sismember(key, value) == 1
+        if self._ttl_seconds == 0:
+            return self._redis_client.sismember(key, value) == 1
+
+        expires_at = self._on_expiring_set(
+            key, lambda: self._redis_client.zscore(key, value)
+        )
+        return expires_at is not None and expires_at > time.time()
 
     def set_len(self, key: bytes | str) -> int:
         """Helper function that returns the set cardinality (number of elements) of the set stored at key.
@@ -78,7 +131,12 @@ class AgentPersistMixin:
         Returns:
             The cardinality (number of elements) of the set, or 0 if key does not exist.
         """
-        return self._redis_client.scard(key)
+        if self._ttl_seconds == 0:
+            return self._redis_client.scard(key)
+
+        return self._on_expiring_set(
+            key, lambda: self._redis_client.zcount(key, f"({time.time()}", "+inf")
+        )
 
     def set_members(self, key: bytes | str) -> set[bytes]:
         """Helper function that returns all the members of the set value stored at key.
@@ -89,7 +147,17 @@ class AgentPersistMixin:
         Returns:
              The value of key, or empty set when key does not exist.
         """
-        return self._redis_client.smembers(key)
+        if self._ttl_seconds == 0:
+            return self._redis_client.smembers(key)
+
+        return set(
+            self._on_expiring_set(
+                key,
+                lambda: self._redis_client.zrangebyscore(
+                    key, f"({time.time()}", "+inf"
+                ),
+            )
+        )
 
     def add(self, key: bytes | str, value: bytes) -> bool | None:
         """Helper function that Set key to hold the string value.

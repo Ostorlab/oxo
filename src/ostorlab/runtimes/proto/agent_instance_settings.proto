@@ -76,4 +76,7 @@ message AgentInstanceSettings {
   optional string service_name = 22;
   // Snapshot storage of the scan, set on every agent when the runtime has one.
   optional SnapshotSettings snapshot = 23;
+  // Seconds a member stays in a set of the persist mixin. Unset uses the default of the mixin, 0 keeps members
+  // forever.
+  optional uint32 persist_ttl_seconds = 24;
 }

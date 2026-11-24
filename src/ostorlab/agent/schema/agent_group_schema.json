@@ -165,6 +165,11 @@
             "description": "[Optional] - Count of how deep the processing of a message can go through the agents, if no value is specified, means no limit.",
             "type": "number"
           },
+          "persist_ttl_seconds": {
+            "description": "[Optional] - Seconds a value stays in a set of the agent persistent storage before the agent forgets it, if no value is specified, means 48 hours, and 0 means forever.",
+            "type": "integer",
+            "minimum": 0
+          },
           "accepted_agents": {
             "description": "[Optional] - Array of strings of the accepted agents, if no value is specified, means all agents are accepted.",
             "$ref": "#/CustomTypes/ArrayOfStrings"
