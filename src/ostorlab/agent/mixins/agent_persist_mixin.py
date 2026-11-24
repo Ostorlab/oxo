@@ -14,7 +14,7 @@ Typical usage:
 A member of a set is forgotten 7 days after it is added, each member on its own, so that a long running scan
 processes the same input again later. The set stays a plain Redis set: the time each member expires at is kept in a
 sorted set next to it, under the key of the set followed by `:expires_at`. A member added without the mixin has no
-expiry time and stays until it is removed.
+expiry time: it stays until it is removed, or until `set_add` is called on it, which gives it 7 days from that moment.
 
 A value stored with `add` expires after 7 days too, hashes are kept forever.
 """
@@ -100,19 +100,25 @@ class AgentPersistMixin:
             True if it is a new member, False otherwise.
         """
         self._forget_expired(key)
+        expiry_key = _expiry_key(key)
+        expires_at = time.time() + TTL_SECONDS
+        # A member and the time it expires at are written in one transaction, so that a member is never left
+        # without one. A member that is still known keeps its time.
         pipeline = self._redis_client.pipeline()
         for member in value:
             pipeline.sadd(key, member)
-        added = pipeline.execute()
-        expires_at = time.time() + TTL_SECONDS
-        new = {member: expires_at for member, is_new in zip(value, added) if is_new}
-        known = {member: expires_at for member in value if member not in new}
-        if len(new) > 0:
-            self._redis_client.zadd(_expiry_key(key), new)
-        if len(known) > 0:
-            # A member that is still known keeps the time it expires at.
-            self._redis_client.zadd(_expiry_key(key), known, nx=True)
-        return len(new) > 0
+            pipeline.zadd(expiry_key, {member: expires_at}, nx=True)
+        results = pipeline.execute()
+        added, timed = results[::2], results[1::2]
+        # A member that left the set without the mixin still holds its earlier time.
+        stale = {
+            member: expires_at
+            for member, is_new, got_time in zip(value, added, timed)
+            if is_new == 1 and got_time == 0
+        }
+        if len(stale) > 0:
+            self._redis_client.zadd(expiry_key, stale)
+        return any(is_new == 1 for is_new in added)
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
         """Indicates whether value is member of the set identified by key.
