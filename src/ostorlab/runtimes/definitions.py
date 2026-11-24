@@ -195,7 +195,6 @@ class AgentSettings:
     caps: typing.Optional[typing.Sequence[str]] = None
     cyclic_processing_limit: typing.Optional[int] = None
     depth_processing_limit: typing.Optional[int] = None
-    persist_ttl_seconds: typing.Optional[int] = None
     accepted_agents: typing.Optional[typing.Sequence[str]] = None
     in_selectors: typing.Optional[typing.Sequence[str]] = dataclasses.field(
         default_factory=list
@@ -247,9 +246,6 @@ class AgentSettings:
             caps=instance.caps,
             cyclic_processing_limit=instance.cyclic_processing_limit,
             depth_processing_limit=instance.depth_processing_limit,
-            persist_ttl_seconds=instance.persist_ttl_seconds
-            if instance.HasField("persist_ttl_seconds") is True
-            else None,
             accepted_agents=instance.accepted_agents,
             in_selectors=instance.in_selectors,
             service_name=instance.service_name or None,
@@ -326,9 +322,6 @@ class AgentSettings:
         if self.depth_processing_limit is not None:
             instance.depth_processing_limit = self.depth_processing_limit
 
-        if self.persist_ttl_seconds is not None:
-            instance.persist_ttl_seconds = self.persist_ttl_seconds
-
         if self.accepted_agents is not None:
             instance.accepted_agents.extend(self.accepted_agents)
 
@@ -399,7 +392,6 @@ class AgentGroupDefinition:
                 caps=agent.get("caps"),
                 cyclic_processing_limit=agent.get("cyclic_processing_limit"),
                 depth_processing_limit=agent.get("depth_processing_limit"),
-                persist_ttl_seconds=agent.get("persist_ttl_seconds"),
                 accepted_agents=agent.get("accepted_agents"),
                 in_selectors=agent.get("in_selectors", []),
                 service_name=agent.get("service_name"),

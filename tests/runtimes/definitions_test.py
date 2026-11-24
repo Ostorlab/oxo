@@ -421,42 +421,6 @@ def testAgentInstanceSettingsToRawProto_whenDepthAndCyclicLimitsAreSet_shouldSer
     assert parsed_proto.depth_processing_limit == 3
 
 
-@pytest.mark.parametrize("persist_ttl_seconds", [None, 0, 3600])
-def testAgentInstanceSettingsToRawProto_whenPersistTtlIsSetOrNot_keepsItsValue(
-    persist_ttl_seconds: int | None,
-) -> None:
-    """A TTL of 0 is not the same as no TTL: both come back as they were set."""
-    instance_settings = definitions.AgentSettings(
-        key="agent/ostorlab/BigFuzzer", persist_ttl_seconds=persist_ttl_seconds
-    )
-
-    parsed = definitions.AgentSettings.from_proto(instance_settings.to_raw_proto())
-
-    assert parsed.persist_ttl_seconds == persist_ttl_seconds
-
-
-def testAgentGroupDefinitionFromYaml_whenPersistTtlIsSet_readsIt() -> None:
-    """The group definition gives each agent its own TTL."""
-    group = """
-        kind: "AgentGroup"
-        description: "AgentGroup1 Should be here"
-        agents:
-          - key: "agent/ostorlab/whois"
-            persist_ttl_seconds: 3600
-          - key: "agent/ostorlab/crawler"
-            persist_ttl_seconds: 0
-          - key: "agent/ostorlab/dns"
-    """
-
-    definition = definitions.AgentGroupDefinition.from_yaml(io.StringIO(group))
-
-    assert [agent.persist_ttl_seconds for agent in definition.agents] == [
-        3600,
-        0,
-        None,
-    ]
-
-
 def testAgentInstanceSettingsToRawProto_whenAcceptedAgentsListIsSet_shouldSerialize() -> (
     None
 ):

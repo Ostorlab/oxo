@@ -31,7 +31,6 @@ SCAN_DEFINITION = scan_state.ScanDefinition(
                 caps=["NET_ADMIN"],
                 cyclic_processing_limit=3,
                 depth_processing_limit=4,
-                persist_ttl_seconds=3600,
                 accepted_agents=["agent/ostorlab/inject_asset"],
                 in_selectors=["v3.asset.ip"],
                 service_name="nmap_scanner",

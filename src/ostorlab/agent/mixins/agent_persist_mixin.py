@@ -11,8 +11,8 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 
-A member of a set is forgotten `persist_ttl_seconds` after it is added, each member on its own, so that a long
-running scan processes the same input again later. The agent settings set the duration, 0 keeps the members forever.
+A member of a set is forgotten 48 hours after it is added, each member on its own, so that a long running scan
+processes the same input again later.
 """
 
 import ipaddress
@@ -27,8 +27,8 @@ from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
 
-# Seconds a member stays in a set when the agent settings do not say.
-DEFAULT_TTL_SECONDS = 48 * 60 * 60
+# Seconds a member stays in a set.
+SET_MEMBER_TTL_SECONDS = 48 * 60 * 60
 
 
 class AgentPersistMixin:
@@ -44,9 +44,6 @@ class AgentPersistMixin:
         if agent_settings.redis_url is None:
             raise ValueError("agent settings is missing redis url")
         self._redis_client = redis.Redis.from_url(agent_settings.redis_url)
-        self._ttl_seconds = DEFAULT_TTL_SECONDS
-        if agent_settings.persist_ttl_seconds is not None:
-            self._ttl_seconds = agent_settings.persist_ttl_seconds
 
     def set_add(self, key: bytes | str, *value: bytes | str) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
@@ -62,13 +59,10 @@ class AgentPersistMixin:
         Returns:
             True if it is a new member, False otherwise.
         """
-        if self._ttl_seconds == 0:
-            return bool(self._redis_client.sadd(key, *value))
-
         now = time.time()
         self._redis_client.zremrangebyscore(key, "-inf", now)
         # A member that is still known keeps the time it expires at.
-        expires_at = {member: now + self._ttl_seconds for member in value}
+        expires_at = {member: now + SET_MEMBER_TTL_SECONDS for member in value}
         return bool(self._redis_client.zadd(key, expires_at, nx=True))
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
@@ -81,9 +75,6 @@ class AgentPersistMixin:
         Returns:
             True if it is a member, False otherwise.
         """
-        if self._ttl_seconds == 0:
-            return self._redis_client.sismember(key, value) == 1
-
         expires_at = self._redis_client.zscore(key, value)
         return expires_at is not None and expires_at > time.time()
 
@@ -99,9 +90,6 @@ class AgentPersistMixin:
         Returns:
             The cardinality (number of elements) of the set, or 0 if key does not exist.
         """
-        if self._ttl_seconds == 0:
-            return self._redis_client.scard(key)
-
         return self._redis_client.zcount(key, f"({time.time()}", "+inf")
 
     def set_members(self, key: bytes | str) -> set[bytes]:
@@ -113,9 +101,6 @@ class AgentPersistMixin:
         Returns:
              The value of key, or empty set when key does not exist.
         """
-        if self._ttl_seconds == 0:
-            return self._redis_client.smembers(key)
-
         return set(self._redis_client.zrangebyscore(key, f"({time.time()}", "+inf"))
 
     def add(self, key: bytes | str, value: bytes) -> bool | None:
