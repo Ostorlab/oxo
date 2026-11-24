@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.fingerprint.domain_name.subdomains;
+
+// The subdomains of a domain name.
+message Message {
+  // The domain name the subdomains are under, as it was scanned, like api.example.com.
+  optional string name = 1;
+  // The host names found under the domain.
+  repeated string subdomains = 2;
+}
