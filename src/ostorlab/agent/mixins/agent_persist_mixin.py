@@ -33,7 +33,7 @@ from ostorlab.runtimes import definitions as runtime_definitions
 logger = logging.getLogger(__name__)
 
 # Seconds a member stays in a set, and a value stays stored.
-SET_MEMBER_TTL_SECONDS = 7 * 24 * 60 * 60  # 7 days
+TTL_SECONDS = 7 * 24 * 60 * 60  # 7 days
 
 
 class AgentPersistMixin:
@@ -67,7 +67,7 @@ class AgentPersistMixin:
         now = time.time()
         self._redis_client.zremrangebyscore(key, "-inf", now)
         # A member that is still known keeps the time it expires at.
-        expires_at = {member: now + SET_MEMBER_TTL_SECONDS for member in value}
+        expires_at = {member: now + TTL_SECONDS for member in value}
         return bool(self._redis_client.zadd(key, expires_at, nx=True))
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
@@ -118,7 +118,7 @@ class AgentPersistMixin:
         Returns:
             Status of the set command.
         """
-        return self._redis_client.set(key, value, ex=SET_MEMBER_TTL_SECONDS)
+        return self._redis_client.set(key, value, ex=TTL_SECONDS)
 
     def get(self, key: bytes | str) -> bytes | None:
         """Get the value of key. If the key does not exist None is returned.
