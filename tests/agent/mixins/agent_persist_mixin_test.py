@@ -35,7 +35,7 @@ async def testAgentPersistMixin_whenSetIsAdded_setIsPersisted(
     mixin.add("myKey", b"myVal")
     assert mixin.get("myKey") == b"myVal"
     assert mixin.get("myKey1") is None
-    assert mixin.value_type("test") == "zset"
+    assert mixin.value_type("test") == "set"
     assert mixin.value_type("myKey") == "string"
     assert mixin.value_type("myKey1") == "none"
 
@@ -309,6 +309,56 @@ def testAgentPersistMixinAddIpNetwork_whenNetworkTtlPasses_addsItAgain(
 
     assert mixin.ip_network_exists("seen_ip", network) is False
     assert mixin.add_ip_network("seen_ip", network) is True
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinSet_always_keepsThePlainRedisSet(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A client that reads or writes the set without the mixin keeps working, its members do not expire."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    client = redis.Redis.from_url(_REDIS_URL)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com")
+    client.sadd("seen", "raw.com")
+
+    assert mixin.value_type("seen") == "set"
+    assert client.sismember("seen", "a.com") == 1
+    assert mixin.set_is_member("seen", "raw.com") is True
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert mixin.set_members("seen") == {b"raw.com"}
+    assert client.smembers("seen") == {b"raw.com"}
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinDelete_whenKeyIsSet_forgetsTheExpiryTimesOfItsMembers(
+    mocker: plugin.MockerFixture,
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A member added again after the set was deleted stays 7 days from that moment."""
+    del redis_service, clean_redis_data
+    clock = mocker.patch("time.time", return_value=_NOW)
+    mixin = _mixin()
+    mixin.set_add("seen", "a.com")
+    clock.return_value = _NOW + 6 * _DAY
+    mixin.delete("seen")
+    mixin.set_add("seen", "a.com")
+
+    clock.return_value = _NOW + 7 * _DAY
+
+    assert set(redis.Redis.from_url(_REDIS_URL).keys()) == {
+        b"seen",
+        b"seen:expires_at",
+    }
+    assert mixin.set_is_member("seen", "a.com") is True
 
 
 @pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
