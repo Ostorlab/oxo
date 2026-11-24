@@ -19,7 +19,6 @@ import ipaddress
 import logging
 import time
 from collections.abc import Callable
-from typing import TypeVar
 from typing import cast
 
 import redis
@@ -30,8 +29,6 @@ logger = logging.getLogger(__name__)
 
 # Seconds a member stays in a set when the agent settings do not say.
 DEFAULT_TTL_SECONDS = 48 * 60 * 60
-
-_T = TypeVar("_T")
 
 
 class AgentPersistMixin:
@@ -51,26 +48,6 @@ class AgentPersistMixin:
         if agent_settings.persist_ttl_seconds is not None:
             self._ttl_seconds = agent_settings.persist_ttl_seconds
 
-    def _on_expiring_set(self, key: bytes | str, command: Callable[[], _T]) -> _T:
-        """Runs a command on a set whose members expire.
-
-        Args:
-            key: Set key.
-            command: The Redis command to run.
-
-        Returns:
-            The result of the command.
-        """
-        try:
-            return command()
-        except redis.ResponseError as e:
-            if "WRONGTYPE" not in str(e):
-                raise
-            # The set was written before its members could expire: their age is unknown, so they are forgotten.
-            logger.warning("Dropping the set %r that holds no expiry time.", key)
-            self._redis_client.delete(key)
-            return command()
-
     def set_add(self, key: bytes | str, *value: bytes | str) -> bool:
         """Helper function that takes care of reporting if the specified DNA has been tested in the past, or mark it
         as tested.
@@ -89,17 +66,10 @@ class AgentPersistMixin:
             return bool(self._redis_client.sadd(key, *value))
 
         now = time.time()
-
-        def _add() -> bool:
-            pipeline = self._redis_client.pipeline()
-            pipeline.zremrangebyscore(key, "-inf", now)
-            # A member that is still known keeps the time it expires at.
-            pipeline.zadd(
-                key, {member: now + self._ttl_seconds for member in value}, nx=True
-            )
-            return bool(pipeline.execute()[1])
-
-        return self._on_expiring_set(key, _add)
+        self._redis_client.zremrangebyscore(key, "-inf", now)
+        # A member that is still known keeps the time it expires at.
+        expires_at = {member: now + self._ttl_seconds for member in value}
+        return bool(self._redis_client.zadd(key, expires_at, nx=True))
 
     def set_is_member(self, key: bytes | str, value: bytes | str) -> bool:
         """Indicates whether value is member of the set identified by key.
@@ -114,9 +84,7 @@ class AgentPersistMixin:
         if self._ttl_seconds == 0:
             return self._redis_client.sismember(key, value) == 1
 
-        expires_at = self._on_expiring_set(
-            key, lambda: self._redis_client.zscore(key, value)
-        )
+        expires_at = self._redis_client.zscore(key, value)
         return expires_at is not None and expires_at > time.time()
 
     def set_len(self, key: bytes | str) -> int:
@@ -134,9 +102,7 @@ class AgentPersistMixin:
         if self._ttl_seconds == 0:
             return self._redis_client.scard(key)
 
-        return self._on_expiring_set(
-            key, lambda: self._redis_client.zcount(key, f"({time.time()}", "+inf")
-        )
+        return self._redis_client.zcount(key, f"({time.time()}", "+inf")
 
     def set_members(self, key: bytes | str) -> set[bytes]:
         """Helper function that returns all the members of the set value stored at key.
@@ -150,14 +116,7 @@ class AgentPersistMixin:
         if self._ttl_seconds == 0:
             return self._redis_client.smembers(key)
 
-        return set(
-            self._on_expiring_set(
-                key,
-                lambda: self._redis_client.zrangebyscore(
-                    key, f"({time.time()}", "+inf"
-                ),
-            )
-        )
+        return set(self._redis_client.zrangebyscore(key, f"({time.time()}", "+inf"))
 
     def add(self, key: bytes | str, value: bytes) -> bool | None:
         """Helper function that Set key to hold the string value.

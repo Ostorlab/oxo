@@ -3,7 +3,6 @@
 import ipaddress
 
 import pytest
-import redis
 from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_persist_mixin
@@ -332,22 +331,6 @@ def testAgentPersistMixinSet_whenTtlIsZero_membersAreKeptForever(
     assert mixin.set_len("seen") == 1
     assert mixin.set_members("seen") == {b"a.com"}
     assert mixin.value_type("seen") == "set"
-
-
-@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
-@pytest.mark.docker
-def testAgentPersistMixinSet_whenKeyHoldsSetWithoutExpiryTimes_dropsItsMembers(
-    redis_service: local_redis_service.LocalRedis,
-    clean_redis_data: None,
-) -> None:
-    """A set written before members could expire is emptied instead of failing the agent."""
-    del redis_service, clean_redis_data
-    redis.Redis.from_url(_REDIS_URL).sadd("seen", "a.com")
-    mixin = _mixin()
-
-    assert mixin.set_is_member("seen", "a.com") is False
-    assert mixin.set_add("seen", "a.com") is True
-    assert mixin.set_is_member("seen", "a.com") is True
 
 
 @pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
