@@ -3,6 +3,7 @@
 import ipaddress
 
 import pytest
+import redis
 from pytest_mock import plugin
 
 from ostorlab.agent.mixins import agent_persist_mixin
@@ -232,7 +233,7 @@ async def testAgentPersistMixinCheckIpNetworkExist_whenIpRangeIsCovered_returnTr
 
 
 _REDIS_URL = "redis://localhost:6379"
-_HOUR = 60 * 60
+_DAY = 24 * 60 * 60
 _NOW = 1_800_000_000.0
 
 
@@ -250,16 +251,16 @@ def testAgentPersistMixinSet_whenMembersAreAddedAtDifferentTimes_eachIsForgotten
     redis_service: local_redis_service.LocalRedis,
     clean_redis_data: None,
 ) -> None:
-    """A member leaves the set 48 hours after it was added, the members added later stay."""
+    """A member leaves the set 7 days after it was added, the members added later stay."""
     del redis_service, clean_redis_data
     clock = mocker.patch("time.time", return_value=_NOW)
     mixin = _mixin()
     mixin.set_add("seen", "a.com")
-    clock.return_value = _NOW + 47 * _HOUR
+    clock.return_value = _NOW + 6 * _DAY
     mixin.set_add("seen", "b.com")
     assert mixin.set_is_member("seen", "a.com") is True
 
-    clock.return_value = _NOW + 48 * _HOUR
+    clock.return_value = _NOW + 7 * _DAY
 
     assert mixin.set_is_member("seen", "a.com") is False
     assert mixin.set_is_member("seen", "b.com") is True
@@ -281,10 +282,10 @@ def testAgentPersistMixinSetAdd_whenMemberIsStillKnown_keepsItsExpiryTime(
     clock = mocker.patch("time.time", return_value=_NOW)
     mixin = _mixin()
     mixin.set_add("seen", "a.com")
-    clock.return_value = _NOW + 47 * _HOUR
+    clock.return_value = _NOW + 6 * _DAY
     mixin.set_add("seen", "a.com")
 
-    clock.return_value = _NOW + 48 * _HOUR
+    clock.return_value = _NOW + 7 * _DAY
 
     assert mixin.set_is_member("seen", "a.com") is False
 
@@ -304,7 +305,23 @@ def testAgentPersistMixinAddIpNetwork_whenNetworkTtlPasses_addsItAgain(
     assert mixin.add_ip_network("seen_ip", network) is True
     assert mixin.add_ip_network("seen_ip", network) is False
 
-    clock.return_value = _NOW + 48 * _HOUR
+    clock.return_value = _NOW + 7 * _DAY
 
     assert mixin.ip_network_exists("seen_ip", network) is False
     assert mixin.add_ip_network("seen_ip", network) is True
+
+
+@pytest.mark.parametrize("clean_redis_data", [_REDIS_URL], indirect=True)
+@pytest.mark.docker
+def testAgentPersistMixinAdd_always_storesTheValueForSevenDays(
+    redis_service: local_redis_service.LocalRedis,
+    clean_redis_data: None,
+) -> None:
+    """A value is given an expiry by Redis, so that it does not stay forever."""
+    del redis_service, clean_redis_data
+    mixin = _mixin()
+
+    mixin.add("key", b"value")
+
+    assert mixin.get("key") == b"value"
+    assert 7 * _DAY - 60 < redis.Redis.from_url(_REDIS_URL).ttl("key") <= 7 * _DAY

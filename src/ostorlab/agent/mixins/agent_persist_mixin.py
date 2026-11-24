@@ -11,9 +11,10 @@ Typical usage:
     is_new = not status_agent.set_is_member()
 ```
 
-A member of a set is forgotten 48 hours after it is added, each member on its own, so that a long running scan
+A member of a set is forgotten 7 days after it is added, each member on its own, so that a long running scan
 processes the same input again later. Reading a set ignores the forgotten members, only `set_add` removes them from
-Redis: a key that is no longer added to keeps its last members stored.
+Redis: a key that is no longer added to keeps its last members stored. A value stored with `add` expires after 7 days
+too, hashes are kept forever.
 
 A set is stored as a Redis sorted set. A key written as a plain set by a version that kept members forever is not
 readable: Redis answers `WRONGTYPE`. Start the scan on an empty Redis and upgrade all the replicas of an agent together.
@@ -31,8 +32,8 @@ from ostorlab.runtimes import definitions as runtime_definitions
 
 logger = logging.getLogger(__name__)
 
-# Seconds a member stays in a set.
-SET_MEMBER_TTL_SECONDS = 48 * 60 * 60
+# Seconds a member stays in a set, and a value stays stored.
+SET_MEMBER_TTL_SECONDS = 7 * 24 * 60 * 60  # 7 days
 
 
 class AgentPersistMixin:
@@ -108,7 +109,7 @@ class AgentPersistMixin:
         return set(self._redis_client.zrangebyscore(key, f"({time.time()}", "+inf"))
 
     def add(self, key: bytes | str, value: bytes) -> bool | None:
-        """Helper function that Set key to hold the string value.
+        """Helper function that Set key to hold the string value, for 7 days.
 
         Args:
             key: Key for string value.
@@ -117,7 +118,7 @@ class AgentPersistMixin:
         Returns:
             Status of the set command.
         """
-        return self._redis_client.set(key, value)
+        return self._redis_client.set(key, value, ex=SET_MEMBER_TTL_SECONDS)
 
     def get(self, key: bytes | str) -> bytes | None:
         """Get the value of key. If the key does not exist None is returned.
