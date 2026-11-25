@@ -1,0 +1,16 @@
+syntax = "proto2";
+
+package ostorlab.agent.message.proto.v3.history.request;
+
+// What the engine asks one history agent to read.
+message Ask {
+  optional string type = 1;   // "certificates", "dns" or "screenshot"
+  optional string start = 2;  // ISO 8601 UTC; unset: the whole history
+}
+
+// The history of an asset to read: a domain name or an IP address, and what to read of it.
+message Message {
+  optional string domain_name = 1;  // set for a domain name
+  optional string ip = 2;           // set for an IP address, v4 or v6
+  repeated Ask asks = 3;
+}
