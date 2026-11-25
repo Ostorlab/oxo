@@ -24,13 +24,13 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n=ostorlab/agent/message/proto/v3/capture/ui_call/ui_call.proto\x12/ostorlab.agent.message.proto.v3.capture.ui_call\"a\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0b\n\x03\x64na\x18\x02 \x01(\t\x12\x12\n\nscreenshot\x18\x03 \x01(\x0c\x12\x12\n\nparent_dna\x18\x04 \x01(\t\x12\x13\n\x0b\x63\x61ptured_at\x18\x05 \x01(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n=ostorlab/agent/message/proto/v3/capture/ui_call/ui_call.proto\x12/ostorlab.agent.message.proto.v3.capture.ui_call\"\x89\x01\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x0b\n\x03\x64na\x18\x02 \x01(\t\x12\x12\n\nscreenshot\x18\x03 \x01(\x0c\x12\x12\n\nparent_dna\x18\x04 \x01(\t\x12\x13\n\x0b\x63\x61ptured_at\x18\x05 \x01(\t\x12\x13\n\x0bperiod_from\x18\x06 \x01(\t\x12\x11\n\tperiod_to\x18\x07 \x01(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ostorlab.agent.message.proto.v3.capture.ui_call.ui_call_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_MESSAGE']._serialized_start=114
-  _globals['_MESSAGE']._serialized_end=211
+  _globals['_MESSAGE']._serialized_start=115
+  _globals['_MESSAGE']._serialized_end=252
 # @@protoc_insertion_point(module_scope)

@@ -25,6 +25,8 @@ class Message(_message.Message):
     SCREENSHOT_FIELD_NUMBER: _builtins.int
     PARENT_DNA_FIELD_NUMBER: _builtins.int
     CAPTURED_AT_FIELD_NUMBER: _builtins.int
+    PERIOD_FROM_FIELD_NUMBER: _builtins.int
+    PERIOD_TO_FIELD_NUMBER: _builtins.int
     path: _builtins.str
     dna: _builtins.str
     screenshot: _builtins.bytes
@@ -33,6 +35,10 @@ class Message(_message.Message):
     """When the page was captured, as an ISO 8601 date and time in UTC, like 2019-01-29T22:43:31Z, for a screenshot
     of an archived page; absent for a screenshot taken during the scan.
     """
+    period_from: _builtins.str
+    """When the period the message holds starts, as an ISO 8601 date and time in UTC; absent: from the beginning."""
+    period_to: _builtins.str
+    """When it ends, as an ISO 8601 date and time in UTC: the message holds everything the archive had for the page in the period; absent: no period is claimed."""
     def __init__(
         self,
         *,
@@ -41,10 +47,12 @@ class Message(_message.Message):
         screenshot: _builtins.bytes | None = ...,
         parent_dna: _builtins.str | None = ...,
         captured_at: _builtins.str | None = ...,
+        period_from: _builtins.str | None = ...,
+        period_to: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["captured_at", b"captured_at", "dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "screenshot", b"screenshot"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["captured_at", b"captured_at", "dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "period_from", b"period_from", "period_to", b"period_to", "screenshot", b"screenshot"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["captured_at", b"captured_at", "dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "screenshot", b"screenshot"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["captured_at", b"captured_at", "dna", b"dna", "parent_dna", b"parent_dna", "path", b"path", "period_from", b"period_from", "period_to", b"period_to", "screenshot", b"screenshot"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

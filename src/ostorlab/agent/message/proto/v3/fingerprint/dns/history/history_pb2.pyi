@@ -97,10 +97,16 @@ class Message(_message.Message):
     HOST_FIELD_NUMBER: _builtins.int
     RECORDS_FIELD_NUMBER: _builtins.int
     COMPLETE_FIELD_NUMBER: _builtins.int
+    PERIOD_FROM_FIELD_NUMBER: _builtins.int
+    PERIOD_TO_FIELD_NUMBER: _builtins.int
     host: _builtins.str
     """The registrable domain."""
     complete: _builtins.bool
     """Whether no record was cut by a limit on results."""
+    period_from: _builtins.str
+    """When the period the message holds starts, as an ISO 8601 date and time in UTC; absent: from the beginning."""
+    period_to: _builtins.str
+    """When it ends, as an ISO 8601 date and time in UTC: the message holds everything passive DNS had for the host in the period; absent: no period is claimed."""
     @_builtins.property
     def records(self) -> _containers.RepeatedCompositeFieldContainer[Global___Record]: ...
     def __init__(
@@ -109,10 +115,12 @@ class Message(_message.Message):
         host: _builtins.str | None = ...,
         records: _abc.Iterable[Global___Record] | None = ...,
         complete: _builtins.bool | None = ...,
+        period_from: _builtins.str | None = ...,
+        period_to: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["complete", b"complete", "host", b"host"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["complete", b"complete", "host", b"host", "period_from", b"period_from", "period_to", b"period_to"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["complete", b"complete", "host", b"host", "records", b"records"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["complete", b"complete", "host", b"host", "period_from", b"period_from", "period_to", b"period_to", "records", b"records"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

@@ -235,3 +235,48 @@ def testSerialize_whenACertificateHasAFieldOfItsX509_shouldRaiseSerializationErr
             "v3.fingerprint.certificate.history",
             {"host": "ostorlab.co", "certificates": [{"crtsh_id": 1, field: value}]},
         )
+
+
+def testSerialize_whenPeriodSet_shouldSerializeAndDeserializeCorrectly() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.certificate.history",
+        {
+            "host": "ostorlab.co",
+            "data_up_to": "2026-11-24T21:51:36Z",
+            "complete": True,
+            "period_from": "2026-10-30T00:00:00Z",
+            "period_to": "2026-11-24T21:51:36Z",
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.period_from == "2026-10-30T00:00:00Z"
+    assert message.period_to == "2026-11-24T21:51:36Z"
+
+
+def testSerialize_whenPeriodCoversTheWholeHistory_shouldKeepPeriodFromUnset() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.certificate.history",
+        {"host": "ostorlab.co", "period_to": "2026-11-24T21:51:36Z"},
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.HasField("period_from") is False
+    assert message.period_to == "2026-11-24T21:51:36Z"
+
+
+def testSerialize_whenNoPeriod_shouldKeepPeriodUnset() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.certificate.history",
+        {"host": "ostorlab.co", "complete": False},
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.certificate.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.HasField("period_from") is False
+    assert message.HasField("period_to") is False
