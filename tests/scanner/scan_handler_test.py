@@ -517,7 +517,9 @@ def testFetchAvailableScans_whenTransientServerErrorThenSuccess_retriesAndReturn
     """A transient server error (5xx) is retried and the scan list is returned on success."""
     runner, handler = _fetch_handler(mocker)
     runner.execute.side_effect = [
-        base_runner.ResponseError("Response status code is 502: temporary"),
+        base_runner.ResponseError(
+            "Response status code is 502: temporary", status_code=502
+        ),
         {"data": {"scans": {"scans": [{"id": 42}]}}},
     ]
 
@@ -549,10 +551,40 @@ def testFetchAvailableScans_whenPersistentFailure_returnsEmptyList(
     """A fetch that keeps failing retries up to the budget then returns an empty list."""
     runner, handler = _fetch_handler(mocker)
     runner.execute.side_effect = base_runner.ResponseError(
-        "Response status code is 502: temporary"
+        "Response status code is 502: temporary", status_code=502
     )
 
     result = handler._fetch_available_scans(runner)
 
     assert result == []
     assert runner.execute.call_count == scan_handler.SCANNER_FETCH_ATTEMPTS
+
+
+def testFetchAvailableScans_whenClientError_doesNotRetryAndReturnsEmptyList(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A client error (4xx) is not transient and is not retried."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.side_effect = base_runner.ResponseError(
+        "Response status code is 401: unauthorized", status_code=401
+    )
+
+    result = handler._fetch_available_scans(runner)
+
+    assert result == []
+    runner.execute.assert_called_once()
+
+
+def testFetchAvailableScans_whenGraphQLError_doesNotRetryAndReturnsEmptyList(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A GraphQL error has no HTTP status and is not retried."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.side_effect = base_runner.ResponseError(
+        "Response errors: not authorized"
+    )
+
+    result = handler._fetch_available_scans(runner)
+
+    assert result == []
+    runner.execute.assert_called_once()

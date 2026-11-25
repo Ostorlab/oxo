@@ -34,6 +34,20 @@ SCANNER_FETCH_ATTEMPTS = 3
 SCANNER_RETRY_WAIT = tenacity.wait_exponential(multiplier=1, min=1, max=30)
 
 
+def _is_transient_fetch_failure(exception: BaseException) -> bool:
+    """Returns whether a fetch failure is transient and worth retrying.
+
+    Server errors (5xx) and transport-level failures can recover on retry. Client and GraphQL
+    errors are not retried: the request would fail the same way again, so retrying only triples the
+    failing requests and delays the polling loop.
+    """
+    return (
+        isinstance(exception, base_runner.ResponseError)
+        and exception.status_code is not None
+        and exception.status_code >= 500
+    )
+
+
 class ScanHandler:
     """Class responsible for handling the API scan loop."""
 
@@ -127,8 +141,9 @@ class ScanHandler:
         retrying = tenacity.Retrying(
             stop=tenacity.stop_after_attempt(SCANNER_FETCH_ATTEMPTS),
             wait=self._retry_wait,
-            retry=tenacity.retry_if_exception_type(
-                (base_runner.ResponseError, httpx.HTTPError)
+            retry=tenacity.retry_any(
+                tenacity.retry_if_exception(_is_transient_fetch_failure),
+                tenacity.retry_if_exception_type(httpx.HTTPError),
             ),
             reraise=True,
         )
