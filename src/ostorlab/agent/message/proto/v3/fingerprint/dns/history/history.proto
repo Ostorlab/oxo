@@ -33,4 +33,8 @@ message Message {
   repeated Record records = 2;
   // Whether no record was cut by a limit on results.
   optional bool complete = 3;
+  // When the period the message holds starts, as an ISO 8601 date and time in UTC; absent: from the beginning.
+  optional string period_from = 4;
+  // When it ends, as an ISO 8601 date and time in UTC: the message holds everything passive DNS had for the host in the period; absent: no period is claimed.
+  optional string period_to = 5;
 }

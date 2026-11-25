@@ -48,4 +48,8 @@ message Message {
   repeated string missing_ranges = 10;
   // The crt.sh search page of the host.
   optional string search_url = 11;
+  // When the period the message holds starts, as an ISO 8601 date and time in UTC; absent: from the beginning.
+  optional string period_from = 12;
+  // When it ends, as an ISO 8601 date and time in UTC: the message holds everything crt.sh had for the host in the period; absent: no period is claimed.
+  optional string period_to = 13;
 }
