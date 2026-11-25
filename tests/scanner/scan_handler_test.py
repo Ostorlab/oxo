@@ -588,3 +588,21 @@ def testFetchAvailableScans_whenGraphQLError_doesNotRetryAndReturnsEmptyList(
 
     assert result == []
     runner.execute.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        httpx.UnsupportedProtocol("unsupported URL scheme"),
+        httpx.TooManyRedirects("redirect limit"),
+    ],
+)
+def testFetchAvailableScans_whenPermanentHttpxFailure_doesNotRetry(
+    mocker: plugin.MockerFixture, error: httpx.HTTPError
+) -> None:
+    """Permanent request failures wait for the next poll without retrying."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.side_effect = error
+
+    assert handler._fetch_available_scans(runner) == []
+    runner.execute.assert_called_once()

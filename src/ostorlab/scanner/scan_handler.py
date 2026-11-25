@@ -143,7 +143,14 @@ class ScanHandler:
             wait=self._retry_wait,
             retry=tenacity.retry_any(
                 tenacity.retry_if_exception(_is_transient_fetch_failure),
-                tenacity.retry_if_exception_type(httpx.HTTPError),
+                tenacity.retry_if_exception_type(
+                    (
+                        httpx.NetworkError,
+                        httpx.TimeoutException,
+                        httpx.ProxyError,
+                        httpx.RemoteProtocolError,
+                    )
+                ),
             ),
             reraise=True,
         )
