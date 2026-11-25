@@ -157,8 +157,8 @@ class ScanHandler:
             return scans_list
         except (base_runner.ResponseError, httpx.HTTPError) as e:
             logger.warning(
-                "Failed to fetch available scans after %s attempts: %s",
-                SCANNER_FETCH_ATTEMPTS,
+                "Failed to fetch available scans after %s attempt(s): %s",
+                retrying.statistics.get("attempt_number", 1),
                 e,
             )
             return []
