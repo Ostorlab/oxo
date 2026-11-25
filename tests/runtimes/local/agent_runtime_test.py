@@ -149,7 +149,7 @@ def testCreateAgentService_whenAgentDefIsNotEmptyAndAgentSettingsIsEmpty_service
     assert kwargs["resources"]["Limits"]["MemoryBytes"] == 620000
     assert kwargs["mounts"] == ["def_mount1", "def_mount2"]
     assert kwargs["endpoint_spec"]["Ports"][0]["PublishedPort"] == 30000
-    assert kwargs["restart_policy"]["Condition"] == "any"
+    assert kwargs["restart_policy"]["Condition"] == "on-failure"
 
 
 def testCreateAgentService_whenAgentHasOpenPort_serviceCreatedWithBothTcpAndUdp(
