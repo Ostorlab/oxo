@@ -7,6 +7,9 @@ from collections import abc as _abc
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
 from google.protobuf.internal import containers as _containers
+from ostorlab.agent.message.proto.v3.asset.domain_name import domain_name_pb2 as _domain_name_pb2
+from ostorlab.agent.message.proto.v3.asset.ip.v4 import v4_pb2 as _v4_pb2
+from ostorlab.agent.message.proto.v3.asset.ip.v6 import v6_pb2 as _v6_pb2
 import builtins as _builtins
 import sys
 import typing as _typing
@@ -46,30 +49,36 @@ Global___Ask: _TypeAlias = Ask  # noqa: Y015
 
 @_typing.final
 class Message(_message.Message):
-    """The history of an asset to read: a domain name or an IP address, and what to read of it."""
+    """The history of an asset to read: the asset, as its own asset message, and what to read of it."""
 
     DESCRIPTOR: _descriptor.Descriptor
 
     DOMAIN_NAME_FIELD_NUMBER: _builtins.int
-    IP_FIELD_NUMBER: _builtins.int
+    IPV4_FIELD_NUMBER: _builtins.int
+    IPV6_FIELD_NUMBER: _builtins.int
     ASKS_FIELD_NUMBER: _builtins.int
-    domain_name: _builtins.str
-    """set for a domain name"""
-    ip: _builtins.str
-    """set for an IP address, v4 or v6"""
+    @_builtins.property
+    def domain_name(self) -> _domain_name_pb2.Message: ...
+    @_builtins.property
+    def ipv4(self) -> _v4_pb2.Message: ...
+    @_builtins.property
+    def ipv6(self) -> _v6_pb2.Message: ...
     @_builtins.property
     def asks(self) -> _containers.RepeatedCompositeFieldContainer[Global___Ask]: ...
     def __init__(
         self,
         *,
-        domain_name: _builtins.str | None = ...,
-        ip: _builtins.str | None = ...,
+        domain_name: _domain_name_pb2.Message | None = ...,
+        ipv4: _v4_pb2.Message | None = ...,
+        ipv6: _v6_pb2.Message | None = ...,
         asks: _abc.Iterable[Global___Ask] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["domain_name", b"domain_name", "ip", b"ip"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["asset", b"asset", "domain_name", b"domain_name", "ipv4", b"ipv4", "ipv6", b"ipv6"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["asks", b"asks", "domain_name", b"domain_name", "ip", b"ip"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["asks", b"asks", "asset", b"asset", "domain_name", b"domain_name", "ipv4", b"ipv4", "ipv6", b"ipv6"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
-    def WhichOneof(self, oneof_group: _Never) -> None: ...
+    _WhichOneofReturnType_asset: _TypeAlias = _typing.Literal["domain_name", "ipv4", "ipv6"]  # noqa: Y015
+    _WhichOneofArgType_asset: _TypeAlias = _typing.Literal["asset", b"asset"]  # noqa: Y015
+    def WhichOneof(self, oneof_group: _WhichOneofArgType_asset) -> _WhichOneofReturnType_asset | None: ...
 
 Global___Message: _TypeAlias = Message  # noqa: Y015

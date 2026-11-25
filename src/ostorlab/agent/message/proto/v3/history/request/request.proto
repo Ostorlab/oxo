@@ -1,5 +1,9 @@
 syntax = "proto2";
 
+import "ostorlab/agent/message/proto/v3/asset/domain_name/domain_name.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/v4/v4.proto";
+import "ostorlab/agent/message/proto/v3/asset/ip/v6/v6.proto";
+
 package ostorlab.agent.message.proto.v3.history.request;
 
 // What the engine asks one history agent to read.
@@ -8,9 +12,12 @@ message Ask {
   optional string start = 2;  // ISO 8601 UTC; unset: the whole history
 }
 
-// The history of an asset to read: a domain name or an IP address, and what to read of it.
+// The history of an asset to read: the asset, as its own asset message, and what to read of it.
 message Message {
-  optional string domain_name = 1;  // set for a domain name
-  optional string ip = 2;           // set for an IP address, v4 or v6
-  repeated Ask asks = 3;
+  oneof asset {
+    ostorlab.agent.message.proto.v3.asset.domain_name.Message domain_name = 1;
+    ostorlab.agent.message.proto.v3.asset.ip.v4.Message ipv4 = 2;
+    ostorlab.agent.message.proto.v3.asset.ip.v6.Message ipv6 = 3;
+  }
+  repeated Ask asks = 4;
 }

@@ -7,7 +7,7 @@ from ostorlab.agent.message.proto.v3.history.request import request_pb2
 
 def testMessageFromData_whenDomainNameWithAsks_roundTrips() -> None:
     data = {
-        "domain_name": "monzo.com",
+        "domain_name": {"name": "monzo.com"},
         "asks": [
             {"type": "certificates", "start": "2026-10-30T00:00:00Z"},
             {"type": "dns"},
@@ -22,34 +22,48 @@ def testMessageFromData_whenDomainNameWithAsks_roundTrips() -> None:
     assert deserialized.data == data
 
 
-def testMessageFromData_whenIp_roundTripsWithoutDomainName() -> None:
+def testMessageFromData_whenDomainName_setsTheDomainNameAsset() -> None:
     serialized = agent_message.Message.from_data(
         "v3.history.request",
-        {"ip": "2001:db8::1", "asks": [{"type": "certificates"}]},
+        {"domain_name": {"name": "monzo.com"}, "asks": [{"type": "dns"}]},
     )
 
     message = serializer.deserialize("v3.history.request", serialized.raw)
 
     assert isinstance(message, request_pb2.Message)
-    assert message.ip == "2001:db8::1"
-    assert message.HasField("domain_name") is False
-    assert len(message.asks) == 1
-    assert message.asks[0].type == "certificates"
+    assert message.WhichOneof("asset") == "domain_name"
+    assert message.domain_name.name == "monzo.com"
+    assert message.asks[0].type == "dns"
     assert message.asks[0].HasField("start") is False
 
 
-def testMessageFromData_whenAskHasStart_keepsIt() -> None:
-    serialized = agent_message.Message.from_data(
-        "v3.history.request",
-        {
-            "ip": "203.0.113.7",
-            "asks": [{"type": "certificates", "start": "2026-10-30T00:00:00Z"}],
-        },
-    )
+def testMessageFromData_whenIpv4WithMask_roundTrips() -> None:
+    data = {
+        "ipv4": {"host": "8.8.8.8", "mask": "32", "version": 4},
+        "asks": [{"type": "certificates"}],
+    }
 
+    serialized = agent_message.Message.from_data("v3.history.request", data)
+    deserialized = agent_message.Message.from_raw("v3.history.request", serialized.raw)
     message = serializer.deserialize("v3.history.request", serialized.raw)
 
+    assert deserialized.data == data
     assert isinstance(message, request_pb2.Message)
-    assert message.ip == "203.0.113.7"
-    assert message.asks[0].HasField("start") is True
+    assert message.WhichOneof("asset") == "ipv4"
+    assert message.HasField("domain_name") is False
+
+
+def testMessageFromData_whenIpv6WithStart_roundTrips() -> None:
+    data = {
+        "ipv6": {"host": "2001:db8::1", "mask": "128", "version": 6},
+        "asks": [{"type": "certificates", "start": "2026-10-30T00:00:00Z"}],
+    }
+
+    serialized = agent_message.Message.from_data("v3.history.request", data)
+    deserialized = agent_message.Message.from_raw("v3.history.request", serialized.raw)
+    message = serializer.deserialize("v3.history.request", serialized.raw)
+
+    assert deserialized.data == data
+    assert isinstance(message, request_pb2.Message)
+    assert message.WhichOneof("asset") == "ipv6"
     assert message.asks[0].start == "2026-10-30T00:00:00Z"
