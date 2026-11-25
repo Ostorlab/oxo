@@ -4,9 +4,12 @@ import json
 from typing import Any
 
 import docker
+import httpx
 import pytest
+import tenacity
 from pytest_mock import plugin
 
+from ostorlab.apis.runners import runner as base_runner
 from ostorlab.runtimes import definitions
 from ostorlab.runtimes.local import runtime as local_runtime
 from ostorlab.runtimes.local import snapshot
@@ -477,3 +480,79 @@ def testTriggerScanWithRollback_whenApiUrlSet_forwardsItToStartScan(
         start_scan_mock.call_args.kwargs["api_url"]
         == "https://re.example.com/apis/graphql"
     )
+
+
+def _fetch_handler(
+    mocker: plugin.MockerFixture,
+) -> tuple[Any, scan_handler.ScanHandler]:
+    """Builds a scan handler with backoff disabled and returns it with a mocked runner."""
+    runner = mocker.MagicMock()
+    handler = scan_handler.ScanHandler(
+        state_reporter=scanner_state_reporter.ScannerStateReporter(
+            scanner_id="GGBD-DJJD-DKJK-DJDD",
+            hostname="test-host",
+            ip="192.168.0.1",
+        ),
+        retry_wait=tenacity.wait_fixed(0),
+    )
+    return runner, handler
+
+
+def testFetchAvailableScans_whenSuccess_returnsScansWithoutRetry(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A successful fetch returns the scan list with a single request."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.return_value = {"data": {"scans": {"scans": [{"id": 1}]}}}
+
+    result = handler._fetch_available_scans(runner)
+
+    assert result == [{"id": 1}]
+    runner.execute.assert_called_once()
+
+
+def testFetchAvailableScans_whenTransientServerErrorThenSuccess_retriesAndReturnsScans(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A transient server error (5xx) is retried and the scan list is returned on success."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.side_effect = [
+        base_runner.ResponseError("Response status code is 502: temporary"),
+        {"data": {"scans": {"scans": [{"id": 42}]}}},
+    ]
+
+    result = handler._fetch_available_scans(runner)
+
+    assert result == [{"id": 42}]
+    assert runner.execute.call_count == 2
+
+
+def testFetchAvailableScans_whenTransportErrorThenSuccess_retriesAndReturnsScans(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A transient transport error is retried and the scan list is returned on success."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.side_effect = [
+        httpx.ConnectError("connection refused"),
+        {"data": {"scans": {"scans": [{"id": 7}]}}},
+    ]
+
+    result = handler._fetch_available_scans(runner)
+
+    assert result == [{"id": 7}]
+    assert runner.execute.call_count == 2
+
+
+def testFetchAvailableScans_whenPersistentFailure_returnsEmptyList(
+    mocker: plugin.MockerFixture,
+) -> None:
+    """A fetch that keeps failing retries up to the budget then returns an empty list."""
+    runner, handler = _fetch_handler(mocker)
+    runner.execute.side_effect = base_runner.ResponseError(
+        "Response status code is 502: temporary"
+    )
+
+    result = handler._fetch_available_scans(runner)
+
+    assert result == []
+    assert runner.execute.call_count == scan_handler.SCANNER_FETCH_ATTEMPTS

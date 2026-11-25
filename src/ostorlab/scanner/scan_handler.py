@@ -10,6 +10,7 @@ from typing import Any
 
 import docker
 import httpx
+import tenacity
 from docker.models import services
 
 from ostorlab.apis import scan_update_state
@@ -29,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 WAIT_CHECK_MESSAGES = datetime.timedelta(seconds=5)
 UNIVERSE_LABEL = "ostorlab.universe"
+SCANNER_FETCH_ATTEMPTS = 3
+SCANNER_RETRY_WAIT = tenacity.wait_exponential(multiplier=1, min=1, max=30)
 
 
 class ScanHandler:
@@ -43,6 +46,7 @@ class ScanHandler:
         max_concurrent_scans: int = 1,
         snapshot_settings: definitions.SnapshotSettings | None = None,
         api_url: str | None = None,
+        retry_wait: tenacity.wait.WaitBaseT | None = None,
     ) -> None:
         self._state_reporter = state_reporter
         self._api_url = api_url
@@ -50,6 +54,9 @@ class ScanHandler:
         self._scan_resource_requirements = scan_resource_requirements or {}
         self._gcp_logging_credential = gcp_logging_credential
         self._max_concurrent_scans = max_concurrent_scans
+        self._retry_wait: tenacity.wait.WaitBaseT = (
+            retry_wait if retry_wait is not None else SCANNER_RETRY_WAIT
+        )
         self._docker_client = docker.from_env()
 
     def close(self) -> None:
@@ -109,16 +116,36 @@ class ScanHandler:
     def _fetch_available_scans(
         self, runner: scanner_runner.ScannerAPIRunner
     ) -> list[dict[str, Any]]:
-        """Fetches the list of discoverable scans from the API."""
+        """Fetches the list of discoverable scans from the API.
+
+        The orchestrator can answer a fetch with a transient server error (for example a 502 from
+        the load balancer that asks to retry). Because fetching is read-only, transient failures
+        are retried with backoff before giving up; a fetch that keeps failing only logs a warning
+        (no exception traceback) so the polling loop can try again on its next cycle.
+        """
         logger.debug("Fetching available scans from Discover API...")
+        retrying = tenacity.Retrying(
+            stop=tenacity.stop_after_attempt(SCANNER_FETCH_ATTEMPTS),
+            wait=self._retry_wait,
+            retry=tenacity.retry_if_exception_type(
+                (base_runner.ResponseError, httpx.HTTPError)
+            ),
+            reraise=True,
+        )
         try:
-            response = runner.execute(request=scans_discover.ScansDiscoverAPIRequest())
+            response = retrying(
+                runner.execute, request=scans_discover.ScansDiscoverAPIRequest()
+            )
             data = response.get("data") or {}
             scans_list = (data.get("scans") or {}).get("scans") or []
             logger.info("Discovered %s potential scans.", len(scans_list))
             return scans_list
-        except (base_runner.ResponseError, httpx.HTTPError):
-            logger.exception("Exception while fetching scans")
+        except (base_runner.ResponseError, httpx.HTTPError) as e:
+            logger.warning(
+                "Failed to fetch available scans after %s attempts: %s",
+                SCANNER_FETCH_ATTEMPTS,
+                e,
+            )
             return []
 
     def _reserve_single_scan(
