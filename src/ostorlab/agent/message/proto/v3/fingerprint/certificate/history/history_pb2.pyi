@@ -103,6 +103,8 @@ class Message(_message.Message):
     COMPLETE_FIELD_NUMBER: _builtins.int
     MISSING_RANGES_FIELD_NUMBER: _builtins.int
     SEARCH_URL_FIELD_NUMBER: _builtins.int
+    PERIOD_FROM_FIELD_NUMBER: _builtins.int
+    PERIOD_TO_FIELD_NUMBER: _builtins.int
     host: _builtins.str
     """The host: a registrable domain name, an IPv4 or an IPv6 address."""
     certificate_count: _builtins.int
@@ -119,6 +121,10 @@ class Message(_message.Message):
     """Whether every certificate was fetched; false when some expiry ranges timed out."""
     search_url: _builtins.str
     """The crt.sh search page of the host."""
+    period_from: _builtins.str
+    """When the period the message holds starts, as an ISO 8601 date and time in UTC; absent: from the beginning."""
+    period_to: _builtins.str
+    """When it ends, as an ISO 8601 date and time in UTC: the message holds everything crt.sh had for the host in the period; absent: no period is claimed."""
     @_builtins.property
     def issuers(self) -> _containers.RepeatedCompositeFieldContainer[Global___Issuer]: ...
     @_builtins.property
@@ -143,10 +149,12 @@ class Message(_message.Message):
         complete: _builtins.bool | None = ...,
         missing_ranges: _abc.Iterable[_builtins.str] | None = ...,
         search_url: _builtins.str | None = ...,
+        period_from: _builtins.str | None = ...,
+        period_to: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "complete", b"complete", "data_up_to", b"data_up_to", "first_issued", b"first_issued", "host", b"host", "host_certificate_count", b"host_certificate_count", "last_issued", b"last_issued", "search_url", b"search_url"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "complete", b"complete", "data_up_to", b"data_up_to", "first_issued", b"first_issued", "host", b"host", "host_certificate_count", b"host_certificate_count", "last_issued", b"last_issued", "period_from", b"period_from", "period_to", b"period_to", "search_url", b"search_url"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "certificates", b"certificates", "complete", b"complete", "data_up_to", b"data_up_to", "first_issued", b"first_issued", "host", b"host", "host_certificate_count", b"host_certificate_count", "issuers", b"issuers", "last_issued", b"last_issued", "missing_ranges", b"missing_ranges", "search_url", b"search_url"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["certificate_count", b"certificate_count", "certificates", b"certificates", "complete", b"complete", "data_up_to", b"data_up_to", "first_issued", b"first_issued", "host", b"host", "host_certificate_count", b"host_certificate_count", "issuers", b"issuers", "last_issued", b"last_issued", "missing_ranges", b"missing_ranges", "period_from", b"period_from", "period_to", b"period_to", "search_url", b"search_url"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
