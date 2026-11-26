@@ -28,6 +28,11 @@ WAIT_MINUTES = 30
 SLEEP_CHECKS = 10  # seconds
 SCAN_PROGRESS_NOT_STARTED = "not_started"
 SCAN_PROGRESS_DONE = "done"
+SCAN_PROGRESS_ERROR = "error"
+SCAN_PROGRESS_STOPPED = "stopped"
+SCAN_PROGRESS_FINISHED = frozenset(
+    [SCAN_PROGRESS_DONE, SCAN_PROGRESS_ERROR, SCAN_PROGRESS_STOPPED]
+)
 
 CI_LOGGER: dict[str, Callable[[], logger.Logger]] = {
     "console": console_logger.Logger,
@@ -342,9 +347,20 @@ def apply_break_scan_risk_rating(
             _handle_scan_timeout(runner, scan_id, break_on_risk_rating, ci_logger)
 
         scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
-        if scan_result["data"]["scan"]["progress"] == "done":
+        scan_progress = scan_result["data"]["scan"]["progress"]
+        if scan_progress == SCAN_PROGRESS_DONE:
             scan_risk_rating = scan_result["data"]["scan"]["riskRating"]
             _check_scan_risk_rating(scan_risk_rating, break_on_risk_rating, ci_logger)
+        elif scan_progress in (SCAN_PROGRESS_ERROR, SCAN_PROGRESS_STOPPED):
+            ci_logger.error(
+                f"The scan ended with status {scan_progress} before completing."
+            )
+            raise click.exceptions.Exit(2)
+        else:
+            ci_logger.error(
+                f"The scan did not complete, its status is {scan_progress}."
+            )
+            raise click.exceptions.Exit(2)
     else:
         ci_logger.error(
             f"Incorrect risk rating value {break_on_risk_rating}. "
@@ -356,13 +372,13 @@ def apply_break_scan_risk_rating(
 def _check_scan_periodically(
     runner: authenticated_runner.AuthenticatedAPIRunner, scan_id: int | str
 ) -> None:
-    """Retrieve the scan progress using the API and wait if the progress is different than done"""
-    scan_done = False
-    while not scan_done:
+    """Retrieve the scan progress using the API and wait until the scan is done, errored or stopped."""
+    scan_finished = False
+    while scan_finished is False:
         scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
         scan_progress = scan_result["data"]["scan"]["progress"]
-        if scan_progress == "done":
-            scan_done = True
+        if scan_progress in SCAN_PROGRESS_FINISHED:
+            scan_finished = True
         time.sleep(SLEEP_CHECKS)
 
 
@@ -399,6 +415,8 @@ def _handle_scan_timeout(
     otherwise we raise the timeout exception
     """
     scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
+    if scan_result["data"]["scan"]["progress"] in SCAN_PROGRESS_FINISHED:
+        return
     if scan_result["data"]["scan"]["progress"] != SCAN_PROGRESS_NOT_STARTED:
         scan_risk_rating = scan_result["data"]["scan"]["riskRating"]
         if scan_risk_rating is not None and _is_scan_risk_rating_higher(
