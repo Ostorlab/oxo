@@ -356,6 +356,11 @@ def apply_break_scan_risk_rating(
                 f"The scan ended with status {scan_progress} before completing."
             )
             raise click.exceptions.Exit(2)
+        else:
+            ci_logger.error(
+                f"The scan did not complete, its status is {scan_progress}."
+            )
+            raise click.exceptions.Exit(2)
     else:
         ci_logger.error(
             f"Incorrect risk rating value {break_on_risk_rating}. "

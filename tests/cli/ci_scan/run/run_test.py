@@ -319,6 +319,39 @@ def testRunScanCLI_whenScanErrorsBeforeTimeout_shouldExitWithStatus(
     assert "The scan is still running." not in _strip_ansi(result.output)
 
 
+def testRunScanCLI_whenPollingStopsBeforeScanFinishes_shouldExitWithStatus(
+    mocker: plugin.MockerFixture,
+) -> None:
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    scan_info_dict = {"data": {"scan": {"progress": "in_progress", "riskRating": None}}}
+    mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict],
+    )
+    process_mock = mocker.patch.object(multiprocessing, "Process")
+    process_mock.return_value.is_alive.return_value = False
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=1",
+            "--title=scan1",
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "The scan did not complete, its status is in_progress." in _strip_ansi(
+        result.output
+    )
+
+
 def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(
     mocker: plugin.MockerFixture,
 ) -> None:
