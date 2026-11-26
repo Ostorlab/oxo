@@ -27,17 +27,26 @@ class RepositoryNotFoundError(Error):
 def _resolve_repository(
     runner: authenticated_runner.AuthenticatedAPIRunner, full_name: str
 ) -> source_code_scan_create_api.Repository:
-    result = runner.execute(
-        source_code_scan_create_api.RepositoriesAPIRequest(search=full_name)
-    )
     # A repository reachable through several integrations of one provider (GitHub App and PAT) is listed once per
     # integration with the same provider and id.
     matches_by_key: dict[tuple[str, str], dict[str, Any]] = {}
-    for repository in result["data"]["repositories"]["repositories"]:
-        if repository["fullName"].lower() == full_name.lower():
-            matches_by_key.setdefault(
-                (repository["provider"], repository["id"]), repository
+    page = 1
+    # The search is a substring match, so the exact name can be past the first page; a short page is the last one.
+    while True:
+        result = runner.execute(
+            source_code_scan_create_api.RepositoriesAPIRequest(
+                search=full_name, page=page
             )
+        )
+        repositories = result["data"]["repositories"]["repositories"]
+        for repository in repositories:
+            if repository["fullName"].lower() == full_name.lower():
+                matches_by_key.setdefault(
+                    (repository["provider"], repository["id"]), repository
+                )
+        if len(repositories) < source_code_scan_create_api.REPOSITORIES_PAGE_SIZE:
+            break
+        page += 1
     matches = list(matches_by_key.values())
     if len(matches) != 1:
         raise RepositoryNotFoundError(

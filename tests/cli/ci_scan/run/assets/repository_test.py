@@ -8,6 +8,7 @@ from typing import Any
 from click import testing as click_testing
 from pytest_mock import plugin
 
+from ostorlab.apis import source_code_scan_create
 from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import rootcli
 
@@ -133,6 +134,39 @@ def testRepositoryScan_whenRepositoryListedByTwoIntegrations_shouldCreateScanOnc
     assert result.exit_code == 0, result.output
     assert execute.call_count == 2
     create_variables = json.loads(execute.call_args_list[1].args[0].data["variables"])
+    assert create_variables["repository"] == REPOSITORY
+
+
+def testRepositoryScan_whenRepositoryIsPastFirstSearchPage_shouldCreateScanOfIt(
+    mocker: plugin.MockerFixture,
+) -> None:
+    similar_repositories = [
+        {**REPOSITORY, "id": str(index), "fullName": f"acme/demo-{index}"}
+        for index in range(source_code_scan_create.REPOSITORIES_PAGE_SIZE)
+    ]
+    execute = mocker.patch(
+        EXECUTE_PATH,
+        side_effect=[
+            _repositories_result(*similar_repositories),
+            _repositories_result(REPOSITORY),
+            SCAN_CREATED,
+        ],
+    )
+
+    result = _invoke(
+        "--scan-profile=source_code_fast_scan",
+        "--title=CI scan",
+        "repository",
+        "--full-name=acme/demo",
+        "--commit=0123abcd",
+    )
+
+    assert result.exit_code == 0, result.output
+    second_search_variables = json.loads(
+        execute.call_args_list[1].args[0].data["variables"]
+    )
+    assert second_search_variables["page"] == 2
+    create_variables = json.loads(execute.call_args_list[2].args[0].data["variables"])
     assert create_variables["repository"] == REPOSITORY
 
 
