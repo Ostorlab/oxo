@@ -20,7 +20,7 @@ class Error(Exception):
     """Base error of the repository asset."""
 
 
-class RepositoryNotFoundError(Error):
+class RepositoryResolutionError(Error):
     """The repository does not resolve to exactly one repository of the source code integrations."""
 
 
@@ -49,7 +49,7 @@ def _resolve_repository(
         page += 1
     matches = list(matches_by_key.values())
     if len(matches) != 1:
-        raise RepositoryNotFoundError(
+        raise RepositoryResolutionError(
             f"Expected one repository named {full_name} in the source code integrations of the organisation, "
             f"found {len(matches)}."
         )
