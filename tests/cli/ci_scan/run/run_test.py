@@ -249,6 +249,39 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(
     assert isinstance(result.exception, BaseException)
 
 
+def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanStopped_shouldExitWithStatus(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch("time.sleep")
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    scan_info_dict = {"data": {"scan": {"progress": "stopped", "riskRating": None}}}
+    mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=10",
+            "--title=scan1",
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "The scan ended with status stopped before completing." in _strip_ansi(
+        result.output
+    )
+    assert "The scan is still running." not in _strip_ansi(result.output)
+
+
 def testRunScanCLI_whithLogLfavorGithub_PrintExpctedOutput(
     mocker: plugin.MockerFixture,
 ) -> None:
