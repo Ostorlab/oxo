@@ -51,6 +51,7 @@ class DomainConfig(_message.Message):
     TRUST_ANCHORS_FIELD_NUMBER: _builtins.int
     PINS_FIELD_NUMBER: _builtins.int
     PIN_EXPIRATION_FIELD_NUMBER: _builtins.int
+    OVERRIDE_PINS_TRUST_ANCHORS_FIELD_NUMBER: _builtins.int
     cleartext_traffic_permitted: _builtins.bool
     pin_expiration: _builtins.str
     """The date the pins stop being enforced, for example 2027-01-01."""
@@ -58,11 +59,15 @@ class DomainConfig(_message.Message):
     def domains(self) -> _containers.RepeatedCompositeFieldContainer[Global___Domain]: ...
     @_builtins.property
     def trust_anchors(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
-        """The certificate sources trusted for these domains: system, user, or a resource reference such as @7F130001."""
+        """The certificate sources trusted for these domains: system, user, a resource such as @raw/my_ca, or the raw ID such as @7F130001 when it cannot be resolved."""
 
     @_builtins.property
     def pins(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Pinned public keys, as digest/value, for example SHA-256/7HIpactkIAq2Y49orFOOQKurWxmmSFZhBCoQYcRhJ3Y=."""
+
+    @_builtins.property
+    def override_pins_trust_anchors(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """The trust anchors of this domain-config that may bypass the pins, with overridePins="true"."""
 
     def __init__(
         self,
@@ -72,10 +77,11 @@ class DomainConfig(_message.Message):
         trust_anchors: _abc.Iterable[_builtins.str] | None = ...,
         pins: _abc.Iterable[_builtins.str] | None = ...,
         pin_expiration: _builtins.str | None = ...,
+        override_pins_trust_anchors: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["cleartext_traffic_permitted", b"cleartext_traffic_permitted", "pin_expiration", b"pin_expiration"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cleartext_traffic_permitted", b"cleartext_traffic_permitted", "domains", b"domains", "pin_expiration", b"pin_expiration", "pins", b"pins", "trust_anchors", b"trust_anchors"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["cleartext_traffic_permitted", b"cleartext_traffic_permitted", "domains", b"domains", "override_pins_trust_anchors", b"override_pins_trust_anchors", "pin_expiration", b"pin_expiration", "pins", b"pins", "trust_anchors", b"trust_anchors"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
@@ -93,6 +99,8 @@ class Message(_message.Message):
     BASE_TRUST_ANCHORS_FIELD_NUMBER: _builtins.int
     DOMAIN_CONFIGS_FIELD_NUMBER: _builtins.int
     DEBUG_TRUST_ANCHORS_FIELD_NUMBER: _builtins.int
+    BASE_OVERRIDE_PINS_TRUST_ANCHORS_FIELD_NUMBER: _builtins.int
+    DEBUG_OVERRIDE_PINS_TRUST_ANCHORS_FIELD_NUMBER: _builtins.int
     path: _builtins.str
     """The file inside the app, for example res/xml/network_security_config.xml."""
     package_name: _builtins.str
@@ -105,6 +113,14 @@ class Message(_message.Message):
     def debug_trust_anchors(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
         """Trust anchors added only in debuggable builds."""
 
+    @_builtins.property
+    def base_override_pins_trust_anchors(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """The base trust anchors that may bypass the pins, with overridePins="true"."""
+
+    @_builtins.property
+    def debug_override_pins_trust_anchors(self) -> _containers.RepeatedScalarFieldContainer[_builtins.str]:
+        """The debug trust anchors that may bypass the pins, with overridePins="true"."""
+
     def __init__(
         self,
         *,
@@ -114,10 +130,12 @@ class Message(_message.Message):
         base_trust_anchors: _abc.Iterable[_builtins.str] | None = ...,
         domain_configs: _abc.Iterable[Global___DomainConfig] | None = ...,
         debug_trust_anchors: _abc.Iterable[_builtins.str] | None = ...,
+        base_override_pins_trust_anchors: _abc.Iterable[_builtins.str] | None = ...,
+        debug_override_pins_trust_anchors: _abc.Iterable[_builtins.str] | None = ...,
     ) -> None: ...
     _HasFieldArgType: _TypeAlias = _typing.Literal["base_cleartext_traffic_permitted", b"base_cleartext_traffic_permitted", "package_name", b"package_name", "path", b"path"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["base_cleartext_traffic_permitted", b"base_cleartext_traffic_permitted", "base_trust_anchors", b"base_trust_anchors", "debug_trust_anchors", b"debug_trust_anchors", "domain_configs", b"domain_configs", "package_name", b"package_name", "path", b"path"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["base_cleartext_traffic_permitted", b"base_cleartext_traffic_permitted", "base_override_pins_trust_anchors", b"base_override_pins_trust_anchors", "base_trust_anchors", b"base_trust_anchors", "debug_override_pins_trust_anchors", b"debug_override_pins_trust_anchors", "debug_trust_anchors", b"debug_trust_anchors", "domain_configs", b"domain_configs", "package_name", b"package_name", "path", b"path"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n`ostorlab/agent/message/proto/v3/fingerprint/file/android/network_security/network_security.proto\x12Iostorlab.agent.message.proto.v3.fingerprint.file.android.network_security\"2\n\x06\x44omain\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1a\n\x12include_subdomains\x18\x02 \x01(\x08\"\xd4\x01\n\x0c\x44omainConfig\x12\x62\n\x07\x64omains\x18\x01 \x03(\x0b\x32Q.ostorlab.agent.message.proto.v3.fingerprint.file.android.network_security.Domain\x12#\n\x1b\x63leartext_traffic_permitted\x18\x02 \x01(\x08\x12\x15\n\rtrust_anchors\x18\x03 \x03(\t\x12\x0c\n\x04pins\x18\x04 \x03(\t\x12\x16\n\x0epin_expiration\x18\x05 \x01(\t\"\x81\x02\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x14\n\x0cpackage_name\x18\x02 \x01(\t\x12(\n base_cleartext_traffic_permitted\x18\x03 \x01(\x08\x12\x1a\n\x12\x62\x61se_trust_anchors\x18\x04 \x03(\t\x12o\n\x0e\x64omain_configs\x18\x05 \x03(\x0b\x32W.ostorlab.agent.message.proto.v3.fingerprint.file.android.network_security.DomainConfig\x12\x1b\n\x13\x64\x65\x62ug_trust_anchors\x18\x06 \x03(\t')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n`ostorlab/agent/message/proto/v3/fingerprint/file/android/network_security/network_security.proto\x12Iostorlab.agent.message.proto.v3.fingerprint.file.android.network_security\"2\n\x06\x44omain\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1a\n\x12include_subdomains\x18\x02 \x01(\x08\"\xf9\x01\n\x0c\x44omainConfig\x12\x62\n\x07\x64omains\x18\x01 \x03(\x0b\x32Q.ostorlab.agent.message.proto.v3.fingerprint.file.android.network_security.Domain\x12#\n\x1b\x63leartext_traffic_permitted\x18\x02 \x01(\x08\x12\x15\n\rtrust_anchors\x18\x03 \x03(\t\x12\x0c\n\x04pins\x18\x04 \x03(\t\x12\x16\n\x0epin_expiration\x18\x05 \x01(\t\x12#\n\x1boverride_pins_trust_anchors\x18\x06 \x03(\t\"\xd6\x02\n\x07Message\x12\x0c\n\x04path\x18\x01 \x01(\t\x12\x14\n\x0cpackage_name\x18\x02 \x01(\t\x12(\n base_cleartext_traffic_permitted\x18\x03 \x01(\x08\x12\x1a\n\x12\x62\x61se_trust_anchors\x18\x04 \x03(\t\x12o\n\x0e\x64omain_configs\x18\x05 \x03(\x0b\x32W.ostorlab.agent.message.proto.v3.fingerprint.file.android.network_security.DomainConfig\x12\x1b\n\x13\x64\x65\x62ug_trust_anchors\x18\x06 \x03(\t\x12(\n base_override_pins_trust_anchors\x18\x07 \x03(\t\x12)\n!debug_override_pins_trust_anchors\x18\x08 \x03(\t')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,7 +34,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_DOMAIN']._serialized_start=175
   _globals['_DOMAIN']._serialized_end=225
   _globals['_DOMAINCONFIG']._serialized_start=228
-  _globals['_DOMAINCONFIG']._serialized_end=440
-  _globals['_MESSAGE']._serialized_start=443
-  _globals['_MESSAGE']._serialized_end=700
+  _globals['_DOMAINCONFIG']._serialized_end=477
+  _globals['_MESSAGE']._serialized_start=480
+  _globals['_MESSAGE']._serialized_end=822
 # @@protoc_insertion_point(module_scope)
