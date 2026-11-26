@@ -410,6 +410,8 @@ def _handle_scan_timeout(
     otherwise we raise the timeout exception
     """
     scan_result = runner.execute(scan_info_api.ScanInfoAPIRequest(scan_id=scan_id))
+    if scan_result["data"]["scan"]["progress"] in SCAN_PROGRESS_FINISHED:
+        return
     if scan_result["data"]["scan"]["progress"] != SCAN_PROGRESS_NOT_STARTED:
         scan_risk_rating = scan_result["data"]["scan"]["riskRating"]
         if scan_risk_rating is not None and _is_scan_risk_rating_higher(
