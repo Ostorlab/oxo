@@ -1,12 +1,14 @@
 """Tests for the repository asset of the ci-scan run command."""
 
 import json
+import multiprocessing
 import re
 from typing import Any
 
 from click import testing as click_testing
 from pytest_mock import plugin
 
+from ostorlab.apis.runners import runner as base_runner
 from ostorlab.cli import rootcli
 
 EXECUTE_PATH = (
@@ -189,3 +191,78 @@ def testRepositoryScan_whenScanErrors_shouldExitWithErrorStatus(
     assert "The scan ended with status error before completing." in _normalize_output(
         result.output
     )
+
+
+def testRepositoryScan_whenBranchProvided_shouldCreateScanOfBranch(
+    mocker: plugin.MockerFixture,
+) -> None:
+    execute = mocker.patch(
+        EXECUTE_PATH, side_effect=[_repositories_result(REPOSITORY), SCAN_CREATED]
+    )
+
+    result = _invoke(
+        "--scan-profile=source_code_fast_scan",
+        "--title=CI scan",
+        "repository",
+        "--full-name=acme/demo",
+        "--branch=release",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "Scan created with id 7." in _normalize_output(result.output)
+    create_variables = json.loads(execute.call_args_list[1].args[0].data["variables"])
+    assert create_variables["branchName"] == "release"
+    assert create_variables["commitHash"] is None
+
+
+def testRepositoryScan_whenScanCreationRejected_shouldExitWithError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch(
+        EXECUTE_PATH,
+        side_effect=[
+            _repositories_result(REPOSITORY),
+            base_runner.ResponseError("Repository is archived."),
+        ],
+    )
+
+    result = _invoke(
+        "--scan-profile=source_code_fast_scan",
+        "--title=CI scan",
+        "repository",
+        "--full-name=acme/demo",
+        "--commit=0123abcd",
+    )
+
+    assert result.exit_code == 2
+    assert "Could not start the scan. Repository is archived." in _normalize_output(
+        result.output
+    )
+
+
+def testRepositoryScan_whenScanStillRunningAfterMaxWait_shouldExitWithError(
+    mocker: plugin.MockerFixture,
+) -> None:
+    mocker.patch(
+        EXECUTE_PATH,
+        side_effect=[
+            _repositories_result(REPOSITORY),
+            SCAN_CREATED,
+            _scan_info_result("in_progress", None),
+        ],
+    )
+    process_mock = mocker.patch.object(multiprocessing, "Process")
+    process_mock.return_value.is_alive.return_value = True
+
+    result = _invoke(
+        "--scan-profile=source_code_fast_scan",
+        "--title=CI scan",
+        "--break-on-risk-rating=medium",
+        "--max-wait-minutes=1",
+        "repository",
+        "--full-name=acme/demo",
+        "--commit=0123abcd",
+    )
+
+    assert result.exit_code == 2
+    assert "The scan is still running." in _normalize_output(result.output)
