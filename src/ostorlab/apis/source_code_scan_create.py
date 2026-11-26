@@ -25,10 +25,16 @@ class Repository:
 
 
 class RepositoriesAPIRequest(request.APIRequest):
-    """Search the repositories reachable through the source code integrations of the organisation."""
+    """Search one page of the repositories reachable through the source code integrations of the organisation.
 
-    def __init__(self, search: str) -> None:
+    The search is a substring match, so a full name also matches its longer siblings (`acme/api` matches
+    `acme/api-v2`) and the exact match can be on a later page. A page shorter than `REPOSITORIES_PAGE_SIZE` is
+    the last one.
+    """
+
+    def __init__(self, search: str, page: int = 1) -> None:
         self._search = search
+        self._page = page
 
     @property
     def query(self) -> str:
@@ -63,7 +69,7 @@ query Repositories($page: Int, $numberElements: Int, $search: String) {
             "query": self.query,
             "variables": json.dumps(
                 {
-                    "page": 1,
+                    "page": self._page,
                     "numberElements": REPOSITORIES_PAGE_SIZE,
                     "search": self._search,
                 }

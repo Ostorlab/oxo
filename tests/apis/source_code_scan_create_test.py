@@ -27,6 +27,16 @@ def testRepositoriesAPIRequest_whenSearchProvided_shouldSendSearchAndPageSize() 
     }
 
 
+def testRepositoriesAPIRequest_whenPageProvided_shouldSendPage() -> None:
+    api_request = source_code_scan_create.RepositoriesAPIRequest(
+        search="acme/demo", page=3
+    )
+
+    data = api_request.data
+
+    assert json.loads(data["variables"])["page"] == 3
+
+
 def testCreateSourceCodeScanAPIRequest_whenCommitProvided_shouldSendRepositoryAndCommit() -> (
     None
 ):
