@@ -114,6 +114,28 @@ def testRepositoryScan_whenNameMatchesSeveralRepositories_shouldExitWithoutCreat
     assert execute.call_count == 1
 
 
+def testRepositoryScan_whenRepositoryListedByTwoIntegrations_shouldCreateScanOnce(
+    mocker: plugin.MockerFixture,
+) -> None:
+    execute = mocker.patch(
+        EXECUTE_PATH,
+        side_effect=[_repositories_result(REPOSITORY, dict(REPOSITORY)), SCAN_CREATED],
+    )
+
+    result = _invoke(
+        "--scan-profile=source_code_fast_scan",
+        "--title=CI scan",
+        "repository",
+        "--full-name=acme/demo",
+        "--commit=0123abcd",
+    )
+
+    assert result.exit_code == 0, result.output
+    assert execute.call_count == 2
+    create_variables = json.loads(execute.call_args_list[1].args[0].data["variables"])
+    assert create_variables["repository"] == REPOSITORY
+
+
 def testRepositoryScan_whenCommitAndBranchBothProvided_shouldExitWithError(
     mocker: plugin.MockerFixture,
 ) -> None:

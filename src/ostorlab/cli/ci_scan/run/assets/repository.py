@@ -4,6 +4,7 @@ This module resolves a repository reachable through the source code integrations
 the create source code scan API. The platform fetches the code itself, so nothing is uploaded from the CI.
 """
 
+from typing import Any
 from typing import cast
 
 import click
@@ -29,11 +30,15 @@ def _resolve_repository(
     result = runner.execute(
         source_code_scan_create_api.RepositoriesAPIRequest(search=full_name)
     )
-    matches = [
-        repository
-        for repository in result["data"]["repositories"]["repositories"]
-        if repository["fullName"].lower() == full_name.lower()
-    ]
+    # A repository reachable through several integrations of one provider (GitHub App and PAT) is listed once per
+    # integration with the same provider and id.
+    matches_by_key: dict[tuple[str, str], dict[str, Any]] = {}
+    for repository in result["data"]["repositories"]["repositories"]:
+        if repository["fullName"].lower() == full_name.lower():
+            matches_by_key.setdefault(
+                (repository["provider"], repository["id"]), repository
+            )
+    matches = list(matches_by_key.values())
     if len(matches) != 1:
         raise RepositoryNotFoundError(
             f"Expected one repository named {full_name} in the source code integrations of the organisation, "
