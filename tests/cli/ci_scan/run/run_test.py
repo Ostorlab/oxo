@@ -7,6 +7,7 @@ import re
 from collections.abc import Callable
 from typing import Optional
 
+import pytest
 import pytest_httpx
 from click.testing import CliRunner
 from pytest_mock import plugin
@@ -249,12 +250,13 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanDoneHigherRisk_ShowError(
     assert isinstance(result.exception, BaseException)
 
 
-def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanStopped_shouldExitWithStatus(
-    mocker: plugin.MockerFixture,
+@pytest.mark.parametrize("scan_progress", ["error", "stopped"])
+def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanErroredOrStopped_shouldExitWithStatus(
+    mocker: plugin.MockerFixture, scan_progress: str
 ) -> None:
     mocker.patch("time.sleep")
     scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
-    scan_info_dict = {"data": {"scan": {"progress": "stopped", "riskRating": None}}}
+    scan_info_dict = {"data": {"scan": {"progress": scan_progress, "riskRating": None}}}
     mocker.patch(
         "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
         side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
@@ -276,7 +278,42 @@ def testRunScanCLI_whenBreakOnRiskRatingIsSetAndScanStopped_shouldExitWithStatus
     )
 
     assert result.exit_code == 2
-    assert "The scan ended with status stopped before completing." in _strip_ansi(
+    assert (
+        f"The scan ended with status {scan_progress} before completing."
+        in _strip_ansi(result.output)
+    )
+    assert "The scan is still running." not in _strip_ansi(result.output)
+
+
+def testRunScanCLI_whenScanErrorsBeforeTimeout_shouldExitWithStatus(
+    mocker: plugin.MockerFixture,
+) -> None:
+    scan_create_dict = {"data": {"createMobileScan": {"scan": {"id": "1"}}}}
+    scan_info_dict = {"data": {"scan": {"progress": "error", "riskRating": None}}}
+    mocker.patch(
+        "ostorlab.apis.runners.authenticated_runner.AuthenticatedAPIRunner.execute",
+        side_effect=[scan_create_dict, scan_info_dict, scan_info_dict],
+    )
+    process_mock = mocker.patch.object(multiprocessing, "Process")
+    process_mock.return_value.is_alive.return_value = True
+
+    result = CliRunner().invoke(
+        rootcli.rootcli,
+        [
+            "--api-key=12",
+            "ci-scan",
+            "run",
+            "--scan-profile=full_scan",
+            "--break-on-risk-rating=medium",
+            "--max-wait-minutes=1",
+            "--title=scan1",
+            "android-apk",
+            TEST_FILE_PATH,
+        ],
+    )
+
+    assert result.exit_code == 2
+    assert "The scan ended with status error before completing." in _strip_ansi(
         result.output
     )
     assert "The scan is still running." not in _strip_ansi(result.output)
