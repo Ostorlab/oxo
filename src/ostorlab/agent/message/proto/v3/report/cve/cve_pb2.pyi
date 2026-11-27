@@ -30,17 +30,29 @@ class Message(_message.Message):
     CVSS_SCORES_FIELD_NUMBER: _builtins.int
     PUBLISHED_DATE_FIELD_NUMBER: _builtins.int
     MODIFIED_DATE_FIELD_NUMBER: _builtins.int
+    VULN_STATUS_FIELD_NUMBER: _builtins.int
+    KEV_FIELD_NUMBER: _builtins.int
+    SSVC_FIELD_NUMBER: _builtins.int
+    AFFECTED_FIELD_NUMBER: _builtins.int
     cve_id: _builtins.str
     cwe: _builtins.int
     description: _builtins.str
     published_date: _builtins.int
     modified_date: _builtins.int
+    vuln_status: _builtins.str
+    """NVD vulnStatus, e.g. "Analyzed", "Modified" """
     @_builtins.property
     def targets(self) -> _containers.RepeatedCompositeFieldContainer[Global___Target]: ...
     @_builtins.property
     def references(self) -> _containers.RepeatedCompositeFieldContainer[Global___Reference]: ...
     @_builtins.property
     def cvss_scores(self) -> Global___CVSS: ...
+    @_builtins.property
+    def kev(self) -> Global___KEV: ...
+    @_builtins.property
+    def ssvc(self) -> Global___SSVC: ...
+    @_builtins.property
+    def affected(self) -> _containers.RepeatedCompositeFieldContainer[Global___Affected]: ...
     def __init__(
         self,
         *,
@@ -52,14 +64,141 @@ class Message(_message.Message):
         cvss_scores: Global___CVSS | None = ...,
         published_date: _builtins.int | None = ...,
         modified_date: _builtins.int | None = ...,
+        vuln_status: _builtins.str | None = ...,
+        kev: Global___KEV | None = ...,
+        ssvc: Global___SSVC | None = ...,
+        affected: _abc.Iterable[Global___Affected] | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["cve_id", b"cve_id", "cvss_scores", b"cvss_scores", "cwe", b"cwe", "description", b"description", "modified_date", b"modified_date", "published_date", b"published_date"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["cve_id", b"cve_id", "cvss_scores", b"cvss_scores", "cwe", b"cwe", "description", b"description", "kev", b"kev", "modified_date", b"modified_date", "published_date", b"published_date", "ssvc", b"ssvc", "vuln_status", b"vuln_status"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["cve_id", b"cve_id", "cvss_scores", b"cvss_scores", "cwe", b"cwe", "description", b"description", "modified_date", b"modified_date", "published_date", b"published_date", "references", b"references", "targets", b"targets"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["affected", b"affected", "cve_id", b"cve_id", "cvss_scores", b"cvss_scores", "cwe", b"cwe", "description", b"description", "kev", b"kev", "modified_date", b"modified_date", "published_date", b"published_date", "references", b"references", "ssvc", b"ssvc", "targets", b"targets", "vuln_status", b"vuln_status"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
 Global___Message: _TypeAlias = Message  # noqa: Y015
+
+@_typing.final
+class KEV(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    DATE_ADDED_FIELD_NUMBER: _builtins.int
+    DUE_DATE_FIELD_NUMBER: _builtins.int
+    REQUIRED_ACTION_FIELD_NUMBER: _builtins.int
+    VULNERABILITY_NAME_FIELD_NUMBER: _builtins.int
+    date_added: _builtins.str
+    """NVD cisaExploitAdd, as NVD carries it (e.g. "2024-04-12")"""
+    due_date: _builtins.str
+    """NVD cisaActionDue"""
+    required_action: _builtins.str
+    """NVD cisaRequiredAction"""
+    vulnerability_name: _builtins.str
+    """NVD cisaVulnerabilityName"""
+    def __init__(
+        self,
+        *,
+        date_added: _builtins.str | None = ...,
+        due_date: _builtins.str | None = ...,
+        required_action: _builtins.str | None = ...,
+        vulnerability_name: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["date_added", b"date_added", "due_date", b"due_date", "required_action", b"required_action", "vulnerability_name", b"vulnerability_name"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["date_added", b"date_added", "due_date", b"due_date", "required_action", b"required_action", "vulnerability_name", b"vulnerability_name"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___KEV: _TypeAlias = KEV  # noqa: Y015
+
+@_typing.final
+class SSVC(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    EXPLOITATION_FIELD_NUMBER: _builtins.int
+    AUTOMATABLE_FIELD_NUMBER: _builtins.int
+    TECHNICAL_IMPACT_FIELD_NUMBER: _builtins.int
+    exploitation: _builtins.str
+    """CISA SSVC decision point, e.g. "active", "poc", "none" """
+    automatable: _builtins.str
+    """e.g. "yes", "no" """
+    technical_impact: _builtins.str
+    """e.g. "total", "partial" """
+    def __init__(
+        self,
+        *,
+        exploitation: _builtins.str | None = ...,
+        automatable: _builtins.str | None = ...,
+        technical_impact: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["automatable", b"automatable", "exploitation", b"exploitation", "technical_impact", b"technical_impact"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["automatable", b"automatable", "exploitation", b"exploitation", "technical_impact", b"technical_impact"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___SSVC: _TypeAlias = SSVC  # noqa: Y015
+
+@_typing.final
+class Affected(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    VENDOR_FIELD_NUMBER: _builtins.int
+    PRODUCT_FIELD_NUMBER: _builtins.int
+    DEFAULT_STATUS_FIELD_NUMBER: _builtins.int
+    VERSIONS_FIELD_NUMBER: _builtins.int
+    vendor: _builtins.str
+    product: _builtins.str
+    default_status: _builtins.str
+    """e.g. "affected", "unaffected", "unknown" """
+    @_builtins.property
+    def versions(self) -> _containers.RepeatedCompositeFieldContainer[Global___AffectedVersion]: ...
+    def __init__(
+        self,
+        *,
+        vendor: _builtins.str | None = ...,
+        product: _builtins.str | None = ...,
+        default_status: _builtins.str | None = ...,
+        versions: _abc.Iterable[Global___AffectedVersion] | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["default_status", b"default_status", "product", b"product", "vendor", b"vendor"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["default_status", b"default_status", "product", b"product", "vendor", b"vendor", "versions", b"versions"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___Affected: _TypeAlias = Affected  # noqa: Y015
+
+@_typing.final
+class AffectedVersion(_message.Message):
+    DESCRIPTOR: _descriptor.Descriptor
+
+    VERSION_FIELD_NUMBER: _builtins.int
+    LESS_THAN_FIELD_NUMBER: _builtins.int
+    LESS_THAN_OR_EQUAL_FIELD_NUMBER: _builtins.int
+    STATUS_FIELD_NUMBER: _builtins.int
+    VERSION_TYPE_FIELD_NUMBER: _builtins.int
+    version: _builtins.str
+    less_than: _builtins.str
+    less_than_or_equal: _builtins.str
+    status: _builtins.str
+    """e.g. "affected", "unaffected" """
+    version_type: _builtins.str
+    """e.g. "semver", "custom", "git" """
+    def __init__(
+        self,
+        *,
+        version: _builtins.str | None = ...,
+        less_than: _builtins.str | None = ...,
+        less_than_or_equal: _builtins.str | None = ...,
+        status: _builtins.str | None = ...,
+        version_type: _builtins.str | None = ...,
+    ) -> None: ...
+    _HasFieldArgType: _TypeAlias = _typing.Literal["less_than", b"less_than", "less_than_or_equal", b"less_than_or_equal", "status", b"status", "version", b"version", "version_type", b"version_type"]  # noqa: Y015
+    def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["less_than", b"less_than", "less_than_or_equal", b"less_than_or_equal", "status", b"status", "version", b"version", "version_type", b"version_type"]  # noqa: Y015
+    def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
+    def WhichOneof(self, oneof_group: _Never) -> None: ...
+
+Global___AffectedVersion: _TypeAlias = AffectedVersion  # noqa: Y015
 
 @_typing.final
 class CVSS(_message.Message):
@@ -123,6 +262,7 @@ class CVSSv2(_message.Message):
     OBTAIN_USER_PRIVILEGE_FIELD_NUMBER: _builtins.int
     OBTAIN_OTHER_PRIVILEGE_FIELD_NUMBER: _builtins.int
     USER_INTERACTION_REQUIRED_FIELD_NUMBER: _builtins.int
+    SOURCE_FIELD_NUMBER: _builtins.int
     version: _builtins.str
     vector_string: _builtins.str
     confidentiality_impact: _builtins.str
@@ -149,6 +289,8 @@ class CVSSv2(_message.Message):
     obtain_user_privilege: _builtins.bool
     obtain_other_privilege: _builtins.bool
     user_interaction_required: _builtins.bool
+    source: _builtins.str
+    """issuer, e.g. "nvd@nist.gov" or the CNA"""
     def __init__(
         self,
         *,
@@ -178,10 +320,11 @@ class CVSSv2(_message.Message):
         obtain_user_privilege: _builtins.bool | None = ...,
         obtain_other_privilege: _builtins.bool | None = ...,
         user_interaction_required: _builtins.bool | None = ...,
+        source: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["ac_insuf_info", b"ac_insuf_info", "access_complexity", b"access_complexity", "access_vector", b"access_vector", "authentication", b"authentication", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "collateral_damage_potential", b"collateral_damage_potential", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "exploitability", b"exploitability", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "obtain_all_privilege", b"obtain_all_privilege", "obtain_other_privilege", b"obtain_other_privilege", "obtain_user_privilege", b"obtain_user_privilege", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "target_distribution", b"target_distribution", "temporal_score", b"temporal_score", "user_interaction_required", b"user_interaction_required", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["ac_insuf_info", b"ac_insuf_info", "access_complexity", b"access_complexity", "access_vector", b"access_vector", "authentication", b"authentication", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "collateral_damage_potential", b"collateral_damage_potential", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "exploitability", b"exploitability", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "obtain_all_privilege", b"obtain_all_privilege", "obtain_other_privilege", b"obtain_other_privilege", "obtain_user_privilege", b"obtain_user_privilege", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "source", b"source", "target_distribution", b"target_distribution", "temporal_score", b"temporal_score", "user_interaction_required", b"user_interaction_required", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["ac_insuf_info", b"ac_insuf_info", "access_complexity", b"access_complexity", "access_vector", b"access_vector", "authentication", b"authentication", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "collateral_damage_potential", b"collateral_damage_potential", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "exploitability", b"exploitability", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "obtain_all_privilege", b"obtain_all_privilege", "obtain_other_privilege", b"obtain_other_privilege", "obtain_user_privilege", b"obtain_user_privilege", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "target_distribution", b"target_distribution", "temporal_score", b"temporal_score", "user_interaction_required", b"user_interaction_required", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["ac_insuf_info", b"ac_insuf_info", "access_complexity", b"access_complexity", "access_vector", b"access_vector", "authentication", b"authentication", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "collateral_damage_potential", b"collateral_damage_potential", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "exploitability", b"exploitability", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "obtain_all_privilege", b"obtain_all_privilege", "obtain_other_privilege", b"obtain_other_privilege", "obtain_user_privilege", b"obtain_user_privilege", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "source", b"source", "target_distribution", b"target_distribution", "temporal_score", b"temporal_score", "user_interaction_required", b"user_interaction_required", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
@@ -223,6 +366,7 @@ class CVSSv3(_message.Message):
     ENVIRONMENTAL_SEVERITY_FIELD_NUMBER: _builtins.int
     IMPACT_SCORE_FIELD_NUMBER: _builtins.int
     EXPLOITABILITY_SCORE_FIELD_NUMBER: _builtins.int
+    SOURCE_FIELD_NUMBER: _builtins.int
     version: _builtins.str
     vector_string: _builtins.str
     confidentiality_impact: _builtins.str
@@ -255,6 +399,8 @@ class CVSSv3(_message.Message):
     environmental_severity: _builtins.str
     impact_score: _builtins.float
     exploitability_score: _builtins.float
+    source: _builtins.str
+    """used by both CVSS.v31 and CVSS.v30"""
     def __init__(
         self,
         *,
@@ -290,10 +436,11 @@ class CVSSv3(_message.Message):
         environmental_severity: _builtins.str | None = ...,
         impact_score: _builtins.float | None = ...,
         exploitability_score: _builtins.float | None = ...,
+        source: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_vector", b"attack_vector", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "environmental_severity", b"environmental_severity", "exploit_code_maturity", b"exploit_code_maturity", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_vector", b"modified_attack_vector", "modified_availability_impact", b"modified_availability_impact", "modified_confidentiality_impact", b"modified_confidentiality_impact", "modified_integrity_impact", b"modified_integrity_impact", "modified_privileges_required", b"modified_privileges_required", "modified_scope", b"modified_scope", "modified_user_interaction", b"modified_user_interaction", "privileges_required", b"privileges_required", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "scope", b"scope", "temporal_score", b"temporal_score", "temporal_severity", b"temporal_severity", "user_interaction", b"user_interaction", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_vector", b"attack_vector", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "environmental_severity", b"environmental_severity", "exploit_code_maturity", b"exploit_code_maturity", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_vector", b"modified_attack_vector", "modified_availability_impact", b"modified_availability_impact", "modified_confidentiality_impact", b"modified_confidentiality_impact", "modified_integrity_impact", b"modified_integrity_impact", "modified_privileges_required", b"modified_privileges_required", "modified_scope", b"modified_scope", "modified_user_interaction", b"modified_user_interaction", "privileges_required", b"privileges_required", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "scope", b"scope", "source", b"source", "temporal_score", b"temporal_score", "temporal_severity", b"temporal_severity", "user_interaction", b"user_interaction", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_vector", b"attack_vector", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "environmental_severity", b"environmental_severity", "exploit_code_maturity", b"exploit_code_maturity", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_vector", b"modified_attack_vector", "modified_availability_impact", b"modified_availability_impact", "modified_confidentiality_impact", b"modified_confidentiality_impact", "modified_integrity_impact", b"modified_integrity_impact", "modified_privileges_required", b"modified_privileges_required", "modified_scope", b"modified_scope", "modified_user_interaction", b"modified_user_interaction", "privileges_required", b"privileges_required", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "scope", b"scope", "temporal_score", b"temporal_score", "temporal_severity", b"temporal_severity", "user_interaction", b"user_interaction", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_vector", b"attack_vector", "availability_impact", b"availability_impact", "availability_requirement", b"availability_requirement", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_impact", b"confidentiality_impact", "confidentiality_requirement", b"confidentiality_requirement", "environmental_score", b"environmental_score", "environmental_severity", b"environmental_severity", "exploit_code_maturity", b"exploit_code_maturity", "exploitability_score", b"exploitability_score", "impact_score", b"impact_score", "integrity_impact", b"integrity_impact", "integrity_requirement", b"integrity_requirement", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_vector", b"modified_attack_vector", "modified_availability_impact", b"modified_availability_impact", "modified_confidentiality_impact", b"modified_confidentiality_impact", "modified_integrity_impact", b"modified_integrity_impact", "modified_privileges_required", b"modified_privileges_required", "modified_scope", b"modified_scope", "modified_user_interaction", b"modified_user_interaction", "privileges_required", b"privileges_required", "remediation_level", b"remediation_level", "report_confidence", b"report_confidence", "scope", b"scope", "source", b"source", "temporal_score", b"temporal_score", "temporal_severity", b"temporal_severity", "user_interaction", b"user_interaction", "vector_string", b"vector_string", "version", b"version"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
@@ -339,6 +486,7 @@ class CVSSv4(_message.Message):
     VALUE_DENSITY_FIELD_NUMBER: _builtins.int
     VULNERABILITY_RESPONSE_EFFORT_FIELD_NUMBER: _builtins.int
     PROVIDER_URGENCY_FIELD_NUMBER: _builtins.int
+    SOURCE_FIELD_NUMBER: _builtins.int
     version: _builtins.str
     vector_string: _builtins.str
     base_score: _builtins.float
@@ -375,6 +523,7 @@ class CVSSv4(_message.Message):
     value_density: _builtins.str
     vulnerability_response_effort: _builtins.str
     provider_urgency: _builtins.str
+    source: _builtins.str
     def __init__(
         self,
         *,
@@ -414,10 +563,11 @@ class CVSSv4(_message.Message):
         value_density: _builtins.str | None = ...,
         vulnerability_response_effort: _builtins.str | None = ...,
         provider_urgency: _builtins.str | None = ...,
+        source: _builtins.str | None = ...,
     ) -> None: ...
-    _HasFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_requirements", b"attack_requirements", "attack_vector", b"attack_vector", "automatable", b"automatable", "availability_requirements", b"availability_requirements", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_requirements", b"confidentiality_requirements", "exploit_maturity", b"exploit_maturity", "integrity_requirements", b"integrity_requirements", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_requirements", b"modified_attack_requirements", "modified_attack_vector", b"modified_attack_vector", "modified_privileges_required", b"modified_privileges_required", "modified_subsequent_system_availability", b"modified_subsequent_system_availability", "modified_subsequent_system_confidentiality", b"modified_subsequent_system_confidentiality", "modified_subsequent_system_integrity", b"modified_subsequent_system_integrity", "modified_user_interaction", b"modified_user_interaction", "modified_vulnerable_system_availability", b"modified_vulnerable_system_availability", "modified_vulnerable_system_confidentiality", b"modified_vulnerable_system_confidentiality", "modified_vulnerable_system_integrity", b"modified_vulnerable_system_integrity", "privileges_required", b"privileges_required", "provider_urgency", b"provider_urgency", "recovery", b"recovery", "safety", b"safety", "subsequent_system_availability", b"subsequent_system_availability", "subsequent_system_confidentiality", b"subsequent_system_confidentiality", "subsequent_system_integrity", b"subsequent_system_integrity", "user_interaction", b"user_interaction", "value_density", b"value_density", "vector_string", b"vector_string", "version", b"version", "vulnerability_response_effort", b"vulnerability_response_effort", "vulnerable_system_availability", b"vulnerable_system_availability", "vulnerable_system_confidentiality", b"vulnerable_system_confidentiality", "vulnerable_system_integrity", b"vulnerable_system_integrity"]  # noqa: Y015
+    _HasFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_requirements", b"attack_requirements", "attack_vector", b"attack_vector", "automatable", b"automatable", "availability_requirements", b"availability_requirements", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_requirements", b"confidentiality_requirements", "exploit_maturity", b"exploit_maturity", "integrity_requirements", b"integrity_requirements", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_requirements", b"modified_attack_requirements", "modified_attack_vector", b"modified_attack_vector", "modified_privileges_required", b"modified_privileges_required", "modified_subsequent_system_availability", b"modified_subsequent_system_availability", "modified_subsequent_system_confidentiality", b"modified_subsequent_system_confidentiality", "modified_subsequent_system_integrity", b"modified_subsequent_system_integrity", "modified_user_interaction", b"modified_user_interaction", "modified_vulnerable_system_availability", b"modified_vulnerable_system_availability", "modified_vulnerable_system_confidentiality", b"modified_vulnerable_system_confidentiality", "modified_vulnerable_system_integrity", b"modified_vulnerable_system_integrity", "privileges_required", b"privileges_required", "provider_urgency", b"provider_urgency", "recovery", b"recovery", "safety", b"safety", "source", b"source", "subsequent_system_availability", b"subsequent_system_availability", "subsequent_system_confidentiality", b"subsequent_system_confidentiality", "subsequent_system_integrity", b"subsequent_system_integrity", "user_interaction", b"user_interaction", "value_density", b"value_density", "vector_string", b"vector_string", "version", b"version", "vulnerability_response_effort", b"vulnerability_response_effort", "vulnerable_system_availability", b"vulnerable_system_availability", "vulnerable_system_confidentiality", b"vulnerable_system_confidentiality", "vulnerable_system_integrity", b"vulnerable_system_integrity"]  # noqa: Y015
     def HasField(self, field_name: _HasFieldArgType) -> _builtins.bool: ...
-    _ClearFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_requirements", b"attack_requirements", "attack_vector", b"attack_vector", "automatable", b"automatable", "availability_requirements", b"availability_requirements", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_requirements", b"confidentiality_requirements", "exploit_maturity", b"exploit_maturity", "integrity_requirements", b"integrity_requirements", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_requirements", b"modified_attack_requirements", "modified_attack_vector", b"modified_attack_vector", "modified_privileges_required", b"modified_privileges_required", "modified_subsequent_system_availability", b"modified_subsequent_system_availability", "modified_subsequent_system_confidentiality", b"modified_subsequent_system_confidentiality", "modified_subsequent_system_integrity", b"modified_subsequent_system_integrity", "modified_user_interaction", b"modified_user_interaction", "modified_vulnerable_system_availability", b"modified_vulnerable_system_availability", "modified_vulnerable_system_confidentiality", b"modified_vulnerable_system_confidentiality", "modified_vulnerable_system_integrity", b"modified_vulnerable_system_integrity", "privileges_required", b"privileges_required", "provider_urgency", b"provider_urgency", "recovery", b"recovery", "safety", b"safety", "subsequent_system_availability", b"subsequent_system_availability", "subsequent_system_confidentiality", b"subsequent_system_confidentiality", "subsequent_system_integrity", b"subsequent_system_integrity", "user_interaction", b"user_interaction", "value_density", b"value_density", "vector_string", b"vector_string", "version", b"version", "vulnerability_response_effort", b"vulnerability_response_effort", "vulnerable_system_availability", b"vulnerable_system_availability", "vulnerable_system_confidentiality", b"vulnerable_system_confidentiality", "vulnerable_system_integrity", b"vulnerable_system_integrity"]  # noqa: Y015
+    _ClearFieldArgType: _TypeAlias = _typing.Literal["attack_complexity", b"attack_complexity", "attack_requirements", b"attack_requirements", "attack_vector", b"attack_vector", "automatable", b"automatable", "availability_requirements", b"availability_requirements", "base_score", b"base_score", "base_severity", b"base_severity", "confidentiality_requirements", b"confidentiality_requirements", "exploit_maturity", b"exploit_maturity", "integrity_requirements", b"integrity_requirements", "modified_attack_complexity", b"modified_attack_complexity", "modified_attack_requirements", b"modified_attack_requirements", "modified_attack_vector", b"modified_attack_vector", "modified_privileges_required", b"modified_privileges_required", "modified_subsequent_system_availability", b"modified_subsequent_system_availability", "modified_subsequent_system_confidentiality", b"modified_subsequent_system_confidentiality", "modified_subsequent_system_integrity", b"modified_subsequent_system_integrity", "modified_user_interaction", b"modified_user_interaction", "modified_vulnerable_system_availability", b"modified_vulnerable_system_availability", "modified_vulnerable_system_confidentiality", b"modified_vulnerable_system_confidentiality", "modified_vulnerable_system_integrity", b"modified_vulnerable_system_integrity", "privileges_required", b"privileges_required", "provider_urgency", b"provider_urgency", "recovery", b"recovery", "safety", b"safety", "source", b"source", "subsequent_system_availability", b"subsequent_system_availability", "subsequent_system_confidentiality", b"subsequent_system_confidentiality", "subsequent_system_integrity", b"subsequent_system_integrity", "user_interaction", b"user_interaction", "value_density", b"value_density", "vector_string", b"vector_string", "version", b"version", "vulnerability_response_effort", b"vulnerability_response_effort", "vulnerable_system_availability", b"vulnerable_system_availability", "vulnerable_system_confidentiality", b"vulnerable_system_confidentiality", "vulnerable_system_integrity", b"vulnerable_system_integrity"]  # noqa: Y015
     def ClearField(self, field_name: _ClearFieldArgType) -> None: ...
     def WhichOneof(self, oneof_group: _Never) -> None: ...
 
