@@ -10,4 +10,8 @@ message Message{
     // When the page was captured, as an ISO 8601 date and time in UTC, like 2019-01-29T22:43:31Z, for a screenshot
     // of an archived page; absent for a screenshot taken during the scan.
     optional string captured_at = 5;
+    // When the period the message holds starts, as an ISO 8601 date and time in UTC; absent: from the beginning.
+    optional string period_from = 6;
+    // When it ends, as an ISO 8601 date and time in UTC: the message holds everything the archive had for the page in the period; absent: no period is claimed.
+    optional string period_to = 7;
 }

@@ -4,5 +4,6 @@ from ostorlab.cli.ci_scan.run.assets import android_aab
 from ostorlab.cli.ci_scan.run.assets import android_apk
 from ostorlab.cli.ci_scan.run.assets import ios_ipa
 from ostorlab.cli.ci_scan.run.assets import link
+from ostorlab.cli.ci_scan.run.assets import repository
 
-__all__ = ["android_aab", "android_apk", "ios_ipa", "link"]
+__all__ = ["android_aab", "android_apk", "ios_ipa", "link", "repository"]

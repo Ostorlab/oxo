@@ -72,6 +72,7 @@ SCAN_PROFILES = {
     "fast_scan": "Fast Scan",
     "full_scan": "Full Scan",
     "full_web_scan": "Full Web Scan",
+    "source_code_fast_scan": "Source Code Fast Scan",
     # aliases
     "fast": "Fast Scan",
     "full": "Full Scan",

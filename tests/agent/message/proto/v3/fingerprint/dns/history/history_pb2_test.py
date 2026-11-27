@@ -78,3 +78,47 @@ def testSerialize_whenTheHistoryIsCut_shouldKeepItIncomplete() -> None:
     assert message.complete is False
     assert message.records[0].truncated is True
     assert message.records[0].values[0].HasField("first_seen") is False
+
+
+def testSerialize_whenPeriodSet_shouldSerializeAndDeserializeCorrectly() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.dns.history",
+        {
+            "host": "ostorlab.co",
+            "complete": True,
+            "period_from": "2026-10-30T00:00:00Z",
+            "period_to": "2026-11-25T08:12:03Z",
+        },
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.dns.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.period_from == "2026-10-30T00:00:00Z"
+    assert message.period_to == "2026-11-25T08:12:03Z"
+
+
+def testSerialize_whenPeriodCoversTheWholeHistory_shouldKeepPeriodFromUnset() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.dns.history",
+        {"host": "ostorlab.co", "period_to": "2026-11-25T08:12:03Z"},
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.dns.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.HasField("period_from") is False
+    assert message.period_to == "2026-11-25T08:12:03Z"
+
+
+def testSerialize_whenNoPeriod_shouldKeepPeriodUnset() -> None:
+    raw = serializer.serialize(
+        "v3.fingerprint.dns.history",
+        {"host": "ostorlab.co", "complete": False},
+    ).SerializeToString()
+
+    message = serializer.deserialize("v3.fingerprint.dns.history", raw)
+
+    assert isinstance(message, history_pb2.Message)
+    assert message.HasField("period_from") is False
+    assert message.HasField("period_to") is False
