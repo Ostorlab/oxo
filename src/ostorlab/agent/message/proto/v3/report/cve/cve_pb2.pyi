@@ -40,6 +40,7 @@ class Message(_message.Message):
     published_date: _builtins.int
     modified_date: _builtins.int
     vuln_status: _builtins.str
+    """NVD vulnStatus, e.g. "Analyzed", "Modified" """
     @_builtins.property
     def targets(self) -> _containers.RepeatedCompositeFieldContainer[Global___Target]: ...
     @_builtins.property
