@@ -11,12 +11,14 @@ message Domain {
 message DomainConfig {
   repeated Domain domains = 1;
   optional bool cleartext_traffic_permitted = 2;
-  // The certificate sources trusted for these domains: system, user, or a resource reference such as @7F130001.
+  // The certificate sources trusted for these domains: system, user, a resource such as @raw/my_ca, or the raw ID such as @7F130001 when it cannot be resolved.
   repeated string trust_anchors = 3;
   // Pinned public keys, as digest/value, for example SHA-256/7HIpactkIAq2Y49orFOOQKurWxmmSFZhBCoQYcRhJ3Y=.
   repeated string pins = 4;
   // The date the pins stop being enforced, for example 2027-01-01.
   optional string pin_expiration = 5;
+  // The trust anchors of this domain-config that may bypass the pins, with overridePins="true".
+  repeated string override_pins_trust_anchors = 6;
 }
 
 // The network security config of an Android app, the file its manifest points to with android:networkSecurityConfig.
@@ -29,4 +31,8 @@ message Message {
   repeated DomainConfig domain_configs = 5;
   // Trust anchors added only in debuggable builds.
   repeated string debug_trust_anchors = 6;
+  // The base trust anchors that may bypass the pins, with overridePins="true".
+  repeated string base_override_pins_trust_anchors = 7;
+  // The debug trust anchors that may bypass the pins, with overridePins="true".
+  repeated string debug_override_pins_trust_anchors = 8;
 }

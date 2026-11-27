@@ -1,7 +1,7 @@
 from ostorlab.agent.message import message as agent_message
 
 
-def testMessageFromData_whenDomainConfigsProvided_roundTrips() -> None:
+def testMessageFromData_whenDomainConfigsAndOverridePinsProvided_roundTrips() -> None:
     data = {
         "path": "res/xml/network_security_config.xml",
         "package_name": "com.example.app",
@@ -14,9 +14,12 @@ def testMessageFromData_whenDomainConfigsProvided_roundTrips() -> None:
                 "trust_anchors": ["@raw/my_ca"],
                 "pins": ["SHA-256/7HIpactkIAq2Y49orFOOQKurWxmmSFZhBCoQYcRhJ3Y="],
                 "pin_expiration": "2027-01-01",
+                "override_pins_trust_anchors": ["@raw/my_ca"],
             }
         ],
         "debug_trust_anchors": ["user"],
+        "base_override_pins_trust_anchors": ["system"],
+        "debug_override_pins_trust_anchors": ["user"],
     }
 
     serialized = agent_message.Message.from_data(
