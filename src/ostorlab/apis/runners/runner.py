@@ -19,7 +19,22 @@ class Error(Exception):
 
 
 class ResponseError(Error):
-    """Response Error."""
+    """Response Error.
+
+    Attributes:
+        status_code: The HTTP status code of the error response, when the error came from a
+            non-200 status. None for a GraphQL error embedded in a 200 response.
+    """
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        """Constructs the response error.
+
+        Args:
+            message: The error message.
+            status_code: The HTTP status code of the error response, when known.
+        """
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class UnauthorizedError(ResponseError):

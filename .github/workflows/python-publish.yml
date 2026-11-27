@@ -69,8 +69,8 @@ jobs:
       with:
         username: ${{ secrets.store_user }}
         password: ${{ secrets.store_password }}
-    - name: truncate current tag
-      run: echo "TAG=$(echo $GITHUB_REF | cut -c12-17)" >> $GITHUB_ENV
+    - name: Set Docker image version
+      run: printf 'TAG=%s\n' "${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
     - name: Build image and push to ostorlab Container Registry
       uses: docker/build-push-action@v2
       with:

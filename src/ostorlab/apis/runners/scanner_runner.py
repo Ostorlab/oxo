@@ -69,7 +69,8 @@ class ScannerAPIRunner(runner.APIRunner):
                 response.content,
             )
             raise runner.ResponseError(
-                f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}"
+                f"Response status code is {response.status_code}: {response.content.decode(errors='ignore')}",
+                status_code=response.status_code,
             )
         data: dict[str, Any] = response.json()
         errors = data.get("errors")
